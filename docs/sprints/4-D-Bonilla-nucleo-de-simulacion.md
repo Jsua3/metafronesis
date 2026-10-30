@@ -5,11 +5,11 @@
 **Tamaño:** 2,939 líneas de producción ≈ 10.1% del backend (de 29,073); 45 archivos de prueba.  
 **Rama sugerida:** `feature/s3-caso-intento (luego feature/s4-motor-decisiones)` · **Etiqueta:** `v0.3.0 y v0.4.0`
 
-> **Propuesta sin ejecutar.** Codex hizo un análisis estático de `origin/master` (263146c1). Nadie ha corrido `django.setup()`, migraciones ni pruebas sobre este corte; esa verificación es parte de tu sprint.
+> **Propuesta sin ejecutar.** Es un análisis estático hecho con ayuda de IA sobre el código del proyecto original. Nadie ha corrido `django.setup()`, migraciones ni pruebas sobre este corte; esa verificación es parte de tu sprint.
 
-Es el sprint con menos código copiable (~7,7%) y el que más diseño exige: Codex propone **contratos nuevos** (rutas `/api/cases`, `/api/attempts`, migración inicial acotada de `simulation`) en vez de montar el `game_views.py` actual. Dependes de S1 y S2. Decide con el equipo los contratos de autorización antes de implementar.
+Es el sprint con menos código copiable (~7,7%) y el que más diseño exige: la IA propone **contratos nuevos** (rutas `/api/cases`, `/api/attempts`, migración inicial acotada de `simulation`) en vez de montar el `game_views.py` actual. Dependes de S1 y S2. Decide con el equipo los contratos de autorización antes de implementar.
 
-## Qué entrega (según el análisis de Codex)
+## Qué entrega (según el análisis de la IA)
 
 ## S3 — Caso, intento y API básica
 
@@ -17,8 +17,8 @@ Es el sprint con menos código copiable (~7,7%) y el que más diseño exige: Cod
 - **Apps/modelos/endpoints:** `simulation` con `SimulationAttempt` y dependencias de caso/mundo ya registradas en S2; serializers/requests de gameplay y servicios de ciclo/duración/bloqueo/sustitución. Nuevas rutas en el repo nuevo: `GET/POST /api/cases`, `GET /api/cases/{id}`, `POST /api/attempts`, `GET /api/attempts/{id}`; concretar contrato de autorización con la rúbrica antes de implementarlas.
 - **Migraciones:** nueva `apps/simulation/migrations/0001_initial.py` **acotada** a caso y dependencias mínimas, más migración de asignaciones de grupos. La fila S3 de 0001 en CSV denota tarea de regeneración; no copiar la 0001 monolítica extraída.
 - **Tests asignados:** 37 archivos bajo `apps/simulation/tests` cuyo grafo directo cabe en el corte; comenzar por `test_attempt_duration`, `test_attempt_id`, `test_attempt_lifecycle_contract`, `test_world` y tests de migración seleccionados. El total incluye fixtures/support no ejecutables como tests; no contar archivos como casos.
-- **Defensa de diseño:** el ciclo de intento y el guardado transaccional muestran límites del caso de uso; revisar `apps/simulation/services/attempt_lifecycle.py` y `attempt_lock.py`. `patrones-solid.md:15` referencia `SimulationAttempt` como dato/relaciones y exige contrastar responsabilidades.
-- **Antipatrones:** el paquete `simulation.models.__init__` reexporta mundo/rúbrica, provocando el ciclo modelar descrito en `ciclos.md`; recortar exports y usar FK por string solo donde proceda. No afirmar que importar serializers/game_dtos basta para cerrar el API: el contrato propuesto se crea como módulo nuevo.
+- **Defensa de diseño:** el ciclo de intento y el guardado transaccional muestran límites del caso de uso; revisar `apps/simulation/services/attempt_lifecycle.py` y `attempt_lock.py`. el análisis de patrones referencia `SimulationAttempt` como dato/relaciones y exige contrastar responsabilidades.
+- **Antipatrones:** el paquete `simulation.models.__init__` reexporta mundo/rúbrica, provocando el ciclo modelar descrito en el análisis de ciclos; recortar exports y usar FK por string solo donde proceda. No afirmar que importar serializers/game_dtos basta para cerrar el API: el contrato propuesto se crea como módulo nuevo.
 
 ## S4 — Motor de decisiones y evaluación mínima
 
@@ -26,7 +26,7 @@ Es el sprint con menos código copiable (~7,7%) y el que más diseño exige: Cod
 - **Apps/modelos/endpoints:** `simulation.services.game_service`, `case_rules`, `conditions`, `endings`, `response_effects` y assessment `evaluation`, `definitions`, `evidence`. Añadir una ruta de decisión/evaluación al API S3 solo tras fijar su contrato y permisos. El conteo de las fuentes seleccionadas de S4 incluye 8 módulos productivos, 1.185 LOC, 0 modelos declarados y 0 rutas declaradas en esos archivos.
 - **Migraciones:** migraciones aditivas nuevas para los campos mínimos de reglas/efectos y evidencia que requiera el corte. No copiar automáticamente 0008+ del historial; vincular cada columna al modelo realmente incluido. Las migraciones completas quedan tras S3 y respetan la dependencia a su inicial acotada.
 - **Tests asignados:** crear tests nuevos de decisión determinista, efectos, reintento idempotente y evaluación con evidencia mínima; no hay tests fuente S4 elegibles tras cerrar el set de producción seleccionado, porque los existentes importan módulos fuera de este corte. No ejecutar suite completa.
-- **Defensa de diseño:** `choose_decision` en `game_service.py:526` y `start_attempt` en `:246` son funciones largas candidatas a refactor (`patrones-solid.md:54-55`); se pueden extraer regla pura/selector y persistencia para explicar SRP/OCP como objetivo de diseño. No presentarlas como SOLID cumplido.
+- **Defensa de diseño:** `choose_decision` en `game_service.py:526` y `start_attempt` en `:246` son funciones largas candidatas a refactor (el análisis de patrones); se pueden extraer regla pura/selector y persistencia para explicar SRP/OCP como objetivo de diseño. No presentarlas como SOLID cumplido.
 - **Antipatrones:** presentes en el legado: métodos extensos y acoplamiento con otros subsistemas; la propuesta corta este sprint antes de autoría/reportes. No se corrigió código fuente en esta tarea.
 
 ## Aristas del ciclo que te tocan
@@ -163,7 +163,7 @@ Para que el avance no baje de 40% con ningún método de conteo, tu S4 suma dos 
 
 ## Para la sustentación (cada integrante defiende lo suyo)
 Debes poder explicar: (1) qué hace tu bloque y por qué va en este orden, (2) un patrón de diseño y un principio SOLID con un archivo concreto de los de arriba, (3) un antipatrón que corrigieron o que sigue presente y cómo lo cortarían, (4) cómo se versionó (ramas, PR, etiqueta).
-> Las referencias `archivo:línea` de Codex son indicios por tamaño y estructura, no pruebas. Léelas tú antes de afirmarlas.
+> Las referencias `archivo:línea` de la IA son indicios por tamaño y estructura, no pruebas. Léelas tú antes de afirmarlas.
 
 ## Checklist de Git (puntos de la rúbrica)
 - [ ] Rama `feature/s3-caso-intento (luego feature/s4-motor-decisiones)` salida de `develop`; commits pequeños en formato Conventional Commits (`feat(...)`, `refactor(...)`, `test(...)`, `docs(...)`).

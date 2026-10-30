@@ -5,11 +5,11 @@
 **Tamaño:** 4,368 líneas de producción ≈ 15.0% del backend (de 29,073); 23 archivos de prueba.  
 **Rama sugerida:** `feature/s2-privacidad-grupos` · **Etiqueta:** `v0.2.0`
 
-> **Propuesta sin ejecutar.** Codex hizo un análisis estático de `origin/master` (263146c1). Nadie ha corrido `django.setup()`, migraciones ni pruebas sobre este corte; esa verificación es parte de tu sprint.
+> **Propuesta sin ejecutar.** Es un análisis estático hecho con ayuda de IA sobre el código del proyecto original. Nadie ha corrido `django.setup()`, migraciones ni pruebas sobre este corte; esa verificación es parte de tu sprint.
 
 Es el bloque con más código del equipo (~15%). Dependes de S1 completo (`users` y los contratos de `shared`). Puedes preparar la rama ya, pero la fusión espera a que S1 esté en `develop`. Además eres el dueño del repo: antes de los sprints haces el Sprint 0 (commit inicial con los 4 autores, `develop`, protección de ramas, archivos base).
 
-## Qué entrega (según el análisis de Codex)
+## Qué entrega (según el análisis de la IA)
 
 ## S2 — Privacidad y grupos básicos
 
@@ -17,8 +17,8 @@ Es el bloque con más código del equipo (~15%). Dependes de S1 completo (`users
 - **Apps/modelos/endpoints:** `privacy` (`ConsentRecord` y eventos/servicios de consentimiento y derechos), `grupos` (`Grupo`, `GrupoEstudiante`, asignación de caso) y el modelo mínimo de caso. Endpoints de privacidad: consentimiento; grupos: CRUD, estudiantes, import, spec/template y casos. Mantener fuera los endpoints dependientes de motor hasta S3/S4.
 - **Migraciones:** `privacy` 0001, sujeta a cotejar dependencias con `AUTH_USER_MODEL`. Las migraciones de grupos se asignan a S3 junto con la inicial acotada de simulation, porque el histórico `apps/grupos/migrations/0001..0005` enlaza asignaciones/versiones a `CaseVersion`. En S2 generar en el repo nuevo solo la migración core de grupo/membresía si se requiere escribir grupos antes de S3.
 - **Tests asignados:** 23 archivos S2 de `apps/privacy/tests`, `apps/grupos/tests` y `shared/tests/test_fetch_raise.py`, según CSV. Diferir tests de asignaciones/versiones que pidan el modelo completo hasta S3; la tabla de cierre enumera referencias incompatibles del código fuente actual.
-- **Defensa de diseño:** `Grupo` agrupa relaciones (`patrones-solid.md:23`); `assignment_service.create_assignment` usa `auditable` y `transaction.atomic` (`patrones-solid.md:33-35`). Sirve para explicar composición y transacción, no como prueba de cumplimiento completo de SOLID.
-- **Antipatrones:** S2↔S1 forma el ciclo de 11 archivos; presente dependencia de `grupos/services.py` a serializers de usuarios y al motor. Se propone extraer contratos y evitar el import directo. Riesgo de responsabilidad múltiple en `privacy/data_subject.py` (`patrones-solid.md:73`); indicio, no veredicto.
+- **Defensa de diseño:** `Grupo` agrupa relaciones (el análisis de patrones); `assignment_service.create_assignment` usa `auditable` y `transaction.atomic` (el análisis de patrones). Sirve para explicar composición y transacción, no como prueba de cumplimiento completo de SOLID.
+- **Antipatrones:** S2↔S1 forma el ciclo de 11 archivos; presente dependencia de `grupos/services.py` a serializers de usuarios y al motor. Se propone extraer contratos y evitar el import directo. Riesgo de responsabilidad múltiple en `privacy/data_subject.py` (el análisis de patrones); indicio, no veredicto.
 
 ## Aristas del ciclo que te tocan
 
@@ -30,7 +30,7 @@ Es el bloque con más código del equipo (~15%). Dependes de S1 completo (`users
 
 ## Ojo
 - Las migraciones de `grupos` (0001–0005) enlazan a `CaseVersion`: se activan en S3 con Bonilla. En S2 solo lo mínimo de grupo/membresía.
-- `privacy/data_subject.py` junta varias responsabilidades (indicio de Codex): buen tema para defender SOLID.
+- `privacy/data_subject.py` junta varias responsabilidades (indicio de la IA): buen tema para defender SOLID.
 
 ## Tus archivos
 
@@ -116,7 +116,7 @@ Es el bloque con más código del equipo (~15%). Dependes de S1 completo (`users
 
 ## Para la sustentación (cada integrante defiende lo suyo)
 Debes poder explicar: (1) qué hace tu bloque y por qué va en este orden, (2) un patrón de diseño y un principio SOLID con un archivo concreto de los de arriba, (3) un antipatrón que corrigieron o que sigue presente y cómo lo cortarían, (4) cómo se versionó (ramas, PR, etiqueta).
-> Las referencias `archivo:línea` de Codex son indicios por tamaño y estructura, no pruebas. Léelas tú antes de afirmarlas.
+> Las referencias `archivo:línea` de la IA son indicios por tamaño y estructura, no pruebas. Léelas tú antes de afirmarlas.
 
 ## Checklist de Git (puntos de la rúbrica)
 - [ ] Rama `feature/s2-privacidad-grupos` salida de `develop`; commits pequeños en formato Conventional Commits (`feat(...)`, `refactor(...)`, `test(...)`, `docs(...)`).

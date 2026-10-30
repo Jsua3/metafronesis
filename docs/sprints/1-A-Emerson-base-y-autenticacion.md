@@ -5,11 +5,11 @@
 **Tamaño:** 2,492 líneas de producción ≈ 8.6% del backend (de 29,073); 20 archivos de prueba.  
 **Rama sugerida:** `feature/s1-base-autenticacion` · **Etiqueta:** `v0.1.0`
 
-> **Propuesta sin ejecutar.** Codex hizo un análisis estático de `origin/master` (263146c1). Nadie ha corrido `django.setup()`, migraciones ni pruebas sobre este corte; esa verificación es parte de tu sprint.
+> **Propuesta sin ejecutar.** Es un análisis estático hecho con ayuda de IA sobre el código del proyecto original. Nadie ha corrido `django.setup()`, migraciones ni pruebas sobre este corte; esa verificación es parte de tu sprint.
 
 Tu bloque es la base: sin `users` y la configuración nada arranca. **Dependes de Leyton (B)**: `shared` lo usan los settings y los contratos neutrales (`shared/audit.py`, `shared/identity.py`) nacen en su sprint. Coordínense: B fusiona primero o ambos trabajan sobre una rama de integración `integracion/s1`.
 
-## Qué entrega (según el análisis de Codex)
+## Qué entrega (según el análisis de la IA)
 
 ## S1 — Base y autenticación
 
@@ -18,8 +18,8 @@ Tu bloque es la base: sin `users` y la configuración nada arranca. **Dependes d
 - **Endpoints:** health/readiness y OpenAPI de `shared`; login, Google login/config, access-request, me, change-password; reporte CSP y throttling según el contrato de `security`. Se deben conservar las rutas /api existentes de la copia; no se ejecutaron.
 - **Migraciones:** llevar `users` migrations 0001–0004 y `security` 0001 solo si tras inspección del grafo no tienen FK a apps aplazadas; en el repo nuevo la 0001 de usuarios fija `AUTH_USER_MODEL`. No aplicar migraciones en esta auditoría.
 - **Tests asignados:** archivos bajo `shared/tests`, `apps/users/tests` y `apps/security/tests` marcados S1 en CSV. Prioridad de ejecución futura: importar settings, crear usuario y autenticar, cambio de contraseña, access request, CSP/throttle, health/OpenAPI.
-- **Defensa de diseño:** transacción/bloqueo de cuenta en `apps/users/services/account_service.py:85` (`patrones-solid.md:82`) para discutir atomicidad y concurrencia; en S1 explicar la separación entre middleware/política/respuesta en `shared` con `shared/middleware.py`, `shared/policies.py`, `shared/response.py`. La evidencia no afirma SOLID automáticamente.
-- **Antipatrones:** el corte original por peso dejaba auth fuera; aquí se corrige. Está presente la dependencia de `account_service` hacia el decorador del motor de simulación (`patrones-solid.md:81`); propuesta de corte en `romper-ciclo.md`. Settings carga token serializer por ruta de módulo (`psychosim/settings/base.py:169`), que hoy conduce a import eager indirecto.
+- **Defensa de diseño:** transacción/bloqueo de cuenta en `apps/users/services/account_service.py:85` (el análisis de patrones) para discutir atomicidad y concurrencia; en S1 explicar la separación entre middleware/política/respuesta en `shared` con `shared/middleware.py`, `shared/policies.py`, `shared/response.py`. La evidencia no afirma SOLID automáticamente.
+- **Antipatrones:** el corte original por peso dejaba auth fuera; aquí se corrige. Está presente la dependencia de `account_service` hacia el decorador del motor de simulación (el análisis de patrones); propuesta de corte en el análisis de ciclos. Settings carga token serializer por ruta de módulo (`psychosim/settings/base.py:169`), que hoy conduce a import eager indirecto.
 
 ## Aristas del ciclo que te tocan
 
@@ -108,7 +108,7 @@ Tu bloque es la base: sin `users` y la configuración nada arranca. **Dependes d
 
 ## Para la sustentación (cada integrante defiende lo suyo)
 Debes poder explicar: (1) qué hace tu bloque y por qué va en este orden, (2) un patrón de diseño y un principio SOLID con un archivo concreto de los de arriba, (3) un antipatrón que corrigieron o que sigue presente y cómo lo cortarían, (4) cómo se versionó (ramas, PR, etiqueta).
-> Las referencias `archivo:línea` de Codex son indicios por tamaño y estructura, no pruebas. Léelas tú antes de afirmarlas.
+> Las referencias `archivo:línea` de la IA son indicios por tamaño y estructura, no pruebas. Léelas tú antes de afirmarlas.
 
 ## Checklist de Git (puntos de la rúbrica)
 - [ ] Rama `feature/s1-base-autenticacion` salida de `develop`; commits pequeños en formato Conventional Commits (`feat(...)`, `refactor(...)`, `test(...)`, `docs(...)`).
