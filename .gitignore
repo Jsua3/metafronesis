@@ -1,0 +1,36 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Entornos virtuales
+.venv/
+venv/
+
+# Secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Bases de datos locales y logs
+*.sqlite3
+*.log
+
+# Archivos generados
+staticfiles/
+media/
+psychosim/settings/local.py
+
+# Editor y sistema
+.idea/
+.vscode/
+.DS_Store
+desktop.ini
+Thumbs.db

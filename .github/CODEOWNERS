@@ -1,0 +1,10 @@
+# Cada bloque tiene un responsable; las reglas de abajo prevalecen sobre las de arriba.
+*                           @Jsua3
+/psychosim/                 @EmersonAngel
+/apps/users/                @EmersonAngel
+/shared/                    @SantiagoLeyton
+/apps/security/             @SantiagoLeyton
+/apps/privacy/              @Jsua3
+/apps/grupos/               @Jsua3
+/apps/simulation/           @estebanbonilla22
+/.github/                   @Jsua3
