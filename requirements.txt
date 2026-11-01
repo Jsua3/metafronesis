@@ -1,0 +1,21 @@
+# backend_django/requirements.txt
+# Pins para Python 3.14 (imagen y CI; wheels disponibles). Revisados el 2026-10-13.
+Django==6.1.2
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.9.0
+psycopg[binary]==3.3.6
+cryptography==50.0.2
+drf-spectacular==0.30.0
+bcrypt==5.0.0
+google-auth==2.62.0
+# google.auth.transport.requests (inicio de sesión con Google) exige `requests` y google-auth no lo instala solo (A-10)
+requests==2.34.2
+# casedef valida `x-siep` con jsonschema y las pruebas lo usan para la comprobación cruzada del taller (E4); lo trae también drf-spectacular
+jsonschema==4.26.0
+# Lectura del .xlsx (S2-6a): el parser seguro rechaza entidades, DTD y referencias externas; xml.etree no las rechaza
+defusedxml==0.7.1
+# Producción / despliegue
+gunicorn==26.2.0
+whitenoise==6.12.0
+dj-database-url==3.1.2
