@@ -20,6 +20,7 @@ Transiciones:
 COMPLETED, REPLACED y SAFE_EXITED son terminales. SAFE_EXITED solo existe en
 intentos históricos (antes de la pausa reanudable): ninguna transición llega a él.
 """
+
 from rest_framework.exceptions import ValidationError
 
 from apps.simulation.models import AttemptStatus

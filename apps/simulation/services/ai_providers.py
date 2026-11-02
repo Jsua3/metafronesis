@@ -8,6 +8,7 @@ propio de la API que envuelve (URL, cabeceras, cuerpo y forma de la respuesta).
 Agregar un proveedor nuevo es crear una clase y registrarla en ``PROVIDERS``;
 la vista no se toca (principio abierto/cerrado).
 """
+
 import http.client
 import json
 import socket
@@ -29,7 +30,9 @@ class NotConfigured(Exception):
 _CABECERAS_SECRETAS = frozenset({"x-api-key", "authorization"})
 
 
-def post_json(url: str, payload: dict, headers: dict, timeout: float = TIMEOUT_SECONDS) -> dict:
+def post_json(
+    url: str, payload: dict, headers: dict, timeout: float = TIMEOUT_SECONDS
+) -> dict:
     """Transporte HTTP común a todos los proveedores (lo único que toca la red)."""
     request = urllib.request.Request(
         url,
@@ -45,7 +48,10 @@ def post_json(url: str, payload: dict, headers: dict, timeout: float = TIMEOUT_S
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        for name, secret in headers.items():  # primero se borra la clave y después se recorta: no puede quedar cortada a medias
+        for (
+            name,
+            secret,
+        ) in headers.items():  # primero se borra la clave y después se recorta: no puede quedar cortada a medias
             if name.lower() in _CABECERAS_SECRETAS and secret:
                 body = body.replace(secret, "***")
         raise RuntimeError(f"provider returned {exc.code}: {body[:300]}") from exc
@@ -65,7 +71,9 @@ class ProviderError(Exception):
 def _es_timeout(exc: BaseException) -> bool:
     if isinstance(exc, (TimeoutError, socket.timeout)):
         return True
-    return isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, (TimeoutError, socket.timeout))
+    return isinstance(exc, urllib.error.URLError) and isinstance(
+        exc.reason, (TimeoutError, socket.timeout)
+    )
 
 
 class AIProvider(ABC):
@@ -95,7 +103,12 @@ class OpenAIProvider(AIProvider):
             ],
         }
         data = post_json(self.URL, payload, {"Authorization": f"Bearer {self.api_key}"})
-        return (data.get("choices") or [{}])[0].get("message", {}).get("content", "").strip()
+        return (
+            (data.get("choices") or [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
 
 
 class AnthropicProvider(AIProvider):
@@ -110,10 +123,14 @@ class AnthropicProvider(AIProvider):
             "system": system,
             "messages": [{"role": "user", "content": question}],
         }
-        data = post_json(self.URL, payload, {
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
-        })
+        data = post_json(
+            self.URL,
+            payload,
+            {
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+            },
+        )
         content = data.get("content") or []
         return (content[0].get("text", "") if content else "").strip()
 
@@ -149,15 +166,30 @@ class AnthropicProvider(AIProvider):
             raise ProviderError("http", self._sin_clave(str(exc))) from None
         except OSError as exc:  # incluye URLError, TimeoutError y cortes de conexión durante la lectura
             if _es_timeout(exc):
-                raise ProviderError("timeout", "el proveedor no respondió a tiempo") from None
-            raise ProviderError("http", self._sin_clave(f"error de red: {exc}")) from None
-        except http.client.HTTPException as exc:  # IncompleteRead, BadStatusLine, RemoteDisconnected...
-            raise ProviderError("http", self._sin_clave(f"respuesta HTTP inválida: {type(exc).__name__}")) from None
-        except ValueError:  # cuerpo 2xx que no es JSON ni UTF-8 (p. ej. HTML de un proxy)
-            raise ProviderError("malformed", "el cuerpo de la respuesta no es JSON") from None
+                raise ProviderError(
+                    "timeout", "el proveedor no respondió a tiempo"
+                ) from None
+            raise ProviderError(
+                "http", self._sin_clave(f"error de red: {exc}")
+            ) from None
+        except (
+            http.client.HTTPException
+        ) as exc:  # IncompleteRead, BadStatusLine, RemoteDisconnected...
+            raise ProviderError(
+                "http",
+                self._sin_clave(f"respuesta HTTP inválida: {type(exc).__name__}"),
+            ) from None
+        except (
+            ValueError
+        ):  # cuerpo 2xx que no es JSON ni UTF-8 (p. ej. HTML de un proxy)
+            raise ProviderError(
+                "malformed", "el cuerpo de la respuesta no es JSON"
+            ) from None
 
         if not isinstance(data, dict):
-            raise ProviderError("malformed", "el cuerpo de la respuesta no es un objeto JSON")
+            raise ProviderError(
+                "malformed", "el cuerpo de la respuesta no es un objeto JSON"
+            )
         stop_reason = data.get("stop_reason")
         if stop_reason == "refusal":
             raise ProviderError("refusal", "el modelo se negó a responder")
@@ -165,9 +197,15 @@ class AnthropicProvider(AIProvider):
             raise ProviderError("malformed", "la respuesta se cortó por max_tokens")
         content = data.get("content")
         if not isinstance(content, list):
-            raise ProviderError("malformed", "el contenido de la respuesta no es una lista")
+            raise ProviderError(
+                "malformed", "el contenido de la respuesta no es una lista"
+            )
         text = next(
-            (b.get("text") for b in content if isinstance(b, dict) and b.get("type") == "text"),
+            (
+                b.get("text")
+                for b in content
+                if isinstance(b, dict) and b.get("type") == "text"
+            ),
             None,
         )
         if text is not None and not isinstance(text, str):
@@ -177,7 +215,9 @@ class AnthropicProvider(AIProvider):
         try:
             result = json.loads(text)
         except ValueError:
-            raise ProviderError("malformed", "el texto de la respuesta no es JSON") from None
+            raise ProviderError(
+                "malformed", "el texto de la respuesta no es JSON"
+            ) from None
         if not isinstance(result, dict):
             raise ProviderError("malformed", "el JSON de la respuesta no es un objeto")
         return result

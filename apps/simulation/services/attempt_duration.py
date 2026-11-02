@@ -11,6 +11,7 @@ recorrer los eventos —ni escribir uno por cada movimiento del jugador— para 
 ``active_duration_seconds`` conserva el cálculo viejo por eventos: lo usa la migración
 de datos para los intentos anteriores y las pruebas como referencia.
 """
+
 from django.utils import timezone
 
 IDLE_CAP_SECONDS = 300
@@ -35,7 +36,9 @@ def touch(attempt, now, idle_cap=IDLE_CAP_SECONDS):
     if last is not None:
         gap = (now - last).total_seconds()
         if gap > 0:
-            attempt.active_seconds = (attempt.active_seconds or 0.0) + min(gap, idle_cap)
+            attempt.active_seconds = (attempt.active_seconds or 0.0) + min(
+                gap, idle_cap
+            )
     attempt.last_activity_at = now
     return attempt
 
@@ -96,7 +99,12 @@ def scene_durations(events, end_at=None, idle_cap=IDLE_CAP_SECONDS):
         if event_type in SCENE_START_EVENTS:
             scenes.append({"nodeId": node_id, "seconds": 0.0})
         previous = (event_type, occurred_at)
-    if end_at is not None and previous is not None and scenes and previous[0] != PAUSE_EVENT:
+    if (
+        end_at is not None
+        and previous is not None
+        and scenes
+        and previous[0] != PAUSE_EVENT
+    ):
         gap = (end_at - previous[1]).total_seconds()
         if gap > 0:
             scenes[-1]["seconds"] += min(gap, idle_cap)

@@ -7,6 +7,7 @@ la segunda espera, y al despertar lee lo que la primera ya confirmó (READ COMMI
 vuelve a tomar la instantánea en cada sentencia). La última defensa sigue siendo la BD:
 índice único del intento abierto y ``UNIQUE (attempt, request_id)`` de los eventos.
 """
+
 import functools
 
 from django.db import transaction
@@ -20,7 +21,9 @@ def lock_attempt_row(attempt_id):
     Solo bloquea el intento (no los nodos ni el caso, que la orden solo lee). Si el
     intento no existe no hace nada: quien lo necesite lo reportará al leerlo.
     """
-    SimulationAttempt.objects.select_for_update().filter(pk=attempt_id).values_list("pk", flat=True).first()
+    SimulationAttempt.objects.select_for_update().filter(pk=attempt_id).values_list(
+        "pk", flat=True
+    ).first()
 
 
 def locked_attempt(func):

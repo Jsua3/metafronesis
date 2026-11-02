@@ -3,6 +3,7 @@
 Note: support_resources_json / required_tools_json are TEXT columns holding
 JSON strings (not jsonb), so they are TextField and parsed in serializers.
 """
+
 from django.conf import settings
 from django.db import models
 
@@ -34,7 +35,9 @@ class SimulationCase(models.Model):
     description = models.TextField(blank=True, null=True)
     active = models.BooleanField(default=True, db_default=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, db_column="created_by",
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        db_column="created_by",
         related_name="simulation_cases",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -49,19 +52,27 @@ class SimulationCase(models.Model):
 
 class CaseVersion(models.Model):
     simulation_case = models.ForeignKey(
-        SimulationCase, on_delete=models.CASCADE, related_name="versions",
+        SimulationCase,
+        on_delete=models.CASCADE,
+        related_name="versions",
         db_column="simulation_case_id",
     )
     semantic_version = models.CharField(max_length=32)
     status = models.CharField(
-        max_length=24, choices=CaseVersionStatus.choices, default=CaseVersionStatus.DRAFT
+        max_length=24,
+        choices=CaseVersionStatus.choices,
+        default=CaseVersionStatus.DRAFT,
     )
     narrative_context = models.TextField(blank=True, null=True)
     # Los objetivos de aprendizaje del caso (E3-4, RF-16): una lista de textos planos en JSON
     # (como los demás ``*_json``). Los redacta Psicología; ``[]`` = el caso aún no los tiene.
     learning_objectives = models.TextField(default="[]", db_default="[]")
     cloned_from = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.DO_NOTHING, db_column="cloned_from_id"
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        db_column="cloned_from_id",
     )
     published_at = models.DateTimeField(null=True, blank=True)
     # El sello de lo publicado (E4-4, R13): cuándo se validó el documento de la versión y la huella
@@ -71,9 +82,13 @@ class CaseVersion(models.Model):
     definition_hash = models.CharField(max_length=71, null=True, blank=True)
     # Cuánto del original sobrevive idéntico en un clon al publicarlo (E4-7, RQ-NEG-007): entre 0 y 1 con cuatro
     # decimales; vacío en un original y en lo publicado antes de E4. Lo escribe la compuerta (``authoring.gate``).
-    reuse_ratio = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
+    reuse_ratio = models.DecimalField(
+        max_digits=5, decimal_places=4, null=True, blank=True
+    )
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, db_column="created_by",
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        db_column="created_by",
         related_name="created_versions",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -90,30 +105,46 @@ class CaseVersion(models.Model):
     # se canceló) no es un conflicto mientras nadie más haya editado después
     # (``authoring.guards.check_revision``). Un clon empieza sin historial.
     last_edited_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
-        db_column="last_edited_by", related_name="+",
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="last_edited_by",
+        related_name="+",
     )
     edited_alone_since = models.BigIntegerField(default=0, db_default=0)
 
     class Meta:
         db_table = "case_versions"
         constraints = [
-            models.CheckConstraint(condition=models.Q(status__in=CaseVersionStatus.values), name="case_versions_status_check"),
+            models.CheckConstraint(
+                condition=models.Q(status__in=CaseVersionStatus.values),
+                name="case_versions_status_check",
+            ),
             models.CheckConstraint(
                 condition=(
                     models.Q(validated_at__isnull=True, definition_hash__isnull=True)
-                    | models.Q(validated_at__isnull=False, definition_hash__isnull=False)
+                    | models.Q(
+                        validated_at__isnull=False, definition_hash__isnull=False
+                    )
                 ),
                 name="case_versions_seal_check",
             ),
             models.CheckConstraint(
-                condition=models.Q(reuse_ratio__isnull=True) | (models.Q(reuse_ratio__gte=0) & models.Q(reuse_ratio__lte=1)),
+                condition=models.Q(reuse_ratio__isnull=True)
+                | (models.Q(reuse_ratio__gte=0) & models.Q(reuse_ratio__lte=1)),
                 name="case_versions_reuse_ratio_check",
             ),
-            models.UniqueConstraint(fields=["simulation_case", "semantic_version"], name="case_versions_simulation_case_id_semantic_version_key"),
+            models.UniqueConstraint(
+                fields=["simulation_case", "semantic_version"],
+                name="case_versions_simulation_case_id_semantic_version_key",
+            ),
         ]
         indexes = [
-            models.Index(fields=["simulation_case", "status"], name="idx_case_versions_case_status"),
+            models.Index(
+                fields=["simulation_case", "status"],
+                name="idx_case_versions_case_status",
+            ),
         ]
 
     def __str__(self):
@@ -122,7 +153,10 @@ class CaseVersion(models.Model):
 
 class SimulationNode(models.Model):
     case_version = models.ForeignKey(
-        CaseVersion, on_delete=models.CASCADE, related_name="nodes", db_column="case_version_id"
+        CaseVersion,
+        on_delete=models.CASCADE,
+        related_name="nodes",
+        db_column="case_version_id",
     )
     node_key = models.CharField(max_length=120)
     title = models.CharField(max_length=255)
@@ -143,7 +177,9 @@ class SimulationNode(models.Model):
     display_order = models.IntegerField(default=0, db_default=0)
     # La intensidad de la escena (modelo de respuesta): ``LOW`` | ``MEDIUM`` | ``HIGH``; ``HIGH`` por defecto en las
     # escenas con ``sensitive_content``. Ver ``casedef.vocabulary.Intensity``.
-    intensity = models.CharField(max_length=8, default=Intensity.MEDIUM.value, db_default=Intensity.MEDIUM.value)
+    intensity = models.CharField(
+        max_length=8, default=Intensity.MEDIUM.value, db_default=Intensity.MEDIUM.value
+    )
     # Sugerido por el asistente de IA y aún sin revisar (P5): la compuerta de publicación no deja pasar mientras esté en alto.
     ai_suggested = models.BooleanField(default=False, db_default=False)
 
@@ -151,10 +187,15 @@ class SimulationNode(models.Model):
         db_table = "simulation_nodes"
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(intensity__in=[member.value for member in Intensity]),
+                condition=models.Q(
+                    intensity__in=[member.value for member in Intensity]
+                ),
                 name="simulation_nodes_intensity_check",
             ),
-            models.UniqueConstraint(fields=["case_version", "node_key"], name="simulation_nodes_case_version_id_node_key_key"),
+            models.UniqueConstraint(
+                fields=["case_version", "node_key"],
+                name="simulation_nodes_case_version_id_node_key_key",
+            ),
         ]
 
     def __str__(self):
@@ -163,14 +204,22 @@ class SimulationNode(models.Model):
 
 class DecisionOption(models.Model):
     case_version = models.ForeignKey(
-        CaseVersion, on_delete=models.CASCADE, related_name="decisions", db_column="case_version_id"
+        CaseVersion,
+        on_delete=models.CASCADE,
+        related_name="decisions",
+        db_column="case_version_id",
     )
     option_key = models.CharField(max_length=120)
     source_node = models.ForeignKey(
-        SimulationNode, on_delete=models.CASCADE, related_name="options", db_column="source_node_id"
+        SimulationNode,
+        on_delete=models.CASCADE,
+        related_name="options",
+        db_column="source_node_id",
     )
     target_node = models.ForeignKey(
-        SimulationNode, on_delete=models.CASCADE, related_name="incoming_options",
+        SimulationNode,
+        on_delete=models.CASCADE,
+        related_name="incoming_options",
         db_column="target_node_id",
     )
     text = models.TextField()
@@ -197,10 +246,15 @@ class DecisionOption(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(response_class__isnull=True)
-                | models.Q(response_class__in=[member.value for member in ResponseClass]),
+                | models.Q(
+                    response_class__in=[member.value for member in ResponseClass]
+                ),
                 name="decision_options_response_class_check",
             ),
-            models.UniqueConstraint(fields=["case_version", "option_key"], name="decision_options_case_version_id_option_key_key"),
+            models.UniqueConstraint(
+                fields=["case_version", "option_key"],
+                name="decision_options_case_version_id_option_key_key",
+            ),
         ]
 
     def __str__(self):

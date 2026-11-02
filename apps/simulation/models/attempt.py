@@ -4,6 +4,7 @@ attempt_world_states is keyed 1:1 by attempt_id (no surrogate id).
 Los CHECK, UNIQUE e índices que antes imponía el volcado de despliegue viven en
 ``Meta`` y los fija ``apps/simulation/tests/test_schema_contract.py``.
 """
+
 import uuid
 
 from django.conf import settings
@@ -64,20 +65,28 @@ class SimulationAttempt(models.Model):
     # Quién y por qué cerró el intento como REPLACED (E1-2): el docente o el ADMIN en la acción
     # docente, el propio estudiante en el ``forceNew`` heredado. Vacíos en cualquier otro estado.
     replaced_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
-        db_column="replaced_by_id", related_name="+",
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="replaced_by_id",
+        related_name="+",
     )
     replace_reason = models.TextField(null=True, blank=True)
     # Tiempo activo acumulado (E1-5, decisión 14): cada orden que cambia el intento suma
     # ``min(ahora − last_activity_at, 300)``; la pausa no suma. Reemplaza los eventos
     # WORLD_POSITION_UPDATED como fuente del tiempo (ver ``services/attempt_duration``).
+    state_json = models.JSONField(default=dict, blank=True)
     active_seconds = models.FloatField(default=0.0, db_default=0)
     last_activity_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "simulation_attempts_v2"
         constraints = [
-            models.CheckConstraint(condition=models.Q(status__in=AttemptStatus.values), name="simulation_attempts_v2_status_check"),
+            models.CheckConstraint(
+                condition=models.Q(status__in=AttemptStatus.values),
+                name="simulation_attempts_v2_status_check",
+            ),
             # DM-5.4: un intento abierto por estudiante y caso. Última defensa de la política de
             # inicio (E1-1): dos POST simultáneos no pueden crear dos intentos abiertos.
             models.UniqueConstraint(
@@ -87,20 +96,32 @@ class SimulationAttempt(models.Model):
             ),
         ]
         indexes = [
-            models.Index(fields=["student", "status"], name="idx_attempts_student_status"),
+            models.Index(
+                fields=["student", "status"], name="idx_attempts_student_status"
+            ),
         ]
 
 
 class AttemptEvent(models.Model):
     attempt = models.ForeignKey(
-        SimulationAttempt, on_delete=models.CASCADE, related_name="events", db_column="attempt_id"
+        SimulationAttempt,
+        on_delete=models.CASCADE,
+        related_name="events",
+        db_column="attempt_id",
     )
     event_type = models.CharField(max_length=50)
     node = models.ForeignKey(
-        SimulationNode, on_delete=models.DO_NOTHING, null=True, blank=True, db_column="node_id"
+        SimulationNode,
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+        db_column="node_id",
     )
     decision_option = models.ForeignKey(
-        DecisionOption, on_delete=models.DO_NOTHING, null=True, blank=True,
+        DecisionOption,
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
         db_column="decision_option_id",
     )
     detail = models.TextField(null=True, blank=True)
@@ -112,10 +133,14 @@ class AttemptEvent(models.Model):
     class Meta:
         db_table = "attempt_events"
         constraints = [
-            models.UniqueConstraint(fields=["attempt", "request_id"], name="uq_attempt_events_attempt_request"),
+            models.UniqueConstraint(
+                fields=["attempt", "request_id"],
+                name="uq_attempt_events_attempt_request",
+            ),
         ]
         indexes = [
-            models.Index(fields=["attempt", "occurred_at"], name="idx_attempt_events_att_time"),
+            models.Index(
+                fields=["attempt", "occurred_at"], name="idx_attempt_events_att_time"
+            ),
         ]
         ordering = ["occurred_at", "id"]
-
