@@ -51,3 +51,35 @@ stateDiagram-v2
 ```
 
 SAFE_EXITED solo se conserva como estado histórico; ninguna orden nueva lo genera.
+
+## Decisión, evaluación y progresión S4
+
+```mermaid
+sequenceDiagram
+  actor Estudiante
+  participant API
+  participant Motor
+  participant DB
+  participant Progresion
+  Estudiante->>API: decisión + request_id
+  API->>DB: Iniciar transacción y bloquear intento
+  alt request_id ya registrado
+    API-->>Estudiante: Respuesta guardada
+  else Orden nueva
+    API->>Motor: Validar escena y segunda oportunidad
+    alt Primer riesgo con segunda oportunidad
+      Motor->>DB: Guardar evento de reintento sin efectos
+    else Decisión registrada
+      Motor->>DB: Aplicar efectos, avanzar y guardar evento
+      opt Nodo terminal
+        Motor->>DB: Congelar evaluación con evidencia
+        Motor->>Progresion: attempt_completed
+        Progresion->>DB: Registrar finalización única
+      end
+    end
+    API->>DB: Confirmar transacción
+    API-->>Estudiante: Resultado
+  end
+```
+
+Si falla un suscriptor, toda la transacción se revierte. Biblioteca solo lee el catálogo JSON externo; no participa en la transacción de decisiones.
