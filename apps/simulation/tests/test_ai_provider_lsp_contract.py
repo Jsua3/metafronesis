@@ -9,6 +9,7 @@ Lo propio de cada API (la URL, las cabeceras, la forma del cuerpo) lo fijan
 ``test_ai_provider_contract.py`` y ``test_ai_providers_strategy.py``; aquí solo está lo que
 tienen que cumplir **todos**.
 """
+
 import inspect
 import json
 
@@ -89,7 +90,9 @@ class TestCadaProveedorCumpleElContrato:
         assert text == "hola"
         assert isinstance(text, str)
 
-    def test_usa_el_transporte_una_vez_con_url_cuerpo_y_cabeceras(self, name, transport):
+    def test_usa_el_transporte_una_vez_con_url_cuerpo_y_cabeceras(
+        self, name, transport
+    ):
         _provider(name).complete(SYSTEM, QUESTION)
 
         (call,) = transport["calls"]
@@ -97,7 +100,9 @@ class TestCadaProveedorCumpleElContrato:
         assert isinstance(call["payload"], dict)
         assert isinstance(call["headers"], dict) and call["headers"]
 
-    def test_manda_el_modelo_el_limite_de_tokens_y_los_dos_textos(self, name, transport):
+    def test_manda_el_modelo_el_limite_de_tokens_y_los_dos_textos(
+        self, name, transport
+    ):
         _provider(name).complete(SYSTEM, QUESTION)
 
         (call,) = transport["calls"]
@@ -107,7 +112,9 @@ class TestCadaProveedorCumpleElContrato:
         assert SYSTEM in body
         assert QUESTION in body
 
-    def test_la_clave_viaja_en_las_cabeceras_y_en_ningun_otro_sitio(self, name, transport):
+    def test_la_clave_viaja_en_las_cabeceras_y_en_ningun_otro_sitio(
+        self, name, transport
+    ):
         _provider(name).complete(SYSTEM, QUESTION)
 
         (call,) = transport["calls"]
@@ -116,7 +123,9 @@ class TestCadaProveedorCumpleElContrato:
         assert API_KEY not in json.dumps(call["payload"], ensure_ascii=False)
 
     @pytest.mark.parametrize("reply", EMPTY_REPLIES, ids=lambda r: json.dumps(r))
-    def test_una_respuesta_vacia_o_incompleta_da_cadena_vacia(self, name, transport, reply):
+    def test_una_respuesta_vacia_o_incompleta_da_cadena_vacia(
+        self, name, transport, reply
+    ):
         transport["reply"] = reply
 
         text = _provider(name).complete(SYSTEM, QUESTION)

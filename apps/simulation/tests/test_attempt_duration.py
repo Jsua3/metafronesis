@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta, timezone
 
-from apps.simulation.services.attempt_duration import IDLE_CAP_SECONDS, active_duration_seconds
+from apps.simulation.services.attempt_duration import (
+    IDLE_CAP_SECONDS,
+    active_duration_seconds,
+)
 
 T0 = datetime(2026, 9, 1, 10, 0, tzinfo=timezone.utc)
 
