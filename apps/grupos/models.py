@@ -39,9 +39,9 @@ class MembershipStatus(models.TextChoices):
 
 class GrupoEstudiante(models.Model):
     pk = models.CompositePrimaryKey("grupo_id", "estudiante_id")
-    grupo = models.ForeignKey(Grupo, on_delete=models.DB_CASCADE, db_column="grupo_id")
+    grupo = models.ForeignKey(Grupo, on_delete=models.CASCADE, db_column="grupo_id")
     estudiante = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DB_CASCADE, db_column="estudiante_id"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column="estudiante_id"
     )
     # ``db_default=ACTIVE``: las membresías anteriores a E2-10 (y los INSERT crudos de semillas
     # y pruebas) siguen siendo miembros. ``default=INVITED``: un alta por ORM sin estado es la
@@ -51,7 +51,7 @@ class GrupoEstudiante(models.Model):
         default=MembershipStatus.INVITED, db_default=MembershipStatus.ACTIVE,
     )
     invited_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DB_SET_NULL, null=True, blank=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         db_column="invited_by", related_name="+",
     )
     invited_at = models.DateTimeField(null=True, blank=True)
@@ -81,22 +81,22 @@ class CaseAssignment(models.Model):
     """
 
     case_version = models.ForeignKey(
-        "simulation.CaseVersion", on_delete=models.DB_CASCADE, db_column="case_version_id",
+        "simulation.CaseVersion", on_delete=models.CASCADE, db_column="case_version_id",
         related_name="assignments",
     )
     grupo = models.ForeignKey(
-        Grupo, on_delete=models.DB_CASCADE, null=True, blank=True, db_column="grupo_id",
+        Grupo, on_delete=models.CASCADE, null=True, blank=True, db_column="grupo_id",
         related_name="assignments",
     )
     estudiante = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DB_CASCADE, null=True, blank=True,
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True,
         db_column="estudiante_id", related_name="direct_assignments",
     )
     opens_at = models.DateTimeField(null=True, blank=True)
     closes_at = models.DateTimeField(null=True, blank=True)
     sort_order = models.IntegerField(default=0, db_default=0)
     assigned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DB_SET_NULL, null=True, blank=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         db_column="assigned_by", related_name="+",
     )
     assigned_at = models.DateTimeField(null=True, db_default=Now())

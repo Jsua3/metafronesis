@@ -1,0 +1,44 @@
+{
+  "esquema": 1,
+  "lugares": [
+    {
+      "id": "universidad",
+      "nombre": "Universidad",
+      "salas": 10,
+      "completo": true,
+      "arteProvisional": true,
+      "temas": [
+        "orientacion",
+        "bienestar",
+        "violencia-genero"
+      ],
+      "hitos": 6
+    },
+    {
+      "id": "casa",
+      "nombre": "Casa",
+      "salas": 9,
+      "completo": true,
+      "arteProvisional": true,
+      "temas": [
+        "violencia-genero",
+        "ninez-adolescencia",
+        "plan-seguridad"
+      ],
+      "hitos": 8
+    },
+    {
+      "id": "comisaria",
+      "nombre": "Comisaría de familia",
+      "salas": 9,
+      "completo": true,
+      "arteProvisional": true,
+      "temas": [
+        "violencia-genero",
+        "ninez-adolescencia",
+        "rutas-proteccion"
+      ],
+      "hitos": 8
+    }
+  ]
+}

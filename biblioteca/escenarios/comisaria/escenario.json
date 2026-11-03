@@ -1,0 +1,1228 @@
+{
+  "esquema": 2,
+  "id": "comisaria",
+  "nombre": "Comisaría de familia",
+  "descripcion": "Comisaría de familia: recepción, sala de espera, orientación jurídica, despacho, consultorio psicosocial, sala de entrevista a niñas, niños y adolescentes, archivo y pasillo. Rutas de protección y medidas.",
+  "temas": [
+    "violencia-genero",
+    "ninez-adolescencia",
+    "rutas-proteccion"
+  ],
+  "completo": true,
+  "arteProvisional": true,
+  "nivelRiesgoPorDefecto": "EXTREME",
+  "hitos": [
+    {
+      "key": "valorar-el-riesgo",
+      "label": "Valorar el riesgo",
+      "description": "Explorar con la persona usuaria las señales de riesgo y estimar su nivel con la escala del protocolo antes de decidir. [por validar con Psicología]",
+      "decisive": true
+    },
+    {
+      "key": "informar-derechos",
+      "label": "Informar derechos",
+      "description": "Explicar a la persona usuaria sus derechos (Ley 1257 de 2008) y lo que la comisaría puede hacer por ella. [por validar con Psicología]",
+      "decisive": true
+    },
+    {
+      "key": "recomendar-medidas-de-proteccion",
+      "label": "Recomendar medidas de protección",
+      "description": "Proponer las medidas de protección que correspondan y explicar cómo se piden. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "derivar-a-salud-mental",
+      "label": "Derivar a salud mental",
+      "description": "Remitir a la persona usuaria a atención en salud mental y asegurar que la remisión llegue. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "aplicar-primeros-auxilios-psicologicos",
+      "label": "Aplicar primeros auxilios psicológicos",
+      "description": "Escuchar, proteger y conectar a la persona en crisis antes de cualquier otro paso. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "no-mediar-con-el-agresor",
+      "label": "No mediar con el agresor",
+      "description": "Evitar cualquier mediación, conciliación o careo entre la persona usuaria y quien la agrede. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "solicitar-medida-de-proteccion",
+      "label": "Solicitar medida de protección",
+      "description": "Acompañar a la persona usuaria a solicitar formalmente la medida de protección ante la comisaria. [por validar con Psicología]",
+      "decisive": true
+    },
+    {
+      "key": "registrar-la-atencion",
+      "label": "Registrar la atención",
+      "description": "Dejar constancia escrita de la atención, las remisiones y los acuerdos. [por validar con Psicología]",
+      "decisive": false
+    }
+  ],
+  "salas": [
+    {
+      "id": "fachada",
+      "nombre": "Fachada de la comisaría",
+      "descripcion": "Entrada de la comisaría de familia: fachada institucional, escudo sin texto y una banca en el andén.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/fachada.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "banca-exterior",
+          "x": 260,
+          "y": 380,
+          "espejo": false
+        },
+        {
+          "ref": "planta-oficina",
+          "x": 840,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "camara-seguridad",
+          "x": 700,
+          "y": 236
+        },
+        {
+          "ref": "cartel-linea-155",
+          "x": 300,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "policia-infancia",
+          "x": 620,
+          "y": 360,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-recepcion",
+          "hacia": "recepcion",
+          "x": 480,
+          "y": 236,
+          "etiqueta": "Entrar a la comisaría"
+        }
+      ]
+    },
+    {
+      "id": "recepcion",
+      "nombre": "Recepción",
+      "descripcion": "Mostrador de recepción donde se toma el turno y se orienta a quien llega.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/recepcion.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "mostrador-recepcion",
+          "x": 420,
+          "y": 304,
+          "espejo": false
+        },
+        {
+          "ref": "silla-giratoria",
+          "x": 420,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "cartelera-comisaria",
+          "x": 650,
+          "y": 236,
+          "espejo": false
+        },
+        {
+          "ref": "planta-oficina",
+          "x": 150,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "caneca-comisaria",
+          "x": 280,
+          "y": 262,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "dispensador-turnos",
+          "x": 560,
+          "y": 262
+        },
+        {
+          "ref": "afiche-rutas-atencion",
+          "x": 760,
+          "y": 236
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "funcionaria-recepcion",
+          "x": 400,
+          "y": 262,
+          "mirando": "derecha",
+          "expresion": "neutral"
+        },
+        {
+          "ref": "persona-usuaria",
+          "x": 480,
+          "y": 400,
+          "mirando": "izquierda",
+          "expresion": "cautelosa"
+        },
+        {
+          "ref": "acompanante",
+          "x": 530,
+          "y": 410,
+          "mirando": "izquierda",
+          "expresion": "preocupada"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-fachada",
+          "hacia": "fachada",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir a la calle"
+        },
+        {
+          "id": "puerta-sala-espera",
+          "hacia": "sala-espera",
+          "x": 864,
+          "y": 380,
+          "etiqueta": "Pasar a la sala de espera"
+        },
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 200,
+          "y": 236,
+          "etiqueta": "Ir al pasillo de atención"
+        }
+      ]
+    },
+    {
+      "id": "sala-espera",
+      "nombre": "Sala de espera",
+      "descripcion": "Filas de sillas, agua y un afiche con la ruta de atención.",
+      "encuadre": "dos-paredes-derecha",
+      "fondo": "arte/salas/sala-espera.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "sillas-espera-comisaria",
+          "x": 300,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "sillas-espera-comisaria",
+          "x": 300,
+          "y": 400,
+          "espejo": false
+        },
+        {
+          "ref": "planta-oficina",
+          "x": 120,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "cartelera-comisaria",
+          "x": 480,
+          "y": 236,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "dispensador-agua",
+          "x": 700,
+          "y": 262
+        },
+        {
+          "ref": "papelera",
+          "x": 780,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "acompanante",
+          "x": 420,
+          "y": 420,
+          "mirando": "derecha",
+          "expresion": "preocupada"
+        },
+        {
+          "ref": "persona-usuaria",
+          "x": 360,
+          "y": 430,
+          "mirando": "izquierda",
+          "expresion": "triste"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-recepcion",
+          "hacia": "recepcion",
+          "x": 24,
+          "y": 380,
+          "etiqueta": "Volver a la recepción"
+        },
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 600,
+          "y": 236,
+          "etiqueta": "Ir al pasillo de atención"
+        }
+      ]
+    },
+    {
+      "id": "pasillo",
+      "nombre": "Pasillo de atención",
+      "descripcion": "Pasillo con las puertas de orientación jurídica, el despacho, el consultorio y la sala de entrevista.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/pasillo.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "sillas-espera-comisaria",
+          "x": 200,
+          "y": 430,
+          "espejo": false
+        },
+        {
+          "ref": "caneca-comisaria",
+          "x": 880,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "planta-oficina",
+          "x": 60,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "camara-seguridad",
+          "x": 480,
+          "y": 236
+        }
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "id": "puerta-sala-espera",
+          "hacia": "sala-espera",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Volver a la sala de espera"
+        },
+        {
+          "id": "puerta-recepcion",
+          "hacia": "recepcion",
+          "x": 24,
+          "y": 380,
+          "etiqueta": "Volver a la recepción"
+        },
+        {
+          "id": "puerta-orientacion",
+          "hacia": "orientacion-juridica",
+          "x": 160,
+          "y": 236,
+          "etiqueta": "Entrar a orientación jurídica"
+        },
+        {
+          "id": "puerta-despacho",
+          "hacia": "despacho-comisaria",
+          "x": 330,
+          "y": 236,
+          "etiqueta": "Entrar al despacho de la comisaria de familia"
+        },
+        {
+          "id": "puerta-consultorio",
+          "hacia": "consultorio-psicosocial",
+          "x": 560,
+          "y": 236,
+          "etiqueta": "Entrar al consultorio psicosocial"
+        },
+        {
+          "id": "puerta-entrevista",
+          "hacia": "sala-entrevista-nna",
+          "x": 760,
+          "y": 236,
+          "etiqueta": "Entrar a la sala de entrevista"
+        },
+        {
+          "id": "puerta-archivo",
+          "hacia": "archivo",
+          "x": 936,
+          "y": 380,
+          "etiqueta": "Ir al archivo"
+        }
+      ]
+    },
+    {
+      "id": "orientacion-juridica",
+      "nombre": "Orientación jurídica",
+      "descripcion": "Escritorio de la orientadora, estantes con códigos y formatos de denuncia.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/orientacion-juridica.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "escritorio-funcionario",
+          "x": 480,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "silla-giratoria",
+          "x": 480,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante-comisaria",
+          "x": 430,
+          "y": 350,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante-comisaria",
+          "x": 530,
+          "y": 350,
+          "espejo": true
+        },
+        {
+          "ref": "estante-expedientes",
+          "x": 200,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "archivador-metalico",
+          "x": 760,
+          "y": 252,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "boligrafo-formularios",
+          "x": 480,
+          "y": 282
+        },
+        {
+          "ref": "carpeta-medidas-proteccion",
+          "x": 760,
+          "y": 240
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "orientadora-juridica",
+          "x": 560,
+          "y": 280,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "despacho-comisaria",
+      "nombre": "Despacho de la comisaria",
+      "descripcion": "Despacho donde se firman las medidas de protección; bandera, escritorio y estantes.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/despacho-comisaria.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "escritorio-funcionario",
+          "x": 560,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "silla-giratoria",
+          "x": 560,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante-comisaria",
+          "x": 500,
+          "y": 350,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante-comisaria",
+          "x": 620,
+          "y": 350,
+          "espejo": true
+        },
+        {
+          "ref": "bandera-asta",
+          "x": 820,
+          "y": 290,
+          "espejo": false
+        },
+        {
+          "ref": "estante-expedientes",
+          "x": 200,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "planta-oficina",
+          "x": 140,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "sello-tinta",
+          "x": 530,
+          "y": 282
+        },
+        {
+          "ref": "boligrafo-formularios",
+          "x": 590,
+          "y": 282
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "comisaria",
+          "x": 640,
+          "y": 290,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "consultorio-psicosocial",
+      "nombre": "Consultorio psicosocial",
+      "descripcion": "Espacio de escucha del equipo psicosocial: dos sillas, una mesa baja y pañuelos a la mano.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/consultorio-psicosocial.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "escritorio-funcionario",
+          "x": 700,
+          "y": 290,
+          "espejo": false
+        },
+        {
+          "ref": "silla-giratoria",
+          "x": 700,
+          "y": 256,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante-comisaria",
+          "x": 300,
+          "y": 340,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante-comisaria",
+          "x": 420,
+          "y": 340,
+          "espejo": true
+        },
+        {
+          "ref": "mesa-baja-nna",
+          "x": 360,
+          "y": 362,
+          "espejo": false
+        },
+        {
+          "ref": "planta-oficina",
+          "x": 140,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "caja-panuelos",
+          "x": 360,
+          "y": 350
+        },
+        {
+          "ref": "papelera",
+          "x": 760,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "profesional-psicosocial",
+          "x": 520,
+          "y": 350,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        },
+        {
+          "ref": "persona-usuaria",
+          "x": 260,
+          "y": 410,
+          "mirando": "derecha",
+          "expresion": "cautelosa"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "sala-entrevista-nna",
+      "nombre": "Sala de entrevista a niñas, niños y adolescentes",
+      "descripcion": "Cámara de Gesell: espejo en la pared, mesa baja, sillas pequeñas y juguetes.",
+      "encuadre": "dos-paredes-izquierda",
+      "fondo": "arte/salas/sala-entrevista-nna.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "mesa-baja-nna",
+          "x": 480,
+          "y": 360,
+          "espejo": false
+        },
+        {
+          "ref": "silla-pequena",
+          "x": 430,
+          "y": 320,
+          "espejo": false
+        },
+        {
+          "ref": "silla-pequena",
+          "x": 530,
+          "y": 400,
+          "espejo": true
+        },
+        {
+          "ref": "tapete-juegos",
+          "x": 720,
+          "y": 450,
+          "espejo": false
+        },
+        {
+          "ref": "estante-juguetes",
+          "x": 200,
+          "y": 252,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "caja-panuelos",
+          "x": 480,
+          "y": 350
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "profesional-psicosocial",
+          "x": 620,
+          "y": 330,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "archivo",
+      "nombre": "Archivo",
+      "descripcion": "Estantes y archivadores con los expedientes; cajas de archivo apiladas.",
+      "encuadre": "dos-paredes-izquierda",
+      "fondo": "arte/salas/archivo.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "estante-expedientes",
+          "x": 180,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "estante-expedientes",
+          "x": 290,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "estante-expedientes",
+          "x": 400,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "archivador-metalico",
+          "x": 600,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "archivador-metalico",
+          "x": 660,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "caja-archivo",
+          "x": 780,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "caja-archivo",
+          "x": 800,
+          "y": 340,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "camara-seguridad",
+          "x": 520,
+          "y": 236
+        }
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 96,
+          "y": 380,
+          "etiqueta": "Volver al pasillo"
+        }
+      ]
+    }
+  ],
+  "recorridosSugeridos": [
+    {
+      "id": "primera-atencion",
+      "nombre": "Primera atención",
+      "descripcion": "La persona llega, toma turno, espera y es escuchada en el consultorio psicosocial.",
+      "salas": [
+        "fachada",
+        "recepcion",
+        "sala-espera",
+        "consultorio-psicosocial"
+      ]
+    },
+    {
+      "id": "medidas-de-proteccion",
+      "nombre": "Medidas de protección",
+      "descripcion": "Orientación jurídica y solicitud de la medida ante la comisaria.",
+      "salas": [
+        "orientacion-juridica",
+        "despacho-comisaria"
+      ]
+    },
+    {
+      "id": "entrevista-nna",
+      "nombre": "Entrevista a niña, niño o adolescente",
+      "descripcion": "De la sala de espera a la sala de entrevista y, luego, conversación con quien acompaña en el consultorio.",
+      "salas": [
+        "sala-espera",
+        "sala-entrevista-nna",
+        "consultorio-psicosocial"
+      ]
+    }
+  ],
+  "catalogo": {
+    "muebles": [
+      {
+        "id": "mostrador-recepcion",
+        "nombre": "Mostrador de recepción",
+        "arte": "arte/muebles/mostrador-recepcion.png",
+        "ancho": 180,
+        "alto": 30,
+        "colision": true
+      },
+      {
+        "id": "silla-giratoria",
+        "nombre": "Silla giratoria",
+        "arte": "arte/muebles/silla-giratoria.png",
+        "ancho": 26,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "sillas-espera-comisaria",
+        "nombre": "Fila de sillas de espera",
+        "arte": "arte/muebles/sillas-espera-comisaria.png",
+        "ancho": 120,
+        "alto": 22,
+        "colision": true
+      },
+      {
+        "id": "escritorio-funcionario",
+        "nombre": "Escritorio",
+        "arte": "arte/muebles/escritorio-funcionario.png",
+        "ancho": 122,
+        "alto": 28,
+        "colision": true
+      },
+      {
+        "id": "silla-visitante-comisaria",
+        "nombre": "Silla para visitante",
+        "arte": "arte/muebles/silla-visitante-comisaria.png",
+        "ancho": 24,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "archivador-metalico",
+        "nombre": "Archivador metálico",
+        "arte": "arte/muebles/archivador-metalico.png",
+        "ancho": 40,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "estante-expedientes",
+        "nombre": "Estante de expedientes",
+        "arte": "arte/muebles/estante-expedientes.png",
+        "ancho": 96,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "bandera-asta",
+        "nombre": "Bandera en asta",
+        "arte": "arte/muebles/bandera-asta.png",
+        "ancho": 24,
+        "alto": 12,
+        "colision": true
+      },
+      {
+        "id": "mesa-reunion",
+        "nombre": "Mesa de reunión",
+        "arte": "arte/muebles/mesa-reunion.png",
+        "ancho": 120,
+        "alto": 40,
+        "colision": true
+      },
+      {
+        "id": "mesa-baja-nna",
+        "nombre": "Mesa baja",
+        "arte": "arte/muebles/mesa-baja-nna.png",
+        "ancho": 60,
+        "alto": 24,
+        "colision": true
+      },
+      {
+        "id": "silla-pequena",
+        "nombre": "Silla pequeña",
+        "arte": "arte/muebles/silla-pequena.png",
+        "ancho": 20,
+        "alto": 12,
+        "colision": true
+      },
+      {
+        "id": "tapete-juegos",
+        "nombre": "Tapete de juegos",
+        "arte": "arte/muebles/tapete-juegos.png",
+        "ancho": 90,
+        "alto": 60,
+        "colision": false
+      },
+      {
+        "id": "estante-juguetes",
+        "nombre": "Estante de juguetes",
+        "arte": "arte/muebles/estante-juguetes.png",
+        "ancho": 60,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "banca-exterior",
+        "nombre": "Banca del andén",
+        "arte": "arte/muebles/banca-exterior.png",
+        "ancho": 100,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "caneca-comisaria",
+        "nombre": "Caneca",
+        "arte": "arte/muebles/caneca-comisaria.png",
+        "ancho": 26,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "planta-oficina",
+        "nombre": "Planta de oficina",
+        "arte": "arte/muebles/planta-oficina.png",
+        "ancho": 36,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "cartelera-comisaria",
+        "nombre": "Cartelera institucional",
+        "arte": "arte/muebles/cartelera-comisaria.png",
+        "ancho": 90,
+        "alto": 6,
+        "colision": false
+      },
+      {
+        "id": "caja-archivo",
+        "nombre": "Cajas de archivo",
+        "arte": "arte/muebles/caja-archivo.png",
+        "ancho": 40,
+        "alto": 18,
+        "colision": true
+      }
+    ],
+    "objetos": [
+      {
+        "id": "dispensador-turnos",
+        "nombre": "Dispensador de turnos",
+        "tipo": "RESOURCE",
+        "desdeModelo": "dispensador-turnos",
+        "arte": "arte/objetos/dispensador-turnos.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/dispensador-turnos-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Turno 37. Van en el 12.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "sello-tinta",
+        "nombre": "Sello y tinta",
+        "tipo": "PROP",
+        "desdeModelo": "sello-tinta",
+        "arte": "arte/objetos/sello-tinta.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/sello-tinta-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Sello de la comisaría.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "carpeta-medidas-proteccion",
+        "nombre": "Carpeta de medidas de protección",
+        "tipo": "RESOURCE",
+        "desdeModelo": "carpeta-medidas-proteccion",
+        "hitos": [
+          "solicitar-medida-de-proteccion",
+          "recomendar-medidas-de-proteccion"
+        ],
+        "arte": "arte/objetos/carpeta-medidas-proteccion.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/carpeta-medidas-proteccion-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Formatos de medidas de protección (Ley 1257 de 2008).",
+        "textoInteraccion": "Revisar",
+        "efecto": "pista"
+      },
+      {
+        "id": "camara-seguridad",
+        "nombre": "Cámara de seguridad",
+        "tipo": "PROP",
+        "desdeModelo": "camara-seguridad",
+        "arte": "arte/objetos/camara-seguridad.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/camara-seguridad-cerca.png",
+          "cuadros": 2,
+          "fps": 4
+        },
+        "alRevisar": "Graba. Es un espacio público.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "afiche-rutas-atencion",
+        "nombre": "Afiche de rutas de atención",
+        "tipo": "NOTE",
+        "desdeModelo": "afiche-rutas-atencion",
+        "hitos": [
+          "informar-derechos"
+        ],
+        "arte": "arte/objetos/afiche-rutas-atencion.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/afiche-rutas-atencion-cerca.png",
+          "cuadros": 4,
+          "fps": 6
+        },
+        "alRevisar": "Ruta de atención: recepción, orientación, medidas de protección y seguimiento.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "boligrafo-formularios",
+        "nombre": "Bolígrafo sobre formularios",
+        "tipo": "OBJECT",
+        "desdeModelo": "boligrafo-formularios",
+        "arte": "arte/objetos/boligrafo-formularios.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/boligrafo-formularios-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Formularios de denuncia en blanco.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "dispensador-agua",
+        "nombre": "Dispensador de agua",
+        "tipo": "OBJECT",
+        "desdeModelo": "dispensador-agua",
+        "arte": "arte/objetos/dispensador-agua.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/dispensador-agua-cerca.png",
+          "cuadros": 4,
+          "fps": 6
+        },
+        "alRevisar": "Ofrecer un vaso de agua puede ser el primer gesto de cuidado.",
+        "textoInteraccion": "Revisar",
+        "efecto": "pista"
+      },
+      {
+        "id": "cartel-linea-155",
+        "nombre": "Cartel de la Línea 155",
+        "tipo": "NOTE",
+        "desdeModelo": "cartel-linea-155",
+        "hitos": [
+          "informar-derechos"
+        ],
+        "arte": "arte/objetos/cartel-linea-155.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/cartel-linea-155-cerca.png",
+          "cuadros": 4,
+          "fps": 6
+        },
+        "alRevisar": "Línea 155: orientación a mujeres víctimas de violencia. Gratuita, las 24 horas.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "caja-panuelos",
+        "nombre": "Caja de pañuelos",
+        "tipo": "OBJECT",
+        "desdeModelo": "caja-panuelos",
+        "arte": "arte/objetos/caja-panuelos.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/caja-panuelos-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Tenerlos a la mano, sin ofrecerlos de golpe.",
+        "textoInteraccion": "Revisar",
+        "efecto": "pista"
+      },
+      {
+        "id": "papelera",
+        "nombre": "Papelera",
+        "tipo": "PROP",
+        "desdeModelo": "papelera",
+        "arte": "arte/objetos/papelera.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/papelera-cerca.png",
+          "cuadros": 2,
+          "fps": 6
+        },
+        "alRevisar": "Vacía.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      }
+    ],
+    "herramientas": [
+      {
+        "id": "tarjeta-contacto-bienestar",
+        "nombre": "Tarjeta de contacto de Bienestar",
+        "descripcion": "Teléfono y horario de Bienestar Universitario: abre la respuesta «derivar a Bienestar».",
+        "desdeModelo": "tarjeta-contacto-bienestar",
+        "hitos": [
+          "derivar-a-salud-mental"
+        ],
+        "arte": "arte/herramientas/tarjeta-contacto-bienestar.png",
+        "animacionCerca": {
+          "hoja": "arte/herramientas/tarjeta-contacto-bienestar-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Teléfono y horario de Bienestar Universitario. Sirve para derivar."
+      },
+      {
+        "id": "ficha-riesgo",
+        "nombre": "Ficha de riesgo",
+        "descripcion": "Para anotar señales de riesgo observadas durante la atención.",
+        "arte": "arte/herramientas/ficha-riesgo.png",
+        "alRevisar": "Hoja para anotar las señales de riesgo que observes.",
+        "hitos": [
+          "valorar-el-riesgo"
+        ]
+      },
+      {
+        "id": "directorio-rutas",
+        "nombre": "Directorio de rutas de atención",
+        "descripcion": "Teléfonos y lugares a los que se puede remitir a la persona.",
+        "arte": "arte/herramientas/directorio-rutas.png",
+        "alRevisar": "Teléfonos y direcciones de las rutas de atención de la ciudad.",
+        "hitos": [
+          "informar-derechos",
+          "derivar-a-salud-mental"
+        ]
+      },
+      {
+        "id": "guia-primeros-auxilios",
+        "nombre": "Guía de primeros auxilios psicológicos",
+        "descripcion": "Pasos para acompañar a alguien en crisis: escuchar, proteger y conectar.",
+        "arte": "arte/herramientas/guia-primeros-auxilios.png",
+        "alRevisar": "Pasos de los primeros auxilios psicológicos, para tener a mano.",
+        "hitos": [
+          "aplicar-primeros-auxilios-psicologicos"
+        ]
+      },
+      {
+        "id": "acta-registro",
+        "nombre": "Acta de registro de la atención",
+        "descripcion": "Para dejar constancia de la atención: fecha, qué se hizo, a dónde se remitió.",
+        "arte": "arte/herramientas/acta-registro.png",
+        "alRevisar": "Formato para registrar la atención prestada y las remisiones hechas.",
+        "hitos": [
+          "registrar-la-atencion"
+        ]
+      }
+    ]
+  },
+  "personajes": [
+    {
+      "id": "funcionaria-recepcion",
+      "nombre": "Funcionaria de recepción",
+      "rol": "Personal administrativo",
+      "recipeId": "funcionaria-recepcion"
+    },
+    {
+      "id": "orientadora-juridica",
+      "nombre": "Orientadora jurídica",
+      "rol": "Profesional",
+      "recipeId": "orientadora-juridica"
+    },
+    {
+      "id": "profesional-psicosocial",
+      "nombre": "Profesional psicosocial",
+      "rol": "Profesional",
+      "recipeId": "profesional-psicosocial"
+    },
+    {
+      "id": "comisaria",
+      "nombre": "Comisaria de familia",
+      "rol": "Comisaria",
+      "recipeId": "comisaria-familia"
+    },
+    {
+      "id": "persona-usuaria",
+      "nombre": "Persona usuaria",
+      "rol": "Persona usuaria",
+      "recipeId": "sobreviviente"
+    },
+    {
+      "id": "acompanante",
+      "nombre": "Acompañante",
+      "rol": "Familiar",
+      "recipeId": "madre-acompanante"
+    },
+    {
+      "id": "policia-infancia",
+      "nombre": "Policía de infancia y adolescencia",
+      "rol": "Policía",
+      "recipeId": "policia-infancia"
+    }
+  ]
+}
