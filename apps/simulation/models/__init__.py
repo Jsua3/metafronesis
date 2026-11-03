@@ -4,6 +4,9 @@ from .case import (
     CaseVersionStatus,
     SimulationNode,
     DecisionOption,
+    CaseReview,
+    ReviewDecision,
+    ReviewReason,
 )
 from .attempt import (
     SimulationAttempt,
@@ -13,6 +16,20 @@ from .attempt import (
     new_attempt_id,
 )
 from .evaluation import AttemptEvaluation
+from .rubric import (
+    AuditLog,
+    AuthoringAssistantUsage,
+    Competency,
+    CriterionScore,
+    EvaluationOrigin,
+    FormativeLevel,
+    PublicationChecklist,
+    PublicationChecklistItem,
+    Rubric,
+    RubricCriterion,
+    RubricEvaluation,
+    SimulationRubricAssignment,
+)
 
 __all__ = [
     "SimulationCase",
@@ -26,4 +43,19 @@ __all__ = [
     "OPEN_ATTEMPT_STATUSES",
     "new_attempt_id",
     "AttemptEvaluation",
+    "CaseReview",
+    "ReviewDecision",
+    "ReviewReason",
+    "AuditLog",
+    "AuthoringAssistantUsage",
+    "Competency",
+    "CriterionScore",
+    "EvaluationOrigin",
+    "FormativeLevel",
+    "PublicationChecklist",
+    "PublicationChecklistItem",
+    "Rubric",
+    "RubricCriterion",
+    "RubricEvaluation",
+    "SimulationRubricAssignment",
 ]
