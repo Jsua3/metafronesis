@@ -1,0 +1,1065 @@
+{
+  "esquema": 2,
+  "id": "casa",
+  "nombre": "Casa",
+  "descripcion": "Casa de barrio: sala, comedor, cocina, patio y las habitaciones del segundo piso. Visita domiciliaria y acompañamiento a la persona usuaria y a niñas, niños y adolescentes.",
+  "temas": [
+    "violencia-genero",
+    "ninez-adolescencia",
+    "plan-seguridad"
+  ],
+  "completo": true,
+  "arteProvisional": true,
+  "nivelRiesgoPorDefecto": "SEVERE",
+  "hitos": [
+    {
+      "key": "valorar-el-riesgo",
+      "label": "Valorar el riesgo",
+      "description": "Explorar con la persona usuaria las señales de riesgo en la casa y estimar su nivel antes de decidir el acompañamiento. [por validar con Psicología]",
+      "decisive": true
+    },
+    {
+      "key": "informar-derechos",
+      "label": "Informar derechos",
+      "description": "Explicar a la persona usuaria sus derechos y las rutas de atención que existen en el barrio y en la ciudad. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "recomendar-medidas-de-proteccion",
+      "label": "Recomendar medidas de protección",
+      "description": "Proponer medidas concretas de protección y acompañar a la persona a solicitarlas en la comisaría de familia. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "derivar-a-salud-mental",
+      "label": "Derivar a salud mental",
+      "description": "Remitir a la persona usuaria a atención en salud mental y asegurar que la remisión llegue. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "aplicar-primeros-auxilios-psicologicos",
+      "label": "Aplicar primeros auxilios psicológicos",
+      "description": "Escuchar, proteger y conectar a la persona en crisis antes de cualquier otro paso. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "no-mediar-con-el-agresor",
+      "label": "No mediar con el agresor",
+      "description": "Evitar cualquier mediación o careo entre la persona usuaria y quien la agrede, también dentro de la casa. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "identificar-una-red-de-apoyo",
+      "label": "Identificar una red de apoyo",
+      "description": "Reconocer con la persona usuaria a quién puede acudir: familiares, vecinas, amistades, instituciones. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "acordar-un-plan-de-seguridad",
+      "label": "Acordar un plan de seguridad",
+      "description": "Acordar con la persona usuaria qué hace, a quién llama y a dónde va si el riesgo sube. [por validar con Psicología]",
+      "decisive": true
+    }
+  ],
+  "salas": [
+    {
+      "id": "fachada",
+      "nombre": "Fachada de la casa",
+      "descripcion": "Frente de una casa de barrio: puerta, ventana con reja sencilla y el andén.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/fachada.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "materas",
+          "x": 200,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "banco-patio",
+          "x": 760,
+          "y": 330,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "papelera",
+          "x": 640,
+          "y": 300
+        },
+        {
+          "ref": "cerrojo-puerta",
+          "x": 445,
+          "y": 250
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "vecina",
+          "x": 300,
+          "y": 370,
+          "mirando": "derecha",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-sala",
+          "hacia": "sala",
+          "x": 480,
+          "y": 236,
+          "etiqueta": "Entrar a la casa"
+        }
+      ]
+    },
+    {
+      "id": "sala",
+      "nombre": "Sala",
+      "descripcion": "Sala de estar con sofá, televisor y las fotos de la familia.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/sala.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "sofa-casa",
+          "x": 300,
+          "y": 330,
+          "espejo": false
+        },
+        {
+          "ref": "sillon-casa",
+          "x": 470,
+          "y": 300,
+          "espejo": true
+        },
+        {
+          "ref": "mesa-centro-casa",
+          "x": 330,
+          "y": 392,
+          "espejo": false
+        },
+        {
+          "ref": "mueble-tv",
+          "x": 660,
+          "y": 262,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "televisor",
+          "x": 650,
+          "y": 250
+        },
+        {
+          "ref": "portarretrato",
+          "x": 700,
+          "y": 252
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "persona-usuaria",
+          "x": 560,
+          "y": 360,
+          "mirando": "izquierda",
+          "expresion": "cautelosa"
+        },
+        {
+          "ref": "psicologa-visitante",
+          "x": 400,
+          "y": 430,
+          "mirando": "derecha",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-fachada",
+          "hacia": "fachada",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir a la calle"
+        },
+        {
+          "id": "puerta-comedor",
+          "hacia": "comedor",
+          "x": 200,
+          "y": 236,
+          "etiqueta": "Pasar al comedor"
+        },
+        {
+          "id": "puerta-escalera",
+          "hacia": "escalera",
+          "x": 760,
+          "y": 236,
+          "etiqueta": "Ir a la escalera"
+        }
+      ]
+    },
+    {
+      "id": "comedor",
+      "nombre": "Comedor",
+      "descripcion": "Mesa con cuatro sillas y una vitrina; aquí se hacen las tareas.",
+      "encuadre": "dos-paredes-izquierda",
+      "fondo": "arte/salas/comedor.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "mesa-comedor",
+          "x": 480,
+          "y": 350,
+          "espejo": false
+        },
+        {
+          "ref": "silla-comedor",
+          "x": 430,
+          "y": 314,
+          "espejo": false
+        },
+        {
+          "ref": "silla-comedor",
+          "x": 530,
+          "y": 314,
+          "espejo": false
+        },
+        {
+          "ref": "silla-comedor",
+          "x": 430,
+          "y": 384,
+          "espejo": true
+        },
+        {
+          "ref": "silla-comedor",
+          "x": 530,
+          "y": 384,
+          "espejo": true
+        },
+        {
+          "ref": "vitrina-comedor",
+          "x": 200,
+          "y": 252,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "planta-maceta",
+          "x": 300,
+          "y": 300
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "nina-casa",
+          "x": 620,
+          "y": 400,
+          "mirando": "izquierda",
+          "expresion": "cautelosa"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-sala",
+          "hacia": "sala",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Volver a la sala"
+        },
+        {
+          "id": "puerta-cocina",
+          "hacia": "cocina",
+          "x": 936,
+          "y": 380,
+          "etiqueta": "Pasar a la cocina"
+        }
+      ]
+    },
+    {
+      "id": "cocina",
+      "nombre": "Cocina",
+      "descripcion": "Cocina pequeña con nevera, mesón y estufa; en la nevera hay notas.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/cocina.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "nevera",
+          "x": 160,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "meson-cocina",
+          "x": 400,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "estufa",
+          "x": 520,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "lavaplatos",
+          "x": 640,
+          "y": 262,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "nevera-notas",
+          "x": 160,
+          "y": 240
+        },
+        {
+          "ref": "papelera",
+          "x": 740,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "familiar",
+          "x": 480,
+          "y": 380,
+          "mirando": "izquierda",
+          "expresion": "preocupada"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-comedor",
+          "hacia": "comedor",
+          "x": 96,
+          "y": 380,
+          "etiqueta": "Volver al comedor"
+        },
+        {
+          "id": "puerta-patio",
+          "hacia": "patio",
+          "x": 780,
+          "y": 236,
+          "etiqueta": "Salir al patio"
+        }
+      ]
+    },
+    {
+      "id": "escalera",
+      "nombre": "Escalera",
+      "descripcion": "Escalera al segundo piso, con una matera al pie.",
+      "encuadre": "dos-paredes-izquierda",
+      "fondo": "arte/salas/escalera.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "materas",
+          "x": 200,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "mesa-noche",
+          "x": 640,
+          "y": 262,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "telefono-fijo",
+          "x": 640,
+          "y": 250
+        }
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "id": "puerta-sala",
+          "hacia": "sala",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Volver a la sala"
+        },
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 300,
+          "y": 236,
+          "etiqueta": "Subir al segundo piso"
+        }
+      ]
+    },
+    {
+      "id": "pasillo",
+      "nombre": "Pasillo del segundo piso",
+      "descripcion": "Pasillo corto entre las habitaciones; hay un peluche en el piso.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/pasillo.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "armario",
+          "x": 820,
+          "y": 256,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "peluche",
+          "x": 560,
+          "y": 420
+        }
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "id": "puerta-escalera",
+          "hacia": "escalera",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Bajar por la escalera"
+        },
+        {
+          "id": "puerta-habitacion-principal",
+          "hacia": "habitacion-principal",
+          "x": 300,
+          "y": 236,
+          "etiqueta": "Entrar a la habitación principal"
+        },
+        {
+          "id": "puerta-habitacion-ninos",
+          "hacia": "habitacion-ninos",
+          "x": 620,
+          "y": 236,
+          "etiqueta": "Entrar a la habitación de los niños"
+        }
+      ]
+    },
+    {
+      "id": "habitacion-principal",
+      "nombre": "Habitación principal",
+      "descripcion": "Cama doble, armario y una maleta a medio hacer.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/habitacion-principal.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "cama-doble",
+          "x": 300,
+          "y": 330,
+          "espejo": false
+        },
+        {
+          "ref": "mesa-noche",
+          "x": 400,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "armario",
+          "x": 700,
+          "y": 256,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "maleta",
+          "x": 560,
+          "y": 420
+        }
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "habitacion-ninos",
+      "nombre": "Habitación de los niños",
+      "descripcion": "Cama sencilla, escritorio con tareas y una caja de juguetes.",
+      "encuadre": "dos-paredes-derecha",
+      "fondo": "arte/salas/habitacion-ninos.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "cama-sencilla",
+          "x": 240,
+          "y": 320,
+          "espejo": false
+        },
+        {
+          "ref": "escritorio-infantil",
+          "x": 500,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "caja-juguetes",
+          "x": 700,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "cuaderno-escolar",
+          "x": 500,
+          "y": 250
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "nina-casa",
+          "x": 620,
+          "y": 400,
+          "mirando": "izquierda",
+          "expresion": "alegre"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "patio",
+      "nombre": "Patio",
+      "descripcion": "Patio trasero con tendedero, materas y un banco; se puede hablar sin que nadie oiga.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/patio.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "tendedero",
+          "x": 300,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "materas",
+          "x": 720,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "banco-patio",
+          "x": 520,
+          "y": 400,
+          "espejo": false
+        }
+      ],
+      "objetos": [],
+      "personajes": [
+        {
+          "ref": "persona-usuaria",
+          "x": 660,
+          "y": 380,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-cocina",
+          "hacia": "cocina",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Volver a la cocina"
+        }
+      ]
+    }
+  ],
+  "recorridosSugeridos": [
+    {
+      "id": "visita-domiciliaria",
+      "nombre": "Visita domiciliaria",
+      "descripcion": "La psicóloga llega a la casa, conversa en la sala y en la cocina conoce a la familia.",
+      "salas": [
+        "fachada",
+        "sala",
+        "cocina"
+      ]
+    },
+    {
+      "id": "la-nina-cuenta-algo",
+      "nombre": "La niña cuenta algo",
+      "descripcion": "Mientras hace tareas en el comedor la niña cuenta algo; se habla en su habitación y luego con la persona usuaria en la sala.",
+      "salas": [
+        "comedor",
+        "habitacion-ninos",
+        "sala"
+      ]
+    },
+    {
+      "id": "plan-de-seguridad",
+      "nombre": "Plan de seguridad",
+      "descripcion": "La persona usuaria muestra la maleta a medio hacer y, en el patio, se acuerda un plan de seguridad.",
+      "salas": [
+        "sala",
+        "habitacion-principal",
+        "patio"
+      ]
+    }
+  ],
+  "catalogo": {
+    "muebles": [
+      {
+        "id": "sofa-casa",
+        "nombre": "Sofá de la sala",
+        "arte": "arte/muebles/sofa-casa.png",
+        "ancho": 90,
+        "alto": 26,
+        "colision": true
+      },
+      {
+        "id": "sillon-casa",
+        "nombre": "Sillón",
+        "arte": "arte/muebles/sillon-casa.png",
+        "ancho": 46,
+        "alto": 24,
+        "colision": true
+      },
+      {
+        "id": "mesa-centro-casa",
+        "nombre": "Mesa de centro",
+        "arte": "arte/muebles/mesa-centro-casa.png",
+        "ancho": 50,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "mueble-tv",
+        "nombre": "Mueble del televisor",
+        "arte": "arte/muebles/mueble-tv.png",
+        "ancho": 100,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "mesa-comedor",
+        "nombre": "Mesa del comedor",
+        "arte": "arte/muebles/mesa-comedor.png",
+        "ancho": 110,
+        "alto": 30,
+        "colision": true
+      },
+      {
+        "id": "silla-comedor",
+        "nombre": "Silla del comedor",
+        "arte": "arte/muebles/silla-comedor.png",
+        "ancho": 22,
+        "alto": 12,
+        "colision": true
+      },
+      {
+        "id": "vitrina-comedor",
+        "nombre": "Vitrina",
+        "arte": "arte/muebles/vitrina-comedor.png",
+        "ancho": 60,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "nevera",
+        "nombre": "Nevera",
+        "arte": "arte/muebles/nevera.png",
+        "ancho": 44,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "estufa",
+        "nombre": "Estufa",
+        "arte": "arte/muebles/estufa.png",
+        "ancho": 56,
+        "alto": 22,
+        "colision": true
+      },
+      {
+        "id": "meson-cocina",
+        "nombre": "Mesón de la cocina",
+        "arte": "arte/muebles/meson-cocina.png",
+        "ancho": 120,
+        "alto": 26,
+        "colision": true
+      },
+      {
+        "id": "lavaplatos",
+        "nombre": "Lavaplatos",
+        "arte": "arte/muebles/lavaplatos.png",
+        "ancho": 50,
+        "alto": 22,
+        "colision": true
+      },
+      {
+        "id": "cama-doble",
+        "nombre": "Cama doble",
+        "arte": "arte/muebles/cama-doble.png",
+        "ancho": 110,
+        "alto": 60,
+        "colision": true
+      },
+      {
+        "id": "mesa-noche",
+        "nombre": "Mesa de noche",
+        "arte": "arte/muebles/mesa-noche.png",
+        "ancho": 30,
+        "alto": 16,
+        "colision": true
+      },
+      {
+        "id": "armario",
+        "nombre": "Armario",
+        "arte": "arte/muebles/armario.png",
+        "ancho": 70,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "cama-sencilla",
+        "nombre": "Cama sencilla",
+        "arte": "arte/muebles/cama-sencilla.png",
+        "ancho": 60,
+        "alto": 50,
+        "colision": true
+      },
+      {
+        "id": "escritorio-infantil",
+        "nombre": "Escritorio de tareas",
+        "arte": "arte/muebles/escritorio-infantil.png",
+        "ancho": 70,
+        "alto": 24,
+        "colision": true
+      },
+      {
+        "id": "caja-juguetes",
+        "nombre": "Caja de juguetes",
+        "arte": "arte/muebles/caja-juguetes.png",
+        "ancho": 40,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "tendedero",
+        "nombre": "Tendedero",
+        "arte": "arte/muebles/tendedero.png",
+        "ancho": 90,
+        "alto": 10,
+        "colision": true
+      },
+      {
+        "id": "materas",
+        "nombre": "Materas",
+        "arte": "arte/muebles/materas.png",
+        "ancho": 60,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "banco-patio",
+        "nombre": "Banco del patio",
+        "arte": "arte/muebles/banco-patio.png",
+        "ancho": 80,
+        "alto": 18,
+        "colision": true
+      }
+    ],
+    "objetos": [
+      {
+        "id": "televisor",
+        "nombre": "Televisor encendido",
+        "tipo": "PROP",
+        "desdeModelo": "televisor",
+        "arte": "arte/objetos/televisor.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/televisor-cerca.png",
+          "cuadros": 4,
+          "fps": 6
+        },
+        "alRevisar": "Nadie lo está viendo.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "portarretrato",
+        "nombre": "Portarretrato",
+        "tipo": "OBJECT",
+        "desdeModelo": "portarretrato",
+        "hitos": [
+          "identificar-una-red-de-apoyo"
+        ],
+        "arte": "arte/objetos/portarretrato.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/portarretrato-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Una foto familiar. Falta alguien en el marco.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "telefono-fijo",
+        "nombre": "Teléfono fijo",
+        "tipo": "OBJECT",
+        "desdeModelo": "telefono-fijo",
+        "hitos": [
+          "identificar-una-red-de-apoyo"
+        ],
+        "arte": "arte/objetos/telefono-fijo.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/telefono-fijo-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Suena. Nadie contesta.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "cerrojo-puerta",
+        "nombre": "Cerrojo de la puerta",
+        "tipo": "PROP",
+        "desdeModelo": "cerrojo-puerta",
+        "arte": "arte/objetos/cerrojo-puerta.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/cerrojo-puerta-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Tiene cerrojo por dentro.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "peluche",
+        "nombre": "Peluche en el piso",
+        "tipo": "OBJECT",
+        "desdeModelo": "peluche",
+        "arte": "arte/objetos/peluche.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/peluche-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Hay niñas o niños en esta casa.",
+        "textoInteraccion": "Mirar",
+        "efecto": "pista"
+      },
+      {
+        "id": "cuaderno-escolar",
+        "nombre": "Cuaderno escolar",
+        "tipo": "OBJECT",
+        "desdeModelo": "cuaderno-escolar",
+        "arte": "arte/objetos/cuaderno-escolar.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/cuaderno-escolar-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Tareas a medio hacer.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "nevera-notas",
+        "nombre": "Nevera con notas",
+        "tipo": "NOTE",
+        "desdeModelo": "nevera-notas",
+        "arte": "arte/objetos/nevera-notas.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/nevera-notas-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Lista de mercado y una cita médica.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "maleta",
+        "nombre": "Maleta a medio hacer",
+        "tipo": "OBJECT",
+        "desdeModelo": "maleta",
+        "hitos": [
+          "acordar-un-plan-de-seguridad"
+        ],
+        "arte": "arte/objetos/maleta.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/maleta-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Ropa doblada de prisa.",
+        "textoInteraccion": "Revisar",
+        "efecto": "pista"
+      },
+      {
+        "id": "ventana",
+        "nombre": "Ventana",
+        "tipo": "PROP",
+        "desdeModelo": "ventana",
+        "arte": "arte/objetos/ventana.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/ventana-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Afuera llueve despacio.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "planta-maceta",
+        "nombre": "Planta pequeña",
+        "tipo": "PROP",
+        "desdeModelo": "planta-maceta",
+        "arte": "arte/objetos/planta-maceta.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/planta-maceta-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Alguien la riega todos los días.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "papelera",
+        "nombre": "Papelera",
+        "tipo": "PROP",
+        "desdeModelo": "papelera",
+        "arte": "arte/objetos/papelera.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/papelera-cerca.png",
+          "cuadros": 2,
+          "fps": 6
+        },
+        "alRevisar": "Vacía.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      }
+    ],
+    "herramientas": [
+      {
+        "id": "ficha-riesgo",
+        "nombre": "Ficha de riesgo",
+        "descripcion": "Para anotar señales de riesgo observadas en la casa.",
+        "arte": "arte/herramientas/ficha-riesgo.png",
+        "alRevisar": "Hoja para anotar las señales de riesgo que observes.",
+        "hitos": [
+          "valorar-el-riesgo"
+        ]
+      },
+      {
+        "id": "directorio-rutas",
+        "nombre": "Directorio de rutas de atención",
+        "descripcion": "Teléfonos y lugares a los que se puede remitir a la persona.",
+        "arte": "arte/herramientas/directorio-rutas.png",
+        "alRevisar": "Teléfonos y direcciones de las rutas de atención de la ciudad.",
+        "hitos": [
+          "informar-derechos",
+          "recomendar-medidas-de-proteccion",
+          "derivar-a-salud-mental"
+        ]
+      },
+      {
+        "id": "guia-primeros-auxilios",
+        "nombre": "Guía de primeros auxilios psicológicos",
+        "descripcion": "Pasos para acompañar a alguien en crisis: escuchar, proteger y conectar.",
+        "arte": "arte/herramientas/guia-primeros-auxilios.png",
+        "alRevisar": "Pasos de los primeros auxilios psicológicos, para tener a mano.",
+        "hitos": [
+          "aplicar-primeros-auxilios-psicologicos"
+        ]
+      },
+      {
+        "id": "ficha-plan-seguridad",
+        "nombre": "Ficha del plan de seguridad",
+        "descripcion": "Para acordar con la persona qué hace, a quién llama y a dónde va si el riesgo sube.",
+        "arte": "arte/herramientas/ficha-plan-seguridad.png",
+        "alRevisar": "Hoja para acordar el plan de seguridad: señales de alarma, a quién llamar, a dónde ir y qué llevar.",
+        "hitos": [
+          "acordar-un-plan-de-seguridad"
+        ]
+      }
+    ]
+  },
+  "personajes": [
+    {
+      "id": "persona-usuaria",
+      "nombre": "Persona usuaria",
+      "rol": "Persona usuaria",
+      "recipeId": "sobreviviente"
+    },
+    {
+      "id": "nina-casa",
+      "nombre": "Niña de la casa",
+      "rol": "Niña, niño o adolescente",
+      "recipeId": "nina-casa"
+    },
+    {
+      "id": "vecina",
+      "nombre": "Vecina",
+      "rol": "Vecina",
+      "recipeId": "vecina"
+    },
+    {
+      "id": "familiar",
+      "nombre": "Familiar",
+      "rol": "Familiar",
+      "recipeId": "madre-acompanante"
+    },
+    {
+      "id": "psicologa-visitante",
+      "nombre": "Psicóloga visitante",
+      "rol": "Profesional",
+      "recipeId": "profesional-psicosocial"
+    }
+  ]
+}
