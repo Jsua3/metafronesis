@@ -38,7 +38,7 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
 }
 
-BIBLIOTECA_DIR = os.environ.get("BIBLIOTECA_DIR", str(BASE_DIR / "biblioteca"))
+BIBLIOTECA_DIR = Path(os.environ.get("BIBLIOTECA_DIR") or BASE_DIR / "biblioteca")
 
 if os.environ.get("POSTGRES_DB"):
     DATABASES = {
