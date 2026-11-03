@@ -1,0 +1,7 @@
+# Herramientas de desarrollo y verificación que NO van en la imagen de producción.
+# Instalación: backend_django/.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
+-r requirements.txt
+pytest==9.1.1
+pytest-django==4.14.0
+factory-boy==3.3.3
+pip-audit==2.10.1
