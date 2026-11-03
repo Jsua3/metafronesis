@@ -1,3 +1,7 @@
-# Catálogo externo
+# Catálogo de lugares
 
-El índice incluido está vacío intencionalmente: no se recibió el catálogo original ni sus imágenes. Para cargarlo, configura BIBLIOTECA_DIR apuntando al directorio que contiene escenarios/indice.json y escenarios/{id}/escenario.json. Los recursos gráficos se publican aparte bajo /assets/biblioteca/escenarios/. Los tests crean un catálogo temporal de prueba; no representa un escenario aprobado por Psicología.
+El catálogo recibido en `4-D-Bonilla-completo.zip` se encuentra en `biblioteca/escenarios/`: índice, casa, comisaría y universidad con sus JSON e imágenes (196 archivos del zip, copiados sin modificaciones).
+
+`BIBLIOTECA_DIR` usa por defecto `BASE_DIR / "biblioteca"`; puede apuntar a otro directorio que contenga `escenarios/indice.json`. Las URLs públicas de imágenes comienzan con `/assets/biblioteca/escenarios/`; servir esos recursos al navegador sigue siendo responsabilidad de la integración del frontend.
+
+Las pruebas de biblioteca incluyen casos temporales de seguridad y una prueba de integración con los tres lugares reales, que comprueba que las rutas de imágenes de la respuesta corresponden a archivos existentes.

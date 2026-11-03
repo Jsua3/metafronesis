@@ -4,7 +4,7 @@
 
 Mi bloque recibe un caso publicado que el estudiante tenga asignado. Abre un solo intento activo por versión y permite consultar, pausar, reanudar o reemplazar ese intento. Cada decisión comprueba la escena actual y aplica los efectos declarados. Al llegar al final guarda la evidencia, congela una evaluación formativa mínima y registra la finalización para habilitar el siguiente caso.
 
-La biblioteca permite al profesor consultar lugares de un catálogo JSON externo. El paquete recibido no trae ese catálogo ni imágenes: la integración está implementada y se prueba con archivos temporales, pero el índice de entrega está vacío.
+La biblioteca permite al profesor consultar lugares de un catálogo JSON externo. El zip completo aporta casa, comisaría y universidad con sus JSON e imágenes. Las pruebas verifican los tres lugares reales y que sus imágenes existan.
 
 ## Archivos que debo poder explicar
 
@@ -38,7 +38,7 @@ La biblioteca permite al profesor consultar lugares de un catálogo JSON externo
 
 **¿Por qué no copiaste la migración original?** Incluía muchos modelos fuera del corte. Se generó una inicial con caso, versión, nodo, opción, intento y evento, y una migración aditiva S4. La inicial de grupos para base vacía debe conciliarse con Juan si ya existe un historial aplicado.
 
-**¿Qué falta para integrar?** Acordar los permisos y las reglas propuestas con Juan, conciliar las dependencias e historial S1/S2, conectar la configuración final de autenticación y aportar el catálogo real. No confundir el corte probado con el porcentaje global de la entrega.
+**¿Qué falta para integrar?** Acordar los permisos y las reglas propuestas con Juan, conciliar las dependencias e historial S1/S2, conectar la configuración final de autenticación. No confundir el corte probado con el porcentaje global de la entrega.
 
 ## Demostración reproducible
 

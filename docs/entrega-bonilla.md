@@ -57,13 +57,13 @@ La señal attempt_completed implementa Observer: progression registra una finali
 
 Se registró biblioteca y se montaron GET /api/biblioteca/lugares y /api/biblioteca/lugares/{id}, solo para PROFESOR/ADMIN autenticados. Las respuestas llevan data; las imágenes se presentan bajo /assets/biblioteca/escenarios/. Los servicios de lectura y geometría proceden del paquete; se adaptaron permisos y errores para cerrar imports. Se rechazan IDs inválidos, rutas de arte absolutas/traversal y enlaces que salgan del catálogo. Un archivo ausente o ilegible devuelve 503 sin revelar rutas locales.
 
-El paquete NO contiene el catálogo externo ni sus imágenes. Se incluye un índice vacío, sin fabricar lugares ni afirmar que hay escenarios aprobados. Configurar BIBLIOTECA_DIR para aportar escenarios/indice.json y escenarios/{id}/escenario.json. Los tests usan un catálogo temporal. La copia visual al caso se excluye porque depende de los modelos y servicios de autoría/mundo fuera del corte mínimo.
+El zip completo aporta 196 archivos del catálogo en biblioteca/escenarios/: índice, casa, comisaría y universidad con sus JSON e imágenes. Se copiaron sin modificaciones. BIBLIOTECA_DIR usa BASE_DIR / "biblioteca" por defecto. Los tests prueban tanto archivos temporales como los tres lugares reales y comprueban la existencia de las imágenes referenciadas. La copia visual al caso se excluye porque depende de los modelos y servicios de autoría/mundo fuera del corte mínimo.
 
 ## Verificación y pendientes de integración
 
 Las pruebas locales cubren permisos, ventanas, sesión y CSRF, transiciones, segunda oportunidad, efectos, evidencia, evaluación congelada, rollback transaccional, desbloqueo secuencial, biblioteca y geometría. CI ejecuta el corte con PostgreSQL e incluye dos pruebas de inicios/decisiones concurrentes. Las omisiones locales se identifican: UUID7 requiere Python 3.14 y los bloqueos concurrentes requieren PostgreSQL.
 
-Antes de declarar el 40% global: integrar con S1/S2, conciliar el historial de grupos, confirmar los contratos con Juan y aportar el catálogo externo. La cantidad de pruebas o archivos de este PR no demuestra por sí sola el porcentaje del backend. No fusionar ni etiquetar por cuenta propia.
+Antes de declarar el 40% global: integrar con S1/S2, conciliar el historial de grupos, confirmar los contratos con Juan. La cantidad de pruebas o archivos de este PR no demuestra por sí sola el porcentaje del backend. No fusionar ni etiquetar por cuenta propia.
 
 ## Sustentación
 
@@ -74,3 +74,9 @@ Corrección de acoplamiento: modelos exportan solo el corte mínimo y vocabulary
 Transacciones: inicio bloquea al usuario, órdenes bloquean el intento y la base impone un único intento abierto por estudiante/versión. SQLite verifica restricciones e idempotencia secuencial. Las pruebas SELECT FOR UPDATE se ejecutan con PostgreSQL en CI; registrar su resultado antes de integrar.
 
 Revisor asignado: Juan (@Jsua3). PR hacia develop, sin autoaprobación ni fusión. No crear etiquetas v0.3.0/v0.4.0 antes de aceptación y cierre. Fecha límite pendiente del equipo.
+
+## Actualización del catálogo completo
+
+Verificación ejecutada con el catálogo del zip: `.venv/bin/python -m pytest apps/biblioteca/tests -q`: **19 passed**. Suite local completa: **88 passed, 3 skipped** (dos pruebas requieren PostgreSQL y una UUID7/Python 3.14). `manage_s3.py check`: sin errores.
+
+El PR #4 permanece en borrador. Orden de integración: PR #3 (Emerson), PR #2 (Juan), PR #4 (Bonilla). No se trae develop ni se retiran users, grupos o los archivos de integración S3 hasta que Esteban lo pida expresamente. Las 26 dependencias opcionales del zip no se copiaron.
