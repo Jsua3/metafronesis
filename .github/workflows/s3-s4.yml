@@ -21,6 +21,7 @@ jobs:
           --health-cmd "pg_isready -U test_runner -d metafronesis_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      DJANGO_SETTINGS_MODULE: psychosim.settings_s3
       POSTGRES_DB: metafronesis_test
       POSTGRES_USER: test_runner
       POSTGRES_PASSWORD: test_only_password
@@ -32,9 +33,11 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements-dev.txt
+            requirements.txt
             requirements-s3.txt
       - run: pip install -r requirements-dev.txt
       - run: python manage_s3.py check
       - run: python manage_s3.py makemigrations --check --dry-run
       - run: python manage_s3.py migrate --noinput
-      - run: python -m pytest -q
+      - name: Pruebas del corte S3 y S4
+        run: python -m pytest --ds=psychosim.settings_s3 apps/simulation/tests apps/biblioteca/tests -q

@@ -9,11 +9,13 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python manage_s3.py migrate
 .venv/bin/python manage_s3.py check
-.venv/bin/python -m pytest -q
+.venv/bin/python -m pytest --ds=psychosim.settings_s3 apps/simulation/tests apps/biblioteca/tests -q
 .venv/bin/python manage_s3.py runserver
 ```
 
 `psychosim/settings_s3.py` es una configuración de integración local. Usa SQLite, el usuario real de S1 y sesiones Django con CSRF. Las pruebas HTTP autentican con `force_authenticate`: no prueban login ni emisión de JWT. No es una configuración de despliegue. La configuración definitiva y las rutas de login se deben integrar con S1; no se ha reemplazado su autenticación con acceso anónimo.
+
+La comprobación «Verificar S3 y S4» utiliza esta misma configuración en todos sus pasos y ejecuta todas las pruebas de `apps/simulation/tests` y `apps/biblioteca/tests`. En CI, las variables `POSTGRES_*` seleccionan la base desechable PostgreSQL del servicio del workflow, incluidas las pruebas de concurrencia. `pytest.ini` conserva la configuración heredada `psychosim.settings.test`; por eso se indica `--ds` y el alcance de este corte explícitamente. La integración y las pruebas de los demás módulos siguen pendientes en SIEP-48: esta comprobación no certifica el backend completo ni el cumplimiento del 40 %.
 
 ## Contrato implementado
 
