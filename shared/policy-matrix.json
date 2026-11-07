@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "roles": [
+    "ESTUDIANTE",
+    "PROFESOR",
+    "ADMIN"
+  ],
+  "scopes": {
+    "all": "sin más condición",
+    "own": "el actor es el dueño del recurso (owner_id)",
+    "member": "el actor tiene alcance sobre la persona o el grupo (member)"
+  },
+  "rows": [
+    {
+      "resource": "account",
+      "action": "self",
+      "ESTUDIANTE": "all",
+      "PROFESOR": "all",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "analytics",
+      "action": "read",
+      "ESTUDIANTE": null,
+      "PROFESOR": "member",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "assignment",
+      "action": "list",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "assignment",
+      "action": "manage",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": null
+    },
+    {
+      "resource": "attempt",
+      "action": "play",
+      "ESTUDIANTE": "own",
+      "PROFESOR": null,
+      "ADMIN": null
+    },
+    {
+      "resource": "attempt",
+      "action": "report",
+      "ESTUDIANTE": "own",
+      "PROFESOR": "member",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "attempt",
+      "action": "review",
+      "ESTUDIANTE": null,
+      "PROFESOR": "member",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "audit",
+      "action": "read",
+      "ESTUDIANTE": null,
+      "PROFESOR": null,
+      "ADMIN": "all"
+    },
+    {
+      "resource": "case",
+      "action": "archive",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "case",
+      "action": "author",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "case",
+      "action": "publish",
+      "ESTUDIANTE": null,
+      "PROFESOR": null,
+      "ADMIN": "all"
+    },
+    {
+      "resource": "case",
+      "action": "submit",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "catalog",
+      "action": "read",
+      "ESTUDIANTE": "all",
+      "PROFESOR": "all",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "competency",
+      "action": "manage",
+      "ESTUDIANTE": null,
+      "PROFESOR": null,
+      "ADMIN": "all"
+    },
+    {
+      "resource": "competency",
+      "action": "read",
+      "ESTUDIANTE": null,
+      "PROFESOR": "all",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "consent",
+      "action": "read",
+      "ESTUDIANTE": "own",
+      "PROFESOR": null,
+      "ADMIN": null
+    },
+    {
+      "resource": "consent",
+      "action": "record",
+      "ESTUDIANTE": "own",
+      "PROFESOR": null,
+      "ADMIN": null
+    },
+    {
+      "resource": "group",
+      "action": "list",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "group",
+      "action": "manage",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": null
+    },
+    {
+      "resource": "membership",
+      "action": "invite",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "membership",
+      "action": "respond",
+      "ESTUDIANTE": "own",
+      "PROFESOR": null,
+      "ADMIN": "all"
+    },
+    {
+      "resource": "rubric",
+      "action": "default",
+      "ESTUDIANTE": null,
+      "PROFESOR": null,
+      "ADMIN": "all"
+    },
+    {
+      "resource": "rubric",
+      "action": "edit",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "rubric",
+      "action": "read",
+      "ESTUDIANTE": null,
+      "PROFESOR": "all",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "user",
+      "action": "manage",
+      "ESTUDIANTE": null,
+      "PROFESOR": null,
+      "ADMIN": "all"
+    }
+  ]
+}
