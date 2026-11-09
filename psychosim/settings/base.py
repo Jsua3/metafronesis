@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.grupos",
     "apps.simulation",
-    "apps.reportes",
     "apps.progression",
     "apps.security",
     "apps.privacy",
@@ -395,7 +394,7 @@ SIEP_SESSION_EPOCH_ENFORCE = _env_flag_cerrada("SIEP_SESSION_EPOCH_ENFORCE", def
 #: P6 · Carpeta de la biblioteca de lugares (``<BIBLIOTECA_DIR>/escenarios/indice.json`` y un ``escenario.json`` por
 #: lugar). Sin ``SIEP_BIBLIOTECA_DIR`` es ``biblioteca/`` junto a ``backend_django/``; la imagen de producción la copia a
 #: ``/app/biblioteca`` y fija la variable. Solo se leen los JSON: el arte lo sirve el frontend bajo ``/assets/biblioteca/``.
-BIBLIOTECA_DIR = Path(os.environ.get("SIEP_BIBLIOTECA_DIR") or BASE_DIR.parent / "biblioteca")
+BIBLIOTECA_DIR = Path(os.environ.get("SIEP_BIBLIOTECA_DIR") or BASE_DIR / "biblioteca")
 
 #: S2-6b · hosts ``https://`` de los que el fondo de sala puede cargar su imagen (separados por comas). Vacía = solo
 #: rutas propias de ``/assets/``. Cada estudiante descarga la imagen desde su navegador: no añadas hosts ajenos.
@@ -566,8 +565,6 @@ SPECTACULAR_SETTINGS = {
         "ReviewReasonEnum": "apps.simulation.models.case.ReviewReason",
         "HealthStatusEnum": "shared.health_docs.HEALTH_STATUS",
         "HealthDbEnum": "shared.health_docs.HEALTH_DB",
-        "FormativeLevelEnum": "apps.reportes.contracts.FORMATIVE_LEVELS",
-        "ReflectionDefinitionEnum": "apps.simulation.assessment.definitions.REFLECTION_DEFINITIONS",
     },
 }
 
