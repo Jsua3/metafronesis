@@ -15,6 +15,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.users.services import account_service
+from shared.policies import ADMIN
 
 User = get_user_model()
 
@@ -37,8 +38,8 @@ class Command(BaseCommand):
         ahora = timezone.now()
         limite = ahora - timedelta(days=settings.SIEP_TEMP_PASSWORD_DAYS)
         caducadas = User.objects.filter(must_change_password=True, temp_password_set_at__lt=limite)
-        administradores = caducadas.filter(role="ADMIN").count()
-        personas = list(caducadas.exclude(role="ADMIN").order_by("pk").values_list("pk", flat=True))
+        administradores = caducadas.filter(role=ADMIN).count()
+        personas = list(caducadas.exclude(role=ADMIN).order_by("pk").values_list("pk", flat=True))
 
         if dry_run:
             devueltas = len(personas)

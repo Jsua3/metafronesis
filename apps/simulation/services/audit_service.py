@@ -32,6 +32,7 @@ from shared.client_ip import client_ip
 from shared.security_events import log_security_event
 
 from ..models import AuditLog, CaseReview
+from shared.policies import ESTUDIANTE
 
 logger = logging.getLogger(__name__)
 
@@ -329,7 +330,7 @@ def _cabe_la_fila_del_estudiante(actor_fk, actor_role):
     acota a los estudiantes (los demás roles tienen sus propios límites en las rutas pesadas). Lo que pasa del tope no se
     escribe, sigue contado y deja UN aviso por ventana, sin datos de la persona salvo su id. Con el limitador apagado,
     ``hit`` devuelve 0 y no hay tope."""
-    if actor_fk is None or actor_role != "ESTUDIANTE":
+    if actor_fk is None or actor_role != ESTUDIANTE:
         return True
     total = hit("audit_game_user", key_hash(str(actor_fk), "juego"))
     limite = LIMITS["audit_game_user"].limit

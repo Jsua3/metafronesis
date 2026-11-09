@@ -1,5 +1,7 @@
 from enum import Enum
 
+from django.db import models
+
 
 class Intensity(str, Enum):
     LOW = "LOW"
@@ -13,8 +15,6 @@ class ResponseClass(str, Enum):
     RISKY = "RISKY"
     CONTRAINDICATED = "CONTRAINDICATED"
 
-
-from django.db import models
 
 
 class RiskLevel(str, Enum):

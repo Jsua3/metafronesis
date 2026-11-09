@@ -19,6 +19,8 @@ from shared.exceptions import ApiError
 
 from .assignments import assignment_state, format_window_value, parse_window_value
 from .models import CaseAssignment, Grupo
+from apps.simulation.services.audit_service import auditable
+from shared.policies import ADMIN
 
 SORT_ORDER_MAX = 1000
 TARGET_GROUP = "GROUP"
@@ -125,7 +127,6 @@ def _load_to_manage(assignment_id, actor, *, lock=False):
 
 
 # ─── Operaciones ──────────────────────────────────────────────────────────────────────────
-from apps.simulation.services.audit_service import auditable
 
 
 @auditable(
@@ -186,7 +187,7 @@ def list_assignments(actor, group_id=None, case_version_id=None):
         if grupo is None or not policies.can(actor, "assignment", "list", owner_id=grupo.profesor_id):
             raise NotFound(f"Grupo no encontrado: {group_id}")
         queryset = queryset.filter(grupo_id=group_id)
-    elif getattr(actor, "role", None) != "ADMIN":
+    elif getattr(actor, "role", None) != ADMIN:
         queryset = queryset.filter(grupo__profesor_id=actor.id)
     if case_version_id is not None:
         queryset = queryset.filter(case_version_id=case_version_id)

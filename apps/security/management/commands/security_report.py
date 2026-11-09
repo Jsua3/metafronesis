@@ -17,9 +17,10 @@ from apps.security.limits import CONTADORES, LIMITS
 from apps.security.models import RateLimitBucket
 from apps.simulation.models import AuditLog
 from apps.simulation.services.audit_service import matching_actions
+from shared.policies import ADMIN, PROFESOR
 
 DIA = 86400
-ROLES_PRIVILEGIADOS = ("ADMIN", "PROFESOR")
+ROLES_PRIVILEGIADOS = (ADMIN, PROFESOR)
 #: Los eventos de auditoría que cuenta este informe, por su etiqueta ``entidad.verbo`` (``matching_actions`` los une con el
 #: código crudo con que se escriben: las filas pueden traer cualquiera de los dos).
 ETIQUETA_FALLO_DE_ACCESO = "sesion.fallar"
@@ -53,7 +54,7 @@ def _rol_privilegiado_nuevo(accion, contexto):
     if not isinstance(cuenta, int) or isinstance(cuenta, bool):
         return None
     if accion in matching_actions("usuario.crear_admin"):
-        return cuenta, "ADMIN"
+        return cuenta, ADMIN
     rol = contexto.get("role")
     return (cuenta, rol) if rol in ROLES_PRIVILEGIADOS else None
 

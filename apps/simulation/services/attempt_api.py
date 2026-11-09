@@ -16,6 +16,7 @@ from .case_rules import rules_of, effects_of
 from .response_effects import apply as apply_effects
 from apps.simulation.assessment.evaluation import freeze
 from apps.simulation.signals import attempt_completed
+from apps.simulation.casedef.vocabulary import ResponseClass
 
 
 @transaction.atomic
@@ -80,14 +81,18 @@ def transition(user, pk, action):
     return attempt
 
 
-@transaction.atomic
-def decide(user, pk, option_id, request_id):
-    attempt = owned(user, pk, lock=True)
+def _previous_result(attempt, request_id, option_id):
+    """La misma orden repetida (mismo ``request_id``) devuelve lo que respondió la primera vez."""
     previous = attempt.events.filter(request_id=request_id).first()
-    if previous:
-        if previous.decision_option_id != option_id:
-            raise ValidationError("request_id ya corresponde a otra decisión.")
-        return json.loads(previous.detail)
+    if previous is None:
+        return None
+    if previous.decision_option_id != option_id:
+        raise ValidationError("request_id ya corresponde a otra decisión.")
+    return json.loads(previous.detail)
+
+
+def _valid_option(attempt, option_id):
+    """La opción elegida, si el intento admite decisiones y la opción sale de la escena actual del mismo caso."""
     if not lifecycle.state_of(attempt).plays:
         raise ValidationError("El intento no admite decisiones en su estado actual.")
     option = get_object_or_404(
@@ -98,63 +103,85 @@ def decide(user, pk, option_id, request_id):
     )
     if option.target_node.case_version_id != attempt.case_version_id:
         raise ValidationError("La escena destino pertenece a otro caso.")
-    now = timezone.now()
-    touch(attempt, now)
-    # Una primera respuesta riesgosa por escena no aplica efectos ni avanza.
-    retry = (
+    return option
+
+
+def _needs_second_chance(attempt, option):
+    """Una primera respuesta riesgosa por escena no aplica efectos ni avanza."""
+    return (
         rules_of(attempt.case_version).second_chance
-        and option.response_class in ("RISKY", "CONTRAINDICATED")
+        and option.response_class in (ResponseClass.RISKY, ResponseClass.CONTRAINDICATED)
         and not attempt.events.filter(
             node=option.source_node, event_type="DECISION_RETRY_REQUIRED"
         ).exists()
     )
-    if retry:
-        result = {
-            "attempt_id": str(attempt.pk),
-            "node_id": attempt.current_node_id,
-            "status": attempt.status,
-            "feedback": option.immediate_feedback,
-            "response_class": option.response_class,
-            "retry_required": True,
-        }
-        attempt.save()
-        AttemptEvent.objects.create(
-            attempt=attempt,
-            node=option.source_node,
-            decision_option=option,
-            event_type="DECISION_RETRY_REQUIRED",
-            request_id=request_id,
-            detail=json.dumps(result),
-        )
-        return result
+
+
+def _result(attempt, option, *, retry_required):
+    return {
+        "attempt_id": str(attempt.pk),
+        "node_id": attempt.current_node_id,
+        "status": attempt.status,
+        "feedback": option.immediate_feedback,
+        "response_class": option.response_class,
+        "retry_required": retry_required,
+    }
+
+
+def _record(attempt, option, request_id, event_type, result):
+    return AttemptEvent.objects.create(
+        attempt=attempt,
+        node=option.source_node,
+        decision_option=option,
+        event_type=event_type,
+        request_id=request_id,
+        detail=json.dumps(result),
+    )
+
+
+def _ask_for_retry(attempt, option, request_id):
+    result = _result(attempt, option, retry_required=True)
+    attempt.save()
+    _record(attempt, option, request_id, "DECISION_RETRY_REQUIRED", result)
+    return result
+
+
+def _advance(attempt, option, now):
+    """Aplica los efectos de la opción, mueve el intento a la escena destino y lo cierra si es terminal."""
     attempt.state_json = apply_effects(attempt.state_json, option)
     attempt.current_node = option.target_node
     if option.target_node.terminal_node:
         lifecycle.apply(attempt, lifecycle.COMPLETE)
         attempt.ended_at = attempt.locked_at = now
     attempt.save()
-    result = {
-        "attempt_id": str(attempt.pk),
-        "node_id": attempt.current_node_id,
-        "status": attempt.status,
-        "feedback": option.immediate_feedback,
-        "response_class": option.response_class,
-        "retry_required": False,
-        "effects": effects_of(option),
-        "state": attempt.state_json,
-    }
-    event = AttemptEvent.objects.create(
-        attempt=attempt,
-        node=option.source_node,
-        decision_option=option,
-        event_type="DECISION_SELECTED",
-        request_id=request_id,
-        detail=json.dumps(result),
-    )
-    if attempt.status == "COMPLETED":
-        evaluation = freeze(attempt)
-        result["evaluation"] = evaluation.snapshot
-        event.detail = json.dumps(result)
-        event.save(update_fields=["detail"])
-        attempt_completed.send(sender=SimulationAttempt, attempt=attempt)
+
+
+def _close_if_completed(attempt, result, event):
+    """Si el intento terminó: congela la evaluación, la agrega al evento y avisa a los observadores."""
+    if attempt.status != "COMPLETED":
+        return
+    evaluation = freeze(attempt)
+    result["evaluation"] = evaluation.snapshot
+    event.detail = json.dumps(result)
+    event.save(update_fields=["detail"])
+    attempt_completed.send(sender=SimulationAttempt, attempt=attempt)
+
+
+@transaction.atomic
+def decide(user, pk, option_id, request_id):
+    """Registra la decisión del estudiante: cada paso es una función con nombre y una sola responsabilidad."""
+    attempt = owned(user, pk, lock=True)
+    previous = _previous_result(attempt, request_id, option_id)
+    if previous is not None:
+        return previous
+    option = _valid_option(attempt, option_id)
+    now = timezone.now()
+    touch(attempt, now)
+    if _needs_second_chance(attempt, option):
+        return _ask_for_retry(attempt, option, request_id)
+    _advance(attempt, option, now)
+    result = _result(attempt, option, retry_required=False)
+    result.update(effects=effects_of(option), state=attempt.state_json)
+    event = _record(attempt, option, request_id, "DECISION_SELECTED", result)
+    _close_if_completed(attempt, result, event)
     return result

@@ -11,7 +11,7 @@ import pytest
 from defusedxml import DefusedXmlException, EntitiesForbidden
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from apps.grupos import services
+from apps.grupos import lector_xlsx
 from apps.grupos.tests.test_grupos import _xlsx_upload
 from apps.grupos.tests.test_import_hardening import (
     NS,
@@ -46,7 +46,7 @@ ENTIDADES_ANIDADAS = _entidades_anidadas()
 
 
 class _EspiaDeParser:
-    """Envuelve el parser de ``services`` y anota los rechazos de defusedxml (la biblioteca estándar no los lanza)."""
+    """Envuelve el parser de ``lector_xlsx`` y anota los rechazos de defusedxml (la biblioteca estándar no los lanza)."""
 
     def __init__(self, parser):
         self._parser = parser
@@ -77,9 +77,9 @@ def _subir_entidades_sin_la_guarda(grupo, monkeypatch, parser=None):
 
     Devuelve la respuesta, los rechazos que lanzó el parser y el pico de memoria.
     """
-    monkeypatch.setattr(services, "_read_xml", lambda zf, name: zf.read(name))
-    espia = _EspiaDeParser(parser if parser is not None else services.SafeET)
-    monkeypatch.setattr(services, "SafeET", espia)
+    monkeypatch.setattr(lector_xlsx, "_read_xml", lambda zf, name: zf.read(name))
+    espia = _EspiaDeParser(parser if parser is not None else lector_xlsx.SafeET)
+    monkeypatch.setattr(lector_xlsx, "SafeET", espia)
     respuesta, pico = _medido(lambda: _post(grupo, _upload(_book(ENTIDADES_ANIDADAS))))
     return respuesta, espia.rechazos, pico
 

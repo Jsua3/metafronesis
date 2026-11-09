@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
-from apps.grupos import services
+from apps.grupos import lector_xlsx
 from apps.grupos.tests.test_grupos import _xlsx_upload
 
 pytestmark = [pytest.mark.req("LS-10"), pytest.mark.req("RNF-01")]
@@ -116,7 +116,7 @@ def test_a_doctype_declaration_is_refused(grupo):
 def test_a_file_that_takes_too_long_is_refused(grupo, settings, monkeypatch):
     settings.IMPORT_MAX_SECONDS = 1
     clock = iter([0.0] + [5.0] * 10_000)
-    monkeypatch.setattr(services.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(lector_xlsx.time, "monotonic", lambda: next(clock))
     rows = [["nombre", "apellido", "email"]] + [[f"N{i}", "A", f"u{i}@hostil.test"] for i in range(20)]
 
     response = _post(grupo, _xlsx_upload(rows))
@@ -204,7 +204,7 @@ def test_a_value_far_to_the_right_is_refused_instead_of_padding_the_row(grupo):
 def test_the_parsed_rows_never_grow_past_the_column_cap(settings):
     sheet = _sheet(f'<row r="1">{_cell("A1", "nombre")}<c r="ZZZ1" s="1"/></row>')
 
-    rows = services._parse_xlsx_rows(io.BytesIO(_book(sheet)))
+    rows = lector_xlsx._parse_xlsx_rows(io.BytesIO(_book(sheet)))
 
     assert max(len(row) for row in rows) <= settings.IMPORT_MAX_COLUMNS
 

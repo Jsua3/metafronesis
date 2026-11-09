@@ -21,6 +21,7 @@ from apps.simulation.services.audit_service import arg, auditable
 from shared.exceptions import ApiError
 
 from .models import GrupoEstudiante, MembershipStatus
+from shared.policies import ADMIN, ESTUDIANTE, PROFESOR
 
 INVITED = MembershipStatus.INVITED
 ACTIVE = MembershipStatus.ACTIVE
@@ -29,13 +30,13 @@ REMOVED = MembershipStatus.REMOVED
 
 #: (estado de origen, acción) → (estado destino, roles que la hacen). ``None`` = aún no hay fila.
 RULES = {
-    (None, "invite"): (INVITED, ("PROFESOR", "ADMIN")),
-    (DECLINED, "invite"): (INVITED, ("PROFESOR", "ADMIN")),
-    (REMOVED, "invite"): (INVITED, ("PROFESOR", "ADMIN")),
-    (INVITED, "accept"): (ACTIVE, ("ESTUDIANTE", "ADMIN")),
-    (INVITED, "decline"): (DECLINED, ("ESTUDIANTE",)),
-    (INVITED, "remove"): (REMOVED, ("PROFESOR",)),  # el docente cancela la invitación
-    (ACTIVE, "remove"): (REMOVED, ("PROFESOR", "ESTUDIANTE")),
+    (None, "invite"): (INVITED, (PROFESOR, ADMIN)),
+    (DECLINED, "invite"): (INVITED, (PROFESOR, ADMIN)),
+    (REMOVED, "invite"): (INVITED, (PROFESOR, ADMIN)),
+    (INVITED, "accept"): (ACTIVE, (ESTUDIANTE, ADMIN)),
+    (INVITED, "decline"): (DECLINED, (ESTUDIANTE,)),
+    (INVITED, "remove"): (REMOVED, (PROFESOR,)),  # el docente cancela la invitación
+    (ACTIVE, "remove"): (REMOVED, (PROFESOR, ESTUDIANTE)),
 }
 
 

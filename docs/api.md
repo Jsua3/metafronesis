@@ -2,7 +2,7 @@ Borrador generado a partir del código; verificar antes de publicar
 
 # API del corte S1–S4
 
-Tabla estática de rutas encontradas en psychosim/urls.py y URLConfs de apps que aparecen en el corte. Se resuelven include() usando el prefijo raíz. La raíz no incluye apps/grupos/urls.py: esas rutas locales duplican las vistas pero no son otra exposición HTTP. Se documentan 40 patrones de ruta y 50 combinaciones método/ruta, contando alias con slash final como ruta distinta. El conteo es estático; no se ejecutó Django.
+Tabla estática de rutas encontradas en psychosim/urls.py y URLConfs de apps que aparecen en el corte. Se resuelven include() usando el prefijo raíz. Las rutas de grupos se registran directamente en psychosim/urls.py. Se documentan 40 patrones de ruta y 50 combinaciones método/ruta, contando alias con slash final como ruta distinta. El conteo es estático; no se ejecutó Django.
 
 En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por defecto (psychosim/settings/base.py:138); las policy específicas se indican. Serializer “—” significa que el código no declara serializer para ese endpoint, no que la respuesta carezca de forma. “Sin verificar” marca lo que requiere runtime.
 

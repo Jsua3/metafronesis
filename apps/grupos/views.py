@@ -18,7 +18,7 @@ from shared.response import api_created, api_ok
 
 from shared import policies
 
-from . import assignment_service, memberships, services
+from . import assignment_service, lector_xlsx, memberships, services
 from .contracts import AssignmentSerializer, InvitationSerializer, MembershipConflictEnvelopeSerializer
 from .import_contract import STUDENT_IMPORT_TEMPLATE_FILENAME
 from .serializers import (
@@ -30,6 +30,7 @@ from .serializers import (
     CrearGrupoSerializer,
     ImportarEstudiantesSerializer,
 )
+from shared.policies import ADMIN
 
 
 _CAN_LIST_GROUPS = policy_permission("group", "list")
@@ -48,7 +49,7 @@ class GrupoListCreateView(APIView):
         return [_CAN_MANAGE_GROUP()]
 
     def get(self, request):
-        if request.user.role == "ADMIN":
+        if request.user.role == ADMIN:
             return api_ok(services.listar_activos())
         return api_ok(services.listar_de_profesor(request.user.id))
 
@@ -142,7 +143,7 @@ class GrupoEstudiantesImportTemplateView(APIView):
     @extend_schema(responses={(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"): OpenApiTypes.BINARY})
     def get(self, request):
         response = HttpResponse(
-            services.student_import_template_bytes(),
+            lector_xlsx.student_import_template_bytes(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         response["Content-Disposition"] = f'attachment; filename="{STUDENT_IMPORT_TEMPLATE_FILENAME}"'

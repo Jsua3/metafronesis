@@ -2,12 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from .services import lugares
+from shared.policies import ADMIN, PROFESOR
 
 
 class BibliotecaView(APIView):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
-        if getattr(request.user, "role", None) not in ("ADMIN", "PROFESOR"):
+        if getattr(request.user, "role", None) not in (ADMIN, PROFESOR):
             raise PermissionDenied()
 
 
