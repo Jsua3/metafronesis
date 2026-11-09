@@ -49,99 +49,18 @@ PUBLIC_ROUTE_REASONS: dict[str, str] = {
 
 #: Prefijo de una exención en ``AUDIT_BY_ROUTE``: ``EXENTO: <motivo>``.
 EXENTO = "EXENTO: "
-_CV = "/<int:case_version_id>"
 
 # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
 _PROPIO = "lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
-_CONTENIDO = "contenido del caso (autoría): no son datos de personas"
-_CALCULO = "valida el caso y devuelve hallazgos: no escribe en la base"
-_RUBRICAS = "rúbricas y competencias (el instrumento de evaluación): no son datos de personas"
 _GRUPOS = "grupos y asignaciones de casos: nombres, códigos y conteos, sin datos de personas"
-_SEUDONIMO = (
-    "listado seudonimizado (alias por docente) dentro de su alcance; leer el detalle de un intento "
-    "(traza, evaluación, reporte) sí queda auditado"
-)
 _CATALOGO = "catálogo de lugares, salas y objetos de la biblioteca (archivos del servidor): no son datos de personas"
 _ESTATICO = "plantilla o especificación estática: no lee datos de nadie"
-_INTENTO_PROPIO = (
-    "estado de juego del propio intento: el hecho queda en la traza del intento (attempt_events), que se audita al leerla"
-)
 _DOCUMENTACION = "documentación de la API: cerrada al ADMIN y apagada por defecto, sin datos de personas"
-# BORRADOR (E6-3): texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
-_ENCUESTA_PROPIA = (
-    "respuesta del estudiante a la encuesta breve de SU intento completado (apagada por defecto): se envía una sola vez y no se modifica, y la fila misma (el intento y la fecha en attempt_feedback) es la evidencia; el comentario no entra a la auditoría"
-)
 
 
 def _exento(motivo):
     return EXENTO + motivo
 
-
-def _autoria(prefijo, tabla):
-    return {(prefijo + sufijo, metodo): valor for (sufijo, metodo), valor in tabla.items()}
-
-
-# La autoría de casos vive en dos prefijos con el mismo urlconf (ED-9): ``/api/authoring/cases`` es el canónico y
-# ``/api/admin/cases`` su alias hasta que el cliente migre. Se declara una vez por sufijo y se expande a los dos.
-_AUTORIA = {
-    ("", "GET"): _exento(_CONTENIDO),
-    ("", "POST"): "CASE_CREATED",
-    ("/import", "POST"): "CASE_IMPORTED",
-    # P5 · el asistente de IA de autoría: ``status`` solo lee el cupo de quien llama y su propio caso.
-    (f"{_CV}/assistant/status", "GET"): _exento(_PROPIO),
-    (f"{_CV}/assistant/propose", "POST"): "AI_AUTHORING_PROPOSE",
-    (f"{_CV}/assistant/guide", "POST"): "AI_AUTHORING_GUIDE",
-    (f"{_CV}/brief", "PUT"): "ADMIN_UPDATE_BRIEF",
-    (f"{_CV}/characters", "POST"): "ADMIN_CREATE_CHARACTER",
-    (f"{_CV}/characters/<int:character_id>", "PUT"): "ADMIN_UPDATE_CHARACTER",
-    (f"{_CV}/characters/<int:character_id>", "DELETE"): "ADMIN_DELETE_CHARACTER",
-    (f"{_CV}/checklist", "PUT"): "ADMIN_CHECKLIST_UPDATE",
-    (f"{_CV}/clone-version", "POST"): "ADMIN_CLONE_VERSION",
-    (f"{_CV}/decisions", "POST"): "ADMIN_CREATE_DECISION",
-    (f"{_CV}/decisions/<int:decision_id>", "PUT"): "ADMIN_UPDATE_DECISION",
-    (f"{_CV}/decisions/<int:decision_id>", "DELETE"): "ADMIN_DELETE_DECISION",
-    (f"{_CV}/definition", "GET"): _exento(_CONTENIDO),
-    (f"{_CV}/dialogues/<int:tree_id>", "PUT"): "ADMIN_UPDATE_DIALOGUE",
-    (f"{_CV}/dialogues/<int:tree_id>", "DELETE"): "ADMIN_DELETE_DIALOGUE",
-    (f"{_CV}/editor", "GET"): _exento(_CONTENIDO),
-    (f"{_CV}/hints/<int:hint_id>", "PUT"): "ADMIN_UPDATE_HINT",
-    (f"{_CV}/hints/<int:hint_id>", "DELETE"): "ADMIN_DELETE_HINT",
-    (f"{_CV}/lifecycle", "GET"): _exento(_CONTENIDO),
-    # Una sola ruta, cinco acciones (``action`` del cuerpo): cada una deja su evento.
-    (f"{_CV}/lifecycle", "POST"): "CASE_SUBMITTED,CASE_APPROVED,CASE_REJECTED,CASE_ARCHIVED,CASE_CLONED",
-    (f"{_CV}/maps", "POST"): "ADMIN_CREATE_MAP",
-    (f"{_CV}/maps/<int:map_id>", "PUT"): "ADMIN_UPDATE_MAP",
-    (f"{_CV}/maps/<int:map_id>", "DELETE"): "ADMIN_DELETE_MAP",
-    (f"{_CV}/maps/<int:map_id>/dialogues", "POST"): "ADMIN_CREATE_DIALOGUE",
-    (f"{_CV}/maps/<int:map_id>/hints", "POST"): "ADMIN_CREATE_HINT",
-    (f"{_CV}/maps/<int:map_id>/objects", "POST"): "ADMIN_CREATE_OBJECT",
-    (f"{_CV}/nodes", "POST"): "ADMIN_CREATE_NODE",
-    (f"{_CV}/nodes/<int:node_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_NODE",
-    (f"{_CV}/decisions/<int:decision_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_DECISION",
-    (f"{_CV}/dialogues/<int:tree_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_DIALOGUE",
-    (f"{_CV}/objects/<int:object_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_OBJECT",
-    # Las reglas de métricas (hitos, riesgo y finales) vienen de la rama de métricas; se declaran aquí para la compuerta.
-    (f"{_CV}/rules/milestones", "PUT"): "ADMIN_UPDATE_MILESTONES",
-    (f"{_CV}/rules/risk", "PUT"): "ADMIN_UPDATE_RISK",
-    (f"{_CV}/rules/endings", "PUT"): "ADMIN_UPDATE_ENDINGS",
-    (f"{_CV}/nodes/<int:node_id>", "PUT"): "ADMIN_UPDATE_NODE",
-    (f"{_CV}/nodes/<int:node_id>", "DELETE"): "ADMIN_DELETE_NODE",
-    (f"{_CV}/nodes/reorder", "PATCH"): "ADMIN_REORDER_NODES",
-    (f"{_CV}/objects/<int:object_id>", "PUT"): "ADMIN_UPDATE_OBJECT",
-    (f"{_CV}/objects/<int:object_id>", "DELETE"): "ADMIN_DELETE_OBJECT",
-    (f"{_CV}/publish", "POST"): "ADMIN_PUBLISH_CASE",
-    (f"{_CV}/rules/milestones", "PUT"): "ADMIN_UPDATE_MILESTONES",
-    (f"{_CV}/rules/risk", "PUT"): "ADMIN_UPDATE_RISK",
-    (f"{_CV}/rules/endings", "PUT"): "ADMIN_UPDATE_ENDINGS",
-    (f"{_CV}/tools", "POST"): "ADMIN_CREATE_TOOL",
-    (f"{_CV}/tools/<int:tool_id>", "PUT"): "ADMIN_UPDATE_TOOL",
-    (f"{_CV}/tools/<int:tool_id>", "DELETE"): "ADMIN_DELETE_TOOL",
-    (f"{_CV}/validate", "POST"): _exento(_CALCULO),
-    (f"{_CV}/world", "PUT"): "ADMIN_SAVE_WORLD",
-    (f"{_CV}/world-editor", "GET"): _exento(_CONTENIDO),
-    (f"{_CV}/world-preview", "GET"): _exento(_CONTENIDO),
-    (f"{_CV}/world/validate", "POST"): _exento(_CALCULO),
-}
 
 # S4-1 · La auditoría de cada ruta, y la compuerta de cobertura (``shared/tests/test_audit_coverage.py``) que la exige: toda
 # ruta que **muta** estado (POST, PUT, PATCH, DELETE) o que **lee** lo que un ADMIN o un PROFESOR puede ver declara aquí su
@@ -176,8 +95,6 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     # ── Consentimiento al aviso de contenido (ESTUDIANTE, S3-2a) ──
     ("api/simulation/cases/<int:case_version_id>/consent", "POST"): "consentimiento.aceptar",
     ("api/simulation/cases/<int:case_version_id>/consent", "DELETE"): "consentimiento.retirar",
-    # ── La propia auditoría (ADMIN) ──
-    ("api/admin/audit", "GET"): "AUDIT_VIEWED",
     # ── Grupos, membresías y asignaciones de casos ──
     ("api/grupos", "GET"): _exento(_GRUPOS),
     ("api/grupos", "POST"): "GROUP_CREATED",
@@ -202,71 +119,20 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     ("api/me/invitations/<int:group_id>/accept", "POST"): "MEMBERSHIP_ACCEPTED",
     ("api/me/invitations/<int:group_id>/decline", "POST"): "MEMBERSHIP_DECLINED",
     ("api/me/invitations/<int:group_id>/leave", "POST"): "MEMBERSHIP_LEFT",
-    # ── Revisión docente de los intentos ──
-    ("api/instructor/attempts", "GET"): _exento(_SEUDONIMO),
-    ("api/instructor/attempts/recent", "GET"): _exento(_SEUDONIMO),
-    ("api/instructor/attempts/<uuid:attempt_id>/trace", "GET"): "traza.leer",
-    ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "GET"): "traza.leer",
-    ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "POST"): "rubrica.evaluar",
-    ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "PUT"): "rubrica.evaluar",
-    ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "PATCH"): "rubrica.evaluar",
-    ("api/instructor/attempts/<uuid:attempt_id>/replace", "POST"): "ATTEMPT_REPLACED",
     # ── Reportes y analítica ──
-    ("api/reportes/dashboard", "GET"): "ANALYTICS_VIEWED",
     # E6-2 · los agregados de aprendizaje (C13): una fila por consulta buena, con {groupId, caseVersionId, suppressed} y
     # nunca ids de estudiantes ni cifras (``reportes/services.generar_analitica``).
-    ("api/reportes/analiticas", "GET"): "ANALYTICS_VIEWED",
-    ("api/reportes/estudiante/<int:estudiante_id>", "GET"): "REPORT_VIEWED",
-    ("api/reportes/grupo/<int:grupo_id>", "GET"): "REPORT_VIEWED",
-    ("api/reportes/grupo/<int:grupo_id>/export", "GET"): "REPORT_EXPORTED",
-    # ── Rúbricas y competencias ──
-    ("api/rubrics", "GET"): _exento(_RUBRICAS),
-    ("api/rubrics", "POST"): "RUBRIC_CREATED",
-    ("api/rubrics/<int:rubric_id>", "GET"): _exento(_RUBRICAS),
-    ("api/rubrics/<int:rubric_id>", "PUT"): "RUBRIC_UPDATED",
-    ("api/rubrics/<int:rubric_id>", "PATCH"): "RUBRIC_UPDATED",
-    ("api/rubrics/<int:rubric_id>/activate", "POST"): "RUBRIC_ACTIVATED",
-    ("api/rubrics/<int:rubric_id>/deactivate", "POST"): "RUBRIC_ACTIVATED",
-    ("api/rubrics/<int:rubric_id>/default", "POST"): "RUBRIC_UPDATED",
-    ("api/rubrics/<int:rubric_id>/duplicate", "POST"): "RUBRIC_CREATED",
-    ("api/rubrics/case-versions/<int:case_version_id>", "GET"): _exento(_RUBRICAS),
-    ("api/rubrics/case-versions/<int:case_version_id>", "POST"): "RUBRIC_UPDATED",
-    ("api/rubrics/case-versions/<int:case_version_id>", "PUT"): "RUBRIC_UPDATED",
-    ("api/competencies", "GET"): _exento(_RUBRICAS),
-    ("api/competencies", "POST"): "COMPETENCY_CREATED",
     # ── La biblioteca de lugares del editor de casos (P6) ──
     ("api/biblioteca/lugares", "GET"): _exento(_CATALOGO),
     ("api/biblioteca/lugares/<str:lugar_id>", "GET"): _exento(_CATALOGO),
     # ── El juego del estudiante ──
-    ("api/simulation/ai-assistant", "POST"): "AI_ASSISTANT_QUERY",
     ("api/simulation/attempts", "POST"): "ATTEMPT_STARTED",
-    ("api/simulation/attempts/<uuid:attempt_id>/decisions", "POST"): "DECISION_SELECTED",
-    ("api/simulation/attempts/<uuid:attempt_id>/reflections", "POST"): "REFLECTION_SAVED",
-    ("api/simulation/attempts/<uuid:attempt_id>/feedback", "POST"): _exento(_ENCUESTA_PROPIA),
-    ("api/simulation/attempts/<uuid:attempt_id>/safe-exit", "POST"): "SAFE_EXIT_REQUESTED",
-    ("api/simulation/attempts/<uuid:attempt_id>/resume", "POST"): "ATTEMPT_RESUMED",
-    ("api/simulation/attempts/<uuid:attempt_id>/enter-room", "POST"): _exento(_INTENTO_PROPIO),
-    ("api/simulation/attempts/<uuid:attempt_id>/hints/next", "POST"): _exento(_INTENTO_PROPIO),
-    ("api/simulation/attempts/<uuid:attempt_id>/interactions/<str:interaction_key>", "POST"): _exento(_INTENTO_PROPIO),
-    ("api/simulation/attempts/<uuid:attempt_id>/npcs/<str:npc_key>", "POST"): _exento(_INTENTO_PROPIO),
-    ("api/simulation/attempts/<uuid:attempt_id>/tools/use", "POST"): _exento(_INTENTO_PROPIO),
-    ("api/simulation/attempts/<uuid:attempt_id>/world-state", "PATCH"): _exento(
-        "posición del jugador en su propio intento: cientos de escrituras por partida sin valor probatorio; "
-        "el juego jamás se frena"
-    ),
     # El dueño lee lo suyo (sin fila); el ADMIN o el docente lee el de otra persona (``reporte.leer``).
-    ("api/simulation/attempts/<uuid:attempt_id>/student-report", "GET"): "REPORT_VIEWED",
     ("api/simulation/cases", "GET"): _exento(_PROPIO),
-    ("api/simulation/cases/<int:case_version_id>/brief", "GET"): _exento(_PROPIO),
     ("api/simulation/catalog", "GET"): _exento(_PROPIO),
     # ── Documentación de la API ──
     ("schema", "GET"): _exento(_DOCUMENTACION),
     ("swagger-ui.html", "GET"): _exento(_DOCUMENTACION),
-    **{
-        clave: valor
-        for prefijo in ("api/authoring/cases", "api/admin/cases")
-        for clave, valor in _autoria(prefijo, _AUTORIA).items()
-    },
 }
 
 

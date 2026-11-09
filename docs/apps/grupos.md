@@ -22,7 +22,7 @@ services.py expone listado, alta/actualización/baja de grupos, membresías, imp
 
 ## Endpoints, hooks y configuración
 
-psychosim/urls.py:73–:93 registra directamente rutas de grupos, invitaciones y asignaciones. apps/grupos/urls.py:17–:28 también define rutas, pero no es el include usado por la raíz revisada. Métodos, policies y serializadores están en api.md. Operaciones básicas/invitaciones: S2; asignaciones vinculadas a CaseVersion: diferidas a S3 según settings-urls-por-sprint.md.
+psychosim/urls.py:73–:93 registra directamente rutas de grupos, invitaciones y asignaciones. Es el único lugar donde se declaran: el antiguo apps/grupos/urls.py, que las duplicaba sin usarse, se retiró. Métodos, policies y serializadores están en api.md. Operaciones básicas/invitaciones: S2; asignaciones vinculadas a CaseVersion: diferidas a S3 según settings-urls-por-sprint.md.
 
 grupos no incluye apps.py en la copia seleccionada. AppConfig/carga de señales en el nuevo repo: sin verificar. psychosim/settings/base.py:35 registra apps.grupos. No se observaron señales Django propias.
 
