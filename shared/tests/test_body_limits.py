@@ -228,14 +228,16 @@ def test_la_importacion_de_casos_tiene_un_tope_propio_mas_holgado_que_el_json_co
     ))
 
 
-def test_la_ruta_de_importacion_de_casos_reconoce_exactamente_las_dos_del_inventario():
+def test_ninguna_ruta_actual_cae_en_el_tope_de_importacion_de_casos():
+    # La importación de casos llega con la autoría (sprint posterior): hasta entonces ninguna ruta real del inventario
+    # puede recibir el tope ampliado por error. Cuando se agregue, esta prueba debe listar sus dos rutas.
     inventario = json.loads(Path(surface.__file__).with_name("surface-inventory.json").read_text(encoding="utf-8"))
     reconocidas = set()
     for fila in inventario["routes"]:
         ruta = "/" + re.sub(r"<[^>]+>", "1", fila["route"])
         if CASE_IMPORT_ROUTE.fullmatch(ruta):
             reconocidas.add((fila["method"], fila["route"]))
-    assert reconocidas == {("POST", "api/admin/cases/import"), ("POST", "api/authoring/cases/import")}
+    assert reconocidas == set()
 
 
 # ── Ajustes, lugar en la cadena y registro ───────────────────────────────────────────────────
