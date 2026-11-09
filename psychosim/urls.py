@@ -25,7 +25,6 @@ from apps.grupos.views import (
     MeInvitationsView,
 )
 from apps.security.csp_report import CspReportView
-from apps.simulation.views.rubric_views import CompetencyListCreateView
 from apps.users.views import (
     AdminAccessRequestListView,
     AdminAccessRequestStatusView,
@@ -36,8 +35,6 @@ from apps.users.views import (
     AdminUserStatusView,
     LogoutView,
 )
-from apps.simulation.views.audit_views import AdminAuditListView
-from apps.simulation.views.authoring_views import AdminCaseListCreateView
 from apps.users.authentication import SiepJWTAuthentication
 from shared.health import health
 from shared.permissions import policy_permission
@@ -91,20 +88,14 @@ urlpatterns = [
     # C7 · asignaciones de casos con ventana (E3-1); las rutas de arriba son su alias heredado.
     path("api/assignments", AssignmentListCreateView.as_view()),
     path("api/assignments/<int:assignment_id>", AssignmentDetailView.as_view()),
-    path("api/reportes/", include("apps.reportes.urls")),
     path("api/simulation/", include("apps.simulation.urls")),
     # S3-2 · C12: el consentimiento al aviso de contenido vive en ``apps/privacy`` y cuelga del mismo prefijo del simulador
     # (``/api/simulation/cases/<id>/consent``); sus rutas no chocan con las de arriba.
     path("api/simulation/", include("apps.privacy.urls")),
     # ED-9 (por defecto): ``/api/authoring/**`` es el espacio canónico de la autoría y
     # ``/api/admin/cases/**`` queda como alias del mismo urlconf hasta que el visual migre.
-    path("api/authoring/cases", AdminCaseListCreateView.as_view()),
-    path("api/authoring/cases/", include("apps.simulation.urls_admin")),
-    path("api/admin/cases", AdminCaseListCreateView.as_view()),
-    path("api/admin/cases/", include("apps.simulation.urls_admin")),
     # P6 · la biblioteca de lugares del editor de casos (solo quien autora).
     path("api/biblioteca/", include("apps.biblioteca.urls")),
-    path("api/admin/audit", AdminAuditListView.as_view()),
     path("api/admin/users", AdminUserListCreateView.as_view()),
     path("api/admin/users/approve", AdminUserApproveView.as_view()),
     path("api/admin/users/<int:user_id>", AdminUserDetailView.as_view()),
@@ -112,10 +103,7 @@ urlpatterns = [
     path("api/admin/users/<int:user_id>/revoke-sessions", AdminUserRevokeSessionsView.as_view()),
     path("api/admin/access-requests", AdminAccessRequestListView.as_view()),
     path("api/admin/access-requests/<int:request_id>/status", AdminAccessRequestStatusView.as_view()),
-    path("api/instructor/", include("apps.simulation.urls_instructor")),
-    path("api/rubrics/", include("apps.simulation.urls_rubrics")),
     # E3-9 · catálogo de competencias (RQ-NEG-002): el personal lo lee, el ADMIN lo amplía.
-    path("api/competencies", CompetencyListCreateView.as_view()),
     # S2-5 · esquema OpenAPI y su visor: cerrados. Apagada la bandera, 404; encendida, sesión JWT y rol ADMIN.
     path(
         "schema/",
