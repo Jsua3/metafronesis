@@ -12,10 +12,11 @@ from .serializers_s3 import (
 )
 from .services.access import available_versions
 from .services import attempt_api
+from shared.policies import ADMIN, ESTUDIANTE, PROFESOR
 
 
 def author(user):
-    return getattr(user, "role", "") in ("ADMIN", "PROFESOR")
+    return getattr(user, "role", "") in (ADMIN, PROFESOR)
 
 
 class Cases(APIView):
@@ -23,7 +24,7 @@ class Cases(APIView):
         qs = SimulationCase.objects.all()
         if not author(request.user):
             qs = qs.filter(versions__in=available_versions(request.user)).distinct()
-        elif request.user.role != "ADMIN":
+        elif request.user.role != ADMIN:
             qs = qs.filter(created_by=request.user)
         return Response(CaseSerializer(qs.order_by("id"), many=True).data)
 
@@ -45,14 +46,14 @@ class CaseDetail(APIView):
         qs = SimulationCase.objects.all()
         if not author(request.user):
             qs = qs.filter(versions__in=available_versions(request.user))
-        elif request.user.role != "ADMIN":
+        elif request.user.role != ADMIN:
             qs = qs.filter(created_by=request.user)
         return Response(CaseSerializer(get_object_or_404(qs, pk=pk)).data)
 
 
 class Attempts(APIView):
     def post(self, request):
-        if getattr(request.user, "role", "") != "ESTUDIANTE":
+        if getattr(request.user, "role", "") != ESTUDIANTE:
             raise PermissionDenied()
         body = StartRequest(data=request.data)
         body.is_valid(raise_exception=True)
@@ -92,7 +93,7 @@ class Catalog(APIView):
     def get(self, request):
         from apps.progression.access import catalog
 
-        if getattr(request.user, "role", None) != "ESTUDIANTE":
+        if getattr(request.user, "role", None) != ESTUDIANTE:
             raise PermissionDenied()
         return Response(catalog(request.user))
 

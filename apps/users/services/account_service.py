@@ -26,6 +26,7 @@ from apps.users.models import UserRole
 from shared.background import run_in_background
 from shared.exceptions import ApiError
 from shared.plain_text import person_text_problem
+from shared.policies import ADMIN
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -147,7 +148,7 @@ def lock_admins():
     primera. Debe llamarse dentro de una transacción.
     """
     return list(
-        User.objects.select_for_update().filter(role="ADMIN").order_by("pk").values_list("pk", flat=True)
+        User.objects.select_for_update().filter(role=ADMIN).order_by("pk").values_list("pk", flat=True)
     )
 
 
@@ -174,11 +175,11 @@ def ensure_not_last_admin(user, *, role=None, activo=None):
 
     Se llama dentro de una transacción que ya tomó ``lock_admins()``.
     """
-    steps_down = (role is not None and role != "ADMIN") or activo is False
-    if not (user.role == "ADMIN" and user.activo and steps_down):
+    steps_down = (role is not None and role != ADMIN) or activo is False
+    if not (user.role == ADMIN and user.activo and steps_down):
         return
     active_admins = list(
-        User.objects.filter(role="ADMIN", activo=True).order_by("pk").values_list("pk", flat=True)
+        User.objects.filter(role=ADMIN, activo=True).order_by("pk").values_list("pk", flat=True)
     )
     if not [pk for pk in active_admins if pk != user.pk]:
         raise ApiError(
@@ -256,7 +257,7 @@ def return_expired_to_pending(user_id, now=None):
         security_logger.info(
             "security_event", extra={"fields": {"event": "temp_password_expired", "userId": user_id}}
         )
-        if user.role == "ADMIN":
+        if user.role == ADMIN:
             return False
         user.activo = False
         user.set_password(None)

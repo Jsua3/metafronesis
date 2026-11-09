@@ -36,6 +36,7 @@ from shared import policies
 
 from . import memberships, notifications
 from .models import Grupo, CaseAssignment, GrupoEstudiante, MembershipStatus
+from shared.policies import ESTUDIANTE
 
 User = get_user_model()
 
@@ -170,7 +171,7 @@ def _imported_student_dto(item, membership_status):
         "nombre": item["nombre"],
         "apellido": item["apellido"],
         "email": item["email"],
-        "role": "ESTUDIANTE",
+        "role": ESTUDIANTE,
         "membershipStatus": str(membership_status),
     }
 
@@ -593,7 +594,7 @@ def _validate_import_rows(grupo, rows, ignored_columns=None):
         seen_emails.add(email)
 
         user = User.objects.filter(email=email).first()
-        if user and user.role != "ESTUDIANTE":
+        if user and user.role != ESTUDIANTE:
             # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
             # Un mensaje genérico: no se confirma al docente que ese correo tiene otra cuenta (D-14).
             errors.append({"row": row_number, "field": "email", "email": email, "message": "Este correo no se puede agregar como estudiante.", "error": "Este correo no se puede agregar como estudiante."})
@@ -644,7 +645,7 @@ def _importar(grupo_id, uploaded_file, profesor):
                     password=None,
                     nombre=item["nombre"],
                     apellido=item["apellido"],
-                    role="ESTUDIANTE",
+                    role=ESTUDIANTE,
                     activo=False,
                     must_change_password=True,
                 )
@@ -785,7 +786,7 @@ def _invitar_por_correo(grupo_id, email, actor):
     with transaction.atomic():
         grupo = _require_grupo_to_invite(grupo_id, actor)
         estudiante = User.objects.filter(email=normalize_email_value(email)).first()
-        if estudiante is None or estudiante.role != "ESTUDIANTE":
+        if estudiante is None or estudiante.role != ESTUDIANTE:
             return grupo, None, None
         row, changed = memberships.invite(grupo, estudiante, actor)
         notify = estudiante if changed and estudiante.activo and row.status == MembershipStatus.INVITED else None

@@ -24,6 +24,7 @@ from django.core.management.base import CommandError
 from rest_framework.test import APIClient
 
 from shared.dev_only import ajustes_en_uso
+from shared.policies import ADMIN
 
 SOURCE_CODE = "SIM-VBG-001"
 PROBE_CODE = "SONDA-CSP-001"
@@ -196,7 +197,7 @@ def seed_markup_case():
     require_csp_probe_settings()
     from apps.simulation.models import SimulationCase
 
-    admin = get_user_model().objects.filter(role="ADMIN", activo=True).order_by("id").first()
+    admin = get_user_model().objects.filter(role=ADMIN, activo=True).order_by("id").first()
     if admin is None:
         raise CommandError("No hay un ADMIN activo: ¿se sembró la base con bootstrap_dev_db?")
     version = _publish_copy(admin)

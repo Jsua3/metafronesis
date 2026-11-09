@@ -30,6 +30,7 @@ from .serializers import (
     CrearGrupoSerializer,
     ImportarEstudiantesSerializer,
 )
+from shared.policies import ADMIN
 
 
 _CAN_LIST_GROUPS = policy_permission("group", "list")
@@ -48,7 +49,7 @@ class GrupoListCreateView(APIView):
         return [_CAN_MANAGE_GROUP()]
 
     def get(self, request):
-        if request.user.role == "ADMIN":
+        if request.user.role == ADMIN:
             return api_ok(services.listar_activos())
         return api_ok(services.listar_de_profesor(request.user.id))
 
