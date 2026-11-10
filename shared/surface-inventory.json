@@ -50,6 +50,22 @@
       "audit": "USER_UPDATED,USER_STATUS_CHANGED,USER_ROLE_CHANGED,PASSWORD_SET_BY_ADMIN,USER_APPROVED"
     },
     {
+      "route": "api/admin/users/<int:user_id>/authoring-permission",
+      "method": "DELETE",
+      "exposure": "role:ADMIN",
+      "body": "none",
+      "throttle": null,
+      "audit": "AUTHORING_PERMISSION_REVOKED"
+    },
+    {
+      "route": "api/admin/users/<int:user_id>/authoring-permission",
+      "method": "PUT",
+      "exposure": "role:ADMIN",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AUTHORING_PERMISSION_GRANTED"
+    },
+    {
       "route": "api/admin/users/<int:user_id>/revoke-sessions",
       "method": "POST",
       "exposure": "role:ADMIN",
