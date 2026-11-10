@@ -1,46 +1,123 @@
-# Metafrónesis · backend del simulador de psicología social (antes llamado SIEP)
+# MetaFrónesis · backend del simulador de psicología social (antes llamado SIEP)
 
-Backend en Django del simulador de casos situacionales de psicología social. Este repositorio se construye **por sprints**, cada uno a cargo de una persona del equipo, y cada sprint deja una versión etiquetada.
+API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-> **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2),dentro del cual vive una version mejorada de lo que fue el ganador a mejor proyecto nuclear 3er semestre. Tal repositorio queda como archivo de solo lectura  . Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
+**Versión actual:** [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) · **Alcance:** solo backend (no hay frontend; el «mundo y juego» queda fuera) · Última revisión de este archivo: 10 de noviembre de 2026.
 
+> **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
-## Equipo
+## Qué incluye
 
-| Persona | Sprint | Bloque |
-|---|---|---|
-| Emerson Ángel Gómez (`@EmersonAngel`) | A | Base y autenticación (`psychosim`, `users`) |
-| Santiago Leyton (`@SantiagoLeyton`) | B | Plataforma transversal (`shared`, `security`) |
-| Juan José Sua Gómez (`@Jsua3`) | C | Privacidad y grupos (`privacy`, `grupos`) |
-| Esteban Bonilla Giraldo (`@estebanbonilla22`) | D | Núcleo de la simulación (`simulation`) |
+| App | Qué hace |
+|---|---|
+| `users` | Cuentas y roles (ADMIN, PROFESOR, ESTUDIANTE); ingreso con contraseña, con Google y con el código de la convocatoria; permiso de autoría |
+| `grupos` | Grupos, invitaciones y asignación de casos a grupos |
+| `privacy` | Consentimiento y clasificación de datos personales |
+| `security` | Límites de uso y cabeceras de seguridad |
+| `simulation` | Casos, versiones, escenas y decisiones, intentos, rúbricas, calificación y resultado final |
+| `progression` | Progresión del estudiante |
+| `biblioteca` | Catálogo de materiales por API |
+| `autoria` | Borrador del caso con su ficha, escenas y decisiones; exportar e importar en JSON |
+| `publicacion` | Validar, enviar a revisión, publicar, archivar y clonar versiones |
+| `sesiones` | Sesiones y convocatorias con código, ingreso, repetición excepcional y cierre automático |
+| `revision` | Revisión docente: participaciones y retroalimentación general |
+| `reportes` | Reporte de participación en CSV o JSON, por grupo y por sesión |
+| `notificaciones` | Avisos por correo y por la API |
+| `ia` | Asistentes de IA, apagados por defecto y sin datos personales hacia el proveedor |
+| `auditoria` | Consulta de auditoría para el ADMIN |
+| `shared`, `psychosim` | Respuesta uniforme, políticas de permisos, eventos del dominio e inventario de rutas; configuración y rutas del proyecto |
 
-## Avance por sprint
+**Patrones de diseño usados:** Builder (`autoria`), Composite (`publicacion`), Adapter (`reportes`), Strategy (calificación en `simulation` y proveedores en `ia`), State (intentos y sesiones) y Observer (eventos del dominio y notificaciones).
 
-| Versión | Contenido | Estado |
-|---|---|---|
-| `v0.1.0` | Base, autenticación y plataforma transversal (A + B) | pendiente |
-| `v0.2.0` | Privacidad y grupos (C) | pendiente |
-| `v0.3.0` | Caso, intento y API básica (D) | pendiente |
-| `v0.4.0` | Motor de decisiones y evaluación mínima (D) | pendiente |
+## Estado
 
-Alcance acordado: backend al 40 % o más. El detalle de cada sprint está en `docs/sprints/`.
+| Versión | Contenido |
+|---|---|
+| [`v0.1.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.1.0) | Base del backend (sprints 1 a 3): autenticación, plataforma transversal, privacidad y grupos, casos e intentos |
+| [`v0.2.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.2.0) | Sprint 4: auditoría y contratos |
+| [`v0.3.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.3.0) | Ola 1 de la migración: borrador del caso, escenas y decisiones, validar y publicar, reporte de participación, rúbrica, calificación y resultado |
+| [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) | Ola 2: revisión docente, notificaciones, IA y auditoría, incompletos y tiempo máximo, permiso de autoría, exportar e importar, sesiones y convocatorias, repetición, reporte completo e ingreso con código |
+
+El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
+
+### Pendiente y límites conocidos
+
+- Las apps `grupos`, `privacy`, `progression`, `security`, `sesiones`, `simulation` y `users` siguen formando un ciclo de dependencias; está mitigado con registros y señales, pero no roto.
+- No hay linter configurado todavía (ruff).
+- Quedan 80 pruebas heredadas del repositorio anterior que buscan archivos que este repositorio no tiene; se retirarán.
+- La validación del caso tiene tres huecos conocidos (publicar sin revisión aprobada con `REVIEW_WORKFLOW_STRICT`, sugerencias de IA sin revisar y camino de la escena inicial a un final); están en el seguimiento SIEP-62.
+- El ingreso tardío se niega pasada la mitad de la duración de la sesión (`SIEP_INGRESO_TARDIO_FRACCION`, 0,5 por defecto): es un supuesto declarado, por confirmar con la docente.
+- La nota es el nivel formativo de 1,00 a 4,00, no una nota de 0 a 5; es una equivalencia declarada.
 
 ## Cómo ejecutarlo
 
-Se completa en el sprint 1, cuando exista la configuración base:
+Requisitos: Python 3.13 y PostgreSQL (el CI usa la 17).
+
+**1. Base de datos.** Sin variables de entorno, el proyecto busca `localhost:5433`, base `psychosim`, usuario `psychosim` y contraseña `psychosim_secret`. Con Docker:
+
+```bash
+docker run -d --name metafronesis-db -e POSTGRES_DB=psychosim -e POSTGRES_USER=psychosim -e POSTGRES_PASSWORD=psychosim_secret -p 5433:5432 postgres:17
+```
+
+Con otra base, define `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`, o `DATABASE_URL`.
+
+**2. Entorno y arranque.**
 
 ```bash
 python -m venv .venv
-# activar el entorno y luego:
-pip install -r requirements.txt
-cp .env.example .env     # completar los valores localmente
+# Windows (PowerShell): .venv/Scripts/Activate.ps1   ·   Linux o macOS: source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp psychosim/settings/local.example.py psychosim/settings/local.py   # local.py lo ignora Git
+export DJANGO_SETTINGS_MODULE=psychosim.settings.local               # PowerShell: $env:DJANGO_SETTINGS_MODULE = "psychosim.settings.local"
 python manage.py migrate
-python manage.py runserver
+python manage.py runserver 8091
 ```
+
+**3. Comprobar.** `GET http://127.0.0.1:8091/api/health` responde `200` con `{"success": true, "data": {"status": "ok", "db": "ok"}}`.
+
+Comprobado el 10 de noviembre de 2026 sobre `main` con PostgreSQL 17: `manage.py check` sin avisos, `migrate` aplicado, `makemigrations --check` sin cambios y `/api/health` en 200.
+
+En producción se usa `psychosim.settings.production`, que exige secretos y hosts propios; los nombres de las variables están en `.env.example`.
+
+## Pruebas
+
+`pytest` usa `psychosim.settings.test`, que exige una base de datos desechable y su propio nonce:
+
+```bash
+export SIEP_TEST_DB_NAME=metafronesis_test SIEP_TEST_DB_HOST=127.0.0.1 SIEP_TEST_DB_PORT=5433
+export SIEP_TEST_DB_USER=<usuario> SIEP_TEST_DB_PASSWORD=<contraseña> SIEP_TEST_ATTESTATION_NONCE=local
+python -m pytest apps/users/tests -q     # una app
+python -m pytest apps shared -q          # todo
+```
+
+Resultado medido en la integración, con el mismo código que `main`: 1.597 pruebas pasan y 80 fallan; las 80 son las heredadas descritas arriba, no fallos de lógica. En cada PR hacia `develop`, GitHub Actions corre `check`, `makemigrations --check`, `migrate` y las pruebas con `psychosim.settings.test` sobre PostgreSQL 17.
+
+## API
+
+Las rutas están en `psychosim/urls.py` y en el `urls.py` de cada app; el inventario actualizado se genera en `shared/surface-inventory.json`. Los grupos principales son `/api/auth`, `/api/grupos`, `/api/assignments`, `/api/authoring`, `/api/simulation`, `/api/rubrics`, `/api/sesiones`, `/api/instructor`, `/api/reportes`, `/api/me/notifications` y `/api/admin`. Las respuestas exitosas usan el mismo sobre: `{"success": true, "data": ...}`.
+
+## Documentación
+
+| Qué | Dónde |
+|---|---|
+| Cambios por versión | [CHANGELOG.md](CHANGELOG.md) |
+| Cómo contribuir | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Rutas, arquitectura y ejecución | `docs/api.md`, `docs/arquitectura.md`, `docs/ejecucion.md`: borradores del corte de los sprints 1 a 4; no incluyen las apps de las olas 1 y 2 y `ejecucion.md` trae pasos sin verificar, así que usa los de este archivo |
+| Documentación por app | `docs/apps/`: solo `grupos`, `privacy`, `psychosim`, `security`, `shared` y `users`; faltan las demás |
+| Fichas de sprint y diagramas | `docs/sprints/` y `docs/diagramas/` |
 
 ## Flujo de trabajo
 
-Ver [CONTRIBUTING.md](CONTRIBUTING.md): Git Flow (`main`, `develop`, `feature/*`), Pull Request con revisión cruzada y Conventional Commits.
+Git Flow: `main` lleva las versiones etiquetadas, `develop` integra, y el trabajo va en ramas `feature/*` y `fix/*`. Cada cambio entra por Pull Request hacia `develop`, lo revisa otra persona del equipo y se fusiona con un merge commit. Los commits siguen Conventional Commits en español y llevan la clave de Jira (`SIEP-N`). Las versiones `v0.x.0` son etiquetas anotadas. Detalle en [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Equipo
+
+| Persona | Partes principales |
+|---|---|
+| Emerson Ángel Gómez (`@EmersonAngel`) | `psychosim`, `users`, `autoria`: ingreso, permiso de autoría, borrador del caso, escenas y decisiones, exportar e importar |
+| Santiago Leyton (`@SantiagoLeyton`) | `shared`, `security`, `publicacion`, `reportes`, `notificaciones`, `ia`, `auditoria` |
+| Juan José Sua Gómez (`@Jsua3`) | `privacy`, `grupos`, `revision`, `sesiones` |
+| Esteban Bonilla Giraldo (`@estebanbonilla22`) | `simulation`, `progression`, `biblioteca`: motor, rúbrica, calificación, tiempo, incompletos |
 
 ## Licencia
 
