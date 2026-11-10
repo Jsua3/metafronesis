@@ -1,4 +1,4 @@
-from apps.simulation.models.attempt import AttemptStatus, REGISTERED_DECISION_EVENT_TYPES
+from apps.simulation.models.attempt import AttemptStatus
 from apps.simulation.models.rubric import EvaluationOrigin
 from apps.simulation.casedef.vocabulary import ResponseClass
 from shared.exceptions import ApiError
@@ -42,7 +42,8 @@ def resultado_de(estudiante, attempt_id) -> dict:
     intento = owned(estudiante, attempt_id)
     if intento.status != AttemptStatus.COMPLETED:
         raise ApiError("ATTEMPT_NOT_FINISHED", "El intento aún no ha finalizado.", 409)
-    eventos = intento.events.filter(event_type__in=REGISTERED_DECISION_EVENT_TYPES, decision_option__isnull=False).select_related("node", "decision_option__source_node")
+    from .revision_de_respuestas import decisiones_vigentes
+    eventos = decisiones_vigentes(intento)
     evaluacion = getattr(intento, "evaluation", None)
     return {
         "attemptId": str(intento.pk),

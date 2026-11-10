@@ -18,7 +18,8 @@ def build(attempt):
     evidence = []
     levels = {}
     # Los efectos se sellan en el evento: no se releen opciones editadas después.
-    for event in attempt.events.filter(event_type="DECISION_SELECTED").order_by("id"):
+    from apps.simulation.services.revision_de_respuestas import decisiones_vigentes
+    for event in decisiones_vigentes(attempt):
         detail = json.loads(event.detail)
         response_class = detail["response_class"]
         counts[response_class.lower()] += 1

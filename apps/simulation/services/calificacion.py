@@ -14,7 +14,6 @@ from django.db import transaction
 from shared.eventos import intento_calificado
 
 from apps.simulation.models import AttemptStatus, CriterionScore, RubricEvaluation, SimulationAttempt
-from apps.simulation.models.attempt import REGISTERED_DECISION_EVENT_TYPES
 from apps.simulation.models.rubric import LEVEL_INDEX, EvaluationOrigin, FormativeLevel
 from apps.simulation.models.vocabulary import ResponseClass
 from .case_rules import competency_overrides
@@ -47,7 +46,8 @@ class Calificacion:
 def _evidencias(intento):
     """Índices aportados por competencia y competencias tocadas por una respuesta contraindicada."""
     aportes, topadas = defaultdict(list), set()
-    eventos = intento.events.filter(event_type__in=REGISTERED_DECISION_EVENT_TYPES).select_related("decision_option")
+    from .revision_de_respuestas import decisiones_vigentes
+    eventos = decisiones_vigentes(intento)
     for evento in eventos:
         opcion = evento.decision_option
         if opcion is None or opcion.response_class not in NIVEL_POR_CLASE:

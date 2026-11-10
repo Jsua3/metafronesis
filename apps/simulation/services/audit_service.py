@@ -48,6 +48,7 @@ AUDIT_PURGE_SETTING = "siep.purge"
 #: Taxonomía canónica ``entidad.verbo`` (E5-7, §A16, C15).
 AUDIT_TAXONOMY: dict[str, str] = {
     "ATTEMPT_STARTED": "intento.iniciar",
+    "ATTEMPT_REVISITED": "intento.revisitar",
     "DECISION_SELECTED": "intento.decidir",
     "REFLECTION_SAVED": "intento.reflexionar",
     "SAFE_EXIT_REQUESTED": "intento.pausar",
