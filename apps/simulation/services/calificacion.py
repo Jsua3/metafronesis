@@ -11,6 +11,8 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 
+from shared.eventos import intento_calificado
+
 from apps.simulation.models import AttemptStatus, CriterionScore, RubricEvaluation, SimulationAttempt
 from apps.simulation.models.attempt import REGISTERED_DECISION_EVENT_TYPES
 from apps.simulation.models.rubric import LEVEL_INDEX, EvaluationOrigin, FormativeLevel
@@ -114,6 +116,17 @@ class IncompletoParcial(EstrategiaDeCalificacion):
         return PARCIAL
 
 
+class CeroParaAusentes:
+    def calificar(self, intento, rubrica) -> Calificacion:
+        niveles = {c.pk: FormativeLevel.EN_INICIO for c in rubrica.criteria.filter(active=True)}
+        return Calificacion(Decimal("0.00"), niveles, "ABSENT")
+
+
+def calificacion_de_ausente(case_version_id) -> Calificacion | None:
+    rubrica = rubrica_activa_de(case_version_id)
+    return CeroParaAusentes().calificar(None, rubrica) if rubrica else None
+
+
 def estrategia_para(intento) -> EstrategiaDeCalificacion:
     """Elige el algoritmo según el estado del intento."""
     return PorCompetenciaPonderada() if intento.status == AttemptStatus.COMPLETED else IncompletoParcial()
@@ -139,4 +152,5 @@ def calificar_y_guardar(intento) -> RubricEvaluation | None:
                        score=LEVEL_INDEX.get(nivel, 0))
         for criterio, nivel in resultado.niveles.items()
     ])
+    intento_calificado.send(sender=SimulationAttempt, intento=intento, evaluacion=evaluacion)
     return evaluacion

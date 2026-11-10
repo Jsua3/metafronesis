@@ -29,6 +29,7 @@ COMPLETE = "complete"
 PAUSE = "pause"
 RESUME = "resume"
 REPLACE = "replace"
+EXPIRE = "expire"
 
 #: Un intento nuevo siempre nace en juego.
 INITIAL_STATUS = AttemptStatus.IN_PROGRESS
@@ -68,6 +69,7 @@ class InProgress(AttemptState):
     is_open = True
     transitions = {
         COMPLETE: AttemptStatus.COMPLETED,
+        EXPIRE: AttemptStatus.INCOMPLETE,
         PAUSE: AttemptStatus.PAUSED,
         REPLACE: AttemptStatus.REPLACED,
     }
@@ -78,12 +80,17 @@ class Paused(AttemptState):
     is_open = True
     transitions = {
         RESUME: AttemptStatus.IN_PROGRESS,
+        EXPIRE: AttemptStatus.INCOMPLETE,
         REPLACE: AttemptStatus.REPLACED,
     }
 
 
 class Completed(AttemptState):
     status = AttemptStatus.COMPLETED
+
+
+class Incomplete(AttemptState):
+    status = AttemptStatus.INCOMPLETE
 
 
 class Replaced(AttemptState):
@@ -98,7 +105,7 @@ class SafeExited(AttemptState):
 
 _STATES = {
     state.status: state
-    for state in (InProgress(), Paused(), Completed(), Replaced(), SafeExited())
+    for state in (InProgress(), Paused(), Completed(), Incomplete(), Replaced(), SafeExited())
 }
 
 #: Estados de un intento abierto (en juego o en pausa), en el orden de la tabla.

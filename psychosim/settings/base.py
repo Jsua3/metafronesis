@@ -49,6 +49,18 @@ INSTALLED_APPS = [
     "apps.reportes",
 
     # Ola 1 · revision
+    "apps.revision",
+
+    # Ola 2 · notificaciones
+    "apps.notificaciones",
+
+    # Ola 2 · ia
+    "apps.ia",
+
+    # Ola 2 · auditoria
+    "apps.auditoria",
+
+    # Ola 2 · sesiones
 ]
 
 MIDDLEWARE = [
@@ -264,6 +276,17 @@ def _env_flag(name, default=False):
     if raw is None:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+AI_ASSISTANT_ENABLED = _env_flag("AI_ASSISTANT_ENABLED")
+AI_ASSISTANT_PROVIDER = os.environ.get("AI_ASSISTANT_PROVIDER", "")
+AI_ASSISTANT_API_KEY = os.environ.get("AI_ASSISTANT_API_KEY", "")
+AI_ASSISTANT_MODEL = os.environ.get("AI_ASSISTANT_MODEL", "gpt-4o-mini")
+AI_AUTHORING_ENABLED = _env_flag("AI_AUTHORING_ENABLED")
+AI_AUTHORING_PROVIDER = os.environ.get("AI_AUTHORING_PROVIDER", "")
+AI_AUTHORING_API_KEY = os.environ.get("AI_AUTHORING_API_KEY", "")
+AI_AUTHORING_MODEL = os.environ.get("AI_AUTHORING_MODEL", "claude-haiku-5-5")
+AI_AUTHORING_DAILY_LIMIT_PER_USER = int(os.environ.get("AI_AUTHORING_DAILY_LIMIT_PER_USER", "200"))
 
 
 #: Valores que APAGAN un interruptor de seguridad «cerrado» (sin mayúsculas ni espacios). Cualquier otro valor lo enciende.
@@ -528,6 +551,7 @@ MAILERS = {
     },
 }
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "siep@psychosim.edu.co")
+SIEP_PUBLIC_URL = os.environ.get("SIEP_PUBLIC_URL", "")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "PsychoSim / SIEP API",

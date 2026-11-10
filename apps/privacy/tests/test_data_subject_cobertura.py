@@ -49,6 +49,22 @@ def test_la_cobertura_esta_completa_hoy():
     assert validar_cobertura() == []
 
 
+@pytest.mark.req("SIEP-21")
+def test_columnas_nuevas_de_simulacion_estan_clasificadas():
+    assert inventory.classify("case_versions", "estimated_minutes") == inventory.PUBLIC
+    assert inventory.classify("simulation_attempts_v2", "state_json") == SENSITIVE
+    assert "api" in inventory.salidas("simulation_attempts_v2", "state_json")
+    assert ERASURE_RULES[("simulation_attempts_v2", "state_json")].accion == CONSERVAR
+
+
+@pytest.mark.req("SIEP-21")
+def test_evaluacion_del_intento_tiene_titular_y_reglas():
+    tabla = "simulation_attemptevaluation"
+    assert inventory.classify(tabla, "snapshot") == SENSITIVE
+    assert tabla in PERSON_SCOPE
+    assert ERASURE_RULES[(tabla, "snapshot")].accion == CONSERVAR
+
+
 def test_hay_columnas_con_datos_de_personas_y_todas_las_de_una_tabla_con_dueno_tienen_regla():
     """Se recorre el inventario por otro camino: si ``validar_cobertura`` quedara vacía por un error, esto lo delata."""
     columnas = _columnas_con_datos()

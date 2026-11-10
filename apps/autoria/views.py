@@ -81,3 +81,21 @@ class DecisionView(APIView):
         datos = _datos(RevisionSerializer, request)
         decisiones.borrar(request.user, case_version_id, decision_id, datos.get("revision"))
         return api_ok()
+
+
+class ExportarCasoView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    def get(self, request, case_version_id):
+        from . import intercambio
+        return api_ok(intercambio.exportar(request.user, case_version_id))
+
+
+class ImportarCasoView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    def post(self, request):
+        from . import intercambio
+        from apps.users.permisos import exigir_autoria
+        exigir_autoria(request.user)
+        return api_created(servicios.resumen(intercambio.importar(request.user, request.data)))

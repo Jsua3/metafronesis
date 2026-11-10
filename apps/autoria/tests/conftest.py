@@ -1,13 +1,17 @@
 import pytest
 from rest_framework.test import APIClient
-from apps.users.models import CustomUser
-from shared.policies import PROFESOR, ESTUDIANTE
+from apps.users.models import CustomUser, PermisoDeAutoria
+from shared.policies import ADMIN, PROFESOR, ESTUDIANTE
 
 
 @pytest.fixture
 def usuarios(db):
-    return [CustomUser.objects.create_user(email=f"{i}@example.test", password="clave", role=rol)
+    usuarios = [CustomUser.objects.create_user(email=f"{i}@example.test", password="clave", role=rol)
             for i, rol in enumerate((PROFESOR, PROFESOR, ESTUDIANTE))]
+    admin = CustomUser.objects.create_user(email="admin-autoria@example.test", role=ADMIN)
+    for docente in usuarios[:2]:
+        PermisoDeAutoria.objects.create(docente=docente, otorgado_por=admin)
+    return usuarios
 
 
 @pytest.fixture

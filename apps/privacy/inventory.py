@@ -229,6 +229,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "status": TECHNICAL,
             "narrative_context": PUBLIC,
             "learning_objectives": PUBLIC,
+            "estimated_minutes": PUBLIC,
             "cloned_from_id": TECHNICAL,
             "published_at": TECHNICAL,
             "validated_at": TECHNICAL,
@@ -475,6 +476,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "replace_reason": (SENSITIVE, "motivo escrito para sustituir el intento"),
             "active_seconds": (SENSITIVE, "tiempo activo del estudiante en el intento"),
             "last_activity_at": (SENSITIVE, "última actividad del estudiante (sirve al cronómetro)"),
+            "state_json": (SENSITIVE, "estado del intento derivado de las decisiones del estudiante"),
         },
         "exits": {
             "id": ["api"],
@@ -488,8 +490,22 @@ DATA_INVENTORY: dict[str, dict] = {
             "replaced_by_id": [],
             "replace_reason": [],
             "last_activity_at": [],
+            "state_json": ["api"],
         },
         "forbidden_exits": {"attempt_token_hash": ["api", "csv", "reporte", "correo", "registro"]},
+    },
+    "simulation_attemptevaluation": {
+        "purpose": "Evaluación cerrada de un intento y su resultado calculado.",
+        "retention": "Sin plazo definido (SD-9, pendiente de la institución).",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL,
+            "attempt_id": (SENSITIVE, "intento del estudiante al que corresponde la evaluación"),
+            "rules_version": TECHNICAL,
+            "snapshot": (SENSITIVE, "resultado de la evaluación del intento"),
+            "created_at": TECHNICAL,
+        },
+        "exits": {"attempt_id": [], "snapshot": ["api"]},
     },
     "attempt_events": {
         "purpose": "Línea de tiempo del intento: cada decisión, herramienta, bitácora o salida.",

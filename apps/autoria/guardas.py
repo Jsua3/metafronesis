@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.http import Http404
 from apps.simulation.models import CaseVersion, CaseVersionStatus
+from apps.users.permisos import exigir_autoria
 from shared.exceptions import ApiError
 from shared.policies import ADMIN, PROFESOR
 
@@ -15,6 +16,7 @@ def versiones_visibles(usuario):
 
 
 def version_editable(usuario, case_version_id: int) -> CaseVersion:
+    exigir_autoria(usuario)
     try:
         version = versiones_visibles(usuario).select_for_update().get(pk=case_version_id)
     except CaseVersion.DoesNotExist:

@@ -1,7 +1,7 @@
 """Crea los usuarios demo si la BD local no los tiene (la tabla la crea ``migrate``)."""
 from django.core.management.base import BaseCommand
 
-from apps.users.models import CustomUser, UserRole
+from apps.users.models import CustomUser, PermisoDeAutoria, UserRole
 from shared.dev_only import require_dev_environment
 
 DEMO_USERS = [
@@ -42,5 +42,10 @@ class Command(BaseCommand):
             CustomUser.objects.create_user(**spec)
             created += 1
             self.stdout.write(self.style.SUCCESS(f"Creado: {spec['email']}"))
+
+        admin = CustomUser.objects.get(email=DEMO_USERS[0]["email"])
+        docente = CustomUser.objects.get(email=DEMO_USERS[1]["email"])
+        if admin.role == UserRole.ADMIN and docente.role == UserRole.PROFESOR:
+            PermisoDeAutoria.objects.get_or_create(docente=docente, defaults={"otorgado_por": admin})
 
         self.stdout.write(self.style.SUCCESS(f"Listo. Usuarios nuevos: {created}"))

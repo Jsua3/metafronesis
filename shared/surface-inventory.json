@@ -26,6 +26,14 @@
       "audit": "ACCESS_REQUEST_RESOLVED"
     },
     {
+      "route": "api/admin/audit",
+      "method": "GET",
+      "exposure": "role:ADMIN",
+      "body": "none",
+      "throttle": null,
+      "audit": "AUDIT_VIEWED"
+    },
+    {
       "route": "api/admin/users",
       "method": "GET",
       "exposure": "role:ADMIN",
@@ -48,6 +56,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": "USER_UPDATED,USER_STATUS_CHANGED,USER_ROLE_CHANGED,PASSWORD_SET_BY_ADMIN,USER_APPROVED"
+    },
+    {
+      "route": "api/admin/users/<int:user_id>/authoring-permission",
+      "method": "DELETE",
+      "exposure": "role:ADMIN",
+      "body": "none",
+      "throttle": null,
+      "audit": "AUTHORING_PERMISSION_REVOKED"
+    },
+    {
+      "route": "api/admin/users/<int:user_id>/authoring-permission",
+      "method": "PUT",
+      "exposure": "role:ADMIN",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AUTHORING_PERMISSION_GRANTED"
     },
     {
       "route": "api/admin/users/<int:user_id>/revoke-sessions",
@@ -186,6 +210,30 @@
       "audit": "CASE_CREATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/assistant/guide",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_AUTHORING_GUIDE"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/assistant/propose",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_AUTHORING_PROPOSE"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/assistant/status",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de configuración del caso propio"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/brief",
       "method": "PUT",
       "exposure": "role:ADMIN,PROFESOR",
@@ -234,6 +282,14 @@
       "audit": null
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/export",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de casos propios o visibles para el administrador"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/lifecycle",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -280,6 +336,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: validación sin cambios sobre el caso propio o accesible al administrador"
+    },
+    {
+      "route": "api/authoring/cases/import",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED"
     },
     {
       "route": "api/biblioteca/lugares",
@@ -428,6 +492,30 @@
       "audit": null
     },
     {
+      "route": "api/instructor/attempts",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "INSTRUCTOR_ATTEMPTS_VIEWED"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "INSTRUCTOR_ATTEMPT_VIEWED"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/feedback",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_FEEDBACK_SAVED"
+    },
+    {
       "route": "api/me/invitations",
       "method": "GET",
       "exposure": "role:ADMIN,ESTUDIANTE",
@@ -458,6 +546,30 @@
       "body": "json-small",
       "throttle": null,
       "audit": "MEMBERSHIP_LEFT"
+    },
+    {
+      "route": "api/me/notifications",
+      "method": "GET",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de notificaciones propias"
+    },
+    {
+      "route": "api/me/notifications/<int:pk>/read",
+      "method": "POST",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NOTIFICATION_READ"
+    },
+    {
+      "route": "api/notifications/<int:pk>/resend",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NOTIFICATION_RESENT"
     },
     {
       "route": "api/reportes/grupo/<int:grupo_id>/export",
@@ -500,6 +612,14 @@
         "csp_report_ip"
       ],
       "audit": "EXENTO: informe anónimo del navegador sobre la política de contenido: no cambia datos de personas; deja una línea del registro de seguridad"
+    },
+    {
+      "route": "api/simulation/ai-assistant",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_ASSISTANT_QUERY"
     },
     {
       "route": "api/simulation/attempts",

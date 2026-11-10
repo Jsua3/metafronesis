@@ -36,6 +36,7 @@ from apps.users.views import (
     LogoutView,
 )
 from apps.users.authentication import SiepJWTAuthentication
+from apps.users.views_autoria import PermisoDeAutoriaView
 from shared.health import health
 from shared.permissions import policy_permission
 
@@ -110,11 +111,24 @@ urlpatterns = [
     path("api/reportes/", include("apps.reportes.urls")),
 
     # Ola 1 · revision
+    path("api/instructor/", include("apps.revision.urls")),
+
+    # Ola 2 · notificaciones
+    path("api/", include("apps.notificaciones.urls")),
+
+    # Ola 2 · ia
+    path("api/", include("apps.ia.urls")),
+
+    # Ola 2 · auditoria
+    path("api/", include("apps.auditoria.urls")),
+
+    # Ola 2 · sesiones
 
     path("api/admin/users", AdminUserListCreateView.as_view()),
     path("api/admin/users/approve", AdminUserApproveView.as_view()),
     path("api/admin/users/<int:user_id>", AdminUserDetailView.as_view()),
     path("api/admin/users/<int:user_id>/status", AdminUserStatusView.as_view()),
+    path("api/admin/users/<int:user_id>/authoring-permission", PermisoDeAutoriaView.as_view()),
     path("api/admin/users/<int:user_id>/revoke-sessions", AdminUserRevokeSessionsView.as_view()),
     path("api/admin/access-requests", AdminAccessRequestListView.as_view()),
     path("api/admin/access-requests/<int:request_id>/status", AdminAccessRequestStatusView.as_view()),
