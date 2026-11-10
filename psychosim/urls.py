@@ -110,6 +110,7 @@ urlpatterns = [
     path("api/reportes/", include("apps.reportes.urls")),
 
     # Ola 1 · revision
+    path("api/instructor/", include("apps.revision.urls")),
 
     path("api/admin/users", AdminUserListCreateView.as_view()),
     path("api/admin/users/approve", AdminUserApproveView.as_view()),

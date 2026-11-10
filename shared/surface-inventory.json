@@ -428,6 +428,30 @@
       "audit": null
     },
     {
+      "route": "api/instructor/attempts",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "INSTRUCTOR_ATTEMPTS_VIEWED"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "INSTRUCTOR_ATTEMPT_VIEWED"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/feedback",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_FEEDBACK_SAVED"
+    },
+    {
       "route": "api/me/invitations",
       "method": "GET",
       "exposure": "role:ADMIN,ESTUDIANTE",
