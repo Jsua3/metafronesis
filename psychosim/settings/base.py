@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Ola 1 · autoria
 
     # Ola 1 · publicacion
+    "apps.publicacion",
 
     # Ola 1 · reportes
 
