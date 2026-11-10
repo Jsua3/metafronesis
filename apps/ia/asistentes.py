@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.db import transaction
 from django.http import Http404
@@ -18,13 +20,20 @@ def _version(usuario, version_id):
     return version
 
 
-def _responder(nombre, clave, texto, pregunta):
-    proveedor = proveedor_para(nombre)
-    if hasattr(proveedor, "clave"):
-        proveedor.clave = clave
-    return proveedor.responder("Responde usando únicamente el contexto proporcionado.", [
-        {"role": "user", "content": f"{texto}\n{pregunta}"},
-    ])
+#: Correos y secuencias largas de dígitos (teléfonos, documentos) no salen hacia el proveedor (Ley 1581).
+_CORREO = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+_NUMERO_LARGO = re.compile(r"\d(?:[\s.-]?\d){6,}")
+INSTRUCCIONES = "Responde usando únicamente el contexto proporcionado."
+
+
+def sin_datos_personales(texto: str) -> str:
+    return _NUMERO_LARGO.sub("[número]", _CORREO.sub("[correo]", texto))
+
+
+def _responder(nombre, clave, modelo, texto, pregunta):
+    proveedor = proveedor_para(nombre, clave, modelo)
+    contenido = sin_datos_personales(f"{texto}\n{pregunta}")
+    return proveedor.responder(INSTRUCCIONES, [{"role": "user", "content": contenido}])
 
 
 def _texto(version):
@@ -42,7 +51,7 @@ def consultar(usuario, intento_id, pregunta):
     if intento.status != AttemptStatus.IN_PROGRESS:
         raise ApiError("ATTEMPT_NOT_IN_PROGRESS", "El intento no está en curso.", 409)
     texto = "\n".join(filter(None, [_texto(intento.case_version), intento.current_node.narrative]))
-    return _responder(settings.AI_ASSISTANT_PROVIDER, settings.AI_ASSISTANT_API_KEY, texto, pregunta)
+    return _responder(settings.AI_ASSISTANT_PROVIDER, settings.AI_ASSISTANT_API_KEY, settings.AI_ASSISTANT_MODEL, texto, pregunta)
 
 
 def estado(usuario, version_id):
@@ -58,7 +67,7 @@ def proponer(usuario, version_id, pregunta):
     uso, _ = AuthoringAssistantUsage.objects.get_or_create(user=usuario, day=timezone.localtime().date() if settings.USE_TZ else timezone.now().date())
     if uso.count >= settings.AI_AUTHORING_DAILY_LIMIT_PER_USER:
         raise ApiError("DAILY_LIMIT_EXCEEDED", "Se alcanzó el límite diario.", 429)
-    respuesta = _responder(settings.AI_AUTHORING_PROVIDER, settings.AI_AUTHORING_API_KEY, _texto(version), pregunta)
+    respuesta = _responder(settings.AI_AUTHORING_PROVIDER, settings.AI_AUTHORING_API_KEY, settings.AI_AUTHORING_MODEL, _texto(version), pregunta)
     uso.count += 1
     uso.save(update_fields=["count"])
     return respuesta
@@ -67,4 +76,4 @@ def proponer(usuario, version_id, pregunta):
 @auditable("AI_AUTHORING_GUIDE", "case_version", resource_id_param_index=1)
 def guiar(usuario, version_id, pregunta):
     version = _version(usuario, version_id)
-    return _responder(settings.AI_AUTHORING_PROVIDER, settings.AI_AUTHORING_API_KEY, _texto(version), pregunta)
+    return _responder(settings.AI_AUTHORING_PROVIDER, settings.AI_AUTHORING_API_KEY, settings.AI_AUTHORING_MODEL, _texto(version), pregunta)
