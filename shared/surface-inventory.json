@@ -518,6 +518,14 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/result",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta el resultado de su propio intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/resume",
       "method": "POST",
       "exposure": "authenticated",
