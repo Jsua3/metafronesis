@@ -163,6 +163,26 @@ def _informe_sin_el_motivo_de_la_salida_segura(texto):
 #: Tabla → cómo se llega a las filas de una persona (``persona`` es su cuenta de ``users``). El primer papel de una tabla es
 #: el más amplio: una fila que cae en dos papeles se exporta una sola vez, con el primero.
 PERSON_SCOPE: dict[str, tuple[Pertenencia, ...]] = {
+    "sesiones_sesion": (
+        Pertenencia("docente", lambda p: Q(creada_por_id=p.pk)),
+    ),
+    "sesiones_convocatoria": (
+        Pertenencia(TITULAR, lambda p: Q(estudiante_id=p.pk)),
+    ),
+    "sesiones_autorizacionrepeticion": (
+        Pertenencia(TITULAR, lambda p: Q(convocatoria__estudiante_id=p.pk), excluir=("autorizada_por_id",)),
+        Pertenencia("autorizador", lambda p: Q(autorizada_por_id=p.pk),
+                    solo=("id", "autorizada_por_id", "creada_en")),
+    ),
+    "notificaciones_notificacion": (
+        Pertenencia(TITULAR, lambda p: Q(destinatario_id=p.pk), excluir=("originador_id",)),
+        Pertenencia("originador", lambda p: Q(originador_id=p.pk), solo=("id", "originador_id", "creada_en")),
+    ),
+    "users_permisodeautoria": (
+        Pertenencia(TITULAR, lambda p: Q(docente_id=p.pk), excluir=("otorgado_por_id",)),
+        Pertenencia("otorgante", lambda p: Q(otorgado_por_id=p.pk),
+                    solo=("id", "otorgado_por_id", "otorgado_en")),
+    ),
     # ── Su cuenta y sus solicitudes ──
     "users": (Pertenencia(TITULAR, lambda p: Q(pk=p.pk)),),
     "access_requests": (Pertenencia(TITULAR, lambda p: Q(email__iexact=p.email)),),
@@ -295,6 +315,17 @@ def _columnas(tabla, columnas, regla):
 
 
 ERASURE_RULES: dict[tuple[str, str], Regla] = {
+    ("sesiones_sesion", "creada_por_id"): Regla(CONSERVAR, _M_AUTORIA),
+    ("sesiones_sesion", "mensaje"): Regla(VACIAR, "texto libre escrito por el docente", roles=("docente",)),
+    **_columnas("sesiones_convocatoria", ("estudiante_id", "estado"), Regla(CONSERVAR, _M_CONDUCTA)),
+    ("sesiones_convocatoria", "codigo_hash"): Regla(VACIAR, "invalida el código de acceso del estudiante", roles=(TITULAR,)),
+    **_columnas("sesiones_autorizacionrepeticion", ("convocatoria_id", "autorizada_por_id"), Regla(CONSERVAR, _M_CONDUCTA)),
+    ("sesiones_autorizacionrepeticion", "motivo"): Regla(VACIAR, "texto libre del docente", roles=("autorizador",)),
+    **_columnas("notificaciones_notificacion", ("destinatario_id", "originador_id", "tipo", "leida"),
+                Regla(CONSERVAR, _M_CONDUCTA)),
+    **_columnas("notificaciones_notificacion", ("titulo", "cuerpo", "error_correo"),
+                Regla(VACIAR, "contenido y errores del aviso de la persona", roles=(TITULAR,))),
+    **_columnas("users_permisodeautoria", ("docente_id", "otorgado_por_id"), Regla(CONSERVAR, _M_AUTORIA)),
     # ── users: la cuenta conserva su fila y se seudonimiza ──
     ("users", "id"): Regla(CONSERVAR, _M_LLAVE),
     ("users", "password_hash"): Regla(
