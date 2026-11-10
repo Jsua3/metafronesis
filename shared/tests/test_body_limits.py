@@ -31,7 +31,7 @@ SECURITY = "django.middleware.security.SecurityMiddleware"
 WHITENOISE = "shared.static_files.SpaStaticFilesMiddleware"
 LOGIN = "/api/auth/login"
 IMPORTACION = "/api/grupos/7/estudiantes/import"
-IMPORTACION_DE_CASOS = "/api/admin/cases/import"
+IMPORTACION_DE_CASOS = "/api/authoring/cases/import"
 
 
 class _Flujo:
@@ -228,16 +228,15 @@ def test_la_importacion_de_casos_tiene_un_tope_propio_mas_holgado_que_el_json_co
     ))
 
 
-def test_ninguna_ruta_actual_cae_en_el_tope_de_importacion_de_casos():
-    # La importación de casos llega con la autoría (sprint posterior): hasta entonces ninguna ruta real del inventario
-    # puede recibir el tope ampliado por error. Cuando se agregue, esta prueba debe listar sus dos rutas.
+def test_solo_la_importacion_de_casos_cae_en_su_tope():
+    # Ninguna otra ruta del inventario puede recibir por error el tope ampliado de la importación de casos.
     inventario = json.loads(Path(surface.__file__).with_name("surface-inventory.json").read_text(encoding="utf-8"))
     reconocidas = set()
     for fila in inventario["routes"]:
         ruta = "/" + re.sub(r"<[^>]+>", "1", fila["route"])
         if CASE_IMPORT_ROUTE.fullmatch(ruta):
             reconocidas.add((fila["method"], fila["route"]))
-    assert reconocidas == set()
+    assert reconocidas == {("POST", "api/authoring/cases/import")}
 
 
 # ── Ajustes, lugar en la cadena y registro ───────────────────────────────────────────────────

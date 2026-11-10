@@ -23,8 +23,8 @@ from shared.security_events import log_security_event
 METODOS_CON_CUERPO = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 #: La importación de estudiantes: la fila ``multipart-import`` de ``shared/surface-inventory.json``, con o sin barra final.
 MULTIPART_IMPORT_ROUTE = re.compile(r"/api/grupos/[0-9]+/estudiantes/import/?")
-#: La importación de casos: ``POST api/admin/cases/import`` y ``POST api/authoring/cases/import`` (tope propio, ver ajustes).
-CASE_IMPORT_ROUTE = re.compile(r"/api/(?:admin|authoring)/cases/import/?")
+#: La importación de casos: ``POST api/authoring/cases/import`` (tope propio, ver ajustes).
+CASE_IMPORT_ROUTE = re.compile(r"/api/authoring/cases/import/?")
 _DIGITOS = re.compile(r"[0-9]{1,18}")
 
 # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
