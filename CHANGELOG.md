@@ -11,6 +11,29 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - Cubrir tres validaciones del caso detectadas en la revisión del #17: revisión aprobada antes de publicar con `REVIEW_WORKFLOW_STRICT`, rechazo de sugerencias de IA sin revisar y camino desde la escena inicial hasta un final.
 - Documentación por app y `docs/api.md`.
 
+## [0.4.0] - 2026-11-10
+
+Entrega del backend: ola 2 de la migración.
+
+### Añadido
+- Revisión docente: consultar las participaciones de los grupos propios y registrar la retroalimentación general (#23).
+- Eventos del dominio (patrón Observer) y notificaciones por correo y por la API (#24, #28).
+- Asistentes de IA con el patrón Strategy, apagados por defecto y sin datos personales hacia el proveedor, y auditoría para el ADMIN (#31).
+- Estado `INCOMPLETE`, nota parcial, cero para los ausentes y tiempo máximo del intento (#26).
+- Volver a responder una escena, progreso y consultas del estudiante (#32).
+- Permiso de autoría: un PROFESOR crea o edita casos solo si el ADMIN se lo otorga (#27).
+- Exportar e importar casos en JSON (#30).
+- Sesiones y convocatorias con código, con el patrón State, e ingreso tardío a la mitad de la duración, configurable con `SIEP_INGRESO_TARDIO_FRACCION` (#34).
+- Repetición excepcional autorizada por el creador del caso y cierre automático de sesiones vencidas (#35).
+- Ingreso del estudiante con el código de la convocatoria (#37).
+- Reporte completo con ausentes, incompletos y por sesión (#36).
+- Clasificación de datos personales de las columnas y tablas nuevas (#29).
+- Semilla de demostración (#33) y lugares de registro de las apps de esta ola (#25).
+
+### Cambiado
+- La prueba del tamaño máximo reconoce la ruta de importación de casos (#38).
+- Migración sobre una tabla existente: el estado `INCOMPLETE` del intento (#26).
+
 ## [0.3.0] - 2026-11-10
 
 Ola 1 de la migración del backend.
@@ -51,3 +74,9 @@ Base del backend (sprints 1 a 3).
 - API de casos e intentos con acceso por asignaciones y ciclo State, motor mínimo, evaluación y progresión por Observer (#4).
 - Biblioteca por API con catálogo externo configurable y validación de rutas (#4).
 - Pruebas de concurrencia PostgreSQL en CI (#4).
+
+[Sin publicar]: https://github.com/Jsua3/metafronesis/compare/v0.4.0...develop
+[0.4.0]: https://github.com/Jsua3/metafronesis/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Jsua3/metafronesis/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Jsua3/metafronesis/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Jsua3/metafronesis/releases/tag/v0.1.0
