@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "apps.ia",
 
     # Ola 2 · auditoria
+    "apps.auditoria",
 
     # Ola 2 · sesiones
 ]
