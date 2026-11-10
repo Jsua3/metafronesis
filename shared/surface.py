@@ -24,7 +24,11 @@ if __name__ == "__main__":
 
     django.setup()
 
+import importlib  # noqa: E402
+
+from django.apps import apps as django_apps  # noqa: E402
 from django.contrib.auth.models import AnonymousUser  # noqa: E402
+from django.core.exceptions import ImproperlyConfigured  # noqa: E402
 from django.test import RequestFactory  # noqa: E402
 from django.urls import URLPattern, URLResolver, get_resolver  # noqa: E402
 from rest_framework.parsers import MultiPartParser  # noqa: E402
@@ -135,6 +139,34 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     ("swagger-ui.html", "GET"): _exento(_DOCUMENTACION),
 }
 
+#: Nombre del módulo y de la variable con que cada app declara la auditoría de sus rutas.
+_MODULO_DE_SUPERFICIE = "superficie"
+_DECLARACIONES_DE_APP = "AUDITORIA_POR_RUTA"
+
+
+def _declaraciones_de_apps():
+    """Las ``AUDITORIA_POR_RUTA`` de las apps instaladas que tienen ``superficie.py``."""
+    for config in django_apps.get_app_configs():
+        nombre = f"{config.name}.{_MODULO_DE_SUPERFICIE}"
+        try:
+            modulo = importlib.import_module(nombre)
+        except ModuleNotFoundError as error:
+            if error.name != nombre:
+                raise
+            continue
+        yield nombre, getattr(modulo, _DECLARACIONES_DE_APP, {})
+
+
+def auditoria_por_ruta():
+    """``AUDIT_BY_ROUTE`` más lo que declara cada app; una ruta declarada dos veces es un error de configuración."""
+    combinada = dict(AUDIT_BY_ROUTE)
+    for origen, declaraciones in _declaraciones_de_apps():
+        repetidas = combinada.keys() & declaraciones.keys()
+        if repetidas:
+            raise ImproperlyConfigured(f"{origen} vuelve a declarar la auditoría de {sorted(repetidas)}")
+        combinada.update(declaraciones)
+    return combinada
+
 
 def _root_patterns():
     return get_resolver().url_patterns
@@ -224,6 +256,7 @@ def _throttle_scopes(view_class):
 
 def collect_routes(patterns=None):
     """Una fila por ruta (sin barra final) y método HTTP, ordenadas por (ruta, método)."""
+    auditoria = auditoria_por_ruta()
     rows = {}
     for raw_route, callback in _iter_routes(_root_patterns() if patterns is None else patterns):
         route = raw_route.rstrip("/")
@@ -237,7 +270,7 @@ def collect_routes(patterns=None):
                 "exposure": _exposure(view, permissions),
                 "body": _body(method, view_class),
                 "throttle": _throttle_scopes(view_class),
-                "audit": AUDIT_BY_ROUTE.get((route, method)),  # S4-1 · None: ni muta ni lee datos de otra persona
+                "audit": auditoria.get((route, method)),  # S4-1 · None: ni muta ni lee datos de otra persona
             }
             key = (route, method)
             # ``…/import`` y ``…/import/`` son una sola fila sin barra final: si difieren, es un error.
