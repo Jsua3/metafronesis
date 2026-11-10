@@ -41,8 +41,8 @@ def cliente(persona=None):
 
 
 def version_publicada():
-    """La versión publicada que siembra el entorno de pruebas (SIM-VBG-001)."""
-    return CaseVersion.objects.get(simulation_case__code="SIM-VBG-001", status="PUBLISHED")
+    """Una versión publicada propia de la prueba."""
+    return crear_version(crear_persona("PROFESOR", "autor"), estado="PUBLISHED")
 
 
 def crear_version(autor, *, estado="DRAFT", activo=True):
