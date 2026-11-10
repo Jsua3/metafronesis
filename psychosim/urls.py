@@ -98,6 +98,7 @@ urlpatterns = [
     path("api/biblioteca/", include("apps.biblioteca.urls")),
 
     # Ola 1 · rubricas
+    path("api/", include("apps.simulation.urls_rubricas")),
 
     # Ola 1 · autoria
 

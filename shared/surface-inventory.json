@@ -348,6 +348,30 @@
       "audit": "MEMBERSHIP_LEFT"
     },
     {
+      "route": "api/rubrics",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_CREATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de criterios de una rúbrica sin datos de personas"
+    },
+    {
+      "route": "api/rubrics/case-versions/<int:case_version_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_UPDATED"
+    },
+    {
       "route": "api/security/csp-report",
       "method": "POST",
       "exposure": "public",
