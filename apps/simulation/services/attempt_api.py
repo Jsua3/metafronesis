@@ -3,6 +3,7 @@
 import hashlib
 import json
 import secrets
+from copy import copy
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -11,6 +12,8 @@ from django.shortcuts import get_object_or_404
 from apps.simulation.models import SimulationAttempt, AttemptEvent, DecisionOption
 from .access import available_versions
 from . import attempt_lifecycle as lifecycle
+from . import limites, reglas_de_inicio
+from .cierre import cerrar_como_incompleto
 from .calificacion import calificar_y_guardar
 from .attempt_duration import touch, reset_clock
 from .case_rules import rules_of, effects_of
@@ -18,6 +21,7 @@ from .response_effects import apply as apply_effects
 from apps.simulation.assessment.evaluation import freeze
 from apps.simulation.signals import attempt_completed
 from apps.simulation.casedef.vocabulary import ResponseClass
+from shared.exceptions import ApiError
 
 
 @transaction.atomic
@@ -25,6 +29,7 @@ def start(user, version_id):
     # Serializa inicios incluso cuando aún no existe una fila de intento.
     get_user_model().objects.select_for_update().get(pk=user.pk)
     version = get_object_or_404(available_versions(user), pk=version_id)
+    reglas_de_inicio.verificar(user, version)
     existing = SimulationAttempt.objects.filter(
         student=user, case_version=version, status__in=lifecycle.OPEN_STATUSES
     ).first()
@@ -50,20 +55,57 @@ def start(user, version_id):
     return attempt, True
 
 
-def owned(user, pk, lock=False):
-    qs = (
-        SimulationAttempt.objects.select_for_update()
-        if lock
-        else SimulationAttempt.objects.all()
-    )
+def _owned(user, pk):
+    qs = SimulationAttempt.objects.select_for_update()
     attempt = get_object_or_404(qs, pk=pk, student=user)
     get_object_or_404(available_versions(user), pk=attempt.case_version_id)
+    attempt._time_expired = _cerrar_si_vencido(attempt)
     return attempt
 
 
-@transaction.atomic
+def _cerrar_si_vencido(attempt):
+    if attempt.status not in lifecycle.OPEN_STATUSES:
+        return False
+    limite = limites.minutos_para(attempt)
+    if limite is None:
+        return False
+    medido = copy(attempt)
+    if attempt.status == lifecycle.INITIAL_STATUS:
+        touch(medido, timezone.now())
+    if medido.active_seconds <= limite * 60:
+        return False
+    attempt.active_seconds = medido.active_seconds
+    attempt.last_activity_at = medido.last_activity_at
+    attempt.save(update_fields=["active_seconds", "last_activity_at"])
+    cerrar_como_incompleto(attempt, "TIEMPO")
+    return True
+
+
+def _error_si_vencido(attempt):
+    if attempt._time_expired:
+        raise ApiError("ATTEMPT_TIME_EXPIRED", "El tiempo del intento ha vencido.", 409)
+
+
+def owned(user, pk, lock=False):
+    if lock:
+        return _owned(user, pk)
+    with transaction.atomic():
+        attempt = _owned(user, pk)
+    _error_si_vencido(attempt)
+    return attempt
+
+
 def transition(user, pk, action):
+    with transaction.atomic():
+        attempt = _transition(user, pk, action)
+    _error_si_vencido(attempt)
+    return attempt
+
+
+def _transition(user, pk, action):
     attempt = owned(user, pk, lock=True)
+    if attempt._time_expired:
+        return attempt
     now = timezone.now()
     previous = attempt.status
     lifecycle.apply(attempt, action)
@@ -172,10 +214,16 @@ def _close_if_completed(attempt, result, event):
     attempt_completed.send(sender=SimulationAttempt, attempt=attempt)
 
 
-@transaction.atomic
 def decide(user, pk, option_id, request_id):
     """Registra la decisión del estudiante: cada paso es una función con nombre y una sola responsabilidad."""
-    attempt = owned(user, pk, lock=True)
+    with transaction.atomic():
+        attempt = owned(user, pk, lock=True)
+        result = None if attempt._time_expired else _decide(attempt, option_id, request_id)
+    _error_si_vencido(attempt)
+    return result
+
+
+def _decide(attempt, option_id, request_id):
     previous = _previous_result(attempt, request_id, option_id)
     if previous is not None:
         return previous
