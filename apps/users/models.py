@@ -147,6 +147,12 @@ class AccessRequestStatus(models.TextChoices):
     DISMISSED = "DISMISSED"
 
 
+class PermisoDeAutoria(models.Model):
+    docente = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="permiso_autoria")
+    otorgado_por = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name="permisos_otorgados")
+    otorgado_en = models.DateTimeField(auto_now_add=True)
+
+
 class AccessRequest(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
