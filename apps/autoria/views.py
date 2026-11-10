@@ -1,8 +1,9 @@
 from rest_framework.views import APIView
 from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
-from . import servicios
-from .serializers import CrearFichaSerializer, FichaSerializer
+from . import decisiones, escenas, servicios
+from .serializers import (CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
+                          DecisionSerializer, EscenaSerializer, FichaSerializer, RevisionSerializer)
 
 
 class CasosView(APIView):
@@ -32,3 +33,51 @@ class FichaView(APIView):
         serializer.is_valid(raise_exception=True)
         datos = serializer.validated_data
         return api_ok(servicios.actualizar_ficha(request.user, case_version_id, datos, datos.get("revision")))
+
+
+def _datos(serializer, request):
+    instancia = serializer(data=request.data)
+    instancia.is_valid(raise_exception=True)
+    return instancia.validated_data
+
+
+class EscenasView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    def post(self, request, case_version_id):
+        datos = _datos(CrearEscenaSerializer, request)
+        return api_created(escenas.crear(request.user, case_version_id, datos, datos.get("revision")))
+
+
+class EscenaView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    def put(self, request, case_version_id, node_id):
+        datos = _datos(EscenaSerializer, request)
+        return api_ok(escenas.actualizar(request.user, case_version_id, node_id, datos, datos.get("revision")))
+
+    def delete(self, request, case_version_id, node_id):
+        datos = _datos(RevisionSerializer, request)
+        escenas.borrar(request.user, case_version_id, node_id, datos.get("revision"))
+        return api_ok()
+
+
+class DecisionesView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    def post(self, request, case_version_id):
+        datos = _datos(CrearDecisionSerializer, request)
+        return api_created(decisiones.crear(request.user, case_version_id, datos, datos.get("revision")))
+
+
+class DecisionView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    def put(self, request, case_version_id, decision_id):
+        datos = _datos(DecisionSerializer, request)
+        return api_ok(decisiones.actualizar(request.user, case_version_id, decision_id, datos, datos.get("revision")))
+
+    def delete(self, request, case_version_id, decision_id):
+        datos = _datos(RevisionSerializer, request)
+        decisiones.borrar(request.user, case_version_id, decision_id, datos.get("revision"))
+        return api_ok()

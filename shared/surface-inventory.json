@@ -194,12 +194,60 @@
       "audit": "CASE_BRIEF_UPDATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/decisions",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "DECISION_CREATED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/decisions/<int:decision_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "DECISION_DELETED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/decisions/<int:decision_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "DECISION_UPDATED"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/definition",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "none",
       "throttle": null,
       "audit": null
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/nodes",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NODE_CREATED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/nodes/<int:node_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "NODE_DELETED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/nodes/<int:node_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NODE_UPDATED"
     },
     {
       "route": "api/biblioteca/lugares",
