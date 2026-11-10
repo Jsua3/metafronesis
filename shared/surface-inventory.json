@@ -614,6 +614,46 @@
       "audit": "EXENTO: informe anónimo del navegador sobre la política de contenido: no cambia datos de personas; deja una línea del registro de seguridad"
     },
     {
+      "route": "api/sesiones",
+      "method": "GET",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de sesiones propias sin datos de convocados"
+    },
+    {
+      "route": "api/sesiones",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_CREADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>",
+      "method": "GET",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de sesión propia sin datos de convocados"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/finalizar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_FINALIZADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/iniciar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_INICIADA"
+    },
+    {
       "route": "api/simulation/ai-assistant",
       "method": "POST",
       "exposure": "role:ESTUDIANTE",
