@@ -702,6 +702,14 @@
       "audit": "ATTEMPT_REVISITED"
     },
     {
+      "route": "api/simulation/attempts/history",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio historial"
+    },
+    {
       "route": "api/simulation/cases",
       "method": "GET",
       "exposure": "authenticated",
@@ -716,6 +724,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": null
+    },
+    {
+      "route": "api/simulation/cases/<int:case_version_id>/active-attempt",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio intento"
+    },
+    {
+      "route": "api/simulation/cases/<int:case_version_id>/brief",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: ficha de un caso asignado al estudiante"
     },
     {
       "route": "api/simulation/cases/<int:case_version_id>/consent",
