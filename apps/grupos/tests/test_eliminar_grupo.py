@@ -10,7 +10,6 @@ from django.db import connection
 from rest_framework.test import APIClient
 
 from apps.grupos.models import CaseAssignment, Grupo, GrupoEstudiante
-from apps.simulation.models import CaseVersion
 
 User = get_user_model()
 
@@ -34,7 +33,7 @@ def _fk_sin_cascade(table, referenced):
         )
 
 
-def test_eliminar_un_grupo_con_miembros_y_casos_con_fk_en_no_action():
+def test_eliminar_un_grupo_con_miembros_y_casos_con_fk_en_no_action(caso_publicado):
     # Antes de insertar filas: PostgreSQL no deja alterar una tabla con eventos de FK pendientes.
     _fk_sin_cascade("grupo_estudiante", "grupos")
     _fk_sin_cascade("case_assignments", "grupos")
@@ -44,10 +43,9 @@ def test_eliminar_un_grupo_con_miembros_y_casos_con_fk_en_no_action():
     estudiante = User.objects.create_user(
         email="est_elim@x.com", password="pass1234", nombre="E", apellido="S", role="ESTUDIANTE"
     )
-    version = CaseVersion.objects.get(simulation_case__code="SIM-VBG-001", status="PUBLISHED")
     grupo = Grupo.objects.create(nombre="Para borrar", codigo="ELIM-1", profesor=profesor)
     GrupoEstudiante.objects.create(grupo_id=grupo.id, estudiante_id=estudiante.id, status="ACTIVE")
-    CaseAssignment.objects.create(grupo_id=grupo.id, case_version_id=version.id)
+    CaseAssignment.objects.create(grupo_id=grupo.id, case_version_id=caso_publicado.id)
     client = APIClient()
     client.force_authenticate(user=profesor)
 

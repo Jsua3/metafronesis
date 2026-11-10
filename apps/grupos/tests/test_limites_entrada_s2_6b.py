@@ -13,7 +13,6 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
 from apps.grupos.models import CaseAssignment, Grupo
-from apps.simulation.models import CaseVersion
 
 pytestmark = [pytest.mark.req("RNF-002"), pytest.mark.security]
 
@@ -35,11 +34,6 @@ def cliente(profesor):
     client = APIClient()
     client.force_authenticate(user=profesor)
     return client
-
-
-@pytest.fixture
-def caso_publicado(db):
-    return CaseVersion.objects.get(simulation_case__code="SIM-VBG-001", status="PUBLISHED")
 
 
 def _codigo():
