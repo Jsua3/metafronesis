@@ -3,6 +3,7 @@ import pytest
 from rest_framework.test import APIClient
 from apps.users.models import CustomUser
 from apps.biblioteca.services import lugares, geometria
+from shared.policies import ESTUDIANTE, PROFESOR
 
 pytestmark = pytest.mark.django_db
 
@@ -27,7 +28,7 @@ def library(tmp_path, settings):
     )
     settings.BIBLIOTECA_DIR = tmp_path
     client = APIClient()
-    user = CustomUser.objects.create_user(email="library@example.test", role="PROFESOR")
+    user = CustomUser.objects.create_user(email="library@example.test", role=PROFESOR)
     client.force_authenticate(user)
     return client, folder
 
@@ -48,9 +49,9 @@ def test_catalog_and_details_are_public_urls_and_independent_copies(library):
 
 def test_anonymous_and_students_are_denied(library):
     client, _ = library
-    assert APIClient().get("/api/biblioteca/lugares").status_code == 403
+    assert APIClient().get("/api/biblioteca/lugares").status_code == 401
     user = CustomUser.objects.create_user(
-        email="student-library@example.test", role="ESTUDIANTE"
+        email="student-library@example.test", role=ESTUDIANTE
     )
     client.force_authenticate(user)
     assert client.get("/api/biblioteca/lugares").status_code == 403

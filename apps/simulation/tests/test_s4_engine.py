@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 
 def choose(scene, attempt_id, key="command"):
     return scene["client"].post(
-        "/api/attempts/" + str(attempt_id) + "/decisions",
+        "/api/simulation/attempts/" + str(attempt_id) + "/decisions",
         {"decision_option_id": scene["option"].pk, "request_id": key},
         format="json",
     )
@@ -69,7 +69,7 @@ def test_effects_evaluation_completion_and_replay_are_atomic_and_once(scene):
     replay = choose(scene, attempt_id)
     assert replay.data == result.data
     assert (
-        scene["client"].get("/api/attempts/" + attempt_id + "/evaluation").data
+        scene["client"].get("/api/simulation/attempts/" + attempt_id + "/evaluation").data
         == report
     )
     assert (
@@ -123,8 +123,7 @@ def test_completion_failure_rolls_back_decision_evaluation_and_progress(scene):
 
     attempt_completed.connect(fail, weak=False, dispatch_uid="test.fail")
     try:
-        with pytest.raises(RuntimeError, match="observer failed"):
-            choose(scene, attempt_id)
+        assert choose(scene, attempt_id).status_code == 500
     finally:
         attempt_completed.disconnect(dispatch_uid="test.fail")
     attempt = SimulationAttempt.objects.get()
@@ -157,23 +156,23 @@ def test_sequence_unlocks_only_on_completion(scene):
     CaseAssignment.objects.create(
         case_version=version, estudiante=scene["student"], sort_order=1
     )
-    catalog = scene["client"].get("/api/catalog").data
+    catalog = scene["client"].get("/api/simulation/catalog").data
     assert catalog[1]["reason"] == "LOCKED_BY_SEQUENCE"
     assert (
         scene["client"]
-        .post("/api/attempts", {"case_version_id": version.pk}, format="json")
+        .post("/api/simulation/attempts", {"case_version_id": version.pk}, format="json")
         .status_code
         == 400
     )
     attempt_id = start(scene).data["id"]
-    scene["client"].post("/api/attempts/" + attempt_id + "/pause")
+    scene["client"].post("/api/simulation/attempts/" + attempt_id + "/pause")
     assert not StudentCaseCompletion.objects.exists()
-    scene["client"].post("/api/attempts/" + attempt_id + "/resume")
+    scene["client"].post("/api/simulation/attempts/" + attempt_id + "/resume")
     choose(scene, attempt_id)
-    assert scene["client"].get("/api/catalog").data[1]["allowed"] is True
+    assert scene["client"].get("/api/simulation/catalog").data[1]["allowed"] is True
     assert (
         scene["client"]
-        .post("/api/attempts", {"case_version_id": version.pk}, format="json")
+        .post("/api/simulation/attempts", {"case_version_id": version.pk}, format="json")
         .status_code
         == 201
     )

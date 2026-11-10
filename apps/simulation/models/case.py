@@ -113,6 +113,8 @@ class CaseVersion(models.Model):
         related_name="+",
     )
     edited_alone_since = models.BigIntegerField(default=0, db_default=0)
+    #: Tiempo estimado de participación en minutos (RF-05); nulo mientras el autor no lo define.
+    estimated_minutes = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         db_table = "case_versions"
