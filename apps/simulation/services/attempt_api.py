@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from apps.simulation.models import SimulationAttempt, AttemptEvent, DecisionOption
 from .access import available_versions
 from . import attempt_lifecycle as lifecycle
+from .calificacion import calificar_y_guardar
 from .attempt_duration import touch, reset_clock
 from .case_rules import rules_of, effects_of
 from .response_effects import apply as apply_effects
@@ -161,6 +162,7 @@ def _close_if_completed(attempt, result, event):
     if attempt.status != "COMPLETED":
         return
     evaluation = freeze(attempt)
+    calificar_y_guardar(attempt)
     result["evaluation"] = evaluation.snapshot
     event.detail = json.dumps(result)
     event.save(update_fields=["detail"])
