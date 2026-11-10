@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "apps.auditoria",
 
     # Ola 2 · sesiones
+    "apps.sesiones",
 ]
 
 MIDDLEWARE = [
