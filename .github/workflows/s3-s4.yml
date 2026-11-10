@@ -21,10 +21,13 @@ jobs:
           --health-cmd "pg_isready -U test_runner -d metafronesis_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DJANGO_SETTINGS_MODULE: psychosim.settings_s3
-      POSTGRES_DB: metafronesis_test
-      POSTGRES_USER: test_runner
-      POSTGRES_PASSWORD: test_only_password
+      DJANGO_SETTINGS_MODULE: psychosim.settings.test
+      SIEP_TEST_DB_NAME: metafronesis_test
+      SIEP_TEST_DB_HOST: 127.0.0.1
+      SIEP_TEST_DB_PORT: '5432'
+      SIEP_TEST_DB_USER: test_runner
+      SIEP_TEST_DB_PASSWORD: test_only_password
+      SIEP_TEST_ATTESTATION_NONCE: local
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,10 +37,9 @@ jobs:
           cache-dependency-path: |
             requirements-dev.txt
             requirements.txt
-            requirements-s3.txt
       - run: pip install -r requirements-dev.txt
-      - run: python manage_s3.py check
-      - run: python manage_s3.py makemigrations --check --dry-run
-      - run: python manage_s3.py migrate --noinput
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py migrate --noinput
       - name: Pruebas del corte S3 y S4
-        run: python -m pytest --ds=psychosim.settings_s3 apps/simulation/tests apps/biblioteca/tests -q
+        run: python -m pytest apps/simulation/tests apps/biblioteca/tests -q
