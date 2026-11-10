@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.reportes",
 
     # Ola 1 · revision
+    "apps.revision",
 ]
 
 MIDDLEWARE = [
