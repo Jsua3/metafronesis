@@ -500,6 +500,30 @@
       "audit": "MEMBERSHIP_LEFT"
     },
     {
+      "route": "api/me/notifications",
+      "method": "GET",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de notificaciones propias"
+    },
+    {
+      "route": "api/me/notifications/<int:pk>/read",
+      "method": "POST",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NOTIFICATION_READ"
+    },
+    {
+      "route": "api/notifications/<int:pk>/resend",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NOTIFICATION_RESENT"
+    },
+    {
       "route": "api/reportes/grupo/<int:grupo_id>/export",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",

@@ -114,6 +114,7 @@ urlpatterns = [
     path("api/instructor/", include("apps.revision.urls")),
 
     # Ola 2 · notificaciones
+    path("api/", include("apps.notificaciones.urls")),
 
     # Ola 2 · ia
 
