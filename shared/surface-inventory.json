@@ -348,6 +348,14 @@
       "audit": "MEMBERSHIP_LEFT"
     },
     {
+      "route": "api/reportes/grupo/<int:grupo_id>/export",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "REPORT_EXPORTED"
+    },
+    {
       "route": "api/security/csp-report",
       "method": "POST",
       "exposure": "public",
