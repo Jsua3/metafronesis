@@ -112,6 +112,14 @@ urlpatterns = [
     # Ola 1 · revision
     path("api/instructor/", include("apps.revision.urls")),
 
+    # Ola 2 · notificaciones
+
+    # Ola 2 · ia
+
+    # Ola 2 · auditoria
+
+    # Ola 2 · sesiones
+
     path("api/admin/users", AdminUserListCreateView.as_view()),
     path("api/admin/users/approve", AdminUserApproveView.as_view()),
     path("api/admin/users/<int:user_id>", AdminUserDetailView.as_view()),
