@@ -120,6 +120,7 @@ urlpatterns = [
     path("api/", include("apps.ia.urls")),
 
     # Ola 2 · auditoria
+    path("api/", include("apps.auditoria.urls")),
 
     # Ola 2 · sesiones
 

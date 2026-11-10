@@ -26,6 +26,14 @@
       "audit": "ACCESS_REQUEST_RESOLVED"
     },
     {
+      "route": "api/admin/audit",
+      "method": "GET",
+      "exposure": "role:ADMIN",
+      "body": "none",
+      "throttle": null,
+      "audit": "AUDIT_VIEWED"
+    },
+    {
       "route": "api/admin/users",
       "method": "GET",
       "exposure": "role:ADMIN",
