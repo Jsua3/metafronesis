@@ -580,6 +580,14 @@
       "audit": "REPORT_EXPORTED"
     },
     {
+      "route": "api/reportes/sesion/<int:sesion_id>/export",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "REPORT_EXPORTED"
+    },
+    {
       "route": "api/rubrics",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
