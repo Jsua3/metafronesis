@@ -241,6 +241,7 @@ PERSON_SCOPE: dict[str, tuple[Pertenencia, ...]] = {
             solo=("id", "replaced_by_id", "replace_reason", "ended_at"),
         ),
     ),
+    "simulation_attemptevaluation": (Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk)),),
     "attempt_events": (Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk)),),
     "attempt_hint_views": (Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk)),),
     "attempt_reports": (Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk)),),
@@ -354,13 +355,16 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
         "simulation_attempts_v2",
         (
             "id", "student_id", "current_node_id", "status", "started_at", "ended_at", "active_seconds",
-            "last_activity_at",
+            "last_activity_at", "state_json",
         ),
         Regla(CONSERVAR, _M_CONDUCTA),
     ),
     **_columnas(
         "simulation_attempts_v2", ("replaced_by_id", "replace_reason"),
         Regla(CONSERVAR, "quién y por qué cerró el intento (texto del docente o del sistema): " + _M_TEXTO_DE_OTRO),
+    ),
+    **_columnas(
+        "simulation_attemptevaluation", ("attempt_id", "snapshot"), Regla(CONSERVAR, _M_CONDUCTA),
     ),
     **_columnas(
         "attempt_events", ("attempt_id", "event_type", "decision_option_id", "occurred_at"),
