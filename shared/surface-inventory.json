@@ -662,6 +662,14 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/progress",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta el progreso de su propio intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/replace",
       "method": "POST",
       "exposure": "authenticated",
@@ -684,6 +692,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": null
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/revisit",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_REVISITED"
     },
     {
       "route": "api/simulation/cases",
