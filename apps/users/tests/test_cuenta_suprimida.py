@@ -9,9 +9,9 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from apps.privacy import services
-from apps.privacy.data_subject import correo_seudonimo
+from apps.privacy.data_subject import NOMBRE_SEUDONIMO, apellido_seudonimo, correo_seudonimo
 from apps.users.services import account_service
+from shared.policies import ADMIN, ESTUDIANTE
 
 pytestmark = [pytest.mark.req("RNF-003"), pytest.mark.security]
 
@@ -36,13 +36,17 @@ def _como(cuenta):
 
 @pytest.fixture
 def escenario(db):
-    admin = _cuenta("ADMIN", "admin")
-    estudiante = _cuenta("ESTUDIANTE", "estudiante")
-    otra = _cuenta("ESTUDIANTE", "otra")
+    admin = _cuenta(ADMIN, "admin")
+    estudiante = _cuenta(ESTUDIANTE, "estudiante")
+    otra = _cuenta(ESTUDIANTE, "otra")
     otra.activo = False
     otra.save(update_fields=["activo"])
-    services.erase_person(estudiante, executed_by=admin)
-    estudiante.refresh_from_db()
+    estudiante.email = correo_seudonimo(estudiante.pk)
+    estudiante.nombre = NOMBRE_SEUDONIMO
+    estudiante.apellido = apellido_seudonimo(estudiante.pk)
+    estudiante.activo = False
+    estudiante.set_password(None)
+    estudiante.save()
     assert estudiante.email == correo_seudonimo(estudiante.pk) and not estudiante.activo
     return admin, estudiante, otra
 

@@ -40,11 +40,13 @@ INSTALLED_APPS = [
     "apps.biblioteca",
 
     # Ola 1 · autoria
+    "apps.autoria",
 
     # Ola 1 · publicacion
     "apps.publicacion",
 
     # Ola 1 · reportes
+    "apps.reportes",
 
     # Ola 1 · revision
 ]

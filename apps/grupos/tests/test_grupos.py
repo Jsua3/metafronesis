@@ -7,7 +7,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from apps.grupos.models import GrupoEstudiante
-from apps.simulation.models import CaseVersion
 
 User = get_user_model()
 
@@ -279,8 +278,8 @@ def test_list_students_in_group(profesor, estudiante):
     }]
 
 
-def test_assign_case_to_group(profesor):
-    case_version_id = CaseVersion.objects.get(simulation_case__code="SIM-VBG-001", status="PUBLISHED").id
+def test_assign_case_to_group(profesor, caso_publicado):
+    case_version_id = caso_publicado.id
     grupo = cl(profesor).post("/api/grupos", {"nombre": "G", "codigo": "CASE1"}, format="json").data["data"]
 
     resp = cl(profesor).post(
@@ -294,8 +293,8 @@ def test_assign_case_to_group(profesor):
     assert resp.data["data"][0]["caseVersionId"] == case_version_id
 
 
-def test_assign_case_to_foreign_group_400(profesor, otro_profesor):
-    case_version_id = CaseVersion.objects.get(simulation_case__code="SIM-VBG-001", status="PUBLISHED").id
+def test_assign_case_to_foreign_group_400(profesor, otro_profesor, caso_publicado):
+    case_version_id = caso_publicado.id
     grupo = cl(profesor).post("/api/grupos", {"nombre": "G", "codigo": "CASE2"}, format="json").data["data"]
 
     resp = cl(otro_profesor).post(
