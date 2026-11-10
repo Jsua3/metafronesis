@@ -38,6 +38,14 @@ INSTALLED_APPS = [
     "apps.security",
     "apps.privacy",
     "apps.biblioteca",
+
+    # Ola 1 · autoria
+
+    # Ola 1 · publicacion
+
+    # Ola 1 · reportes
+
+    # Ola 1 · revision
 ]
 
 MIDDLEWARE = [

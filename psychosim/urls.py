@@ -96,6 +96,17 @@ urlpatterns = [
     # ``/api/admin/cases/**`` queda como alias del mismo urlconf hasta que el visual migre.
     # P6 · la biblioteca de lugares del editor de casos (solo quien autora).
     path("api/biblioteca/", include("apps.biblioteca.urls")),
+
+    # Ola 1 · rubricas
+
+    # Ola 1 · autoria
+
+    # Ola 1 · publicacion
+
+    # Ola 1 · reportes
+
+    # Ola 1 · revision
+
     path("api/admin/users", AdminUserListCreateView.as_view()),
     path("api/admin/users/approve", AdminUserApproveView.as_view()),
     path("api/admin/users/<int:user_id>", AdminUserDetailView.as_view()),
