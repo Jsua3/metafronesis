@@ -33,7 +33,7 @@ def test_concurrent_start_creates_one_open_attempt(scene):
     responses = parallel(
         scene["student"],
         lambda client: client.post(
-            "/api/attempts", {"case_version_id": scene["version"].pk}, format="json"
+            "/api/simulation/attempts", {"case_version_id": scene["version"].pk}, format="json"
         ),
     )
     assert sorted(r.status_code for r in responses) == [200, 201]
@@ -46,13 +46,13 @@ def test_concurrent_decision_applies_once(scene):
         pytest.skip("Requiere SELECT FOR UPDATE de PostgreSQL")
     attempt = (
         scene["client"]
-        .post("/api/attempts", {"case_version_id": scene["version"].pk}, format="json")
+        .post("/api/simulation/attempts", {"case_version_id": scene["version"].pk}, format="json")
         .data["id"]
     )
     responses = parallel(
         scene["student"],
         lambda client: client.post(
-            "/api/attempts/" + attempt + "/decisions",
+            "/api/simulation/attempts/" + attempt + "/decisions",
             {"decision_option_id": scene["option"].pk, "request_id": "same-command"},
             format="json",
         ),
