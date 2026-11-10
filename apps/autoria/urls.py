@@ -1,7 +1,11 @@
 from django.urls import path
 from .views import CasosView, DefinicionView, FichaView, EscenasView, EscenaView, DecisionesView, DecisionView
 
+from .views import ExportarCasoView, ImportarCasoView
+
 urlpatterns = [
+    path("cases/import", ImportarCasoView.as_view()),
+    path("cases/<int:case_version_id>/export", ExportarCasoView.as_view()),
     path("cases", CasosView.as_view()),
     path("cases/<int:case_version_id>/definition", DefinicionView.as_view()),
     path("cases/<int:case_version_id>/brief", FichaView.as_view()),

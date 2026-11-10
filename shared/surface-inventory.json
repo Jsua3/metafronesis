@@ -250,6 +250,14 @@
       "audit": null
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/export",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de casos propios o visibles para el administrador"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/lifecycle",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -296,6 +304,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: validación sin cambios sobre el caso propio o accesible al administrador"
+    },
+    {
+      "route": "api/authoring/cases/import",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED"
     },
     {
       "route": "api/biblioteca/lugares",
