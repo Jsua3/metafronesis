@@ -281,10 +281,12 @@ def _env_flag(name, default=False):
 AI_ASSISTANT_ENABLED = _env_flag("AI_ASSISTANT_ENABLED")
 AI_ASSISTANT_PROVIDER = os.environ.get("AI_ASSISTANT_PROVIDER", "")
 AI_ASSISTANT_API_KEY = os.environ.get("AI_ASSISTANT_API_KEY", "")
+AI_ASSISTANT_MODEL = os.environ.get("AI_ASSISTANT_MODEL", "gpt-4o-mini")
 AI_AUTHORING_ENABLED = _env_flag("AI_AUTHORING_ENABLED")
 AI_AUTHORING_PROVIDER = os.environ.get("AI_AUTHORING_PROVIDER", "")
 AI_AUTHORING_API_KEY = os.environ.get("AI_AUTHORING_API_KEY", "")
-AI_AUTHORING_DAILY_LIMIT_PER_USER = int(os.environ.get("AI_AUTHORING_DAILY_LIMIT_PER_USER", "0"))
+AI_AUTHORING_MODEL = os.environ.get("AI_AUTHORING_MODEL", "claude-haiku-5-5")
+AI_AUTHORING_DAILY_LIMIT_PER_USER = int(os.environ.get("AI_AUTHORING_DAILY_LIMIT_PER_USER", "200"))
 
 
 #: Valores que APAGAN un interruptor de seguridad «cerrado» (sin mayúsculas ni espacios). Cualquier otro valor lo enciende.
