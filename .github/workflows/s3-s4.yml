@@ -1,0 +1,51 @@
+name: Verificar el backend
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [feature/s3-caso-intento]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: metafronesis_test
+          POSTGRES_USER: test_runner
+          POSTGRES_PASSWORD: test_only_password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test_runner -d metafronesis_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: psychosim.settings.test
+      SIEP_TEST_DB_NAME: metafronesis_test
+      SIEP_TEST_DB_HOST: 127.0.0.1
+      SIEP_TEST_DB_PORT: '5432'
+      SIEP_TEST_DB_USER: test_runner
+      SIEP_TEST_DB_PASSWORD: test_only_password
+      SIEP_TEST_ATTESTATION_NONCE: local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            requirements.txt
+      - run: pip install -r requirements-dev.txt
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py migrate --noinput
+      - name: Pruebas de las apps migradas
+        run: >-
+          python -m pytest -q
+          apps/simulation/tests apps/biblioteca/tests
+          apps/autoria/tests apps/publicacion/tests apps/reportes/tests apps/revision/tests
+          apps/users/tests apps/grupos/tests
+          shared/tests/test_surface_inventory.py shared/tests/test_superficie_por_app.py
+          shared/tests/test_public_routes.py shared/tests/test_policy_matrix.py

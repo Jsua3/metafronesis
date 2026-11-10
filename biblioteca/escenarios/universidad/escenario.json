@@ -1,0 +1,1495 @@
+{
+  "esquema": 2,
+  "id": "universidad",
+  "nombre": "Universidad",
+  "descripcion": "Campus universitario: atención psicológica, bienestar, clases y espacios comunes.",
+  "temas": [
+    "orientacion",
+    "bienestar",
+    "violencia-genero"
+  ],
+  "completo": true,
+  "arteProvisional": true,
+  "nivelRiesgoPorDefecto": "MODERATE",
+  "hitos": [
+    {
+      "key": "valorar-el-riesgo",
+      "label": "Valorar el riesgo",
+      "description": "Explorar con la persona usuaria las señales de riesgo y estimar su nivel antes de decidir el acompañamiento. [por validar con Psicología]",
+      "decisive": true
+    },
+    {
+      "key": "informar-derechos",
+      "label": "Informar derechos",
+      "description": "Explicar a la persona usuaria sus derechos y las rutas de atención que existen en la universidad y en la ciudad. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "recomendar-medidas-de-proteccion",
+      "label": "Recomendar medidas de protección",
+      "description": "Proponer medidas concretas de protección y acompañar a la persona a solicitarlas. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "derivar-a-salud-mental",
+      "label": "Derivar a salud mental",
+      "description": "Remitir a la persona usuaria a atención en salud mental y asegurar que la remisión llegue. [por validar con Psicología]",
+      "decisive": true
+    },
+    {
+      "key": "aplicar-primeros-auxilios-psicologicos",
+      "label": "Aplicar primeros auxilios psicológicos",
+      "description": "Escuchar, proteger y conectar a la persona en crisis antes de cualquier otro paso. [por validar con Psicología]",
+      "decisive": false
+    },
+    {
+      "key": "no-mediar-con-el-agresor",
+      "label": "No mediar con el agresor",
+      "description": "Evitar cualquier mediación o careo entre la persona usuaria y quien la agrede. [por validar con Psicología]",
+      "decisive": false
+    }
+  ],
+  "salas": [
+    {
+      "id": "entrada",
+      "nombre": "Entrada del campus",
+      "descripcion": "Portería y fachada de la facultad, donde se llega al campus.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/entrada.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "porteria",
+          "x": 200,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "banca",
+          "x": 720,
+          "y": 400,
+          "espejo": false
+        },
+        {
+          "ref": "planta",
+          "x": 860,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "caneca",
+          "x": 620,
+          "y": 290,
+          "espejo": false
+        },
+        {
+          "ref": "cartelera",
+          "x": 330,
+          "y": 236,
+          "espejo": false
+        }
+      ],
+      "objetos": [],
+      "personajes": [
+        {
+          "ref": "vigilante",
+          "x": 290,
+          "y": 340,
+          "mirando": "derecha",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 236,
+          "etiqueta": "Entrar a la facultad"
+        }
+      ]
+    },
+    {
+      "id": "pasillo",
+      "nombre": "Pasillo de facultad",
+      "descripcion": "Pasillo central que comunica las aulas, las oficinas y los servicios.",
+      "encuadre": "una-pared",
+      "fondo": "arte/salas/pasillo.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "cartelera",
+          "x": 442,
+          "y": 236,
+          "espejo": false
+        },
+        {
+          "ref": "dispensador-agua",
+          "x": 615,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "caneca",
+          "x": 800,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "banca",
+          "x": 300,
+          "y": 420,
+          "espejo": false
+        },
+        {
+          "ref": "planta",
+          "x": 890,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "afiche-bienestar",
+          "x": 230,
+          "y": 300
+        },
+        {
+          "ref": "buzon-bienestar",
+          "x": 540,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "companera-clase",
+          "x": 640,
+          "y": 380,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-entrada",
+          "hacia": "entrada",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir a la entrada del campus"
+        },
+        {
+          "id": "puerta-aula",
+          "hacia": "aula",
+          "x": 140,
+          "y": 236,
+          "etiqueta": "Entrar al aula"
+        },
+        {
+          "id": "puerta-oficina-docente",
+          "hacia": "oficina-docente",
+          "x": 330,
+          "y": 236,
+          "etiqueta": "Entrar a la oficina de docentes"
+        },
+        {
+          "id": "puerta-sala-espera",
+          "hacia": "sala-espera",
+          "x": 520,
+          "y": 236,
+          "etiqueta": "Ir a la sala de espera de Bienestar"
+        },
+        {
+          "id": "puerta-biblioteca",
+          "hacia": "biblioteca",
+          "x": 710,
+          "y": 236,
+          "etiqueta": "Entrar a la biblioteca"
+        },
+        {
+          "id": "puerta-cafeteria",
+          "hacia": "cafeteria",
+          "x": 24,
+          "y": 380,
+          "etiqueta": "Ir a la cafetería"
+        },
+        {
+          "id": "puerta-enfermeria",
+          "hacia": "enfermeria",
+          "x": 936,
+          "y": 380,
+          "etiqueta": "Ir a la enfermería"
+        }
+      ]
+    },
+    {
+      "id": "aula",
+      "nombre": "Aula de clase",
+      "descripcion": "Salón con tablero, escritorio del profesor y pupitres.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/aula.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "tablero",
+          "x": 480,
+          "y": 236,
+          "espejo": false
+        },
+        {
+          "ref": "escritorio",
+          "x": 480,
+          "y": 296,
+          "espejo": false
+        },
+        {
+          "ref": "pupitre",
+          "x": 240,
+          "y": 380,
+          "espejo": false
+        },
+        {
+          "ref": "pupitre",
+          "x": 360,
+          "y": 380,
+          "espejo": false
+        },
+        {
+          "ref": "pupitre",
+          "x": 600,
+          "y": 380,
+          "espejo": false
+        },
+        {
+          "ref": "pupitre",
+          "x": 720,
+          "y": 380,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "mochila",
+          "x": 250,
+          "y": 450
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "docente",
+          "x": 600,
+          "y": 300,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        },
+        {
+          "ref": "estudiante-consultante",
+          "x": 720,
+          "y": 410,
+          "mirando": "izquierda",
+          "expresion": "triste"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "oficina-docente",
+      "nombre": "Oficina de docente",
+      "descripcion": "Oficina pequeña donde el profesor atiende a sus estudiantes.",
+      "encuadre": "dos-paredes-izquierda",
+      "fondo": "arte/salas/oficina-docente.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "estante-libros",
+          "x": 180,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "archivador",
+          "x": 290,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "silla-oficina",
+          "x": 470,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "escritorio",
+          "x": 470,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante",
+          "x": 520,
+          "y": 350,
+          "espejo": true
+        },
+        {
+          "ref": "planta",
+          "x": 860,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "taza-cafe",
+          "x": 430,
+          "y": 262
+        },
+        {
+          "ref": "lampara-escritorio",
+          "x": 512,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "docente",
+          "x": 340,
+          "y": 330,
+          "mirando": "derecha",
+          "expresion": "preocupada"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "sala-espera",
+      "nombre": "Sala de espera de Bienestar",
+      "descripcion": "Sillas de espera antes de pasar a la oficina de Bienestar.",
+      "encuadre": "dos-paredes-derecha",
+      "fondo": "arte/salas/sala-espera.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "sillas-espera",
+          "x": 300,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "sillas-espera",
+          "x": 300,
+          "y": 400,
+          "espejo": false
+        },
+        {
+          "ref": "mesa-centro",
+          "x": 520,
+          "y": 340,
+          "espejo": false
+        },
+        {
+          "ref": "planta",
+          "x": 110,
+          "y": 290,
+          "espejo": false
+        },
+        {
+          "ref": "dispensador-agua",
+          "x": 700,
+          "y": 262,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "folleto-rutas",
+          "x": 520,
+          "y": 334
+        },
+        {
+          "ref": "cartelera-horarios",
+          "x": 620,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "estudiante-consultante",
+          "x": 420,
+          "y": 330,
+          "mirando": "derecha",
+          "expresion": "preocupada"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        },
+        {
+          "id": "puerta-bienestar",
+          "hacia": "bienestar",
+          "x": 864,
+          "y": 360,
+          "etiqueta": "Pasar a Bienestar"
+        }
+      ]
+    },
+    {
+      "id": "bienestar",
+      "nombre": "Oficina de Bienestar Universitario",
+      "descripcion": "Recepción de Bienestar, donde se pide la cita y se orienta a la persona.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/bienestar.png",
+      "entrada": {
+        "x": 170,
+        "y": 390
+      },
+      "muebles": [
+        {
+          "ref": "silla-oficina",
+          "x": 420,
+          "y": 262,
+          "espejo": false
+        },
+        {
+          "ref": "mostrador",
+          "x": 420,
+          "y": 304,
+          "espejo": false
+        },
+        {
+          "ref": "archivador",
+          "x": 200,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "cartelera",
+          "x": 600,
+          "y": 236,
+          "espejo": false
+        },
+        {
+          "ref": "planta",
+          "x": 820,
+          "y": 300,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "planilla-turnos",
+          "x": 480,
+          "y": 290
+        },
+        {
+          "ref": "afiche-bienestar",
+          "x": 640,
+          "y": 262
+        },
+        {
+          "ref": "computador-oficina",
+          "x": 370,
+          "y": 266
+        },
+        {
+          "ref": "planta-maceta",
+          "x": 760,
+          "y": 280
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "recepcionista-bienestar",
+          "x": 360,
+          "y": 262,
+          "mirando": "derecha",
+          "expresion": "alegre"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-sala-espera",
+          "hacia": "sala-espera",
+          "x": 96,
+          "y": 360,
+          "etiqueta": "Volver a la sala de espera"
+        },
+        {
+          "id": "puerta-consultorio",
+          "hacia": "consultorio",
+          "x": 730,
+          "y": 236,
+          "etiqueta": "Entrar al consultorio"
+        }
+      ]
+    },
+    {
+      "id": "consultorio",
+      "nombre": "Consultorio de atención psicológica",
+      "descripcion": "Espacio privado para la primera escucha.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/consultorio.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "silla-oficina",
+          "x": 690,
+          "y": 256,
+          "espejo": false
+        },
+        {
+          "ref": "escritorio",
+          "x": 690,
+          "y": 290,
+          "espejo": false
+        },
+        {
+          "ref": "sillon",
+          "x": 280,
+          "y": 340,
+          "espejo": false
+        },
+        {
+          "ref": "sillon",
+          "x": 460,
+          "y": 340,
+          "espejo": true
+        },
+        {
+          "ref": "mesa-centro",
+          "x": 370,
+          "y": 360,
+          "espejo": false
+        },
+        {
+          "ref": "planta",
+          "x": 140,
+          "y": 290,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "vaso-agua",
+          "x": 370,
+          "y": 352
+        },
+        {
+          "ref": "folleto-rutas",
+          "x": 650,
+          "y": 280
+        },
+        {
+          "ref": "caja-panuelos",
+          "x": 392,
+          "y": 350
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "psicologa-bienestar",
+          "x": 520,
+          "y": 350,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-bienestar",
+          "hacia": "bienestar",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir a Bienestar"
+        }
+      ]
+    },
+    {
+      "id": "enfermeria",
+      "nombre": "Enfermería",
+      "descripcion": "Primeros auxilios del campus, con camilla y botiquín.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/enfermeria.png",
+      "entrada": {
+        "x": 170,
+        "y": 400
+      },
+      "muebles": [
+        {
+          "ref": "camilla",
+          "x": 600,
+          "y": 300,
+          "espejo": false
+        },
+        {
+          "ref": "biombo",
+          "x": 740,
+          "y": 280,
+          "espejo": false
+        },
+        {
+          "ref": "vitrina-medicamentos",
+          "x": 300,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "lavamanos",
+          "x": 420,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante",
+          "x": 260,
+          "y": 370,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "vaso-agua",
+          "x": 420,
+          "y": 240
+        },
+        {
+          "ref": "botiquin",
+          "x": 520,
+          "y": 250
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "enfermera",
+          "x": 520,
+          "y": 360,
+          "mirando": "izquierda",
+          "expresion": "neutral"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 96,
+          "y": 380,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "cafeteria",
+      "nombre": "Cafetería",
+      "descripcion": "Barra de comida y mesas donde se reúnen los estudiantes.",
+      "encuadre": "dos-paredes-izquierda",
+      "fondo": "arte/salas/cafeteria.png",
+      "entrada": {
+        "x": 860,
+        "y": 430
+      },
+      "muebles": [
+        {
+          "ref": "barra-cafeteria",
+          "x": 300,
+          "y": 290,
+          "espejo": false
+        },
+        {
+          "ref": "mesa-cafeteria",
+          "x": 560,
+          "y": 360,
+          "espejo": false
+        },
+        {
+          "ref": "silla-cafeteria",
+          "x": 515,
+          "y": 362,
+          "espejo": false
+        },
+        {
+          "ref": "mesa-cafeteria",
+          "x": 760,
+          "y": 320,
+          "espejo": false
+        },
+        {
+          "ref": "silla-cafeteria",
+          "x": 805,
+          "y": 322,
+          "espejo": true
+        },
+        {
+          "ref": "caneca",
+          "x": 880,
+          "y": 280,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "celular",
+          "x": 760,
+          "y": 314
+        },
+        {
+          "ref": "mochila",
+          "x": 470,
+          "y": 420
+        },
+        {
+          "ref": "carne-estudiantil",
+          "x": 575,
+          "y": 340
+        }
+      ],
+      "personajes": [
+        {
+          "ref": "companera-clase",
+          "x": 610,
+          "y": 400,
+          "mirando": "izquierda",
+          "expresion": "preocupada"
+        }
+      ],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 936,
+          "y": 380,
+          "etiqueta": "Volver al pasillo"
+        }
+      ]
+    },
+    {
+      "id": "biblioteca",
+      "nombre": "Biblioteca",
+      "descripcion": "Estanterías y mesas de estudio en silencio.",
+      "encuadre": "tres-paredes",
+      "fondo": "arte/salas/biblioteca.png",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "muebles": [
+        {
+          "ref": "estante-biblioteca",
+          "x": 180,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "estante-biblioteca",
+          "x": 310,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "estante-biblioteca",
+          "x": 780,
+          "y": 252,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante",
+          "x": 440,
+          "y": 320,
+          "espejo": false
+        },
+        {
+          "ref": "silla-visitante",
+          "x": 520,
+          "y": 320,
+          "espejo": true
+        },
+        {
+          "ref": "mesa-estudio",
+          "x": 480,
+          "y": 350,
+          "espejo": false
+        }
+      ],
+      "objetos": [
+        {
+          "ref": "libro-abierto",
+          "x": 480,
+          "y": 322
+        },
+        {
+          "ref": "tablero-avisos",
+          "x": 640,
+          "y": 262
+        }
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "id": "puerta-pasillo",
+          "hacia": "pasillo",
+          "x": 480,
+          "y": 486,
+          "etiqueta": "Salir al pasillo"
+        }
+      ]
+    }
+  ],
+  "recorridosSugeridos": [
+    {
+      "id": "atencion-bienestar",
+      "nombre": "Atención en Bienestar",
+      "descripcion": "La persona llega, espera y es escuchada en el consultorio.",
+      "salas": [
+        "pasillo",
+        "sala-espera",
+        "consultorio"
+      ]
+    },
+    {
+      "id": "docente-detecta-alerta",
+      "nombre": "Un docente detecta una señal de alerta",
+      "descripcion": "En clase el profesor nota algo, habla con la persona en su oficina y la acompaña a Bienestar.",
+      "salas": [
+        "aula",
+        "pasillo",
+        "oficina-docente",
+        "bienestar"
+      ]
+    },
+    {
+      "id": "crisis-espacio-comun",
+      "nombre": "Crisis en un espacio común",
+      "descripcion": "Una persona entra en crisis en la cafetería, recibe primeros auxilios y luego atención psicológica.",
+      "salas": [
+        "cafeteria",
+        "enfermeria",
+        "consultorio"
+      ]
+    }
+  ],
+  "catalogo": {
+    "muebles": [
+      {
+        "id": "escritorio",
+        "nombre": "Escritorio",
+        "arte": "arte/muebles/escritorio.png",
+        "ancho": 122,
+        "alto": 28,
+        "colision": true
+      },
+      {
+        "id": "silla-oficina",
+        "nombre": "Silla de oficina",
+        "arte": "arte/muebles/silla-oficina.png",
+        "ancho": 26,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "silla-visitante",
+        "nombre": "Silla para visitante",
+        "arte": "arte/muebles/silla-visitante.png",
+        "ancho": 24,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "sillon",
+        "nombre": "Sillón",
+        "arte": "arte/muebles/sillon.png",
+        "ancho": 46,
+        "alto": 24,
+        "colision": true
+      },
+      {
+        "id": "sofa",
+        "nombre": "Sofá de dos puestos",
+        "arte": "arte/muebles/sofa.png",
+        "ancho": 88,
+        "alto": 26,
+        "colision": true
+      },
+      {
+        "id": "mesa-centro",
+        "nombre": "Mesa de centro",
+        "arte": "arte/muebles/mesa-centro.png",
+        "ancho": 50,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "estante-libros",
+        "nombre": "Estante con libros",
+        "arte": "arte/muebles/estante-libros.png",
+        "ancho": 62,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "archivador",
+        "nombre": "Archivador",
+        "arte": "arte/muebles/archivador.png",
+        "ancho": 40,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "planta",
+        "nombre": "Planta",
+        "arte": "arte/muebles/planta.png",
+        "ancho": 36,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "mostrador",
+        "nombre": "Mostrador de atención",
+        "arte": "arte/muebles/mostrador.png",
+        "ancho": 180,
+        "alto": 30,
+        "colision": true
+      },
+      {
+        "id": "sillas-espera",
+        "nombre": "Fila de sillas de espera",
+        "arte": "arte/muebles/sillas-espera.png",
+        "ancho": 120,
+        "alto": 22,
+        "colision": true
+      },
+      {
+        "id": "pupitre",
+        "nombre": "Pupitre",
+        "arte": "arte/muebles/pupitre.png",
+        "ancho": 46,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "tablero",
+        "nombre": "Tablero",
+        "arte": "arte/muebles/tablero.png",
+        "ancho": 180,
+        "alto": 8,
+        "colision": false
+      },
+      {
+        "id": "cartelera",
+        "nombre": "Cartelera",
+        "arte": "arte/muebles/cartelera.png",
+        "ancho": 90,
+        "alto": 6,
+        "colision": false
+      },
+      {
+        "id": "mesa-cafeteria",
+        "nombre": "Mesa de cafetería",
+        "arte": "arte/muebles/mesa-cafeteria.png",
+        "ancho": 56,
+        "alto": 22,
+        "colision": true
+      },
+      {
+        "id": "silla-cafeteria",
+        "nombre": "Silla de cafetería",
+        "arte": "arte/muebles/silla-cafeteria.png",
+        "ancho": 22,
+        "alto": 12,
+        "colision": true
+      },
+      {
+        "id": "barra-cafeteria",
+        "nombre": "Barra de la cafetería",
+        "arte": "arte/muebles/barra-cafeteria.png",
+        "ancho": 200,
+        "alto": 32,
+        "colision": true
+      },
+      {
+        "id": "camilla",
+        "nombre": "Camilla",
+        "arte": "arte/muebles/camilla.png",
+        "ancho": 104,
+        "alto": 28,
+        "colision": true
+      },
+      {
+        "id": "vitrina-medicamentos",
+        "nombre": "Vitrina del botiquín",
+        "arte": "arte/muebles/vitrina-medicamentos.png",
+        "ancho": 56,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "biombo",
+        "nombre": "Biombo",
+        "arte": "arte/muebles/biombo.png",
+        "ancho": 70,
+        "alto": 10,
+        "colision": true
+      },
+      {
+        "id": "lavamanos",
+        "nombre": "Lavamanos",
+        "arte": "arte/muebles/lavamanos.png",
+        "ancho": 40,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "mesa-estudio",
+        "nombre": "Mesa de estudio",
+        "arte": "arte/muebles/mesa-estudio.png",
+        "ancho": 130,
+        "alto": 28,
+        "colision": true
+      },
+      {
+        "id": "estante-biblioteca",
+        "nombre": "Estantería de libros",
+        "arte": "arte/muebles/estante-biblioteca.png",
+        "ancho": 96,
+        "alto": 20,
+        "colision": true
+      },
+      {
+        "id": "banca",
+        "nombre": "Banca",
+        "arte": "arte/muebles/banca.png",
+        "ancho": 100,
+        "alto": 18,
+        "colision": true
+      },
+      {
+        "id": "caneca",
+        "nombre": "Caneca de reciclaje",
+        "arte": "arte/muebles/caneca.png",
+        "ancho": 26,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "dispensador-agua",
+        "nombre": "Dispensador de agua",
+        "arte": "arte/muebles/dispensador-agua.png",
+        "ancho": 26,
+        "alto": 14,
+        "colision": true
+      },
+      {
+        "id": "porteria",
+        "nombre": "Caseta de portería",
+        "arte": "arte/muebles/porteria.png",
+        "ancho": 120,
+        "alto": 32,
+        "colision": true
+      },
+      {
+        "id": "tapete",
+        "nombre": "Tapete",
+        "arte": "arte/muebles/tapete.png",
+        "ancho": 120,
+        "alto": 40,
+        "colision": false
+      }
+    ],
+    "objetos": [
+      {
+        "id": "folleto-rutas",
+        "nombre": "Folleto de rutas de atención",
+        "tipo": "RESOURCE",
+        "arte": "arte/objetos/folleto-rutas.png",
+        "textoInteraccion": "Revisar",
+        "alRevisar": "Folleto con las rutas de atención en violencia de género.",
+        "efecto": "pista",
+        "animacionCerca": {
+          "hoja": "arte/objetos/folleto-rutas-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "hitos": [
+          "informar-derechos"
+        ]
+      },
+      {
+        "id": "afiche-bienestar",
+        "nombre": "Afiche de servicios de Bienestar",
+        "tipo": "NOTE",
+        "arte": "arte/objetos/afiche-bienestar.png",
+        "textoInteraccion": "Leer",
+        "alRevisar": "Bienestar Universitario: «Hablar también cuida». Horarios de atención.",
+        "efecto": "ninguno",
+        "animacionCerca": {
+          "hoja": "arte/objetos/afiche-bienestar-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        }
+      },
+      {
+        "id": "planilla-turnos",
+        "nombre": "Planilla de turnos de atención",
+        "tipo": "RESOURCE",
+        "arte": "arte/objetos/planilla-turnos.png",
+        "textoInteraccion": "Revisar",
+        "alRevisar": "Planilla de turnos de la sala de espera. Hoy hay tres personas antes.",
+        "efecto": "ninguno",
+        "animacionCerca": {
+          "hoja": "arte/objetos/planilla-turnos-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        }
+      },
+      {
+        "id": "vaso-agua",
+        "nombre": "Vaso de agua",
+        "tipo": "PROP",
+        "arte": "arte/objetos/vaso-agua.png",
+        "textoInteraccion": "Ofrecer",
+        "alRevisar": "Un vaso de agua para quien llega.",
+        "efecto": "ninguno",
+        "animacionCerca": {
+          "hoja": "arte/objetos/vaso-agua-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        }
+      },
+      {
+        "id": "celular",
+        "nombre": "Celular sobre la mesa",
+        "tipo": "OBJECT",
+        "arte": "arte/objetos/celular.png",
+        "textoInteraccion": "Mirar",
+        "alRevisar": "Un celular sobre la mesa. No es tuyo.",
+        "efecto": "ninguno",
+        "animacionCerca": {
+          "hoja": "arte/objetos/celular-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        }
+      },
+      {
+        "id": "mochila",
+        "nombre": "Mochila",
+        "tipo": "OBJECT",
+        "arte": "arte/objetos/mochila.png",
+        "textoInteraccion": "Mirar",
+        "alRevisar": "Una mochila de estudiante, dejada junto a la silla.",
+        "efecto": "ninguno",
+        "animacionCerca": {
+          "hoja": "arte/objetos/mochila-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        }
+      },
+      {
+        "id": "carne-estudiantil",
+        "nombre": "Carné estudiantil",
+        "tipo": "OBJECT",
+        "desdeModelo": "carne-estudiantil",
+        "arte": "arte/objetos/carne-estudiantil.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/carne-estudiantil-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Lo dejó sobre la mesa al salir.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "taza-cafe",
+        "nombre": "Taza de café",
+        "tipo": "PROP",
+        "desdeModelo": "taza-cafe",
+        "arte": "arte/objetos/taza-cafe.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/taza-cafe-cerca.png",
+          "cuadros": 4,
+          "fps": 6
+        },
+        "alRevisar": "Todavía tibia.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "lampara-escritorio",
+        "nombre": "Lámpara de escritorio",
+        "tipo": "PROP",
+        "desdeModelo": "lampara-escritorio",
+        "arte": "arte/objetos/lampara-escritorio.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/lampara-escritorio-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Da una luz cálida.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "libro-abierto",
+        "nombre": "Libro abierto",
+        "tipo": "OBJECT",
+        "desdeModelo": "libro-abierto",
+        "arte": "arte/objetos/libro-abierto.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/libro-abierto-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Un manual de entrevista clínica, subrayado.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "tablero-avisos",
+        "nombre": "Tablero de avisos",
+        "tipo": "NOTE",
+        "desdeModelo": "tablero-avisos",
+        "arte": "arte/objetos/tablero-avisos.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/tablero-avisos-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Avisos del lugar: horarios, un curso, alguien que vende una bicicleta.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "computador-oficina",
+        "nombre": "Computador de la oficina",
+        "tipo": "OBJECT",
+        "desdeModelo": "computador-oficina",
+        "arte": "arte/objetos/computador-oficina.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/computador-oficina-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Está bloqueado. Lo que hay ahí no es tuyo.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "planta-maceta",
+        "nombre": "Planta pequeña",
+        "tipo": "PROP",
+        "desdeModelo": "planta-maceta",
+        "arte": "arte/objetos/planta-maceta.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/planta-maceta-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Alguien la riega todos los días.",
+        "textoInteraccion": "Mirar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "buzon-bienestar",
+        "nombre": "Buzón de Bienestar",
+        "tipo": "RESOURCE",
+        "desdeModelo": "buzon-bienestar",
+        "arte": "arte/objetos/buzon-bienestar.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/buzon-bienestar-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Buzón anónimo de Bienestar. Aquí también se piden citas.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "cartelera-horarios",
+        "nombre": "Cartelera de horarios",
+        "tipo": "NOTE",
+        "desdeModelo": "cartelera-horarios",
+        "arte": "arte/objetos/cartelera-horarios.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/cartelera-horarios-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Bienestar atiende de 8 a 5. Enfermería, de 7 a 7.",
+        "textoInteraccion": "Leer",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "botiquin",
+        "nombre": "Botiquín",
+        "tipo": "RESOURCE",
+        "desdeModelo": "botiquin",
+        "arte": "arte/objetos/botiquin.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/botiquin-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Lo usa la enfermera. Si alguien se siente mal, avísale.",
+        "textoInteraccion": "Revisar",
+        "efecto": "ninguno"
+      },
+      {
+        "id": "caja-panuelos",
+        "nombre": "Caja de pañuelos",
+        "tipo": "OBJECT",
+        "desdeModelo": "caja-panuelos",
+        "arte": "arte/objetos/caja-panuelos.png",
+        "animacionCerca": {
+          "hoja": "arte/objetos/caja-panuelos-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "alRevisar": "Tenerlos a la mano, sin ofrecerlos de golpe.",
+        "textoInteraccion": "Revisar",
+        "efecto": "pista"
+      }
+    ],
+    "herramientas": [
+      {
+        "id": "ficha-riesgo",
+        "nombre": "Ficha de riesgo",
+        "descripcion": "Para anotar señales de riesgo observadas.",
+        "arte": "arte/herramientas/ficha-riesgo.png",
+        "alRevisar": "Hoja para anotar las señales de riesgo que observes.",
+        "animacionCerca": {
+          "hoja": "arte/herramientas/ficha-riesgo-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "hitos": [
+          "valorar-el-riesgo"
+        ]
+      },
+      {
+        "id": "directorio-rutas",
+        "nombre": "Directorio de rutas de atención",
+        "descripcion": "Teléfonos y lugares a los que se puede remitir a la persona.",
+        "arte": "arte/herramientas/directorio-rutas.png",
+        "alRevisar": "Teléfonos y direcciones de las rutas de atención de la ciudad.",
+        "animacionCerca": {
+          "hoja": "arte/herramientas/directorio-rutas-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "hitos": [
+          "informar-derechos",
+          "derivar-a-salud-mental"
+        ]
+      },
+      {
+        "id": "guia-primeros-auxilios",
+        "nombre": "Guía de primeros auxilios psicológicos",
+        "descripcion": "Pasos para acompañar a alguien en crisis: escuchar, proteger y conectar.",
+        "arte": "arte/herramientas/guia-primeros-auxilios.png",
+        "alRevisar": "Pasos de los primeros auxilios psicológicos, para tener a mano.",
+        "animacionCerca": {
+          "hoja": "arte/herramientas/guia-primeros-auxilios-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "hitos": [
+          "aplicar-primeros-auxilios-psicologicos"
+        ]
+      },
+      {
+        "id": "protocolo-bienestar",
+        "nombre": "Protocolo de Bienestar",
+        "descripcion": "Qué hace la universidad cuando recibe un caso y a quién avisa.",
+        "arte": "arte/herramientas/protocolo-bienestar.png",
+        "alRevisar": "Qué hace Bienestar cuando una estudiante pide ayuda.",
+        "animacionCerca": {
+          "hoja": "arte/herramientas/protocolo-bienestar-cerca.png",
+          "cuadros": 3,
+          "fps": 6
+        },
+        "hitos": [
+          "derivar-a-salud-mental"
+        ]
+      }
+    ]
+  },
+  "personajes": [
+    {
+      "id": "psicologa-bienestar",
+      "nombre": "Psicóloga de Bienestar",
+      "rol": "Profesional",
+      "recipeId": "psicologa-hospitalaria"
+    },
+    {
+      "id": "docente",
+      "nombre": "Docente",
+      "rol": "Docente",
+      "recipeId": "docente-universidad"
+    },
+    {
+      "id": "estudiante-consultante",
+      "nombre": "Estudiante consultante",
+      "rol": "Estudiante",
+      "recipeId": "estudiante-consultante"
+    },
+    {
+      "id": "companera-clase",
+      "nombre": "Compañera de clase",
+      "rol": "Estudiante",
+      "recipeId": "companera-clase"
+    },
+    {
+      "id": "recepcionista-bienestar",
+      "nombre": "Recepcionista de Bienestar",
+      "rol": "Personal administrativo",
+      "recipeId": "funcionaria-recepcion"
+    },
+    {
+      "id": "enfermera",
+      "nombre": "Enfermera",
+      "rol": "Profesional de salud",
+      "recipeId": "enfermera-urgencias"
+    },
+    {
+      "id": "vigilante",
+      "nombre": "Vigilante",
+      "rol": "Seguridad",
+      "recipeId": "seguridad"
+    }
+  ]
+}
