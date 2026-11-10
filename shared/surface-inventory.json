@@ -170,6 +170,14 @@
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/validate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: validación sin cambios sobre el caso propio o accesible al administrador"
+    },
+    {
       "route": "api/biblioteca/lugares",
       "method": "GET",
       "exposure": "authenticated",

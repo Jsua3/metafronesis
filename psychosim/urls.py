@@ -102,6 +102,7 @@ urlpatterns = [
     # Ola 1 · autoria
 
     # Ola 1 · publicacion
+    path("api/authoring/", include("apps.publicacion.urls")),
 
     # Ola 1 · reportes
 
