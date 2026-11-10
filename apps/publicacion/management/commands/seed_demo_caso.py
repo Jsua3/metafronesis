@@ -11,6 +11,8 @@ from apps.simulation.models import (CaseVersion, DecisionOption, Rubric, RubricC
                                     SimulationCase, SimulationNode, SimulationRubricAssignment)
 from apps.users.models import CustomUser
 from shared.policies import ESTUDIANTE, PROFESOR
+from apps.simulation.models import CaseVersionStatus
+from apps.simulation.models.vocabulary import ResponseClass
 
 
 class Command(BaseCommand):
@@ -39,8 +41,8 @@ class Command(BaseCommand):
             narrative="Se presenta una situación de ejemplo.", decision_prompt="¿Qué harías?", start_node=True)
         fin = SimulationNode.objects.create(case_version=version, node_key="fin", title="Fin",
             narrative="El ejercicio ha terminado.", terminal_node=True)
-        for clave, texto, clase in [("analizar", "Analizar la situación", "RECOMMENDED"),
-                                     ("ignorar", "Ignorar la situación", "RISKY")]:
+        for clave, texto, clase in [("analizar", "Analizar la situación", ResponseClass.RECOMMENDED),
+                                     ("ignorar", "Ignorar la situación", ResponseClass.RISKY)]:
             DecisionOption.objects.create(case_version=version, source_node=inicio, target_node=fin,
                 option_key=clave, text=texto, response_class=clase, feedback_text="Reflexiona sobre la decisión.",
                 theory_basis="Ejercicio de práctica.", effects='{"competencies":["ANALISIS"]}')
@@ -48,7 +50,7 @@ class Command(BaseCommand):
         RubricCriterion.objects.create(rubric=rubrica, competency="ANALISIS", title="Análisis", weight=Decimal("100"))
         SimulationRubricAssignment.objects.create(case_version=version, rubric=rubrica, assigned_by=docente)
         CaseAssignment.objects.create(case_version=version, estudiante=estudiante, assigned_by=docente)
-        version.status = "PUBLISHED"
+        version.status = CaseVersionStatus.PUBLISHED
         version.published_at = version.validated_at = timezone.now()
         version.definition_hash = huella_de(version)
         version.save(update_fields=["status", "published_at", "validated_at", "definition_hash"])
