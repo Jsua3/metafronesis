@@ -150,6 +150,16 @@
       "audit": "PASSWORD_CHANGED"
     },
     {
+      "route": "api/auth/code-login",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "login_ip"
+      ],
+      "audit": "LOGIN_SUCCEEDED,LOGIN_FAILED,LOGIN_LOCKED"
+    },
+    {
       "route": "api/auth/google",
       "method": "POST",
       "exposure": "public",

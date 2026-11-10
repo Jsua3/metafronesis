@@ -185,6 +185,14 @@ class LoginSerializer(serializers.Serializer):
         return normalize_email_value(value)
 
 
+class CodeLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_email(self, value):
+        return normalize_email_value(value)
+
+
 class GoogleLoginSerializer(serializers.Serializer):
     # R1c · una credencial de Google no pasa de LONGITUD_MAXIMA: el 400 de validación llega antes de cualquier red.
     credential = serializers.CharField(write_only=True, max_length=LONGITUD_MAXIMA)
