@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formato",
+    "version",
+    "ficha",
+    "escenas",
+    "decisiones"
+  ],
+  "properties": {
+    "formato": {
+      "const": "metafronesis-caso"
+    },
+    "version": {
+      "const": 1
+    },
+    "ficha": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "title",
+        "description",
+        "narrativeContext",
+        "learningObjectives",
+        "estimatedMinutes"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "\\S"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "narrativeContext": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "learningObjectives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "estimatedMinutes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "escenas": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "title",
+          "narrative",
+          "question",
+          "start",
+          "terminal",
+          "order"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "narrative": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "start": {
+            "type": "boolean"
+          },
+          "terminal": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
+          }
+        }
+      }
+    },
+    "decisiones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "source",
+          "target",
+          "text",
+          "responseClass",
+          "feedback",
+          "theoryBasis"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "source": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "responseClass": {
+            "enum": [
+              "RECOMMENDED",
+              "ACCEPTABLE",
+              "RISKY",
+              "CONTRAINDICATED"
+            ]
+          },
+          "feedback": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "theoryBasis": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
