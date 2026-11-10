@@ -48,3 +48,46 @@ El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 - La validación del caso tiene tres huecos conocidos (publicar sin revisión aprobada con `REVIEW_WORKFLOW_STRICT`, sugerencias de IA sin revisar y camino de la escena inicial a un final); están en el seguimiento SIEP-62.
 - El ingreso tardío se niega pasada la mitad de la duración de la sesión (`SIEP_INGRESO_TARDIO_FRACCION`, 0,5 por defecto): es un supuesto declarado, por confirmar con la docente.
 - La nota es el nivel formativo de 1,00 a 4,00, no una nota de 0 a 5; es una equivalencia declarada.
+
+## Cómo ejecutarlo
+
+Requisitos: Python 3.13 y PostgreSQL (el CI usa la 17).
+
+**1. Base de datos.** Sin variables de entorno, el proyecto busca `localhost:5433`, base `psychosim`, usuario `psychosim` y contraseña `psychosim_secret`. Con Docker:
+
+```bash
+docker run -d --name metafronesis-db -e POSTGRES_DB=psychosim -e POSTGRES_USER=psychosim -e POSTGRES_PASSWORD=psychosim_secret -p 5433:5432 postgres:17
+```
+
+Con otra base, define `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`, o `DATABASE_URL`.
+
+**2. Entorno y arranque.**
+
+```bash
+python -m venv .venv
+# Windows (PowerShell): .venv/Scripts/Activate.ps1   ·   Linux o macOS: source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp psychosim/settings/local.example.py psychosim/settings/local.py   # local.py lo ignora Git
+export DJANGO_SETTINGS_MODULE=psychosim.settings.local               # PowerShell: $env:DJANGO_SETTINGS_MODULE = "psychosim.settings.local"
+python manage.py migrate
+python manage.py runserver 8091
+```
+
+**3. Comprobar.** `GET http://127.0.0.1:8091/api/health` responde `200` con `{"success": true, "data": {"status": "ok", "db": "ok"}}`.
+
+Comprobado el 10 de noviembre de 2026 sobre `main` con PostgreSQL 17: `manage.py check` sin avisos, `migrate` aplicado, `makemigrations --check` sin cambios y `/api/health` en 200.
+
+En producción se usa `psychosim.settings.production`, que exige secretos y hosts propios; los nombres de las variables están en `.env.example`.
+
+## Pruebas
+
+`pytest` usa `psychosim.settings.test`, que exige una base de datos desechable y su propio nonce:
+
+```bash
+export SIEP_TEST_DB_NAME=metafronesis_test SIEP_TEST_DB_HOST=127.0.0.1 SIEP_TEST_DB_PORT=5433
+export SIEP_TEST_DB_USER=<usuario> SIEP_TEST_DB_PASSWORD=<contraseña> SIEP_TEST_ATTESTATION_NONCE=local
+python -m pytest apps/users/tests -q     # una app
+python -m pytest apps shared -q          # todo
+```
+
+Resultado medido en la integración, con el mismo código que `main`: 1.597 pruebas pasan y 80 fallan; las 80 son las heredadas descritas arriba, no fallos de lógica. En cada PR hacia `develop`, GitHub Actions corre `check`, `makemigrations --check`, `migrate` y las pruebas con `psychosim.settings.test` sobre PostgreSQL 17.
