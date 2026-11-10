@@ -34,3 +34,11 @@ class Convocatoria(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["sesion", "estudiante"], name="sesion_estudiante_unico")]
+
+
+class AutorizacionRepeticion(models.Model):
+    convocatoria = models.ForeignKey(Convocatoria, on_delete=models.CASCADE, related_name="autorizaciones")
+    autorizada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    motivo = models.TextField()
+    usada = models.BooleanField(default=False)
+    creada_en = models.DateTimeField(auto_now_add=True)
