@@ -4,6 +4,7 @@ from django.db.models import Prefetch
 from django.http import Http404
 from apps.simulation.models import DecisionOption, SimulationNode
 from apps.simulation.services.audit_service import auditable
+from apps.users.permisos import exigir_autoria
 from .constructor import ConstructorDeBorrador
 from . import guardas
 
@@ -22,6 +23,7 @@ def resumen(version):
 @auditable("CASE_CREATED", "CASE", resource_id=lambda args, kwargs, result: result.pk)
 @transaction.atomic
 def crear_borrador(autor, datos: dict):
+    exigir_autoria(autor)
     return (ConstructorDeBorrador(autor).con_ficha(datos["code"], datos["title"], datos.get("description", ""))
         .con_contexto(datos.get("narrativeContext", "")).con_objetivos(datos.get("learningObjectives", []))
         .con_tiempo_estimado(datos.get("estimatedMinutes")).construir())
