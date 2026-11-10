@@ -190,9 +190,10 @@ def _ask_for_retry(attempt, option, request_id):
     return result
 
 
-def _advance(attempt, option, now):
+def _advance(attempt, option, now, aplicar=True):
     """Aplica los efectos de la opción, mueve el intento a la escena destino y lo cierra si es terminal."""
-    attempt.state_json = apply_effects(attempt.state_json, option)
+    if aplicar:
+        attempt.state_json = apply_effects(attempt.state_json, option)
     attempt.current_node = option.target_node
     if option.target_node.terminal_node:
         lifecycle.apply(attempt, lifecycle.COMPLETE)
@@ -232,9 +233,18 @@ def _decide(attempt, option_id, request_id):
     touch(attempt, now)
     if _needs_second_chance(attempt, option):
         return _ask_for_retry(attempt, option, request_id)
-    _advance(attempt, option, now)
+    from .revision_de_respuestas import decisiones_vigentes
+    vigentes = decisiones_vigentes(attempt)
+    cambiada = any(evento.node_id == option.source_node_id for evento in vigentes)
+    if cambiada:
+        # La opci?n cambiada conserva su posici?n original en la secuencia.
+        estado = {}
+        for evento in vigentes:
+            estado = apply_effects(estado, option if evento.node_id == option.source_node_id else evento.decision_option)
+        attempt.state_json = estado
+    _advance(attempt, option, now, aplicar=not cambiada)
     result = _result(attempt, option, retry_required=False)
     result.update(effects=effects_of(option), state=attempt.state_json)
-    event = _record(attempt, option, request_id, "DECISION_SELECTED", result)
+    event = _record(attempt, option, request_id, "DECISION_CHANGED" if cambiada else "DECISION_SELECTED", result)
     _close_if_completed(attempt, result, event)
     return result

@@ -614,6 +614,62 @@
       "audit": "EXENTO: informe anónimo del navegador sobre la política de contenido: no cambia datos de personas; deja una línea del registro de seguridad"
     },
     {
+      "route": "api/sesiones",
+      "method": "GET",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de sesiones propias sin datos de convocados"
+    },
+    {
+      "route": "api/sesiones",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_CREADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>",
+      "method": "GET",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de sesión propia sin datos de convocados"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/convocados",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CONVOCADOS_AGREGADOS"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/convocados/<int:estudiante_id>",
+      "method": "DELETE",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "CONVOCADO_RETIRADO"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/finalizar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_FINALIZADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/iniciar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_INICIADA"
+    },
+    {
       "route": "api/simulation/ai-assistant",
       "method": "POST",
       "exposure": "role:ESTUDIANTE",
@@ -662,6 +718,14 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/progress",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta el progreso de su propio intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/replace",
       "method": "POST",
       "exposure": "authenticated",
@@ -686,6 +750,22 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/revisit",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_REVISITED"
+    },
+    {
+      "route": "api/simulation/attempts/history",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio historial"
+    },
+    {
       "route": "api/simulation/cases",
       "method": "GET",
       "exposure": "authenticated",
@@ -700,6 +780,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": null
+    },
+    {
+      "route": "api/simulation/cases/<int:case_version_id>/active-attempt",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio intento"
+    },
+    {
+      "route": "api/simulation/cases/<int:case_version_id>/brief",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: ficha de un caso asignado al estudiante"
     },
     {
       "route": "api/simulation/cases/<int:case_version_id>/consent",
