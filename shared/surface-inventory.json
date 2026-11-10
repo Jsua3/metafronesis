@@ -194,6 +194,14 @@
       "audit": "CASE_BRIEF_UPDATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/clone-version",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_VERSION_CLONED"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/decisions",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -226,6 +234,14 @@
       "audit": null
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/lifecycle",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_SUBMITTED,CASE_ARCHIVED"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/nodes",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -248,6 +264,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": "NODE_UPDATED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/publish",
+      "method": "POST",
+      "exposure": "role:ADMIN",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_PUBLISHED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/validate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: validación sin cambios sobre el caso propio o accesible al administrador"
     },
     {
       "route": "api/biblioteca/lugares",
