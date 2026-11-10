@@ -1,15 +1,11 @@
-from django.contrib.auth.hashers import make_password
 from django.db import transaction
-from django.db.models.functions import Lower
 from django.http import Http404
 
 from apps.simulation.models import CaseVersion, CaseVersionStatus
 from apps.simulation.services.audit_service import auditable
-from apps.users.models import CustomUser
 from shared.exceptions import ApiError
-from shared.policies import ESTUDIANTE
 from .estados import ESTADOS
-from .models import Convocatoria, Sesion
+from .models import Sesion
 
 
 def propias(usuario):
@@ -41,9 +37,8 @@ def agendar(usuario, datos):
     if not version.estimated_minutes or datos["tiempoMaximoMin"] > version.estimated_minutes:
         raise ApiError("INVALID_TIME_LIMIT", "El tiempo máximo supera el tiempo estimado o este no está definido.", 400)
     sesion = Sesion.objects.create(case_version=version, creada_por=usuario, espacio_academico=datos["espacioAcademico"], inicio=datos["inicio"], fin=datos["fin"], tiempo_maximo_min=datos["tiempoMaximoMin"], lugar=datos["lugar"], mensaje=datos["mensaje"])
-    correos = {email.casefold() for email in datos["emails"]}
-    estudiantes = CustomUser.objects.alias(email_normalizado=Lower("email")).filter(role=ESTUDIANTE, email_normalizado__in=correos)
-    Convocatoria.objects.bulk_create([Convocatoria(sesion=sesion, estudiante=e, codigo_hash=make_password(None)) for e in estudiantes])
+    from .convocatorias import _agregar
+    sesion.codigos_emitidos = _agregar(sesion, datos["emails"])
     return sesion
 
 
