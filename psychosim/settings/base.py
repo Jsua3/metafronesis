@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "apps.notificaciones",
 
     # Ola 2 · ia
+    "apps.ia",
 
     # Ola 2 · auditoria
 
