@@ -91,3 +91,34 @@ python -m pytest apps shared -q          # todo
 ```
 
 Resultado medido en la integración, con el mismo código que `main`: 1.597 pruebas pasan y 80 fallan; las 80 son las heredadas descritas arriba, no fallos de lógica. En cada PR hacia `develop`, GitHub Actions corre `check`, `makemigrations --check`, `migrate` y las pruebas con `psychosim.settings.test` sobre PostgreSQL 17.
+
+## API
+
+Las rutas están en `psychosim/urls.py` y en el `urls.py` de cada app; el inventario actualizado se genera en `shared/surface-inventory.json`. Los grupos principales son `/api/auth`, `/api/grupos`, `/api/assignments`, `/api/authoring`, `/api/simulation`, `/api/rubrics`, `/api/sesiones`, `/api/instructor`, `/api/reportes`, `/api/me/notifications` y `/api/admin`. Las respuestas exitosas usan el mismo sobre: `{"success": true, "data": ...}`.
+
+## Documentación
+
+| Qué | Dónde |
+|---|---|
+| Cambios por versión | [CHANGELOG.md](CHANGELOG.md) |
+| Cómo contribuir | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Rutas, arquitectura y ejecución | `docs/api.md`, `docs/arquitectura.md`, `docs/ejecucion.md`: borradores del corte de los sprints 1 a 4; no incluyen las apps de las olas 1 y 2 y `ejecucion.md` trae pasos sin verificar, así que usa los de este archivo |
+| Documentación por app | `docs/apps/`: solo `grupos`, `privacy`, `psychosim`, `security`, `shared` y `users`; faltan las demás |
+| Fichas de sprint y diagramas | `docs/sprints/` y `docs/diagramas/` |
+
+## Flujo de trabajo
+
+Git Flow: `main` lleva las versiones etiquetadas, `develop` integra, y el trabajo va en ramas `feature/*` y `fix/*`. Cada cambio entra por Pull Request hacia `develop`, lo revisa otra persona del equipo y se fusiona con un merge commit. Los commits siguen Conventional Commits en español y llevan la clave de Jira (`SIEP-N`). Las versiones `v0.x.0` son etiquetas anotadas. Detalle en [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Equipo
+
+| Persona | Partes principales |
+|---|---|
+| Emerson Ángel Gómez (`@EmersonAngel`) | `psychosim`, `users`, `autoria`: ingreso, permiso de autoría, borrador del caso, escenas y decisiones, exportar e importar |
+| Santiago Leyton (`@SantiagoLeyton`) | `shared`, `security`, `publicacion`, `reportes`, `notificaciones`, `ia`, `auditoria` |
+| Juan José Sua Gómez (`@Jsua3`) | `privacy`, `grupos`, `revision`, `sesiones` |
+| Esteban Bonilla Giraldo (`@estebanbonilla22`) | `simulation`, `progression`, `biblioteca`: motor, rúbrica, calificación, tiempo, incompletos |
+
+## Licencia
+
+Pendiente de definir por el equipo.
