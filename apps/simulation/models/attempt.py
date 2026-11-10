@@ -34,7 +34,7 @@ OPEN_ATTEMPT_STATUSES = (AttemptStatus.IN_PROGRESS, AttemptStatus.PAUSED)
 #: Eventos de decisión REGISTRADA: los únicos que cuentan en el reporte y en el final. La primera respuesta riesgosa
 #: o contraindicada de una escena no se aplica (regla de reintento) y queda como evento ``*_RETRY_REQUIRED``, que se
 #: reporta aparte: contarla contradiría lo que el juego le promete a la persona.
-REGISTERED_DECISION_EVENT_TYPES = ("DECISION_SELECTED", "PROHIBITED_DECISION_SELECTED")
+REGISTERED_DECISION_EVENT_TYPES = ("DECISION_SELECTED", "PROHIBITED_DECISION_SELECTED", "DECISION_CHANGED")
 RETRY_EVENT_TYPES = ("DECISION_RETRY_REQUIRED", "PROHIBITED_DECISION_RETRY_REQUIRED")
 
 
