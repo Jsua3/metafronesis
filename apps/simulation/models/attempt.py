@@ -21,6 +21,7 @@ class AttemptStatus(models.TextChoices):
     # salida segura cerraba el intento. Ningún código nuevo la escribe.
     SAFE_EXITED = "SAFE_EXITED"
     COMPLETED = "COMPLETED"
+    INCOMPLETE = "INCOMPLETE"
     # Cierre terminal porque el estudiante empezó otro intento con forceNew. No
     # es una salida segura y no puntúa.
     REPLACED = "REPLACED"
