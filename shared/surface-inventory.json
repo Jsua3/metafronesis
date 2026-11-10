@@ -170,6 +170,38 @@
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
     },
     {
+      "route": "api/authoring/cases",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": null
+    },
+    {
+      "route": "api/authoring/cases",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_CREATED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/brief",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CASE_BRIEF_UPDATED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/definition",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": null
+    },
+    {
       "route": "api/biblioteca/lugares",
       "method": "GET",
       "exposure": "authenticated",
