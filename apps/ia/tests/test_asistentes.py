@@ -102,3 +102,19 @@ def test_estado_y_guia(contexto, settings):
     ruta = f"/api/authoring/cases/{version.pk}/assistant"
     assert cliente.get(ruta + "/status").status_code == 200
     assert cliente.post(ruta + "/guide", {"question": "Ayuda"}, format="json").status_code == 200
+
+
+def test_no_salen_correos_ni_numeros_largos():
+    from apps.ia.asistentes import sin_datos_personales
+
+    texto = sin_datos_personales("Escríbeme a ana.perez@correo.co o al 300 123 4567; cédula 1094123456.")
+    assert "ana.perez@correo.co" not in texto and "4567" not in texto and "1094123456" not in texto
+    assert texto.count("[correo]") == 1 and texto.count("[número]") == 2
+
+
+def test_el_proveedor_recibe_su_clave_y_su_modelo():
+    from apps.ia.proveedores import ProveedorAnthropic, proveedor_para
+
+    proveedor = proveedor_para("Anthropic", "clave-de-prueba", "modelo-de-prueba")
+    assert isinstance(proveedor, ProveedorAnthropic)
+    assert (proveedor.clave, proveedor.modelo) == ("clave-de-prueba", "modelo-de-prueba")
