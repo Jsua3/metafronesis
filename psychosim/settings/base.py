@@ -50,6 +50,14 @@ INSTALLED_APPS = [
 
     # Ola 1 · revision
     "apps.revision",
+
+    # Ola 2 · notificaciones
+
+    # Ola 2 · ia
+
+    # Ola 2 · auditoria
+
+    # Ola 2 · sesiones
 ]
 
 MIDDLEWARE = [
