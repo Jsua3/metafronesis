@@ -537,6 +537,7 @@ MAILERS = {
     },
 }
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "siep@psychosim.edu.co")
+SIEP_PUBLIC_URL = os.environ.get("SIEP_PUBLIC_URL", "")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "PsychoSim / SIEP API",
