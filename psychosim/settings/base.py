@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     # Ola 1 · publicacion
 
     # Ola 1 · reportes
+    "apps.reportes",
 
     # Ola 1 · revision
 ]
