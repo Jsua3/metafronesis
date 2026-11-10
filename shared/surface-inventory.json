@@ -638,6 +638,22 @@
       "audit": "EXENTO: lectura de sesión propia sin datos de convocados"
     },
     {
+      "route": "api/sesiones/<int:pk>/convocados",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CONVOCADOS_AGREGADOS"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/convocados/<int:estudiante_id>",
+      "method": "DELETE",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "CONVOCADO_RETIRADO"
+    },
+    {
       "route": "api/sesiones/<int:pk>/finalizar",
       "method": "POST",
       "exposure": "role:PROFESOR",

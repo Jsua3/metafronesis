@@ -15,3 +15,7 @@ class AgendaSerializer(serializers.Serializer):
         if datos["fin"] <= datos["inicio"]:
             raise serializers.ValidationError({"fin": "Debe ser posterior al inicio."})
         return datos
+
+
+class ConvocadosSerializer(serializers.Serializer):
+    emails = serializers.ListField(child=serializers.EmailField(), allow_empty=False)
