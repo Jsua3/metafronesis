@@ -89,7 +89,10 @@ def _previous_result(attempt, request_id, option_id):
         return None
     if previous.decision_option_id != option_id:
         raise ValidationError("request_id ya corresponde a otra decisión.")
-    return json.loads(previous.detail)
+    result = json.loads(previous.detail)
+    result.pop("feedback", None)
+    result.pop("response_class", None)
+    return result
 
 
 def _valid_option(attempt, option_id):
@@ -123,8 +126,6 @@ def _result(attempt, option, *, retry_required):
         "attempt_id": str(attempt.pk),
         "node_id": attempt.current_node_id,
         "status": attempt.status,
-        "feedback": option.immediate_feedback,
-        "response_class": option.response_class,
         "retry_required": retry_required,
     }
 
@@ -136,7 +137,7 @@ def _record(attempt, option, request_id, event_type, result):
         decision_option=option,
         event_type=event_type,
         request_id=request_id,
-        detail=json.dumps(result),
+        detail=json.dumps({**result, "response_class": option.response_class}),
     )
 
 
@@ -164,7 +165,9 @@ def _close_if_completed(attempt, result, event):
     evaluation = freeze(attempt)
     calificar_y_guardar(attempt)
     result["evaluation"] = evaluation.snapshot
-    event.detail = json.dumps(result)
+    detail = json.loads(event.detail)
+    detail["evaluation"] = result["evaluation"]
+    event.detail = json.dumps(detail)
     event.save(update_fields=["detail"])
     attempt_completed.send(sender=SimulationAttempt, attempt=attempt)
 

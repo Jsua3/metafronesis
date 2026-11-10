@@ -1,9 +1,11 @@
 from django.urls import path
 from . import views_s3 as views
+from .views_resultado import Resultado
 
 urlpatterns = [
     path("catalog", views.Catalog.as_view()),
     path("attempts/<uuid:pk>/evaluation", views.Evaluation.as_view()),
+    path("attempts/<uuid:pk>/result", Resultado.as_view()),
     path("cases", views.Cases.as_view()),
     path("cases/<int:pk>", views.CaseDetail.as_view()),
     path("attempts", views.Attempts.as_view()),
