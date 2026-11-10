@@ -202,6 +202,30 @@
       "audit": "CASE_CREATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/assistant/guide",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_AUTHORING_GUIDE"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/assistant/propose",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_AUTHORING_PROPOSE"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/assistant/status",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de configuración del caso propio"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/brief",
       "method": "PUT",
       "exposure": "role:ADMIN,PROFESOR",
@@ -580,6 +604,14 @@
         "csp_report_ip"
       ],
       "audit": "EXENTO: informe anónimo del navegador sobre la política de contenido: no cambia datos de personas; deja una línea del registro de seguridad"
+    },
+    {
+      "route": "api/simulation/ai-assistant",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_ASSISTANT_QUERY"
     },
     {
       "route": "api/simulation/attempts",
