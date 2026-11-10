@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
-from . import convocatorias, servicios
+from . import convocatorias, servicios, repeticion
 from .serializers import AgendaSerializer, ConvocadosSerializer
 
 
@@ -55,3 +55,13 @@ class ConvocadoView(APIView):
     def delete(self, request, pk, estudiante_id):
         convocatorias.retirar(request.user, pk, estudiante_id)
         return api_ok(message="Convocatoria retirada")
+
+
+class RepeticionView(APIView):
+    permission_classes = [policy_permission("assignment", "manage")]
+
+    def post(self, request, pk, estudiante_id):
+        serializer = repeticion.MotivoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        autorizacion = repeticion.autorizar(request.user, pk, estudiante_id, serializer.validated_data["motivo"])
+        return api_created({"id": autorizacion.pk})

@@ -61,6 +61,72 @@ DOC_PATH = Path(__file__).resolve().parents[3] / "docs" / "seguridad" / "inventa
 
 # BORRADOR: finalidad y plazo pendientes de la aprobación de Psicología (SD-9).
 DATA_INVENTORY: dict[str, dict] = {
+    "sesiones_sesion": {
+        "purpose": "Sesiones académicas programadas y docente responsable.",
+        "retention": "Sin plazo definido (SD-9, pendiente de la institución).",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL, "case_version_id": TECHNICAL,
+            "espacio_academico": PUBLIC, "inicio": TECHNICAL, "fin": TECHNICAL,
+            "tiempo_maximo_min": TECHNICAL, "lugar": PUBLIC,
+            "mensaje": (PERSONAL, "texto libre del docente que puede nombrar personas"),
+            "estado": TECHNICAL, "creada_por_id": (PERSONAL, "docente que programó la sesión"),
+        },
+        "exits": {"mensaje": ["api", "correo"], "creada_por_id": ["api"]},
+    },
+    "sesiones_convocatoria": {
+        "purpose": "Convocatoria de un estudiante a una sesión y su código de acceso.",
+        "retention": "Sin plazo definido (SD-9, pendiente de la institución).",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL, "sesion_id": TECHNICAL,
+            "estudiante_id": (PERSONAL, "estudiante convocado"),
+            "codigo_hash": (SECRET, "hash del código de acceso"),
+            "estado": (PERSONAL, "estado de la convocatoria del estudiante"), "creada_en": TECHNICAL,
+        },
+        "exits": {"estudiante_id": ["api"], "codigo_hash": [], "estado": ["api"]},
+        "forbidden_exits": {"codigo_hash": ["api", "csv", "reporte", "correo", "registro"]},
+    },
+    "sesiones_autorizacionrepeticion": {
+        "purpose": "Autorizaciones excepcionales de repetición para estudiantes convocados.",
+        "retention": "Sin plazo definido (SD-9, pendiente de la institución).",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL, "convocatoria_id": (PERSONAL, "convocatoria del estudiante"),
+            "autorizada_por_id": (PERSONAL, "docente que autorizó la repetición"),
+            "motivo": (SENSITIVE, "texto libre sobre la autorización del estudiante"),
+            "usada": TECHNICAL, "creada_en": TECHNICAL,
+        },
+        "exits": {"convocatoria_id": [], "autorizada_por_id": [], "motivo": ["api"]},
+    },
+    "notificaciones_notificacion": {
+        "purpose": "Avisos enviados a una persona y resultado del envío por correo.",
+        "retention": "Sin plazo definido (SD-9, pendiente de la institución).",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL, "destinatario_id": (PERSONAL, "persona destinataria"),
+            "originador_id": (PERSONAL, "persona que originó el aviso"),
+            "tipo": (PERSONAL, "tipo de aviso recibido"),
+            "titulo": (SENSITIVE, "título del aviso dirigido a la persona"),
+            "cuerpo": (SENSITIVE, "contenido del aviso, que puede incluir un código de acceso"),
+            "leida": (PERSONAL, "estado de lectura del aviso"), "creada_en": TECHNICAL,
+            "correo_enviado": TECHNICAL,
+            "error_correo": (PERSONAL, "detalle del error de envío, que puede incluir datos de contacto"),
+        },
+        "exits": {"destinatario_id": [], "originador_id": [], "tipo": ["api"],
+                  "titulo": ["api", "correo"], "cuerpo": ["api", "correo"],
+                  "leida": ["api"], "error_correo": []},
+    },
+    "users_permisodeautoria": {
+        "purpose": "Permiso de autoría de un docente y persona que lo otorgó.",
+        "retention": "Mientras exista el permiso (SD-9, pendiente de la institución).",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL, "docente_id": (PERSONAL, "docente con permiso"),
+            "otorgado_por_id": (PERSONAL, "persona que otorgó el permiso"), "otorgado_en": TECHNICAL,
+        },
+        "exits": {"docente_id": ["api"], "otorgado_por_id": []},
+    },
     # ── Tablas de Django y de seguridad: sin datos de personas ────────────────────────────────────
     "auth_permission": {
         "purpose": "Permisos que genera Django para cada modelo. El sistema no los asigna a personas.",

@@ -65,6 +65,21 @@ def test_evaluacion_del_intento_tiene_titular_y_reglas():
     assert ERASURE_RULES[(tabla, "snapshot")].accion == CONSERVAR
 
 
+@pytest.mark.req("SIEP-21")
+@pytest.mark.parametrize("tabla,columna,clase", [
+    ("sesiones_sesion", "creada_por_id", PERSONAL),
+    ("sesiones_convocatoria", "estudiante_id", PERSONAL),
+    ("sesiones_convocatoria", "codigo_hash", inventory.SECRET),
+    ("sesiones_autorizacionrepeticion", "motivo", SENSITIVE),
+    ("notificaciones_notificacion", "cuerpo", SENSITIVE),
+    ("users_permisodeautoria", "docente_id", PERSONAL),
+])
+def test_datos_de_las_tablas_nuevas_tienen_clasificacion_y_regla(tabla, columna, clase):
+    assert inventory.classify(tabla, columna) == clase
+    assert tabla in PERSON_SCOPE
+    assert (tabla, columna) in ERASURE_RULES
+
+
 def test_hay_columnas_con_datos_de_personas_y_todas_las_de_una_tabla_con_dueno_tienen_regla():
     """Se recorre el inventario por otro camino: si ``validar_cobertura`` quedara vacía por un error, esto lo delata."""
     columnas = _columnas_con_datos()

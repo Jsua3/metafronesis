@@ -150,6 +150,16 @@
       "audit": "PASSWORD_CHANGED"
     },
     {
+      "route": "api/auth/code-login",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "login_ip"
+      ],
+      "audit": "LOGIN_SUCCEEDED,LOGIN_FAILED,LOGIN_LOCKED"
+    },
+    {
       "route": "api/auth/google",
       "method": "POST",
       "exposure": "public",
@@ -580,6 +590,14 @@
       "audit": "REPORT_EXPORTED"
     },
     {
+      "route": "api/reportes/sesion/<int:sesion_id>/export",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "REPORT_EXPORTED"
+    },
+    {
       "route": "api/rubrics",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -652,6 +670,14 @@
       "body": "none",
       "throttle": null,
       "audit": "CONVOCADO_RETIRADO"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/convocados/<int:estudiante_id>/repeticion",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "REPETICION_AUTORIZADA"
     },
     {
       "route": "api/sesiones/<int:pk>/finalizar",

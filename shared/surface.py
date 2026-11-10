@@ -44,6 +44,7 @@ AUTHENTICATED = "authenticated"
 PUBLIC_ROUTE_REASONS: dict[str, str] = {
     "api/health": "sondeo de salud de la plataforma",
     "api/auth/login": "entrar",
+    "api/auth/code-login": "entrar con c?digo de convocatoria",
     "api/auth/google": "entrar con una cuenta de Google",
     "api/auth/google/config": "configuración pública del acceso con Google",
     "api/auth/access-request": "pedir una cuenta, que aprueba el ADMIN",

@@ -121,3 +121,64 @@ def test_retroalimentacion_mas_reciente_por_actualizacion(datos):
     anterior.save(update_fields=['comment', 'updated_at'])
     filas = json.loads(descargar(datos, 'json').content)
     assert next(f for f in filas if f['correo'] == 'uno@example.test')['retroalimentacion'] == 'Comentario actualizado'
+
+@pytest.fixture
+def sesion_reporte(datos):
+    from apps.sesiones.models import Convocatoria, Sesion
+    from apps.simulation.models import SimulationRubricAssignment
+
+    ahora = timezone.now()
+    sesion = Sesion.objects.create(
+        case_version=datos['version'], espacio_academico='Curso',
+        inicio=ahora - timedelta(hours=1), fin=ahora + timedelta(hours=1),
+        tiempo_maximo_min=30, creada_por=datos['docente'],
+    )
+    for persona in (datos['estudiante'], datos['sin_intento']):
+        Convocatoria.objects.create(sesion=sesion, estudiante=persona, codigo_hash='hash')
+    SimulationRubricAssignment.objects.create(case_version=datos['version'], rubric=datos['rubrica'])
+    return sesion
+
+
+@pytest.mark.req('SIEP-33')
+def test_ausente_sale_con_cero(datos, sesion_reporte):
+    filas = json.loads(descargar(datos, 'json').content)
+    ausente = next(f for f in filas if f['correo'] == datos['sin_intento'].email)
+    assert ausente['estado'] == 'SIN_INTENTO'
+    assert ausente['total'] == '0.00'
+
+
+@pytest.mark.req('SIEP-33')
+def test_incompleto_sale_con_parcial(datos, sesion_reporte):
+    intento = datos['intento']
+    intento.status = 'INCOMPLETE'
+    intento.save(update_fields=['status'])
+    evaluacion = RubricEvaluation.objects.get(attempt=intento, origin=EvaluationOrigin.SISTEMA)
+    evaluacion.total_score = Decimal('2.25')
+    evaluacion.status = 'PARTIAL'
+    evaluacion.save(update_fields=['total_score', 'status'])
+    filas = json.loads(descargar(datos, 'json').content)
+    fila = next(f for f in filas if f['correo'] == datos['estudiante'].email)
+    assert (fila['estado'], fila['total']) == ('INCOMPLETE', '2.25')
+
+
+@pytest.mark.req('SIEP-33')
+def test_reporte_por_sesion(datos, sesion_reporte):
+    anterior = SimulationAttempt.objects.create(
+        student=datos['sin_intento'], case_version=datos['version'],
+        current_node=datos['nodo'], status='COMPLETED', attempt_token_hash='fuera-sesion',
+    )
+    SimulationAttempt.objects.filter(pk=anterior.pk).update(started_at=sesion_reporte.inicio - timedelta(seconds=1))
+    url = f'/api/reportes/sesion/{sesion_reporte.pk}/export'
+    respuesta = datos['cliente'].get(url, {'formato': 'json'})
+    assert respuesta.status_code == 200
+    filas = json.loads(respuesta.content)
+    assert {f['correo'] for f in filas} == {datos['estudiante'].email, datos['sin_intento'].email}
+    por_correo = {f['correo']: f for f in filas}
+    assert por_correo[datos['estudiante'].email]['total'] == '3.00'
+    assert por_correo[datos['sin_intento'].email]['estado'] == 'SIN_INTENTO'
+    assert por_correo[datos['sin_intento'].email]['total'] == '0.00'
+    ajeno = APIClient()
+    ajeno.force_authenticate(datos['otro'])
+    assert ajeno.get(url).status_code == 404
+    ajeno.force_authenticate(datos['estudiante'])
+    assert ajeno.get(url).status_code == 403

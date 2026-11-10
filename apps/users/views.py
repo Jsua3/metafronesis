@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import APIException
@@ -11,6 +12,7 @@ from rest_framework.exceptions import AuthenticationFailed, Throttled, Validatio
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
+from apps.sesiones.codigos import validar_codigo
 from apps.security.limiter import hit, key_hash, peek, retry_after
 from apps.security.limits import LIMITS
 from apps.security.throttling import (
@@ -23,6 +25,7 @@ from shared.client_ip import rate_limit_ip
 from shared.exceptions import ApiError
 from shared.openapi import ApiEnvelopeSerializer
 from shared.permissions import policy_permission
+from shared.policies import ESTUDIANTE
 from shared.response import api_created, api_ok
 from shared.security_events import log_security_event
 
@@ -37,6 +40,7 @@ from .serializers import (
     AdminUserWriteSerializer,
     ApproveUsersSerializer,
     ChangePasswordSerializer,
+    CodeLoginSerializer,
     GoogleLoginSerializer,
     LoginSerializer,
     UserSummarySerializer,
@@ -175,6 +179,34 @@ class LoginView(APIView):
             "token": generate_access_token(user),
             "user": UserSummarySerializer(user).data,
         })
+
+
+class CodeLoginView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginIpThrottle]
+
+    def post(self, request):
+        ser = CodeLoginSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        email = ser.validated_data["email"]
+        ip = rate_limit_ip(request)
+        cuenta = User.objects.filter(email=email).first()
+        _bloqueo_por_fallos(email, ip, cuenta.pk if cuenta else None)
+        try:
+            user, convocatoria = validar_codigo(email, ser.validated_data["code"])
+            valido = user.activo and user.role == ESTUDIANTE and convocatoria.sesion.fin > timezone.now()
+        except ApiError as error:
+            if error.api_code != "INVALID_CREDENTIALS":
+                raise
+            valido = False
+        if not valido:
+            saltan = _registrar_fallo(email, ip)
+            audit_events.login_failed(email, cuenta, "bad_password", ip)
+            if saltan:
+                audit_events.login_locked(email, cuenta, saltan[0], ip)
+            raise AuthenticationFailed("Credenciales inv?lidas")
+        audit_events.login_succeeded(user, "code")
+        return api_ok({"token": generate_access_token(user), "user": UserSummarySerializer(user).data})
 
 
 class GoogleConfigView(APIView):

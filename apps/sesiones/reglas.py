@@ -2,8 +2,9 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.simulation.models import SimulationAttempt
+from apps.simulation.models.attempt import OPEN_ATTEMPT_STATUSES
 from shared.exceptions import ApiError
-from .models import Convocatoria, EstadoConvocatoria, EstadoSesion
+from .models import AutorizacionRepeticion, Convocatoria, EstadoConvocatoria, EstadoSesion
 
 
 def verificar(estudiante, version):
@@ -18,8 +19,13 @@ def verificar(estudiante, version):
     fraccion = getattr(settings, "SIEP_INGRESO_TARDIO_FRACCION", 0.5)
     if ahora > sesion.inicio + (sesion.fin - sesion.inicio) * fraccion:
         raise ApiError("LATE_ENTRY", "El plazo de ingreso ha terminado.", 409)
-    if SimulationAttempt.objects.filter(student=estudiante, case_version=version, started_at__gte=sesion.inicio, started_at__lt=sesion.fin).exists():
-        raise ApiError("SESSION_ALREADY_PARTICIPATED", "Ya existe una participación en la sesión.", 409)
+    intentos = SimulationAttempt.objects.filter(student=estudiante, case_version=version, started_at__gte=sesion.inicio, started_at__lt=sesion.fin)
+    if intentos.exists() and not intentos.filter(status__in=OPEN_ATTEMPT_STATUSES).exists():
+        autorizacion = AutorizacionRepeticion.objects.select_for_update().filter(convocatoria=vigente, usada=False).order_by("pk").first()
+        if autorizacion is None:
+            raise ApiError("SESSION_ALREADY_PARTICIPATED", "Ya existe una participación en la sesión.", 409)
+        autorizacion.usada = True
+        autorizacion.save(update_fields=["usada"])
 
 
 def limite(intento):
