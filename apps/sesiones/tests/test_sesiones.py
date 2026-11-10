@@ -77,8 +77,8 @@ def test_correos_no_revelan_existencia(datos):
     assert "ausente@example.test" not in str(respuesta.data)
     convocatoria = Convocatoria.objects.get(sesion_id=respuesta.data["data"]["id"])
     assert convocatoria.estudiante == estudiante
-    from django.contrib.auth.hashers import is_password_usable
-    assert not is_password_usable(convocatoria.codigo_hash)
+    from django.contrib.auth.hashers import check_password
+    assert check_password(respuesta.data["data"]["codigos"][str(estudiante.pk)], convocatoria.codigo_hash)
 
 
 def test_cierre_automatico_de_cada_estado():
