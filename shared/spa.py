@@ -15,6 +15,7 @@ from django.http import Http404, HttpResponse
 from django.middleware.csp import get_nonce
 from django.utils.cache import patch_cache_control
 from django.utils.html import escape
+from django.views.decorators.http import require_safe
 
 #: Lo que ``frontend/src/index.html`` trae en ``ngCspNonce`` (y el build copia a sus ``<script>``/``<style>``).
 #: Una prueba (``shared/tests/test_spa_index.py``) comprueba que el archivo del frontend usa EXACTAMENTE este valor.
@@ -30,8 +31,11 @@ def _nonce_de(request):
     return escape(str(nonce)) if nonce is not None else ""
 
 
+@require_safe
 def spa_index(request):
     """Sirve el ``index.html`` del SPA para las rutas del cliente, con el nonce de la petición.
+
+    Solo responde a GET y HEAD: el SPA no recibe formularios; cualquier otro método devuelve 405.
 
     WhiteNoise sirve los archivos que existen (assets, JS), salvo el índice; las rutas de Angular que no son archivos
     (p. ej. ``/portal/personaje`` al recargar), ``/`` y ``/index.html`` llegan aquí.
