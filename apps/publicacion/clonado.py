@@ -1,9 +1,10 @@
 from django.db import transaction
 
-from apps.simulation.models import CaseVersion, DecisionOption, SimulationNode, SimulationRubricAssignment
+from apps.simulation.models import (CaseCharacter, CaseVersion, CaseVersionStatus, ClinicalTool, CollisionZone,
+                                    DecisionOption, DialogueChoice, DialogueLine, DialogueTree, MapObject,
+                                    SceneHint, SceneMap, SimulationNode, SimulationRubricAssignment)
 from apps.simulation.services.audit_service import auditable
 from .ciclo import _exigir_estado, version_accesible
-from apps.simulation.models import CaseVersionStatus
 
 
 def _valores(objeto, excluidos):
@@ -25,10 +26,42 @@ def _copiar_arbol(original, clon):
     for nodo in original.nodes.all():
         copia = SimulationNode.objects.create(case_version=clon, **_valores(nodo, {'case_version'}))
         nodos[nodo.pk] = copia.pk
+    opciones = {}
     for opcion in original.decisions.all():
         valores = _valores(opcion, {'case_version', 'source_node', 'target_node'})
-        DecisionOption.objects.create(case_version=clon, source_node_id=nodos[opcion.source_node_id],
-                                      target_node_id=nodos[opcion.target_node_id], **valores)
+        copia = DecisionOption.objects.create(case_version=clon, source_node_id=nodos[opcion.source_node_id],
+                                              target_node_id=nodos[opcion.target_node_id], **valores)
+        opciones[opcion.pk] = copia.pk
+    personajes = {}
+    for personaje in original.characters.all():
+        copia = CaseCharacter.objects.create(case_version=clon, **_valores(personaje, {'case_version'}))
+        personajes[personaje.pk] = copia.pk
+    for herramienta in original.clinical_tools.all():
+        ClinicalTool.objects.create(case_version=clon, **_valores(herramienta, {'case_version'}))
+    for mapa in original.scene_maps.all():
+        copia_mapa = SceneMap.objects.create(case_version=clon, node_id=nodos[mapa.node_id],
+                                             **_valores(mapa, {'case_version', 'node', 'created_at', 'updated_at'}))
+        for pista in mapa.hints.all():
+            SceneHint.objects.create(scene_map=copia_mapa, **_valores(pista, {'scene_map'}))
+        for zona in mapa.collision_zones.all():
+            CollisionZone.objects.create(scene_map=copia_mapa, **_valores(zona, {'scene_map'}))
+        objetos = {}
+        for objeto in mapa.map_objects.all():
+            copia = MapObject.objects.create(scene_map=copia_mapa,
+                decision_option_id=opciones[objeto.decision_option_id] if objeto.decision_option_id else None,
+                character_id=personajes[objeto.character_id] if objeto.character_id else None,
+                **_valores(objeto, {'scene_map', 'decision_option', 'character', 'created_at', 'updated_at'}))
+            objetos[objeto.pk] = copia.pk
+        for arbol in mapa.dialogue_trees.all():
+            copia = DialogueTree.objects.create(scene_map=copia_mapa,
+                map_object_id=objetos[arbol.map_object_id] if arbol.map_object_id else None,
+                **_valores(arbol, {'scene_map', 'map_object', 'created_at'}))
+            for linea in arbol.lines.all():
+                DialogueLine.objects.create(dialogue_tree=copia, **_valores(linea, {'dialogue_tree'}))
+            for eleccion in arbol.choices.all():
+                DialogueChoice.objects.create(dialogue_tree=copia,
+                    decision_option_id=opciones[eleccion.decision_option_id] if eleccion.decision_option_id else None,
+                    **_valores(eleccion, {'dialogue_tree', 'decision_option'}))
 
 
 @auditable('CASE_VERSION_CLONED', 'CASE_VERSION', resource_id=lambda args, kwargs, result: result.pk)
