@@ -133,4 +133,4 @@ Git Flow: `main` lleva las versiones etiquetadas, `develop` integra, y el trabaj
 
 ## Licencia
 
-Pendiente de definir por el equipo.
+Código abierto bajo la [licencia MIT](LICENSE). Los titulares son los cuatro integrantes del equipo.
