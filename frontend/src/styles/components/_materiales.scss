@@ -1,0 +1,97 @@
+// Materiales de Metafrónesis (acabado tipo iOS sobre la paleta del simulador), compartidos por la portada (`.publico`)
+// y por el portal de trabajo (`.portal`). Antes vivían dentro de `.publico`; se mueven aquí a mixins para que las dos
+// raíces los emitan sin copiarlos (B0, DISENO §2.1). Los valores de los `--l-*` de la portada NO cambian: lo único
+// nuevo son los tokens de trabajo del final de cada mixin, derivados de `--ds-*` (sin colores sueltos salvo el blanco
+// y el negro de los filos, como en la portada). Todo se emite en un contenedor con `data-skin`, nunca en `:root` ni
+// en `body` (REGLA-010).
+
+// Base, pensada para la piel oscura (juego): la clara la recalibra `materiales-claro`.
+@mixin materiales {
+  // Acento de marca: el violeta del logo en las dos pieles (juego: #B69CFF; portal: #5B3FD1).
+  --l-acento: var(--ds-accent-sim);
+  --l-acento-tinta: var(--ds-primary-hover);
+
+  --l-filo: color-mix(in oklab, var(--ds-text-1) 10%, transparent);
+  --l-filo-fuerte: color-mix(in oklab, var(--ds-text-1) 17%, transparent);
+  --l-brillo: color-mix(in oklab, var(--ds-text-1) 9%, transparent);
+  --l-vidrio: color-mix(in oklab, var(--ds-surface-1) 72%, transparent);
+  --l-vidrio-alto: color-mix(in oklab, var(--ds-surface-2) 78%, transparent);
+  --l-relleno: color-mix(in oklab, var(--ds-text-1) 5%, transparent);
+  --l-tinte: color-mix(in oklab, var(--l-acento) 16%, transparent);
+  --l-tinte-filo: color-mix(in oklab, var(--l-acento) 34%, transparent);
+  --l-trama: color-mix(in oklab, var(--ds-text-1) 4.5%, transparent);
+  --l-sombra:
+    0 1px 1px color-mix(in oklab, black 22%, transparent),
+    0 12px 32px -14px color-mix(in oklab, black 60%, transparent);
+  --l-sombra-alta:
+    0 2px 6px color-mix(in oklab, black 22%, transparent),
+    0 30px 70px -24px color-mix(in oklab, black 70%, transparent);
+  --l-radio: 1.5rem;
+  --l-radio-chico: 0.875rem;
+  --l-curva: var(--ds-ease-drawer);
+  // Colores del isotipo de Metafrónesis (cuadros del logo).
+  --marca-cian: #1dbce7;
+  --marca-azul: #1576d6;
+  --l-entrada: var(--ds-dur-glass);
+
+  // ── Tokens de las pantallas de trabajo (P3: el vidrio solo en la capa de controles; el contenido, opaco) ──
+  --l-superficie: var(--ds-surface-1);
+  --l-superficie-hundida: var(--ds-surface-2);
+  --l-fila-encima: color-mix(in oklab, var(--ds-text-1) 4%, transparent);
+  --l-fila-elegida: color-mix(in oklab, var(--l-acento) 10%, transparent);
+  // En oscuro no se ve una sombra sobre un fondo oscuro: un filo de luz arriba hace el trabajo.
+  --l-sombra-trabajo: inset 0 1px 0 color-mix(in oklab, white 6%, transparent);
+  --l-radio-tarjeta: 1.25rem;
+  --l-radio-control: 0.75rem;
+  --l-ancho-lectura: 42rem;
+  --l-ancho-pagina: 75rem;
+  --l-ancho-amplio: 90rem;
+  --l-canal: clamp(1rem, 3vw, 2.25rem);
+  // Lo que reserva la barra fija arriba (antes escrito a mano en el shell).
+  --l-alto-barra: calc(5.5rem + env(safe-area-inset-top, 0px));
+  --l-pixel: 2px;
+}
+
+// Modo claro (piel portal): mismo vidrio y misma luz, recalibrados para fondo claro. Sombras más suaves y tintadas
+// con la tinta de la piel (no negro puro), vidrio casi blanco, retícula más tenue y el violeta de marca como tinta.
+@mixin materiales-claro {
+  color-scheme: light;
+  --l-acento-tinta: var(--ds-accent-sim);
+  --l-filo: color-mix(in oklab, var(--ds-text-1) 9%, transparent);
+  --l-filo-fuerte: color-mix(in oklab, var(--ds-text-1) 15%, transparent);
+  --l-brillo: color-mix(in oklab, white 90%, transparent);
+  --l-vidrio: color-mix(in oklab, var(--ds-surface-1) 80%, transparent);
+  --l-vidrio-alto: color-mix(in oklab, var(--ds-surface-1) 90%, transparent);
+  --l-relleno: color-mix(in oklab, var(--ds-text-1) 3.5%, transparent);
+  --l-tinte: color-mix(in oklab, var(--l-acento) 10%, transparent);
+  --l-tinte-filo: color-mix(in oklab, var(--l-acento) 26%, transparent);
+  --l-trama: color-mix(in oklab, var(--ds-text-1) 6%, transparent);
+  --l-sombra:
+    0 1px 2px color-mix(in oklab, var(--ds-text-1) 6%, transparent),
+    0 12px 32px -16px color-mix(in oklab, var(--ds-text-1) 22%, transparent);
+  --l-sombra-alta:
+    0 2px 6px color-mix(in oklab, var(--ds-text-1) 7%, transparent),
+    0 30px 70px -28px color-mix(in oklab, var(--ds-text-1) 30%, transparent);
+  // Las tarjetas de trabajo llevan menos sombra que las de la portada: en pantallas densas se ve blando.
+  --l-sombra-trabajo:
+    0 1px 2px color-mix(in oklab, var(--ds-text-1) 5%, transparent),
+    0 8px 24px -18px color-mix(in oklab, var(--ds-text-1) 18%, transparent);
+}
+
+// Transparencia reducida y más contraste: superficies sólidas y filos marcados.
+@mixin materiales-reducidos {
+  --l-vidrio: var(--ds-surface-1);
+  --l-vidrio-alto: var(--ds-surface-2);
+  --l-filo: var(--ds-border-strong);
+  --l-filo-fuerte: var(--ds-border-strong);
+}
+
+// Alias con los que la barra de vidrio compartida (`.cromo`) se adapta a la piel que la rodea.
+@mixin cromo-alias {
+  --asb-linea: var(--l-filo-fuerte);
+  --asb-cromo-tinta-tenue: var(--ds-text-2);
+  --asb-filo: var(--l-brillo);
+  --asb-brillo: color-mix(in oklab, var(--ds-text-1) 6%, transparent);
+  --asb-canto: color-mix(in oklab, var(--ds-border-strong) 45%, transparent);
+  --asb-resplandor: 0 20px 70px color-mix(in oklab, black 28%, transparent);
+}

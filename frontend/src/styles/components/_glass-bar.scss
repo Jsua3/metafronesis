@@ -1,0 +1,1228 @@
+// Barra de vidrio modular (plan visual §2.8, F3). Reglas de assets/gemela.html de /barra-de-vidrio-modular
+// (réplica Recomendada) copiadas POR VALOR, secciones 3 a 8. Cambios de forma, todos sin cambiar valores:
+// · los selectores de clases genéricas van acotados con :where(.cromo), que no suma especificidad: el orden y los
+//   pesos de la gemela (de los que dependen sus portadores de `transition`) se conservan;
+// · capas por tokens --ds-z-* y colores por tokens --asb-* (src/styles/tokens/_glass-bar.scss);
+// · el material del vidrio sale de m.ds-glass-bar-layer, en UNA regla agrupada por dueño (píldora en «inicial»,
+//   cada módulo en «scroll»/«atencion»);
+// · no se copian desplegables, selector de tema e idioma ni «Afíliate» (no existen en SIEP).
+// Invariantes (SKILL.md): .cromo sin transform/filter/opacity; todo `fixed` de la barra es hijo directo de .cromo;
+// backdrop-filter no transiciona; translate/scale se nombran en transition; un portador de transition por elemento.
+@use 'mixins' as m;
+
+// Corte entre la rejilla `auto auto auto` (franja estrecha) y `1fr auto 1fr` (centrado exacto). Se recalcula con
+// el contenido real (adaptar-a-stacks §12) en F3-3; el tope se escribe con −0,001rem (trampa del corte exacto).
+$corte: 82.5rem;
+$corte-tope: 82.499rem;
+
+// Acuse de pulsación. Va ANTES de .modulo a propósito (como la gemela): en el logo, que lleva las dos clases,
+// gana la lista de .modulo y el scale(0.97) entra y sale sin transición.
+:where(.cromo) .pulsable {
+  transition:
+    transform var(--duracion-instante) var(--ease-out),
+    color var(--duracion-boton) var(--ease-color),
+    background-color var(--duracion-boton) var(--ease-color),
+    border-color var(--duracion-boton) var(--ease-color);
+}
+
+:where(.cromo) .pulsable:active {
+  transform: scale(0.97);
+  transition-duration: 0ms;
+}
+
+// 3. EL CROMO: fijo, aislado, SIN transform/filter/opacity.
+.cromo {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: var(--ds-z-cabecera);
+  isolation: isolate;
+  min-height: 4.35rem;
+  padding-block: 0.4rem 0;
+  background-color: transparent;
+  box-shadow: none;
+  transition: box-shadow var(--duracion-entrada) var(--ease-color);
+}
+
+// 4. LA BANDEJA (píldora) y LOS MÓDULOS. Vidrio en pseudoelementos (data-vidrio="pseudo").
+:where(.cromo) .bandeja {
+  position: relative;
+  isolation: isolate;
+  z-index: var(--ds-z-elevado);
+  width: min(calc(100% - 2rem), 80rem);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  gap: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-color: transparent;
+  box-shadow: none;
+  transition:
+    gap var(--duracion-estado) var(--ease-rebote-suave),
+    background-color var(--duracion-entrada) var(--ease-color),
+    border-color var(--duracion-entrada) var(--ease-color),
+    box-shadow var(--duracion-entrada) var(--ease-color);
+}
+
+@media (min-width: $corte) {
+  :where(.cromo) .bandeja {
+    grid-template-columns: 1fr auto 1fr;
+  }
+}
+
+:where(.cromo) .modulo {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-color: transparent;
+  box-shadow: none;
+  translate: 0 0;
+  transition:
+    background-color var(--duracion-entrada) var(--ease-color),
+    border-color var(--duracion-entrada) var(--ease-color),
+    box-shadow var(--duracion-entrada) var(--ease-color),
+    translate var(--duracion-estado) var(--ease-rebote-suave);
+}
+
+:where(.cromo) .modulo::before,
+:where(.cromo) .modulo::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: var(--ds-z-base);
+  border-radius: inherit;
+}
+
+:where(.cromo) .modulo > * {
+  position: relative;
+  z-index: var(--ds-z-elevado);
+}
+
+// La capa de vidrio de la píldora y la de cada módulo: funde velo, canto y sombra en 200 ms; backdrop-filter no
+// está en la lista y la capa no cambia de opacidad.
+.cromo[data-vidrio='pseudo'] .bandeja::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  border-radius: inherit;
+}
+
+.cromo[data-vidrio='pseudo'] .bandeja::before,
+.cromo[data-vidrio='pseudo'] .modulo::before {
+  inset: -1px;
+  // Debajo del contenido de su caja (que es contexto de apilamiento propio).
+  z-index: calc(var(--ds-z-base) - 1);
+  border: 1px solid transparent;
+  background-color: transparent;
+  box-shadow: none;
+  transition:
+    background-color var(--duracion-entrada) var(--ease-color),
+    border-color var(--duracion-entrada) var(--ease-color),
+    box-shadow var(--duracion-entrada) var(--ease-color);
+}
+
+// Brillo especular y canto de cristal, en una sola capa sobre el vidrio.
+.cromo[data-vidrio='pseudo'] .modulo::after {
+  background: radial-gradient(18rem circle at 50% 0%, var(--asb-brillo), transparent 60%);
+  box-shadow: inset 0 0 0 1px var(--asb-canto);
+  opacity: 0;
+  transition: opacity var(--duracion-entrada) var(--ease-color);
+}
+
+// La luz sigue al puntero solo con ratón.
+@media (hover: hover) and (pointer: fine) {
+  .cromo[data-vidrio='pseudo'] .modulo::after {
+    background: radial-gradient(
+      18rem circle at calc(var(--puntero-x, 50) * 1%) calc(var(--puntero-y, 0) * 1%),
+      var(--asb-brillo),
+      transparent 60%
+    );
+  }
+}
+
+:where(.cromo) .modulo-logo {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  min-width: max-content;
+  min-height: 2.75rem;
+  margin-block: -0.375rem;
+  padding: 0.375rem 0.75rem;
+  color: var(--asb-cromo-tinta);
+  text-decoration: none;
+}
+
+:where(.cromo) .modulo-principal {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 0.25rem;
+  min-height: 2.75rem;
+  padding-inline: 0.5rem;
+}
+
+:where(.cromo) .modulo-cuenta {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 0.5rem;
+  min-width: 0;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+}
+
+// Por debajo de 64rem el módulo central sale: la navegación principal es la barra inferior (sección 9).
+@media (max-width: 63.999rem) {
+  :where(.cromo) .modulo-principal {
+    display: none;
+  }
+}
+
+// 5. LOS TRES ESTADOS. inicial: una sola píldora de vidrio. scroll y atención: tres cápsulas, cada una con su
+// vidrio. Un solo dueño de vidrio por estado: el material cambia de dueño en el mismo recálculo de estilo.
+// Todos los dueños de vidrio de la barra, de escritorio y de móvil, en UNA regla: `data-ancho` lo pinta ui-glass-bar
+// con la misma media que este CSS (64rem). En móvil el vidrio es la banda superior y la barra inferior, siempre; los
+// módulos no llevan vidrio (no hay vidrio sobre vidrio).
+.cromo[data-ancho='escritorio'][data-estado='inicial'][data-vidrio='pseudo'] .bandeja::before,
+.cromo[data-ancho='escritorio'][data-estado='scroll'][data-vidrio='pseudo'] .modulo::before,
+.cromo[data-ancho='escritorio'][data-estado='atencion'][data-vidrio='pseudo'] .modulo::before,
+.cromo[data-ancho='movil'] .bandeja::before,
+.cromo[data-ancho='movil'] .modulo-inferior::before,
+// La pieza «volver» del editor de casos: separada de la píldora, con su propio vidrio (2026-11-22).
+.cromo[data-ancho='escritorio'] .volver--pieza::before {
+  @include m.ds-glass-bar-layer;
+}
+
+@media (min-width: 64rem) {
+  // Solo la píldora lleva el resplandor de marca.
+  .cromo[data-estado='inicial'][data-vidrio='pseudo'] .bandeja::before {
+    box-shadow:
+      var(--asb-cromo-apoyo),
+      inset 0 1px 0 var(--asb-filo),
+      var(--asb-resplandor);
+  }
+
+  .cromo[data-estado='scroll'] .bandeja,
+  .cromo[data-estado='atencion'] .bandeja {
+    gap: var(--asb-separacion-modulos);
+  }
+
+  .cromo[data-estado='scroll'] .modulo,
+  .cromo[data-estado='atencion'] .modulo {
+    translate: 0 var(--asb-caida-modulo);
+  }
+
+  .cromo[data-estado='scroll'][data-vidrio='pseudo'] .modulo::after,
+  .cromo[data-estado='atencion'][data-vidrio='pseudo'] .modulo::after {
+    opacity: 1;
+  }
+
+}
+
+// 6. LOS CONTROLES PLEGABLES (la expansión del módulo central). La geometría va en el <a>. Se pliegan en «scroll»
+// salvo con el foco dentro de la barra puesto con el teclado (data-modalidad la escribe la máquina).
+// DESVÍO F3-a (medido): la gemela usa un techo común de 12rem y compensa el relleno con margin-inline: -0.75rem
+// (en su origen el relleno era una utilidad de Tailwind que no se dejaba pisar). Con destinos de anchos distintos,
+// cada uno se satura en un instante distinto y los vecinos se balanceaban hasta 14 px, también con movimiento
+// reducido (M11 en rojo). Aquí cada plegable tiene su propio techo, su ancho natural (--asb-ancho-natural, que
+// mide ui-glass-bar), y se pliega con el relleno: todos crecen en proporción y nada se balancea.
+:where(.cromo) .control-plegable {
+  transition: visibility 0s linear 0s;
+}
+
+:where(.cromo) a.control-plegable {
+  max-width: var(--asb-ancho-natural, 12rem);
+  opacity: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  transition:
+    max-width var(--duracion-estado) var(--ease-rebote-suave),
+    padding var(--duracion-estado) var(--ease-rebote-suave),
+    opacity var(--duracion-entrada) var(--ease-color);
+}
+
+.cromo[data-estado='scroll']:is(:not(:focus-within), [data-modalidad='puntero']) .control-plegable {
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0s linear var(--duracion-estado);
+}
+
+// El <a> es a la vez raíz y portador: su lista nombra la visibility retrasada, o se oculta en t = 0.
+.cromo[data-estado='scroll']:is(:not(:focus-within), [data-modalidad='puntero']) a.control-plegable {
+  max-width: 0;
+  padding-inline: 0;
+  opacity: 0;
+  transition:
+    max-width var(--duracion-estado) var(--ease-rebote-suave),
+    padding var(--duracion-estado) var(--ease-rebote-suave),
+    opacity var(--duracion-salida) var(--ease-color),
+    visibility 0s linear var(--duracion-estado);
+}
+
+// El indicador ··· : solo con dedo y solo en scroll.
+:where(.cromo) .indicador-mas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin-block: -0.25rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--asb-apagado);
+  visibility: hidden;
+  opacity: 0;
+  scale: var(--asb-escala-indicador);
+  transition:
+    opacity var(--duracion-entrada) var(--ease-color),
+    scale var(--duracion-estado) var(--ease-rebote-vivo),
+    visibility 0s linear var(--duracion-entrada);
+}
+
+@media (hover: none) {
+  .cromo[data-estado='scroll']:is(:not(:focus-within), [data-modalidad='puntero']) .indicador-mas {
+    visibility: visible;
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity var(--duracion-entrada) var(--ease-color),
+      scale var(--duracion-estado) var(--ease-rebote-vivo),
+      visibility 0s linear 0s;
+  }
+}
+
+// 7. EL LOGO DOBLE: logotipo («S» + SIEP) e isotipo («S») superpuestos; techos medidos (tokens del logo).
+:where(.cromo) .logo-doble {
+  position: relative;
+  display: block;
+  height: 2rem;
+  max-width: var(--asb-logo-ancho);
+  overflow: hidden;
+  transition: max-width var(--duracion-estado) var(--ease-rebote-suave);
+}
+
+:where(.cromo) .logo-doble__completo,
+:where(.cromo) .logo-doble__isotipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  white-space: nowrap;
+  transition:
+    opacity var(--duracion-entrada) var(--ease-color),
+    scale var(--duracion-estado) var(--ease-rebote-vivo);
+}
+
+:where(.cromo) .logo-doble__isotipo {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  opacity: 0;
+  scale: var(--asb-escala-isotipo);
+}
+
+:where(.cromo) .logo-doble__marca {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--ds-radius-md);
+  background-color: var(--ds-primary);
+  color: var(--ds-on-primary);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 800;
+  line-height: 1;
+
+  // El monograma es decorativo y se pinta aquí, no como texto del enlace: el texto visible del logo es «SIEP», que
+  // está dentro de su nombre accesible («SIEP: ir al …»; WCAG 2.5.3, Axe label-content-name-mismatch).
+  &::before {
+    content: 'S';
+  }
+}
+
+:where(.cromo) .logo-doble__nombre {
+  color: var(--asb-cromo-tinta);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 800;
+  letter-spacing: var(--ds-type-h3-track);
+  line-height: 1;
+}
+
+.cromo[data-estado='scroll'] .logo-doble,
+.cromo[data-estado='atencion'] .logo-doble {
+  max-width: var(--asb-isotipo-ancho);
+}
+
+.cromo[data-estado='scroll'] .logo-doble__completo,
+.cromo[data-estado='atencion'] .logo-doble__completo {
+  opacity: 0;
+  scale: var(--asb-escala-isotipo);
+}
+
+.cromo[data-estado='scroll'] .logo-doble__isotipo,
+.cromo[data-estado='atencion'] .logo-doble__isotipo {
+  opacity: 1;
+  scale: 1;
+}
+
+// Franja estrecha: el centrado exacto no cabe; el isotipo queda fijo (D10).
+@media (min-width: 64rem) and (max-width: $corte-tope) {
+  :where(.cromo) .logo-doble {
+    max-width: var(--asb-isotipo-ancho);
+  }
+
+  :where(.cromo) .logo-doble__completo {
+    opacity: 0;
+    scale: var(--asb-escala-isotipo);
+  }
+
+  :where(.cromo) .logo-doble__isotipo {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+// 8. ENLACES Y CUENTA
+:where(.cromo) .nav-enlace {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-block: -0.25rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  letter-spacing: var(--text-sm--letter-spacing);
+  color: var(--asb-cromo-tinta);
+  text-decoration: none;
+  transition:
+    color var(--duracion-boton) var(--ease-color),
+    opacity var(--duracion-instante) var(--ease-out);
+}
+
+:where(.cromo) .enlace-tenue {
+  color: var(--asb-cromo-tinta-tenue);
+}
+
+:where(.cromo) .nav-enlace[aria-current='page'] {
+  color: var(--asb-acento);
+}
+
+:where(.cromo) .nav-enlace::after {
+  content: '';
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.55rem;
+  left: 0.75rem;
+  height: 1px;
+  border-radius: 999px;
+  background-color: currentColor;
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition:
+    opacity var(--duracion-boton) var(--ease-color),
+    transform var(--duracion-boton) var(--ease-out);
+}
+
+:where(.cromo) .nav-enlace[aria-current='page']::after {
+  opacity: 0.45;
+  transform: scaleX(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  // El actual conserva el acento al posarse.
+  :where(.cromo) .nav-enlace:not([aria-current='page']):hover {
+    color: var(--asb-fuerte);
+  }
+
+  :where(.cromo) .nav-enlace:hover::after {
+    opacity: 0.42;
+    transform: scaleX(1);
+  }
+
+  :where(.cromo) .enlace-tenue:hover {
+    color: var(--asb-fuerte);
+  }
+}
+
+:where(.cromo) .nav-enlace:active {
+  opacity: 0.55;
+  transition-duration: 0ms;
+}
+
+// La cuenta: quién soy (nombre y rol) y el menú. El chip no es interactivo.
+:where(.cromo) .cuenta-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  max-width: 14rem;
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  letter-spacing: var(--text-sm--letter-spacing);
+}
+
+:where(.cromo) .cuenta-chip__nombre {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--asb-cromo-tinta);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+:where(.cromo) .cuenta-chip__rol {
+  color: var(--asb-cromo-tinta-tenue);
+  font-size: var(--ds-type-caption-size);
+}
+
+// En la franja estrecha la cuenta se reduce a su menú (plan §2.8: «la cuenta como icono por debajo de 1.200 px»).
+@media (max-width: $corte-tope) {
+  :where(.cromo) .cuenta-chip {
+    display: none;
+  }
+}
+
+// Colores forzados (revisión de F3, I-2; accesibilidad-y-tactil.md §10 de la skill): el sistema repinta el color y los
+// fondos, así que el destino actual pierde su tinta de acento, su raya (::after con background) y la gota de la
+// pestaña. Se marca con lo que el sistema respeta: subrayado en el enlace y un borde en la pestaña (WCAG 1.4.1).
+@media (forced-colors: active) {
+  :where(.cromo) .nav-enlace[aria-current='page'] {
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.3em;
+  }
+
+  :where(.cromo) .pestana[aria-current] {
+    border-block-end: 3px solid CanvasText;
+  }
+}
+
+// H-19 (WCAG 2.4.11) en escritorio: el foco y las anclas se paran bajo la barra fija. Chrome da por visible un destino
+// que está en la ventana aunque lo tape la barra, y no se desplaza; scroll-padding le dice cuánto ocupa. 5,5rem = la
+// píldora (≈ 4,25rem), la caída de 6 px de los módulos al desplazarse y aire; es el mismo relleno del <main>.
+@media (min-width: 64rem) {
+  html {
+    scroll-padding-top: calc(5.5rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+// 9. MÓVIL (por debajo de 64rem; references/movil.md de la skill, decisión D11): dos barras en el mismo header. Arriba
+// la banda con el logo y la cuenta; abajo la barra de pestañas (`nav.modulo-inferior`, hija directa de .cromo). El
+// estado `scroll` lo decide la DIRECCIÓN (la máquina) y solo reasigna dos altos. Sin «atención», sin quiebre, sin
+// hover. Ningún `env(safe-area-inset-*)` entra en una propiedad que se transiciona (§7).
+:where(.cromo) .modulo-inferior {
+  display: none;
+}
+
+@media (max-width: 63.999rem) {
+  html {
+    scroll-padding-top: calc(var(--asb-alto-modulo-superior) + env(safe-area-inset-top, 0px) + 2.5rem);
+    scroll-padding-bottom: calc(var(--asb-alto-modulo-inferior) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  // Con 100vh, en iOS las páginas cortas se desplazan y la máquina lo leería como gesto (§7).
+  body {
+    min-height: 100svh;
+  }
+
+  .cromo {
+    min-height: 0;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  }
+
+  .cromo[data-estado='scroll'] {
+    --asb-alto-modulo-superior: var(--asb-alto-modulo-superior-compacto);
+    --asb-alto-modulo-inferior: var(--asb-alto-modulo-inferior-compacto);
+  }
+
+  // La banda superior: a todo lo ancho, sin borde ni radio (un borde transparente subía la cabecera 2 px).
+  :where(.cromo) .bandeja {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: var(--asb-alto-modulo-superior);
+    padding: 0 1rem;
+    gap: 1rem;
+    border: 0;
+    border-radius: 0;
+    touch-action: manipulation;
+    transition:
+      height var(--duracion-estado) var(--ease-rebote-suave),
+      gap var(--duracion-estado) var(--ease-rebote-suave);
+  }
+
+  // Su vidrio se extiende por la zona segura (cubre la muesca).
+  .cromo[data-vidrio='pseudo'] .bandeja::before {
+    inset: calc(-1 * env(safe-area-inset-top, 0px)) calc(-1 * env(safe-area-inset-right, 0px)) 0 calc(-1 * env(safe-area-inset-left, 0px));
+    border-width: 0 0 1px;
+    border-radius: 0;
+  }
+
+  // La barra inferior: fija al viewport (hija directa del header, que no es bloque contenedor). Sin translate en
+  // reposo: solo en el estado de teclado.
+  :where(.cromo) .modulo-inferior {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: var(--ds-z-elevado);
+    isolation: isolate;
+    display: flex;
+    justify-content: center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+    touch-action: manipulation;
+    transition:
+      translate var(--duracion-panel) var(--ease-cajon),
+      opacity var(--duracion-salida) var(--ease-color),
+      visibility 0s linear 0s;
+  }
+
+  :where(.cromo) .modulo-inferior::before {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--ds-z-base) - 1);
+    border-top: 1px solid transparent;
+  }
+
+  // Su sombra mira hacia arriba (hacia el contenido).
+  .cromo[data-ancho='movil'] .modulo-inferior::before {
+    box-shadow:
+      var(--asb-cromo-apoyo-inferior),
+      inset 0 1px 0 var(--asb-filo);
+  }
+
+  // El alto lo lleva la fila, no el nav (el nav solo paga la zona segura).
+  :where(.cromo) .pestanas {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    max-width: 36rem;
+    height: var(--asb-alto-modulo-inferior);
+    transition: height var(--duracion-estado) var(--ease-rebote-suave);
+  }
+
+  :where(.cromo) .pestana {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    row-gap: 0.1875rem;
+    min-width: 0;
+    min-height: var(--ds-target-min);
+    margin: 0;
+    padding: 0 0.125rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background-color: transparent;
+    color: var(--asb-cromo-tinta-tenue);
+    font: inherit;
+    font-size: var(--ds-type-caption-size);
+    font-weight: 600;
+    line-height: 1.65;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--duracion-boton) var(--ease-color);
+  }
+
+  // Acuse de pulsación: solo tinte, sin escala (una pestaña encogida se lee como una arruga de la barra).
+  :where(.cromo) .pestana:active {
+    background-color: var(--ds-primary-subtle);
+    transition-duration: 0ms;
+  }
+
+  :where(.cromo) .pestana[aria-current] {
+    color: var(--asb-acento);
+  }
+
+  :where(.cromo) .pestana__icono {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  // La pestaña activa lleva una gota bajo el icono (estática: la receta la hace viajar con View Transitions entre
+  // documentos; en esta SPA no se anima).
+  :where(.cromo) .pestana[aria-current] .pestana__icono::before {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: -0.125rem -0.5rem;
+    z-index: calc(var(--ds-z-base) - 1);
+    border-radius: 999px;
+    background-color: var(--ds-primary-subtle);
+  }
+
+  // El rótulo pliega por rejilla, nunca por height (§4.3): no se recorta en reposo (WCAG 1.4.12).
+  :where(.cromo) .pestana__rotulo {
+    display: grid;
+    grid-template-rows: 1fr;
+    min-height: var(--asb-alto-rotulo-pestana);
+    opacity: 1;
+    transition:
+      grid-template-rows var(--duracion-estado) var(--ease-rebote-suave),
+      min-height var(--duracion-estado) var(--ease-rebote-suave),
+      opacity var(--duracion-entrada) var(--ease-color);
+  }
+
+  :where(.cromo) .pestana__rotulo > span {
+    min-height: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .cromo[data-estado='scroll'] .pestana__rotulo {
+    grid-template-rows: 0fr;
+    min-height: 0;
+    opacity: 0;
+    transition:
+      grid-template-rows var(--duracion-estado) var(--ease-rebote-suave),
+      min-height var(--duracion-estado) var(--ease-rebote-suave),
+      opacity var(--duracion-salida) var(--ease-color);
+  }
+
+  // Con el teclado virtual abierto la barra inferior se retira: desliza, funde y sale del orden de tabulación al final.
+  .cromo[data-teclado='abierto'] .modulo-inferior {
+    visibility: hidden;
+    opacity: 0;
+    translate: 0 var(--asb-retirada-barra);
+    transition:
+      translate var(--duracion-panel) var(--ease-cajon),
+      opacity var(--duracion-salida) var(--ease-color),
+      visibility 0s linear var(--duracion-panel);
+  }
+
+  // Pantalla muy estrecha: isotipo siempre, por ancho y no por recorte.
+  @media (max-width: 22.499rem) {
+    :where(.cromo) .logo-doble {
+      max-width: var(--asb-isotipo-ancho);
+    }
+
+    :where(.cromo) .logo-doble__completo {
+      opacity: 0;
+      scale: var(--asb-escala-isotipo);
+    }
+
+    :where(.cromo) .logo-doble__isotipo {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  // Teléfono apaisado: compacto de nacimiento y rótulos plegados.
+  @media (orientation: landscape) and (max-height: 30rem) {
+    .cromo {
+      --asb-alto-modulo-superior: var(--asb-alto-modulo-superior-compacto);
+      --asb-alto-modulo-inferior: var(--asb-alto-modulo-inferior-compacto);
+    }
+
+    :where(.cromo) .pestana__rotulo {
+      grid-template-rows: 0fr;
+      min-height: 0;
+      opacity: 0;
+    }
+  }
+
+  // Viewport muy corto (zoom al 400 %): el header entero sale del fijo (dos barras fijas se comían media pantalla).
+  @media (max-height: 20rem) {
+    .cromo {
+      position: static;
+    }
+
+    :where(.cromo) .modulo-inferior {
+      position: relative;
+    }
+
+    html {
+      scroll-padding-top: 0;
+      scroll-padding-bottom: 0;
+    }
+  }
+}
+
+// 10. LA BARRA PÚBLICA (portada, acceso y 404; `header.barra-publica`). Todo acotado a .barra-publica: la barra del
+// editor y el banco /dev/barra no cambian. Pedido del usuario (2026-11-20): «Ingresar» no es una ficha dentro del
+// módulo de cuenta: el módulo ENTERO es la llamada a la acción, una cápsula violeta que es el enlace; al acercar el
+// cursor se amplía y dice «Ingresar aquí». El botón de tema sale de ese módulo (al principal, tras un filete).
+
+// Tokens de la llamada a la acción. Violeta de marca (--l-acento: #5B3FD1 en la piel clara) con tinta blanca (la
+// «sobre primario» de esa piel): ≥ 4,5:1 sobre el violeta al 88 % encima del peor fondo (contrast.contract.spec.ts).
+// Al 88 % el vidrio del módulo aún se transparenta.
+.barra-publica {
+  --cta-fondo: var(--l-acento, var(--ds-accent-sim));
+  --cta-tinta: var(--ds-on-primary);
+  --cta-presencia: 88%;
+  // Hacia dónde se va el violeta al posarse y al pulsar: siempre más oscuro, lejos de la tinta blanca (sube el contraste).
+  --cta-oscuro: var(--ds-text-1);
+  --cta-fondo-fuerte: color-mix(in oklab, var(--cta-fondo) 84%, var(--cta-oscuro));
+  --cta-velo: color-mix(in oklab, var(--cta-fondo) var(--cta-presencia), transparent);
+  --cta-velo-fuerte: color-mix(in oklab, var(--cta-fondo-fuerte) var(--cta-presencia), transparent);
+  --cta-canto: color-mix(in oklab, var(--cta-fondo-fuerte) 70%, transparent);
+  --cta-filo: color-mix(in oklab, white 30%, transparent);
+  --cta-halo: color-mix(in oklab, var(--cta-fondo) 60%, transparent);
+  // Cuánto crece al ampliarse: el ancho de « aquí →». public-bar.component.ts lo mide con la fuente real y lo escribe en
+  // el módulo; este respaldo es esa medida en em (Poppins 600 a 14 px, 2026-11-20).
+  --cta-crece: 3.9em;
+  // Movimiento que el movimiento reducido anula (invariante 12: el reloj se queda).
+  --cta-escala: 1.035;
+  --cta-escala-pulsada: 0.97;
+  --cta-empuje-flecha: -0.3125rem;
+}
+
+// Piel oscura. El violeta de marca de esa piel es la lavanda #B69CFF, que con texto oscuro se leía como «lila claro» y no
+// como el morado del módulo (revisión 2026-11-20; el arnés lo marcaba como velo claro, M14). Aquí el módulo es el MISMO
+// morado profundo con tinta blanca que en la piel clara: el tono sale del token (h de --l-acento) y solo bajan la luz y
+// sube el croma (oklch 0,52 / 0,2 ≈ #7544CD, dentro de sRGB): blanco 6,0:1 sobre él, 4,7:1 al 88 % sobre blanco y
+// 7,3:1 sobre negro. Al posarse se oscurece hacia el fondo de la piel. Sin sintaxis de color relativo queda la lavanda
+// con tinta oscura de la piel, que también pasa AA.
+@supports (color: oklch(from red l c h)) {
+  .publico[data-skin='game'] .barra-publica {
+    --cta-fondo: oklch(from var(--l-acento, var(--ds-accent-sim)) 0.52 0.2 h);
+    --cta-tinta: white;
+    --cta-oscuro: var(--ds-surface-page);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .barra-publica {
+    --cta-presencia: 100%;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .barra-publica {
+    --cta-presencia: 100%;
+    --cta-canto: var(--ds-text-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-publica {
+    --cta-escala: 1;
+    --cta-escala-pulsada: 1;
+    --cta-empuje-flecha: 0rem;
+  }
+}
+
+// 10.1 El módulo «Ingresar». Un solo portador de transition (invariante 13): esta lista reemplaza la de .modulo y nombra
+// todo lo que el módulo anima; :active solo acorta la escala (acuse en 100 ms; vuelve con el resorte de la lista base).
+@mixin cta-transicion($escala: var(--duracion-estado)) {
+  transition:
+    background-color var(--duracion-entrada) var(--ease-color),
+    border-color var(--duracion-entrada) var(--ease-color),
+    box-shadow var(--duracion-entrada) var(--ease-color),
+    translate var(--duracion-estado) var(--ease-rebote-suave),
+    margin var(--duracion-estado) var(--ease-rebote-suave),
+    padding var(--duracion-estado) var(--ease-rebote-suave),
+    scale $escala var(--ease-rebote-vivo);
+}
+
+.cromo.barra-publica .cta-modulo {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: var(--ds-target-min);
+  margin-inline: 0;
+  padding-inline: 1.125rem;
+  color: var(--cta-tinta);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-s-line);
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  white-space: nowrap;
+  // Crece hacia la izquierda: la escala también se ancla al canto derecho.
+  transform-origin: right center;
+  -webkit-tap-highlight-color: transparent;
+  @include cta-transicion;
+}
+
+// El violeta es la capa del propio módulo (su ::before): en «inicial» tiñe el interior de la píldora, sin vidrio propio
+// (el desenfoque es solo de la píldora); en «scroll» y «atención» tiñe el vidrio del módulo. backdrop-filter no se toca
+// aquí: cambia de dueño como en el resto de la barra (invariante 4). Gana a la regla de los dueños de vidrio por orden.
+.cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo::before {
+  border-color: var(--cta-canto);
+  background-color: var(--cta-velo);
+  box-shadow:
+    inset 0 1px 0 var(--cta-filo),
+    0 8px 20px -10px var(--cta-halo);
+}
+
+// En la píldora el módulo es el REMATE morado de la píldora, no una cápsula suelta dentro de ella (revisión 2026-11-20:
+// con 8 px de aire alrededor se leía como la ficha rechazada). Se estira sobre la fila y se come el relleno de la
+// píldora (0,5rem arriba y abajo, 0,75rem a la derecha): su capa coincide con el extremo derecho de la píldora y el
+// violeta llega a su borde. En «scroll» vuelve a ser una cápsula de 44 px como las otras dos; los márgenes viajan con
+// el resorte suave (el estiramiento recalcula el alto en cada fotograma). Sin escala aquí: asomaría 1 px por fuera de la
+// píldora; se amplía con el ancho.
+@media (min-width: 64rem) {
+  .cromo.barra-publica .cta-modulo {
+    align-self: stretch;
+    margin-block: 0.0625rem;
+  }
+
+  .cromo.barra-publica[data-estado='inicial'] .cta-modulo {
+    --cta-escala: 1;
+    margin-block: -0.5rem;
+    margin-inline-end: -0.75rem;
+    padding-inline: 1.5rem;
+  }
+}
+
+// Lo que aparece al ampliarse: « aquí →», a ancho 0 y recortado en reposo (sigue en el DOM: el nombre accesible es
+// siempre «Ingresar aquí», y contiene lo visible). Al plegar, el texto se va en 100 ms, antes de que el ancho lo corte.
+.cromo.barra-publica .cta-modulo__mas {
+  display: inline-flex;
+  width: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    width var(--duracion-estado) var(--ease-rebote-suave),
+    opacity var(--duracion-instante) var(--ease-color);
+}
+
+.cromo.barra-publica .cta-modulo__mas-dentro {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.cromo.barra-publica .cta-modulo__flecha {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-inline-start: 0.375rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  translate: var(--cta-empuje-flecha) 0;
+  transition: translate var(--duracion-estado) var(--ease-rebote-vivo);
+}
+
+// Área de reacción algo mayor que el dibujo (solo con ratón): el cursor que se acerca lo amplía un poco antes. Por la
+// izquierda no pasa de 0,75rem, la separación mínima entre módulos: no tapa ningún otro control. Por la derecha no
+// sobresale (no hay nada a ese lado, y no debe agrandar el desbordamiento del enlace).
+.cromo.barra-publica .cta-modulo > .cta-modulo__alcance {
+  display: none;
+  position: absolute;
+  inset: -0.5rem 0 -0.5rem -0.75rem;
+  z-index: var(--ds-z-base);
+  border-radius: inherit;
+}
+
+// La ampliación: el ancho crece con el resorte suave y el módulo devuelve ese mismo ancho con margen negativo (misma
+// curva y duración), así que su huella en la rejilla no cambia: crece hacia la izquierda sin empujar a nadie. Lo que
+// aparece entra con fundido (retrasado 100 ms, cuando ya hay sitio) y la flecha con el resorte vivo.
+@mixin cta-amplio {
+  scale: var(--cta-escala);
+
+  &::before {
+    background-color: var(--cta-velo-fuerte);
+  }
+
+  .cta-modulo__mas {
+    width: var(--cta-crece);
+    opacity: 1;
+    transition:
+      width var(--duracion-estado) var(--ease-rebote-suave),
+      opacity var(--duracion-entrada) var(--ease-color) var(--duracion-instante);
+  }
+
+  .cta-modulo__flecha {
+    translate: 0 0;
+  }
+}
+
+@media (min-width: 64rem) {
+  .cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo:focus-visible {
+    margin-inline-start: calc(-1 * var(--cta-crece));
+  }
+}
+
+.cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo:focus-visible {
+  @include cta-amplio;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cromo.barra-publica .cta-modulo > .cta-modulo__alcance {
+    display: block;
+  }
+
+  .cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo:hover {
+    @include cta-amplio;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 64rem) {
+  .cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo:hover {
+    margin-inline-start: calc(-1 * var(--cta-crece));
+  }
+}
+
+.cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo:active {
+  scale: var(--cta-escala-pulsada);
+  @include cta-transicion(var(--duracion-instante));
+}
+
+.cromo.barra-publica[data-vidrio='pseudo'] .modulo.cta-modulo:active::before {
+  background-color: var(--cta-fondo-fuerte);
+}
+
+// Colores forzados: el sistema repintaba el ::before y el rótulo con el mismo color (texto invisible sobre su capa,
+// medido con Alto contraste emulado). Se toman las riendas con colores del sistema: rótulo y flecha (currentColor) en
+// LinkText sobre Canvas, con un borde LinkText que dibuja el módulo. Por tokens, para que valga en reposo, al posarse,
+// con el foco y al pulsar.
+@media (forced-colors: active) {
+  .cromo.barra-publica .modulo.cta-modulo {
+    --cta-velo: Canvas;
+    --cta-velo-fuerte: Canvas;
+    --cta-fondo-fuerte: Canvas;
+    --cta-canto: LinkText;
+    --cta-filo: transparent;
+    --cta-halo: transparent;
+    forced-color-adjust: none;
+    color: LinkText;
+  }
+}
+
+// 10.2 El tema, fuera del módulo violeta: al final del principal, tras un filete fino. Por debajo de 64rem el principal sale (sus destinos son la barra inferior),
+// pero en la portada se queda con el tema solo, pegado a «Ingresar».
+.cromo.barra-publica .filete-tema {
+  flex: none;
+  width: 1px;
+  height: 1.25rem;
+  margin-inline: 0.25rem;
+  background-color: var(--asb-linea);
+}
+
+.cromo.barra-publica .modulo-principal.con-tema {
+  padding-inline-end: 0.25rem;
+}
+
+.cromo.barra-publica .modulo .tema {
+  // La tinta de los enlaces de la barra (--ds-text-2 quedaba en 3,9:1 sobre el velo en claro con la página violeta debajo).
+  --_fg: var(--asb-cromo-tinta);
+
+  // 46 px y no 44: la barra cae en medios píxeles (relleno de 0,4rem, centrado de la rejilla) y el navegador ajusta la
+  // caja al píxel al decidir el clic; con 44 justos, un canto del objetivo de 44 × 44 quedaba fuera (M16 del arnés). El
+  // margen negativo devuelve los 2 px: el módulo no crece de alto. Esquina continua, no círculo: el clic se recorta al radio.
+  inline-size: 2.875rem;
+  block-size: 2.875rem;
+  margin-block: -0.0625rem;
+  border-radius: 0.875rem;
+}
+
+@media (max-width: 63.999rem) {
+  .cromo.barra-publica .modulo-principal.con-tema {
+    display: flex;
+    margin-inline: auto -0.5rem;
+    padding-inline: 0;
+  }
+
+  .cromo.barra-publica .modulo-principal.con-tema > :not(.tema) {
+    display: none;
+  }
+}
+
+// 10.3 El principal abraza lo que se ve (defecto visto en scroll: un hueco tras «Cómo funciona»). El hueco eran el
+// `···`, que con ratón nunca se ve pero ocupaba sus 44 px, y la separación de 0,25rem de cada plegable a ancho 0.
+// · Con ratón el `···` no existe (solo se muestra con `hover: none`); con dedo ocupa sitio solo cuando se ve.
+// · Cada plegable devuelve su separación con un margen negativo que viaja con su ancho (mismo resorte).
+// · El texto de un plegable no se ve recortado: al plegar se va en 100 ms y solo entonces se cierra su hueco (el ancho
+//   espera esos 100 ms); al volver, el hueco se abre en el acto y el texto entra con 140 ms de retraso, cuando ya tiene
+//   casi todo su sitio. DESVÍO de la receta (160 / 200 ms sin retraso),
+//   pedido por el usuario («Rol Étic» recortado durante la transición).
+.cromo.barra-publica a.control-plegable {
+  margin-inline-end: 0;
+  transition:
+    max-width var(--duracion-estado) var(--ease-rebote-suave),
+    padding var(--duracion-estado) var(--ease-rebote-suave),
+    margin var(--duracion-estado) var(--ease-rebote-suave),
+    opacity var(--duracion-entrada) var(--ease-color) var(--duracion-boton);
+}
+
+.cromo.barra-publica[data-estado='scroll']:is(:not(:focus-within), [data-modalidad='puntero']) a.control-plegable {
+  margin-inline-end: -0.25rem;
+  transition:
+    max-width var(--duracion-estado) var(--ease-rebote-suave) var(--duracion-instante),
+    padding var(--duracion-estado) var(--ease-rebote-suave) var(--duracion-instante),
+    margin var(--duracion-estado) var(--ease-rebote-suave) var(--duracion-instante),
+    opacity var(--duracion-instante) var(--ease-color),
+    visibility 0s linear var(--duracion-estado);
+}
+
+@media (hover: hover) {
+  .cromo.barra-publica .indicador-mas {
+    display: none;
+  }
+}
+
+@media (hover: none) {
+  .cromo.barra-publica .indicador-mas {
+    min-width: 0;
+    max-width: 0;
+    margin-inline-start: -0.25rem;
+    padding-inline: 0;
+    overflow: hidden;
+    transition:
+      opacity var(--duracion-entrada) var(--ease-color),
+      scale var(--duracion-estado) var(--ease-rebote-vivo),
+      max-width var(--duracion-estado) var(--ease-rebote-suave),
+      min-width var(--duracion-estado) var(--ease-rebote-suave),
+      padding var(--duracion-estado) var(--ease-rebote-suave),
+      margin var(--duracion-estado) var(--ease-rebote-suave),
+      visibility 0s linear var(--duracion-entrada);
+  }
+
+  .cromo.barra-publica[data-estado='scroll']:is(:not(:focus-within), [data-modalidad='puntero']) .indicador-mas {
+    min-width: 2.75rem;
+    max-width: 2.75rem;
+    margin-inline-start: 0;
+    padding-inline: 0.5rem;
+    transition:
+      opacity var(--duracion-entrada) var(--ease-color),
+      scale var(--duracion-estado) var(--ease-rebote-vivo),
+      max-width var(--duracion-estado) var(--ease-rebote-suave),
+      min-width var(--duracion-estado) var(--ease-rebote-suave),
+      padding var(--duracion-estado) var(--ease-rebote-suave),
+      margin var(--duracion-estado) var(--ease-rebote-suave),
+      visibility 0s linear 0s;
+  }
+}
+
+// 11. LA BARRA DEL PORTAL (rediseño 2026-11-21, DISENO §3.1; `header.barra-portal` de shell.component.ts). La misma
+// barra modular para los tres roles, con la marca completa de Metafrónesis (la de la barra pública: SIEP vive en los
+// títulos y textos), la cápsula de tema en el módulo de cuenta y las insignias de pendientes. Todo acotado a
+// .barra-portal: la barra pública, la del editor y el banco /dev/barra no cambian.
+
+.cromo.barra-portal .barra-marca {
+  --marca-alto: 1.75rem;
+}
+
+// Franja estrecha (64rem a 82,5rem): el docente tiene seis destinos y la rejilla deja de centrar; la palabra cede y
+// queda el isotipo, como hacía el logo doble (D10 de la receta). En el teléfono la banda sí tiene sitio para la marca
+// completa (marca, tema y cuenta caben a 360 px) y la marca se queda: el usuario pidió en la portada que no cediera al
+// isotipo. Solo por debajo de 22,5rem (320 px) cede, por ancho y no por recorte.
+// Pasada final: el corte de la barra pública (82,5rem) dejaba al portal sin palabra ni nombre a 1280 px con media barra
+// vacía. Con seis destinos cortos, marca completa, tema y ficha caben desde 75rem (medido: unos 1.080 px de 1.168), y el
+// plan §2.8 pide la cuenta como icono solo por debajo de 1.200 px. Entre 64rem y 75rem sigue cediendo.
+@media (min-width: 64rem) and (max-width: 74.999rem), (max-width: 22.499rem) {
+  .cromo.barra-portal .barra-marca .marca__palabra {
+    display: none;
+  }
+}
+
+@media (min-width: 75rem) and (max-width: $corte-tope) {
+  .cromo.barra-portal .cuenta-chip {
+    display: inline-flex;
+  }
+}
+
+// La cápsula de tema en el módulo de cuenta, delante de la ficha. 46 px y no 44 por el mismo motivo que en la barra
+// pública (la barra cae en medios píxeles y un canto del objetivo quedaba fuera); el margen negativo devuelve los 2 px.
+// Abierta, la cápsula crece DENTRO del módulo (tema-selector, ancla «fin»): abre su sitio a la izquierda, el módulo
+// crece con ella y su vidrio la cubre; la ficha y el menú de cuenta no se mueven ni quedan tapados.
+.cromo.barra-portal .modulo-cuenta {
+  gap: 0.375rem;
+}
+
+.cromo.barra-portal .modulo-cuenta > .tema {
+  --_fg: var(--asb-cromo-tinta);
+
+  inline-size: 2.875rem;
+  block-size: 2.875rem;
+  margin-block: -0.0625rem;
+  border-radius: 0.875rem;
+}
+
+// Teléfono: la banda es una fila (marca a la izquierda, cuenta a la derecha) y abierta la cápsula pide 92 px más. Sin
+// esto el módulo de cuenta, que encoge, empujaba el menú fuera de la pantalla (medido a 390 px: hasta 433 px). La cuenta
+// no encoge; la marca sí, y mientras se elige el tema su palabra se funde y deja ver solo el isotipo (el enlace
+// conserva su nombre accesible). Al plegarse la palabra vuelve.
+@media (max-width: 63.999rem) {
+  .cromo.barra-portal .modulo-cuenta {
+    flex: none;
+  }
+
+  .cromo.barra-portal .modulo-logo {
+    min-width: 0;
+  }
+
+  .cromo.barra-portal .barra-marca .marca__palabra {
+    transition: opacity var(--ds-dur-fade) var(--ds-ease-out);
+  }
+
+  .cromo.barra-portal .bandeja:has(.modulo-cuenta > .tema.abierto) .barra-marca .marca__palabra {
+    opacity: 0;
+  }
+}
+
+// Insignia de pendientes tras la etiqueta del destino (DISENO §2.5, C15). Píldora violeta de la piel con su tinta
+// «sobre primario» (AA en las dos pieles); cifras tabulares para que «9» y «12» no bailen.
+.cromo.barra-portal .nav-enlace__cuenta {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-inline-start: 0.125rem;
+  padding-inline: 0.375rem;
+  border-radius: 999px;
+  background-color: var(--ds-primary);
+  color: var(--ds-on-primary);
+  font-size: var(--ds-type-caption-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+}
+
+// En las pestañas la insignia cuelga de la esquina del icono, como en iOS; un filo del color de la barra la separa
+// del dibujo. «Más» lleva solo un punto (el número exacto está dentro de la hoja).
+@media (max-width: 63.999rem) {
+  :where(.cromo) .pestana__cuenta {
+    position: absolute;
+    inset-block-start: -0.3125rem;
+    inset-inline-start: calc(50% + 0.25rem);
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 1.125rem;
+    block-size: 1.125rem;
+    padding-inline: 0.3125rem;
+    border-radius: 999px;
+    background-color: var(--ds-primary);
+    box-shadow: 0 0 0 2px var(--ds-surface-1);
+    color: var(--ds-on-primary);
+    font-size: var(--ds-type-caption-size);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  :where(.cromo) .pestana__cuenta--punto {
+    inset-block-start: -0.125rem;
+    min-inline-size: 0.625rem;
+    block-size: 0.625rem;
+    padding: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .cromo.barra-portal .nav-enlace__cuenta,
+  :where(.cromo) .pestana__cuenta {
+    border: 1px solid CanvasText;
+  }
+}

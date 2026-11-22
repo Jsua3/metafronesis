@@ -1,0 +1,135 @@
+<ui-cabecera-ilustrada [herramienta]="true" escena="usuarios" eyebrow="Administración" title="Usuarios"
+  description="Crea, edita y activa las cuentas de docentes, estudiantes y administradores.">
+  <button ui-button uiHerramientaAcciones type="button" icon="person_add" (click)="newUser()">Nuevo usuario</button>
+</ui-cabecera-ilustrada>
+
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+<div class="us-views">
+  <ui-segmentado etiqueta="Vista de usuarios" [opciones]="vistas()" [valor]="vista()" (valorChange)="cambiarVista($event)" />
+</div>
+<p class="us-result" [class.us-result--vacio]="!resumen()" role="status" aria-live="polite">{{ resumen() }}</p>
+
+@if (vista() === 'solicitudes') {
+  <ui-section class="us-requests" title="Solicitudes de acceso pendientes">
+    <div class="us-stack">
+      <p class="us-hint">Estudiantes que pidieron cuenta desde el acceso.</p>
+      @if (requestsError()) {
+        <ui-error-state kind="server" message="No pudimos cargar las solicitudes de acceso." (retry)="loadAccessRequests()" />
+      } @else {
+        @if (!accessRequests().length) { <ui-empty-state kind="first-use" title="No hay solicitudes pendientes" /> }
+        <ul class="us-request-list">
+          @for (request of accessRequests(); track request.id) {
+            <li class="us-request">
+              <span class="us-request__text">
+                <strong>{{ request.nombre }} {{ request.apellido }}</strong>
+                <span class="us-email" [title]="request.email">{{ request.email }}</span>
+                <small>Solicitado: {{ formatDate(request.createdAt) }}</small>
+              </span>
+              <span class="us-request__actions">
+                <button ui-button type="button" icon="person_add" (click)="attendRequest(request)">Crear usuario</button>
+                <button ui-button type="button" variant="ghost" [loading]="saving()" (click)="dismissRequest(request)">Descartar</button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </ui-section>
+}
+
+@if (vista() === 'por-aprobar') {
+  <ui-section class="us-pending" title="Cuentas por aprobar">
+    @if (state() === 'loading') {
+      <p class="us-hint">Cargando cuentas…</p>
+    } @else if (state() === 'error') {
+      <ui-error-state kind="server" [message]="error()" (retry)="load()" />
+    } @else {
+      <ui-card class="us-pending__card">
+        <p class="us-hint">{{ pendingText() }}</p>
+        <label class="us-check"><input type="checkbox" [checked]="pendingUsers().length > 0 && seleccionPendientes().length === pendingUsers().length"
+          (change)="seleccionarVisibles($any($event.target).checked, true)"> Seleccionar cuentas pendientes</label>
+        @for (user of pendingUsers(); track user.id) {
+          <label class="us-check"><input type="checkbox" [checked]="seleccionPendientes().includes(user.id)"
+            (change)="seleccionar(user.id, $any($event.target).checked, true)"> {{ user.nombre }} {{ user.apellido }} <span class="us-email" [title]="user.email">{{ user.email }}</span></label>
+        }
+        <button ui-button type="button" icon="task_alt" [disabled]="!seleccionPendientes().length" [loading]="saving()" (click)="aprobarSeleccion()">Aprobar {{ seleccionPendientes().length }} cuentas</button>
+      </ui-card>
+    }
+  </ui-section>
+}
+
+@if (vista() === 'cuentas') {
+<ui-section class="us-users" title="Cuentas">
+  <ui-filtros etiquetaBusqueda="Buscar por nombre o correo" [busqueda]="busqueda()" (busquedaChange)="busqueda.set($event)"
+    [total]="users().length" [visibles]="filtrados().length" [hayFiltros]="rol() !== 'todos' || estadoFiltro() !== 'todos' || orden() !== 'nombre'" (limpiar)="limpiarFiltros()">
+    <!-- Rótulo visible como el de «Estado» y «Ordenar por»: los tres controles se alinean por su base. El nombre
+         accesible lo da el propio grupo («Filtrar por rol»), por eso el rótulo no se lee dos veces. -->
+    <div class="us-control us-control--rol">
+      <span aria-hidden="true">Rol</span>
+      <ui-segmentado etiqueta="Filtrar por rol" [opciones]="opcionesRol" [valor]="rol()" (valorChange)="rol.set($event)" />
+    </div>
+    <label class="us-control">Estado <select [value]="estadoFiltro()" (change)="estadoFiltro.set($any($event.target).value)">
+      <option value="todos">Todos</option><option value="activa">Activas</option><option value="inactiva">Inactivas</option><option value="pendiente">Pendientes</option>
+    </select></label>
+    <label class="us-control">Ordenar por <select [value]="orden()" (change)="orden.set($any($event.target).value)">
+      <option value="nombre">Nombre</option><option value="rol">Rol</option><option value="estado">Estado</option>
+    </select></label>
+  </ui-filtros>
+  @if (seleccion().length) {
+    <div class="us-batch" aria-label="Acciones de cuentas seleccionadas">
+      <strong>{{ seleccion().length }} {{ seleccion().length === 1 ? 'seleccionada' : 'seleccionadas' }}</strong>
+      <button ui-button type="button" variant="secondary" [disabled]="saving()" (click)="cambiarLote(false)">Desactivar</button>
+      <button ui-button type="button" variant="secondary" [disabled]="saving()" (click)="cambiarLote(true)">Activar</button>
+      <button ui-button type="button" variant="ghost" (click)="seleccion.set([])">Quitar selección</button>
+    </div>
+  }
+  @if (filtrados().length) {
+    <!-- La casilla maestra vive fuera de la tabla: en la vista apilada la cabecera queda solo para lectores de pantalla y
+         una casilla enfocable ahí dentro no tendría foco visible. -->
+    <label class="us-check us-master"><input type="checkbox" [checked]="todosVisibles()" [indeterminate]="algunosVisibles()"
+      (change)="seleccionarVisibles($any($event.target).checked)"> Seleccionar las {{ filtrados().length }} visibles</label>
+  }
+  <ui-table label="Tabla de usuarios" density="compact" apilar [state]="state()">
+    <table ui-table>
+      <thead>
+        <tr>
+          <th scope="col"><span class="ds-sr-only">Selección</span></th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Email</th>
+          <th scope="col">Rol</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of filtrados(); track user.id) {
+          <tr uiRow [selected]="selectedUser()?.id === user.id" [class.us-fila--marcada]="seleccion().includes(user.id)">
+            <td class="us-sel"><label class="us-check"><input type="checkbox" [attr.aria-label]="'Seleccionar a ' + user.nombre + ' ' + user.apellido" [checked]="seleccion().includes(user.id)" (change)="seleccionar(user.id, $any($event.target).checked)"><span class="us-check__txt" aria-hidden="true">Seleccionar</span></label></td>
+            <th scope="row" class="us-name" data-celda="principal">{{ user.nombre }} {{ user.apellido }}</th>
+            <td><span class="us-email" [title]="user.email">{{ user.email }}</span></td>
+            <td>{{ roleLabel(user.role) }}</td>
+            @let badge = statusBadge(user);
+            <td><ui-badge [tone]="badge.tone">{{ badge.label }}</ui-badge></td>
+            <td class="us-actions" data-celda="acciones">
+              <button ui-icon-button type="button" icon="edit" [label]="'Editar a ' + user.nombre + ' ' + user.apellido"
+                (click)="editUser(user)"></button>
+              <ui-menu iconOnly [label]="'Más acciones de ' + user.nombre + ' ' + user.apellido" [items]="rowActions(user)"
+                (itemSelected)="rowAction(user, $event)" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (state() === 'empty') {
+      <ui-empty-state uiTableEmpty kind="first-use" title="Aún no hay usuarios"
+        description="Crea la primera cuenta para que una persona pueda entrar al sistema."
+        actionLabel="Nuevo usuario" (action)="newUser()" />
+    }
+    @if (state() === 'error') {
+      <ui-error-state uiTableError kind="server" [message]="error()" (retry)="load()" />
+    }
+  </ui-table>
+</ui-section>
+
+}

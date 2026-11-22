@@ -1,0 +1,361 @@
+// Grupos en maestro-detalle (rediseño B5c, DP-18): solo tokens --ds-* y --l-*. El foco lo pinta el anillo global:
+// aquí ninguna regla lo reasigna ni lo apaga.
+
+// minmax(0, 1fr): sin él, una tabla o un correo largo imponen su ancho mínimo a la columna y la página desborda en un
+// teléfono.
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  color: var(--ds-text-1);
+}
+
+// ── Cabeceras: la de la lista y la del grupo (solo en teléfono, con un grupo abierto por la ruta) ──────────────────
+.gl-cab--detalle {
+  display: none;
+}
+
+@media (max-width: 63.999rem) {
+  .gl-cab--lista.gl-cab--con-detalle {
+    display: none;
+  }
+
+  .gl-cab--detalle.gl-cab--con-detalle {
+    display: block;
+  }
+}
+
+// ── Maestro y detalle ───────────────────────────────────────────────────────────────────────────────────────────
+// Teléfono y tableta: una sola columna; la ruta decide cuál de las dos pantallas se ve. Desde 64rem, las dos a la vez
+// (la lista a 20rem), y la lista queda pegada bajo la barra mientras se recorre un detalle largo.
+.gl-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  align-items: start;
+}
+
+.gl-list,
+.gl-detail,
+.gl-detail__card {
+  min-inline-size: 0;
+}
+
+.gl-list {
+  display: grid;
+  gap: var(--ds-space-4);
+}
+
+@media (max-width: 63.999rem) {
+  .gl-layout--detalle .gl-list {
+    display: none;
+  }
+
+  .gl-layout:not(.gl-layout--detalle) .gl-detail {
+    display: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  .gl-layout {
+    grid-template-columns: 20rem minmax(0, 1fr);
+    gap: var(--ds-space-6);
+  }
+
+  .gl-list {
+    position: sticky;
+    top: calc(var(--l-alto-barra, 5.5rem) + var(--ds-space-4));
+    max-block-size: calc(100dvh - var(--l-alto-barra, 5.5rem) - var(--ds-space-6));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    // Aire a los lados para que el anillo de foco de cada tarjeta no se recorte.
+    padding: var(--ds-space-1);
+    margin: calc(var(--ds-space-1) * -1);
+  }
+}
+
+// ── Lista de grupos (tarjetas compactas) ─────────────────────────────────────────────────────────────────────────
+.gl-loading {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+.gl-groups {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gl-group {
+  display: grid;
+  gap: var(--ds-space-1);
+  box-sizing: border-box;
+  min-block-size: var(--ds-target-min);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  color: var(--ds-text-1);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition:
+    border-color var(--ds-dur-fast, 120ms) var(--ds-ease-standard, ease),
+    background-color var(--ds-dur-fast, 120ms) var(--ds-ease-standard, ease);
+}
+
+// Solo con puntero real: en un toque `:hover` se queda pegado a la última tarjeta pulsada.
+@media (hover: hover) {
+  .gl-group:hover {
+    border-color: var(--l-filo-fuerte, var(--ds-border-strong, var(--ds-border)));
+    background: var(--l-fila-encima, var(--ds-surface-2));
+  }
+}
+
+// El grupo elegido solo se marca cuando la lista y el detalle se ven juntos: en teléfono la lista es una pantalla sola y
+// marcar «el primero» (que se abre por omisión) sería decir que hay uno abierto.
+@media (min-width: 64rem) {
+  // Doble clase: gana al color de pasar el puntero sin escribir otro :hover.
+  // La marca de 3 px del acento a la izquierda: la misma firma que la bandeja de Revisión y las listas del portal.
+  .gl-group.gl-group--active {
+    border-color: var(--l-tinte-filo, var(--ds-primary));
+    background: var(--l-fila-elegida, var(--ds-surface-2));
+    box-shadow: inset 3px 0 0 var(--l-acento, var(--ds-primary));
+  }
+}
+
+.gl-group__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-1) var(--ds-space-3);
+}
+
+.gl-group__name {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// El código es un identificador: tabular y en tono de apoyo.
+.gl-group__code {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.gl-group__meta {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// Con colores forzados el fondo del elegido se pierde: el borde pasa a Highlight y se engruesa.
+@media (forced-colors: active) and (min-width: 64rem) {
+  .gl-group--active {
+    border: 2px solid Highlight;
+  }
+}
+
+// ── Detalle del grupo ───────────────────────────────────────────────────────────────────────────────────────────
+.gl-detail__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+}
+
+.gl-detail__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-3) var(--ds-space-4);
+}
+
+.gl-detail__title {
+  display: grid;
+  gap: var(--ds-space-1);
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+
+  h2 {
+    margin: 0;
+    font-size: var(--ds-type-h2-size);
+    line-height: var(--ds-type-h2-line);
+    font-weight: var(--ds-type-h2-weight);
+    overflow-wrap: anywhere;
+  }
+}
+
+// En teléfono el grupo ya se nombra en la cabecera de la página: el título del detalle sobra.
+@media (max-width: 63.999rem) {
+  .gl-detail__title h2 {
+    display: none;
+  }
+}
+
+.gl-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.gl-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+  // Aire bajo la lista de pestañas.
+  padding-block-start: var(--ds-space-4);
+}
+
+.gl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+// minmax(0, 1fr): una pista `auto` crece hasta el ancho mínimo de su contenido y desborda en un teléfono.
+.gl-fields,
+.gl-add,
+.gl-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+}
+
+.gl-add {
+  padding: var(--ds-space-4);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+}
+
+.gl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+.gl-hint,
+.gl-empty {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.gl-empty {
+  padding-block: var(--ds-space-3);
+}
+
+.gl-message {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.gl-message--error {
+  color: var(--ds-danger);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// ── Estudiantes (tabla que se apila en tarjetas en una columna estrecha) ────────────────────────────────────────
+// El `th` de fila hereda el estilo de ENCABEZADO de la tabla (fondo hundido, pegajoso, sin saltos): aquí es el nombre de
+// la persona, no un título de columna.
+.gl-person-name {
+  position: static;
+  background: transparent;
+  color: var(--ds-text-1);
+  font-weight: var(--ds-type-h3-weight);
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gl-email {
+  overflow-wrap: anywhere;
+}
+
+.gl-row-actions {
+  text-align: end;
+  // Apilada, la celda de acciones es un flex: el botón va a la derecha, no centrado bajo la tarjeta.
+  justify-content: flex-end;
+}
+
+// ── Invitaciones pendientes ─────────────────────────────────────────────────────────────────────────────────────
+.gl-people {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gl-person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+}
+
+.gl-person__text {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+}
+
+// ── Hoja de importación ─────────────────────────────────────────────────────────────────────────────────────────
+.gl-drop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-3);
+  justify-items: start;
+  min-inline-size: 0;
+
+  ui-archivo {
+    justify-self: stretch;
+  }
+}
+
+.gl-import-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--ds-success-bg);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+
+  p {
+    margin: 0;
+  }
+
+  ul {
+    margin: var(--ds-space-2) 0 0;
+    padding-inline-start: var(--ds-space-5);
+  }
+}
+
+.gl-import-result--warning {
+  background: var(--ds-warning-bg);
+}
+
+.gl-import-result__summary {
+  font-weight: var(--ds-type-h3-weight);
+}

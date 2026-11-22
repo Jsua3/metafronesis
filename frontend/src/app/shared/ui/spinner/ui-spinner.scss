@@ -1,0 +1,26 @@
+// Indicador indeterminado (plan visual §2.7: los bucles infinitos del DOM solo en esqueleto y progreso). Toma el
+// color del texto que lo rodea; con movimiento reducido es un anillo quieto.
+:host {
+  display: inline-block;
+  flex: none;
+  inline-size: var(--_size);
+  block-size: var(--_size);
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: ui-spinner-turn 0.8s linear infinite;
+}
+
+@keyframes ui-spinner-turn {
+  to {
+    rotate: 1turn;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    animation: none;
+    border-inline-end-color: currentColor;
+    opacity: 0.6;
+  }
+}

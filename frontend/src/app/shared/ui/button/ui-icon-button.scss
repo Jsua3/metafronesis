@@ -1,0 +1,69 @@
+@use 'mixins' as m;
+
+// Botón de solo icono (plan visual F2-1): objetivo de 44 px, mismas variantes y estados que ui-button.
+.ui-icon-button {
+  --_bg: transparent;
+  --_bg-hover: var(--ds-primary-subtle);
+  --_bg-active: var(--ds-primary-subtle);
+  --_fg: var(--ds-text-2);
+  --_border: transparent;
+
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: var(--ds-target-min);
+  block-size: var(--ds-target-min);
+  padding: 0;
+  border: 1px solid var(--_border);
+  border-radius: var(--ds-radius-md);
+  background: var(--_bg);
+  color: var(--_fg);
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--ds-dur-fast) ease,
+    border-color var(--ds-dur-fast) ease,
+    color var(--ds-dur-fast) ease,
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    background: var(--_bg-hover);
+    color: var(--ds-text-1);
+  }
+
+  &:active:not([aria-disabled='true'], :disabled) {
+    background: var(--_bg-active);
+    scale: 0.97;
+  }
+
+  @include m.ds-disabled;
+
+  &[aria-disabled='true'] {
+    background: transparent;
+  }
+}
+
+.ui-icon-button--primary {
+  --_bg: var(--ds-primary);
+  --_bg-hover: var(--ds-primary-hover);
+  --_bg-active: var(--ds-primary-active);
+  --_fg: var(--ds-on-primary);
+}
+
+.ui-icon-button--secondary {
+  --_bg: var(--ds-surface-1);
+  --_fg: var(--ds-primary);
+  --_border: var(--ds-border-strong);
+}
+
+.ui-icon-button--danger {
+  --_fg: var(--ds-danger);
+}
+
+.ui-icon-button .ui-icon-button__icon {
+  inline-size: auto;
+  block-size: auto;
+  font-size: var(--ds-type-h3-size);
+  line-height: 1;
+}

@@ -1,0 +1,75 @@
+// Fichas del lenguaje de pixel de la pantalla del juego (bloque U1): las mismas tintas, penumbra y luz que el cuadro de
+// diálogo de I1 (`dialogue-panel.component.ts`), sacadas a un solo sitio para que el HUD, los avisos, la pausa y el resto
+// hablen el mismo idioma. Se declaran en `.pixel-juego` (la raíz del simulador), no en `:root`: por herencia llegan a todo
+// lo que se pinta dentro del juego y no ensucian el portal. Los marcos y tramas (PNG) no van aquí: llegan como variables
+// por `variablesDeArte()` de `dialogo-arte.ts`, con la luz del momento del día.
+
+.pixel-juego {
+  // Un punto de mundo: el HUD usa el mismo a todo tamaño (la cámara descansa en ×2). El cuadro de diálogo sube a 3 px
+  // en el tramo amplio (abajo).
+  --pixel-px: 2px;
+  --pixel-borde: calc(6 * var(--pixel-px));
+  // Escala única (U1, V7; aprobada por el usuario): la letra de las placas sigue al área visible de forma continua, con
+  // piso de 12 px y techo de 16 px (1280 × 600: 13; 1366 × 768: 13,4; 1920 × 1080: 16; teléfono: 12).
+  --pixel-tam: clamp(12px, min(0.625vh + 9.25px, 0.47vw + 7px), 16px);
+  // Teclas del HUD: tres veces la letra, entre 44 y 48 px con cualquier puntero (la guarda de 44 px de BLOQUE-H y RNF-04
+  // no se afloja; decisión del orquestador, V7). El arte del mundo y los retratos no siguen esta escala: van a escala entera.
+  --tecla-hud: clamp(44px, calc(var(--pixel-tam) * 3), 48px);
+  // Las placas de I1 (salida segura, pista) usan --px: fuera del cuadro valen el punto de mundo; el cuadro define el suyo.
+  --px: var(--pixel-px);
+
+  --pixel-tinta: #f2ecdf;
+  --pixel-tinta-suave: #c3bccf;
+  --pixel-tinta-apagada: #a9a2b8;
+  --pixel-tinta-oscura: #1b1530;
+  --pixel-penumbra: #1b1826;
+  --pixel-penumbra-alzada: #24203a;
+  --pixel-penumbra-hundida: #16141f;
+  --pixel-contorno: #15131d;
+  --pixel-canto: #3a3452;
+  --pixel-tecla: #3a3454;
+  --pixel-tecla-hundida: #221e33;
+  --pixel-separador: #2a2638;
+  --pixel-ventanilla: #6c6589;
+  --pixel-ambar: #f5d49b;
+  --pixel-ambar-fondo: #3b2a12;
+  --pixel-hecho: #9fd9a8;
+  --pixel-brasa: #2e161c;
+  --pixel-brasa-alzada: #3e1c22;
+  --pixel-brasa-hundida: #22100f;
+  --pixel-brasa-tinta: #ffd6c4;
+  --pixel-brasa-tinta-sobre: #fff1ea;
+  --pixel-crema: #f0e6cf;
+  --pixel-cine: #0b0a12;
+  --pixel-velo: rgb(11 10 18 / 0.78);
+  --pixel-velo-fuerte: rgb(11 10 18 / 0.93);
+  --pixel-plano-borde: #5c5672;
+
+  // Letra: JetBrains Mono para nombres, pestañas y teclas; Poppins para el texto (las mismas del cuadro).
+  --pixel-f-nombre: 'JetBrains Mono', ui-monospace, monospace;
+  --pixel-f-texto: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  // Piso de toda letra de la interfaz del juego (U1, V6): ningún texto baja de 12 px en ningún tramo (guardas de CI
+  // game-chrome y a11y-scan). Las letras que salen de multiplicar --pixel-tam lo llevan con max().
+  --pixel-letra-minima: 12px;
+  --pixel-letra-chica: max(12px, 0.8em);
+  --pixel-letra-media: max(12px, 0.88em);
+
+
+  // Tramos (U1, V7): las mismas consultas que `features/simulator/pixel/tramos.ts`. El cuadro de diálogo lee estas
+  // fichas (--dialogo-*); sus reglas propias del teléfono y de la pantalla muy baja siguen ganando por ir después.
+  // Compacto: el cuadro baja su letra y el retrato a 128 px (4 × 32: escala entera del kit), y la frase de la persona sale
+  // de la barra del HUD (aparece al pasar el cursor o al enfocarla).
+  @media (max-height: 700px), (max-width: 1100px) {
+    --dialogo-tam: 15px;
+    --dialogo-retrato: 128px;
+  }
+  // Amplio: el cuadro sube a 3 px por punto y retrato de 288 px, y la banda de la decisión a 560 px (52 %).
+  @media (min-width: 1700px) and (min-height: 1000px) {
+    --dialogo-px: 3px;
+    --dialogo-tam: 20px;
+    --dialogo-retrato: 288px;
+    --dialogo-banda: min(560px, 52vh);
+    --dialogo-retrato-lado: 192px;
+    --dialogo-tam-lado: 19px;
+  }
+}

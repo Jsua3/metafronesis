@@ -1,0 +1,227 @@
+// Piezas de pixel de la pantalla del juego (bloque U1): las cuatro del cuadro de diálogo de I1 —placa, pestaña, tecla y
+// ficha— y la ranura de herramienta (la placa con brasa y la de la pista son de I1: safe-exit-button y scene-hint), para que todo lo que se ve en el juego
+// hable un solo idioma. Marco por border-image (4 px de mundo por lado) con la trama de la sala; nada redondeado ni
+// difuminado. Los PNG llegan como variables (`variablesDeArte()` en la raíz `.pixel-juego`); las tintas son fichas de
+// `tokens/_pixel.scss`. Acotadas con :where(.pixel-juego): no suman especificidad y no salen del simulador.
+// Muestra aprobada: variante B, placas en las esquinas.
+
+:where(.pixel-juego) {
+  .u-placa, .u-rotulo, .u-boton, .u-ficha, .u-tecla, .u-ranura {
+    border-style: solid;
+    border-width: calc(4 * var(--pixel-px));
+    border-image: var(--m) 4 / calc(4 * var(--pixel-px)) stretch;
+    border-radius: 0;
+    background-color: var(--pixel-penumbra);
+    background-image: var(--t);
+    background-size: calc(8 * var(--pixel-px));
+    background-clip: padding-box;
+    background-origin: padding-box;
+    image-rendering: pixelated;
+    box-shadow: none;
+  }
+
+  // Placa: superficie de texto.
+  .u-placa { --m: var(--marco-placa); --t: var(--trama-placa); color: var(--pixel-tinta); }
+
+  // Pestaña: el nombre que tapa el canto de una placa (sin borde abajo; se monta un punto sobre la placa).
+  .u-rotulo {
+    --m: var(--marco-rotulo);
+    --t: var(--trama-placa);
+    position: relative;
+    z-index: var(--ds-z-elevado);
+    display: flex;
+    align-items: center;
+    gap: calc(3 * var(--pixel-px));
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 0 calc(-1 * var(--pixel-px)) calc(6 * var(--pixel-px));
+    border-bottom-width: 0;
+    padding: 1px calc(4 * var(--pixel-px)) calc(2 * var(--pixel-px));
+    font-family: var(--pixel-f-nombre);
+    font-weight: 700;
+    font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.86));
+    line-height: 1.3;
+    color: var(--luz);
+  }
+  .u-rotulo--suave { color: var(--pixel-tinta-suave); }
+  .u-rotulo__texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  // Placa-botón (hermana de «Volver al mapa»): sobre y foco encienden el canto; pulsada se hunde un punto; apagada pierde
+  // la luz (deshabilitada con aria-disabled: se ve y se explica, no promete nada).
+  .u-boton {
+    --m: var(--marco-placa);
+    --t: var(--trama-placa);
+    display: inline-flex;
+    align-items: center;
+    gap: calc(4 * var(--pixel-px));
+    min-height: 44px;
+    padding: 0 calc(6 * var(--pixel-px)) 1px calc(4 * var(--pixel-px));
+    color: var(--pixel-tinta);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .u-boton:focus-visible { --m: var(--marco-placa-foco, var(--marco-ficha-foco)); --t: var(--trama-placa-sobre, var(--trama-placa)); background-color: var(--pixel-penumbra-alzada); }
+  .u-boton:active { --m: var(--marco-placa-pulsada, var(--marco-placa)); --t: var(--trama-placa-pulsada, var(--trama-placa)); background-color: var(--pixel-penumbra-hundida); transform: translateY(var(--pixel-px)); }
+  .u-boton[aria-disabled='true'] { --m: var(--marco-placa-apagada, var(--marco-placa)); --t: var(--trama-placa); background-color: var(--pixel-penumbra); color: var(--pixel-tinta-apagada); cursor: default; transform: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .u-boton:hover:not([aria-disabled='true'], :active) { --m: var(--marco-placa-sobre, var(--marco-ficha-sobre)); --t: var(--trama-placa-sobre, var(--trama-placa)); background-color: var(--pixel-penumbra-alzada); color: var(--luz); }
+  }
+
+  // «Salida segura» NO va aquí: es app-safe-exit-button con variante «placa» (I1), la implementación única (REGLA-004).
+
+  // Tecla: la de la letra A a D y de «Esc». Como letra es un adorno; como botón de icono se enciende con la luz de la sala.
+  .u-tecla {
+    --m: var(--marco-tecla);
+    --t: none;
+    display: inline-grid;
+    place-items: center;
+    background-color: var(--pixel-tecla);
+    color: var(--pixel-tinta);
+    font-family: var(--pixel-f-nombre);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .u-tecla--letra { min-width: calc(15 * var(--pixel-px)); min-height: calc(15 * var(--pixel-px)); padding: 0 calc(2 * var(--pixel-px)) var(--pixel-px); font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.82)); }
+  .u-tecla--icono { width: 44px; height: 44px; padding: 0; cursor: pointer; }
+  .u-tecla--icono:focus-visible, .u-tecla--icono[aria-pressed='true'], .u-tecla--icono[aria-expanded='true'] { --m: var(--marco-tecla-encendida); background-color: var(--luz); color: var(--pixel-tinta-oscura); }
+  .u-tecla--icono:active { --m: var(--marco-tecla-hundida); background-color: var(--pixel-tecla-hundida); transform: translateY(var(--pixel-px)); }
+  @media (hover: hover) and (pointer: fine) {
+    .u-tecla--icono:hover:not(:active) { --m: var(--marco-tecla-encendida); background-color: var(--luz); color: var(--pixel-tinta-oscura); }
+  }
+
+  // Ficha: el botón de elegir (la de A a D del cuadro, aquí para «Ir a…», la acción cercana y las herramientas).
+  .u-ficha { --m: var(--marco-ficha); --t: var(--trama-ficha); color: var(--pixel-tinta); font: inherit; cursor: pointer; }
+  .u-ficha:focus-visible { --m: var(--marco-ficha-foco); --t: var(--trama-ficha-sobre); }
+  .u-ficha:active { --m: var(--marco-ficha-pulsada); --t: var(--trama-ficha-pulsada); transform: translateY(var(--pixel-px)); }
+  @media (hover: hover) and (pointer: fine) {
+    .u-ficha:hover:not(:active) { --m: var(--marco-ficha-sobre); --t: var(--trama-ficha-sobre); }
+  }
+  // La ficha encendida: la acción principal de una capa (crema y tinta oscura, como la ficha elegida del cuadro).
+  .u-ficha--primaria { --m: var(--marco-ficha-elegida); --t: var(--trama-ficha-elegida); background-color: var(--pixel-crema); color: var(--pixel-tinta-oscura); font-weight: 700; }
+  .u-ficha--primaria:focus-visible { --m: var(--marco-ficha-elegida); --t: var(--trama-ficha-elegida); outline: calc(1 * var(--pixel-px)) solid var(--luz); outline-offset: calc(2 * var(--pixel-px)); }
+  // Encendida en todos sus estados: la trama oscura de sobre y pulsada dejaba la tinta oscura sobre oscuro (se vio en
+  // «Reanudar este intento» con el foco de teclado). Sobre: el contorno de luz; pulsada: el mismo hundido de un punto.
+  .u-ficha--primaria:active { --m: var(--marco-ficha-elegida); --t: var(--trama-ficha-elegida); }
+  @media (hover: hover) and (pointer: fine) {
+    .u-ficha--primaria:hover:not(:active) { --m: var(--marco-ficha-elegida); --t: var(--trama-ficha-elegida); outline: calc(1 * var(--pixel-px)) solid var(--luz); outline-offset: calc(2 * var(--pixel-px)); }
+  }
+
+  // Ranura de herramienta: ficha cuadrada con el cuaderno de O1 (tira de 6 cuadros de 20 px: 0 disponible, 1-4 nueva,
+  // 5 usada) a la escala del punto de mundo.
+  .u-ranura { --m: var(--marco-ficha); --t: var(--trama-ficha); position: relative; display: grid; place-items: center; width: calc(28 * var(--pixel-px)); height: calc(28 * var(--pixel-px)); padding: 0; cursor: pointer; }
+  .u-ranura:focus-visible { --m: var(--marco-ficha-foco); --t: var(--trama-ficha-sobre); }
+  .u-ranura:active { --m: var(--marco-ficha-pulsada); --t: var(--trama-ficha-pulsada); transform: translateY(var(--pixel-px)); }
+  @media (hover: hover) and (pointer: fine) {
+    .u-ranura:hover:not(:active) { --m: var(--marco-ficha-sobre); --t: var(--trama-ficha-sobre); }
+  }
+
+  // La sombra de tramado de la placa del cuadro, bajo cada pieza que flota sobre la sala.
+  .u-sombra { position: relative; }
+  .u-sombra::after {
+    content: '';
+    position: absolute;
+    left: calc(-2 * var(--pixel-px));
+    right: calc(-2 * var(--pixel-px));
+    bottom: calc(-6 * var(--pixel-px));
+    height: calc(2 * var(--pixel-px));
+    background-image: var(--sombra);
+    background-size: calc(2 * var(--pixel-px));
+    image-rendering: pixelated;
+    pointer-events: none;
+  }
+
+  // La flecha de pixel de seguir (el triángulo del cuadro), para desplegables.
+  .u-seguir { display: block; flex: none; width: calc(7 * var(--pixel-px)); height: calc(5 * var(--pixel-px)); background: var(--seguir) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+
+  // Con movimiento reducido, nada baja al pulsar.
+  @media (prefers-reduced-motion: reduce) {
+    .u-boton:active, .u-tecla--icono:active, .u-ficha:active, .u-ranura:active { transform: none; }
+  }
+}
+
+// Las tres entradas del caso (reanudar, aviso de contenido, «Antes de comenzar») en placas, como la pausa (U1, crítica
+// r2): sin vidrio morado ni resplandor. Aquí y no en simulation-play, para no pasar su presupuesto de estilos (20 kB).
+// El prefijo .game-container.pixel-juego .case-intro-card gana a las reglas del componente (llevan el atributo del
+// encapsulado); las de allá quedan como respaldo. Las acciones se envuelven antes de salirse de la placa (a 1366,
+// «Continuar intento en progreso» se cortaba).
+.game-container.pixel-juego {
+  .case-intro-overlay { background: var(--pixel-velo-fuerte); }
+
+  .case-intro-card {
+    border-style: solid; border-width: calc(4 * var(--pixel-px)); border-color: transparent; border-radius: 0;
+    border-image: var(--marco-placa) 4 / calc(4 * var(--pixel-px)) stretch;
+    background-color: var(--pixel-penumbra); background-image: var(--trama-placa);
+    background-size: calc(8 * var(--pixel-px)); background-clip: padding-box;
+    box-shadow: none; color: var(--pixel-tinta); font-family: var(--pixel-f-texto);
+
+    // Reanudar: un poco más ancha para que sus dos acciones vayan en una fila bajo «Volver al catálogo».
+    &.case-intro-card--entry { width: min(640px, 100%); }
+
+    .case-intro-card__header { background: transparent; border-bottom: 1px solid var(--pixel-separador); }
+    .case-intro-card__header .psy-eyebrow {
+      font-family: var(--pixel-f-nombre); font-weight: 700; font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * .82));
+      letter-spacing: .06em; color: var(--luz);
+    }
+    .case-intro-card__header h2 { font-family: var(--pixel-f-texto); font-weight: 700; color: var(--pixel-tinta); }
+    .case-intro-card__chip {
+      border: 1px solid var(--pixel-separador); border-radius: 0; background: var(--pixel-penumbra-hundida);
+      color: var(--pixel-tinta); font-family: var(--pixel-f-nombre); font-size: var(--pixel-letra-chica); letter-spacing: .04em;
+    }
+    .case-intro-card__body p { color: var(--pixel-tinta); }
+    .case-intro-card__body p:last-child { color: var(--luz); }
+    .case-intro-card__body:focus-visible { outline: var(--pixel-px) solid var(--luz); }
+    .case-intro-card__actions {
+      flex-wrap: wrap; justify-content: flex-end; gap: calc(4 * var(--pixel-px));
+      border-top: 1px solid var(--pixel-separador); background: var(--pixel-penumbra-hundida);
+    }
+    .case-intro-card__actions > :first-child:not(.case-intro-card__buttons) { margin-right: auto; }
+    .case-intro-card__buttons { flex-wrap: wrap; justify-content: flex-end; flex-shrink: 1; min-width: 0; gap: calc(4 * var(--pixel-px)); }
+
+    // Botones como las placas-botón del juego; la acción principal, como la ficha encendida (crema).
+    .case-intro-card__actions .ui-button,
+    .case-intro-card__actions .psy-button,
+    .intro-music-toggle {
+      --m: var(--marco-placa); --t: var(--trama-placa);
+      min-height: 44px; padding: 0 calc(6 * var(--pixel-px)) 1px;
+      border-style: solid; border-width: calc(4 * var(--pixel-px)); border-color: transparent; border-radius: 0;
+      border-image: var(--m) 4 / calc(4 * var(--pixel-px)) stretch;
+      background-color: var(--pixel-penumbra); background-image: var(--t);
+      background-size: calc(8 * var(--pixel-px)); background-clip: padding-box;
+      box-shadow: none; color: var(--pixel-tinta); font-family: var(--pixel-f-texto); font-weight: 600; text-decoration: none;
+      transition: none;
+    }
+    .case-intro-card__actions .ui-button--primary,
+    .case-intro-card__actions .psy-button--primary {
+      --m: var(--marco-ficha-elegida); --t: var(--trama-ficha-elegida);
+      background-color: var(--pixel-crema); color: var(--pixel-tinta-oscura); font-weight: 700;
+    }
+    .intro-music-toggle[aria-pressed="true"] { color: var(--pixel-tinta-suave); background-image: none; }
+    .case-intro-card__actions .ui-button:focus-visible,
+    .case-intro-card__actions .psy-button:focus-visible,
+    .intro-music-toggle:focus-visible { outline: var(--pixel-px) solid var(--luz); outline-offset: calc(2 * var(--pixel-px)); }
+    .case-intro-card__actions .ui-button:active,
+    .case-intro-card__actions .psy-button:active,
+    .intro-music-toggle:active { transform: translateY(var(--pixel-px)); }
+    @media (hover: hover) and (pointer: fine) {
+      .case-intro-card__actions .ui-button:hover,
+      .case-intro-card__actions .psy-button:hover,
+      .intro-music-toggle:hover {
+        background-color: var(--pixel-penumbra); outline: var(--pixel-px) solid var(--luz); outline-offset: calc(2 * var(--pixel-px));
+      }
+      .case-intro-card__actions .ui-button--primary:hover,
+      .case-intro-card__actions .psy-button--primary:hover { background-color: var(--pixel-crema); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .case-intro-card__actions .ui-button:active,
+      .case-intro-card__actions .psy-button:active,
+      .intro-music-toggle:active { transform: none; }
+    }
+  }
+}
+
+// Ajuste a la pantalla (V5): la ficha del objetivo no lleva barra propia. La sombra de la placa-botón (u-sombra, 12 px
+// bajo la placa) desbordaba el contenedor desplazable 4 px y, con barras clásicas (Windows), salía una barra con flecha
+// junto a una ficha de dos renglones. El contenedor deja ese margen abajo.
+.game-container.pixel-juego .objective-card__scroll { padding-bottom: calc(6 * var(--pixel-px)); }

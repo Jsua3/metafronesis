@@ -1,0 +1,63 @@
+// Capa de la viñeta. Las medidas van en px multiplicados por la escala entera de la viñeta (--vineta-e) y no en rem a
+// propósito: el pixel art solo se ve nítido si cada píxel de la hoja ocupa un número entero de píxeles de pantalla.
+:host {
+  --_e: var(--vineta-e, 2);
+
+  position: absolute;
+  inset-inline-start: calc(var(--px, 0) * var(--_e) * 1px);
+  inset-block-end: calc(var(--py, 0) * var(--_e) * 1px);
+  display: block;
+  line-height: 0;
+}
+
+:host(.ui-pieza-pixel--hoja) {
+  inline-size: calc(var(--pw) * var(--_e) * 1px);
+  block-size: calc(var(--ph) * var(--_e) * 1px);
+  background-image: var(--pimg);
+  background-repeat: no-repeat;
+  background-size: calc(var(--pw) * var(--pcuadros) * var(--_e) * 1px) 100%;
+  background-position: calc(var(--pw) * var(--pcuadro) * var(--_e) * -1px) 0;
+  image-rendering: pixelated;
+}
+
+// Lo que flota (las herramientas, como cartas del inventario del juego) lleva su sombra de contacto escalonada en el
+// suelo de la viñeta, del tono de la tinta: sin ella parecería pegado al aire. La sombra cambia con el tema; el arte no.
+:host(.ui-pieza-pixel--flota)::after {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: calc(100% + var(--py) * var(--_e) * 1px - 2px * var(--_e));
+  inline-size: calc(var(--pw) * 0.6 * var(--_e) * 1px);
+  block-size: calc(3px * var(--_e));
+  translate: -50% 0;
+  background: color-mix(in oklab, var(--ds-text-1) 10%, transparent);
+  clip-path: polygon(12% 0, 88% 0, 88% 33%, 100% 33%, 100% 67%, 88% 67%, 88% 100%, 12% 100%, 12% 67%, 0 67%, 0 33%, 12% 33%);
+  content: '';
+}
+
+// Entrada: un fundido corto con un leve ascenso (240 ms, una sola vez). Lo que flota llega después, escalonado por su
+// orden, y sube un poco más: es lo que la escena enseña. Con movimiento reducido no hay entrada.
+@media (prefers-reduced-motion: no-preference) {
+  :host {
+    animation: ui-pieza-entra 240ms var(--ds-ease-out) both;
+    animation-delay: calc(var(--porden, 0) * 70ms);
+  }
+
+  :host(.ui-pieza-pixel--flota) {
+    animation-name: ui-pieza-flota;
+    animation-delay: calc(120ms + var(--porden, 0) * 70ms);
+  }
+}
+
+@keyframes ui-pieza-entra {
+  from {
+    opacity: 0;
+    translate: 0 calc(2px * var(--_e));
+  }
+}
+
+@keyframes ui-pieza-flota {
+  from {
+    opacity: 0;
+    translate: 0 calc(4px * var(--_e));
+  }
+}

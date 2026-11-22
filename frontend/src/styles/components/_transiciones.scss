@@ -1,0 +1,101 @@
+// Transiciones de vistas (DISENO §4.4, pieza 3; DP-10). El router crea una en cada navegación; solo se ANIMAN las que
+// `core/navigation/transiciones.ts` marca en la raíz con `vt-activa` (portal → juego, juego → cierre o Inicio, editor ↔
+// ensayo). Las demás corren sin animación: un cambio instantáneo, igual que sin transición.
+//
+// Por qué no se saltan con `skipTransition()`: Angular, en desarrollo, registra el rechazo de `ready` («Transition was
+// skipped») como error de consola en CADA navegación saltada, y las pruebas e2e que exigen una consola limpia fallarían.
+//
+// Coreografía de la entrada: la página vieja se funde hacia el oscuro de la piel game, la nueva aparece con un respiro
+// de 60 ms (lo que tarda el ojo en soltar la anterior), la barra del portal sube y sale, y la portada del caso (la única
+// con `view-transition-name`, `.vt-portada` en `ui-portada-caso`) viaja de «Tu entrada» al centro del umbral con la
+// curva del cajón: arranca rápido y se posa sin rebotar, como una hoja de iOS.
+
+// Por defecto, nada se anima (incluido el fundido cruzado del navegador).
+::view-transition-group(*),
+::view-transition-image-pair(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation: none;
+}
+
+:root.vt-activa::view-transition-old(root) {
+  animation: vt-fundido-sale var(--ds-dur-slow) var(--ds-ease-out) both;
+}
+
+:root.vt-activa::view-transition-new(root) {
+  animation: vt-fundido-entra var(--ds-dur-slow) var(--ds-ease-out) calc(var(--ds-dur-fast) * 0.375) both;
+}
+
+// La portada: la imagen vieja y la nueva se cruzan dentro de un grupo que cambia de caja (el nombre lo pone
+// `ui-portada-caso` con `umbral`); es la misma imagen a otra escala entera, así que solo cambian el tamaño y el lugar.
+// `revert` devuelve la animación que el navegador genera para el grupo (de una caja a la otra); aquí solo se le cambia
+// la duración y la curva.
+:root.vt-activa::view-transition-group(siep-caso-portada) {
+  animation: revert;
+  animation-duration: var(--ds-dur-umbral);
+  animation-timing-function: var(--ds-ease-drawer);
+}
+
+:root.vt-activa::view-transition-old(siep-caso-portada),
+:root.vt-activa::view-transition-new(siep-caso-portada) {
+  animation: revert;
+  animation-duration: var(--ds-dur-umbral);
+  // El pixel art no se emborrona mientras crece: escala del vecino más cercano, como en el juego.
+  image-rendering: pixelated;
+}
+
+// La barra del portal solo tiene nombre mientras dura una transición que corre (clase de estado en la raíz, no una
+// piel: REGLA-010). Sin esto, cada navegación frecuente le daría una capa propia.
+:root.vt-activa .barra-portal {
+  view-transition-name: siep-barra;
+}
+
+:root.vt-activa::view-transition-old(siep-barra) {
+  animation: vt-barra-sale var(--ds-dur-base) var(--ds-ease-out) both;
+}
+
+@keyframes vt-fundido-sale {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fundido-entra {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-barra-sale {
+  to {
+    opacity: 0;
+    translate: 0 -120%;
+  }
+}
+
+// Movimiento reducido (WCAG 2.3.3, P10): sin grupos con nombre ni desplazamientos, solo un fundido corto de la raíz.
+// El cambio de lugar se sigue notando, sin que nada viaje por la pantalla.
+@media (prefers-reduced-motion: reduce) {
+  // `html` delante: gana a `:host(.vt-portada)` de la hoja del componente, que es la que pone el nombre.
+  html .ui-portada-caso.vt-portada,
+  :root.vt-activa .barra-portal {
+    view-transition-name: none;
+  }
+
+  :root.vt-activa::view-transition-old(root),
+  :root.vt-activa::view-transition-new(root) {
+    animation-name: vt-fundido-reducido;
+    animation-duration: var(--ds-dur-fade);
+    animation-delay: 0s;
+  }
+
+  :root.vt-activa::view-transition-new(root) {
+    animation-direction: reverse;
+  }
+
+  @keyframes vt-fundido-reducido {
+    to {
+      opacity: 0;
+    }
+  }
+}

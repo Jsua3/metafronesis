@@ -1,0 +1,94 @@
+@use 'mixins' as m;
+
+// Menú (plan visual §2.6 y §2.7): panel bajo el botón, entrada 160 ms desde su esquina (origen en el disparador),
+// salida más corta; ítems de 44 px con hover solo de puntero fino y el activo resaltado.
+:host {
+  position: relative;
+  display: inline-block;
+}
+
+// El panel es un popover (capa superior) anclado al botón: debajo y alineado a su borde final, o volteado hacia
+// arriba si no cabe. Se le quitan los estilos por defecto del navegador para popovers (centrado, borde, fondo).
+.ui-menu__panel {
+  position: fixed;
+  inset: auto;
+  z-index: var(--ds-z-desplegable);
+  min-inline-size: 13rem;
+  margin: 0;
+  margin-block: var(--ds-space-1);
+  padding: var(--ds-space-1);
+  overflow: visible;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  box-shadow: var(--ds-shadow-e2);
+  color: var(--ds-text-1);
+  position-area: block-end span-inline-start;
+  position-try-fallbacks: flip-block;
+  transform-origin: top right;
+  transition:
+    opacity var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-fast) var(--ds-ease-out),
+    display var(--ds-dur-press) allow-discrete,
+    overlay var(--ds-dur-press) allow-discrete;
+
+  @starting-style {
+    opacity: 0;
+    scale: 0.96;
+  }
+
+  &[data-visible='false'] {
+    display: none;
+    opacity: 0;
+    scale: 0.98;
+    transition-duration: var(--ds-dur-press);
+  }
+}
+
+:host(.ui-menu--start) .ui-menu__panel {
+  position-area: block-end span-inline-end;
+  transform-origin: top left;
+}
+
+.ui-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-block-size: var(--ds-target-min);
+  padding-inline: var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--ds-dur-fast) ease;
+
+  @include m.ds-hover {
+    background: var(--ds-primary-subtle);
+  }
+
+  &[data-active='true'] {
+    background: var(--ds-primary-subtle);
+  }
+
+  &:active {
+    background: var(--ds-surface-2);
+  }
+
+  &[aria-disabled='true'] {
+    color: var(--ds-text-3);
+    cursor: not-allowed;
+  }
+}
+
+.ui-menu__item--danger {
+  color: var(--ds-danger);
+}
+
+.ui-menu__icon {
+  inline-size: auto;
+  block-size: auto;
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+}

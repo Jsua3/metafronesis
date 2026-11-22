@@ -1,0 +1,5 @@
+/*
+ * Sin JavaScript la pantalla de arranque (fija, a pantalla completa) taparía el aviso de <noscript> del cuerpo.
+ * index.html enlaza esta hoja dentro de <noscript>, DESPUÉS de boot.css: el orden de cascada la hace efectiva.
+ */
+.siep-boot { display: none; }

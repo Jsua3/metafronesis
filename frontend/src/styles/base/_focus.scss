@@ -1,0 +1,7 @@
+// Foco visible único para todo el DOM (plan visual F1-5). Cada piel trae su anillo por token (`--ds-focus`,
+// `--ds-focus-halo`): la del juego vive en `.game-container[data-skin='game']`, sin reglas sobre <body> (REGLA-010).
+@use '../mixins/focus' as *;
+
+:focus-visible {
+  @include ds-focus-ring;
+}

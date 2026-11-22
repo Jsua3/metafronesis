@@ -1,0 +1,79 @@
+// Esqueleto (plan visual §2.5 y §2.7): brillo continuo de 1,4 s lineal; con movimiento reducido, quieto.
+:host {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+:host(.ui-skeleton--card) {
+  padding: var(--ds-space-5);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-1);
+}
+
+:host(.ui-skeleton--row) {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+.ui-skeleton__lines {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+.ui-skeleton__bone {
+  display: block;
+  border-radius: var(--ds-radius-sm);
+  background-color: var(--ds-surface-2);
+  background-image: linear-gradient(90deg, transparent 0%, var(--ds-surface-1) 50%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 50% 100%;
+  animation: ui-skeleton-shimmer 1.4s linear infinite;
+}
+
+.ui-skeleton__bone--text {
+  block-size: 0.875rem;
+}
+
+.ui-skeleton__bone--short {
+  inline-size: 60%;
+}
+
+.ui-skeleton__bone--title {
+  inline-size: 50%;
+  block-size: 1.25rem;
+  margin-block-end: var(--ds-space-2);
+}
+
+.ui-skeleton__bone--value {
+  inline-size: 40%;
+  block-size: 2rem;
+}
+
+.ui-skeleton__bone--chart {
+  block-size: 12rem;
+}
+
+.ui-skeleton__bone--avatar {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 50%;
+}
+
+@keyframes ui-skeleton-shimmer {
+  from {
+    background-position: -100% 0;
+  }
+
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton__bone {
+    animation: none;
+    background-image: none;
+  }
+}

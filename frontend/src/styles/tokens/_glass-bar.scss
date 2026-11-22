@@ -1,0 +1,142 @@
+// Tokens de la barra de vidrio modular (plan visual §2.8, F3-1). Copia POR VALOR del bloque «1. TOKENS» de
+// /barra-de-vidrio-modular (assets/gemela.html, réplica Recomendada), con dos cambios de forma:
+// · se declaran en `.cromo` y no en `:root` (por herencia llegan a toda la barra y no ensucian el resto de la app);
+// · los colores del sitio son ALIAS de los tokens del lenguaje (--ds-*), estrategia «alias, no renombrado» (§5.1).
+// Orden obligatorio (§4.7): base → transparencia reducida → más contraste → @supports linear() → movimiento
+// reducido. Solo piel clara: el portal no tiene modo oscuro (VD-4), así que no se copia el bloque `.dark`.
+@use 'motion';
+
+.cromo {
+  // Color base: roles de la receta → tokens del lenguaje.
+  --asb-fondo: var(--ds-surface-page);
+  --asb-superficie: var(--ds-surface-1);
+  --asb-superficie-alta: var(--ds-surface-2);
+  --asb-fuerte: var(--ds-text-1);
+  --asb-tinta: var(--ds-text-1);
+  --asb-suave: var(--ds-text-1);
+  --asb-tenue: var(--ds-text-2);
+  --asb-apagado: var(--ds-text-2);
+  --asb-acento: var(--ds-primary);
+  // La línea lleva alfa (un borde opaco mata el vidrio): el 12 % del texto principal (#14202E).
+  --asb-linea: rgb(20 32 46 / 0.12);
+
+  // Escala tipográfica de la barra: text-sm trae tamaño, interlineado y tracking (sin el tracking las cajas
+  // medidas no cuadran).
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.55;
+  --text-sm--letter-spacing: 0.006em;
+
+  // Material: el velo sale del fondo real que queda detrás (72 %); desenfoque de la receta, que es el mismo
+  // --ds-glass-blur del lenguaje (con transparencia reducida y colores forzados ya vale none).
+  --asb-cromo-velo: color-mix(in oklab, var(--asb-fondo) 72%, transparent);
+  --asb-cromo-desenfoque: var(--ds-glass-blur);
+  --asb-cromo-apoyo:
+    0 1px 0 rgb(20 32 46 / 0.07),
+    0 8px 24px rgb(20 32 46 / 0.06);
+  // Neutros de la receta que ninguna preferencia apaga (§4.8): filo superior, brillo y canto de cristal.
+  --asb-filo: rgb(255 255 255 / 0.26);
+  --asb-brillo: rgb(255 255 255 / 0.14);
+  --asb-canto: rgb(255 255 255 / 0.18);
+  // Resplandor de marca de la píldora: la receta usa su rojo (§4.8); aquí el azul institucional #004876.
+  --asb-resplandor: 0 20px 70px rgb(0 72 118 / 0.08);
+
+  // Texto de la barra: tokens propios, ≥ 4,5:1 sobre el velo compuesto encima del peor fondo (M21). Medido en el
+  // banco /dev/barra el 2026-10-12: con --ds-text-2 (#4A5A6A) el rol de la cuenta quedaba en 4,49:1 sobre el velo
+  // encima del degradado azul; #3D4B59 da 5,7:1 ahí (y ≥ 8:1 sobre el fondo liso del portal).
+  --asb-cromo-tinta: var(--ds-text-1);
+  --asb-cromo-tinta-tenue: #3D4B59;
+
+  // Curvas. Los resortes NACEN como el cajón: es su respaldo.
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-cajon: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-color: ease;
+  --ease-rebote-suave: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-rebote-vivo: cubic-bezier(0.32, 0.72, 0, 1);
+
+  // Duraciones de la receta: la salida es más rápida que la entrada. NO colapsan con movimiento reducido
+  // (invariante 12 de la barra: se anula el desplazamiento, no el reloj).
+  --duracion-instante: 100ms;
+  --duracion-boton: 140ms;
+  --duracion-salida: 160ms;
+  --duracion-entrada: 200ms;
+  --duracion-rebote: 520ms;
+  --duracion-estado: 620ms;
+
+  // Geometría: la separación es layout; el resto es movimiento.
+  --asb-separacion-modulos: 0.75rem;
+  --asb-caida-modulo: 6px;
+  --asb-escala-isotipo: 0.9;
+  --asb-escala-indicador: 0.6;
+
+  // Techos del logo (adaptar-a-stacks §12): ancho del logotipo y del isotipo a su alto renderizado (2rem),
+  // medidos con Poppins en el banco /dev/barra.
+  --asb-logo-ancho: 6rem;
+  --asb-isotipo-ancho: 2rem;
+
+  // Móvil (references/movil.md §4.1 y §8): la barra inferior se retira con el teclado virtual; su sombra mira arriba.
+  --duracion-panel: 240ms;
+  --asb-retirada-barra: 100%;
+  --asb-cromo-apoyo-inferior:
+    0 -1px 0 rgb(20 32 46 / 0.07),
+    0 -8px 24px rgb(20 32 46 / 0.06);
+}
+
+// Altos de las dos barras móviles (movil.md §4.1): son LAYOUT y van en :root, porque el contenido (fuera del
+// header) reserva su sitio con ellos; el estado compacto los reasigna sobre .cromo. El rótulo de la pestaña mide
+// 12 px (mínimo del plan visual; la receta usa 11): dos líneas de 12 px con interlineado 1,65 caben en 68 px.
+:root {
+  --asb-alto-modulo-superior: 3.5rem;
+  --asb-alto-modulo-superior-compacto: 3rem;
+  --asb-alto-modulo-inferior: 4.25rem;
+  --asb-alto-modulo-inferior-compacto: 3rem;
+  --asb-alto-rotulo-pestana: calc(2 * 1.65 * 0.75rem);
+}
+
+// Velo móvil 88 % (movil.md §6): el mínimo de la receta para que el texto pequeño pase AA sobre contenido vivo. Va
+// ANTES de transparencia reducida y más contraste, que lo vuelven opaco.
+@media (max-width: 63.999rem) {
+  .cromo {
+    --asb-cromo-velo: color-mix(in oklab, var(--asb-fondo) 88%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .cromo {
+    // Se pierde la profundidad, no la jerarquía: la sombra se queda.
+    --asb-cromo-velo: var(--asb-fondo);
+    --asb-cromo-desenfoque: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .cromo {
+    --asb-linea: rgb(20 32 46 / 0.38);
+    --asb-tenue: var(--ds-text-1);
+    --asb-apagado: var(--ds-text-1);
+    --asb-cromo-tinta-tenue: var(--asb-tenue);
+    --asb-cromo-velo: var(--asb-fondo);
+    --asb-cromo-desenfoque: none;
+  }
+}
+
+// Oscilador amortiguado muestreado en 25 paradas: los mismos dos `linear()` de la receta que F1-6 ya copió en
+// tokens/_motion.scss (ζ 0,70, +4,6 % en el 54 %; ζ 0,55, +12,5 % en el 33 %). Solo donde exista linear()
+// (invariante 11).
+@supports (animation-timing-function: linear(0, 1)) {
+  .cromo {
+    --ease-rebote-suave: #{motion.$spring-soft};
+    --ease-rebote-vivo: #{motion.$spring-live};
+  }
+}
+
+// Movimiento reducido: se anula el DESPLAZAMIENTO, no el reloj. Va el último.
+@media (prefers-reduced-motion: reduce) {
+  .cromo {
+    --asb-caida-modulo: 0px;
+    --asb-escala-isotipo: 1;
+    --asb-escala-indicador: 1;
+    --asb-retirada-barra: 0%;
+    --ease-rebote-suave: var(--ease-cajon);
+    --ease-rebote-vivo: var(--ease-cajon);
+  }
+}

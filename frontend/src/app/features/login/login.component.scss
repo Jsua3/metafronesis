@@ -1,0 +1,624 @@
+// Acceso (plan visual F4-2; rediseño Metafrónesis 2026-11-20). El lenguaje común de las pantallas públicas (tokens
+// --l-* de claro y oscuro, filos de 1 px, sombras en capas, botones en cápsula, foco) vive en
+// styles/components/_publico.scss y se activa con `.publico` en el contenedor, que lleva la piel del tema. Aquí solo lo
+// propio del acceso: una tarjeta casi opaca para el formulario (guía de psicología §3: nada de vidrio bajo un
+// formulario), campos con relleno tenue y el borde fuerte de la piel (≥ 3:1, H-28), un control segmentado para el
+// perfil y, al lado desde 64rem, una ventana del simulador como la vista previa de la portada. Enlaces en línea ≥ 24 px
+// y ≥ 44 px con dedo (H-21); sin `transition: all` ni `!important`; texto ≥ 12 px.
+
+:host {
+  display: block;
+}
+
+.acceso {
+  // Relleno de los campos y pulgar del control segmentado: sólidos, derivados de la piel (sin colores sueltos). El filo
+  // del pulgar marca el perfil elegido con ≥ 3:1 contra la pista (WCAG 1.4.11): en oscuro el borde fuerte da 2,5:1, así
+  // que va el texto secundario (5,9:1); en claro, el borde fuerte (3,2:1).
+  --acceso-campo: color-mix(in oklab, var(--ds-text-1) 4%, var(--ds-surface-1));
+  --acceso-pulgar: color-mix(in oklab, var(--ds-text-1) 15%, var(--ds-surface-1));
+  --acceso-pulgar-filo: var(--ds-text-2);
+
+  min-height: 100svh;
+}
+
+.acceso[data-skin='portal'] {
+  --acceso-campo: color-mix(in oklab, var(--ds-text-1) 3%, var(--ds-surface-1));
+  --acceso-pulgar: var(--ds-surface-1);
+  --acceso-pulgar-filo: var(--ds-border-strong);
+}
+
+.acceso__main {
+  display: grid;
+  align-content: center;
+  min-height: 100svh;
+  padding: calc(5.5rem + env(safe-area-inset-top, 0px)) var(--ds-space-4) var(--ds-space-6);
+}
+
+.acceso__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  width: min(30rem, 100%);
+  margin-inline: auto;
+}
+
+// ── Tarjeta del formulario ──────────────────────────────────────────────────────────────────────────────────────
+.acceso__card {
+  padding: clamp(1.25rem, 5vw, 2rem);
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(120% 40% at 50% 0%, var(--l-relleno), transparent 70%),
+    color-mix(in oklab, var(--ds-surface-1) 94%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo),
+    inset 0 1px 0 var(--l-brillo),
+    var(--l-sombra-alta);
+}
+
+// El producto, en la etiqueta de la portada: la marca Metafrónesis ya está en la barra.
+.acceso__card .acceso__producto {
+  margin-bottom: var(--ds-space-4);
+}
+
+.acceso__form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.acceso__titulos {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+.acceso__form h1 {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: clamp(var(--ds-type-h2-size), 3.4vw, var(--ds-type-h1-size));
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  word-spacing: 0.04em;
+}
+
+.acceso__subtitle {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  text-wrap: pretty;
+}
+
+// Por qué volvió la persona al acceso (plan visual F3-6, H-34) y el resultado de la solicitud. Aviso, no alarma: el
+// ámbar queda para la salida segura (DD-3); aquí el tinte de marca y, si salió bien, el verde.
+.acceso__notice,
+.acceso__aviso-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border-radius: var(--l-radio-chico);
+  background: var(--l-tinte);
+  box-shadow: inset 0 0 0 1px var(--l-tinte-filo);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.acceso__notice mat-icon,
+.acceso__aviso-error mat-icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--l-acento-tinta);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+}
+
+.acceso__notice--exito {
+  background: color-mix(in oklab, var(--ds-success) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ds-success) 40%, transparent);
+}
+
+.acceso__notice--exito mat-icon {
+  color: var(--ds-success);
+}
+
+// El error del servidor: el texto en la tinta de la página (≥ 4,5:1) y el icono en rojo; nunca solo color.
+.acceso__aviso-error {
+  background: color-mix(in oklab, var(--ds-danger) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ds-danger) 42%, transparent);
+}
+
+.acceso__aviso-error mat-icon {
+  color: var(--ds-danger);
+}
+
+.acceso__error {
+  margin: 0;
+}
+
+// Aviso de alcance (RN-01): la nota del lenguaje, en el material de la tarjeta y con el icono en la tinta de marca en
+// vez del azul informativo; la letra, la del texto secundario (sus tamaños y colores salen de tokens, que se heredan).
+.acceso .ui-scope-notice {
+  --ds-type-body-size: var(--ds-type-body-s-size);
+  --ds-type-body-line: var(--ds-type-body-s-line);
+  --ds-info: var(--l-acento-tinta);
+
+  padding: var(--ds-space-3);
+  border: 0;
+  border-radius: var(--l-radio-chico);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+}
+
+// ── Perfil: control segmentado (botones con aria-pressed) ───────────────────────────────────────────────────────
+.acceso__perfil {
+  display: grid;
+  gap: var(--ds-space-2);
+}
+
+.acceso__perfil-label {
+  margin: 0;
+  padding-inline: var(--ds-space-1);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// El pulgar se dibuja en el botón elegido; donde el navegador entiende :has(), es una sola pieza que se desliza.
+// Su filo (--acceso-pulgar-filo) hace que el estado se vea con ≥ 3:1 contra la pista, no solo por la sombra.
+.acceso__roles {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.1875rem;
+  border-radius: var(--ds-radius-pill);
+  background: color-mix(in oklab, var(--ds-text-1) 7%, transparent);
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+}
+
+.acceso__role {
+  position: relative;
+  min-width: 0;
+  min-height: var(--ds-target-min);
+  padding: 0 var(--ds-space-1);
+  border: 0;
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-text-2);
+  font: inherit;
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+}
+
+.acceso__role[aria-pressed='true'],
+.acceso__roles::before {
+  background: var(--acceso-pulgar);
+  box-shadow:
+    inset 0 0 0 1px var(--acceso-pulgar-filo),
+    0 1px 2px color-mix(in oklab, black 16%, transparent),
+    0 6px 16px -6px color-mix(in oklab, black 30%, transparent);
+}
+
+.acceso__role[aria-pressed='true'] {
+  color: var(--ds-text-1);
+  font-weight: 600;
+}
+
+.acceso__role:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .acceso__role:hover {
+    color: var(--ds-text-1);
+  }
+}
+
+@supports selector(:has(*)) {
+  .acceso__roles::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.1875rem;
+    inset-inline-start: 0.1875rem;
+    width: calc((100% - 0.375rem) / 3);
+    border-radius: var(--ds-radius-pill);
+    transition: translate var(--ds-dur-slow) var(--ds-spring-soft);
+  }
+
+  .acceso__roles:has(> :nth-child(2)[aria-pressed='true'])::before {
+    translate: 100% 0;
+  }
+
+  .acceso__roles:has(> :nth-child(3)[aria-pressed='true'])::before {
+    translate: 200% 0;
+  }
+
+  .acceso__role[aria-pressed='true'] {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.acceso__role-hint {
+  margin: 0;
+  padding-inline: var(--ds-space-1);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  text-wrap: pretty;
+}
+
+.acceso__demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-1) var(--ds-space-2);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px dashed var(--l-filo-fuerte);
+  border-radius: var(--l-radio-chico);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+}
+
+.acceso__demo code {
+  color: var(--ds-text-1);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-mono-size);
+}
+
+// ── Campos: relleno tenue, filo fuerte de la piel, esquinas suaves; el foco es el anillo global ────────────────────
+.acceso__campos {
+  display: grid;
+  gap: var(--ds-space-4);
+}
+
+.acceso .ui-control {
+  min-block-size: 3rem;
+  padding-inline-start: var(--ds-space-4);
+  border-radius: var(--l-radio-chico);
+  background: var(--acceso-campo);
+  transition:
+    border-color var(--ds-dur-fast) ease,
+    background-color var(--ds-dur-fast) ease;
+}
+
+.acceso .ui-field:not(.ui-field--revealable) .ui-control {
+  padding-inline-end: var(--ds-space-4);
+}
+
+.acceso .ui-control:focus {
+  background: var(--ds-surface-1);
+}
+
+// El autocompletado del navegador pinta su propio fondo claro: se cubre con el relleno de la piel.
+.acceso .ui-control:autofill {
+  box-shadow: inset 0 0 0 100vmax var(--acceso-campo);
+  -webkit-text-fill-color: var(--ds-text-1);
+  caret-color: var(--ds-text-1);
+}
+
+.acceso__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--ds-space-4);
+  margin-block: calc(-1 * var(--ds-space-2));
+}
+
+.acceso__row .ui-check {
+  font-size: var(--ds-type-body-s-size);
+}
+
+// Enlaces y botones en línea: ≥ 24 px (WCAG 2.5.8, H-21) y ≥ 44 px con dedo; subrayados (no solo color, 1.4.1).
+.acceso__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--l-acento-tinta);
+  font: inherit;
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+  transition: text-decoration-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+
+.acceso__link:active {
+  opacity: 0.7;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .acceso__link:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+@media (pointer: coarse) {
+  .acceso__link {
+    min-height: var(--ds-target-min);
+  }
+}
+
+// El primario en cápsula, con el filo de luz arriba y la sombra del color (como en la portada).
+.acceso__submit {
+  width: 100%;
+}
+
+.acceso .acceso__submit[variant='primary']:not(:focus-visible) {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 40%, transparent),
+    0 1px 2px color-mix(in oklab, black 25%, transparent),
+    0 10px 28px -12px color-mix(in oklab, var(--ds-primary) 75%, transparent);
+}
+
+.acceso__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+}
+
+.acceso__divider::before,
+.acceso__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--l-filo-fuerte);
+}
+
+.acceso__google {
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-2);
+}
+
+.acceso__google-btn {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--ds-target-min);
+}
+
+.acceso__google-status {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  text-align: center;
+}
+
+.acceso__switch {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  text-align: center;
+}
+
+// ── Ventana del simulador ───────────────────────────────────────────────────────────────────────────────────────
+.acceso__panel {
+  display: grid;
+  gap: var(--ds-space-3);
+  min-width: 0;
+  padding: var(--ds-space-3);
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(140% 50% at 50% 0%, color-mix(in oklab, var(--ds-text-1) 7%, transparent), transparent 70%),
+    var(--l-vidrio-alto);
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo-fuerte),
+    inset 0 1px 0 color-mix(in oklab, var(--ds-text-1) 14%, transparent),
+    var(--l-sombra-alta),
+    0 0 120px -40px color-mix(in oklab, var(--l-acento) 55%, transparent);
+}
+
+// Tres puntos de ventana: se lee como una pantalla del simulador, no como otra tarjeta.
+.acceso__ventana {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-width: 0;
+  padding: var(--ds-space-1) var(--ds-space-2) 0;
+}
+
+.acceso__ventana-puntos {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-right: 2.25rem;
+  border-radius: 50%;
+  background: var(--l-filo-fuerte);
+  box-shadow:
+    1rem 0 0 var(--l-filo-fuerte),
+    2rem 0 0 var(--l-filo-fuerte);
+}
+
+.acceso__panel .acceso__panel-eyebrow {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.acceso__scene {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: var(--ds-surface-page);
+  box-shadow: 0 8px 24px -12px color-mix(in oklab, black 70%, transparent);
+}
+
+// Filo interior sobre la imagen (como las fotos en iOS): separa la escena del vidrio sin un marco grueso.
+.acceso__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+  pointer-events: none;
+}
+
+.acceso__scene img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 581 / 415;
+  object-fit: cover;
+}
+
+.acceso__panel-texto {
+  display: grid;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-2) var(--ds-space-2) 0;
+}
+
+.acceso__panel h2 {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h3-size);
+  font-weight: 600;
+  line-height: var(--ds-type-h3-line);
+  letter-spacing: -0.02em;
+}
+
+.acceso__panel p {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  text-wrap: pretty;
+}
+
+.acceso__pillars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acceso__pillars li {
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  padding: var(--ds-space-3);
+  border-radius: var(--l-radio-chico);
+  background: var(--l-relleno);
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+}
+
+.acceso__pillars strong {
+  color: var(--l-acento-tinta);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.acceso__pillars span {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// ── Esquinas continuas donde el navegador las dibuja (la curvatura de iOS en lugar del arco circular) ───────────────
+@supports (corner-shape: squircle) {
+  .acceso__card,
+  .acceso__panel,
+  .acceso__scene,
+  .acceso .ui-control,
+  .acceso .ui-scope-notice,
+  .acceso__notice,
+  .acceso__aviso-error,
+  .acceso__demo,
+  .acceso__pillars li {
+    corner-shape: squircle;
+  }
+
+  .acceso__card,
+  .acceso__panel { border-radius: 2.75rem; }
+  .acceso__scene { border-radius: 1.875rem; }
+  .acceso .ui-control,
+  .acceso .ui-scope-notice,
+  .acceso__notice,
+  .acceso__aviso-error,
+  .acceso__demo,
+  .acceso__pillars li { border-radius: 1.25rem; }
+}
+
+// Colores forzados: las superficies conservan su contorno y el perfil elegido se marca con el color del sistema.
+@media (forced-colors: active) {
+  .acceso__card,
+  .acceso__panel,
+  .acceso__notice,
+  .acceso__aviso-error,
+  .acceso__pillars li {
+    border: 1px solid CanvasText;
+  }
+
+  .acceso__roles {
+    border: 1px solid CanvasText;
+  }
+
+  .acceso__roles::before {
+    display: none;
+  }
+
+  .acceso__role[aria-pressed='true'] {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+}
+
+// ── Adaptable ──────────────────────────────────────────────────────────────────────────────────────────────────
+@media (min-width: 64rem) {
+  .acceso__layout {
+    grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+    gap: clamp(var(--ds-space-6), 3vw, var(--ds-space-7));
+    align-items: start;
+    width: min(70rem, 100%);
+  }
+}
+
+// Móvil: la barra de arriba es una banda de 3,5rem; el acceso no lleva pestañas abajo.
+@media (max-width: 63.999rem) {
+  .acceso__main {
+    padding-top: calc(var(--asb-alto-modulo-superior) + env(safe-area-inset-top, 0px) + var(--ds-space-4));
+  }
+}
+
+// Teléfono: «Administrador» no cabe holgado a 14 px en un tercio de la pista; los pilares, en una columna.
+@media (max-width: 30rem) {
+  .acceso__role {
+    font-size: var(--ds-type-caption-size);
+  }
+
+  .acceso__pillars {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

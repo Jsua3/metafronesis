@@ -1,0 +1,94 @@
+// Piel del editor de casos (EDITOR.md §4.7): cada variable del editor es un ALIAS de un token del portal (`--ds-*` de la
+// piel y `--l-*` de los materiales compartidos). El editor vive dentro de `app-shell.portal[data-skin]`, así que todo él
+// cambia de tema —claro u oscuro, el que eligió la persona— tocando solo este archivo: sus pantallas consumen estas
+// variables y no los colores. `app-autoria-shell` no pone `data-skin` propio (DP-02: la piel va en el contenedor del shell,
+// nunca en body ni en :root).
+//
+// Las variables también se declaran en el contenedor de superposiciones de CDK (el menú «Acciones» del mapa se dibuja
+// ahí, fuera del marco) y en cada capa con piel dentro de él: una variable con `var()` se resuelve donde se declara, así
+// que en `.cdk-overlay-container` valdría la piel de :root; en `[data-skin]` (la capa vestida por UiDialog, C13) vale la
+// de la capa.
+//
+// La guía usa `--ds-info` y se distingue por forma y palabra (anillo discontinuo y «Guía»): el violeta es el color de
+// ACCIÓN (DP-03) y no puede ser además «lo que señala la guía». El ámbar (`--salida-segura`) es solo de «Salida segura».
+app-autoria-shell,
+.cdk-overlay-container,
+.cdk-overlay-container [data-skin] {
+  --fondo: transparent; // el fondo lo pinta `.portal`
+  --fondo-hundido: var(--l-superficie-hundida);
+  --superficie: var(--l-superficie);
+  --sobre-primario: var(--ds-on-primary);
+  --tinta: var(--ds-text-1);
+  --texto-secundario: var(--ds-text-2);
+  --primario: var(--ds-primary);
+  --primario-oscuro: var(--ds-primary-hover);
+  --primario-tinte: var(--ds-primary-subtle);
+  // El borde de un control conserva 3:1 (WCAG 1.4.11): el fuerte de la piel, no el filo translúcido (que no llega). La
+  // línea que solo separa superficies, el filo fino de la portada.
+  --borde-control: var(--ds-border-strong);
+  --linea: var(--l-filo);
+  --foco: var(--ds-focus);
+  --salida-segura: #f5b82e;
+  --peligro: var(--ds-danger);
+  --peligro-oscuro: var(--ds-danger-hover);
+  --peligro-tinte: var(--ds-danger-bg);
+  --adecuada: var(--ds-success);
+  --adecuada-tinte: var(--ds-success-bg);
+  --adecuada-borde: var(--ds-success);
+  // «Con riesgo»: el único color del editor sin equivalente en los tokens (EDITOR.md §4.7). Ciruela, con un valor por piel.
+  --riesgo: #4a1f40;
+  --riesgo-tinte: #f3e4ef;
+  --riesgo-borde: #6b2f5c;
+  --aviso: var(--ds-warning-text);
+  --aviso-texto: var(--ds-warning-text);
+  --aviso-tinte: var(--ds-warning-bg);
+  --guia: var(--ds-info);
+  --guia-tinte: var(--ds-info-bg);
+  // El velo de la guía oscurece lo que NO señala, en las dos pieles: el velo de la piel clara es blanco y no apagaría nada.
+  --velo: rgba(20, 35, 42, 0.7);
+  --sombra-buscador: var(--l-sombra-trabajo);
+  --sombra-foco: var(--l-sombra-trabajo);
+  --sombra-menu: var(--l-sombra-trabajo);
+  --radio-control: var(--l-radio-control);
+  --radio-tarjeta: var(--l-radio-tarjeta);
+
+  // La vista previa de la reacción en el guion imita el cuadro del juego, que es oscuro.
+  --juego-fondo: #151b2e;
+  --juego-hundido: #0e1322;
+  --juego-elevado: #1f2740;
+  --juego-escenario: #0e1016;
+  --juego-texto: #e8ecf8;
+  --juego-texto-suave: #d6dcf2;
+  --juego-borde: #8a96b8;
+  --juego-acento: #b69cff;
+  --juego-acento-claro: #c9b3ff;
+  --juego-salida: #f5d27a;
+  --juego-aviso: #ffd28a;
+
+  // Tamaños de texto del editor (16 px es el mínimo para leer; 14 px solo en etiquetas auxiliares).
+  --autoria-texto-14: 0.875rem;
+  --autoria-texto-16: 1rem;
+  --autoria-texto-18: 1.125rem;
+  --autoria-texto-20: 1.25rem;
+  --autoria-texto-22: 1.375rem;
+  --autoria-texto-24: 1.5rem;
+  --autoria-texto-32: 2rem;
+
+  // Capas del editor.
+  --autoria-capa-3: 3;
+  --autoria-capa-4: 4;
+  --autoria-capa-5: 5;
+  --autoria-capa-10: 10;
+  --autoria-capa-40: 40;
+  --autoria-capa-41: 41;
+  --autoria-capa-50: 50;
+}
+
+// «Con riesgo» en la piel oscura: la misma ciruela, aclarada para el texto y hundida para el tinte. Medido en
+// `contrast.contract.spec.ts` (texto sobre su tinte y sobre la superficie ≥ 4,5:1; borde ≥ 3:1).
+[data-skin='game'] app-autoria-shell,
+.cdk-overlay-container [data-skin='game'] {
+  --riesgo: #f0b8df;
+  --riesgo-tinte: #3a1a33;
+  --riesgo-borde: #c77fb3;
+}

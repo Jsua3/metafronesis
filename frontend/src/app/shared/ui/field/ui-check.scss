@@ -1,0 +1,66 @@
+// Casillas, opciones e interruptores (plan visual F2-2): controles nativos con el color de la piel.
+.ui-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-block-size: var(--ds-target-min);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active > input:not(:disabled) {
+    scale: 0.97;
+  }
+
+  &:has(> input:disabled) {
+    cursor: not-allowed;
+    color: var(--ds-text-3);
+  }
+}
+
+.ui-check > input:is([type='checkbox'], [type='radio']):not(.ui-switch) {
+  flex: none;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin: 0;
+  accent-color: var(--ds-primary);
+  cursor: inherit;
+  transition: scale var(--ds-dur-press) var(--ds-ease-out);
+}
+
+// Pista y pulgar dibujados con fondos (sin pseudoelementos, que un <input> no admite en todos los navegadores).
+.ui-switch {
+  --_thumb: var(--ds-text-2);
+
+  flex: none;
+  inline-size: 2.75rem;
+  block-size: 1.5rem;
+  margin: 0;
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-pill);
+  background-color: var(--ds-surface-2);
+  background-image: radial-gradient(circle closest-side, var(--_thumb) 70%, transparent 76%);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 1.375rem 1.375rem;
+  cursor: inherit;
+  appearance: none;
+  transition:
+    background-position var(--ds-dur-move) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) ease,
+    border-color var(--ds-dur-fast) ease;
+
+  &:checked {
+    --_thumb: var(--ds-on-primary);
+
+    border-color: var(--ds-primary);
+    background-color: var(--ds-primary);
+    background-position: right center;
+  }
+
+  @media (forced-colors: active) {
+    appearance: auto;
+  }
+}

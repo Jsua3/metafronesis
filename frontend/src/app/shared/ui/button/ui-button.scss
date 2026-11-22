@@ -1,0 +1,132 @@
+@use 'mixins' as m;
+
+// Botón del lenguaje visual (plan visual §2.6 y hoja del lenguaje): primario sólido, secundario con borde, fantasma
+// sin fondo y peligro. Hover solo con puntero fino, respuesta al presionar, motivo de deshabilitado legible.
+// Todo sale de los tokens de la piel en la que vive (portal o juego).
+.ui-button {
+  --_bg: var(--ds-primary);
+  --_bg-hover: var(--ds-primary-hover);
+  --_bg-active: var(--ds-primary-active);
+  --_fg: var(--ds-on-primary);
+  --_border: transparent;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-block-size: var(--ds-target-min);
+  padding-block: var(--ds-space-2);
+  padding-inline: var(--ds-space-5);
+  border: 1px solid var(--_border);
+  border-radius: var(--ds-radius-md);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-family: inherit;
+  font-size: var(--ds-type-body-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-body-line);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--ds-dur-fast) ease,
+    border-color var(--ds-dur-fast) ease,
+    color var(--ds-dur-fast) ease,
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    background: var(--_bg-hover);
+  }
+
+  &:active:not([aria-disabled='true'], :disabled) {
+    background: var(--_bg-active);
+    scale: 0.97;
+  }
+
+  // Deshabilitado con motivo (no mientras carga: ahí se ve el indicador, no un botón apagado).
+  &:not(.ui-button--loading) {
+    @include m.ds-disabled;
+  }
+}
+
+.ui-button--secondary {
+  --_bg: var(--ds-surface-1);
+  --_bg-hover: var(--ds-primary-subtle);
+  --_bg-active: var(--ds-primary-subtle);
+  --_fg: var(--ds-primary);
+  --_border: var(--ds-border-strong);
+}
+
+.ui-button--ghost {
+  --_bg: transparent;
+  --_bg-hover: var(--ds-primary-subtle);
+  --_bg-active: var(--ds-primary-subtle);
+  --_fg: var(--ds-primary);
+}
+
+.ui-button--danger {
+  --_bg: var(--ds-danger);
+  --_bg-hover: var(--ds-danger-hover);
+  --_bg-active: var(--ds-danger-hover);
+  --_fg: var(--ds-on-primary);
+}
+
+.ui-button--sm {
+  min-block-size: 2.25rem;
+  padding-block: var(--ds-space-1);
+  padding-inline: var(--ds-space-3);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+
+  // En táctil ningún objetivo baja de 44 px (§2.9).
+  @media (pointer: coarse) {
+    min-block-size: var(--ds-target-min);
+  }
+}
+
+.ui-button--lg {
+  min-block-size: 3.25rem;
+  padding-inline: var(--ds-space-6);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+}
+
+// Los estados que impiden actuar lo dicen con el cursor (§2.6); el motivo se lee por aria-describedby.
+.ui-button[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.ui-button--loading {
+  cursor: progress;
+}
+
+// Indicador en el lugar del icono: la caja es la misma, el ancho no cambia.
+.ui-button__icon-slot {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+
+.ui-button .ui-button__icon {
+  inline-size: auto;
+  block-size: auto;
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+}
+
+// Sin icono, el indicador va encima del texto, que sigue ocupando su sitio (y en el árbol de accesibilidad: con
+// opacity, no con visibility).
+.ui-button__spinner--overlay {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.ui-button--spinner-overlay > .ui-button__label,
+.ui-button--spinner-overlay > .ui-button__icon {
+  opacity: 0;
+}

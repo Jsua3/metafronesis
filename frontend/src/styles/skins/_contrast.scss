@@ -1,0 +1,58 @@
+// Preferencias del sistema (plan visual §2.3): contraste forzado, más contraste y transparencia reducida.
+// Van después de las pieles: con la misma especificidad, gana el último.
+
+@media (forced-colors: active) {
+  :root,
+  [data-skin] {
+    --ds-surface-page: Canvas;
+    --ds-surface-1: Canvas;
+    --ds-surface-2: Canvas;
+    --ds-border: CanvasText;
+    --ds-border-strong: CanvasText;
+    --ds-text-1: CanvasText;
+    --ds-text-2: CanvasText;
+    --ds-text-3: GrayText;
+    --ds-primary: LinkText;
+    --ds-primary-hover: LinkText;
+    --ds-primary-active: LinkText;
+    --ds-primary-subtle: Canvas;
+    --ds-on-primary: Canvas;
+    --ds-accent-sim: LinkText;
+    --ds-danger: CanvasText;
+    --ds-danger-hover: CanvasText;
+    --ds-success: CanvasText;
+    --ds-warning-text: CanvasText;
+    --ds-warning-bg: Canvas;
+    --ds-info: CanvasText;
+    --ds-success-bg: Canvas;
+    --ds-danger-bg: Canvas;
+    --ds-info-bg: Canvas;
+    --ds-focus: Highlight;
+    --ds-focus-halo: Canvas;
+    --ds-focus-on-dark: Highlight;
+    --ds-focus-on-dark-halo: Canvas;
+    --ds-focus-on-primary: Highlight;
+    --ds-veil: Canvas;
+    --ds-veil-edge: CanvasText;
+    --ds-shadow-e1: none;
+    --ds-shadow-e2: none;
+    --ds-shadow-e3: none;
+    --ds-glass-blur: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  [data-skin] {
+    --ds-border: var(--ds-border-strong);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-skin] {
+    --ds-veil: var(--ds-surface-1);
+    --ds-veil-edge: var(--ds-border);
+    --ds-glass-blur: none;
+  }
+}

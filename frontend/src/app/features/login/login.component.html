@@ -1,0 +1,172 @@
+<!-- Rediseño Metafrónesis 2026-11-20: la piel (claro u oscuro) la pone el tema en el contenedor de la página (REGLA-010). -->
+<div class="acceso publico" [attr.data-skin]="tema.piel()">
+  <app-public-bar mode="acceso" />
+
+  <main class="acceso__main" id="main-content" tabindex="-1">
+    <div class="acceso__layout">
+      <section class="acceso__card" aria-labelledby="acceso-titulo">
+        <p class="pub-etiqueta acceso__producto">{{ brand.shortName }} · Simulador de Psicología</p>
+
+        <!-- Región de estado SIEMPRE presente (una que nace con su texto no se anuncia): «Ingresando…», «Enviando
+             solicitud…», el resultado de la solicitud y el fallo de Google. -->
+        <p class="acceso__estado sr-only" role="status" aria-live="polite">{{ announcement() }}</p>
+
+        <!-- Un formulario a la vista: al alternar, el foco va al encabezado del nuevo (nunca a body). -->
+        @if (!showRegister()) {
+          <form class="acceso__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+            <div class="acceso__titulos">
+              <h1 #heading id="acceso-titulo" tabindex="-1">Iniciar sesión</h1>
+              <p class="acceso__subtitle">Entra con el correo que te dio la universidad.</p>
+            </div>
+            @if (sessionExpired) {
+              <p class="acceso__notice" role="status">
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>Tu sesión terminó. Entra de nuevo y volverás a donde estabas.</span>
+              </p>
+            }
+
+            <div class="acceso__perfil">
+              <p class="acceso__perfil-label">Entro como</p>
+              <div class="acceso__roles" role="group" aria-label="Seleccionar rol de acceso">
+                @for (role of roles; track role.id) {
+                  <button type="button" class="acceso__role" [attr.aria-pressed]="selectedRole() === role.id" (click)="selectRole(role.id)">{{ role.label }}</button>
+                }
+              </div>
+              <p class="acceso__role-hint">{{ activeRole().hint }}</p>
+            </div>
+
+            @if (demo(); as demo) {
+              <div class="acceso__demo">
+                <span>Credenciales demo ({{ activeRole().label }}):</span>
+                <code>{{ demo[selectedRole()].email }}</code>
+                <button type="button" class="acceso__link" (click)="fillDemoCredentials()">Usar demo</button>
+              </div>
+            }
+
+            <div class="acceso__campos">
+              <ui-field label="Correo institucional" required
+                [error]="fieldError(form.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, signInTried())">
+                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" [placeholder]="activeRole().emailPlaceholder" />
+              </ui-field>
+              <ui-field label="Contraseña" required revealable
+                [error]="fieldError(form.controls.password, { required: 'Escribe tu contraseña.' }, signInTried())">
+                <input uiControl id="login-password" type="password" formControlName="password" autocomplete="current-password" />
+              </ui-field>
+            </div>
+
+            <div class="acceso__row">
+              <label ui-check><input type="checkbox" formControlName="remember" /> Recordar mi correo</label>
+              <a class="acceso__link" href="mailto:secretariapsicologia@cue.edu.co">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            @if (error()) {
+              <div class="acceso__aviso-error">
+                <mat-icon aria-hidden="true">error</mat-icon>
+                <p class="acceso__error" role="alert">{{ error() }}</p>
+              </div>
+            }
+
+            <button ui-button type="submit" variant="primary" size="lg" class="acceso__submit" [loading]="loading()">Ingresar</button>
+
+            @if (googleEnabled()) {
+              <div class="acceso__divider" role="separator"><span>o</span></div>
+              <div class="acceso__google">
+                <div #googleBtn class="acceso__google-btn"></div>
+                @if (googleLoading()) {
+                  <span class="acceso__google-status">Conectando con Google…</span>
+                }
+              </div>
+            }
+            @if (googleUnavailable()) {
+              <p class="acceso__google-status">El acceso con Google no está disponible ahora.</p>
+            }
+
+            <p class="acceso__switch">
+              ¿Aún no tienes cuenta?
+              <button type="button" class="acceso__link" (click)="openSignUp()">Solicitar acceso</button>
+            </p>
+
+            <!-- Alcance (RN-01) al pie: la portada ya dijo qué es SIEP; aquí queda como nota sin empujar el formulario. -->
+            <ui-scope-notice />
+          </form>
+        } @else {
+          <form class="acceso__form" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" novalidate>
+            <div class="acceso__titulos">
+              <h1 #heading id="acceso-titulo" tabindex="-1">Solicitar acceso</h1>
+              <p class="acceso__subtitle">Déjanos tus datos y el equipo académico revisará tu solicitud. Te responderemos por correo.</p>
+            </div>
+
+            <div class="acceso__campos">
+              <ui-field label="Nombre" required [error]="fieldError(registerForm.controls.nombre, { required: 'Escribe tu nombre.' }, requestTried())">
+                <input uiControl id="registro-nombre" type="text" formControlName="nombre" autocomplete="given-name" />
+              </ui-field>
+              <ui-field label="Apellido" required [error]="fieldError(registerForm.controls.apellido, { required: 'Escribe tu apellido.' }, requestTried())">
+                <input uiControl id="registro-apellido" type="text" formControlName="apellido" autocomplete="family-name" />
+              </ui-field>
+              <ui-field label="Correo institucional" required
+                [error]="fieldError(registerForm.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, requestTried())">
+                <input uiControl id="registro-email" type="email" formControlName="email" autocomplete="email" />
+              </ui-field>
+            </div>
+
+            <!-- Campo trampa (S1-3): fuera de la tabulación y oculto a lectores de pantalla; el servidor descarta en silencio la solicitud que lo llene. -->
+            <div class="ds-sr-only" aria-hidden="true">
+              <label for="registro-sitio">Sitio web (déjalo vacío)</label>
+              <input id="registro-sitio" type="text" formControlName="website" tabindex="-1" autocomplete="off" />
+            </div>
+
+            @if (registerNotice()) {
+              <p class="acceso__notice acceso__notice--exito">
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+                <span>{{ registerNotice() }}</span>
+              </p>
+            }
+            @if (registerError()) {
+              <div class="acceso__aviso-error">
+                <mat-icon aria-hidden="true">error</mat-icon>
+                <p class="acceso__error" role="alert">{{ registerError() }}</p>
+              </div>
+            }
+
+            <button ui-button type="submit" variant="primary" size="lg" class="acceso__submit" [loading]="registerLoading()">Enviar solicitud</button>
+
+            <p class="acceso__switch">
+              ¿Ya tienes cuenta?
+              <button type="button" class="acceso__link" (click)="openSignIn()">Ya tengo cuenta</button>
+            </p>
+
+            <ui-scope-notice />
+          </form>
+        }
+      </section>
+
+      <!-- Una ventana del simulador (como la vista previa de la portada): la escena real, fija, y lo que hace SIEP.
+           Sigue el modo de la página; nada se mueve solo. -->
+      <aside class="acceso__panel" aria-label="Sobre el simulador">
+        <div class="acceso__ventana">
+          <span class="acceso__ventana-puntos" aria-hidden="true"></span>
+          <p class="acceso__panel-eyebrow">{{ activeRole().previewCase }} · {{ activeRole().previewScene }}</p>
+        </div>
+        <div class="acceso__scene">
+          <img [src]="loginHeroImage" decoding="async"
+            alt="Escena del simulador: una psicóloga en formación escucha a una consultante en un consultorio con el letrero «Espacio seguro»"
+            width="581" height="415" />
+        </div>
+        <div class="acceso__panel-texto">
+          @if (showRegister()) {
+            <h2>¿Primera vez en {{ brand.shortName }}?</h2>
+            <p>La facultad asigna las cuentas. Solicita acceso aquí o pregúntale a tu docente.</p>
+          } @else {
+            <h2>Te damos la bienvenida</h2>
+            <p>{{ activeRole().narrative }}</p>
+          }
+        </div>
+        <ul class="acceso__pillars" aria-label="Qué haces en SIEP">
+          @for (pillar of pedagogyPillars; track pillar.key) {
+            <li><strong>{{ pillar.title }}</strong> <span>{{ pillar.description }}</span></li>
+          }
+        </ul>
+      </aside>
+    </div>
+  </main>
+</div>

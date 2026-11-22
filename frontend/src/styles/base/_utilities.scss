@@ -1,0 +1,6 @@
+@use 'mixins' as m;
+
+// Utilidades globales del lenguaje visual (plan visual F2-1). Pocas y con nombre `ds-*`.
+.ds-sr-only {
+  @include m.ds-sr-only;
+}

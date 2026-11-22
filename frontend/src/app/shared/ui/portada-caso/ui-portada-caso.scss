@@ -1,0 +1,119 @@
+// Portada de caso (DISENO C9). Ancho máximo del tamaño pedido y nunca más que su contenedor; la proporción de la
+// imagen fuente (960 × 528) se conserva con `aspect-ratio`. Las medidas de la puerta van en px: el pixel art solo se ve
+// nítido a escala entera.
+:host {
+  --_ancho: 240px;
+  --_radio: var(--l-radio-control, var(--ds-radius-md));
+  --_mosaico: 260px;
+
+  position: relative;
+  display: block;
+  flex: none;
+  inline-size: min(100%, var(--_ancho));
+  aspect-ratio: 960 / 528;
+  overflow: hidden;
+  border-radius: var(--_radio);
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+  box-shadow: inset 0 0 0 1px var(--l-filo, var(--ds-border));
+  isolation: isolate;
+}
+
+:host(.ui-portada-caso--mini) {
+  --_ancho: 120px;
+  --_radio: var(--ds-radius-sm);
+  --_mosaico: 160px;
+}
+
+:host(.ui-portada-caso--heroe) {
+  --_ancho: 480px;
+  --_radio: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  --_mosaico: 520px;
+}
+
+// El nombre de la transición de vistas que la lleva al umbral del juego (DP-10).
+:host(.vt-portada) {
+  view-transition-name: siep-caso-portada;
+}
+
+.ui-portada-caso__imagen {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+// ── Respaldo: la puerta cerrada que espera ─────────────────────────────────────────────────────────────────
+:host(.ui-portada-caso--respaldo) {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--l-acento, var(--ds-accent-sim)) 16%, var(--ds-surface-2)),
+    var(--ds-surface-2) 78%
+  );
+}
+
+// El mosaico de doodles de la portada como máscara sobre un color: el tono lo pone la piel, muy tenue.
+.ui-portada-caso__mosaico {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: url('/assets/landing/doodles/mosaico-base.svg') 0 0 / var(--_mosaico) var(--_mosaico) repeat;
+  mask: url('/assets/landing/doodles/mosaico-base.svg') 0 0 / var(--_mosaico) var(--_mosaico) repeat;
+  background: color-mix(in oklab, var(--ds-text-1) 9%, transparent);
+}
+
+// El suelo de la sala: una franja más oscura con un filo de un píxel lógico arriba.
+.ui-portada-caso__suelo {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 22%;
+  background: color-mix(in oklab, var(--ds-text-1) 7%, var(--ds-surface-2));
+  box-shadow: inset 0 var(--l-pixel, 2px) 0 color-mix(in oklab, var(--ds-text-1) 14%, transparent);
+}
+
+// La puerta, apoyada en el suelo. ×1 en tarjeta y mini (en mini asoma recortada, como vista de cerca), ×2 en el héroe.
+.ui-portada-caso__puerta {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-end: calc(22% - var(--l-pixel, 2px));
+  inline-size: 39px;
+  block-size: 74px;
+  translate: -50% 0;
+  image-rendering: pixelated;
+}
+
+:host(.ui-portada-caso--mini) .ui-portada-caso__puerta {
+  inset-block-end: 0;
+}
+
+:host(.ui-portada-caso--heroe) .ui-portada-caso__puerta {
+  inline-size: 78px;
+  block-size: 148px;
+}
+
+// La firma de tres píxeles de la marca (cian, azul y el violeta del tema) en la esquina: el punto de encuentro entre el
+// expediente y el simulador. Solo donde hay sitio para que se lea como firma y no como ruido.
+:host(.ui-portada-caso--tarjeta)::after,
+:host(.ui-portada-caso--heroe)::after {
+  content: '';
+  position: absolute;
+  inset-block-start: var(--ds-space-3);
+  inset-inline-start: var(--ds-space-3);
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  background: var(--marca-cian, var(--ds-info));
+  box-shadow:
+    0.4375rem 0 0 var(--marca-azul, var(--ds-info)),
+    0.875rem 0 0 var(--l-acento, var(--ds-accent-sim));
+}
+
+@media (forced-colors: active) {
+  :host {
+    border: 1px solid CanvasText;
+  }
+
+  .ui-portada-caso__mosaico,
+  :host::after {
+    display: none;
+  }
+}

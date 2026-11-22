@@ -1,0 +1,35 @@
+// Piel portal (clara), la de por defecto: vive en :root (REGLA-010: en :root solo la piel del portal).
+@use '../tokens/color';
+@use '../tokens/scale';
+@use '../tokens/elevation';
+@use '../tokens/type';
+@use '../tokens/motion';
+
+:root,
+[data-skin='portal'] {
+  color-scheme: light;
+  @include color.emit(color.$portal);
+  @include elevation.emit(elevation.$portal);
+}
+
+// El violeta como único color de acción (DISENO DP-03). Va en el contenedor, no en :root (REGLA-010), y solo con la
+// piel clara: la piel juego ya tiene su violeta. Con colores forzados no se emite: la especificidad de esta regla
+// (dos clases) ganaría a la de `_contrast.scss` (`[data-skin]`) y dejaría el primario violeta en vez de LinkText.
+@media not (forced-colors: active) {
+  .portal[data-skin='portal'],
+  .publico[data-skin='portal'] {
+    @include color.emit(color.$portal-acento);
+  }
+}
+
+:root {
+  @include scale.emit;
+  @include type.emit;
+  @include motion.emit;
+}
+
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    @include motion.emit-springs;
+  }
+}

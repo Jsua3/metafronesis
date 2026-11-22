@@ -1,0 +1,363 @@
+@use 'skins';
+@use 'aliases';
+@use 'material';
+@use 'base/focus';
+@use 'base/motion';
+@use 'base/utilities';
+@use 'base/overlays';
+@use 'tokens/glass-bar' as glass-bar-tokens;
+@use 'components/glass-bar';
+@use 'components/publico';
+@use 'components/portal';
+@use 'components/transiciones';
+@use 'components/autoria';
+@use 'tokens/pixel' as pixel-tokens;
+@use 'components/pixel';
+
+:root {
+  /* Heredados sin token propio todavía: el vidrio pasa a mixins (F1-7) y las alturas al shell nuevo (F3). Los demás --psy-* y --siep-* son alias (_aliases.scss). */
+  --psy-blur: blur(18px) saturate(125%);
+  --psy-button-h: 48px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  background: var(--psy-bg);
+  font-family: var(--ds-font-sans);
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: var(--ds-font-sans);
+  color: var(--psy-ink);
+  /* Sin degradado ni literales: el fondo del portal lo pinta `.portal` (components/_portal.scss), con su piel. */
+  background: var(--ds-surface-page);
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  color: var(--siep-blue);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+a {
+  color: var(--psy-blue-deep);
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+code {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+::selection {
+  background: rgba(79, 163, 165, .24);
+}
+
+/* ─── Texto: Poppins y JetBrains Mono ─────────────────────────────────────── */
+/* Autoalojadas (sin CDN en tiempo de ejecución). Origen: @fontsource/poppins@5.3.0
+   y @fontsource/jetbrains-mono@5.3.0, SIL OFL 1.1 (licencias en assets/fonts/).
+   Solo subset latin: cubre el español. Tres pesos (F1-3): 400, 600 y 800; el navegador
+   resuelve 500 a 400, 650 a 800 y 700, 750 y 900 a 800. */
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/poppins-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/assets/fonts/poppins-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/assets/fonts/poppins-latin-800-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts/jetbrains-mono-latin-700-normal.woff2') format('woff2');
+}
+
+/* ─── Icon font: Material Symbols Rounded ──────────────────────────────────── */
+/* Self-hosted (no CDN — works offline / on locked-down domains). Variable font
+   instanced down to the FILL axis only: opsz/wght/GRAD pinned, FILL 0→1 kept so
+   icons can be outlined (default) or filled. Source: assets/fonts/. */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block; /* never flash the raw ligature text ("play_arrow") */
+  src: url('/assets/fonts/material-symbols-rounded.woff2') format('woff2');
+}
+
+/* Both the Angular Material host (.mat-icon) and the bare utility class render
+   ligatures. La fuente la fija esta regla sobre `.mat-icon` (no la clase del registro: fijarla desde app.config.ts
+   metía el registro de iconos en el paquete inicial), y ninguna hoja define `.material-icons`, así que no hace falta
+   !important. Size comes from font-size;
+   width/height use 1em so per-component font-size overrides scale the icon box too. */
+.mat-icon,
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  overflow: hidden;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  font-variation-settings: 'FILL' 0;
+}
+
+/* Opt-in filled variant (e.g. solid hearts/markers in the mockups). */
+.mat-icon--filled,
+.material-symbols-rounded--filled,
+.material-symbols-rounded.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Los avisos del sistema los pinta `ui-toast-host` (F6-1) con sus propios estilos: aquí ya no vive su CSS. */
+
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: var(--psy-blur);
+  border: 1px solid rgba(79, 124, 172, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .72),
+    var(--psy-shadow-soft);
+}
+
+.psy-game-panel {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: var(--psy-blur);
+  border: 1px solid rgba(79, 124, 172, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .72),
+    0 24px 54px -28px rgba(36, 50, 58, .22);
+}
+
+.psy-game-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto -60%;
+  width: 44%;
+  height: 100%;
+  transform: skewX(-16deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.24), transparent);
+  pointer-events: none;
+  /* Un solo barrido al aparecer (F9-1: sin bucles infinitos decorativos). Sin `fill-mode`: al terminar vuelve a su sitio
+     fuera del panel; con `both` se quedaba en el 2–46 % del panel como un velo fijo. */
+  animation: psy-liquid-sheen 2.4s var(--psy-ease-out) 1;
+}
+
+.psy-liquid-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.psy-liquid-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%) scale(.2);
+  background: rgba(79, 163, 165, .18);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 520ms ease, opacity 520ms ease;
+}
+
+.psy-liquid-ripple:active::after {
+  transform: translate(-50%, -50%) scale(28);
+  opacity: 1;
+}
+
+.psy-eyebrow {
+  margin: 0 0 10px;
+  color: var(--siep-blue-soft);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.psy-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: var(--psy-button-h);
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--psy-pill);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  overflow: hidden;
+  transition: transform 160ms var(--psy-ease-out), box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.psy-button:active {
+  transform: scale(.97);
+}
+
+.psy-button--primary {
+  background: var(--siep-blue);
+  color: #fff;
+  border-radius: 18px;
+  padding: 0.9rem 1.5rem;
+  font-weight: 700;
+  box-shadow: var(--siep-shadow-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .psy-button--primary:hover {
+    background: var(--siep-blue-dark);
+  }
+}
+
+.psy-button--ghost {
+  background: var(--siep-surface);
+  color: var(--siep-blue);
+  border: 2px solid var(--siep-blue);
+  border-radius: 18px;
+  font-weight: 700;
+}
+
+.psy-button--glass {
+  background: rgba(255,255,255,.52);
+  color: var(--psy-ink);
+  border: 1px solid rgba(255,255,255,.46);
+  backdrop-filter: var(--psy-blur);
+}
+
+.psy-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--psy-border);
+  border-radius: var(--psy-pill);
+  background: rgba(255,255,255,.7);
+  color: var(--psy-blue-deep);
+  cursor: pointer;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+@keyframes psy-liquid-sheen {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(140%); }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --psy-button-h: 44px;
+  }
+}
+
+/** Screen-reader-only: visually hidden but announced by assistive tech. */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/** Skip links: visible on focus, hidden otherwise. */
+.psy-skip-link,
+.skip-link {
+  position: fixed;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 12px 24px;
+  border-radius: var(--psy-pill);
+  background: var(--psy-blue-deep);
+  color: white;
+  font-weight: 700;
+  font-size: .92rem;
+  text-decoration: none;
+  box-shadow: 0 8px 24px -8px rgba(36,50,58,.5);
+  transition: top .2s ease;
+}
+.psy-skip-link:focus,
+.skip-link:focus {
+  top: 16px;
+  outline: 3px solid var(--psy-focus);
+  outline-offset: 3px;
+}
+
+/* Acuse de pulsación (plan visual: todo lo pulsable lo tiene). Sin transición: entra y sale en el acto. */
+.psy-skip-link:active,
+.skip-link:active {
+  transform: translateX(-50%) scale(0.97);
+}
+
+/* Destino de los enlaces de salto: recibe el foco por script, sin contorno de control. */
+main[tabindex="-1"]:focus,
+#main-content:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/**
+ * Critical stress color: #E25A4F on #0e1322 = ~4.6:1 ✓ (passes AA).
+ * Keeping as-is. If used on lighter backgrounds, use #C0392B instead.
+ */
+
+/* El simulador a pantalla completa: el shell oculta la barra por dato de ruta (`chrome: 'hidden'`) y su <main>
+   (`.portal-main--juego`) y `.game-container` (position: fixed) ocupan la ventana. Sin clases en <body>. */

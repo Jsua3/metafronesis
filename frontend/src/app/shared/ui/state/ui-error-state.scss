@@ -1,0 +1,65 @@
+// Estado de error (plan visual §2.5): parcial = caja dentro del bloque; bloqueante = centrado en la región.
+:host {
+  display: grid;
+  justify-items: start;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-5);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-1);
+}
+
+:host(.ui-error-state--blocking) {
+  justify-items: center;
+  padding-block: var(--ds-space-7);
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+
+.ui-error-state__icon {
+  inline-size: auto;
+  block-size: auto;
+  color: var(--ds-danger);
+  font-size: var(--ds-type-h2-size);
+  line-height: 1;
+}
+
+.ui-error-state__title {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h3-size);
+  font-weight: var(--ds-type-h2-weight);
+  letter-spacing: var(--ds-type-h3-track);
+  line-height: var(--ds-type-h3-line);
+
+  // Recibe el foco por programa (tras un reintento fallido): sin anillo de ratón, con anillo de teclado.
+  &:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+.ui-error-state__message {
+  max-inline-size: 36rem;
+  margin: 0 0 var(--ds-space-2);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+}
+
+.ui-error-state__details {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+
+  summary {
+    min-block-size: var(--ds-target-min-strict);
+    cursor: pointer;
+  }
+
+  code {
+    font-family: var(--ds-font-mono);
+    font-size: var(--ds-type-mono-size);
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,0 +1,93 @@
+// Colores del lenguaje visual (plan visual §2.3). ÚNICA fuente de valores: cada piel es un mapa y se emite
+// como --ds-<nombre>. Contrastes calculados el 2026-10-11 y verificados por scripts/ui/tokens.test.mjs.
+
+$portal: (
+  surface-page: #F5F7FA,
+  surface-1: #FFFFFF,
+  surface-2: #EEF2F6,
+  border: #D5DDE6,
+  border-strong: #6F8296,
+  text-1: #14202E,
+  text-2: #4A5A6A,
+  text-3: #7A8794,
+  primary: #004876,
+  primary-hover: #003B63,
+  primary-active: #002F50,
+  primary-subtle: #E6F0F7,
+  on-primary: #FFFFFF,
+  accent-sim: #5B3FD1,
+  danger: #A12C3B,
+  danger-hover: #8A2532,
+  success: #1E7A4F,
+  warning-text: #7A4F00,
+  warning-bg: #FFF4D6,
+  info: #0B5A8A,
+  success-bg: #E6F4EC,
+  danger-bg: #FBE9EB,
+  info-bg: #E5F0F8,
+  focus: #004876,
+  focus-halo: #FFFFFF,
+  // Foco sobre las superficies oscuras del portal (cabecera y héroe de la portada, acceso, menú lateral):
+  // #C9B3FF ≥ 9:1 sobre #0c1222; halo casi negro.
+  focus-on-dark: #C9B3FF,
+  focus-on-dark-halo: #0E1322,
+  // Foco sobre superficies de color primario o morado (menú lateral, panel lateral del acceso): blanco. Es un token
+  // aparte de --ds-on-primary porque con colores forzados un anillo debe valer Highlight, y on-primary vale Canvas.
+  focus-on-primary: #FFFFFF,
+  veil: rgba(255, 255, 255, 0.72),
+  veil-edge: rgba(255, 255, 255, 0.85),
+);
+
+// Piel juego (oscura, plan visual §2.3 y hoja del lenguaje). Cada piel define su propio primario: la causa del
+// «botón azul sobre tarjeta oscura» (≈ 2:1) era heredar el de la piel portal. Dos ajustes respecto del plan,
+// medidos el 2026-10-12: border-strong #5A6A9A → #6070A0 (2,85:1 → 3,11:1 sobre surface-2, WCAG 1.4.11) y
+// text-3 #6E7894 (el plan no lo fijaba; 3,89:1 sobre surface-1, como el 3,67:1 del portal).
+$game: (
+  surface-page: #0E1322,
+  surface-1: #151B2E,
+  surface-2: #1D2540,
+  border: #3A456B,
+  border-strong: #6070A0,
+  text-1: #E8ECF8,
+  text-2: #A9B3CC,
+  text-3: #6E7894,
+  primary: #B69CFF,
+  primary-hover: #C9B3FF,
+  primary-active: #A58AF5,
+  primary-subtle: #1D2540,
+  on-primary: #0E1322,
+  accent-sim: #B69CFF,
+  danger: #FF8A93,
+  danger-hover: #FFA3AA,
+  success: #7DE0A8,
+  warning-text: #F2C46D,
+  warning-bg: #2B2410,
+  info: #7FB7E6,
+  success-bg: #13291F,
+  danger-bg: #2E1519,
+  info-bg: #12243A,
+  focus: #C9B3FF,
+  focus-halo: #0E1322,
+  veil: rgba(21, 27, 46, 0.62),
+  veil-edge: rgba(255, 255, 255, 0.14),
+);
+
+// Acento de acción de Metafrónesis sobre la piel clara (guía de marca, SIEP-229; DISENO DP-03): el violeta pasa a ser el
+// ÚNICO color de acción del portal. Se emite solo dentro de .portal y .publico claros (skins/_portal.scss), nunca en
+// :root (REGLA-010). Contrastes calculados el 2026-11-21: #5B3FD1 sobre #FFFFFF 6,83:1, sobre #F5F7FA 6,36:1 y sobre
+// #EEF2F6 6,07:1; #4A30B8 sobre blanco 8,73:1; blanco sobre #5B3FD1 6,83:1 y sobre #3D2799 10,78:1; #5B3FD1 sobre
+// #EEEAFC 5,79:1. El azul petróleo sigue vivo como --ds-info.
+// Va DESPUÉS de $game: a11y-bloque-h lee el foco de la piel juego como el segundo «focus:» del archivo.
+$portal-acento: (
+  primary: #5B3FD1,
+  primary-hover: #4A30B8,
+  primary-active: #3D2799,
+  primary-subtle: #EEEAFC,
+  focus: #4A30B8,
+);
+
+@mixin emit($map) {
+  @each $name, $value in $map {
+    --ds-#{$name}: #{$value};
+  }
+}

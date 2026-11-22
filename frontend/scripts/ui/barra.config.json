@@ -1,0 +1,8 @@
+{
+  "cabecera": "header.cromo",
+  "pildora": "nav.bandeja",
+  "modulos": ".modulo",
+  "secundarios": ".control-plegable",
+  "desplazamiento": 400,
+  "gracia": 280
+}

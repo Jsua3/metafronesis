@@ -1,0 +1,23 @@
+// Escalas no cromáticas (plan visual §2.3): espacio en rem (respeta el ajuste de texto del usuario),
+// radios, capas y breakpoints. Los breakpoints son variables Sass (un @media no lee custom properties);
+// el shell los espeja en TypeScript desde esta misma tabla (F3).
+
+$space: (1: 0.25rem, 2: 0.5rem, 3: 0.75rem, 4: 1rem, 5: 1.5rem, 6: 2rem, 7: 3rem, 8: 4rem);
+$radius: (sm: 6px, md: 10px, lg: 16px, xl: 24px, pill: 999px);
+$z: (base: 0, elevado: 10, pegajoso: 20, cabecera: 40, desplegable: 60, cubierta: 80, modal: 100, aviso: 120, maximo: 1000);
+$breakpoints: (sm: 640px, md: 1024px, lg: 1280px, xl: 1600px);
+
+@mixin emit {
+  @each $step, $value in $space {
+    --ds-space-#{$step}: #{$value};
+  }
+  @each $name, $value in $radius {
+    --ds-radius-#{$name}: #{$value};
+  }
+  @each $name, $value in $z {
+    --ds-z-#{$name}: #{$value};
+  }
+  // Objetivos táctiles: 44 px recomendados y 24 px de mínimo estricto (WCAG 2.5.8).
+  --ds-target-min: 2.75rem;
+  --ds-target-min-strict: 1.5rem;
+}

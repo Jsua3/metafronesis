@@ -1,0 +1,9 @@
+// Hover solo con puntero fino (plan visual §2.6): en táctil un :hover pegajoso estorba. El hover no desplaza:
+// cambia superficie, borde o sombra.
+@mixin ds-hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @content;
+    }
+  }
+}
