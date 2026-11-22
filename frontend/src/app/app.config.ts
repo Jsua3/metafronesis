@@ -1,5 +1,5 @@
 import { ApplicationConfig, ErrorHandler, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { TitleStrategy, provideRouter, withComponentInputBinding, withNavigationErrorHandler, withPreloading, withViewTransitions } from '@angular/router';
+import { TitleStrategy, provideRouter, withComponentInputBinding, withNavigationErrorHandler, withPreloading } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { MAT_CARD_CONFIG } from '@angular/material/card';
 import { firstValueFrom } from 'rxjs';
@@ -10,7 +10,6 @@ import { watchConnectionRecovery } from './core/notifications/connection-recover
 import { SiepErrorHandler } from './core/error/siep-error-handler';
 import { offlineNavigationHandler } from './core/navigation/offline-navigation';
 import { PreloadMarkedRoutes } from './core/navigation/preload-marked';
-import { filtrarTransiciones } from './core/navigation/transiciones';
 import { AuthService } from './core/auth/auth.service';
 import { settleWithin } from './core/auth/settle-within.util';
 import { User } from './core/models/user.model';
@@ -19,7 +18,7 @@ import { SiepTitleStrategy } from './core/title/siep-title.strategy';
 /**
  * Lo máximo que el arranque espera a `/api/auth/me`. El usuario ya sale del JWT
  * (los guards solo miran el token): `/me` completa nombre y apellido y, si falla
- * con 401/403, el interceptor limpia la sesión y lleva al login aunque ya se haya pintado.
+ * con 401 o 403 de cuenta inactiva, el interceptor limpia la sesión y lleva al login.
  */
 const AUTH_SYNC_BUDGET_MS = 1500;
 
@@ -34,10 +33,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     { provide: ErrorHandler, useExisting: SiepErrorHandler },
     // Sin red, una navegación que no pudo descargar su código lleva a «Sin conexión», precargada con red (F4-3).
-    // Transiciones de vistas (DISENO §4.4, DP-10): solo los cambios de lugar (portal → juego y vuelta, editor ↔ ensayo)
-    // corren; `filtrarTransiciones` salta el resto. Sin soporte del navegador, la navegación es la de siempre.
-    provideRouter(routes, withNavigationErrorHandler(offlineNavigationHandler), withPreloading(PreloadMarkedRoutes), withComponentInputBinding(),
-      withViewTransitions({ skipInitialTransition: true, onViewTransitionCreated: info => filtrarTransiciones(info) })),
+    provideRouter(routes, withNavigationErrorHandler(offlineNavigationHandler), withPreloading(PreloadMarkedRoutes), withComponentInputBinding()),
     { provide: TitleStrategy, useClass: SiepTitleStrategy },
     provideHttpClient(withInterceptors([jwtInterceptor])),
     provideAppInitializer(initializeAuthSession),

@@ -30,11 +30,6 @@
   --_mosaico: 520px;
 }
 
-// El nombre de la transición de vistas que la lleva al umbral del juego (DP-10).
-:host(.vt-portada) {
-  view-transition-name: siep-caso-portada;
-}
-
 .ui-portada-caso__imagen {
   display: block;
   inline-size: 100%;

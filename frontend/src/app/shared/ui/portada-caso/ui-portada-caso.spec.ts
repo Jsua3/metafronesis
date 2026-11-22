@@ -5,10 +5,9 @@ import { PORTADA_MEDIDAS, UiPortadaCaso } from './ui-portada-caso';
 
 /**
  * ui-portada-caso (DISENO C9): con portada pinta la imagen de la primera sala a una división entera de 960 × 528; sin
- * portada, o si la imagen falla, la puerta cerrada que espera (nunca un recuadro roto). Siempre decorativa. El nombre
- * de la transición al umbral solo va con `umbral`.
+ * portada, o si la imagen falla, la puerta cerrada que espera (nunca un recuadro roto). Siempre decorativa.
  */
-// req: RNF-004 (imagen decorativa), DP-10 (transición al umbral)
+// req: RNF-004 (imagen decorativa)
 describe('ui-portada-caso', () => {
   const crear = async (inputs: Record<string, unknown>) => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
@@ -53,11 +52,4 @@ describe('ui-portada-caso', () => {
     expect(host.querySelector('img.ui-portada-caso__imagen')?.getAttribute('src')).toBe('/media/otra.png');
   });
 
-  it('solo con umbral lleva la clase de la transición de vistas', async () => {
-    const { fixture, host } = await crear({});
-    expect(host.classList).not.toContain('vt-portada');
-    fixture.componentRef.setInput('umbral', true);
-    await fixture.whenStable();
-    expect(host.classList).toContain('vt-portada');
-  });
 });
