@@ -84,7 +84,7 @@ def test_burn_password_check_siempre_devuelve_falso(clave):
     assert burn_password_check(clave) is False
 
 
-def test_el_hash_ficticio_es_bcrypt_de_diez_rondas_y_se_calcula_una_sola_vez(monkeypatch, clave):
+def test_el_hash_ficticio_tiene_el_costo_configurado_y_se_calcula_una_sola_vez(monkeypatch, clave, settings):
     from apps.users.models import burn_password_check
 
     modelos._hash_ficticio.cache_clear()
@@ -102,4 +102,4 @@ def test_el_hash_ficticio_es_bcrypt_de_diez_rondas_y_se_calcula_una_sola_vez(mon
     assert len(hashes) == 1, f"el hash ficticio se calculó {len(hashes)} veces"
     ficticio = modelos._hash_ficticio()
     assert ficticio.startswith(b"$2")
-    assert ficticio.split(b"$")[2] == b"10"
+    assert int(ficticio.split(b"$")[2]) == settings.SIEP_BCRYPT_ROUNDS

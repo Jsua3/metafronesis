@@ -117,8 +117,9 @@ AUDIT_TAXONOMY: dict[str, str] = {
     "ASSIGNMENT_UPDATED": "asignacion.actualizar",
     "ASSIGNMENT_REMOVED": "asignacion.eliminar",
     "USER_APPROVED": "usuario.aprobar",
-    "PASSWORD_CHANGED": "usuario.cambiar_clave",
-    "PASSWORD_SET_BY_ADMIN": "usuario.fijar_clave",
+    # Nombres de eventos de auditoría, no credenciales.
+    "PASSWORD_CHANGED": "usuario.cambiar_clave",  # NOSONAR
+    "PASSWORD_SET_BY_ADMIN": "usuario.fijar_clave",  # NOSONAR
     "SESSIONS_REVOKED": "sesion.revocar",
     # S4-1 · quién entró, quién cambió qué y quién leyó datos de otra persona (RNF-007, SIEP-RNF-02).
     "LOGIN_SUCCEEDED": "sesion.entrar",
