@@ -1,0 +1,117 @@
+@use 'mixins' as m;
+
+// Barra de acciones pegajosa (DISENO C7). El anfitrión es el que pega (sticky) y la bandeja de dentro lleva el material.
+// Alto mínimo de 4.5rem: el mismo que reserva `.p-con-barra-acciones` en la página.
+:host {
+  display: block;
+  position: sticky;
+  // Contenedor de sus botones: en una columna estrecha (Revisión, una hoja) se reparten el ancho igual que en un teléfono.
+  container-type: inline-size;
+  z-index: var(--ds-z-pegajoso);
+  min-inline-size: 0;
+}
+
+.ui-barra-acciones__bandeja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3) var(--ds-space-4);
+  box-sizing: border-box;
+  min-block-size: 4.5rem;
+  min-inline-size: 0;
+}
+
+.ui-barra-acciones__nota {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  text-wrap: pretty;
+}
+
+.ui-barra-acciones__botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-3);
+  margin-inline-start: auto;
+  min-inline-size: 0;
+}
+
+// ── Pie: una bandeja de vidrio que flota al borde inferior de la página (capa de controles, P3) ────────────────
+:host(.ui-barra-acciones--pie) {
+  inset-block-end: var(--ds-space-3);
+  margin-block-start: var(--ds-space-5);
+}
+
+.ui-barra-acciones__bandeja--vidrio {
+  // Capa de controles (P3) sobre contenido que pasa por detrás. El velo es casi opaco y SIN desenfoque: el trinquete de
+  // `ui:lint` no admite un `backdrop-filter` nuevo (D-25) y, sin él, un vidrio del 72 % dejaría leer el texto de debajo
+  // a través de los botones. Al 96 % el material se nota (filo de luz, sombra en capas) y el texto de encima se lee.
+  padding: var(--ds-space-3) var(--ds-space-3) var(--ds-space-3) var(--ds-space-5);
+  border: 1px solid var(--l-filo-fuerte, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: color-mix(in oklab, var(--l-superficie, var(--ds-surface-1)) 96%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--l-brillo, transparent),
+    var(--l-sombra, var(--ds-shadow-e2));
+}
+
+@supports (corner-shape: squircle) {
+  .ui-barra-acciones__bandeja--vidrio {
+    corner-shape: squircle;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .ui-barra-acciones__bandeja--vidrio {
+    background: var(--ds-surface-1);
+    border-color: var(--ds-border-strong);
+  }
+}
+
+// En móvil se apoya sobre las pestañas de la barra (y su zona segura).
+@media (max-width: 63.999rem) {
+  :host(.ui-barra-acciones--pie) {
+    inset-block-end: calc(var(--asb-alto-modulo-inferior, 0px) + env(safe-area-inset-bottom, 0px) + var(--ds-space-2));
+  }
+}
+
+// En un teléfono o una columna estrecha los botones toman el ancho: una rejilla que estira a sus hijos sin tener que
+// seleccionarlos (son contenido proyectado, fuera del encapsulado del componente).
+@container (max-width: 36rem) {
+  .ui-barra-acciones__bandeja--vidrio {
+    padding-inline: var(--ds-space-3);
+  }
+
+  .ui-barra-acciones__botones {
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    margin-inline-start: 0;
+  }
+}
+
+// ── Columna: el pie de una columna lateral o de una hoja. Opaca (vive sobre contenido de trabajo) con un filo arriba ──
+:host(.ui-barra-acciones--columna) {
+  inset-block-end: 0;
+}
+
+:host(.ui-barra-acciones--columna) .ui-barra-acciones__bandeja {
+  padding-block: var(--ds-space-3);
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: 0 -1px 0 var(--l-filo, var(--ds-border));
+}
+
+@media (forced-colors: active) {
+  .ui-barra-acciones__bandeja--vidrio {
+    border-color: CanvasText;
+  }
+
+  :host(.ui-barra-acciones--columna) .ui-barra-acciones__bandeja {
+    border-block-start: 1px solid CanvasText;
+  }
+}

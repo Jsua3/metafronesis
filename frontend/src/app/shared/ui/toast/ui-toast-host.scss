@@ -1,0 +1,101 @@
+// Avisos (plan visual §2.5 y §2.7): pila abajo a la derecha (arriba del todo en móvil sería tapar la barra), con el
+// color del tono en el icono y en el filo; entrada 200 ms desde abajo, salida 160 ms. La región es un popover en la
+// capa superior: se le quitan los estilos por defecto del navegador (centrado, borde, fondo).
+.ui-toast-host__region {
+  position: fixed;
+  inset: auto var(--ds-space-4) calc(var(--ds-space-4) + env(safe-area-inset-bottom)) auto;
+  z-index: var(--ds-z-aviso);
+  display: grid;
+  gap: var(--ds-space-2);
+  justify-items: end;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  pointer-events: none;
+
+  &:not(:popover-open) {
+    display: none;
+  }
+}
+
+// En el juego (plan visual F6-1): arriba a la izquierda, bajo la cabecera (que con el recordatorio ético mide hasta
+// ~5 rem). Abajo a la derecha quedarían encima de «Interactuar», de la cruceta táctil y del pie del diálogo.
+:host(.ui-toast-host--game) .ui-toast-host__region {
+  inset: calc(5.5rem + env(safe-area-inset-top)) auto auto var(--ds-space-3);
+  justify-items: start;
+}
+
+// Ancho 28 rem (F6-12): los avisos accionables del juego dicen qué hacer en una o dos frases («Antes de pasar, habla con
+// la Familia en crisis…»); a 22 rem ocupaban tres líneas y en horizontal (844×390) bajaban hasta la cruceta táctil.
+:host(.ui-toast-host--game) .ui-toast {
+  inline-size: min(28rem, calc(100vw - 2 * var(--ds-space-3)));
+}
+
+// Con varios avisos persistentes la pila no debe llegar a «Salida segura» (abajo a la izquierda; REGLA-004): en el juego
+// solo se ven los dos más recientes. Los anteriores reaparecen al cerrar los nuevos y ya se anunciaron al crearse.
+:host(.ui-toast-host--game) .ui-toast:nth-last-child(n + 3) {
+  display: none;
+}
+
+.ui-toast {
+  --_tone: var(--ds-info);
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--ds-space-2);
+  inline-size: min(24rem, calc(100vw - 2 * var(--ds-space-4)));
+  padding-block: var(--ds-space-1);
+  padding-inline: var(--ds-space-3) var(--ds-space-1);
+  border: 1px solid var(--ds-border);
+  border-inline-start: 4px solid var(--_tone);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  box-shadow: var(--ds-shadow-e2);
+  color: var(--ds-text-1);
+  pointer-events: auto;
+  transition:
+    opacity var(--ds-dur-fade) var(--ds-ease-out),
+    translate var(--ds-dur-base) var(--ds-ease-out);
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+}
+
+.ui-toast--leaving {
+  opacity: 0;
+  translate: 0 0.25rem;
+  transition-duration: var(--ds-dur-fade);
+}
+
+.ui-toast--success {
+  --_tone: var(--ds-success);
+}
+
+.ui-toast--warning {
+  --_tone: var(--ds-warning-text);
+}
+
+.ui-toast--error {
+  --_tone: var(--ds-danger);
+}
+
+.ui-toast__icon {
+  inline-size: auto;
+  block-size: auto;
+  color: var(--_tone);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+}
+
+.ui-toast__text {
+  margin: 0;
+  padding-block: var(--ds-space-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}

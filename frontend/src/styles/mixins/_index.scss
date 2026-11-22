@@ -1,0 +1,8 @@
+// Mixins del lenguaje visual (plan visual §3.3, contrato F1 → F2): `@use 'mixins' as m;` desde cualquier .scss
+// (angular.json añade src/styles a includePaths).
+@forward 'hover';
+@forward 'press';
+@forward 'focus';
+@forward 'glass';
+@forward 'disabled';
+@forward 'sr-only';

@@ -1,0 +1,83 @@
+@use 'mixins' as m;
+
+// Tarjeta (plan visual F2-3; DISENO C2). Los `--l-*` vienen del portal o de la portada (`_materiales.scss`); fuera de
+// ellos (la galería sin piel, el editor) cada uno cae al `--ds-*` de antes, así que nada se rompe donde no hay portal.
+// El filo es un borde translúcido y no una sombra interior: con colores forzados el sistema lo pinta (las sombras las
+// borra) y la tarjeta conserva su contorno.
+.ui-card {
+  display: block;
+  box-sizing: border-box;
+  min-inline-size: 0;
+  padding: var(--l-relleno-tarjeta, var(--ds-space-5));
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+  // El filo de luz de un píxel arriba (el vidrio de iOS lo lleva; aquí se queda en la superficie opaca) y la sombra
+  // de trabajo: en claro, una sombra corta y tenue; en oscuro, solo luz (una sombra no se ve sobre un fondo oscuro).
+  box-shadow:
+    inset 0 1px 0 var(--l-brillo, transparent),
+    var(--l-sombra-trabajo, var(--ds-shadow-e0));
+  color: var(--ds-text-1);
+}
+
+// Hundida: un bloque dentro de otro (cita del caso, resumen dentro de una tarjeta). Sin sombra: no se eleva.
+.ui-card--hundida {
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+  box-shadow: none;
+}
+
+// Tinte: lo que sigue («Siguiente paso»). El violeta de marca muy tenue sobre la superficie, con su filo.
+.ui-card--tinte {
+  border-color: var(--l-tinte-filo, var(--ds-primary));
+  background:
+    linear-gradient(var(--l-tinte, var(--ds-primary-subtle)), var(--l-tinte, var(--ds-primary-subtle))),
+    var(--l-superficie, var(--ds-surface-1));
+}
+
+// Clicable: al pasar se marca el filo (no se eleva ni se desplaza: motion.contract) y al pulsar cede un poco.
+.ui-card--interactive {
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--ds-dur-fast) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    border-color: var(--l-filo-fuerte, var(--ds-border-strong));
+  }
+
+  &:active {
+    scale: 0.985;
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ui-card--tinte.ui-card--interactive {
+  @include m.ds-hover {
+    border-color: var(--l-acento, var(--ds-primary));
+  }
+}
+
+button.ui-card {
+  inline-size: 100%;
+}
+
+// Esquinas continuas (la curvatura de iOS) donde el navegador las dibuja.
+@supports (corner-shape: squircle) {
+  .ui-card {
+    corner-shape: squircle;
+  }
+}
+
+@media (forced-colors: active) {
+  .ui-card {
+    border-color: CanvasText;
+  }
+}

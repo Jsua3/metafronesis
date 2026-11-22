@@ -1,0 +1,34 @@
+// Movimiento (plan visual §2.3 y §2.7): duración y curva SEPARADAS; nunca ease-in; salida más rápida que entrada.
+// Convención: las transformaciones (desplazar, escalar) usan --ds-dur-move o --ds-dur-press; la opacidad y el
+// color, --ds-dur-fade o --ds-dur-fast. Con «movimiento reducido» todo vale 0,01 ms salvo --ds-dur-fade (el
+// fundido corto de opacidad sigue; base/_motion.scss).
+@use 'sass:string';
+
+// `umbral` (420 ms) es el paso del portal al juego y `revelar` (300 ms), el velo del umbral que deja ver el mundo
+// (DISENO P10: el único momento cinematográfico del portal, y corto). Con movimiento reducido valen 0,01 ms.
+$durations: (press: 100ms, fast: 160ms, base: 200ms, slow: 300ms, glass: 620ms, move: 200ms, fade: 160ms, umbral: 420ms, revelar: 300ms);
+$eases: (
+  out: cubic-bezier(0.23, 1, 0.32, 1),
+  in-out: cubic-bezier(0.77, 0, 0.175, 1),
+  drawer: cubic-bezier(0.32, 0.72, 0, 1),
+);
+// Resortes de la barra de vidrio (/barra-de-vidrio-modular: ζ 0,70 y ζ 0,55), copiados de la receta, no reescritos.
+$spring-soft: string.unquote('linear(0, 0.050 4%, 0.168 8%, 0.319 12%, 0.475 17%, 0.620 21%, 0.744 25%, 0.845 29%, 0.922 33%, 0.977 38%, 1.013 42%, 1.034 46%, 1.044 50%, 1.046 54%, 1.043 58%, 1.037 62%, 1.030 67%, 1.023 71%, 1.017 75%, 1.011 79%, 1.006 83%, 1.003 88%, 1.001 92%, 0.999 96%, 1)');
+$spring-live: string.unquote('linear(0, 0.086 4%, 0.283 8%, 0.516 12%, 0.735 17%, 0.910 21%, 1.030 25%, 1.099 29%, 1.125 33%, 1.121 38%, 1.099 42%, 1.071 46%, 1.042 50%, 1.018 54%, 1.000 58%, 0.990 62%, 0.985 67%, 0.984 71%, 0.986 75%, 0.990 79%, 0.994 83%, 0.997 88%, 0.999 92%, 1.001 96%, 1)');
+
+@mixin emit {
+  @each $name, $value in $durations {
+    --ds-dur-#{$name}: #{$value};
+  }
+  @each $name, $value in $eases {
+    --ds-ease-#{$name}: #{$value};
+  }
+  // Sin linear() (navegadores viejos), el resorte cae a ease-out.
+  --ds-spring-soft: var(--ds-ease-out);
+  --ds-spring-live: var(--ds-ease-out);
+}
+
+@mixin emit-springs {
+  --ds-spring-soft: #{$spring-soft};
+  --ds-spring-live: #{$spring-live};
+}

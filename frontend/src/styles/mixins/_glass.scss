@@ -1,0 +1,45 @@
+// Vidrio de la receta de la barra de vidrio (plan visual §2.4): el material vive en ::before y nunca en el
+// elemento, así el contenido no se desenfoca y no hay vidrio sobre vidrio (invariante 4). Velo, canto y filo
+// salen de los tokens de la piel; con transparencia reducida los tokens dan fondo sólido y sin desenfoque, y
+// sin soporte de backdrop-filter se pinta la superficie.
+@mixin ds-glass {
+  // Posición por defecto con especificidad 0: no pisa un `position: fixed` o `sticky` del componente.
+  @at-root :where(#{&}) {
+    position: relative;
+    isolation: isolate;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--ds-veil);
+    border: 1px solid var(--ds-veil-edge);
+    box-shadow: var(--ds-shadow-e2);
+    -webkit-backdrop-filter: var(--ds-glass-blur);
+    backdrop-filter: var(--ds-glass-blur);
+    pointer-events: none;
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    &::before {
+      background: var(--ds-surface-1);
+    }
+  }
+}
+
+// Material de UNA capa de vidrio de la barra de vidrio modular (plan visual F3-1; receta de la skill, §5 de la
+// gemela): canto, velo, desenfoque y sombra de apoyo con filo superior, de los tokens --asb-* de `.cromo`. Se
+// incluye en el pseudoelemento dueño del vidrio en cada estado (la píldora en «inicial», cada módulo después);
+// `backdrop-filter` no transiciona: cambia de dueño de golpe y nunca hay dos vidrios a la vez (invariante 4).
+@mixin ds-glass-bar-layer {
+  border-color: var(--asb-linea);
+  background-color: var(--asb-cromo-velo);
+  -webkit-backdrop-filter: var(--asb-cromo-desenfoque);
+  backdrop-filter: var(--asb-cromo-desenfoque);
+  box-shadow:
+    var(--asb-cromo-apoyo),
+    inset 0 1px 0 var(--asb-filo);
+}

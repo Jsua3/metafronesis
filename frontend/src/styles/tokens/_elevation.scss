@@ -1,0 +1,27 @@
+// Elevación en cuatro niveles (plan visual §2.3): e0 solo borde, e1 tarjeta, e2 popover, e3 modal y hoja.
+// Sombras suaves y difusas; nunca duras «Npx Npx 0» (VD-3). En la piel oscura la elevación se expresa con un
+// filo de luz superior, no con sombra (receta de dos materiales de la barra de vidrio).
+
+$portal: (
+  e0: none,
+  e1: (0 1px 2px rgba(20, 32, 46, 0.06), 0 6px 16px rgba(20, 32, 46, 0.07)),
+  e2: (0 2px 6px rgba(20, 32, 46, 0.08), 0 12px 28px rgba(20, 32, 46, 0.10)),
+  e3: (0 8px 16px rgba(20, 32, 46, 0.10), 0 24px 48px rgba(20, 32, 46, 0.16)),
+);
+
+$game: (
+  e0: none,
+  e1: inset 0 1px 0 rgba(255, 255, 255, 0.07),
+  e2: (inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 12px 28px rgba(0, 0, 0, 0.32)),
+  e3: (inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 24px 48px rgba(0, 0, 0, 0.45)),
+);
+
+// Material de vidrio (plan visual §2.4): desenfoque y saturación de la receta de la barra de vidrio.
+$glass-blur: blur(20px) saturate(180%);
+
+@mixin emit($map) {
+  @each $level, $value in $map {
+    --ds-shadow-#{$level}: #{$value};
+  }
+  --ds-glass-blur: #{$glass-blur};
+}

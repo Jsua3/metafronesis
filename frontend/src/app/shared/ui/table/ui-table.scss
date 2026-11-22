@@ -1,0 +1,234 @@
+@use 'mixins' as m;
+
+// Tabla (plan visual F2-8): marco con borde, cabecera pegajosa en su alto máximo, filas separadas por un filo,
+// hover solo con puntero fino, fila seleccionada con fondo y filo primario, y sombras de desborde horizontal.
+.ui-table {
+  --_cell-y: var(--ds-space-3);
+  --_cell-x: var(--ds-space-4);
+  --_edge: color-mix(in srgb, var(--ds-text-1) 14%, transparent);
+
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+
+  // Indicios de desborde: sombras en los bordes hacia donde hay más tabla.
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    z-index: var(--ds-z-pegajoso);
+    inline-size: var(--ds-space-5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--ds-dur-fade) ease;
+  }
+
+  &::before {
+    inset-inline-start: 0;
+    background: linear-gradient(to right, var(--_edge), transparent);
+  }
+
+  &::after {
+    inset-inline-end: 0;
+    background: linear-gradient(to left, var(--_edge), transparent);
+  }
+}
+
+.ui-table--overflow-start::before,
+.ui-table--overflow-end::after {
+  opacity: 1;
+}
+
+.ui-table--compact {
+  --_cell-y: var(--ds-space-2);
+  --_cell-x: var(--ds-space-3);
+}
+
+.ui-table__scroll {
+  max-block-size: var(--ui-table-max-block-size, 70vh);
+  overflow: auto;
+  overscroll-behavior-x: contain;
+}
+
+.ui-table__table {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+
+  // Solo la cabecera de columnas es pegajosa y lleva el fondo hundido. La cabecera de FILA (`<th scope="row">`, la celda
+  // principal: el nombre de la persona, el título del caso) es una celda más: si heredara ese fondo se vería una franja
+  // más clara solo detrás del nombre (pasada final: Usuarios y Reportes del grupo).
+  thead th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--ds-z-elevado);
+    padding: var(--_cell-y) var(--_cell-x);
+    border-block-end: 1px solid var(--ds-border);
+    background: var(--l-superficie-hundida, var(--ds-surface-2));
+    color: var(--ds-text-2);
+    font-weight: var(--ds-type-h3-weight);
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  td,
+  tbody th {
+    padding: var(--_cell-y) var(--_cell-x);
+    border-block-end: 1px solid var(--ds-border);
+    vertical-align: middle;
+  }
+
+  // La cabecera de fila se lee como el dato principal: tinta primaria y peso de título, sobre el fondo de su fila.
+  tbody th {
+    background: transparent;
+    color: var(--ds-text-1);
+    font-weight: var(--ds-type-h3-weight);
+    text-align: start;
+  }
+
+  tbody tr:last-child :is(td, th) {
+    border-block-end: 0;
+  }
+}
+
+.ui-table__row {
+  transition: background-color var(--ds-dur-fast) ease;
+
+  @include m.ds-hover {
+    background: var(--ds-surface-2);
+  }
+}
+
+.ui-table__row--selected {
+  background: var(--l-fila-elegida, var(--ds-primary-subtle));
+  box-shadow: inset 3px 0 0 var(--ds-primary);
+}
+
+.ui-table__loading {
+  display: grid;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+}
+
+.ui-table__state:not([hidden]) {
+  padding: var(--ds-space-4);
+}
+
+// ── Apilada (DISENO C3, DP-20): en un contenedor de menos de 40rem cada fila es una tarjeta ───────────────────────────
+// La regla consulta el ancho de la propia tabla (`container-type`), no el de la ventana: apila igual en un teléfono que
+// en la columna estrecha de una vista dividida. Los roles los pone `ui-table.ts` (la semántica de tabla se conserva
+// aunque aquí todo sea `display: block`). Nada se sale: los valores largos se parten y los botones toman el ancho.
+.ui-table--apilar {
+  container-type: inline-size;
+}
+
+@container (max-width: 40rem) {
+  // La tarjeta no necesita una región desplazable: crece con su contenido y la página se desplaza una sola vez.
+  .ui-table--apilar .ui-table__scroll {
+    max-block-size: none;
+    overflow: visible;
+  }
+
+  .ui-table--apilar .ui-table__table {
+    display: block;
+
+    // La cabecera queda para los lectores de pantalla: en cada tarjeta, el rótulo va junto a su valor.
+    > thead {
+      @include m.ds-sr-only;
+    }
+
+    > tbody,
+    > tfoot {
+      display: block;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--ds-space-2);
+      padding: var(--ds-space-4);
+      border-block-end: 1px solid var(--l-filo, var(--ds-border));
+    }
+
+    tbody tr:last-child {
+      border-block-end: 0;
+    }
+
+    // Cada celda es un renglón «rótulo · valor», como una lista agrupada de iOS: el rótulo en una columna fija a la
+    // izquierda y el valor a su lado; si el valor no cabe, baja al renglón siguiente en vez de salirse.
+    td,
+    tbody th {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.125rem var(--ds-space-3);
+      min-inline-size: 0;
+      padding: 0;
+      border: 0;
+      font-weight: inherit;
+      text-align: start;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    // El rótulo de la columna, en el tamaño de los metadatos.
+    td[data-etiqueta]::before,
+    tbody th[data-etiqueta]::before {
+      content: attr(data-etiqueta);
+      flex: 0 0 6.5rem;
+      color: var(--ds-text-2);
+      font-size: var(--ds-type-caption-size);
+      font-weight: var(--ds-type-caption-weight);
+      letter-spacing: 0.04em;
+      line-height: var(--ds-type-caption-line);
+      text-transform: uppercase;
+    }
+
+    // Una celda vacía no deja un rótulo huérfano.
+    td:empty {
+      display: none;
+    }
+
+    // La celda principal es el título de la tarjeta y va primero.
+    [data-celda='principal'] {
+      order: -1;
+      color: var(--ds-text-1);
+      font-size: var(--ds-type-body-size);
+      font-weight: 600;
+      line-height: var(--ds-type-body-line);
+
+      &::before {
+        display: none;
+      }
+    }
+
+    // Las acciones son el pie: una fila de botones que se reparte el ancho, cada uno de 44 px de alto.
+    [data-celda='acciones'] {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ds-space-2);
+      margin-block-start: var(--ds-space-1);
+
+      &::before {
+        display: none;
+      }
+
+      > * {
+        flex: 1 1 9rem;
+        min-block-size: var(--ds-target-min);
+      }
+    }
+  }
+
+  // La fila elegida conserva su marca: el filo de la izquierda pasa a ser el de la tarjeta.
+  .ui-table--apilar .ui-table__row--selected {
+    box-shadow: inset 3px 0 0 var(--ds-primary);
+  }
+}

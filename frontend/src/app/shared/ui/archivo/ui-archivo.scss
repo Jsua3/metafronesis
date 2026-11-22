@@ -1,0 +1,158 @@
+@use 'mixins' as m;
+
+// Zona de archivo (DISENO C11): una etiqueta con forma de zona (borde discontinuo y esquinas de tarjeta) que contiene
+// el control nativo, oculto a la vista pero enfocable. El foco del control se dibuja en la zona entera. El icono es
+// pixel art del kit a escala entera (×2), sin suavizado. Las medidas del icono van en px por eso.
+:host {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+}
+
+.ui-archivo__etiqueta {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.ui-archivo__zona {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-1);
+  min-block-size: 8rem;
+  padding: var(--ds-space-5) var(--ds-space-4);
+  border: 1.5px dashed var(--ds-border-strong);
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-relleno, var(--ds-surface-2));
+  color: var(--ds-text-2);
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--ds-dur-fast) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    border-color: var(--l-acento, var(--ds-primary));
+  }
+
+  &:active {
+    scale: 0.99;
+  }
+
+  // El control está oculto: su foco de teclado se ve en la zona.
+  &:has(.ui-archivo__entrada:focus-visible) {
+    @include m.ds-focus-ring;
+  }
+}
+
+// Con un archivo encima: la zona se tiñe del violeta de marca y su borde se vuelve continuo («suéltalo aquí»).
+:host(.ui-archivo--encima) .ui-archivo__zona {
+  border-style: solid;
+  border-color: var(--l-acento, var(--ds-primary));
+  background: var(--l-tinte, var(--ds-primary-subtle));
+}
+
+:host(.ui-archivo--invalido) .ui-archivo__zona {
+  border-color: var(--ds-danger);
+}
+
+// Oculto pero enfocable y operable por teclado y lector: el patrón de `ds-sr-only`, con el área de la zona.
+.ui-archivo__entrada {
+  @include m.ds-sr-only;
+}
+
+.ui-archivo__icono {
+  inline-size: 56px;
+  block-size: 50px;
+  margin-block-end: var(--ds-space-2);
+  image-rendering: pixelated;
+}
+
+.ui-archivo__texto {
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  text-wrap: balance;
+}
+
+// Parece un enlace porque abre el selector: subrayado y en la tinta de acción.
+.ui-archivo__elige {
+  color: var(--l-acento-tinta, var(--ds-primary));
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.ui-archivo__formato {
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// El archivo elegido: una fila con su nombre (se parte si es largo) y su tamaño, y «Quitar» al final.
+.ui-archivo__elegido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-1) var(--ds-space-3);
+  min-inline-size: 0;
+  padding: var(--ds-space-2) var(--ds-space-2) var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+}
+
+.ui-archivo__doc {
+  flex: none;
+  inline-size: auto;
+  block-size: auto;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+}
+
+.ui-archivo__nombre {
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+  color: var(--ds-text-1);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ui-archivo__tamano {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-archivo__quitar {
+  margin-inline-start: auto;
+}
+
+.ui-archivo__mensaje {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.ui-archivo__mensaje--error {
+  color: var(--ds-danger);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+@supports (corner-shape: squircle) {
+  .ui-archivo__zona {
+    corner-shape: squircle;
+  }
+}
+
+@media (forced-colors: active) {
+  :host(.ui-archivo--encima) .ui-archivo__zona {
+    border-color: Highlight;
+  }
+}

@@ -1,0 +1,275 @@
+<div class="landing publico" [attr.data-skin]="tema.piel()">
+  <app-public-bar [anchors]="anchors" />
+  <app-riel-letras [secciones]="seccionesRiel" />
+
+  <main id="main-content" tabindex="-1">
+    <section class="landing-hero" id="simulador" aria-labelledby="hero-title">
+      <app-siep-particle-layer density="medium" [interactive]="true" mode="background" [paused]="particlesPaused()"></app-siep-particle-layer>
+
+      <div class="landing-wrap landing-hero__grid">
+        <div class="landing-hero__copy landing-enter">
+          <p class="landing-hero__eyebrow">Simulador académico · Psicología</p>
+          <h1 id="hero-title" class="landing-hero__title">
+            Entra al caso.
+            <span class="landing-hero__title-sub">
+              Entrena decisiones <span class="landing-accent">psicosociales</span> antes de enfrentarte a casos reales.
+            </span>
+          </h1>
+          <p class="landing-hero__lead">
+            {{ brand.shortName }} es un simulador académico para practicar intervención, análisis ético, rutas de
+            atención y toma de decisiones en escenarios sensibles, con retroalimentación formativa y trazabilidad
+            docente.
+          </p>
+          <div class="landing-hero__actions">
+            <a ui-button variant="primary" size="lg" routerLink="/login">
+              Ingresar al sistema
+              <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+            </a>
+            <a ui-button variant="secondary" size="lg" href="#casos">Ver casos</a>
+          </div>
+          <ul class="landing-trust" aria-label="Compromisos formativos">
+            @for (item of trustItems; track item) {
+              <li>
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+                {{ item }}
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Vista previa inerte: la escena y las decisiones se leen, pero no fingen ser controles. -->
+        <aside class="landing-preview" aria-label="Vista previa del simulador">
+          <div class="landing-preview__head">
+            <span class="landing-preview__badge">Vista previa</span>
+            <h2>Violencia basada en género</h2>
+          </div>
+
+          <div class="landing-preview__body">
+            <div class="landing-preview__scene">
+              <img
+                [src]="simulatorSceneSrc"
+                alt="Escena pixel-art de consulta psicosocial: psicóloga y consultante en espacio seguro"
+                width="581"
+                height="415"
+                decoding="async"
+              />
+            </div>
+
+            <dl class="landing-preview__info">
+              @for (info of caseInfo; track info.label) {
+                <div class="landing-preview__info-item">
+                  <dt><mat-icon aria-hidden="true">{{ info.icon }}</mat-icon>{{ info.label }}</dt>
+                  <dd>{{ info.text }}</dd>
+                </div>
+              }
+            </dl>
+          </div>
+
+          <p class="landing-preview__decisions-label" id="preview-decisions">Ejemplo de decisiones</p>
+          <ul class="landing-preview__decisions" aria-labelledby="preview-decisions">
+            @for (decision of heroDecisions; track decision.label) {
+              <li><span>{{ decision.label }}</span></li>
+            }
+          </ul>
+        </aside>
+      </div>
+
+      <!-- WCAG 2.2.2: la capa animada se puede pausar y reanudar. -->
+      <button ui-button type="button" variant="secondary" size="sm" class="landing-pausa"
+        [icon]="particlesPaused() ? 'play_arrow' : 'pause'" (click)="particlesPaused.set(!particlesPaused())">
+        {{ particlesPaused() ? 'Reanudar animación' : 'Pausar animación' }}
+      </button>
+    </section>
+
+    <section id="casos" class="landing-section" aria-labelledby="casos-title">
+      <div class="landing-wrap">
+        <div class="landing-section__head">
+          <div>
+            <p class="landing-kicker">Expedientes de práctica</p>
+            <h2 class="landing-section__title" id="casos-title">
+              Casos de <span class="landing-accent">entrenamiento</span>
+            </h2>
+            <p class="landing-section__intro">
+              Empieza por el caso disponible. Los otros escenarios están anunciados y todavía no se pueden jugar.
+            </p>
+          </div>
+          <a class="landing-link" routerLink="/login">Ingresa al portal <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+        </div>
+
+        <div class="landing-grid landing-grid--3">
+          @for (trainingCase of trainingCases; track trainingCase.title) {
+            <article class="landing-case-card" [class.landing-case-card--soon]="!trainingCase.available">
+              <span class="landing-icon" aria-hidden="true"><mat-icon>{{ trainingCase.icon }}</mat-icon></span>
+              <h3>{{ trainingCase.title }}</h3>
+              <p>{{ trainingCase.text }}</p>
+              <ui-badge [tone]="trainingCase.available ? 'info' : 'neutral'">{{ trainingCase.tag }}</ui-badge>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="landing-section landing-relato" aria-labelledby="como-funciona-title" #relato>
+      <!-- Modo ambiente a pantalla completa: el cuadro actual del clip, apenas suavizado y mate, fijo a la vista detrás
+           del apartado mientras se recorre. Tapa el fondo de objetos (app-doodles) y se disuelve en él por los bordes.
+           El tamaño del lienzo lo ajusta el componente a la vista. Decorativo. -->
+      <div class="landing-relato__fondo" aria-hidden="true">
+        <div class="landing-relato__vista">
+          <canvas class="landing-relato__ambiente" width="480" height="270"></canvas>
+        </div>
+      </div>
+      <div class="landing-wrap">
+        <div class="landing-section__head landing-section__head--center">
+          <p class="landing-kicker">De la lectura a la decisión</p>
+          <h2 class="landing-section__title landing-section__title--center" id="como-funciona-title">
+            Cómo funciona <span class="landing-accent">SIEP</span>
+          </h2>
+          <p class="landing-section__intro">
+            Así se ve el simulador por dentro. Baja para recorrer un caso de principio a fin.
+          </p>
+          <a class="landing-relato__saltar" href="#roles">Saltar el recorrido</a>
+        </div>
+
+        <div class="landing-relato__grid">
+          <!-- Escenario fijo: el clip del simulador real del paso que se está leyendo. Decorativo: el texto lo describe. -->
+          <div class="landing-relato__escenario">
+            <figure class="landing-relato__pantalla" aria-hidden="true">
+              @for (s of workflow; track s.step; let i = $index) {
+                <div class="landing-relato__capa" [class.is-activa]="paso() === i">
+                  @if (cargarVideos()) {
+                    <!-- H.264 primero: el VP9 falla al decodificar tras el primer cuadro en algunas GPU (Chrome 156) y el
+                         navegador no pasa solo a la otra fuente; alFallarClip cubre ese caso con cualquier formato. -->
+                    <video #clip muted [muted]="true" loop playsinline preload="metadata" disablepictureinpicture
+                      [attr.poster]="'/assets/landing/video/' + s.video + '.webp'" (error)="alFallarClip($event, i)">
+                      <source [attr.src]="'/assets/landing/video/' + s.video + '.mp4'" type="video/mp4" />
+                      <source [attr.src]="'/assets/landing/video/' + s.video + '.webm'" type="video/webm" />
+                    </video>
+                  }
+                </div>
+              }
+            </figure>
+            <div class="landing-relato__controles">
+              <ol class="landing-relato__puntos" aria-hidden="true">
+                @for (s of workflow; track s.step; let i = $index) {
+                  <li [class.is-activo]="paso() === i"></li>
+                }
+              </ol>
+              <button ui-button type="button" variant="secondary" size="sm" class="landing-relato__pausa"
+                [icon]="videosPausados() ? 'play_arrow' : 'pause'" (click)="alternarVideos()">
+                {{ videosPausados() ? 'Reproducir videos' : 'Pausar videos' }}
+              </button>
+            </div>
+          </div>
+
+          <ol class="landing-relato__pasos">
+            @for (s of workflow; track s.step; let i = $index) {
+              <li class="landing-relato__paso" [class.is-activo]="paso() === i" [attr.data-paso]="i" #pasoRelato>
+                <div class="landing-relato__tarjeta pub-vidrio">
+                  <span class="landing-relato__num" aria-hidden="true">0{{ s.step }}</span>
+                  <span class="landing-icon" aria-hidden="true"><mat-icon>{{ s.icon }}</mat-icon></span>
+                  <h3>{{ s.title }}</h3>
+                  <p>{{ s.text }}</p>
+                </div>
+              </li>
+            }
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="roles" class="landing-section" aria-labelledby="roles-title">
+      <div class="landing-wrap">
+        <div class="landing-section__head landing-section__head--center">
+          <p class="landing-kicker">Perfiles del entorno académico</p>
+          <h2 class="landing-section__title landing-section__title--center" id="roles-title">
+            Roles en el <span class="landing-accent">sistema</span>
+          </h2>
+          <p class="landing-section__intro">
+            Cada perfil entra con responsabilidades distintas dentro del mismo proceso de formación.
+          </p>
+        </div>
+
+        <div class="landing-grid landing-grid--3">
+          @for (role of roles; track role.title) {
+            <article class="landing-role-card">
+              <span class="pub-avatares" aria-hidden="true">
+                @for (a of role.avatares; track a) {
+                  <img class="pub-avatar" [src]="a" width="64" height="64" alt="" />
+                }
+              </span>
+              <h3>{{ role.title }}</h3>
+              <p>{{ role.text }}</p>
+              <ul class="landing-role-card__features" [attr.aria-label]="'Funciones de ' + role.title">
+                @for (feature of role.features; track feature) {
+                  <li>{{ feature }}</li>
+                }
+              </ul>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section id="etica" class="landing-section landing-section--muted" aria-labelledby="etica-title">
+      <div class="landing-wrap">
+        <div class="landing-section__head landing-section__head--center">
+          <p class="landing-kicker">Protocolo de práctica</p>
+          <h2 class="landing-section__title landing-section__title--center" id="etica-title">
+            Ética y <span class="landing-accent">buenas prácticas</span>
+          </h2>
+          <p class="landing-section__intro">
+            La simulación cuida a quien aprende y mantiene el foco en los derechos, la confidencialidad y el criterio profesional.
+          </p>
+        </div>
+
+        <div class="landing-ethics">
+          @for (item of ethicsItems; track item.title) {
+            <article class="landing-ethics__item">
+              <span class="landing-icon" aria-hidden="true"><mat-icon>{{ item.icon }}</mat-icon></span>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.text }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-cta" aria-labelledby="cta-title">
+      <div class="landing-wrap landing-cta__inner">
+        <span class="landing-icon landing-icon--lg" aria-hidden="true"><mat-icon>psychology</mat-icon></span>
+        <h2 class="landing-cta__text" id="cta-title">
+          Prepárate para intervenir con criterio, empatía y ética.<br />
+          <strong>Practica hoy. Transforma mañana.</strong>
+        </h2>
+        <a ui-button variant="primary" size="lg" routerLink="/login">
+          Ingresar al sistema
+          <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        </a>
+        <!-- El elenco del simulador: personajes del kit en pixel art, a escala entera. Decorativo. -->
+        <app-elenco class="landing-elenco" />
+      </div>
+    </section>
+  </main>
+
+  <!-- Objetos del simulador detrás del contenido, de «Casos» hasta el final de «Ética» (sin tocar el llamado ni el pie); reaccionan al cursor. -->
+  <app-doodles hasta="#etica" />
+
+  <!-- Fuera del <main>: información del sitio, no contenido de la página. -->
+  <footer class="landing-footer">
+    <div class="landing-wrap landing-footer__inner">
+      <div class="landing-footer__marca">
+        <app-marca class="landing-footer__logo" />
+        <p>
+          Explorar lo posible, para vivir lo humano. {{ brand.shortName }} es el simulador de Metafrónesis, proyecto
+          académico del {{ brand.program }} de la {{ brand.institution }}.
+        </p>
+      </div>
+      <img
+        src="/assets/images/institution/logo-cue-ccaq-vertical.webp"
+        alt="Corporación Universitaria Empresarial Alexander Von Humboldt"
+        width="72"
+        height="36"
+      />
+    </div>
+  </footer>
+</div>

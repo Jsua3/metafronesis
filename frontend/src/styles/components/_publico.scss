@@ -1,0 +1,344 @@
+@use 'materiales' as m;
+
+// Lenguaje común de las pantallas públicas (portada, acceso y 404), rediseño Metafrónesis 2026-11-20: acabado tipo
+// iOS sobre la paleta del simulador. Filos de 1 px, esquinas continuas, vidrio translúcido sin desenfoque (no hay
+// contenido que pase por detrás), sombras en capas, luz ambiental y la curva de las hojas de iOS. Se activa con la clase
+// `.publico` en el contenedor de la pantalla, que lleva también la piel del tema (`[attr.data-skin]="tema.piel()"`:
+// juego = oscuro, portal = claro; REGLA-010). Es global para que el CSS de cada componente quepa en su presupuesto.
+// Las clases genéricas son `.pub-vidrio`, `.pub-icono(--lg)` y `.pub-etiqueta`; la portada usa sus nombres propios.
+
+.publico {
+  // Los materiales (--l-*) viven en _materiales.scss y los comparte el portal (`.portal`, _portal.scss).
+  @include m.materiales;
+
+  color-scheme: dark;
+  background:
+    radial-gradient(70rem 42rem at 8% -6%, color-mix(in oklab, var(--l-acento) 20%, transparent), transparent 62%),
+    radial-gradient(56rem 36rem at 96% 4%, color-mix(in oklab, var(--ds-info) 13%, transparent), transparent 64%),
+    var(--ds-surface-page);
+  color: var(--ds-text-1);
+  font-family: var(--ds-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Modo claro (piel portal): mismo vidrio y misma luz, recalibrados para fondo claro. Sombras más suaves y tintadas
+// con la tinta de la piel (no negro puro), vidrio casi blanco, retícula más tenue y el violeta de marca como tinta.
+.publico[data-skin='portal'] {
+  @include m.materiales-claro;
+}
+
+.publico :is(.pub-etiqueta, .landing-kicker, .landing-hero__eyebrow) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-4);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-tinte);
+  box-shadow: inset 0 0 0 1px var(--l-tinte-filo);
+  color: var(--l-acento-tinta);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// Firma de la marca: tres píxeles con los colores del isotipo (cian, azul y el violeta del tema) delante de cada
+// etiqueta. Es el punto de encuentro entre lo profesional y el pixel art del simulador.
+.publico :is(.pub-etiqueta, .landing-kicker, .landing-hero__eyebrow)::before {
+  content: '';
+  flex: none;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  margin-right: 0.8125rem;
+  background: var(--marca-cian);
+  box-shadow:
+    0.4375rem 0 0 var(--marca-azul),
+    0.875rem 0 0 var(--l-acento);
+}
+
+// Foco visible sobre la piel oscura: el anillo sigue la esquina del elemento.
+.publico :is(a, button):focus-visible {
+  outline: 3px solid var(--ds-focus);
+  outline-offset: 3px;
+}
+
+// ── Botones: cápsulas con brillo superior y respuesta al presionar ─────────────────────────────────
+.publico a[ui-button],
+.publico button[ui-button] {
+  border-radius: var(--ds-radius-pill);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition:
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    box-shadow var(--ds-dur-fast) var(--ds-ease-out),
+    color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+}
+
+// Primario sólido (contrato de contraste del bloque H: sin degradado propio); el filo de luz va en la sombra.
+.publico a[ui-button][variant='primary'] {
+  background: var(--ds-primary);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 45%, transparent),
+    0 1px 2px color-mix(in oklab, black 30%, transparent),
+    0 10px 28px -10px color-mix(in oklab, var(--ds-primary) 70%, transparent);
+  color: var(--ds-on-primary);
+}
+
+.publico a[ui-button][variant='secondary'],
+.publico button[ui-button][variant='secondary'] {
+  border-color: transparent;
+  background: var(--l-relleno);
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo-fuerte),
+    inset 0 1px 0 var(--l-brillo);
+  color: var(--ds-text-1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .publico a[ui-button][variant='primary']:hover {
+    background: var(--ds-primary-hover);
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, white 50%, transparent),
+      0 1px 2px color-mix(in oklab, black 30%, transparent),
+      0 14px 34px -10px color-mix(in oklab, var(--ds-primary) 80%, transparent);
+  }
+
+  .publico a[ui-button][variant='secondary']:hover,
+  .publico button[ui-button][variant='secondary']:hover {
+    background: color-mix(in oklab, var(--ds-text-1) 10%, transparent);
+    color: var(--ds-text-1);
+  }
+}
+
+.publico a[ui-button]:active,
+.publico button[ui-button]:active {
+  scale: 0.97;
+}
+
+// La barra compartida conserva su material de vidrio; solo se adaptan sus alias a la superficie oscura.
+:is(.publico, .portal) .cromo {
+  @include m.cromo-alias;
+}
+
+// ── Icono en baldosa (como los de Ajustes de iOS), un solo tinte para toda la página (VD-3) ────────
+.publico :is(.pub-icono, .landing-icon) {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(130% 130% at 25% 0%, color-mix(in oklab, var(--l-acento) 36%, transparent), color-mix(in oklab, var(--l-acento) 12%, transparent));
+  box-shadow:
+    inset 0 0 0 1px var(--l-tinte-filo),
+    inset 0 1px 0 color-mix(in oklab, white 18%, transparent);
+  color: var(--l-acento-tinta);
+}
+
+.publico :is(.pub-icono, .landing-icon) mat-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.publico :is(.pub-icono--lg, .landing-icon--lg) {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.95rem;
+}
+
+.publico :is(.pub-icono--lg, .landing-icon--lg) mat-icon {
+  width: 1.625rem;
+  height: 1.625rem;
+  font-size: 1.625rem;
+}
+
+// Avatares del kit del simulador (retratos de 32 × 32 a ×2 exacto, sin suavizado) en una baldosa tintada; varios van
+// lado a lado con aire (superpuestos, el aro tapaba la cara del primero).
+.publico .pub-avatares {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.publico .pub-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 1rem;
+  background: var(--l-tinte);
+  box-shadow: inset 0 0 0 1px var(--l-tinte-filo);
+  image-rendering: pixelated;
+}
+
+// Superficie de vidrio común a las tarjetas: filo fino, brillo arriba y sombra en capas.
+.publico :is(.pub-vidrio, .landing-preview, .landing-case-card, .landing-role-card, .landing-ethics__item, .landing-cta__inner) {
+  border-radius: var(--l-radio);
+  background:
+    radial-gradient(140% 70% at 50% 0%, var(--l-relleno), transparent 70%),
+    var(--l-vidrio);
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo),
+    inset 0 1px 0 var(--l-brillo),
+    var(--l-sombra);
+}
+
+// Esquinas continuas (squircle) donde el navegador las dibuja: la curvatura de iOS en lugar del arco circular.
+@supports (corner-shape: squircle) {
+  .publico[data-skin] .pub-vidrio,
+  .publico[data-skin] .pub-icono,
+  .publico[data-skin] .landing-preview,
+  .publico[data-skin] .landing-preview__scene,
+  .publico[data-skin] .landing-preview__info,
+  .publico[data-skin] .landing-preview__decisions li,
+  .publico[data-skin] .landing-case-card,
+  .publico[data-skin] .landing-role-card,
+    .publico[data-skin] .landing-ethics__item,
+  .publico[data-skin] .landing-cta__inner,
+  .publico[data-skin] .landing-icon {
+    corner-shape: squircle;
+  }
+
+  .landing-preview { border-radius: 2.75rem; }
+  .publico[data-skin] .landing-preview__scene,
+  .landing-preview__info { border-radius: 1.75rem; }
+  .landing-preview__decisions li { border-radius: 1.375rem; }
+  .publico[data-skin] .landing-case-card,
+  .publico[data-skin] .landing-role-card,
+    .landing-ethics__item { border-radius: 2.25rem; }
+  .landing-cta__inner { border-radius: 3rem; }
+  .landing-icon { border-radius: 1.125rem; }
+  .landing-icon--lg { border-radius: 1.375rem; }
+}
+
+// Transparencia reducida y más contraste: superficies sólidas y filos marcados.
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .publico {
+    @include m.materiales-reducidos;
+  }
+}
+
+@media (forced-colors: active) {
+  .publico .landing-preview,
+  .publico .landing-preview__scene,
+  .publico .landing-preview__info,
+  .publico .landing-preview__decisions li,
+  .publico .landing-case-card,
+  .publico .landing-role-card,
+    .publico .landing-ethics__item,
+  .publico .landing-cta__inner,
+  .publico .landing-icon {
+    border: 1px solid CanvasText;
+  }
+
+  .publico .landing-case-card--soon {
+    border-style: dashed;
+  }
+}
+
+// Secciones con fondo de objetos del simulador (app-doodles en la portada): las tarjetas tapan como las burbujas de un
+// chat, con vidrio casi opaco, y los casos futuros llevan relleno.
+.publico :is(#casos, #como-funciona) {
+  --l-vidrio: color-mix(in oklab, var(--ds-surface-1) 94%, transparent);
+}
+
+.publico #casos .landing-case-card--soon {
+  background: color-mix(in oklab, var(--ds-surface-page) 92%, transparent);
+}
+
+// ── «Cómo funciona»: el video del paso como fondo mate que se disuelve en los doodles ───────────────
+// Pedido del dueño (2026-11-20): el fondo de objetos (app-doodles) no se dibuja SOBRE el video, sino que los dos se
+// encuentran en los bordes. El video va por encima de los doodles (estos son una capa fija de z 0 posterior al <main>;
+// el fondo, z 1 dentro de la sección; el contenido, .landing-wrap, también z 1 pero después en el DOM) y tapa del todo
+// en su cuerpo; sus bordes se disuelven con fundidos suaves y ahí aparece el mosaico. Tres bordes: la entrada desde
+// «Casos», la salida hacia «Roles» (el video se va antes de que los doodles se apaguen: estos se desvanecen en los
+// últimos 180 px del apartado, así que nunca queda una franja vacía) y el marco de la vista mientras la capa pegajosa
+// la llena. Mate: poco desenfoque, algo desaturado y con un velo del color de fondo de la página.
+
+// Fundido en curva suave (smoothstep por cuartos, sin el «escalón» que deja un fundido lineal) desde los dos extremos
+// de un eje: transparente en el borde, opaco a `$ini` del inicio y desde `$fin` antes del final (`$hasta` corre el
+// final hacia dentro). Solo importa el alfa: es una máscara.
+@function pub-fundido($dir, $ini, $fin: $ini, $hasta: 0px) {
+  @return linear-gradient(
+    $dir,
+    transparent,
+    color-mix(in oklab, black 16%, transparent) calc(#{$ini} * 0.25),
+    color-mix(in oklab, black 50%, transparent) calc(#{$ini} * 0.5),
+    color-mix(in oklab, black 84%, transparent) calc(#{$ini} * 0.75),
+    black $ini,
+    black calc(100% - #{$hasta} - #{$fin}),
+    color-mix(in oklab, black 84%, transparent) calc(100% - #{$hasta} - #{$fin} * 0.75),
+    color-mix(in oklab, black 50%, transparent) calc(100% - #{$hasta} - #{$fin} * 0.5),
+    color-mix(in oklab, black 16%, transparent) calc(100% - #{$hasta} - #{$fin} * 0.25),
+    transparent calc(100% - #{$hasta})
+  );
+}
+
+.publico .landing-relato__fondo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  // Entra a lo largo de casi media vista y sale antes de los 180 px finales, donde los doodles se apagan.
+  mask-image: pub-fundido(to bottom, min(55vh, 30rem), min(45vh, 24rem), 12rem);
+}
+
+// La vista: pegajosa, del alto de la pantalla, opaca desde el primer cuadro (fondo de página) y enmarcada por doodles.
+.publico .landing-relato__vista {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--ds-surface-page);
+  mask-image:
+    pub-fundido(to right, clamp(2.5rem, 9vw, 9rem)),
+    pub-fundido(to bottom, clamp(3.5rem, 16vh, 9rem));
+  mask-composite: intersect;
+}
+
+// El velo: lleva el video hacia el fondo de la página (oscuro: lo apaga; claro: lo lava). Sin opacidad ni fusiones.
+.publico .landing-relato__vista::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklab, var(--ds-surface-page) 64%, transparent);
+}
+
+// El lienzo trae el cuadro a dos tercios de la vista; el navegador lo agranda poco y el filtro lo deja mate. Oscuro: el
+// contraste se aplana para que el negro del clip (el panel de diálogo, la barra del HUD) no baje del fondo de la página
+// y no marque bandas con borde duro sobre el cuerpo del video.
+.publico .landing-relato__ambiente {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(2px) saturate(0.7) contrast(0.6) brightness(0.85);
+}
+
+// Claro: el contraste se aplana antes de lavar, para que los negros del clip (el panel de diálogo) no queden como
+// manchas grises bajo el texto secundario (AA medido sobre el peor cuadro).
+.publico[data-skin='portal'] .landing-relato__vista::after {
+  background: color-mix(in oklab, var(--ds-surface-page) 72%, transparent);
+}
+
+.publico[data-skin='portal'] .landing-relato__ambiente {
+  filter: blur(2px) saturate(0.5) contrast(0.4) brightness(1.35);
+}
+
+// Transparencia reducida: el velo pesa más y el texto queda sobre un fondo casi liso.
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .publico[data-skin] .landing-relato__vista::after {
+    background: color-mix(in oklab, var(--ds-surface-page) 80%, transparent);
+  }
+}
+
+@media (forced-colors: active) {
+  .publico .landing-relato__fondo {
+    display: none;
+  }
+}

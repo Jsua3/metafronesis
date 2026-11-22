@@ -1,0 +1,8 @@
+// Anillo de foco del lenguaje visual (plan visual §2.3 y F1-5): 3 px del color de foco de la piel, separado
+// 2 px por un halo del color de la superficie, sin radio propio (el contorno sigue la forma del control: un
+// radio fijo de 2 px recortaba las píldoras). Bajo forced-colors el token de foco ya vale Highlight.
+@mixin ds-focus-ring {
+  outline: 3px solid var(--ds-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--ds-focus-halo);
+}

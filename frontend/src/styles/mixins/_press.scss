@@ -1,0 +1,11 @@
+// Respuesta al presionar, no al soltar (plan visual §2.7; apple-design §1): scale 0,97 en 100 ms ease-out.
+// Con «movimiento reducido» --ds-dur-press vale 0,01 ms (tokens/_motion.scss): no hace falta otra regla.
+// Un control deshabilitado con motivo sigue siendo enfocable y pulsable (ds-disabled): no se encoge.
+// Ojo: fija `transition`; si el componente anima otras propiedades, debe declararlas junto con `scale`.
+@mixin ds-press {
+  transition: scale var(--ds-dur-press) var(--ds-ease-out);
+
+  &:active:not([aria-disabled='true'], :disabled) {
+    scale: 0.97;
+  }
+}

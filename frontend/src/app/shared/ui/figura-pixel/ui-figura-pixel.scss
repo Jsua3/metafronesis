@@ -1,0 +1,77 @@
+// Figura del kit (DISENO C8). Las medidas van en px y no en rem a propósito: el pixel art solo se ve nítido si cada
+// píxel de la hoja ocupa un número entero de píxeles de pantalla, y el rem cambia con el tamaño de letra de la persona.
+:host {
+  --_escala: 2;
+
+  position: relative;
+  display: inline-block;
+  flex: none;
+  inline-size: calc(48px * var(--_escala));
+  block-size: calc(72px * var(--_escala));
+  vertical-align: bottom;
+}
+
+:host(.ui-figura-pixel--x1) {
+  --_escala: 1;
+}
+
+:host(.ui-figura-pixel--x3) {
+  --_escala: 3;
+}
+
+:host(.ui-figura-pixel--x4) {
+  --_escala: 4;
+}
+
+// Sombra de contacto por escalones, del tono de la tinta (no un óvalo negro difuminado): la misma del elenco de la
+// portada. Va antes del cuadro en el DOM, así queda debajo sin necesidad de capas.
+.ui-figura-pixel__sombra {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-end: calc(-1px * var(--_escala));
+  inline-size: calc(32px * var(--_escala));
+  block-size: calc(4px * var(--_escala));
+  translate: -50% 0;
+  background: color-mix(in oklab, var(--ds-text-1) 16%, transparent);
+  clip-path: polygon(12.5% 0, 87.5% 0, 87.5% 25%, 100% 25%, 100% 75%, 87.5% 75%, 87.5% 100%, 12.5% 100%, 12.5% 75%, 0 75%, 0 25%, 12.5% 25%);
+}
+
+.ui-figura-pixel__cuadro {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  background-image: var(--figura);
+  background-repeat: no-repeat;
+  background-size: calc(192px * var(--_escala)) calc(576px * var(--_escala));
+  background-position: calc(-48px * var(--_escala) * var(--fotograma, 0)) 0;
+  image-rendering: pixelated;
+}
+
+// Tres respiraciones del reposo al aparecer, por pasos (cuatro cuadros). Nunca en bucle infinito.
+:host(.ui-figura-pixel--respira) .ui-figura-pixel__cuadro {
+  animation: ui-figura-respira 900ms steps(4) 3;
+}
+
+@keyframes ui-figura-respira {
+  from {
+    background-position-x: 0;
+  }
+
+  to {
+    background-position-x: calc(-192px * var(--_escala));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.ui-figura-pixel--respira) .ui-figura-pixel__cuadro {
+    animation: none;
+  }
+}
+
+// Colores forzados: el sistema no pinta fondos de imagen como contenido; la sombra sería un rectángulo sin sentido.
+@media (forced-colors: active) {
+  .ui-figura-pixel__sombra {
+    display: none;
+  }
+}

@@ -1,0 +1,10 @@
+// Piel juego (oscura): se declara sobre el contenedor del simulador (`.game-container[data-skin="game"]`),
+// nunca sobre body (REGLA-010). Mismos tokens, otros valores.
+@use '../tokens/color';
+@use '../tokens/elevation';
+
+[data-skin='game'] {
+  color-scheme: dark;
+  @include color.emit(color.$game);
+  @include elevation.emit(elevation.$game);
+}

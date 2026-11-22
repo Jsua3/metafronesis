@@ -1,0 +1,111 @@
+// Capas de diálogos y hojas (plan visual F2-7, §2.7): viven en el contenedor de capas del CDK, fuera de cualquier
+// componente, por eso sus estilos son globales. Entrada 200 ms con --ds-ease-drawer desde @starting-style; salida
+// 180 ms (clase ui-overlay--leaving que pone UiDialog antes de cerrar). Con movimiento reducido la geometría no se
+// anima (tokens) y solo queda el fundido.
+.ui-dialog-backdrop {
+  background: color-mix(in srgb, var(--ds-text-1) 45%, transparent);
+  opacity: 1;
+  transition: opacity var(--ds-dur-fade) ease;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  &.ui-overlay--leaving {
+    opacity: 0;
+  }
+}
+
+.ui-dialog-pane,
+.ui-sheet-pane {
+  max-inline-size: calc(100vw - 2 * var(--ds-space-4));
+  max-block-size: calc(100dvh - 2 * var(--ds-space-4));
+
+  .cdk-dialog-container {
+    display: block;
+    max-block-size: inherit;
+    overflow: auto;
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-lg);
+    background: var(--ds-surface-1);
+    box-shadow: var(--ds-shadow-e3);
+    color: var(--ds-text-1);
+    opacity: 1;
+    transition:
+      opacity var(--ds-dur-fade) var(--ds-ease-drawer),
+      scale var(--ds-dur-base) var(--ds-ease-drawer),
+      translate var(--ds-dur-base) var(--ds-ease-drawer);
+  }
+
+  &.ui-overlay--leaving .cdk-dialog-container {
+    opacity: 0;
+    transition-duration: var(--ds-dur-fast);
+  }
+}
+
+.ui-dialog-pane {
+  .cdk-dialog-container {
+    @starting-style {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+
+  &.ui-overlay--leaving .cdk-dialog-container {
+    scale: 0.98;
+  }
+}
+
+.ui-dialog-pane--sm {
+  inline-size: 28rem;
+}
+
+.ui-dialog-pane--md {
+  inline-size: 36rem;
+}
+
+.ui-dialog-pane--lg {
+  inline-size: 48rem;
+}
+
+// Hoja inferior: ancho de lectura, esquinas de arriba redondeadas, entra desde abajo.
+.ui-sheet-pane--bottom {
+  inline-size: min(40rem, 100vw);
+  max-inline-size: 100vw;
+
+  .cdk-dialog-container {
+    border-block-end: 0;
+    border-radius: var(--ds-radius-lg) var(--ds-radius-lg) 0 0;
+    padding-block-end: env(safe-area-inset-bottom);
+
+    @starting-style {
+      translate: 0 100%;
+    }
+  }
+
+  &.ui-overlay--leaving .cdk-dialog-container {
+    translate: 0 100%;
+  }
+}
+
+// Hoja lateral: alto completo, entra desde el borde final.
+.ui-sheet-pane--end {
+  inline-size: min(28rem, 100vw);
+  block-size: 100dvh;
+  max-inline-size: 100vw;
+  max-block-size: 100dvh;
+
+  .cdk-dialog-container {
+    block-size: 100%;
+    border-inline-end: 0;
+    border-radius: var(--ds-radius-lg) 0 0 var(--ds-radius-lg);
+
+    @starting-style {
+      translate: 100% 0;
+    }
+  }
+
+  &.ui-overlay--leaving .cdk-dialog-container {
+    translate: 100% 0;
+  }
+}

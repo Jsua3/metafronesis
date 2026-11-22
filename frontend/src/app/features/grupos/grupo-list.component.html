@@ -1,0 +1,256 @@
+<!-- Dos cabeceras, una por contexto: en escritorio manda «Grupos» (con «Nuevo grupo»); en teléfono, con un grupo
+     abierto por la ruta, la cabecera pasa a ser la del grupo con su regreso. Solo una se muestra a la vez (la otra
+     queda display:none, también para los lectores de pantalla), así la pantalla siempre tiene un único h1. -->
+<ui-cabecera-ilustrada [herramienta]="true" class="gl-cab gl-cab--lista" [class.gl-cab--con-detalle]="!!grupoActivo() && !!grupoId()"
+  [escena]="state() === 'empty' ? null : 'grupos'" eyebrow="Cohortes académicas" title="Grupos"
+  description="Organiza estudiantes e invitaciones de cada grupo.">
+  @if (state() !== 'empty') { <button ui-button uiHerramientaAcciones type="button" icon="add" (click)="nuevoGrupo()">Nuevo grupo</button> }
+</ui-cabecera-ilustrada>
+@if (grupoActivo(); as abierto) {
+  <ui-page-header class="gl-cab gl-cab--detalle" [class.gl-cab--con-detalle]="!!grupoId()"
+    eyebrow="Grupo" [title]="abierto.nombre" volverA="/portal/grupos" volverEtiqueta="Todos los grupos" />
+}
+
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+@if (state() === 'error') {
+  <ui-error-state kind="server" message="No pudimos cargar los grupos." (retry)="cargar()" />
+} @else if (state() === 'empty') {
+  <ui-vacio-ilustrado escena="grupos" titulo="Aún no tienes grupos" marco="placa"
+    frase="Un grupo reúne a tus estudiantes: le pones un nombre y un código, y los invitas.">
+  </ui-vacio-ilustrado>
+  <ng-container [ngTemplateOutlet]="formularioGrupo" />
+} @else {
+  <div class="gl-layout" [class.gl-layout--detalle]="!!grupoId()">
+    <section class="gl-list" aria-label="Lista de grupos" [attr.aria-busy]="state() === 'loading' ? 'true' : null">
+      <ui-field label="Buscar por nombre o código">
+        <input uiControl type="search" autocomplete="off" [value]="busquedaGrupo()"
+          (input)="busquedaGrupo.set($any($event.target).value)">
+      </ui-field>
+
+      @if (state() === 'loading') {
+        <div class="gl-loading">
+          @for (bone of [1, 2, 3]; track bone) { <ui-skeleton shape="row" /> }
+        </div>
+      } @else if (!gruposFiltrados().length) {
+        <ui-empty-state kind="no-results" title="No encontramos grupos con ese criterio"
+          description="Revisa el nombre o el código, o limpia la búsqueda para ver todos."
+          actionLabel="Limpiar búsqueda" (action)="limpiarBusqueda()" />
+      } @else {
+        <ul class="gl-groups">
+          @for (g of gruposFiltrados(); track g.id) {
+            <li>
+              <a class="gl-group" [class.gl-group--active]="grupoActivo()?.id === g.id"
+                [routerLink]="['/portal/grupos', g.id]" [attr.aria-current]="grupoActivo()?.id === g.id ? 'true' : null"
+                (keydown)="recorrerGrupos($event)">
+                <span class="gl-group__top">
+                  <strong class="gl-group__name">{{ g.nombre }}</strong>
+                  <span class="gl-group__code">{{ g.codigo }}</span>
+                </span>
+                <span class="gl-group__meta">{{ resumenGrupo(g) }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (grupoActivo(); as grupo) {
+      <section class="gl-detail" [attr.aria-label]="'Detalle de ' + grupo.nombre">
+        <ui-card class="gl-detail__card">
+          <header class="gl-detail__head">
+            <div class="gl-detail__title">
+              <h2>{{ grupo.nombre }}</h2>
+              <p class="gl-hint">Código {{ grupo.codigo }} · {{ detalleConteo() }}</p>
+            </div>
+            <div class="gl-detail__actions">
+              <ui-menu iconOnly [label]="'Más acciones de ' + grupo.nombre" [items]="rowActions"
+                (itemSelected)="accionDeFila(grupo, $event)" />
+            </div>
+          </header>
+
+          <ui-tabs label="Contenido del grupo" [(selected)]="pestana">
+            <ng-template uiTab="estudiantes" label="Estudiantes">
+              <div class="gl-stack">
+                <div class="gl-toolbar">
+                  <button ui-button type="button" icon="person_add" (click)="agregarEstudiante(grupo)">Invitar estudiante</button>
+                  <button ui-button type="button" variant="secondary" icon="description" (click)="abrirImportacion()">Importar desde Excel</button>
+                </div>
+
+                @if (grupoSeleccionado() === grupo.id) {
+                  <form class="gl-add" [formGroup]="estudianteForm" novalidate (ngSubmit)="confirmarAgregar()">
+                    <ui-field label="Correo del estudiante" required
+                      hint="Recibe una invitación y entra al grupo cuando la acepta."
+                      [error]="fieldError(estudianteForm.controls.email, 'Escribe un correo válido.')">
+                      <input uiControl type="email" formControlName="email" autocomplete="off">
+                    </ui-field>
+                    <div class="gl-actions">
+                      <button ui-button type="submit" icon="person_add" [loading]="agregandoEstudiante()">
+                        {{ agregandoEstudiante() ? 'Invitando…' : 'Enviar invitación' }}
+                      </button>
+                      <button ui-button type="button" variant="ghost" (click)="grupoSeleccionado.set(null)">Cancelar</button>
+                    </div>
+                  </form>
+                }
+
+                @if (mensajeEstudiante() && !importacionAbierta()) {
+                  <p class="gl-message" [class.gl-message--error]="mensajeEsError()">{{ mensajeEstudiante() }}</p>
+                }
+
+                @if (estudiantes().length) {
+                  <ui-field label="Buscar estudiante por nombre o correo">
+                    <input uiControl type="search" autocomplete="off" [value]="busquedaEstudiante()"
+                      (input)="busquedaEstudiante.set($any($event.target).value)">
+                  </ui-field>
+                }
+
+                @if (!detailLoading() && !estudiantes().length) {
+                  <p class="gl-empty">Este grupo aún no tiene estudiantes. Invita a uno o importa una lista desde Excel.</p>
+                } @else if (!detailLoading() && !estudiantesFiltrados().length) {
+                  <p class="gl-empty">No encontramos estudiantes con ese criterio.</p>
+                } @else {
+                  <ui-table label="Estudiantes del grupo" density="compact" apilar [state]="detailLoading() ? 'loading' : 'ready'">
+                    <table ui-table>
+                      <thead>
+                        <tr>
+                          <th scope="col">Estudiante</th>
+                          <th scope="col">Correo</th>
+                          <th scope="col">Estado</th>
+                          <th scope="col"><span class="ds-sr-only">Acciones</span></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (student of estudiantesFiltrados(); track student.id) {
+                          @let badge = membershipBadge(student);
+                          <tr uiRow>
+                            <th scope="row" uiCeldaPrincipal class="gl-person-name">{{ studentName(student) }}</th>
+                            <td uiCelda="Correo"><span class="gl-email">{{ student.email }}</span></td>
+                            <td uiCelda="Estado"><ui-badge [tone]="badge.tone">{{ badge.label }}</ui-badge></td>
+                            <td uiCeldaAcciones class="gl-row-actions">
+                              @if (canRemove(student)) {
+                                <button ui-icon-button type="button" icon="person_remove" [label]="removeLabel(student)"
+                                  (click)="quitarEstudiante(grupo, student)"></button>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </ui-table>
+                }
+              </div>
+            </ng-template>
+
+<ng-template uiTab="invitaciones" [label]="etiquetaInvitaciones()">
+              <div class="gl-stack">
+                @if (detailLoading()) {
+                  <p class="gl-hint">Cargando invitaciones…</p>
+                } @else if (!invitados().length) {
+                  <p class="gl-empty">No hay invitaciones pendientes. Cuando invites a alguien, aparecerá aquí hasta que acepte.</p>
+                } @else {
+                  <p class="gl-hint">Estas personas aún no responden. Puedes cancelar una invitación si te equivocaste de correo.</p>
+                  <ul class="gl-people">
+                    @for (student of invitados(); track student.id) {
+                      <li class="gl-person">
+                        <span class="gl-person__text">{{ student.email }}</span>
+                        <ui-badge tone="info">Invitación pendiente</ui-badge>
+                        <button ui-icon-button type="button" icon="person_remove" [label]="removeLabel(student)"
+                          (click)="quitarEstudiante(grupo, student)"></button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            </ng-template>
+          </ui-tabs>
+        </ui-card>
+      </section>
+    } @else if (grupoId() && state() === 'ready') {
+      <section class="gl-detail">
+        <ui-card>
+          <ui-empty-state kind="no-results" title="No encontramos ese grupo"
+            description="Puede que se haya borrado o que el enlace esté incompleto. Elige uno de la lista."
+            actionLabel="Ver todos los grupos" (action)="verTodos()" />
+        </ui-card>
+      </section>
+    }
+  </div>
+}
+
+<!-- Hoja «Nuevo grupo» / «Editar grupo»: el mismo formulario y las mismas reglas de siempre. -->
+<ng-template #formularioGrupo>
+  <div class="gl-form">
+    <p class="gl-hint">
+      {{ editandoGrupo() ? 'Actualiza el nombre o el código del grupo.' : 'Un grupo lleva un nombre y un código que lo distingue de los demás.' }}
+    </p>
+    <form #groupForm [formGroup]="form" novalidate class="gl-fields"
+      (ngSubmit)="editandoGrupo() ? actualizarGrupo(groupForm) : crear(groupForm)">
+      <ui-field label="Nombre del grupo" required [error]="fieldError(form.controls.nombre, 'Escribe el nombre del grupo.')">
+        <input uiControl type="text" formControlName="nombre" autocomplete="off">
+      </ui-field>
+      <ui-field label="Código único" required [error]="fieldError(form.controls.codigo, 'Escribe el código del grupo.')">
+        <input uiControl type="text" formControlName="codigo" autocomplete="off">
+      </ui-field>
+      <div class="gl-actions">
+        <button ui-button type="submit" [loading]="saving()">
+          {{ saving() ? 'Guardando…' : (editandoGrupo() ? 'Guardar cambios' : 'Crear grupo') }}
+        </button>
+        @if (state() !== 'empty') { <button ui-button type="button" variant="ghost" (click)="cancelarEdicion()">Cancelar</button> }
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+<!-- Hoja «Importar estudiantes»: la zona de archivo, la plantilla y, al terminar, el resultado. -->
+<ng-template #formularioImportacion>
+  <div class="gl-form">
+    @if (resultadoImportacion(); as result) {
+      <div class="gl-import-result" [class.gl-import-result--warning]="result.errors.length">
+        <p class="gl-import-result__summary">
+          {{ result.associated || result.assigned }} invitados · {{ result.created }} cuentas nuevas ·
+          {{ result.existing }} ya existían · {{ result.skipped }} omitidos
+        </p>
+        <p>{{ result.message }}</p>
+        @if (cuentasNuevasNota(result); as nota) {
+          <p>{{ nota }}</p>
+        }
+        @if (columnasIgnoradasNota(result); as nota) {
+          <p>{{ nota }}</p>
+        }
+        @if (result.errors.length) {
+          <details>
+            <summary>{{ result.errors.length }} filas con observaciones</summary>
+            <ul>
+              @for (item of result.errors; track item.row) {
+                <li>Fila {{ item.row }} · {{ item.field || 'archivo' }} · {{ item.email || 'sin correo' }}: {{ item.message || item.error }}</li>
+              }
+            </ul>
+          </details>
+        }
+      </div>
+      <div class="gl-actions">
+        <button ui-button type="button" (click)="cerrarHoja()">Listo</button>
+        <button ui-button type="button" variant="secondary" (click)="limpiarImportacion()">Importar otra lista</button>
+      </div>
+    } @else {
+      <p class="gl-hint">
+        Las personas entran al grupo cuando aceptan la invitación. Columnas requeridas: {{ columnasRequeridasTexto() }}.
+        @if (columnasOpcionalesTexto()) {Opcionales: {{ columnasOpcionalesTexto() }}.}
+        También acepta el formato institucional (N°, Nombres, Apellidos, Correo institucional).
+      </p>
+      <div class="gl-drop">
+        <button ui-button type="button" variant="ghost" size="sm" icon="download" (click)="descargarPlantilla()">Descargar plantilla Excel</button>
+        <ui-archivo etiqueta="Lista de estudiantes" acepta=".xlsx" (archivo)="archivoElegido($event)" />
+      </div>
+      @if (mensajeEstudiante()) {
+        <p class="gl-message" [class.gl-message--error]="mensajeEsError()">{{ mensajeEstudiante() }}</p>
+      }
+      <div class="gl-actions">
+        <button ui-button type="button" icon="group_add" [loading]="importandoEstudiantes()"
+          [disabledReason]="archivoImportacion() ? null : 'Elige un archivo .xlsx para importar.'"
+          (click)="importarEstudiantes()">{{ importandoEstudiantes() ? 'Cargando…' : 'Importar lista' }}</button>
+        <button ui-button type="button" variant="ghost" (click)="cerrarHoja()">Cancelar</button>
+      </div>
+    }
+  </div>
+</ng-template>

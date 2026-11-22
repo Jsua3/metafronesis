@@ -1,0 +1,61 @@
+// Cabecera ilustrada: el título a la izquierda, arriba (el antetítulo arranca a la misma altura bajo la barra en todas
+// las pantallas, sea cual sea el alto de la viñeta), y la viñeta a la derecha, apoyada abajo.
+// Los doodles son fijos a la vista: el texto y la viñeta van por encima.
+:host {
+  position: relative;
+  z-index: var(--ds-z-base);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ds-space-4) var(--ds-space-6);
+  min-inline-size: 0;
+  // Aire debajo de la viñeta y del texto antes del contenido: la banda de doodles necesita algo de alto para leerse.
+  padding-block-end: var(--ds-space-2);
+}
+
+.ui-cabecera-ilustrada__texto {
+  position: relative;
+  display: grid;
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+}
+
+// El margen inferior de la cabecera de página lo pone aquí la rejilla del contenedor (gap), no ella.
+.ui-cabecera-ilustrada__texto ui-page-header {
+  margin-block-end: 0;
+}
+
+.ui-cabecera-ilustrada__vineta {
+  position: relative;
+  align-self: end;
+}
+
+// Teléfono y columnas estrechas: una sola columna, sin viñeta.
+@media (max-width: 639px) {
+  :host {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ui-cabecera-ilustrada__vineta {
+    display: none;
+  }
+}
+
+// Variante compacta para las herramientas de docente y administración.
+:host(.ui-cabecera-ilustrada--herramienta) {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--ds-space-5);
+  margin-block-end: var(--ds-space-5);
+  padding-block-end: 0;
+}
+.cabecera-herramienta__acciones { display: flex; flex-wrap: wrap; gap: var(--ds-space-2); }
+.cabecera-herramienta__acciones:empty { display: none; }
+:host(.ui-cabecera-ilustrada--herramienta:not(:has(.ui-cabecera-ilustrada__vineta))),
+:host(.ui-cabecera-ilustrada--herramienta:has(.cabecera-herramienta__acciones:empty)) { grid-template-columns: minmax(0, 1fr) auto; }
+@media (max-width: 63.999rem) {
+  :host(.ui-cabecera-ilustrada--herramienta),
+  :host(.ui-cabecera-ilustrada--herramienta:not(:has(.ui-cabecera-ilustrada__vineta))),
+  :host(.ui-cabecera-ilustrada--herramienta:has(.cabecera-herramienta__acciones:empty)) { grid-template-columns: minmax(0, 1fr); }
+  :host(.ui-cabecera-ilustrada--herramienta) .ui-cabecera-ilustrada__vineta { display: none; }
+}

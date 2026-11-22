@@ -1,0 +1,146 @@
+@use 'mixins' as m;
+
+// Segmentado (DISENO C5): cápsula de relleno tenue con un indicador opaco que se desliza con el resorte suave. Cada
+// segmento mide al menos 44 px de alto. Si no caben todos (cinco estados en un teléfono), la pista se desplaza en
+// horizontal dentro de sí misma: la página nunca se ensancha.
+:host {
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.ui-segmentado__pista {
+  position: relative;
+  display: inline-flex;
+  max-inline-size: 100%;
+  gap: 2px;
+  padding: 3px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-relleno, var(--ds-surface-2));
+  box-shadow: inset 0 0 0 1px var(--l-filo, var(--ds-border));
+  isolation: isolate;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Más opciones fuera de la vista: el borde de ese lado se desvanece (la máscara solo usa la opacidad; `currentColor`
+// es cualquier color opaco). Sin desborde no hay máscara y la cápsula se ve entera.
+:host(.ui-segmentado--mas-fin) .ui-segmentado__pista {
+  mask-image: linear-gradient(to right, currentColor calc(100% - 2.5rem), transparent);
+}
+
+:host(.ui-segmentado--mas-inicio) .ui-segmentado__pista {
+  mask-image: linear-gradient(to right, transparent, currentColor 2.5rem);
+}
+
+:host(.ui-segmentado--mas-inicio.ui-segmentado--mas-fin) .ui-segmentado__pista {
+  mask-image: linear-gradient(to right, transparent, currentColor 2.5rem, currentColor calc(100% - 2.5rem), transparent);
+}
+
+// El indicador vive detrás de los segmentos (primero en el DOM; los segmentos van posicionados después de él).
+.ui-segmentado__indicador {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 0;
+  inline-size: var(--_ancho, 0);
+  translate: var(--_x, 0) 0;
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo-fuerte, var(--ds-border-strong)),
+    inset 0 1px 0 var(--l-brillo, transparent),
+    0 1px 3px color-mix(in oklab, var(--ds-text-1) 12%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+:host(.ui-segmentado--medido) .ui-segmentado__indicador {
+  opacity: 1;
+}
+
+// Solo tras el primer cuadro medido: el indicador no entra volando al cargar. Se anima el ancho junto al
+// desplazamiento: es una pieza fuera del flujo y cambiar su ancho no reacomoda nada más (un `scale` deformaría las
+// esquinas de la cápsula). Con movimiento reducido las duraciones valen 0,01 ms: salta sin deslizarse.
+:host(.ui-segmentado--listo) .ui-segmentado__indicador {
+  transition:
+    translate var(--ds-dur-slow) var(--ds-spring-soft),
+    inline-size var(--ds-dur-slow) var(--ds-spring-soft);
+}
+
+.ui-segmentado__opcion {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  // El espacio antes de la cuenta («Solicitudes · 3»): el de dentro del texto se pierde al ser el primero de su caja.
+  gap: 0.3em;
+  min-block-size: calc(var(--ds-target-min) - 6px);
+  min-inline-size: var(--ds-target-min);
+  padding-inline: var(--ds-space-4);
+  border: 0;
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-text-2);
+  font: inherit;
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-s-line);
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    color: var(--ds-text-1);
+  }
+
+  &:active {
+    scale: 0.97;
+  }
+
+  &[aria-checked='true'] {
+    color: var(--ds-text-1);
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+// Sin maquetación (o antes de medir) la opción elegida pinta su propio fondo: nunca queda sin marcar.
+:host(:not(.ui-segmentado--medido)) .ui-segmentado__opcion[aria-checked='true'] {
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: inset 0 0 0 1px var(--l-filo-fuerte, var(--ds-border-strong));
+}
+
+.ui-segmentado__cuenta {
+  color: var(--ds-text-2);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+// Con colores forzados el indicador no se ve (es un fondo): la elegida se marca con un contorno del sistema.
+@media (forced-colors: active) {
+  .ui-segmentado__pista {
+    border: 1px solid CanvasText;
+  }
+
+  .ui-segmentado__indicador {
+    display: none;
+  }
+
+  .ui-segmentado__opcion[aria-checked='true'] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+@media (pointer: coarse) { .ui-segmentado__opcion { min-block-size: 2.75rem; min-inline-size: 2.75rem; } }

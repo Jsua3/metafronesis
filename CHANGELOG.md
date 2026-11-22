@@ -11,6 +11,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - Cubrir tres validaciones del caso detectadas en la revisión del #17: revisión aprobada antes de publicar con `REVIEW_WORKFLOW_STRICT`, rechazo de sugerencias de IA sin revisar y camino desde la escena inicial hasta un final.
 - Documentación por app y `docs/api.md`.
 
+## [0.5.0] - 2026-11-22
+
+Frontend de la primera ola y licencia.
+
+### Añadido
+- Frontend en `frontend/` (Angular 22): portada, acceso, cambio de contraseña, administración de usuarios y solicitudes de acceso, grupos con estudiantes, invitaciones e importación desde Excel, buzón de invitaciones del estudiante y páginas de error, conectado a la API de esta versión (#43).
+- Licencia MIT, con los cuatro integrantes como titulares (#44).
+
 ## [0.4.0] - 2026-11-10
 
 Entrega del backend: ola 2 de la migración.
@@ -75,7 +83,8 @@ Base del backend (sprints 1 a 3).
 - Biblioteca por API con catálogo externo configurable y validación de rutas (#4).
 - Pruebas de concurrencia PostgreSQL en CI (#4).
 
-[Sin publicar]: https://github.com/Jsua3/metafronesis/compare/v0.4.0...develop
+[Sin publicar]: https://github.com/Jsua3/metafronesis/compare/v0.5.0...develop
+[0.5.0]: https://github.com/Jsua3/metafronesis/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Jsua3/metafronesis/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Jsua3/metafronesis/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Jsua3/metafronesis/compare/v0.1.0...v0.2.0

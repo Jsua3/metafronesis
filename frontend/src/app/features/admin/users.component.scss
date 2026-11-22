@@ -1,0 +1,270 @@
+// Pantalla Usuarios (plan visual F7-6): piel portal, solo tokens --ds-*, superficies con borde y sin sombras duras ni
+// bordes punteados (VD-3). El foco lo pinta el anillo global. Reglas de F7-2…F7-5: el host de `ui-section` se queda en
+// bloque y toda rejilla lleva `minmax(0, 1fr)`.
+:host {
+  display: block;
+  color: var(--ds-text-1);
+}
+
+.us-requests,
+.us-pending,
+.us-users {
+  display: block;
+  min-width: 0;
+  margin-block-start: var(--ds-space-6);
+}
+
+// E2-9: cuentas importadas que esperan aprobación (el host de ui-section en bloque; el diseño va en la tarjeta).
+.us-pending__card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+}
+
+.us-pending__card .us-hint {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.us-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-width: 0;
+}
+
+.us-hint {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.us-request-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.us-request {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+}
+
+.us-request__text {
+  display: grid;
+  gap: var(--ds-space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.us-request__text span,
+.us-request__text small {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.us-request__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+}
+
+.us-name {
+  min-width: 9rem;
+  font-weight: var(--ds-type-h3-weight);
+  text-align: start;
+}
+
+.us-email {
+  display: block;
+  min-width: 0;
+  max-width: min(100%, 20rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// En una tabla estrecha las acciones no se parten: la tabla se desplaza dentro de su marco.
+.us-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--ds-space-1);
+  white-space: nowrap;
+}
+
+.us-views {
+  margin-block-start: var(--ds-space-4);
+  min-width: 0;
+}
+
+// El resumen del lote o de la aprobación va en línea, con filo propio: es el resultado de lo que se acaba de hacer.
+.us-result {
+  min-width: 0;
+  margin-block: var(--ds-space-3) 0;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  color: var(--ds-text-1);
+  overflow-wrap: anywhere;
+
+  &--vacio {
+    display: none;
+  }
+}
+
+// Barra contextual de la selección (como en un cliente de correo): aparece al marcar la primera cuenta, con el tinte
+// del acento para que se lea como «modo selección», y se queda fija bajo la barra mientras se recorre la tabla.
+.us-batch {
+  position: sticky;
+  top: var(--l-alto-barra, 0);
+  z-index: var(--ds-z-pegajoso);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin-block-end: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--l-tinte-filo, var(--ds-border-strong));
+  border-radius: var(--ds-radius-md);
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  box-shadow: var(--ds-shadow-e1);
+  animation: us-batch-entra var(--ds-dur-base) var(--ds-ease-out);
+
+  strong {
+    margin-inline-end: auto;
+    color: var(--l-acento-tinta, var(--ds-primary));
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes us-batch-entra {
+  from {
+    opacity: 0;
+    translate: 0 calc(-1 * var(--ds-space-2));
+  }
+}
+
+// La fila marcada se tiñe y lleva la marca de 3 px del acento: se ve qué entra en la acción por lote sin leer casillas.
+.us-fila--marcada {
+  background: var(--l-fila-elegida, var(--ds-primary-subtle));
+  box-shadow: inset 3px 0 0 var(--l-acento, var(--ds-primary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .us-batch {
+    animation: none;
+  }
+}
+
+// Misma letra que la etiqueta de la búsqueda (ui-field): los selectos no se ven más grandes que ella.
+.us-control {
+  display: grid;
+  gap: var(--ds-space-1);
+  min-width: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 600;
+
+  select {
+    min-block-size: var(--ds-target-min);
+    max-inline-size: 100%;
+    padding-inline: var(--ds-space-3);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-surface-1);
+    color: var(--ds-text-1);
+    font: inherit;
+    font-weight: 400;
+  }
+}
+
+.us-check {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-block-size: var(--ds-target-min);
+  // 44 px también a lo ancho: con el texto oculto, el área pulsable no puede quedar en el ancho de la casilla.
+  min-inline-size: var(--ds-target-min);
+  min-width: 0;
+
+  input {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    flex: none;
+  }
+}
+
+// «Seleccionar» solo se lee en la tarjeta de móvil: en la tabla basta el nombre accesible de la casilla.
+.us-check__txt {
+  display: none;
+}
+
+// El segmentado de rol no se encoge por debajo de su contenido: si falta ancho, se desplaza dentro de sí.
+.us-control--rol {
+  flex: 1 1 18rem;
+}
+
+@container (max-width: 40rem) {
+  // Pie de la tarjeta en UNA fila: «Seleccionar» a la izquierda, lápiz y «⋮» a la derecha (antes, dos filas con aire).
+  // Los selectores llevan `.us-users tbody` para pesar más que las reglas de la tarjeta de `ui-table`.
+  .us-users tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    > * {
+      grid-column: 1 / -1;
+    }
+
+    > .us-sel {
+      order: 1;
+      grid-column: 1;
+      align-self: center;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    > .us-actions {
+      order: 2;
+      grid-column: 2;
+      align-self: center;
+      margin-block-start: 0;
+
+      > * {
+        flex: none;
+      }
+    }
+  }
+
+  .us-check__txt {
+    display: inline;
+    color: var(--ds-text-2);
+    font-size: var(--ds-type-body-s-size);
+  }
+}
+
+.us-pending__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+}
+
+.us-request__text {
+  max-width: 100%;
+}

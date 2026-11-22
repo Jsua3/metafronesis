@@ -1,0 +1,1001 @@
+// Portada de Metafrónesis. El lenguaje común (tokens claro/oscuro, vidrio, botones, iconos, etiquetas) vive en
+// styles/components/_publico.scss y se activa con .publico en el contenedor; aquí solo lo propio de la portada.
+:host {
+  display: block;
+}
+
+.landing {
+  min-height: 100vh;
+  overflow-x: clip;
+}
+
+.landing-wrap {
+  width: min(75rem, calc(100% - 2 * var(--ds-space-5)));
+  margin-inline: auto;
+}
+
+
+.landing-accent {
+  color: var(--l-acento-tinta);
+}
+
+// ── Héroe ────────────────────────────────────────────────────────────────────────────────────────
+.landing-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-block: calc(6.5rem + env(safe-area-inset-top, 0px)) clamp(var(--ds-space-7), 9vh, 6.5rem);
+  background:
+    radial-gradient(48rem 30rem at 72% 42%, color-mix(in oklab, var(--l-acento) 15%, transparent), transparent 70%);
+  color: var(--ds-text-1);
+}
+
+// Retícula de puntos cada 48 px (el paso de los personajes del simulador), apenas visible y desvanecida hacia los
+// bordes: la textura del mundo, sin líneas duras.
+.landing-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  --l-punto: color-mix(in oklab, var(--ds-text-1) 13%, transparent);
+  background-image: radial-gradient(circle at 1px 1px, var(--l-punto) 1px, transparent 1.6px);
+  background-size: 48px 48px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 75% 70% at 55% 38%, black 10%, transparent 78%);
+  pointer-events: none;
+}
+
+// En pantallas altas el héroe ocupa la vista completa y la composición se abre un poco más.
+@media (min-width: 64rem) and (min-height: 50rem) {
+  .landing-hero {
+    display: grid;
+    align-items: center;
+    min-height: min(100svh, 68rem);
+  }
+
+  .landing-hero__grid {
+    width: min(82rem, calc(100% - 2 * var(--ds-space-6)));
+  }
+
+  .landing-hero .landing-preview {
+    max-width: 46rem;
+  }
+}
+
+.landing-hero__grid {
+  position: relative;
+  z-index: var(--ds-z-elevado);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr);
+  gap: clamp(2.5rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.landing-hero__copy {
+  min-width: 0;
+}
+
+// Titular en dos niveles, como en las páginas de producto de Apple: el gancho grande y la promesa debajo.
+.landing-hero__title {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: clamp(var(--ds-type-display-size), 6vw, 5.25rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.landing-hero__title-sub {
+  display: block;
+  max-width: 30rem;
+  margin-top: var(--ds-space-4);
+  color: var(--ds-text-1);
+  font-size: clamp(var(--ds-type-h3-size), 2.1vw, 2rem);
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.landing-hero__lead {
+  max-width: 34rem;
+  margin: var(--ds-space-5) 0 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+  text-wrap: pretty;
+}
+
+.landing-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-6);
+}
+
+.landing-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2) var(--ds-space-5);
+  margin: var(--ds-space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 500;
+  line-height: var(--ds-type-body-s-line);
+}
+
+.landing-trust mat-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  font-size: 1.125rem;
+  color: var(--ds-success);
+}
+
+.landing-pausa {
+  position: absolute;
+  right: var(--ds-space-5);
+  bottom: var(--ds-space-5);
+  z-index: var(--ds-z-elevado);
+}
+
+.landing .landing-pausa[ui-button][variant='secondary'] {
+  background: var(--l-vidrio-alto);
+  color: var(--ds-text-2);
+}
+
+// ── Vista previa: una ventana del simulador ──────────────────────────────────────────────────────
+.landing-preview {
+  width: 100%;
+  min-width: 0;
+  max-width: 40rem;
+  justify-self: end;
+  padding: var(--ds-space-3);
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(140% 50% at 50% 0%, color-mix(in oklab, var(--ds-text-1) 7%, transparent), transparent 70%),
+    var(--l-vidrio-alto);
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo-fuerte),
+    inset 0 1px 0 color-mix(in oklab, var(--ds-text-1) 14%, transparent),
+    var(--l-sombra-alta),
+    0 0 120px -40px color-mix(in oklab, var(--l-acento) 55%, transparent);
+}
+
+.landing-preview__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-3);
+}
+
+// Tres puntos de ventana: la vista previa se lee como una pantalla del simulador, no como una tarjeta más.
+.landing-preview__head::before {
+  content: '';
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-right: 2.25rem;
+  border-radius: 50%;
+  background: var(--l-filo-fuerte);
+  box-shadow:
+    1rem 0 0 var(--l-filo-fuerte),
+    2rem 0 0 var(--l-filo-fuerte);
+}
+
+.landing-preview__badge {
+  flex: none;
+  padding: 0.125rem var(--ds-space-2);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-tinte);
+  color: var(--l-acento-tinta);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-preview__head h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-line);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.landing-preview__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--ds-space-3);
+}
+
+.landing-preview__scene {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  background: var(--ds-surface-page);
+  box-shadow: 0 8px 24px -12px color-mix(in oklab, black 70%, transparent);
+}
+
+// Filo interior sobre la imagen (como las fotos en iOS): separa la escena del vidrio sin un marco grueso.
+.landing-preview__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+  pointer-events: none;
+}
+
+.landing-preview__scene img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 581 / 415;
+  object-fit: cover;
+}
+
+// Lista agrupada (inset grouped): filas en un solo bloque, separadas por filos.
+.landing-preview__info {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  background: var(--l-relleno);
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+}
+
+.landing-preview__info-item {
+  flex: 1;
+  padding: var(--ds-space-3);
+}
+
+.landing-preview__info-item + .landing-preview__info-item {
+  box-shadow: inset 0 1px 0 var(--l-filo);
+}
+
+.landing-preview__info dt {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  margin: 0 0 0.125rem;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.02em;
+}
+
+.landing-preview__info dt mat-icon {
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+  color: var(--l-acento-tinta);
+}
+
+.landing-preview__info dd {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.landing-preview__decisions-label {
+  margin: var(--ds-space-4) var(--ds-space-2) var(--ds-space-2);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-preview__decisions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: decision;
+}
+
+.landing-preview__decisions li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 3.5rem;
+  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-2) var(--ds-space-2);
+  border-radius: var(--l-radio-chico);
+  background: var(--l-relleno);
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 500;
+  line-height: 1.25;
+  counter-increment: decision;
+}
+
+// La letra A–C como tecla redondeada (la del cuadro de diálogo del simulador, en versión iOS).
+.landing-preview__decisions li::before {
+  content: counter(decision, upper-alpha);
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  background: var(--l-tinte);
+  box-shadow: inset 0 0 0 1px var(--l-tinte-filo);
+  color: var(--l-acento-tinta);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+// ── Secciones ────────────────────────────────────────────────────────────────────────────────────
+.landing-section {
+  position: relative;
+  padding-block: clamp(var(--ds-space-8), 11vh, 7.5rem);
+}
+
+// Luz ambiental por sección, alternando de lado: profundidad sin líneas divisorias.
+.landing-section {
+  background:
+    radial-gradient(44rem 26rem at 0% 55%, color-mix(in oklab, var(--l-acento) 9%, transparent), transparent 70%);
+}
+
+// Sección alterna: una banda de luz muy tenue con bordes fundidos y el resplandor del otro lado.
+.landing-section--muted {
+  background:
+    radial-gradient(44rem 26rem at 100% 50%, color-mix(in oklab, var(--ds-info) 8%, transparent), transparent 70%),
+    radial-gradient(120% 62% at 50% 50%, color-mix(in oklab, var(--ds-surface-1) 70%, transparent) 40%, transparent 100%);
+}
+
+.landing-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ds-space-5);
+  margin-bottom: clamp(var(--ds-space-6), 5vh, var(--ds-space-7));
+}
+
+.landing-section__head--center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.landing-section__title {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: clamp(var(--ds-type-h2-size), 3.2vw, 3rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.landing-section__intro {
+  max-width: 40rem;
+  margin: var(--ds-space-3) 0 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+  text-wrap: pretty;
+}
+
+.landing-section__head--center .landing-section__intro {
+  margin-inline: auto;
+}
+
+.landing-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  min-height: 44px;
+  padding-inline: var(--ds-space-1);
+  border-radius: var(--ds-radius-sm);
+  color: var(--l-acento-tinta);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--ds-dur-fast) var(--ds-ease-out);
+}
+
+.landing-link mat-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 1.25rem;
+  transition: translate var(--ds-dur-move) var(--ds-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-link:hover {
+    color: var(--l-acento-tinta);
+  }
+
+  .landing-link:hover mat-icon {
+    translate: 0.25rem 0;
+  }
+}
+
+.landing-link:active {
+  color: var(--l-acento);
+}
+
+.landing-grid {
+  display: grid;
+  gap: var(--ds-space-4);
+}
+
+.landing-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+// Tarjetas: vidrio con filo fino. No son pulsables, así que no se levantan al pasar el cursor.
+.landing-case-card,
+.landing-role-card,
+.landing-ethics__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  min-width: 0;
+  padding: var(--ds-space-5);
+}
+
+.landing-case-card h3,
+.landing-role-card h3,
+.landing-ethics__item h3 {
+  margin: var(--ds-space-2) 0 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h3-size);
+  font-weight: 600;
+  line-height: var(--ds-type-h3-line);
+  letter-spacing: -0.02em;
+}
+
+.landing-case-card p,
+.landing-role-card p,
+.landing-ethics__item p {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: 1.55;
+}
+
+// El caso disponible: un halo de luz violeta en el filo, como un elemento seleccionado.
+.landing-case-card:not(.landing-case-card--soon) {
+  background:
+    radial-gradient(28rem 14rem at 0% 0%, color-mix(in oklab, var(--l-acento) 18%, transparent), transparent 70%),
+    radial-gradient(140% 70% at 50% 0%, var(--l-relleno), transparent 70%),
+    var(--l-vidrio);
+  box-shadow:
+    inset 0 0 0 1px var(--l-tinte-filo),
+    inset 0 1px 0 color-mix(in oklab, var(--ds-text-1) 14%, transparent),
+    var(--l-sombra),
+    0 18px 50px -28px color-mix(in oklab, var(--l-acento) 60%, transparent);
+}
+
+// Los casos que todavía no se juegan: sin vidrio ni sombra, con filo discontinuo (forma, no solo color).
+.landing-case-card--soon {
+  border: 1px dashed var(--l-filo-fuerte);
+  background: transparent;
+  box-shadow: none;
+}
+
+.landing-case-card--soon .landing-icon {
+  background: var(--l-relleno);
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+  color: var(--ds-text-2);
+}
+
+.landing-case-card ui-badge {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.landing-role-card__features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin: auto 0 0;
+  padding: var(--ds-space-2) 0 0;
+  list-style: none;
+}
+
+.landing-role-card__features li {
+  padding: 0.25rem var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-relleno);
+  box-shadow: inset 0 0 0 1px var(--l-filo);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 500;
+  line-height: var(--ds-type-caption-line);
+}
+
+// Ética: tres arriba y dos centradas abajo (con el riel, cinco columnas quedaban apretadas).
+.landing-ethics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ds-space-4);
+}
+
+.landing-ethics > * {
+  grid-column: span 2;
+}
+
+.landing-ethics > :nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.landing-ethics__item {
+  padding: var(--ds-space-5) var(--ds-space-4);
+}
+
+.landing-ethics__item h3 {
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  letter-spacing: -0.01em;
+}
+
+// ── Relato con scroll («Cómo funciona») ──────────────────────────────────────────────────────────
+// El scroll es el del navegador (sin secuestrarlo): el escenario queda fijo y el texto avanza; el paso que cruza el
+// centro de la vista enciende su clip. Cada paso ocupa casi una pantalla para que haya tiempo de leer y de ver.
+.landing-relato__saltar {
+  display: inline-flex; align-items: center; min-block-size: 44px;
+  margin-top: var(--ds-space-3);
+  color: var(--l-acento-tinta);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+}
+
+.landing-relato__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+  gap: clamp(var(--ds-space-6), 5vw, 4.5rem);
+  align-items: start;
+}
+
+.landing-relato__escenario {
+  position: sticky;
+  top: max(5.5rem, calc(50vh - 14.5rem));
+  display: grid;
+  gap: var(--ds-space-3);
+}
+
+// El clip, sin recuadro: borde continuo de 1,5rem, un filo de luz interior y una sombra profunda. Detrás, el modo ambiente.
+.landing-relato__pantalla {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  border-radius: 1.5rem;
+  box-shadow:
+    0 2px 6px color-mix(in oklab, black 25%, transparent),
+    0 40px 90px -36px color-mix(in oklab, black 75%, transparent);
+}
+
+.landing-relato__pantalla::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, white 14%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent);
+  pointer-events: none;
+}
+
+// El fondo del apartado (el video mate que se disuelve en los doodles) vive en styles/components/_publico.scss: sus
+// máscaras llevan degradados lineales y este archivo está cerca de su tope de tamaño.
+
+// El contenido de las secciones va sobre el fondo de objetos (lienzo fijo de capa 0) y el modo ambiente.
+.landing-section > .landing-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-relato__capa {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: 1.5rem;
+  background: black;
+  opacity: 0;
+  transition: opacity 400ms var(--ds-ease-out);
+}
+
+.landing-relato__capa + .landing-relato__capa {
+  position: absolute;
+  inset: 0;
+}
+
+.landing-relato__capa.is-activa {
+  opacity: 1;
+}
+
+.landing-relato__capa video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.landing-relato__controles {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding-inline: var(--ds-space-2);
+}
+
+.landing-relato__puntos {
+  display: flex;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-relato__puntos li {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-filo-fuerte);
+  transition:
+    width var(--ds-dur-slow) var(--ds-ease-drawer),
+    background-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+
+.landing-relato__puntos li.is-activo {
+  width: 1.5rem;
+  background: var(--l-acento);
+}
+
+// Sobre el video: vidrio casi opaco, como las tarjetas de los pasos (el relleno de 3,5 % no aseguraba el contraste).
+.landing .landing-relato__pausa[ui-button][variant='secondary'] {
+  background: var(--l-vidrio);
+  color: var(--ds-text-2);
+}
+
+.landing-relato__pasos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-relato__paso {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72vh;
+  opacity: 0.45;
+  transition: opacity var(--ds-dur-slow) var(--ds-ease-out);
+}
+
+.landing-relato__tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-5) var(--ds-space-6);
+}
+
+.landing-relato__paso.is-activo {
+  opacity: 1;
+}
+
+.landing-relato__paso h3 {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: clamp(var(--ds-type-h3-size), 2.2vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.landing-relato__paso p {
+  max-width: 28rem;
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+}
+
+.landing-relato__num {
+  color: var(--l-acento-tinta);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+// ── Llamado final ────────────────────────────────────────────────────────────────────────────────
+.landing-cta {
+  padding-block: var(--ds-space-7) clamp(var(--ds-space-8), 11vh, 7.5rem);
+}
+
+.landing-cta__inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ds-space-5);
+  overflow: hidden;
+  padding: clamp(var(--ds-space-7), 7vw, 5rem) var(--ds-space-5);
+  border-radius: 2rem;
+  background:
+    radial-gradient(40rem 20rem at 50% -20%, color-mix(in oklab, var(--l-acento) 30%, transparent), transparent 70%),
+    radial-gradient(30rem 16rem at 100% 120%, color-mix(in oklab, var(--ds-info) 16%, transparent), transparent 70%),
+    var(--l-vidrio);
+  text-align: center;
+}
+
+.landing-cta__text {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: clamp(var(--ds-type-h3-size), 2.4vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.landing-cta__text strong {
+  display: block;
+  margin-top: var(--ds-space-2);
+  color: var(--ds-text-1);
+  font-weight: 600;
+}
+
+// ── Pie ──────────────────────────────────────────────────────────────────────────────────────────
+.landing-footer {
+  padding-block: var(--ds-space-6) calc(var(--ds-space-6) + env(safe-area-inset-bottom, 0px));
+  box-shadow: inset 0 1px 0 var(--l-filo);
+}
+
+.landing-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+}
+
+.landing-footer p {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.landing-footer__marca {
+  display: grid;
+  gap: var(--ds-space-3);
+  max-width: 38rem;
+}
+
+.landing-footer__logo {
+  --marca-alto: 2.25rem;
+}
+
+.landing-footer img {
+  display: block;
+  height: 2.25rem;
+  width: auto;
+  border-radius: 0.375rem;
+}
+
+// ── Movimiento ───────────────────────────────────────────────────────────────────────────────────
+// Entrada del héroe: cada pieza se materializa (opacidad, desplazamiento y desenfoque a la vez) con la curva de las
+// hojas de iOS, en cascada corta. La ventana del simulador llega un instante después, desde un poco más atrás.
+.landing-enter > * {
+  animation: landing-materializar var(--l-entrada) var(--l-curva) both;
+}
+
+.landing-enter > :nth-child(2) { animation-delay: 60ms; }
+.landing-enter > :nth-child(3) { animation-delay: 120ms; }
+.landing-enter > :nth-child(4) { animation-delay: 180ms; }
+.landing-enter > :nth-child(5) { animation-delay: 240ms; }
+
+.landing-preview {
+  animation: landing-ventana calc(var(--l-entrada) + 120ms) var(--l-curva) 140ms both;
+}
+
+@keyframes landing-materializar {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.875rem);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+@keyframes landing-ventana {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(1.5rem) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+// Al bajar, las tarjetas aparecen ligadas al desplazamiento (sin temporizadores: si se sube, se deshace igual).
+@supports (animation-timeline: view()) {
+  .landing-section__head,
+  .landing-grid > *,
+    .landing-ethics > *,
+  .landing-cta__inner {
+    animation: landing-aparecer linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+
+  @keyframes landing-aparecer {
+    // Sin scale: con 0.985 los enlaces de 44 px medían 43 mientras la sección entraba (la prueba táctil los marcaba).
+    from {
+      opacity: 0;
+      transform: translateY(1.75rem);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+// ── Adaptación ───────────────────────────────────────────────────────────────────────────────────
+@media (max-width: 63.999rem) {
+  .landing-relato__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .landing-relato__escenario {
+    top: 4.75rem;
+    z-index: var(--ds-z-elevado);
+    padding-bottom: var(--ds-space-3);
+  }
+
+  .landing-relato__paso {
+    min-height: 58vh;
+    justify-content: flex-end;
+    padding-inline: var(--ds-space-2);
+  }
+
+  .landing-hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-preview {
+    justify-self: stretch;
+    max-width: none;
+  }
+
+  .landing-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-ethics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-ethics > *,
+  .landing-ethics > :nth-child(4) {
+    grid-column: auto;
+  }
+
+  .landing-ethics > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .landing-wrap {
+    width: calc(100% - 2 * var(--ds-space-4));
+  }
+
+  .landing-hero {
+    padding-top: calc(5.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  .landing-hero__actions a[ui-button] {
+    flex: 1 1 100%;
+  }
+
+  .landing-preview {
+    padding: var(--ds-space-2);
+    border-radius: 1.5rem;
+  }
+
+  .landing-preview__head::before {
+    display: none;
+  }
+
+  .landing-preview__body,
+  .landing-preview__decisions,
+  .landing-grid--3,
+  .landing-ethics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-ethics > :last-child {
+    grid-column: auto;
+  }
+
+  .landing-pausa {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    display: flex;
+    width: fit-content;
+    margin: var(--ds-space-6) auto 0;
+  }
+
+  .landing-cta__inner {
+    border-radius: 1.5rem;
+  }
+}
+
+// Movimiento reducido: el estado final aparece de una vez (solo el fundido corto de opacidad de los tokens).
+@media (prefers-reduced-motion: reduce) {
+  .landing-relato__capa,
+  .landing-relato__paso,
+  .landing-relato__puntos li {
+    transition: none;
+  }
+
+  .landing-enter > *,
+  .landing-preview,
+  .landing-section__head,
+  .landing-grid > *,
+    .landing-ethics > *,
+  .landing-cta__inner {
+    animation: none;
+  }
+
+  .landing a[ui-button]:active,
+  .landing button[ui-button]:active {
+    scale: none;
+  }
+
+  .landing-link mat-icon {
+    transition: none;
+  }
+}
+

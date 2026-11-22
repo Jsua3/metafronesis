@@ -1,0 +1,44 @@
+// Línea del cambio de ruta (plan visual §2.5): 2 px, aparece con un fundido y desliza un tramo primario. Pausada
+// mientras no se ve; con movimiento reducido, línea llena y quieta.
+:host {
+  display: block;
+  overflow: hidden;
+  block-size: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ds-dur-fade) ease;
+}
+
+:host(.ui-route-progress--active) {
+  opacity: 1;
+}
+
+.ui-route-progress__bar {
+  display: block;
+  inline-size: 30%;
+  block-size: 100%;
+  background: var(--ds-primary);
+  animation: ui-route-progress-slide 1.2s var(--ds-ease-in-out) infinite;
+  animation-play-state: paused;
+}
+
+:host(.ui-route-progress--active) .ui-route-progress__bar {
+  animation-play-state: running;
+}
+
+@keyframes ui-route-progress-slide {
+  from {
+    translate: -100% 0;
+  }
+
+  to {
+    translate: 340% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-route-progress__bar {
+    inline-size: 100%;
+    animation: none;
+  }
+}

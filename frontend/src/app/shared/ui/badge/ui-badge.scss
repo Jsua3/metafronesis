@@ -1,0 +1,40 @@
+// Insignia (plan visual F2-3): texto del tono sobre su fondo tonal (contraste ≥ 4,5 probado en tokens.test.mjs).
+// El borde transparente se vuelve visible con contraste forzado.
+:host {
+  --_fg: var(--ds-text-2);
+  --_bg: var(--ds-surface-2);
+
+  display: inline-flex;
+  align-items: center;
+  padding-block: 0.125rem;
+  padding-inline: var(--ds-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-pill);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-caption-weight);
+  letter-spacing: var(--ds-type-caption-track);
+  line-height: var(--ds-type-caption-line);
+  white-space: nowrap;
+}
+
+:host(.ui-badge--info) {
+  --_fg: var(--ds-info);
+  --_bg: var(--ds-info-bg);
+}
+
+:host(.ui-badge--success) {
+  --_fg: var(--ds-success);
+  --_bg: var(--ds-success-bg);
+}
+
+:host(.ui-badge--warning) {
+  --_fg: var(--ds-warning-text);
+  --_bg: var(--ds-warning-bg);
+}
+
+:host(.ui-badge--danger) {
+  --_fg: var(--ds-danger);
+  --_bg: var(--ds-danger-bg);
+}
