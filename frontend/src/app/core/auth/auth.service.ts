@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
@@ -101,11 +101,11 @@ export class AuthService {
     }
 
     return this.http.get<ApiResponse<UserSummary>>(`${this.API}/me`).pipe(
-      tap(res => this.currentUser.set(this.toUser(res.data))),
+      tap(res => { if (this.getToken() === token) this.currentUser.set(this.toUser(res.data)); }),
       map(() => this.currentUser()),
-      catchError(() => {
-        this.clearSession();
-        return of(null);
+      catchError((error: unknown) => {
+        if (this.getToken() === token && error instanceof HttpErrorResponse && error.status === 401) this.clearSession();
+        return of(this.currentUser());
       })
     );
   }

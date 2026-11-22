@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -6,6 +6,7 @@ import { Router, provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from './auth.service';
+import { jwtInterceptor } from './jwt.interceptor';
 
 /** JWT de prueba que no vence (año 2100) con el rol y el id que lee `loadUser`. */
 function token(role = 'ESTUDIANTE'): string {
@@ -131,5 +132,53 @@ describe('AuthService: cierre de sesión revocable (S1-4)', () => {
   it('sin token no llama al servidor', () => {
     service.logout();
     http.expectNone('/api/auth/logout');
+  });
+});
+
+
+describe('sincronización de sesión', () => {
+  let service: AuthService;
+  let http: HttpTestingController;
+  const a = { id: 7, nombre: 'Ana', apellido: 'Ríos', email: 'ana@cue.edu.co', role: 'ESTUDIANTE' as const };
+  const b = { ...a, id: 8, nombre: 'Beatriz', role: 'PROFESOR' as const };
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), provideRouter([]), provideHttpClient(withInterceptors([jwtInterceptor])), provideHttpClientTesting()] });
+    service = TestBed.inject(AuthService);
+    http = TestBed.inject(HttpTestingController);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+  });
+  afterEach(() => { http.verify(); localStorage.clear(); });
+  it.each([200, 401, 403])('una respuesta tardía %s no altera la sesión nueva', async status => {
+    service.saveSession(token(), a);
+    const done = firstValueFrom(service.syncCurrentUser());
+    const req = http.expectOne('/api/auth/me');
+    service.saveSession(token('PROFESOR'), b);
+    if (status === 200) req.flush({ success: true, data: a });
+    else req.flush({}, { status, statusText: 'Error' });
+    await done;
+    expect(service.getToken()).toBe(token('PROFESOR'));
+    expect(service.currentUser()).toEqual(b);
+  });
+  it.each([500, 0])('un fallo temporal %s conserva la sesión y devuelve el usuario', async status => {
+    service.saveSession(token(), a);
+    const done = firstValueFrom(service.syncCurrentUser());
+    http.expectOne('/api/auth/me').flush({}, { status, statusText: 'Error' });
+    expect(await done).toEqual(a);
+    expect(service.getToken()).toBe(token());
+  });
+  it('un 401 vigente cierra la sesión', async () => {
+    service.saveSession(token(), a);
+    const done = firstValueFrom(service.syncCurrentUser());
+    http.expectOne('/api/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(await done).toBeNull();
+    expect(service.getToken()).toBeNull();
+  });
+  it('un 403 que exige cambiar la contraseña mantiene la sesión y marca al usuario', async () => {
+    service.saveSession(token(), a);
+    const done = firstValueFrom(service.syncCurrentUser());
+    http.expectOne('/api/auth/me').flush({ code: 'PASSWORD_CHANGE_REQUIRED' }, { status: 403, statusText: 'Forbidden' });
+    expect((await done)?.mustChangePassword).toBe(true);
+    expect(service.getToken()).toBe(token());
   });
 });

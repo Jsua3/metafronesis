@@ -26,6 +26,7 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
       if (event instanceof HttpResponse) notifications.dismissMatching('error', CONNECTION_MESSAGE);
     }),
     catchError((error: unknown) => {
+      if (token !== auth.getToken()) return throwError(() => error);
       errorChain.handle({
         error, url: req.url, auth, router, notifications,
         screenHandlesForbidden: req.context.get(SCREEN_HANDLES_FORBIDDEN),
