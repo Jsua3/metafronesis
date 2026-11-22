@@ -1,0 +1,64 @@
+@use 'mixins' as m;
+
+// Pestañas (plan visual F2-6): lista con un filo inferior; la seleccionada lleva el color primario y un subrayado de
+// 2 px (no solo color: también peso y subrayado). Objetivos de 44 px. Paneles ocultos fuera de la vista.
+.ui-tabs__list {
+  display: flex;
+  gap: var(--ds-space-1);
+  overflow-x: auto;
+  border-block-end: 1px solid var(--ds-border);
+  scrollbar-width: thin;
+}
+
+.ui-tabs__tab {
+  flex: none;
+  min-block-size: var(--ds-target-min);
+  padding-inline: var(--ds-space-4);
+  border: 0;
+  border-block-end: 2px solid transparent;
+  border-radius: var(--ds-radius-sm) var(--ds-radius-sm) 0 0;
+  background: transparent;
+  color: var(--ds-text-2);
+  font-family: inherit;
+  font-size: var(--ds-type-body-size);
+  font-weight: var(--ds-type-h3-weight);
+  cursor: pointer;
+  transition:
+    color var(--ds-dur-fast) ease,
+    border-color var(--ds-dur-fast) ease,
+    background-color var(--ds-dur-fast) ease;
+
+  @include m.ds-hover {
+    color: var(--ds-text-1);
+    background: var(--ds-surface-2);
+  }
+
+  &[aria-selected='true'] {
+    border-block-end-color: var(--ds-primary);
+    color: var(--ds-primary);
+  }
+
+  &[aria-disabled='true'] {
+    color: var(--ds-text-3);
+    cursor: not-allowed;
+  }
+}
+
+// La lista se desplaza en horizontal y recortaría un anillo hacia fuera: en las pestañas va hacia dentro.
+.ui-tabs__tab:focus-visible {
+  outline-offset: -3px;
+  box-shadow: none;
+}
+
+// Regla plana (no anidada) para que el trinquete ui-lint la asocie a la pestaña.
+.ui-tabs__tab:active {
+  background: var(--ds-surface-2);
+}
+
+.ui-tabs__panel {
+  padding-block-start: var(--ds-space-4);
+
+  &[inert] {
+    display: none;
+  }
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>SIEP | Sistema de Entrenamiento Psicosocial</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SIEP es una plataforma académica para la simulación, evaluación y trazabilidad de decisiones en casos psicosociales.">
+  <!-- Color de la barra del navegador en móvil: el fondo de la pantalla de arranque en cada tema. -->
+  <meta name="theme-color" content="#F5F7FA" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E1322" media="(prefers-color-scheme: dark)">
+  <meta name="google-signin-client_id" content="">
+  <!-- Favicon: isotipo de Metafrónesis en blanco (pedido del usuario, 2026-11-20), en lienzo cuadrado. La pantalla de
+       arranque de abajo usa el isotipo a color de assets/branding (QA ronda 3, punto 4). -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon-metafronesis.svg">
+  <link rel="preload" href="/assets/fonts/material-symbols-rounded.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/poppins-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/poppins-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- CSP (plan 03, S2-4): este archivo no lleva scripts ni estilos en línea, ni manejadores de eventos, ni atributos de estilo; el arranque vive en assets/boot.css y boot.js. El servidor (shared/spa.py) cambia el valor de ngCspNonce por el nonce de cada petición; con `ng serve` queda tal cual. -->
+  <link rel="stylesheet" href="/assets/boot.css">
+  <!-- Sin JavaScript la pantalla de arranque (fija, a pantalla completa) taparía el aviso del cuerpo. Va DESPUÉS de boot.css: el orden de cascada la hace efectiva. -->
+  <noscript>
+    <link rel="stylesheet" href="/assets/boot-noscript.css">
+  </noscript>
+</head>
+<body>
+  <app-root ngCspNonce="__SIEP_CSP_NONCE__">
+    <div class="siep-boot" role="status">
+      <div class="siep-boot__contenido">
+        <img class="siep-boot__mark siep-boot__mark--claro" src="/assets/branding/metafronesis-isotipo.svg" alt="" width="72" height="66">
+        <img class="siep-boot__mark siep-boot__mark--oscuro" src="/assets/branding/metafronesis-isotipo-oscuro.svg" alt="" width="72" height="66">
+        <p class="siep-boot__marca">Metafrónesis</p>
+        <p class="siep-boot__label">Preparando tu espacio…</p>
+        <div class="siep-boot__bar" aria-hidden="true"></div>
+      </div>
+      <div class="siep-boot__slow" hidden>
+        <p>Esto está tardando más de lo normal. Revisa tu conexión y vuelve a intentarlo.</p>
+        <button type="button" class="siep-boot__reload">Recargar</button>
+      </div>
+    </div>
+  </app-root>
+  <!-- Sin defer y justo después de <app-root>: aplica el tema guardado antes del primer cuadro (sin parpadeo de claro a
+       oscuro) y vigila cuándo Angular retira la pantalla de arranque para fundir la salida. -->
+  <script src="/assets/boot.js"></script>
+  <noscript>
+    <p class="siep-noscript">
+      Metafrónesis necesita JavaScript para funcionar. Actívalo en tu navegador y recarga la página.
+    </p>
+  </noscript>
+</body>
+</html>

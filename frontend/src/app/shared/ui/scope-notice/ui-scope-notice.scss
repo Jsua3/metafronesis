@@ -1,0 +1,40 @@
+// Aviso de alcance (plan visual F2-11): sobrio, con el tono informativo; la marca de borrador debajo, pequeña.
+:host {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--ds-space-1) var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-info-bg);
+  color: var(--ds-text-1);
+}
+
+.ui-scope-notice__icon {
+  grid-row: span 2;
+  inline-size: auto;
+  block-size: auto;
+  color: var(--ds-info);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-body-line);
+}
+
+.ui-scope-notice__text {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+}
+
+.ui-scope-notice__draft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+}
+
+.ui-scope-notice__draft-note {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}

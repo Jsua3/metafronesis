@@ -1,0 +1,88 @@
+// Barra de filtros (DISENO C6): una fila que se parte cuando no cabe. La búsqueda crece, los filtros proyectados van a
+// su lado y el recuento con «Limpiar filtros» se alinea al final. Nada se sale de la página: cada pieza puede encogerse
+// hasta su contenido mínimo (`min-inline-size: 0`) y el segmentado se desplaza dentro de sí mismo.
+:host {
+  display: grid;
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+}
+
+.ui-filtros__barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ds-space-3) var(--ds-space-4);
+  min-inline-size: 0;
+}
+
+.ui-filtros__busqueda {
+  flex: 1 1 16rem;
+  max-inline-size: 26rem;
+}
+
+// La lupa dentro del campo, a la izquierda; el texto deja su sitio.
+.ui-filtros__lupa {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--ds-space-3);
+  z-index: var(--ds-z-elevado);
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-block: auto;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.ui-filtros__busqueda input {
+  padding-inline-start: calc(var(--ds-space-3) + 1.75rem);
+}
+
+.ui-filtros__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.ui-filtros__resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  margin-inline-start: auto;
+  min-block-size: var(--ds-target-min);
+}
+
+.ui-filtros__recuento {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  strong {
+    color: var(--ds-text-1);
+    font-weight: 600;
+  }
+}
+
+// En un teléfono, la búsqueda ocupa la fila entera y el recuento queda a la izquierda bajo los filtros.
+@media (max-width: 40rem) {
+  .ui-filtros__busqueda {
+    flex-basis: 100%;
+    max-inline-size: none;
+  }
+
+  .ui-filtros__resumen {
+    margin-inline-start: 0;
+  }
+}

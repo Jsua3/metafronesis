@@ -1,0 +1,159 @@
+@use 'mixins' as m;
+
+// Cabecera de pantalla (plan visual F2-3; DISENO C1): texto a la izquierda y acciones a la derecha. Responde al ancho
+// de su propio contenedor (no de la ventana): en una columna estrecha o un teléfono las acciones bajan a ancho completo.
+// Los tokens `--l-*` vienen del portal o de la portada; fuera de ellos (galería, editor) caen a los `--ds-*`.
+:host {
+  // Rejilla y no flex: con flex, unas acciones largas empujaban el título a una columna estrecha. El anfitrión es
+  // además el contenedor que consultan sus hijos (`@container` al final).
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ds-space-4) var(--ds-space-6);
+  container-type: inline-size;
+  margin-block-end: var(--ds-space-6);
+}
+
+.ui-page-header__text,
+.ui-page-header__actions {
+  min-inline-size: 0;
+}
+
+.ui-page-header__text {
+  display: grid;
+  justify-items: start;
+  gap: var(--ds-space-2);
+  max-inline-size: 48rem;
+}
+
+// Regreso: enlace discreto encima de todo, con el área táctil completa (44 px) aunque el texto sea pequeño.
+.ui-page-header__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  min-block-size: var(--ds-target-min);
+  margin-block: calc(-1 * var(--ds-space-2)) 0;
+  margin-inline-start: calc(-1 * var(--ds-space-1));
+  padding-inline: var(--ds-space-1) var(--ds-space-2);
+  border-radius: var(--ds-radius-pill);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-s-line);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--ds-dur-fast) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    background: var(--l-relleno, var(--ds-surface-2));
+    color: var(--ds-text-1);
+  }
+
+  &:active {
+    scale: 0.97;
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ui-page-header__volver-icono {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  font-size: var(--ds-type-lead-size);
+  line-height: 1;
+}
+
+// El antetítulo es la píldora de la portada (`.pub-etiqueta`) con la firma de la marca delante.
+.ui-page-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 var(--ds-space-1);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  box-shadow: inset 0 0 0 1px var(--l-tinte-filo, transparent);
+  color: var(--l-acento-tinta, var(--ds-primary));
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-caption-weight);
+  letter-spacing: 0.06em;
+  line-height: var(--ds-type-caption-line);
+  text-transform: uppercase;
+}
+
+// Firma: tres píxeles de 5 px con los colores del isotipo (cian, azul y el violeta del tema). Decorativa.
+.ui-page-header__firma {
+  flex: none;
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  margin-inline-end: 1.3125rem;
+  background: var(--marca-cian, var(--ds-info));
+  box-shadow:
+    0.4375rem 0 0 var(--marca-azul, var(--ds-info)),
+    0.875rem 0 0 var(--l-acento, var(--ds-primary));
+}
+
+.ui-page-header__title {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h1-size);
+  font-weight: var(--ds-type-h1-weight);
+  letter-spacing: var(--ds-type-h1-track);
+  line-height: var(--ds-type-h1-line);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.ui-page-header__description {
+  max-inline-size: 60ch;
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+  text-wrap: pretty;
+}
+
+.ui-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-3);
+
+  &:empty {
+    display: none;
+  }
+}
+
+// Columna estrecha o teléfono: las acciones bajan bajo la descripción y toman el ancho (la principal es fácil de
+// alcanzar con el pulgar y ningún texto de botón se corta).
+@container (max-width: 40rem) {
+  .ui-page-header__text {
+    grid-column: 1 / -1;
+  }
+
+  .ui-page-header__actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .ui-page-header__eyebrow {
+    corner-shape: squircle;
+  }
+}
+
+@media (forced-colors: active) {
+  .ui-page-header__eyebrow {
+    border: 1px solid CanvasText;
+  }
+
+  .ui-page-header__firma {
+    display: none;
+  }
+}

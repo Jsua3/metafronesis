@@ -1,0 +1,196 @@
+@use 'components/materiales' as m;
+@use 'tokens/color';
+
+// Marco de diálogo y hoja (plan visual F2-7): encabezado con título y cerrar, descripción, cuerpo con su propio
+// desplazamiento y acciones al pie alineadas al final (la principal, la última). Sin encapsular (ver `ui-dialog.ts`):
+// todo va bajo `.ui-dialog-frame` o bajo `.ui-overlay-materiales`.
+.ui-dialog-frame {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  max-block-size: inherit;
+  padding: var(--ds-space-5);
+  gap: var(--ds-space-3);
+}
+
+.ui-dialog-frame__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+}
+
+.ui-dialog-frame__title {
+  margin: 0;
+  padding-block-start: var(--ds-space-2);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h3-size);
+  font-weight: var(--ds-type-h2-weight);
+  letter-spacing: var(--ds-type-h3-track);
+  line-height: var(--ds-type-h3-line);
+  text-wrap: balance;
+}
+
+.ui-dialog-frame__close {
+  margin-block-start: calc(-1 * var(--ds-space-1));
+  margin-inline-end: calc(-1 * var(--ds-space-2));
+}
+
+.ui-dialog-frame__description {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  text-wrap: pretty;
+}
+
+// Desplazable: el relleno compensado deja sitio al anillo de foco (3 px + 2 px) de los campos a todo lo ancho.
+.ui-dialog-frame__body {
+  min-block-size: 0;
+  margin: calc(-1 * var(--ds-space-2));
+  padding: var(--ds-space-2);
+  overflow: auto;
+}
+
+.ui-dialog-frame__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-3);
+
+  &:empty {
+    display: none;
+  }
+}
+
+// En un teléfono las acciones toman el ancho y la principal (la última) queda abajo, al alcance del pulgar.
+@media (max-width: 30rem) {
+  .ui-dialog-frame__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
+
+// ── La capa con la piel de quien la abre (DISENO C13 y §2.3) ───────────────────────────────────────────────────
+// `UiDialog` pone `data-skin` y esta clase en la capa (`.cdk-overlay-pane`) y en su velo, que viven en el contenedor
+// del CDK, fuera del portal: por eso los materiales de la portada (`--l-*`) se emiten aquí. El diálogo es capa de
+// controles (P3): vidrio casi opaco con filo de luz, radio de 1.5rem y la sombra alta; el contenido de detrás ya queda
+// apagado por el velo. Sin `backdrop-filter`: el trinquete de `ui:lint` no admite vidrios nuevos (D-25), y sobre un velo
+// del 60 % el desenfoque apenas se nota.
+.ui-overlay-materiales {
+  @include m.materiales;
+}
+
+.ui-overlay-materiales[data-skin='portal'] {
+  @include m.materiales-claro;
+}
+
+// El violeta de marca como único color de acción también en las capas claras, como en `.portal` (DP-03). Fuera de los
+// colores forzados, por la misma razón que en `skins/_portal.scss` (D-19).
+@media not (forced-colors: active) {
+  .ui-overlay-materiales[data-skin='portal']:not(.ui-dialog-backdrop) {
+    @include color.emit(color.$portal-acento);
+  }
+}
+
+// El velo: la página de la piel al 60 %, no la tinta (un gris sobre el claro ensucia; sobre el oscuro, sí oscurece).
+.ui-dialog-backdrop.ui-overlay-materiales {
+  background: color-mix(in oklab, var(--ds-surface-page) 60%, transparent);
+  transition-duration: var(--ds-dur-fade);
+}
+
+:is(.ui-dialog-pane, .ui-sheet-pane).ui-overlay-materiales .cdk-dialog-container {
+  border: 0;
+  border-radius: var(--l-radio);
+  background: var(--l-vidrio-alto);
+  box-shadow:
+    inset 0 0 0 1px var(--l-filo-fuerte),
+    inset 0 1px 0 var(--l-brillo),
+    var(--l-sombra-alta);
+  color: var(--ds-text-1);
+  font-family: var(--ds-font-sans);
+}
+
+// El vidrio del diálogo es algo más denso que el de la barra: aquí se lee y se escribe.
+.ui-dialog-pane.ui-overlay-materiales {
+  --l-vidrio-alto: color-mix(in oklab, var(--ds-surface-1) 94%, transparent);
+}
+
+// La hoja, opaca: se apoya en el borde de la pantalla sobre el contenido más denso (la barra inferior, las tarjetas) y
+// al 94 % sus filas dejaban ver el texto de detrás como un fantasma (medido en la hoja «Más» a 390 px, pasada final).
+.ui-sheet-pane.ui-overlay-materiales {
+  --l-vidrio-alto: var(--ds-surface-1);
+}
+
+// Entrada del diálogo: escala .98 → 1 y opacidad en 200 ms; salida en 160 ms (DISENO §2.6). La escala usa
+// `--ds-dur-base`, que con movimiento reducido vale 0,01 ms: entonces solo queda el fundido de opacidad.
+.ui-dialog-pane.ui-overlay-materiales {
+  .cdk-dialog-container {
+    transition:
+      opacity var(--ds-dur-fade) var(--ds-ease-out),
+      scale var(--ds-dur-base) var(--ds-ease-out);
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.98;
+    }
+  }
+
+  &.ui-overlay--leaving .cdk-dialog-container {
+    opacity: 0;
+    scale: 0.98;
+    transition-duration: var(--ds-dur-fast);
+  }
+}
+
+// Hojas: entran por su borde en 300 ms con la curva de las hojas de iOS y salen en 200 ms. Solo la esquina que mira al
+// contenido va redondeada.
+.ui-sheet-pane.ui-overlay-materiales {
+  .cdk-dialog-container {
+    transition:
+      opacity var(--ds-dur-fade) var(--ds-ease-drawer),
+      translate var(--ds-dur-slow) var(--ds-ease-drawer);
+  }
+
+  &.ui-overlay--leaving .cdk-dialog-container {
+    transition-duration: var(--ds-dur-fade), var(--ds-dur-base);
+  }
+}
+
+.ui-sheet-pane--bottom.ui-overlay-materiales .cdk-dialog-container {
+  border-radius: var(--l-radio) var(--l-radio) 0 0;
+}
+
+.ui-sheet-pane--end.ui-overlay-materiales .cdk-dialog-container {
+  border-radius: var(--l-radio) 0 0 var(--l-radio);
+}
+
+// Cabecera y pie de la hoja quedan a la vista mientras su cuerpo se desplaza (§2.3: vidrio en lo que flota).
+.ui-sheet-pane.ui-overlay-materiales .ui-dialog-frame {
+  block-size: 100%;
+  box-sizing: border-box;
+}
+
+// Esquinas continuas (la curvatura de iOS) donde el navegador las dibuja.
+@supports (corner-shape: squircle) {
+  :is(.ui-dialog-pane, .ui-sheet-pane).ui-overlay-materiales .cdk-dialog-container {
+    corner-shape: squircle;
+  }
+}
+
+// Transparencia reducida y más contraste: superficie sólida y filo marcado.
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .ui-overlay-materiales {
+    @include m.materiales-reducidos;
+  }
+
+  :is(.ui-dialog-pane, .ui-sheet-pane).ui-overlay-materiales {
+    --l-vidrio-alto: var(--ds-surface-1);
+  }
+}
+
+// Colores forzados: el sistema borra sombras y fondos; el diálogo conserva un contorno.
+@media (forced-colors: active) {
+  :is(.ui-dialog-pane, .ui-sheet-pane).ui-overlay-materiales .cdk-dialog-container {
+    border: 1px solid CanvasText;
+  }
+}

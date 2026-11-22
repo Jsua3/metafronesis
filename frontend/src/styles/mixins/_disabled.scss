@@ -1,0 +1,12 @@
+// Deshabilitado con motivo (plan visual §2.6): se ve deshabilitado y el cursor lo dice, pero el control sigue
+// recibiendo el puntero y el foco para que su tooltip o su aria-describedby expliquen el motivo (sin
+// pointer-events: none). Se usa con aria-disabled="true" en vez de disabled cuando hay un motivo que leer.
+@mixin ds-disabled {
+  &[aria-disabled='true'],
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--ds-text-3);
+    background-color: var(--ds-surface-2);
+    border-color: var(--ds-border);
+  }
+}

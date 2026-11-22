@@ -1,0 +1,154 @@
+@use 'components/materiales' as mat;
+@use 'tokens/color';
+
+// Galería de `shared/ui` (solo en desarrollo). Cada piel es un panel con los mismos materiales que el portal
+// (`.portal` en `_portal.scss`): los `--l-*` de la portada y, en la clara, el violeta de marca como color de acción
+// (DP-03). Así las piezas se ven aquí como se verán en el portal, y no con los valores de reserva.
+.ui-gallery {
+  box-sizing: border-box;
+  max-inline-size: 72rem;
+  margin: 0 auto;
+  padding: var(--ds-space-6) var(--l-canal, var(--ds-space-4));
+}
+
+.ui-gallery:focus {
+  outline: none;
+}
+
+.ui-gallery__skin {
+  @include mat.materiales;
+
+  margin-block: var(--ds-space-5);
+  padding: var(--ds-space-5) clamp(var(--ds-space-3), 3vw, var(--ds-space-5));
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-page);
+  color: var(--ds-text-1);
+  font-family: var(--ds-font-sans);
+}
+
+.ui-gallery__skin[data-skin='portal'] {
+  @include mat.materiales-claro;
+}
+
+@media not (forced-colors: active) {
+  .ui-gallery__skin[data-skin='portal'] {
+    @include color.emit(color.$portal-acento);
+  }
+}
+
+.ui-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--ds-space-4);
+}
+
+// El h2 global hereda el primario del portal (alias en :root): cada piel pinta su título con su texto.
+.ui-gallery__skin > h2 {
+  margin-block: 0 var(--ds-space-4);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h2-size);
+}
+
+.ui-gallery__grow {
+  flex: 1;
+}
+
+.ui-gallery__card-title {
+  display: block;
+  margin-block-end: var(--ds-space-1);
+}
+
+.ui-gallery__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin-block: var(--ds-space-3);
+}
+
+.ui-gallery__nota {
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+}
+
+// Figuras del kit: en fila, apoyadas en la misma línea de suelo.
+.ui-gallery__figuras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ds-space-5);
+  margin-block: var(--ds-space-4) var(--ds-space-6);
+}
+
+// Una columna de 320 px exactos (20rem): la tabla apilada se mira aquí a cualquier ancho de ventana. El marco es un
+// contorno (no ocupa sitio), así el contenido mide justo 320 px.
+.ui-gallery__estrecha {
+  inline-size: min(100%, 20rem);
+  margin-block-start: var(--ds-space-4);
+  outline: 1px dashed var(--ds-border-strong);
+  outline-offset: var(--ds-space-2);
+}
+
+// Una página en miniatura que se desplaza: la barra de acciones del pie se pega a su borde inferior.
+.ui-gallery__mini-pagina {
+  max-block-size: 18rem;
+  overflow: auto;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-page);
+
+  p {
+    margin: 0 0 var(--ds-space-3);
+    color: var(--ds-text-2);
+  }
+}
+
+// La columna lateral de muestra para la barra en posición «columna».
+.ui-gallery__columna {
+  display: grid;
+  max-inline-size: 26rem;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+
+  p {
+    margin: 0;
+    padding: var(--ds-space-4);
+    color: var(--ds-text-2);
+  }
+
+  ui-barra-acciones {
+    padding-inline: var(--ds-space-4);
+  }
+}
+
+// La banda de cabecera de Inicio con los doodles detrás (DP-23): el mosaico es fijo y solo asoma en esta franja.
+.ui-gallery__banda {
+  position: relative;
+  z-index: var(--ds-z-elevado);
+  display: grid;
+  gap: var(--ds-space-2);
+  min-block-size: 9rem;
+  align-content: center;
+  padding: var(--ds-space-5);
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  box-shadow: inset 0 0 0 1px var(--l-filo, var(--ds-border));
+
+  p {
+    margin: 0;
+    color: var(--ds-text-2);
+  }
+
+  strong {
+    font-size: var(--ds-type-h3-size);
+  }
+}
+
+// La pieza de valoración docente en tres estados (con datos, en columna estrecha y sin valoración), separados.
+.ui-gallery__valoraciones {
+  display: grid;
+  gap: var(--ds-space-6);
+}

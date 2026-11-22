@@ -1,0 +1,35 @@
+// Globo (plan visual §2.6 y §2.7): superficie invertida, texto de 14 px, entrada 160 ms desde el disparador
+// (origen de la transformación según quede arriba o abajo) y salida más corta. Sin flecha: menos ruido.
+:host {
+  display: block;
+  max-inline-size: 18rem;
+  padding-block: var(--ds-space-1);
+  padding-inline: var(--ds-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-text-1);
+  box-shadow: var(--ds-shadow-e2);
+  color: var(--ds-surface-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+  transform-origin: bottom center;
+  transition:
+    opacity var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-fast) var(--ds-ease-out);
+
+  @starting-style {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+:host-context(.ui-tooltip-pane--below) {
+  transform-origin: top center;
+}
+
+:host(.ui-tooltip--leaving) {
+  opacity: 0;
+  scale: 0.98;
+  transition-duration: var(--ds-dur-press);
+}

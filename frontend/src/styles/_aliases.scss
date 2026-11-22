@@ -1,0 +1,32 @@
+// Alias de los espacios de nombres heredados (plan visual §3.2 «alias, no renombrado»): las clases y estilos
+// viejos siguen funcionando y ya pintan con los tokens nuevos. F9-4 retiró los 19 que ya nadie referenciaba; los que
+// quedan tienen usos vivos y se retiran cuando `ui:lint` (colores literales) llegue a 0.
+:root {
+  --siep-blue: var(--ds-primary);
+  --siep-blue-dark: var(--ds-primary-hover);
+  --siep-blue-soft: var(--ds-info);
+  --siep-bg: var(--ds-surface-page);
+  --siep-surface: var(--ds-surface-1);
+  --siep-muted: var(--ds-text-2);
+  --siep-shadow-soft: var(--ds-shadow-e2);
+
+  --psy-bg: var(--ds-surface-page);
+  --psy-surface: var(--ds-surface-1);
+  --psy-ink: var(--ds-text-1);
+  --psy-muted: var(--ds-text-2);
+  --psy-blue: var(--ds-info);
+  --psy-blue-deep: var(--ds-primary);
+  --psy-teal: var(--ds-info);
+  --psy-teal-deep: var(--ds-primary-hover);
+  --psy-border: var(--ds-border);
+  --psy-focus: var(--ds-focus);
+  --psy-radius: var(--ds-radius-lg);
+  --psy-pill: var(--ds-radius-pill);
+  --psy-space-4: var(--ds-space-4);
+  --psy-shadow-soft: var(--ds-shadow-e2);
+  --psy-shadow-card: var(--ds-shadow-e1);
+  --psy-z-nav: var(--ds-z-cubierta);
+  --psy-ease-out: var(--ds-ease-out);
+  --psy-motion-fast: var(--ds-dur-fast) var(--ds-ease-out);
+  --psy-motion-ui: var(--ds-dur-slow) var(--ds-ease-out);
+}

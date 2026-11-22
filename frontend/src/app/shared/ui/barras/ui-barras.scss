@@ -1,0 +1,176 @@
+// Gráfico de barras (DISENO C10). Sin animación: un gráfico se lee, no se mira crecer (P10). El color de cada tono
+// lleva encima su patrón; el texto va siempre en la tinta de la piel (≥ 4,5:1), nunca en el color de la barra.
+:host {
+  display: grid;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  container-type: inline-size;
+}
+
+.ui-barras__descripcion {
+  max-inline-size: 60ch;
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  text-wrap: pretty;
+}
+
+.ui-barras__lista,
+.ui-barras__leyenda {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Lista: etiqueta, barra y cantidad en tres columnas; la cantidad no se parte nunca.
+.ui-barras__fila {
+  display: grid;
+  grid-template-columns: minmax(6rem, 32%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-block-size: 2rem;
+}
+
+.ui-barras__etiqueta {
+  min-inline-size: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+}
+
+.ui-barras__valor {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ds-type-body-s-line);
+  white-space: nowrap;
+}
+
+.ui-barras__pista {
+  display: block;
+  block-size: 0.75rem;
+  overflow: hidden;
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-relleno, var(--ds-surface-2));
+  box-shadow: inset 0 0 0 1px var(--l-filo, var(--ds-border));
+}
+
+.ui-barras__barra {
+  --_tono: var(--ds-text-2);
+
+  display: block;
+  block-size: 100%;
+  inline-size: calc(var(--ratio, 0) * 100%);
+  max-inline-size: 100%;
+  border-radius: inherit;
+  background-color: var(--_tono);
+}
+
+// Una cantidad mayor que cero nunca se pinta invisible: con 1 de 30 la barra queda en 3 %, y debe verse.
+.ui-barras__barra--hay {
+  min-inline-size: calc(2 * var(--l-pixel, 2px));
+}
+
+// Apilada: una sola barra partida, con su leyenda en texto debajo.
+.ui-barras__apilada {
+  display: flex;
+  block-size: 1rem;
+  gap: 2px;
+  overflow: hidden;
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-relleno, var(--ds-surface-2));
+  box-shadow: inset 0 0 0 1px var(--l-filo, var(--ds-border));
+
+  .ui-barras__barra {
+    flex: 0 0 calc(var(--ratio, 0) * 100%);
+    inline-size: auto;
+    min-inline-size: var(--l-pixel, 2px);
+    border-radius: 0;
+  }
+}
+
+.ui-barras__leyenda {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--ds-space-2) var(--ds-space-4);
+}
+
+.ui-barras__clave {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+}
+
+.ui-barras__muestra {
+  --_tono: var(--ds-text-2);
+
+  flex: none;
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  border-radius: 0.25rem;
+  background-color: var(--_tono);
+}
+
+// ── Tonos y patrones (el patrón es una trama clara sobre el color: se ve en las dos pieles) ─────────────────────
+.ui-barras__tinta--neutral {
+  --_tono: var(--ds-text-2);
+}
+
+.ui-barras__tinta--info {
+  --_tono: var(--ds-info);
+}
+
+.ui-barras__tinta--success {
+  --_tono: var(--ds-success);
+}
+
+.ui-barras__tinta--warning {
+  --_tono: var(--ds-warning-text);
+}
+
+.ui-barras__tinta--danger {
+  --_tono: var(--ds-danger);
+}
+
+.ui-barras__tinta--rayas {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--ds-surface-1) 55%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+}
+
+.ui-barras__tinta--puntos {
+  background-image: radial-gradient(circle, color-mix(in oklab, var(--ds-surface-1) 60%, transparent) 1px, transparent 1.6px);
+  background-size: 5px 5px;
+}
+
+// En un contenedor estrecho (columna lateral, teléfono) la etiqueta va encima de su barra.
+@container (max-width: 24rem) {
+  .ui-barras__fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--ds-space-1);
+  }
+
+  .ui-barras__etiqueta {
+    grid-column: 1 / -1;
+  }
+}
+
+// Colores forzados: el sistema borra los fondos; las barras pasan a contorno y relleno del sistema.
+@media (forced-colors: active) {
+  .ui-barras__pista,
+  .ui-barras__apilada {
+    border: 1px solid CanvasText;
+  }
+
+  .ui-barras__barra,
+  .ui-barras__muestra {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}

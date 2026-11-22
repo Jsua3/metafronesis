@@ -1,0 +1,343 @@
+@use 'sass:map';
+@use '../tokens/color';
+@use 'materiales' as m;
+
+// Portal de trabajo de Metafrónesis (estudiante, docente y administrador), rediseño 2026-11-21 (DISENO §2). Es la
+// hermana de `.publico`: los mismos materiales de la portada (_materiales.scss) puestos en las pantallas densas.
+// Se activa con la clase `.portal` en el contenedor del shell, que lleva también su piel (`data-skin`: portal = claro,
+// game = oscuro; REGLA-010: nunca en `body` ni en `:root`). Aquí vive lo que se usa en todas las pantallas y no debe
+// gastar el presupuesto de 20 kB de cada componente: fondo, tipografía, densidad y las primitivas `.p-*` de maquetación.
+
+.portal {
+  @include m.materiales;
+
+  // El host `app-shell` es un elemento personalizado (en línea por defecto).
+  display: block;
+  position: relative;
+  // Contexto de apilamiento propio: la luz ambiental de `::before` queda DETRÁS del contenido pero encima del fondo.
+  isolation: isolate;
+  min-height: 100dvh;
+  background: var(--ds-surface-page);
+  color: var(--ds-text-1);
+  font-family: var(--ds-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // Luz ambiental: los dos reflejos de la portada, más tenues. Antes `body` pintaba un degradado con literales y dejaba
+  // una franja plana bajo el contenido corto (Invitaciones, Usuarios, Grupos, Reportes, Sin permiso y la 404).
+  --l-luz-uno: 14%;
+  --l-luz-dos: 9%;
+
+  // Densidad de trabajo (por defecto); la lectura y la compacta la cambian por clase en la página.
+  --l-relleno-tarjeta: 1.25rem;
+  --l-alto-fila: 3rem;
+
+  // Tipografía (DISENO §2.4): los componentes leen estos tokens, así que ajustarlos aquí cambia `ui-page-header`,
+  // `ui-section` y las tarjetas sin tocar sus archivos. Poppins trae 400, 600 y 800: el 700 del h1 se resuelve a 800,
+  // igual que en la portada. Una sección ya no grita más que la página (h2 de 1.375rem, antes 1.75rem a 800).
+  --ds-type-h1-size: clamp(1.75rem, 6vw, 2.25rem);
+  --ds-type-h1-line: 1.15;
+  --ds-type-h1-track: -0.025em;
+  --ds-type-h1-weight: 700;
+  --ds-type-h2-size: 1.375rem;
+  --ds-type-h2-line: 1.3;
+  --ds-type-h2-track: -0.01em;
+  --ds-type-h2-weight: 600;
+  --ds-type-h3-size: 1.0625rem;
+  --ds-type-h3-line: 1.35;
+  --ds-type-h3-track: 0;
+  --ds-type-h3-weight: 600;
+}
+
+// Piel clara: los materiales recalibrados y una luz más baja.
+.portal[data-skin='portal'] {
+  @include m.materiales-claro;
+  --l-luz-uno: 9%;
+  --l-luz-dos: 6%;
+}
+
+.portal::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  // Un nivel por debajo de la base: detrás de todo lo que pinta el contenido, dentro del contexto de `.portal`.
+  z-index: calc(var(--ds-z-base) - 1);
+  pointer-events: none;
+  background:
+    radial-gradient(70rem 42rem at 8% -6%, color-mix(in oklab, var(--l-acento) var(--l-luz-uno), transparent), transparent 62%),
+    radial-gradient(56rem 36rem at 96% 4%, color-mix(in oklab, var(--ds-info) var(--l-luz-dos), transparent), transparent 64%);
+}
+
+// Los títulos de `styles.scss` van en azul de marca (`--siep-blue`): en la piel oscura saldrían violeta. En el portal
+// son tinta de la piel.
+.portal :is(h1, h2, h3) {
+  color: var(--ds-text-1);
+}
+
+.portal h1 {
+  font-size: var(--ds-type-h1-size);
+  font-weight: var(--ds-type-h1-weight);
+  letter-spacing: var(--ds-type-h1-track);
+  line-height: var(--ds-type-h1-line);
+}
+
+.portal h2 {
+  font-size: var(--ds-type-h2-size);
+  font-weight: var(--ds-type-h2-weight);
+  letter-spacing: var(--ds-type-h2-track);
+  line-height: var(--ds-type-h2-line);
+}
+
+.portal h3 {
+  font-size: var(--ds-type-h3-size);
+  font-weight: var(--ds-type-h3-weight);
+  letter-spacing: var(--ds-type-h3-track);
+  line-height: var(--ds-type-h3-line);
+}
+
+// Casillas y opciones nativas sueltas (selección de filas en Usuarios, listas del editor): las mismas de `ui-check`,
+// con el acento de la piel y 20 px, en vez del gris del sistema. `:where` deja la especificidad en cero: cualquier
+// regla de un componente (un interruptor dibujado, una casilla con `appearance: none`) sigue mandando. Cubre también
+// las capas del CDK (diálogos y hojas), que viven fuera de `.portal` con sus mismos materiales.
+:where(.portal, .ui-overlay-materiales) :where(input:is([type='checkbox'], [type='radio']):not(.ui-switch, [role='switch'])) {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  accent-color: var(--ds-primary);
+}
+
+// Sin marcar, la casilla nativa en oscuro es un cuadro gris relleno que no pertenece a la piel: se dibuja con los
+// materiales (fondo hundido y el borde fuerte, 3:1 contra la tarjeta). Al marcarla vuelve la nativa, que con el acento
+// es violeta con su palomita (y en oscuro el navegador elige la palomita oscura que contrasta). Con colores forzados
+// se deja siempre la nativa.
+@media not (forced-colors: active) {
+  :where(.portal, .ui-overlay-materiales) :where(input:is([type='checkbox'], [type='radio']):not(.ui-switch, [role='switch'], :checked, :indeterminate)) {
+    appearance: none;
+    box-sizing: border-box;
+    border: 2px solid var(--ds-border-strong);
+    // El radio de la casilla nativa a 20 px (unos 3 px): marcar no cambia la forma.
+    border-radius: calc(var(--ds-radius-sm) / 2);
+    background: var(--l-superficie-hundida, var(--ds-surface-2));
+  }
+
+  :where(.portal, .ui-overlay-materiales) :where(input[type='radio']:not(:checked)) {
+    border-radius: 50%;
+  }
+}
+
+// Números alineados en columna (tablas, cifras de reportes).
+.portal :is(table, .p-numeros) {
+  font-variant-numeric: tabular-nums;
+}
+
+// Lectura larga (ficha, cierre, contexto del caso): columna de unos 68 caracteres.
+.portal .p-lectura {
+  max-inline-size: var(--l-ancho-lectura);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+.portal .p-lectura > * + * {
+  margin-block-start: var(--ds-space-4);
+}
+
+// ── Densidad: relleno de tarjeta y alto mínimo de fila. Una fila con algo pulsable nunca baja de 2.75rem (44 px). ──
+.portal .p-densidad-lectura {
+  --l-relleno-tarjeta: 1.5rem;
+  --l-alto-fila: 3.25rem;
+}
+
+.portal .p-densidad-compacta {
+  --l-relleno-tarjeta: 1rem;
+  --l-alto-fila: 2.75rem;
+}
+
+// ── Etiqueta con firma: la píldora de la portada (`.pub-etiqueta`) y sus tres píxeles, para las cabeceras ────────
+.portal .p-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-4);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-tinte);
+  box-shadow: inset 0 0 0 1px var(--l-tinte-filo);
+  color: var(--l-acento-tinta);
+  font-size: var(--ds-type-caption-size);
+  font-weight: 600;
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// La firma de la marca: cian, azul y el violeta del tema, cuadrados de 5 px (decorativa: no se lee).
+.portal .p-etiqueta::before {
+  content: '';
+  flex: none;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  margin-right: 0.8125rem;
+  background: var(--marca-cian);
+  box-shadow:
+    0.4375rem 0 0 var(--marca-azul),
+    0.875rem 0 0 var(--l-acento);
+}
+
+// ── Maquetación ───────────────────────────────────────────────────────────────────────────────────────────
+// Página: ancho máximo centrado (arregla «pegado a la izquierda con media pantalla vacía»). `min-inline-size: 0`
+// deja que una tabla ancha se desplace dentro de su tarjeta en vez de ensanchar la página.
+.p-pagina {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: var(--l-ancho-pagina);
+  margin-inline: auto;
+  padding-inline: var(--l-canal);
+}
+
+.p-pagina--amplia {
+  max-inline-size: var(--l-ancho-amplio);
+}
+
+.p-pagina--lectura {
+  max-inline-size: var(--l-ancho-lectura);
+}
+
+// Rejilla de tarjetas: tantas columnas como quepan; nunca menos de `--p-min` ni más ancha que su contenedor.
+.p-rejilla {
+  display: grid;
+  gap: var(--ds-space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--p-min, 20rem)), 1fr));
+}
+
+.p-rejilla--18 {
+  --p-min: 18rem;
+}
+
+.p-rejilla--24 {
+  --p-min: 24rem;
+}
+
+// Dividida: una columna en teléfono y tableta; desde 64rem, el cuerpo y una columna lateral (`--p-lateral`, 22rem), o
+// con `--tres` la bandeja, el cuerpo y la valoración (Revisión). `align-items: start` deja que la columna lateral sea
+// pegajosa. Usa la ventana y no un contenedor porque un contenedor no puede consultar su propio ancho, y el portal no
+// tiene barra lateral: el ancho de la ventana y el de la página coinciden.
+.p-dividida {
+  display: grid;
+  gap: var(--ds-space-5);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 64rem) {
+  .p-dividida {
+    gap: var(--ds-space-6);
+    grid-template-columns: minmax(0, 1fr) var(--p-lateral, 22rem);
+    align-items: start;
+  }
+
+  .p-dividida--invertida {
+    grid-template-columns: var(--p-lateral, 22rem) minmax(0, 1fr);
+  }
+
+  .p-dividida--tres {
+    grid-template-columns: var(--p-bandeja, 18rem) minmax(0, 1fr) var(--p-lateral, 26rem);
+  }
+}
+
+// Columna pegajosa: bajo la barra fija, y solo con las columnas lado a lado (en una sola columna dejaría de ser
+// lateral y taparía el contenido). `--desplaza` le da su propio desplazamiento si no cabe en la altura de la ventana.
+@media (min-width: 64rem) {
+  .p-pegajosa {
+    position: sticky;
+    top: calc(var(--l-alto-barra) + var(--ds-space-4));
+  }
+
+  .p-pegajosa--desplaza {
+    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+// Barra de acciones pegajosa (`ui-barra-acciones`): la página reserva su alto para que no tape la última fila.
+.p-con-barra-acciones {
+  --l-alto-acciones: 4.5rem;
+  padding-block-end: calc(var(--l-alto-acciones) + var(--ds-space-4));
+}
+
+// El foco no queda tapado por la barra fija (WCAG 2.4.11): al llevar el foco o un ancla a un elemento, el navegador
+// deja libre el alto de la barra. `--l-alto-barra` vive en `.portal`, no en `html`, así que aquí se escribe completo:
+// escritorio 5.5rem; en móvil la banda de 3.5rem, y abajo las pestañas (alto de `_glass-bar.scss`).
+html:has(app-shell.portal) {
+  scroll-padding-top: calc(5.5rem + env(safe-area-inset-top, 0px) + 1rem);
+}
+
+html:has(.p-con-barra-acciones) {
+  scroll-padding-bottom: calc(4.5rem + 1rem);
+}
+
+// Portal en oscuro (pendiente de B0 y B1): al rebotar el desplazamiento (macOS, iOS) asomaba el fondo claro de `html`, y
+// la barra de desplazamiento de la página salía clara. Aquí solo se pinta el lienzo y se pide el esquema oscuro: los
+// tokens de la piel siguen en el contenedor del shell (REGLA-010), no en `html`. El color es el `surface-page` de la
+// piel juego, leído del mapa de tokens para no escribir un literal.
+html:has(app-shell.portal[data-skin='game']) {
+  color-scheme: dark;
+  background-color: map.get(color.$game, surface-page);
+}
+
+@media (max-width: 63.999rem) {
+  // En móvil la barra de arriba es una banda más baja: `.p-pegajosa` ya no pega, pero `--l-alto-barra` la sigue.
+  .portal {
+    --l-alto-barra: calc(var(--asb-alto-modulo-superior) + env(safe-area-inset-top, 0px) + 1rem);
+  }
+
+  html:has(app-shell.portal) {
+    scroll-padding-top: calc(var(--asb-alto-modulo-superior) + env(safe-area-inset-top, 0px) + 1rem);
+    scroll-padding-bottom: calc(var(--asb-alto-modulo-inferior) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  html:has(.p-con-barra-acciones) {
+    scroll-padding-bottom: calc(4.5rem + var(--asb-alto-modulo-inferior) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+}
+
+// Una ventana al juego dentro del portal (la vista previa de Mi personaje): la piel game re-emite los `--ds-*`, pero
+// los `--l-*` se calculan donde se declaran y llegaban heredados del `.portal` claro (superficie blanca, filos
+// oscuros). El segmentado pintaba así su opción elegida sobre una pastilla blanca con el texto claro de la piel game,
+// casi ilegible. Se vuelven a emitir aquí para que resuelvan contra la piel oscura; en el tema oscuro el shell ya es
+// game y esto repite los mismos valores. Solo los tokens de color (no el mixin entero: todo esto viaja en el CSS inicial).
+.portal [data-skin='game'] {
+  --l-acento-tinta: var(--ds-primary-hover);
+  --l-superficie: var(--ds-surface-1);
+  --l-superficie-hundida: var(--ds-surface-2);
+  --l-relleno: color-mix(in oklab, var(--ds-text-1) 5%, transparent);
+  --l-filo: color-mix(in oklab, var(--ds-text-1) 10%, transparent);
+  --l-filo-fuerte: color-mix(in oklab, var(--ds-text-1) 17%, transparent);
+  --l-brillo: color-mix(in oklab, var(--ds-text-1) 9%, transparent);
+  --l-fila-encima: color-mix(in oklab, var(--ds-text-1) 4%, transparent);
+}
+
+// Esquinas continuas (squircle) donde el navegador las dibuja: la curvatura de iOS en lugar del arco circular.
+@supports (corner-shape: squircle) {
+  .portal .p-etiqueta {
+    corner-shape: squircle;
+  }
+}
+
+// Transparencia reducida y más contraste: superficies sólidas y filos marcados.
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .portal,
+  .portal [data-skin='game'] {
+    @include m.materiales-reducidos;
+  }
+}
+
+// Colores forzados: sin luz ambiental (el sistema pinta el fondo), y la píldora con contorno.
+@media (forced-colors: active) {
+  .portal::before {
+    display: none;
+  }
+
+  .portal .p-etiqueta {
+    border: 1px solid CanvasText;
+  }
+}

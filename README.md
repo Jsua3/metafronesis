@@ -2,7 +2,7 @@
 
 API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-**Versión actual:** [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) · **Alcance:** solo backend (no hay frontend; el «mundo y juego» queda fuera) · Última revisión de este archivo: 10 de noviembre de 2026.
+**Versión actual:** [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) · **Alcance:** backend y, desde esta versión, frontend de la primera ola: acceso, cuenta, administración de usuarios, grupos e invitaciones · Última revisión de este archivo: 10 de noviembre de 2026.
 
 > **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
@@ -28,6 +28,18 @@ API en Django del simulador de casos situacionales de psicología social: el doc
 | `shared`, `psychosim` | Respuesta uniforme, políticas de permisos, eventos del dominio e inventario de rutas; configuración y rutas del proyecto |
 
 **Patrones de diseño usados:** Builder (`autoria`), Composite (`publicacion`), Adapter (`reportes`), Strategy (calificación en `simulation` y proveedores en `ia`), State (intentos y sesiones) y Observer (eventos del dominio y notificaciones).
+
+## Frontend
+
+Requiere Node.js `^24.15.0 || >=26.0.0`. Para ejecutarlo localmente:
+
+```sh
+cd frontend
+npm ci
+npm start
+```
+
+Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` al backend en el puerto 8091. Ejecuta `npm test` para las pruebas y `npm run build` para compilar.
 
 ## Estado
 

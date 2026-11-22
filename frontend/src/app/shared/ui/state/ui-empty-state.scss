@@ -1,0 +1,65 @@
+// Estado vacío (plan visual §2.5; VD-8): ilustración de pixel art nítida (sin suavizado), título, explicación y
+// acción, centrados.
+:host {
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-2);
+  padding-block: var(--ds-space-7);
+  padding-inline: var(--ds-space-4);
+  text-align: center;
+}
+
+.ui-empty-state__art {
+  margin-block-end: var(--ds-space-3);
+  image-rendering: pixelated;
+}
+
+.ui-empty-state__title {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-h3-size);
+  font-weight: var(--ds-type-h2-weight);
+  letter-spacing: var(--ds-type-h3-track);
+  line-height: var(--ds-type-h3-line);
+  text-wrap: balance;
+}
+
+.ui-empty-state__description {
+  max-inline-size: 32rem;
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  text-wrap: pretty;
+}
+
+// ── Con figura del kit (DISENO C12) ──────────────────────────────────────────────────────────────────────────────
+// El personaje a ×3, quieto, sobre su sombra de contacto; bajo el título, la firma de la marca. Todo centrado y con
+// el ancho de lectura de la guía (32rem).
+:host(.ui-empty-state--figura) {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.ui-empty-state__figura {
+  margin-block-end: var(--ds-space-4);
+}
+
+.ui-empty-state__firma {
+  display: block;
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  margin-block: var(--ds-space-1);
+  // Centrada: los dos píxeles de la sombra van a la derecha, así que el primero se corre a la izquierda.
+  translate: -0.4375rem 0;
+  background: var(--marca-cian, var(--ds-info));
+  box-shadow:
+    0.4375rem 0 0 var(--marca-azul, var(--ds-info)),
+    0.875rem 0 0 var(--l-acento, var(--ds-primary));
+}
+
+@media (forced-colors: active) {
+  .ui-empty-state__firma {
+    display: none;
+  }
+}

@@ -1,0 +1,34 @@
+@use 'mixins' as m;
+
+// Enlace de texto (plan visual F2-1): subrayado siempre (no se distingue solo por color, WCAG 1.4.1); el hover
+// engrosa el subrayado y la pulsación oscurece el color. Dentro de una frase no necesita objetivo de 44 px (2.5.8,
+// excepción «en línea»).
+.ui-link {
+  color: var(--ds-primary);
+  font-weight: var(--ds-type-h3-weight);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+  transition:
+    color var(--ds-dur-fast) ease,
+    text-decoration-thickness var(--ds-dur-fast) ease;
+
+  @include m.ds-hover {
+    color: var(--ds-primary-hover);
+    text-decoration-thickness: 2px;
+  }
+
+  &:active {
+    color: var(--ds-primary-active);
+  }
+}
+
+.ui-link .ui-link__icon {
+  inline-size: auto;
+  block-size: auto;
+  margin-inline-start: 0.15em;
+  font-size: inherit;
+  line-height: 1;
+  vertical-align: -0.125em;
+}

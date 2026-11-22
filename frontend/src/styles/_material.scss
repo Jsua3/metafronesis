@@ -1,0 +1,94 @@
+// Tema de Angular Material (plan visual F1-4, ANG-10). `mat.theme` emite solo los tokens de sistema (--mat-sys-*);
+// cada componente los lee con su propio valor de reserva, así que sobran los ~930 tokens por componente que
+// emitía `all-component-themes`. Los tokens de sistema se atan a --ds-*: Material cambia de piel con el resto.
+@use '@angular/material' as mat;
+@use 'tokens/type';
+
+// Tokens de sistema → tokens del lenguaje. Se declaran en html y otra vez en la piel juego, porque una custom
+// property que referencia otra se resuelve donde se declara (el valor heredado ya viene sustituido).
+$sys-overrides: (
+  primary: var(--ds-primary),
+  on-primary: var(--ds-on-primary),
+  primary-container: var(--ds-primary-subtle),
+  on-primary-container: var(--ds-primary),
+  secondary-container: var(--ds-primary-subtle),
+  on-secondary-container: var(--ds-primary),
+  background: var(--ds-surface-page),
+  on-background: var(--ds-text-1),
+  surface: var(--ds-surface-1),
+  on-surface: var(--ds-text-1),
+  surface-variant: var(--ds-surface-2),
+  on-surface-variant: var(--ds-text-2),
+  surface-container-lowest: var(--ds-surface-1),
+  surface-container-low: var(--ds-surface-1),
+  // Paneles de select y menú sobre superficie 1: el tinte de la opción elegida (primary-subtle) se distingue.
+  surface-container: var(--ds-surface-1),
+  surface-container-high: var(--ds-surface-2),
+  surface-container-highest: var(--ds-surface-2),
+  outline: var(--ds-border-strong),
+  outline-variant: var(--ds-border),
+  error: var(--ds-danger),
+  on-error: var(--ds-on-primary),
+);
+
+// Tarjetas «outlined» (MAT_CARD_CONFIG en app.config.ts): borde fino y elevación e1, sin !important.
+$card-overrides: (
+  outlined-container-color: var(--ds-surface-1),
+  outlined-outline-color: var(--ds-border),
+  outlined-container-shape: var(--ds-radius-lg),
+  outlined-container-elevation: var(--ds-shadow-e1),
+);
+
+$table-overrides: (
+  header-headline-color: var(--ds-text-1),
+  header-headline-weight: 600,
+);
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$cyan-palette,
+    ),
+    typography: (
+      plain-family: type.$font-sans,
+      brand-family: type.$font-sans,
+      regular-weight: 400,
+      medium-weight: 600,
+      bold-weight: 800,
+    ),
+    density: 0,
+  ));
+  @include mat.theme-overrides($sys-overrides);
+  @include mat.card-overrides($card-overrides);
+  @include mat.table-overrides($table-overrides);
+}
+
+// La piel juego vuelve a atar todo: un token que referencia otro se resuelve donde se declara.
+@mixin atar-material {
+  @include mat.theme-overrides($sys-overrides);
+  @include mat.card-overrides($card-overrides);
+  @include mat.table-overrides($table-overrides);
+}
+
+[data-skin='game'] {
+  @include atar-material;
+}
+
+// Lo mismo hacen el portal y la portada en claro, que redefinen el primario en violeta (skins/_portal.scss, DISENO
+// DP-03): sin esto Angular Material seguiría pintando con el azul petróleo resuelto en `html`.
+// También la capa clara de diálogos y hojas (`.ui-overlay-materiales`, B2), que vive en el contenedor del CDK, fuera del
+// portal: sin ella un control de Material dentro de un diálogo claro seguiría en petróleo y no en violeta.
+.portal[data-skin='portal'],
+.publico[data-skin='portal'],
+.ui-overlay-materiales[data-skin='portal'] {
+  @include atar-material;
+}
+
+// Fila de tabla: el hover solo con puntero fino (plan visual §2.6) y sin !important (el :hover ya gana).
+@media (hover: hover) and (pointer: fine) {
+  .mat-mdc-row:hover {
+    background: var(--ds-primary-subtle);
+  }
+}

@@ -1,0 +1,63 @@
+// Viñeta del simulador. El escenario mide el ancho × alto de la escena en px del arte por la escala entera (--vineta-e):
+// px y no rem a propósito, para que cada píxel del arte sea un cuadrado exacto de la pantalla.
+:host {
+  display: flex;
+  justify-content: center;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+:host(.ui-vineta--inicio) {
+  justify-content: flex-start;
+}
+
+:host(.ui-vineta--fin) {
+  justify-content: flex-end;
+}
+
+.ui-vineta__escena {
+  position: relative;
+  flex: none;
+  inline-size: calc(var(--vw) * var(--vineta-e) * 1px);
+  block-size: calc(var(--vh) * var(--vineta-e) * 1px);
+}
+
+// Suelo: una franja escalonada del tono de la tinta bajo toda la escena, como el piso del juego visto de frente. Con el
+// tema cambia el tono (la tinta), nunca el arte.
+:host(.ui-vineta--suelo) .ui-vineta__escena::before {
+  position: absolute;
+  inset-inline: calc(-6px * var(--vineta-e));
+  inset-block-end: calc(-2px * var(--vineta-e));
+  block-size: calc(4px * var(--vineta-e));
+  background: color-mix(in oklab, var(--ds-text-1) 9%, transparent);
+  clip-path: polygon(4% 0, 96% 0, 96% 50%, 100% 50%, 100% 100%, 0 100%, 0 50%, 4% 50%);
+  content: '';
+}
+
+// Placa: la escena dentro de un marco de superficie, con su suelo en la franja de abajo (un cuarto del juego en
+// miniatura). El marco, el borde y la sombra salen de los tokens del tema; el arte es el mismo en claro y oscuro.
+:host(.ui-vineta--placa) .ui-vineta__escena {
+  box-sizing: content-box;
+  padding: calc(10px * var(--vineta-e)) calc(12px * var(--vineta-e)) calc(6px * var(--vineta-e));
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background:
+    linear-gradient(to top, color-mix(in oklab, var(--ds-text-1) 7%, transparent) calc(10px * var(--vineta-e)), transparent 0),
+    color-mix(in oklab, var(--ds-surface-2) 70%, var(--ds-surface-page));
+  box-shadow: var(--ds-shadow-e1);
+  overflow: hidden;
+}
+
+// Dentro de la placa las capas se miden desde el borde interior (el relleno), no desde el borde de la placa.
+:host(.ui-vineta--placa) .ui-vineta__escena > ui-pieza-pixel {
+  margin-inline-start: calc(12px * var(--vineta-e));
+  margin-block-end: calc(6px * var(--vineta-e));
+}
+
+@media (forced-colors: active) {
+  :host {
+    display: none;
+  }
+}
