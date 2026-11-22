@@ -2,7 +2,7 @@
 
 API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-**Versión actual:** [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) · **Alcance:** backend y, desde esta versión, frontend de la primera ola: acceso, cuenta, administración de usuarios, grupos e invitaciones · Última revisión de este archivo: 10 de noviembre de 2026.
+**Versión actual:** [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) · **Alcance:** backend y, desde esta versión, frontend de la primera ola: acceso, cuenta, administración de usuarios, grupos e invitaciones · Última revisión de este archivo: 22 de noviembre de 2026.
 
 > **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
@@ -49,6 +49,7 @@ Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` 
 | [`v0.2.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.2.0) | Sprint 4: auditoría y contratos |
 | [`v0.3.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.3.0) | Ola 1 de la migración: borrador del caso, escenas y decisiones, validar y publicar, reporte de participación, rúbrica, calificación y resultado |
 | [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) | Ola 2: revisión docente, notificaciones, IA y auditoría, incompletos y tiempo máximo, permiso de autoría, exportar e importar, sesiones y convocatorias, repetición, reporte completo e ingreso con código |
+| [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) | Frontend de la primera ola (acceso, cuenta, usuarios, grupos e invitaciones) y licencia MIT |
 
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
