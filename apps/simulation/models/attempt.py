@@ -145,3 +145,29 @@ class AttemptEvent(models.Model):
             ),
         ]
         ordering = ["occurred_at", "id"]
+
+
+class AttemptWorldState(models.Model):
+    """Estado espacial y de exploración propio de un intento.
+
+    Aquí viven el mapa, la posición, el inventario, las interacciones y las
+    banderas del mundo. ``SimulationAttempt.state_json`` conserva únicamente el
+    estado narrativo y los efectos de decisiones; no es fuente del estado espacial.
+    """
+
+    attempt = models.OneToOneField(
+        SimulationAttempt, primary_key=True, on_delete=models.CASCADE, related_name="world_state"
+    )
+    scene_map = models.ForeignKey("simulation.SceneMap", on_delete=models.PROTECT)
+    player_x = models.IntegerField(default=0)
+    player_y = models.IntegerField(default=0)
+    inventory = models.JSONField(default=list, blank=True)
+    inspected_object_keys = models.JSONField(default=list, blank=True)
+    viewed_dialogue_keys = models.JSONField(default=list, blank=True)
+    used_tool_keys = models.JSONField(default=list, blank=True)
+    flags = models.JSONField(default=dict, blank=True)
+    synced_node = models.ForeignKey(SimulationNode, on_delete=models.PROTECT)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "attempt_world_states"
