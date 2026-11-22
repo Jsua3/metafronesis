@@ -75,7 +75,9 @@ _RANGOS_INVISIBLES = (
 )
 INVISIBLE_O_DE_DIRECCION = re.compile("[" + "".join(chr(a) + "-" + chr(b) for a, b in _RANGOS_INVISIBLES) + "]")
 #: Un dominio desnudo: dos o más letras, un punto y otras dos o más letras sin espacio («login.siep»).
-DOMINIO_DESNUDO = re.compile(r"[^\W\d_]{2,}\.[^\W\d_]{2,}")
+#: Solo se usa con ``search``: «dos o más letras, punto, dos o más letras» aparece si y solo si aparece «dos letras,
+#: punto, dos letras», y esta forma de longitud fija no retrocede (búsqueda lineal).
+DOMINIO_DESNUDO = re.compile(r"[^\W\d_]{2}\.[^\W\d_]{2}")
 #: Lo que un nombre de persona admite además de las letras y los espacios.
 PUNTUACION_DE_NOMBRE = frozenset("'’-.")
 
