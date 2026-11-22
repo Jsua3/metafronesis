@@ -1,4 +1,8 @@
 AUDITORIA_POR_RUTA = {
+    ("api/simulation/attempts/<uuid:pk>/world", "GET"): "EXENTO: el estudiante consulta su propio mundo",
+    ("api/simulation/attempts/<uuid:pk>/progress-map", "GET"): "EXENTO: el estudiante consulta su propio progreso",
+    ("api/simulation/attempts/<uuid:pk>/world-state", "PATCH"): "EXENTO: el estudiante actualiza su propia posición",
+    ("api/simulation/attempts/<uuid:pk>/enter-room", "POST"): "EXENTO: el paso de sala queda registrado en el intento",
     ("api/simulation/cases/<int:case_version_id>/brief", "GET"): "EXENTO: ficha de un caso asignado al estudiante",
     ("api/simulation/cases/<int:case_version_id>/active-attempt", "GET"): "EXENTO: el estudiante consulta su propio intento",
     ("api/simulation/attempts/history", "GET"): "EXENTO: el estudiante consulta su propio historial",
