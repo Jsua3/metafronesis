@@ -634,11 +634,12 @@ export class GrupoListComponent implements OnInit {
     this.mensajeEsError.set(false);
     this.grupoService.importarEstudiantes(grupo.id, file).subscribe({
       next: result => {
+        this.importandoEstudiantes.set(false);
+        this.grupos.update(list => list.map(g => g.id === grupo.id ? result.grupo : g));
+        if (this.grupoActivo()?.id !== grupo.id) return;
         this.resultadoImportacion.set(result);
         this.erroresImportacion.set(result.errors);
         this.archivoImportacion.set(null);
-        this.importandoEstudiantes.set(false);
-        this.grupos.update(list => list.map(g => g.id === grupo.id ? result.grupo : g));
         this.grupoActivo.set(result.grupo);
         this.cargarDetalle(grupo.id);
         const warnings = result.errors.length ? ` ${result.errors.length} fila(s) con observaciones.` : '';
@@ -648,14 +649,16 @@ export class GrupoListComponent implements OnInit {
         this.mensajeEsError.set(false);
       },
       error: (err: HttpErrorResponse) => {
+        this.importandoEstudiantes.set(false);
         const result = err.error?.data as GrupoImportResult | undefined;
+        if (result?.grupo) this.grupos.update(list => list.map(g => g.id === grupo.id ? result.grupo : g));
+        if (this.grupoActivo()?.id !== grupo.id) return;
         if (result) {
           this.resultadoImportacion.set(result);
           this.erroresImportacion.set(result.errors ?? []);
         }
         this.mensajeEstudiante.set(this.mapImportError(err));
         this.mensajeEsError.set(true);
-        this.importandoEstudiantes.set(false);
       }
     });
   }

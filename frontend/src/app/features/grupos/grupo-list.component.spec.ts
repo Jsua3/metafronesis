@@ -89,6 +89,26 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
     TestBed.resetTestingModule();
   });
 
+  it.each(['éxito', 'error'])('importación tardía con %s conserva el grupo visible', async outcome => {
+    await render();
+    await openDetail(grupoA);
+    const pending = new Subject<GrupoImportResult>();
+    service['importarEstudiantes'].mockReturnValue(pending);
+    component().archivoImportacion.set(new File(['datos'], 'estudiantes.xlsx'));
+    component().importarEstudiantes();
+    await openDetail(grupoB);
+    service['listarEstudiantes'].mockClear();
+    const result = { grupo: { ...grupoA, totalEstudiantes: 4 }, errors: [], assigned: 1, created: 1, existing: 0 } as unknown as GrupoImportResult;
+    if (outcome === 'éxito') pending.next(result);
+    else pending.error({ status: 400, error: { data: result, message: 'Error de A' } });
+    expect(component().grupoActivo()?.id).toBe(grupoB.id);
+    expect(component().grupos().find(g => g.id === grupoA.id)?.totalEstudiantes).toBe(4);
+    expect(component().resultadoImportacion()).toBeNull();
+    expect(component().mensajeEstudiante()).toBe('');
+    expect(component().importandoEstudiantes()).toBe(false);
+    expect(service['listarEstudiantes']).not.toHaveBeenCalled();
+  });
+
   // req: RNF-04, BLOQUE-H
   describe('estados', () => {
     it('«Grupos» es el h1 de la lista; el del detalle es la cabecera de teléfono y la región de estado siempre está', async () => {
