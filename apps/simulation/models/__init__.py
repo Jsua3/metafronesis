@@ -59,3 +59,11 @@ __all__ = [
     "RubricEvaluation",
     "SimulationRubricAssignment",
 ]
+
+from .world import (
+    SceneMap, SceneHint, CaseCharacter, MapObject, CollisionZone,
+    DialogueTree, DialogueLine, DialogueChoice, ClinicalTool,
+)
+
+__all__ += ["SceneMap", "SceneHint", "CaseCharacter", "MapObject", "CollisionZone",
+            "DialogueTree", "DialogueLine", "DialogueChoice", "ClinicalTool"]
