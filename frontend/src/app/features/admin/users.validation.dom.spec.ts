@@ -2,7 +2,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { AccessRequest, AccessRequestAdminService } from '../../core/api/access-request-admin.service';
 import { AdminUser, UserAdminService } from '../../core/api/user-admin.service';
@@ -223,5 +223,39 @@ describe('usuarios: validar al enviar (DOM de la hoja con la biblioteca)', () =>
     expect(save().getAttribute('aria-disabled')).toBe('true');
     expect(save().getAttribute('aria-busy')).toBe('true');
     expect((save().textContent ?? '')).toContain('Guardando…');
+  });
+
+  it('al crear exige una contraseña de al menos 10 caracteres', () => {
+    fillValid();
+    component.form.controls.password.setValue('123456789');
+    submit();
+    expect(errorTexts()).toContain('Usa al menos 10 caracteres.');
+    expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('explica que el rol es obligatorio cuando se deja vacío', () => {
+    component.form.controls.role.setValue('' as never);
+    submit();
+    expect(errorTexts()).toContain('Elige un rol.');
+    expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('permite guardar una edición sin contraseña', () => {
+    component.editUser(ana);
+    service.update.mockReturnValue(of(ana));
+    sheet.detectChanges();
+    submit();
+    expect(errorTexts()).toEqual([]);
+    expect(service.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('muestra «Guardando…» mientras la petición está pendiente', () => {
+    const pending = new Subject<AdminUser>();
+    service.create.mockReturnValue(pending);
+    fillValid();
+    submit();
+    expect(root.querySelector('button[type="submit"]')?.textContent).toContain('Guardando…');
+    pending.next(ana);
+    pending.complete();
   });
 });
