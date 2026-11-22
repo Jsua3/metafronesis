@@ -127,9 +127,10 @@ describe('LandingComponent', () => {
     expect(host().textContent).not.toMatch(/intrafamiliar/i);
   });
 
-  it('«Ingresa para ver los casos» lleva al acceso, no a su propia sección', () => {
+  it('«Ingresa al portal» lleva al acceso', () => {
     const link = host().querySelector<HTMLAnchorElement>('#casos .landing-link')!;
     expect(link.getAttribute('href')).toBe('/login');
+    expect(text(link)).toContain('Ingresa al portal');
   });
 
   it('sin estilos en línea (los acentos por tarjeta eran [style.*]) y sin texto con degradado', () => {

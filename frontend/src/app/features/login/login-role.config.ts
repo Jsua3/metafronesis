@@ -17,7 +17,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
     label: 'Estudiante',
     icon: 'school',
     emailPlaceholder: 'estudiante@institucion.edu.co',
-    hint: 'Accede a tus casos asignados, explora el simulador y registra tu bitácora reflexiva.',
+    hint: 'Revisa las invitaciones de tus docentes y entra a sus grupos.',
     narrative:
       'Entrena decisiones en casos de VBG, feminicidio, NNA y rutas de protección con retroalimentación formativa.',
     previewCase: 'SIM-VBG-001',
@@ -28,7 +28,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
     label: 'Docente',
     icon: 'co_present',
     emailPlaceholder: 'docente@institucion.edu.co',
-    hint: 'Gestiona grupos, asigna simulaciones y revisa evidencias con rúbricas académicas.',
+    hint: 'Crea grupos e invita a tus estudiantes, uno a uno o desde Excel.',
     narrative:
       'Supervisa intentos, evalúa competencias y acompaña el aprendizaje con evidencia clínica trazable.',
     previewCase: 'Panel docente',
@@ -39,7 +39,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
     label: 'Administrador',
     icon: 'admin_panel_settings',
     emailPlaceholder: 'admin@institucion.edu.co',
-    hint: 'Administra usuarios, autoría de casos y publicación del catálogo institucional.',
+    hint: 'Administra las cuentas, aprueba las solicitudes de acceso y asigna roles.',
     narrative:
       'Configura la plataforma, publica versiones de casos y garantiza el acceso seguro por rol.',
     previewCase: 'Autoría',
