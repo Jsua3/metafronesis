@@ -6,7 +6,17 @@ from .mundo_views import MundoView, MapaView, MapasView, ObjetoView, ObjetosView
 
 from .dialogos_views import DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView
 
+from .reglas_views import AceptarView, FinalesView, HitosView, RiesgoView, RubricaView
+
 urlpatterns = [
+    path("cases/<int:case_version_id>/rules/milestones", HitosView.as_view()),
+    path("cases/<int:case_version_id>/rules/risk", RiesgoView.as_view()),
+    path("cases/<int:case_version_id>/rules/endings", FinalesView.as_view()),
+    path("cases/<int:case_version_id>/rubric", RubricaView.as_view()),
+    path("cases/<int:case_version_id>/nodes/<int:elemento_id>/accept-ai", AceptarView.as_view(), {"tipo": "nodes"}),
+    path("cases/<int:case_version_id>/decisions/<int:elemento_id>/accept-ai", AceptarView.as_view(), {"tipo": "decisions"}),
+    path("cases/<int:case_version_id>/dialogues/<int:elemento_id>/accept-ai", AceptarView.as_view(), {"tipo": "dialogues"}),
+    path("cases/<int:case_version_id>/objects/<int:elemento_id>/accept-ai", AceptarView.as_view(), {"tipo": "objects"}),
     path("cases/<int:case_version_id>/maps/<int:map_id>/dialogues", DialogosView.as_view()),
     path("cases/<int:case_version_id>/dialogues/<int:tree_id>", DialogoView.as_view()),
     path("cases/<int:case_version_id>/tools", HerramientasView.as_view()),

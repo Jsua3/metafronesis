@@ -1,4 +1,13 @@
 AUDITORIA_POR_RUTA = {
+    ("api/authoring/cases/<int:case_version_id>/rules/milestones", "PUT"): "ADMIN_UPDATE_MILESTONES",
+    ("api/authoring/cases/<int:case_version_id>/rules/risk", "PUT"): "ADMIN_UPDATE_RISK",
+    ("api/authoring/cases/<int:case_version_id>/rules/endings", "PUT"): "ADMIN_UPDATE_ENDINGS",
+    ("api/authoring/cases/<int:case_version_id>/rubric", "POST"): "RUBRIC_UPDATED",
+    ("api/authoring/cases/<int:case_version_id>/nodes/<int:elemento_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_NODE",
+    ("api/authoring/cases/<int:case_version_id>/decisions/<int:elemento_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_DECISION",
+    ("api/authoring/cases/<int:case_version_id>/dialogues/<int:elemento_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_DIALOGUE",
+    ("api/authoring/cases/<int:case_version_id>/objects/<int:elemento_id>/accept-ai", "POST"): "ADMIN_ACCEPT_AI_OBJECT",
+
     ("api/authoring/cases/<int:case_version_id>/maps/<int:map_id>/dialogues", "POST"): "ADMIN_CREATE_DIALOGUE",
     ("api/authoring/cases/<int:case_version_id>/dialogues/<int:tree_id>", "PUT"): "ADMIN_UPDATE_DIALOGUE",
     ("api/authoring/cases/<int:case_version_id>/dialogues/<int:tree_id>", "DELETE"): "ADMIN_DELETE_DIALOGUE",

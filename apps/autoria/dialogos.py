@@ -11,6 +11,10 @@ from shared.jsonutils import write_map
 from . import editor, guardas, mundo
 
 
+LIMITE_NOMBRE = DialogueTree._meta.get_field("speaker_name").max_length
+LIMITE_EMOCION = DialogueTree._meta.get_field("emotion").max_length
+
+
 def _texto(valor, nombre, limite=None, obligatorio=False):
     if not isinstance(valor, str) or (obligatorio and not valor.strip()) or (limite and len(valor) > limite):
         mundo._error(f"El campo {nombre} no es válido.")
@@ -29,9 +33,9 @@ def _lineas(arbol, lineas, campo_orden):
         if "aiSuggested" in linea and not isinstance(linea["aiSuggested"], bool):
             mundo._error("La marca de sugerencia debe ser verdadera o falsa.")
         DialogueLine.objects.create(dialogue_tree=arbol, display_order=orden,
-            speaker_name=_texto(linea.get("speakerName") or arbol.speaker_name, "speakerName", 255),
+            speaker_name=_texto(linea.get("speakerName") or arbol.speaker_name, "speakerName", LIMITE_NOMBRE),
             text=_texto(linea.get("text") or "", "text"),
-            emotion=_texto(linea.get("emotion") if linea.get("emotion") is not None else "neutral", "emotion", 60),
+            emotion=_texto(linea.get("emotion") if linea.get("emotion") is not None else "neutral", "emotion", LIMITE_EMOCION),
             ai_suggested=linea.get("aiSuggested", anteriores.get(orden, False)))
 
 
@@ -88,11 +92,11 @@ def guardar_dialogos(version, mapa, dialogos):
             DialogueTree.objects.filter(pk=arbol.pk).update(tree_key=f"__temporal_{uuid4().hex}")
     for datos, clave, arbol in zip(dialogos, claves, elegidos):
         arbol.tree_key = clave
-        arbol.speaker_name = _texto(datos.get("speakerName") or "", "speakerName", 255)
+        arbol.speaker_name = _texto(datos.get("speakerName") or "", "speakerName", LIMITE_NOMBRE)
         arbol.portrait_key = datos.get("portraitKey")
         if arbol.portrait_key is not None:
             _texto(arbol.portrait_key, "portraitKey", 120)
-        arbol.emotion = _texto(datos.get("emotion") if datos.get("emotion") is not None else "neutral", "emotion", 60)
+        arbol.emotion = _texto(datos.get("emotion") if datos.get("emotion") is not None else "neutral", "emotion", LIMITE_EMOCION)
         objeto_id = datos.get("mapObjectId")
         objeto_clave = datos.get("mapObjectKey")
         arbol.map_object = get_object_or_404(MapObject, scene_map=mapa, object_key=objeto_clave) if objeto_clave is not None else (get_object_or_404(MapObject, scene_map=mapa, pk=objeto_id) if objeto_id is not None else None)

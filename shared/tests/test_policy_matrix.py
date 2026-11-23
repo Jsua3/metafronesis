@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework.views import APIView
 
+from apps.autoria.reglas_views import AceptarView, FinalesView, HitosView, RiesgoView, RubricaView
 from apps.autoria.views import ChecklistView, EditorView, PlanoView
 from apps.autoria.dialogos_views import DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView
 from shared import policies
@@ -217,6 +218,6 @@ def test_scope_of_exposes_the_role_scope_for_filtering_lists():
 
 
 def test_las_vistas_del_editor_usan_la_politica_de_autoria():
-    for vista in (ChecklistView, EditorView, PlanoView, DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView):
+    for vista in (AceptarView, FinalesView, HitosView, RiesgoView, RubricaView, ChecklistView, EditorView, PlanoView, DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView):
         permiso = vista.permission_classes[0]()
         assert permiso.policy == ("case", "author")
