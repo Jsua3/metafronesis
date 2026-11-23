@@ -133,3 +133,23 @@ def test_comando_guarda_minutos_indicados(autor):
     call_command('cargar_caso_insignia', autor=autor.email, minutos_estimados=45, stdout=salida)
     assert CaseVersion.objects.get().estimated_minutes == 45
     assert 'Indica --minutos-estimados' not in salida.getvalue()
+
+
+def test_comando_publica_con_administrador_y_revision_estricta(autor, settings):
+    settings.REVIEW_WORKFLOW_STRICT = True
+    administrador = CustomUser.objects.create_user(email='admin@example.test', password='prueba', role='ADMIN')
+    salida = StringIO()
+    call_command('cargar_caso_insignia', autor=autor.email, publicador=administrador.email,
+                 minutos_estimados=45, stdout=salida)
+    version = CaseVersion.objects.get()
+    assert version.status == 'PUBLISHED'
+    assert version.created_by == autor
+    assert 'Estado de publicación: PUBLISHED' in salida.getvalue()
+
+
+def test_comando_sin_administrador_conserva_borrador(autor):
+    salida = StringIO()
+    call_command('cargar_caso_insignia', autor=autor.email, publicador='ausente@example.test',
+                 minutos_estimados=45, stdout=salida)
+    assert CaseVersion.objects.get().status == 'DRAFT'
+    assert 'No se encontró el administrador' in salida.getvalue()

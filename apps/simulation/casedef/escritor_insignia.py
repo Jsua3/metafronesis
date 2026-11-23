@@ -5,13 +5,14 @@ import uuid
 from decimal import Decimal
 from collections.abc import Mapping
 
+from django.conf import settings
 from django.db import transaction
 
 from apps.publicacion import ciclo
 from apps.publicacion.arbol import arbol_de
 from apps.publicacion.huella import huella_de
 from apps.simulation.models import (
-    CaseCharacter, CaseVersion, ClinicalTool, CollisionZone, DecisionOption,
+    CaseCharacter, CaseVersion, CaseVersionStatus, ClinicalTool, CollisionZone, DecisionOption,
     DialogueChoice, DialogueLine, DialogueTree, MapObject, Rubric, RubricCriterion,
     SceneHint, SceneMap, SimulationCase, SimulationNode, SimulationRubricAssignment,
 )
@@ -120,7 +121,7 @@ class _ComparacionTerminada(Exception):
 
 
 @transaction.atomic
-def cargar(plan, autor):
+def cargar(plan, autor, publicador=None):
     """Carga el plan o devuelve la versión idéntica; expone los motivos de publicación."""
     if plan.no_soportado:
         raise ErrorDeCarga('Contenido no soportado: ' + '; '.join(plan.no_soportado))
@@ -141,15 +142,22 @@ def cargar(plan, autor):
         except _ComparacionTerminada as resultado:
             if resultado.huella != huella_de(existente):
                 raise ErrorDeCarga('La versión existente tiene una huella diferente.')
-        existente.motivos_publicacion = arbol_de(existente).problemas()
-        return existente
-    version = _guardar(plan, caso, autor, semantica)
-    motivos = ciclo.validar(autor, version.pk)
-    if not motivos and not can(autor, 'case', 'publish', owner_id=caso.created_by_id):
-        motivos = ['El autor no tiene permiso para publicar.']
+        version = existente
+    else:
+        version = _guardar(plan, caso, autor, semantica)
+    if version.status == CaseVersionStatus.PUBLISHED:
+        version.motivos_publicacion = []
+        return version
+    motivos = arbol_de(version).problemas()
+    if not publicador:
+        motivos.append('No se encontró el administrador; el caso queda en borrador.')
+    elif not can(publicador, 'case', 'publish', owner_id=caso.created_by_id):
+        motivos.append('El publicador no tiene permiso para publicar.')
     if not motivos:
         try:
-            version = ciclo.publicar(autor, version.pk)
+            if settings.REVIEW_WORKFLOW_STRICT and version.status == CaseVersionStatus.DRAFT:
+                version = ciclo.enviar_a_revision(autor, version.pk)
+            version = ciclo.publicar(publicador, version.pk)
         except (ApiError, PermissionError) as error:
             motivos = [str(error)]
     version.motivos_publicacion = motivos

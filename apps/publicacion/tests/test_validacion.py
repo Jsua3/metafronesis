@@ -1,5 +1,9 @@
 import pytest
 
+from apps.simulation.models import DecisionOption, SimulationNode
+from apps.users.models import CustomUser
+from shared.policies import PROFESOR
+
 pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-26")]
 
 
@@ -99,9 +103,6 @@ def test_validacion_de_caso_ajeno_404(caso):
     respuesta = caso['cliente'].post(f"/api/authoring/cases/{caso['version'].pk}/validate", {}, format='json')
     assert respuesta.status_code == 404
 
-from apps.users.models import CustomUser
-from shared.policies import PROFESOR
-
 def test_respuesta_invalida_incluye_problemas(caso):
     caso['inicio'].decision_prompt = ''
     caso['inicio'].save()
@@ -124,3 +125,22 @@ def test_retroalimentacion_inmediata_cuenta_como_justificacion(caso):
     opcion.immediate_feedback = 'La respuesta explica la consecuencia de la decisión.'
     opcion.save()
     assert 'OPTION_NO_JUSTIFICATION' not in codigos(caso)
+
+
+def test_sala_solo_de_mundo_no_bloquea(caso):
+    SimulationNode.objects.create(case_version=caso['version'], node_key='sala', title='Sala', narrative='Sala')
+    assert not codigos(caso) & {'NODE_NO_QUESTION', 'NODE_FEW_OPTIONS', 'NODE_NO_RECOMMENDED'}
+
+
+def test_nodo_alcanzable_sin_opciones_bloquea(caso):
+    nodo = SimulationNode.objects.create(case_version=caso['version'], node_key='alcanzable', title='Sala', narrative='Sala')
+    caso['opciones'][0].target_node = nodo
+    caso['opciones'][0].save()
+    assert {'NODE_NO_QUESTION', 'NODE_FEW_OPTIONS', 'NODE_NO_RECOMMENDED'} <= codigos(caso)
+
+
+def test_nodo_no_alcanzable_con_una_opcion_bloquea(caso):
+    nodo = SimulationNode.objects.create(case_version=caso['version'], node_key='aislado', title='Sala', narrative='Sala')
+    DecisionOption.objects.create(case_version=caso['version'], source_node=nodo, target_node=caso['fin'],
+                                  option_key='aislada', text='Opción', response_class='ACCEPTABLE', feedback_text='Justificación')
+    assert {'NODE_NO_QUESTION', 'NODE_FEW_OPTIONS', 'NODE_NO_RECOMMENDED'} <= codigos(caso)

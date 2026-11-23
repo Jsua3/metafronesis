@@ -15,6 +15,7 @@ from shared.dev_only import require_dev_environment
 
 RUTA_DOCUMENTO = Path(__file__).resolve().parents[2] / 'data/casos/SIM-VBG-002.dsl.json'
 AUTOR_DEMO = 'profesora@psychosim.edu.co'
+PUBLICADOR_DEMO = 'admin@psychosim.edu.co'
 
 
 class Command(BaseCommand):
@@ -22,6 +23,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--autor', default=AUTOR_DEMO, help='Correo del docente autor.')
+        parser.add_argument('--publicador', default=PUBLICADOR_DEMO, help='Correo del administrador que publica.')
         parser.add_argument('--minutos-estimados', type=int, help='Tiempo estimado en minutos, entero positivo.')
 
     def handle(self, *args, **options):
@@ -32,6 +34,7 @@ class Command(BaseCommand):
         autor = CustomUser.objects.filter(email=options['autor'], role=UserRole.PROFESOR).first()
         if not autor:
             raise CommandError('No se encontró el docente autor; crea la semilla o indica --autor.')
+        publicador = CustomUser.objects.filter(email=options['publicador'], role=UserRole.ADMIN).first()
         plan = traducir(json.loads(RUTA_DOCUMENTO.read_text(encoding='utf-8')))
         if minutos is not None:
             plan = replace(plan, version=MappingProxyType({**plan.version, 'estimated_minutes': minutos}))
@@ -41,7 +44,7 @@ class Command(BaseCommand):
         for aviso in plan.no_soportado:
             self.stdout.write(aviso)
         try:
-            version = cargar(plan, autor)
+            version = cargar(plan, autor, publicador=publicador)
         except ErrorDeCarga as error:
             raise CommandError(str(error)) from error
         self.stdout.write(f'Caso {version.simulation_case.code}, versión {version.semantic_version}: '
