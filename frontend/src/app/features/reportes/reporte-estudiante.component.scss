@@ -1,0 +1,68 @@
+// Reporte de un estudiante (plan visual F10-7†): piel portal, solo tokens --ds-*, rejillas con `minmax(0, 1fr)` y el
+// host de `ui-section` en bloque (reglas de F7). El foco lo pinta el anillo global.
+:host {
+  display: block;
+  color: var(--ds-text-1);
+}
+
+.re-loading,
+.re-error {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  margin-block-start: var(--ds-space-6);
+  justify-items: start;
+}
+
+.re-section {
+  display: block;
+  min-width: 0;
+  margin-block-start: var(--ds-space-6);
+}
+
+.re-filter,
+.re-coverage,
+.re-limit {
+  margin: var(--ds-space-3) 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.re-coverage {
+  color: var(--ds-text-1);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.re-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.re-nowrap {
+  white-space: nowrap;
+}
+
+.re-more {
+  display: flex;
+  margin-block-start: var(--ds-space-4);
+}
+
+.re-privacy { color: var(--ds-text-2); overflow-wrap: anywhere; }
+@media (max-width: 40rem) {
+  .re-nowrap { white-space: normal; }
+}
+
+.re-case-card { display: block; min-width: 0; margin-block: var(--ds-space-4); overflow-wrap: anywhere; }
+
+.re-status { margin: 0 0 var(--ds-space-3); color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
+
+// El tiempo de reloj es un dato auxiliar: una etiqueta pequeña que se alcanza con el teclado y se explica en su globo.
+.re-clock {
+  display: inline-block;
+  margin-inline-start: var(--ds-space-2);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  text-decoration: underline dotted;
+  cursor: help;
+}
