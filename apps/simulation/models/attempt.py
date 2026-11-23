@@ -171,3 +171,14 @@ class AttemptWorldState(models.Model):
 
     class Meta:
         db_table = "attempt_world_states"
+
+
+class AttemptHintView(models.Model):
+    """Pista revelada a un intento, una sola vez."""
+    attempt = models.ForeignKey(SimulationAttempt, on_delete=models.CASCADE, related_name="hint_views")
+    hint = models.ForeignKey("simulation.SceneHint", on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "attempt_hint_views"
+        constraints = [models.UniqueConstraint(fields=["attempt", "hint"], name="uq_attempt_hint_view")]

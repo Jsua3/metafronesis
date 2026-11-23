@@ -744,6 +744,38 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/hints",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de pistas del propio intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/hints/next",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: la pista queda registrada en el intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/interactions/<str:key>",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: la interacción queda registrada en el intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/npcs/<str:key>",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el diálogo queda registrado en el intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/pause",
       "method": "POST",
       "exposure": "authenticated",
@@ -798,6 +830,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": "ATTEMPT_REVISITED"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/tools/use",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el uso queda registrado en el intento"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/world",

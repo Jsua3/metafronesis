@@ -62,3 +62,44 @@ class ProgresoMundo(serializers.Serializer):
     nodes = NodoProgreso(many=True)
     visitedNodeKeys = serializers.ListField(child=serializers.CharField())
     currentNodeKey = serializers.CharField()
+
+
+class PistaMostrada(serializers.Serializer):
+    id = serializers.IntegerField()
+    order = serializers.IntegerField()
+    text = serializers.CharField()
+
+
+class PistasRespuesta(serializers.Serializer):
+    available = serializers.IntegerField()
+    shown = PistaMostrada(many=True)
+    reason = serializers.CharField(required=False)
+
+
+class SolicitudPista(serializers.Serializer):
+    requestId = serializers.CharField(required=False, allow_blank=True)
+    attemptToken = serializers.CharField(required=False, allow_blank=True)
+
+
+class SolicitudHerramienta(serializers.Serializer):
+    toolCode = serializers.CharField()
+    targetInteractionKey = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    requestId = serializers.CharField(required=False, allow_blank=True)
+    attemptToken = serializers.CharField(required=False, allow_blank=True)
+
+
+class InteraccionRespuesta(serializers.Serializer):
+    world = MundoRespuesta()
+    interaction = serializers.DictField()
+    dialogue = serializers.DictField(allow_null=True)
+    preparedDecisionOptionId = serializers.IntegerField(allow_null=True)
+    unlockedToolCode = serializers.CharField(allow_null=True)
+
+
+class HerramientaRespuesta(serializers.Serializer):
+    world = MundoRespuesta()
+    toolCode = serializers.CharField()
+    targetKey = serializers.CharField(allow_null=True)
+    pertinent = serializers.BooleanField()
+    feedbackMessage = serializers.CharField()
+    alreadyUsed = serializers.BooleanField()

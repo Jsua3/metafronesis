@@ -425,8 +425,8 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
     **_columnas(
         "attempt_world_states",
         (
-            "attempt_id", "scene_map_id", "player_x", "player_y", "inventory_json", "inspected_object_keys_json",
-            "viewed_dialogue_keys_json", "used_tool_keys_json", "flags_json",
+            "attempt_id", "scene_map_id", "player_x", "player_y", "inventory", "inspected_object_keys",
+            "viewed_dialogue_keys", "used_tool_keys", "flags",
         ),
         Regla(CONSERVAR, _M_CONDUCTA),
     ),

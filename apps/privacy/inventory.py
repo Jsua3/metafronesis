@@ -684,14 +684,15 @@ DATA_INVENTORY: dict[str, dict] = {
         "default": None,
         "columns": {
             "attempt_id": (SENSITIVE, "intento al que pertenece el estado del mundo"),
+            "synced_node_id": TECHNICAL,
             "scene_map_id": (SENSITIVE, "escena en la que está el estudiante"),
             "player_x": (SENSITIVE, "posición del estudiante en la escena (x)"),
             "player_y": (SENSITIVE, "posición del estudiante en la escena (y)"),
-            "inventory_json": (SENSITIVE, "objetos que el estudiante recogió"),
-            "inspected_object_keys_json": (SENSITIVE, "objetos que el estudiante revisó"),
-            "viewed_dialogue_keys_json": (SENSITIVE, "diálogos que el estudiante vio"),
-            "used_tool_keys_json": (SENSITIVE, "herramientas que el estudiante usó"),
-            "flags_json": (
+            "inventory": (SENSITIVE, "objetos que el estudiante recogió"),
+            "inspected_object_keys": (SENSITIVE, "objetos que el estudiante revisó"),
+            "viewed_dialogue_keys": (SENSITIVE, "diálogos que el estudiante vio"),
+            "used_tool_keys": (SENSITIVE, "herramientas que el estudiante usó"),
+            "flags": (
                 SENSITIVE,
                 "banderas del caso que el estudiante ha activado, los hitos que ha cumplido y el estado de la persona usuaria "
                 "en la ficción (vínculo y activación) según sus decisiones",
@@ -703,11 +704,11 @@ DATA_INVENTORY: dict[str, dict] = {
             "scene_map_id": ["api"],
             "player_x": ["api"],
             "player_y": ["api"],
-            "inventory_json": ["api"],
-            "inspected_object_keys_json": ["api"],
-            "viewed_dialogue_keys_json": ["api"],
-            "used_tool_keys_json": ["api"],
-            "flags_json": ["api", "reporte"],
+            "inventory": ["api"],
+            "inspected_object_keys": ["api"],
+            "viewed_dialogue_keys": ["api"],
+            "used_tool_keys": ["api"],
+            "flags": ["api", "reporte"],
         },
     },
     "student_case_completion": {
