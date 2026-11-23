@@ -30,5 +30,5 @@ def registrar_retroalimentacion_docente(intento, docente, texto: str) -> RubricE
 
 
 def retroalimentacion_docente_de(intento) -> str | None:
-    evaluacion = intento.rubric_evaluations.filter(origin=EvaluationOrigin.DOCENTE).order_by(Coalesce("updated_at", "evaluated_at").desc(), "-pk").first()
+    evaluacion = intento.rubric_evaluations.filter(origin=EvaluationOrigin.DOCENTE).exclude(status="PENDING", snapshot_json__contains='"valoracionRubrica": true').order_by(Coalesce("updated_at", "evaluated_at").desc(), "-pk").first()
     return evaluacion.comment if evaluacion else None
