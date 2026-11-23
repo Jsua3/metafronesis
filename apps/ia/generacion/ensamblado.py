@@ -201,7 +201,7 @@ def ensamblar(generacion, actor) -> ResultadoEnsamblado:
         clave: entrada["data"] for clave, entrada in json.loads(generacion.scenes_json).items()
         if isinstance(entrada, dict) and entrada.get("data")
     }
-    lugar = lugares.cargar_lugar(generacion.lugar_id)
+    lugar = lugares.cargar_lugar(generacion.lugar_id, por_piezas=True)
     competencias = contexto_del_lugar.competencias_activas()
     contexto = contexto_del_lugar.del_lugar(lugar, competencias)
     por_escena = comprobar(esqueleto, escenas, contexto, {competencia["codigo"] for competencia in competencias})

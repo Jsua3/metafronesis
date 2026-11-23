@@ -39,6 +39,18 @@
         "rutas-proteccion"
       ],
       "hitos": 8
+    },
+    {
+      "id": "hospital",
+      "nombre": "Hospital",
+      "salas": 8,
+      "completo": true,
+      "arteProvisional": false,
+      "temas": [
+        "violencia-genero",
+        "rutas-proteccion"
+      ],
+      "hitos": 4
     }
   ]
 }

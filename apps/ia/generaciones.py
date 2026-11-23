@@ -246,7 +246,7 @@ def crear(actor, lugar_id, descripcion) -> dict:
     exigir_disponible()
     if not isinstance(lugar_id, str) or not lugar_id.strip():
         raise _validacion("lugarId", MENSAJE_SIN_LUGAR)
-    lugares.cargar_lugar(lugar_id.strip())
+    lugares.cargar_lugar(lugar_id.strip(), por_piezas=True)
     texto = _descripcion_valida(descripcion)
     caducar(actor)
     try:
@@ -300,7 +300,7 @@ class _Plan:
 
 
 def _contexto_de(generacion: CaseGeneration) -> dict:
-    return contexto_del_lugar.del_lugar(lugares.cargar_lugar(generacion.lugar_id), contexto_del_lugar.competencias_activas())
+    return contexto_del_lugar.del_lugar(lugares.cargar_lugar(generacion.lugar_id, por_piezas=True), contexto_del_lugar.competencias_activas())
 
 
 def _plan_del_esqueleto(generacion, contexto, marca) -> _Plan:

@@ -1,0 +1,657 @@
+{
+ "esquema": 2,
+ "geometria": {
+  "alto": 528,
+  "anchos": [
+   960,
+   1200,
+   1440,
+   1680,
+   1920
+  ],
+  "borde": {
+   "1200": 115,
+   "1440": 134,
+   "1680": 153,
+   "1920": 172,
+   "960": 96
+  },
+  "k": [
+   3,
+   16
+  ],
+  "piso": 230,
+  "rejilla": 8,
+  "tope": 84
+ },
+ "piezas": {
+  "cartelera/cartelera": {
+   "nombre": "Cartelera",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 80,
+   "franja": [
+    64,
+    118
+   ],
+   "cuadros": 1
+  },
+  "cruz/cruz": {
+   "nombre": "Cruz verde",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 40,
+   "franja": [
+    95,
+    133
+   ],
+   "cuadros": 1
+  },
+  "cuadro/cuadro": {
+   "nombre": "Cuadro",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 56,
+   "franja": [
+    81,
+    123
+   ],
+   "cuadros": 1
+  },
+  "espejo/espejo": {
+   "nombre": "Espejo",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 40,
+   "franja": [
+    66,
+    120
+   ],
+   "cuadros": 1
+  },
+  "extintor/extintor": {
+   "nombre": "Extintor",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 24,
+   "franja": [
+    29,
+    89
+   ],
+   "cuadros": 1
+  },
+  "gel/gel": {
+   "nombre": "Dispensador de gel",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 24,
+   "franja": [
+    59,
+    89
+   ],
+   "cuadros": 1
+  },
+  "lampara/colgante": {
+   "nombre": "Lámpara colgante",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 40,
+   "franja": [
+    90,
+    147
+   ],
+   "cuadros": 2
+  },
+  "lampara/mesa": {
+   "nombre": "Lámpara de mesa",
+   "muros": [
+    "suelo"
+   ],
+   "ocupa": 24,
+   "franja": [
+    0,
+    26
+   ],
+   "cuadros": 2
+  },
+  "lampara/pie": {
+   "nombre": "Lámpara de pie",
+   "muros": [
+    "suelo"
+   ],
+   "ocupa": 24,
+   "franja": [
+    0,
+    63
+   ],
+   "cuadros": 2
+  },
+  "lampara/tubo": {
+   "nombre": "Tubo de techo",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 96,
+   "franja": [
+    131,
+    147
+   ],
+   "cuadros": 2
+  },
+  "puerta/corrediza": {
+   "nombre": "Corrediza automática de vidrio",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 144,
+   "franja": [
+    0,
+    109
+   ],
+   "cuadros": 4
+  },
+  "puerta/madera": {
+   "nombre": "Madera lisa",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 64,
+   "franja": [
+    0,
+    101
+   ],
+   "cuadros": 4
+  },
+  "puerta/madera-ventanilla": {
+   "nombre": "Madera con ventanilla",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 64,
+   "franja": [
+    0,
+    101
+   ],
+   "cuadros": 4
+  },
+  "puerta/metalica": {
+   "nombre": "Metálica institucional",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 64,
+   "franja": [
+    0,
+    101
+   ],
+   "cuadros": 4
+  },
+  "puerta/paso": {
+   "nombre": "Paso abierto",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 80,
+   "franja": [
+    0,
+    103
+   ],
+   "cuadros": 4
+  },
+  "puerta/urgencias": {
+   "nombre": "Doble batiente de urgencias",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 96,
+   "franja": [
+    0,
+    103
+   ],
+   "cuadros": 4
+  },
+  "puerta/vidrio": {
+   "nombre": "Vidrio",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha",
+    "camara"
+   ],
+   "ocupa": 64,
+   "franja": [
+    0,
+    101
+   ],
+   "cuadros": 4
+  },
+  "reloj/reloj": {
+   "nombre": "Reloj con segundero",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 32,
+   "franja": [
+    99,
+    127
+   ],
+   "cuadros": 12
+  },
+  "repisa/repisa": {
+   "nombre": "Repisa con libros",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 144,
+   "franja": [
+    73,
+    115
+   ],
+   "cuadros": 1
+  },
+  "senal/senal": {
+   "nombre": "Señal",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 40,
+   "franja": [
+    108,
+    130
+   ],
+   "cuadros": 1
+  },
+  "tablero/tablero": {
+   "nombre": "Tablero",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 128,
+   "franja": [
+    53,
+    122
+   ],
+   "cuadros": 1
+  },
+  "ventana/alta": {
+   "nombre": "Ventana alta de hospital",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 136,
+   "franja": [
+    93,
+    136
+   ],
+   "cuadros": 2
+  },
+  "ventana/corrediza": {
+   "nombre": "Ventana corrediza",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 128,
+   "franja": [
+    59,
+    139
+   ],
+   "cuadros": 2
+  },
+  "ventana/persiana": {
+   "nombre": "Ventana con persiana",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 104,
+   "franja": [
+    59,
+    135
+   ],
+   "cuadros": 2
+  },
+  "ventana/ventanal": {
+   "nombre": "Ventanal",
+   "muros": [
+    "fondo",
+    "izquierda",
+    "derecha"
+   ],
+   "ocupa": 184,
+   "franja": [
+    32,
+    135
+   ],
+   "cuadros": 2
+  }
+ },
+ "pisos": {
+  "adoquin-a": {
+   "nombre": "Adoquín",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "adoquin-b": {
+   "nombre": "Adoquín",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "adoquin-casa-fachada": {
+   "nombre": "Adoquín",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "adoquin-comisaria-fachada": {
+   "nombre": "Adoquín",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "adoquin-universidad-entrada": {
+   "nombre": "Adoquín",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-a": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-b": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-casa-cocina": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-casa-comedor": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-casa-patio": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-comisaria-archivo": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-comisaria-orientacion-juridica": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-comisaria-pasillo": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-comisaria-recepcion": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-comisaria-sala-espera": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-universidad-aula": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-universidad-bienestar": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-universidad-enfermeria": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-universidad-pasillo": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "baldosa-universidad-sala-espera": {
+   "nombre": "Baldosa",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "cemento-a": {
+   "nombre": "Cemento",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "cemento-b": {
+   "nombre": "Cemento",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "damero-a": {
+   "nombre": "Damero",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "damero-b": {
+   "nombre": "Damero",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "damero-universidad-cafeteria": {
+   "nombre": "Damero",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-a": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-b": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-casa-escalera": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-casa-habitacion-principal": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-casa-pasillo": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-casa-sala": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-comisaria-consultorio-psicosocial": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-comisaria-despacho-comisaria": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-universidad-consultorio": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "madera-universidad-oficina-docente": {
+   "nombre": "Madera",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "vinilo-a": {
+   "nombre": "Vinilo de hospital",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "vinilo-b": {
+   "nombre": "Vinilo de hospital",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "vinilo-casa-habitacion-ninos": {
+   "nombre": "Vinilo de hospital",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "vinilo-comisaria-sala-entrevista-nna": {
+   "nombre": "Vinilo de hospital",
+   "ancho": 1920,
+   "alto": 298
+  },
+  "vinilo-universidad-biblioteca": {
+   "nombre": "Vinilo de hospital",
+   "ancho": 1920,
+   "alto": 298
+  }
+ },
+ "muros": {
+  "azulejo/casa": {},
+  "azulejo/casa-cocina": {},
+  "azulejo/comisaria": {},
+  "azulejo/hospital": {},
+  "azulejo/universidad": {},
+  "azulejo/universidad-enfermeria": {},
+  "ladrillo/casa": {},
+  "ladrillo/casa-patio": {},
+  "ladrillo/comisaria": {},
+  "ladrillo/comisaria-fachada": {},
+  "ladrillo/hospital": {},
+  "ladrillo/universidad": {},
+  "ladrillo/universidad-entrada": {},
+  "paneles/casa": {},
+  "paneles/casa-comedor": {},
+  "paneles/comisaria": {},
+  "paneles/comisaria-despacho-comisaria": {},
+  "paneles/hospital": {},
+  "paneles/universidad": {},
+  "paneles/universidad-biblioteca": {},
+  "pintura/casa": {},
+  "pintura/casa-escalera": {},
+  "pintura/casa-habitacion-ninos": {},
+  "pintura/comisaria": {},
+  "pintura/comisaria-consultorio-psicosocial": {},
+  "pintura/comisaria-sala-entrevista-nna": {},
+  "pintura/hospital": {},
+  "pintura/universidad": {},
+  "pintura/universidad-bienestar": {},
+  "pintura/universidad-consultorio": {},
+  "pintura/universidad-oficina-docente": {},
+  "pintura/universidad-sala-espera": {},
+  "zocalo-alto/casa": {},
+  "zocalo-alto/casa-fachada": {},
+  "zocalo-alto/casa-habitacion-principal": {},
+  "zocalo-alto/casa-pasillo": {},
+  "zocalo-alto/casa-sala": {},
+  "zocalo-alto/comisaria": {},
+  "zocalo-alto/comisaria-archivo": {},
+  "zocalo-alto/comisaria-orientacion-juridica": {},
+  "zocalo-alto/comisaria-pasillo": {},
+  "zocalo-alto/comisaria-recepcion": {},
+  "zocalo-alto/comisaria-sala-espera": {},
+  "zocalo-alto/hospital": {},
+  "zocalo-alto/universidad": {},
+  "zocalo-alto/universidad-aula": {},
+  "zocalo-alto/universidad-cafeteria": {},
+  "zocalo-alto/universidad-pasillo": {}
+ },
+ "propios": [
+  "piezas/propios/casa-cocina.png",
+  "piezas/propios/casa-comedor.png",
+  "piezas/propios/casa-escalera.png",
+  "piezas/propios/casa-fachada.png",
+  "piezas/propios/casa-habitacion-ninos.png",
+  "piezas/propios/casa-habitacion-principal.png",
+  "piezas/propios/casa-pasillo.png",
+  "piezas/propios/casa-patio.png",
+  "piezas/propios/casa-sala.png",
+  "piezas/propios/comisaria-archivo.png",
+  "piezas/propios/comisaria-consultorio-psicosocial.png",
+  "piezas/propios/comisaria-despacho-comisaria.png",
+  "piezas/propios/comisaria-fachada.png",
+  "piezas/propios/comisaria-orientacion-juridica.png",
+  "piezas/propios/comisaria-pasillo.png",
+  "piezas/propios/comisaria-recepcion.png",
+  "piezas/propios/comisaria-sala-entrevista-nna.png",
+  "piezas/propios/comisaria-sala-espera.png"
+ ],
+ "tapetes": [
+  "piezas/tapetes/hospital-sala-escucha-1.png"
+ ]
+}

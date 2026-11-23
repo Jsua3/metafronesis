@@ -439,6 +439,12 @@ SIEP_SESSION_EPOCH_ENFORCE = _env_flag_cerrada("SIEP_SESSION_EPOCH_ENFORCE", def
 #: lugar). Sin ``SIEP_BIBLIOTECA_DIR`` es ``biblioteca/`` junto a ``backend_django/``; la imagen de producción la copia a
 #: ``/app/biblioteca`` y fija la variable. Solo se leen los JSON: el arte lo sirve el frontend bajo ``/assets/biblioteca/``.
 BIBLIOTECA_DIR = Path(os.environ.get("SIEP_BIBLIOTECA_DIR") or BASE_DIR / "biblioteca")
+#: Salas por piezas: el catalogo de piezas (``manifiesto.json``) que leen las reglas del servidor. Es una copia exacta, en
+#: contenido, de ``frontend/src/assets/biblioteca/piezas/manifiesto.json`` (la comprueba ``test_catalogo_piezas``); vive en
+#: ``<BIBLIOTECA_DIR>/piezas/`` para que la imagen de produccion lo copie junto a los escenarios. ``SIEP_BIBLIOTECA_PIEZAS_MANIFIESTO``
+#: lo cambia; sin ella se lee ``<BIBLIOTECA_DIR>/piezas/manifiesto.json``.
+BIBLIOTECA_PIEZAS_MANIFIESTO = os.environ.get("SIEP_BIBLIOTECA_PIEZAS_MANIFIESTO") or None
+
 
 #: S2-6b · hosts ``https://`` de los que el fondo de sala puede cargar su imagen (separados por comas). Vacía = solo
 #: rutas propias de ``/assets/``. Cada estudiante descarga la imagen desde su navegador: no añadas hosts ajenos.
