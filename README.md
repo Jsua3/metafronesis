@@ -51,7 +51,7 @@ Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` 
 | [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) | Ola 2: revisión docente, notificaciones, IA y auditoría, incompletos y tiempo máximo, permiso de autoría, exportar e importar, sesiones y convocatorias, repetición, reporte completo e ingreso con código |
 | [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) | Frontend de la primera ola (acceso, cuenta, usuarios, grupos e invitaciones) y licencia MIT |
 | [`v0.6.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.0) | Ola 3: mundo por salas, caso insignia, editor de casos con ensayo, IA de autoría, rúbricas y reportes, frontend del estudiante y del docente, tutorial y despliegue en Cloud Run |
-| [`v0.6.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.1) | Salas por piezas con su luz, lugar hospital y editor sin parpadeo |
+| [`v0.6.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.1) | Salas por piezas con su luz, lugar hospital, editor sin parpadeo y proveedor de IA de NVIDIA |
 
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
