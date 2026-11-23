@@ -1,0 +1,27 @@
+{
+  "id": "trabajadora-social",
+  "displayName": "Trabajadora social",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "corto-rizado",
+    "face": "sereno",
+    "top": "cardigan",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": [
+      "gafete"
+    ]
+  },
+  "colors": {
+    "skin": "piel-4",
+    "hair": "castano",
+    "top": "verde-azulado",
+    "inner": "blanco",
+    "bottom": "gris-oscuro",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

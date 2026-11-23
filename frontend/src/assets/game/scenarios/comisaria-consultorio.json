@@ -1,0 +1,35 @@
+{
+  "scenarioKey": "comisaria-consultorio",
+  "startRoomKey": "comisaria-consultorio",
+  "rooms": [
+    {
+      "key": "comisaria-consultorio",
+      "tiledMapKey": "comisaria-consultorio",
+      "tiledJsonPath": "",
+      "displayName": "Comisaría de Familia — Consultorio",
+      "spawnX": 480,
+      "spawnY": 430,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "apoyo-psicosocial",
+          "npcType": "colleague",
+          "displayName": "Apoyo psicosocial",
+          "portrait": "🧑‍💼",
+          "x": 660,
+          "y": 430,
+          "recipeId": "profesional-psicosocial",
+          "facing": "left",
+          "emotion": "calm",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Tenemos instrumento de valoración de riesgo y ruta de protección listos, sobre la mesa.", "emotion": "neutral" },
+              { "text": "Recuerda: en violencia de género la mediación con el agresor no es una opción. La prioridad es la seguridad de ella.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

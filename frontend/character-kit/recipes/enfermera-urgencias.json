@@ -1,0 +1,24 @@
+{
+  "id": "enfermera-urgencias",
+  "displayName": "Enfermera de urgencias",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "cola-caballo",
+    "face": "sereno",
+    "top": "uniforme-clinico",
+    "bottom": "pantalon-uniforme",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "castano",
+    "top": "verde-azulado",
+    "bottom": "verde-azulado",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "mariana",
+  "displayName": "Mariana",
+  "kind": "jugable",
+  "complexion": "a",
+  "pieces": {
+    "hair": "trenza",
+    "face": "sereno",
+    "top": "uniforme-psicologia",
+    "bottom": "jogger",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "negro",
+    "top": "azul-humboldt",
+    "accent": "blanco",
+    "bottom": "azul-humboldt",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

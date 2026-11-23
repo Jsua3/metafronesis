@@ -1,0 +1,70 @@
+{
+  "scenarioKey": "comisaria-recepcion",
+  "startRoomKey": "comisaria-recepcion",
+  "rooms": [
+    {
+      "key": "comisaria-recepcion",
+      "tiledMapKey": "comisaria-recepcion",
+      "tiledJsonPath": "",
+      "displayName": "Comisaría de Familia — Recepción",
+      "spawnX": 160,
+      "spawnY": 452,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "orientadora-juridica",
+          "npcType": "colleague",
+          "displayName": "Orientadora jurídica",
+          "portrait": "👩‍⚖️",
+          "x": 320,
+          "y": 360,
+          "recipeId": "orientadora-juridica",
+          "facing": "right",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "La comisaría puede dictar medidas de protección sin que ella tenga que enfrentar al agresor. Eso es importante que lo sepa.", "emotion": "neutral" },
+              { "text": "También orientamos derechos económicos y de justicia: alimentos, patrimonio, representación. Nada de eso se pierde por denunciar.", "emotion": "neutral" }
+            ]
+          }
+        },
+        {
+          "key": "sobreviviente-espera",
+          "npcType": "family",
+          "displayName": "Sobreviviente",
+          "portrait": "🧕",
+          "x": 180,
+          "y": 380,
+          "recipeId": "sobreviviente",
+          "facing": "right",
+          "emotion": "closed",
+          "motion": { "behavior": "idle" },
+          "dialogue": {
+            "lines": [
+              { "text": "(La sobreviviente espera en silencio junto a su madre. Aún se mueve con dificultad por las secuelas.)", "emotion": "neutral" },
+              { "text": "(El consultorio es el espacio adecuado para escucharla: privado y sin presión.)", "emotion": "neutral" }
+            ]
+          }
+        },
+        {
+          "key": "madre-acompanante",
+          "npcType": "family",
+          "displayName": "Madre de la sobreviviente",
+          "portrait": "👩",
+          "x": 230,
+          "y": 396,
+          "recipeId": "madre-acompanante",
+          "facing": "left",
+          "emotion": "worried",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Desde el hospital no la dejo sola. Le digo que aquí sí la van a proteger… ¿verdad que sí?", "emotion": "anxious" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

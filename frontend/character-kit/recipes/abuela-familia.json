@@ -1,0 +1,25 @@
+{
+  "id": "abuela-familia",
+  "displayName": "Abuela de la niña",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "mono",
+    "face": "maduro",
+    "top": "cardigan",
+    "bottom": "falda-larga",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "canoso",
+    "top": "vinotinto",
+    "inner": "blanco",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "valentina",
+  "displayName": "Valentina",
+  "kind": "jugable",
+  "complexion": "a",
+  "pieces": {
+    "hair": "bob-flequillo",
+    "face": "sereno",
+    "top": "uniforme-psicologia",
+    "bottom": "jogger",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-1",
+    "hair": "castano-oscuro",
+    "top": "azul-humboldt",
+    "accent": "blanco",
+    "bottom": "azul-humboldt",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

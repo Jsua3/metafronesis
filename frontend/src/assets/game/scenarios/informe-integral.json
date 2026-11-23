@@ -1,0 +1,35 @@
+{
+  "scenarioKey": "informe-integral",
+  "startRoomKey": "oficina-informe",
+  "rooms": [
+    {
+      "key": "oficina-informe",
+      "tiledMapKey": "map-informe-oficina",
+      "tiledJsonPath": "/assets/game/maps/informe-oficina.json",
+      "displayName": "Oficina — Informe Psicológico Integral",
+      "spawnX": 480,
+      "spawnY": 420,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "supervisor-informe",
+          "npcType": "supervisor",
+          "displayName": "Supervisión clínica",
+          "portrait": "👨‍💼",
+          "x": 736,
+          "y": 372,
+          "recipeId": "supervisor-clinico",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "El informe debe incluir la valoración del riesgo de feminicidio — no solo los síntomas observados.", "emotion": "neutral" },
+              { "text": "Asegúrate de incluir las medidas de seguridad adoptadas y el plan de coordinación interinstitucional.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "docente-universidad",
+  "displayName": "Docente universitaria",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "media-melena",
+    "face": "maduro",
+    "top": "blazer",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": ["gafas"]
+  },
+  "colors": {
+    "skin": "piel-4",
+    "hair": "canoso",
+    "top": "vinotinto",
+    "inner": "blanco",
+    "bottom": "gris-oscuro",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

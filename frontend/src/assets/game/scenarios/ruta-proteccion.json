@@ -1,0 +1,53 @@
+{
+  "scenarioKey": "ruta-proteccion",
+  "startRoomKey": "sala-atencion",
+  "rooms": [
+    {
+      "key": "sala-atencion",
+      "tiledMapKey": "map-ruta-sala",
+      "tiledJsonPath": "/assets/game/maps/ruta-sala.json",
+      "displayName": "Sala de Escucha — Ruta de Protección",
+      "spawnX": 480,
+      "spawnY": 420,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "trabajadora-social",
+          "npcType": "colleague",
+          "displayName": "Trabajadora social",
+          "portrait": "👩‍💼",
+          "x": 736,
+          "y": 372,
+          "recipeId": "trabajadora-social",
+          "facing": "down",
+          "emotion": "receptive",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "La Resolución 459 de 2012 del MSPS establece el protocolo que debemos seguir. ¿Ya activaste la notificación a la Comisaría de Familia?", "emotion": "neutral" },
+              { "text": "El ICBF debe ser notificado si los menores estuvieron presentes durante la agresión. Eso es Ley 1098.", "emotion": "neutral" }
+            ]
+          }
+        },
+        {
+          "key": "supervisor-ruta",
+          "npcType": "supervisor",
+          "displayName": "Supervisora clínica",
+          "portrait": "👨‍💼",
+          "x": 320,
+          "y": 306,
+          "recipeId": "supervisor-clinico",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Antes de activar o descartar una ruta, valora el riesgo con un instrumento estructurado. La intuición no es evidencia.", "emotion": "neutral" },
+              { "text": "Si te falta contexto, vuelve a urgencias por la puerta. Las salas están conectadas por algo.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

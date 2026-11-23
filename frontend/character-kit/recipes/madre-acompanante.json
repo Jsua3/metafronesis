@@ -1,0 +1,24 @@
+{
+  "id": "madre-acompanante",
+  "displayName": "Madre acompañante",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "media-melena",
+    "face": "sereno",
+    "top": "blusa",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "castano-oscuro",
+    "top": "vinotinto",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}
