@@ -8,7 +8,7 @@ import type { PlanDeSala } from './sala/composicion';
 import { EscenaDeSala } from './sala/escena-de-sala';
 
 /**
- * Bloque P2, hallazgos de la revisión de Codex sobre la integración (`.superpowers/codex/2026-11-15-revision-integracion-escena.md`):
+ * Bloque P2, hallazgos de la revisión sobre la integración:
  * 1. una sala por piezas manda sobre un ScenarioConfig del legado; 2. una pieza que no carga no se pide sin fin ni deja la
  * sala a medias; 3. con una capa encima, las puertas de pieza no se mueven; 6. la sala por piezas se suelta al cambiar de
  * camino y al apagar la escena.

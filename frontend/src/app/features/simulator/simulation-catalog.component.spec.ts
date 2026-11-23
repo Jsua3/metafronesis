@@ -138,7 +138,7 @@ describe('Casos del estudiante', () => {
     expect(host.querySelector('details')).toBeNull();
   });
 
-  describe('catálogo e historial fallan por separado (Codex B4a, hallazgo 3)', () => {
+  describe('catálogo e historial fallan por separado (B4a, hallazgo 3)', () => {
     async function renderSinCache(servicio: Record<string, unknown>) {
       const guardarAcceso = vi.fn();
       TestBed.configureTestingModule({

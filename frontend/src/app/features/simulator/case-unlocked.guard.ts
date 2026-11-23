@@ -29,7 +29,7 @@ export const caseUnlockedGuard: CanActivateFn = route => {
   const caseVersionId = Number(route.paramMap.get('caseVersionId'));
 
   // `history` en null = no se sabe (falló o tardó): no se puede afirmar que no haya un intento abierto que continuar, así
-  // que un caso bloqueado deja pasar y decide el servidor (Codex B4b, hallazgo 4). Nunca se cierra la puerta a ciegas.
+  // que un caso bloqueado deja pasar y decide el servidor (B4b, hallazgo 4). Nunca se cierra la puerta a ciegas.
   const decidir = (catalog: CatalogItem[] | null, history: StudentAttemptSummary[] | null): boolean | UrlTree => {
     const item = catalog?.find(entry => entry.caseVersionId === caseVersionId);
     if (!item || item.unlocked || history === null) return true;

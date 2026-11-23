@@ -103,7 +103,7 @@ export class SimulationCatalogComponent {
   private readonly catalogItems = signal<CatalogItem[]>([]);
   private readonly catalogSettled = signal(!this.isStudent);
   /**
-   * El catálogo de acceso falló (Codex B4a, hallazgo 3): sin él no se sabe qué está bloqueado, así que las tarjetas no se
+   * El catálogo de acceso falló (B4a, hallazgo 3): sin él no se sabe qué está bloqueado, así que las tarjetas no se
    * pintan con un «abierto» inventado; se muestra el error de los casos y su reintento lo vuelve a pedir.
    */
   private readonly catalogError = signal<HttpLikeError | null>(null);
@@ -285,7 +285,7 @@ export class SimulationCatalogComponent {
       this.historySettled.set(true);
       return;
     }
-    // Antes, un forkJoin: si fallaba el catálogo se perdía también el historial y el error decía «historial» (Codex B4a, 3).
+    // Antes, un forkJoin: si fallaba el catálogo se perdía también el historial y el error decía «historial» (B4a, 3).
     this.accessTicket = this.cache.ticket();
     this.loadCatalog();
     this.loadHistory();

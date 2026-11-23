@@ -200,7 +200,7 @@ describe('CaseBriefComponent', () => {
     expect(service.startAttempt).not.toHaveBeenCalled();
   });
 
-  it('si la ficha se cierra mientras se registra el consentimiento, no lleva al juego al resolverse (Codex B4b, 7)', async () => {
+  it('si la ficha se cierra mientras se registra el consentimiento, no lleva al juego al resolverse (B4b, 7)', async () => {
     await render();
     let terminar: () => void = () => undefined;
     consent.recordForCase.mockImplementation(() => new Promise<void>(resolver => { terminar = resolver; }));

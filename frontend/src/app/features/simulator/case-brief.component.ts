@@ -86,7 +86,7 @@ export class CaseBriefComponent {
   private readonly simulationService = inject(SimulationService);
   private readonly router = inject(Router);
   /**
-   * La ficha ya se cerró (Codex B4b, hallazgo 7): una promesa que se resuelve después (el registro del consentimiento o el
+   * La ficha ya se cerró (B4b, hallazgo 7): una promesa que se resuelve después (el registro del consentimiento o el
    * diálogo de empezar de nuevo) no debe llevar al juego a quien ya está en otra pantalla.
    */
   private destruida = false;

@@ -1626,7 +1626,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** P2: la sala por piezas que se está mostrando (null en las salas de imagen fija o de Tiled). */
   private salaPorPiezas: EscenaDeSala | null = null;
   private manifiestoDePiezasPedido = false;
-  /** P2: claves de piezas que fallaron al cargar: no se vuelven a pedir (hallazgo 2 de la revisión de Codex). */
+  /** P2: claves de piezas que fallaron al cargar: no se vuelven a pedir (hallazgo 2 de la revisión). */
   private readonly piezasFallidas = new Set<string>();
   /** P2: la sala por piezas apartada durante un repintado de la misma sala (vuelve sin rearmarse). */
   private salaApartada: EscenaDeSala | null = null;

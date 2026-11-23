@@ -76,12 +76,12 @@ export class CierreCasoComponent {
     stream: ({ params }) => (params === undefined ? EMPTY : this.simulation.studentReport(params)),
   });
   /**
-   * El reporte respondió: el intento es de quien mira (Codex B4d, hallazgo 6). Hasta entonces no se pide ni se pinta
+   * El reporte respondió: el intento es de quien mira (B4d, hallazgo 6). Hasta entonces no se pide ni se pinta
    * ninguna otra fuente, así un 403 o 404 que llega tarde nunca deja ver la valoración o la ficha un instante.
    */
   private readonly autorizado = computed(() => this.reporte.hasValue());
   protected readonly ficha = rxResource<CaseBrief, number | undefined>({
-    // La ficha es la del caso DEL INTENTO, no la del número de la URL (Codex B4d, hallazgo 5): una URL con el intento del
+    // La ficha es la del caso DEL INTENTO, no la del número de la URL (B4d, hallazgo 5): una URL con el intento del
     // caso A y el número del caso B no mezcla el recorrido de A con los objetivos de B.
     params: () => this.casoDelIntento() ?? undefined,
     stream: ({ params }) => (params === undefined ? EMPTY : this.simulation.getCaseBrief(params)),

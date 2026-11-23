@@ -35,7 +35,7 @@ const HEROE_CABE = '(min-width: 34rem) and (min-height: 50rem)';
  * pasados 10 s, «Volver a la ficha». Las tarjetas de entrada del juego («Antes de comenzar», reanudar y el aviso de
  * respaldo) se pintan sobre su mitad de abajo, como una hoja; esta pantalla les deja el sitio (`conTarjeta`).
  *
- * Sin «Reintentar» mientras haya algo en curso (Codex 7): lo lento sigue y la persona decide si espera o vuelve. Un
+ * Sin «Reintentar» mientras haya algo en curso (hallazgo 7): lo lento sigue y la persona decide si espera o vuelve. Un
  * fallo de verdad lo muestra el juego por su camino de error de siempre, que reintenta una sola cosa.
  */
 @Component({

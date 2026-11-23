@@ -26,7 +26,7 @@ import { CONSENT_RECORDER, SessionConsentRecorder } from './consent-recorder';
 import { SimulationPlayComponent, UMBRAL_LENTO_MS } from './simulation-play.component';
 
 /**
- * Cómo se entra al juego (DISENO §4.4; DP-12, DP-26) y el arranque como máquina de estados (Codex 7):
+ * Cómo se entra al juego (DISENO §4.4; DP-12, DP-26) y el arranque como máquina de estados (hallazgo 7):
  * - `?intento=continuar` reanuda directo el intento abierto, sin el diálogo de reanudar;
  * - `?intento=nuevo` por URL ya no significa nada (una URL se repite desde el historial, un marcador u otra pestaña);
  * - el permiso de estado `reemplazar` reemplaza UNA vez y SOLO el `attemptId` que la persona aceptó perder;

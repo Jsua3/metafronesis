@@ -46,7 +46,7 @@ interface Entry<T> {
  * - el **intento abierto** por versión del caso (`intentoAbierto(id)`, `guardarIntentoAbierto`, `guardandoIntentoAbierto(id)`):
  *   `null` guardado significa «sé que no hay»; `undefined` al leer, «no sé».
  *
- * **Dueño de sesión** (Codex, hallazgo 4; D-16). `AuthService.logout()` navega sin recargar, así que este servicio raíz
+ * **Dueño de sesión** (hallazgo 4; D-16). `AuthService.logout()` navega sin recargar, así que este servicio raíz
  * sobrevive al cambio de cuenta: en un computador del aula, B heredaría durante 60 s el catálogo, el historial y el intento
  * abierto de A. Por eso cada entrada recuerda el `id` de quien la llenó y:
  *
@@ -153,7 +153,7 @@ export class CaseAccessCache {
   olvidarCaso(caseVersionId: number): void {
     this.intentos.delete(caseVersionId);
     this.accesoGuardado = null;
-    // Lo que ya salió a preguntar traería el estado de ANTES del cambio: se sube la época para descartarlo (Codex, BK-1).
+    // Lo que ya salió a preguntar traería el estado de ANTES del cambio: se sube la época para descartarlo (BK-1).
     // Es global y no por caso: descartar de más solo cuesta volver a preguntar.
     this.epoca += 1;
   }

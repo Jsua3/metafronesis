@@ -20,7 +20,7 @@ describe('game-world: render a escala entera (spec §8.3)', () => {
     expect(source.match(/\.setZoom\(/g) ?? []).toHaveLength(1);
   });
 
-  // Revisión de la integración (Codex, hallazgo 3): con el plano o el diálogo abiertos el personaje no camina.
+  // Revisión de la integración (hallazgo 3): con el plano o el diálogo abiertos el personaje no camina.
   it('con una capa abierta las teclas no mueven al jugador', () => {
     expect(source).toContain('const bloqueado = typing || this.motionPaused;');
     expect(source.match(/!bloqueado && \(this\.cursors\./g) ?? []).toHaveLength(4);

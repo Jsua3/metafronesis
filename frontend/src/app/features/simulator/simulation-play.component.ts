@@ -2284,7 +2284,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.pausa.cancelar();
     this.decisionOnline.cancelar();
     this.positionRetry.cancelar();
-    // Al salir del juego, Inicio y Casos no deben pintar lo de antes (Codex B4a, hallazgo 2): aquí se empieza, pausa,
+    // Al salir del juego, Inicio y Casos no deben pintar lo de antes (B4a, hallazgo 2): aquí se empieza, pausa,
     // reanuda o termina el intento, así que lo guardado de este caso ya no vale. Se pide perezoso y a prueba de fallos:
     // las pruebas de instancia montan el juego sin la sesión que la caché necesita.
     const caso = this.attempt()?.caseVersionId ?? Number(this.route.snapshot?.paramMap?.get('caseVersionId'));
