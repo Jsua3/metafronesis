@@ -8,7 +8,7 @@ from apps.simulation.services import case_rules
 from apps.simulation.models.vocabulary import ResponseClass
 from apps.simulation.services.audit_service import auditable
 from shared.exceptions import ApiError
-from . import contenido, guardas, servicios
+from . import contenido, ensayo, guardas, servicios
 
 
 def _aplicar(version, decision, datos):
@@ -73,5 +73,7 @@ def actualizar(usuario, case_version_id, decision_id, datos, revision):
 def borrar(usuario, case_version_id, decision_id, revision):
     version = guardas.version_editable(usuario, case_version_id)
     guardas.exigir_revision(version, revision)
-    get_object_or_404(DecisionOption, case_version=version, pk=decision_id).delete()
+    opcion = get_object_or_404(DecisionOption, case_version=version, pk=decision_id)
+    ensayo.descartar_de_version(version.pk)
+    opcion.delete()
     guardas.tocar(version, usuario)

@@ -5,6 +5,7 @@ import json
 import secrets
 from copy import copy
 from django.db import transaction
+from django.http import Http404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -22,6 +23,7 @@ from .response_effects import apply as apply_effects
 from apps.simulation.assessment.evaluation import freeze
 from apps.simulation.signals import attempt_completed
 from apps.simulation.casedef.vocabulary import ResponseClass
+from shared import policies
 from shared.exceptions import ApiError
 
 
@@ -67,15 +69,20 @@ def start(user, version_id, expected_attempt_id=None):
 
 
 def _owned(user, pk):
-    qs = SimulationAttempt.objects.select_for_update()
+    qs = SimulationAttempt.all_objects.select_for_update()
     attempt = get_object_or_404(qs, pk=pk, student=user)
-    get_object_or_404(available_versions(user), pk=attempt.case_version_id)
+    if attempt.is_rehearsal:
+        # Un ensayo es de su autora (o de administración) y no pasa por la asignación ni la publicación.
+        if not policies.can(user, "attempt", "rehearse", owner_id=attempt.student_id):
+            raise Http404
+    else:
+        get_object_or_404(available_versions(user), pk=attempt.case_version_id)
     attempt._time_expired = _cerrar_si_vencido(attempt)
     return attempt
 
 
 def _cerrar_si_vencido(attempt):
-    if attempt.status not in lifecycle.OPEN_STATUSES:
+    if attempt.status not in lifecycle.OPEN_STATUSES or attempt.is_rehearsal:
         return False
     limite = limites.minutos_para(attempt)
     if limite is None:
@@ -248,7 +255,8 @@ def _advance(attempt, option, now, aplicar=True):
 
 def _close_if_completed(attempt, result, event):
     """Si el intento terminó: congela la evaluación, la agrega al evento y avisa a los observadores."""
-    if attempt.status != "COMPLETED":
+    if attempt.status != "COMPLETED" or attempt.is_rehearsal:
+        # El ensayo de la docente muestra el final y nada más: ni evaluación, ni informe, ni aviso de intento completado.
         return
     evaluation = freeze(attempt)
     calificar_y_guardar(attempt)

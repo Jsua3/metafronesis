@@ -7,7 +7,7 @@ from apps.simulation.models import CaseCharacter, SimulationNode
 from apps.simulation.models.vocabulary import Intensity
 from apps.simulation.services.audit_service import auditable
 from shared.exceptions import ApiError
-from . import contenido, guardas, servicios
+from . import contenido, ensayo, guardas, servicios
 
 
 def _aplicar(version, nodo, datos):
@@ -69,5 +69,6 @@ def borrar(usuario, case_version_id, node_id, revision):
     nodo = get_object_or_404(SimulationNode, case_version=version, pk=node_id)
     if nodo.incoming_options.exists():
         raise ApiError("NODE_IN_USE", "La escena es destino de una decisión.", 409)
+    ensayo.descartar_de_version(version.pk)
     nodo.delete()
     guardas.tocar(version, usuario)

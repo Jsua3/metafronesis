@@ -21,7 +21,7 @@ def lock_attempt_row(attempt_id):
     Solo bloquea el intento (no los nodos ni el caso, que la orden solo lee). Si el
     intento no existe no hace nada: quien lo necesite lo reportará al leerlo.
     """
-    SimulationAttempt.objects.select_for_update().filter(pk=attempt_id).values_list(
+    SimulationAttempt.all_objects.select_for_update().filter(pk=attempt_id).values_list(
         "pk", flat=True
     ).first()
 

@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import CasosView, DefinicionView, FichaView, EscenasView, EscenaView, DecisionesView, DecisionView
 
-from .views import ChecklistView, EditorView, ExportarCasoView, ImportarCasoView, PlanoView
+from .views import (ChecklistView, EditorView, EnsayoDetalleView, EnsayoView, ExportarCasoView, ImportarCasoView,
+                    PlanoView)
 from .mundo_views import MundoView, MapaView, MapasView, ObjetoView, ObjetosView, PistaView, PistasView
 
 from .dialogos_views import DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView
@@ -41,6 +42,8 @@ urlpatterns = [
     path("cases/<int:case_version_id>/brief", FichaView.as_view()),
     path("cases/<int:case_version_id>/nodes", EscenasView.as_view()),
     path("cases/<int:case_version_id>/nodes/<int:node_id>", EscenaView.as_view()),
+    path("cases/<int:case_version_id>/rehearsal", EnsayoView.as_view()),
+    path("cases/<int:case_version_id>/rehearsal/<uuid:attempt_id>", EnsayoDetalleView.as_view()),
     path("cases/<int:case_version_id>/decisions", DecisionesView.as_view()),
     path("cases/<int:case_version_id>/decisions/<int:decision_id>", DecisionView.as_view()),
 ]

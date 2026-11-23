@@ -3,8 +3,8 @@ from rest_framework.views import APIView
 from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
 from shared.openapi import envelope_of, error_responses
-from . import decisiones, editor, escenas, plano, servicios
-from .serializers import (CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
+from . import decisiones, editor, ensayo, escenas, plano, servicios
+from .serializers import (AjusteEnsayoSerializer, CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
                           ChecklistSerializer, DecisionSerializer, EscenaSerializer, FichaSerializer, PlanoSerializer,
                           RevisionSerializer, VistaEditorSerializer)
 
@@ -138,3 +138,24 @@ class PlanoView(APIView):
     def get(self, request, case_version_id):
         version = editor.version_visible(request.user, case_version_id)
         return api_ok({"plan": plano.plano(version)})
+
+
+class EnsayoView(APIView):
+    """``POST …/rehearsal``: abre el ensayo del borrador (201) o reanuda el que ya está abierto (200)."""
+    permission_classes = [policy_permission("attempt", "rehearse")]
+
+    def post(self, request, case_version_id):
+        datos, creado = ensayo.abrir(request.user, case_version_id)
+        return api_created(datos) if creado else api_ok(datos)
+
+
+class EnsayoDetalleView(APIView):
+    """``GET/PATCH …/rehearsal/{attemptId}``: lee el ensayo o lo mueve a otra escena (``irA``)."""
+    permission_classes = [policy_permission("attempt", "rehearse")]
+
+    def get(self, request, case_version_id, attempt_id):
+        return api_ok(ensayo.leer(request.user, case_version_id, attempt_id))
+
+    def patch(self, request, case_version_id, attempt_id):
+        datos = _datos(AjusteEnsayoSerializer, request)
+        return api_ok(ensayo.ajustar(request.user, case_version_id, attempt_id, datos))

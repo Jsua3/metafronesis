@@ -42,4 +42,7 @@ AUDITORIA_POR_RUTA = {
     ("api/authoring/cases/<int:case_version_id>/decisions", "POST"): "DECISION_CREATED",
     ("api/authoring/cases/<int:case_version_id>/decisions/<int:decision_id>", "PUT"): "DECISION_UPDATED",
     ("api/authoring/cases/<int:case_version_id>/decisions/<int:decision_id>", "DELETE"): "DECISION_DELETED",
+    ("api/authoring/cases/<int:case_version_id>/rehearsal", "POST"): "ATTEMPT_STARTED",
+    ("api/authoring/cases/<int:case_version_id>/rehearsal/<uuid:attempt_id>", "GET"): "EXENTO: lectura del ensayo propio de la autora",
+    ("api/authoring/cases/<int:case_version_id>/rehearsal/<uuid:attempt_id>", "PATCH"): "NODE_ENTERED",
 }
