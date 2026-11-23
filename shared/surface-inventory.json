@@ -944,6 +944,14 @@
       "audit": "SAFE_EXIT_REQUESTED"
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/state",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta el estado de su propio intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/student-report",
       "method": "GET",
       "exposure": "role:ESTUDIANTE",
