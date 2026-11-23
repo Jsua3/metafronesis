@@ -16,3 +16,21 @@ ui-filtros { display: block; min-width: 0; margin-block-end: var(--ds-space-5); 
 .hub-versiones summary:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
 .hub-versiones__lista { display: grid; gap: var(--ds-space-3); }
 @media (forced-colors: active) { .hub-versiones summary:focus-visible { outline-color: CanvasText; } }
+
+// «Aprende a crear un caso»: la tarjeta del tutorial del editor, sobre la lista. El filo discontinuo es el de la guía.
+.hub-tutorial {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem;
+  margin-block-end: 1.5rem; padding: 1rem 1.25rem; border: 2px dashed var(--ds-info); border-radius: var(--ds-radius-lg, 16px);
+  background: var(--ds-surface-1);
+}
+.hub-tutorial__mentor { border-radius: 8px; image-rendering: pixelated; background: var(--ds-surface-2, transparent); }
+.hub-tutorial__texto { display: flex; flex-direction: column; gap: 0.25rem; min-inline-size: 0; }
+.hub-tutorial__texto h2 { margin: 0; font-size: 1.125rem; }
+.hub-tutorial__texto p { margin: 0; color: var(--ds-text-2); }
+.hub-tutorial__texto .hub-tutorial__avance { font-weight: 700; color: var(--ds-text-1); }
+.hub-tutorial progress { inline-size: min(16rem, 100%); accent-color: var(--ds-info); }
+.hub-tutorial__texto .hub-tutorial__error { color: var(--ds-danger); font-weight: 700; }
+@media (max-width: 40rem) {
+  .hub-tutorial { grid-template-columns: auto minmax(0, 1fr); }
+  .hub-tutorial__accion { grid-column: 1 / -1; }
+}

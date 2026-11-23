@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { CasoStore } from '../estado/caso.store';
-import { rutaDelEditor } from '../rutas';
 import { ACCIONES, type Accion } from './acciones';
+import { rutaConcreta } from './ruta-concreta';
 
 export type ModoGuia = 'resaltar' | 'foco' | 'recorrido';
 
@@ -71,17 +71,7 @@ export class GuiaService {
    * acciones guardan su pantalla con la dirección corta del editor (`/editor/sala/:sala`); aquí se vuelve la real.
    */
   ruta(a: Accion): string | null {
-    if (!a.ruta) return null;
-    const caso = this.store.caso();
-    const partes = this.router.url.split('?')[0].split('/').filter(Boolean);
-    const i = partes.indexOf('editor');
-    const salaActual = i >= 0 && partes[i + 1] === 'sala' ? decodeURIComponent(partes[i + 2] ?? '') : null;
-    const escenaActual = i >= 0 && partes[i + 1] === 'escena' ? decodeURIComponent(partes[i + 2] ?? '') : null;
-    const sala = salaActual ?? caso?.salas[0]?.id ?? '';
-    const escena = escenaActual ?? caso?.inicioId ?? caso?.escenas[0]?.id ?? '';
-    if ((a.ruta.includes(':sala') && !sala) || (a.ruta.includes(':escena') && !escena)) return rutaDelEditor('/', null);
-    const corta = a.ruta.replace(':sala', encodeURIComponent(sala)).replace(':escena', encodeURIComponent(escena));
-    return rutaDelEditor(corta, caso?.id ?? null);
+    return rutaConcreta(a.ruta, this.store.caso(), this.router.url);
   }
 
   async mostrar(accionId: string, modo: ModoGuia): Promise<void> {

@@ -1,12 +1,16 @@
 // La «hoja de estudio» de las pestañas de formulario del editor (Datos, Evaluación, Rúbrica, Finales, Revisión):
-// el lienzo hundido que se desplaza solo, una hoja centrada de medida de lectura y una cabecera compacta.
+// el lienzo hundido, una hoja centrada de medida de lectura y una cabecera compacta.
 // Vive aquí (y no en styles/) porque solo la usan estas pestañas; cada una la incluye con `@use '../datos/hoja'`.
 // Densidad de EDITOR-PRO.md, punto 2: rótulos de 14 px, campos de 14–16 px, filas de 36–40 px con área de toque de 44 px.
 
 @mixin lienzo {
   :host { display: block; min-block-size: 0; block-size: 100%; }
+  // Quien se desplaza es la zona central del estudio (`.zona-centro`), no el lienzo: el marco no le da un alto definido,
+  // así que el lienzo crece con su contenido y solo pinta el fondo. Antes llevaba `overflow: auto` con
+  // `overscroll-behavior: contain`; sin desbordar, ese `contain` se comía la rueda del ratón y la pestaña solo se
+  // desplazaba arrastrando la barra lateral (medido el 2026-11-22 en Evaluación).
   .lienzo {
-    block-size: 100%; min-block-size: 0; overflow: auto; overscroll-behavior: contain;
+    min-block-size: 100%;
     background: var(--l-superficie-hundida);
   }
   .hoja {

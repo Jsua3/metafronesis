@@ -33,6 +33,8 @@ import { EstudioMarcoComponent } from './marco/estudio/estudio-marco.component';
 import { EstudioService } from './marco/estudio/estudio.service';
 import { ExploradorBibliotecaComponent } from './marco/estudio/explorador-biblioteca.component';
 import { RUTA_CASOS, RutasAutoria } from './rutas';
+import { TutorialCapaComponent } from './tutorial/tutorial-capa.component';
+import { TutorialService } from './tutorial/tutorial.service';
 
 const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', icon: 'logout', tone: 'danger' }];
 
@@ -56,7 +58,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
   imports: [
     RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
     UiGlassBar, UiMenu, TemaSelectorComponent, HiloDelCasoComponent, RielDeEscenasComponent,
-    EstudioMarcoComponent, ExploradorBibliotecaComponent,
+    EstudioMarcoComponent, ExploradorBibliotecaComponent, TutorialCapaComponent,
   ],
   providers: [EstudioService],
   host: { '(window:pagehide)': 'alCerrar()', '(window:beforeunload)': 'antesDeSalir($event)' },
@@ -144,6 +146,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
       <app-buscador [modo]="modo" (cerrar)="cerrarBuscador()" />
     }
     <app-foco-guia />
+    <app-tutorial-capa />
 
     <!-- El espacio de trabajo (EDITOR-PRO.md §1): Explorador · lienzo · Inspector y barra de estado. La pantalla de la ruta
          va en el centro; lo que pone en el Inspector o en la barra de herramientas llega por las ranuras del estudio. -->
@@ -354,6 +357,10 @@ export class AutoriaShellComponent implements CanLeave {
   private readonly ruta = inject(ActivatedRoute);
   /** El caso que pide la dirección; `null` en crear un caso (no hay caso que abrir). */
   private readonly casoPedido = toSignal(this.ruta.paramMap.pipe(map((p) => p.get('caseVersionId'))), { initialValue: this.ruta.snapshot.paramMap.get('caseVersionId') });
+  private readonly tutorial = inject(TutorialService);
+  /** `?tutorial=1` (empezar o retomar) o `?tutorial=repetir`, que pone la tarjeta «Aprende a crear un caso». */
+  private readonly pedidoTutorial = toSignal(this.ruta.queryParamMap.pipe(map((q) => q.get('tutorial'))), { initialValue: this.ruta.snapshot.queryParamMap.get('tutorial') });
+  private tutorialArrancado = false;
   /** Se está abriendo el caso pedido (aún no es el que tiene el store). */
   protected readonly abriendo = computed(() => {
     const pedido = this.casoPedido();
@@ -498,6 +505,18 @@ export class AutoriaShellComponent implements CanLeave {
       const pedido = this.casoPedido();
       if (pedido === null) return;
       untracked(() => void this.store.cargar(Number(pedido)));
+    });
+    // «Aprende a crear un caso» abre el editor con ?tutorial=1 (o =repetir): cuando el caso pedido ya está abierto, arranca.
+    // `iniciar` navega a la pantalla del paso sin el parámetro, así que la dirección queda limpia sola. Si la página se
+    // recargó con el tutorial abierto en este caso, se reanuda en el mismo paso.
+    effect(() => {
+      const pedido = this.pedidoTutorial();
+      const caso = this.store.caso();
+      if (!caso || caso.id !== this.casoPedido() || this.tutorialArrancado) return;
+      const reanudar = untracked(() => this.tutorial.estabaActivo(caso.id));
+      if (!pedido && !reanudar) return;
+      this.tutorialArrancado = true;
+      untracked(() => void this.tutorial.iniciar(caso.id, pedido === 'repetir'));
     });
     const destruir = inject(DestroyRef);
     destruir.onDestroy(() => void this.store.liberar());
