@@ -35,7 +35,7 @@ describe('Lista de casos de autoría', () => {
     expect(host().textContent).toContain('Aún no tienes casos');
     expect(host().querySelector('ui-vacio-ilustrado button')).toBeNull();
   });
-  it('ofrece la acción correspondiente a cada estado (el ensayo llega en un PR siguiente)', async () => {
+  it('ofrece la acción correspondiente a cada estado', async () => {
     api.listAuthoringCases.mockReturnValue(of([caso(1, 'DRAFT'), caso(2, 'IN_REVIEW'), caso(3, 'PUBLISHED'), caso(4, 'ARCHIVED')])); await render();
     const texto = host().textContent ?? '';
     for (const accion of ['Seguir editando', 'Ver revisión', 'Abrir en el editor', 'Ver']) expect(texto).toContain(accion);

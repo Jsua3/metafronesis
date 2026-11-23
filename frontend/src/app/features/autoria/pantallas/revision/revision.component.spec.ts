@@ -1,4 +1,3 @@
-import { ENSAYO_DISPONIBLE } from '../../ensayo';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
@@ -459,7 +458,7 @@ describe('RevisionComponent · un caso que Psicología devolvió', () => {
   });
 });
 
-describe.skipIf(!ENSAYO_DISPONIBLE)('RevisionComponent · el ensayo en otra pestaña', () => {
+describe('RevisionComponent · el ensayo en otra pestaña', () => {
   afterEach(() => { vi.restoreAllMocks(); document.querySelectorAll('body > app-revision, body > [ng-version]').forEach((n) => n.remove()); });
   const sugerencia = (raiz: HTMLElement) => [...raiz.querySelectorAll('li.falta')].find((li) => li.textContent?.includes('Todavía no probaste el caso completo en el juego.'));
 

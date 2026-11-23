@@ -1,5 +1,4 @@
 ﻿import type { CasoBorrador, Escena } from './caso';
-import { ENSAYO_DISPONIBLE } from '../ensayo';
 import { escenasAlcanzables } from './hitos';
 import { clasificarPendientes, estaVacia, type Etapa, type Pendiente } from './pendientes';
 
@@ -154,7 +153,7 @@ export function siguientePaso(caso: CasoBorrador, marco: EstadoDelMarco = {}, pe
   const final = pendientes.find((p) => p.etapa === 'evaluacion' && p.tipo !== 'sugerencia');
   if (final) return { texto: final.mensaje, ruta: final.ir.ruta, ancla: final.ir.ancla, accionId: final.ir.accionId };
 
-  if (ENSAYO_DISPONIBLE && caso.probadoHastaElFinal !== true) return { texto: 'Prueba el caso hasta un final', ruta: '/editor', accionId: 'probar' };
+  if (caso.probadoHastaElFinal !== true) return { texto: 'Prueba el caso hasta un final', ruta: '/editor', accionId: 'probar' };
 
   if (pendientes.some((p) => p.codigo === 'CHECKLIST_INCOMPLETE')) {
     return { texto: 'Completa la lista de verificación', ruta: '/revision', ancla: 'lista-verificacion' };

@@ -279,6 +279,41 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
     });
   });
 
+  describe('el asistente de IA de autoría', () => {
+    it('assistantStatus lee GET …/assistant/status y entrega el contenido sin sobre', () => {
+      let estado: unknown;
+      api.assistantStatus(9).subscribe(e => (estado = e));
+      const r = http.expectOne('/api/authoring/cases/9/assistant/status');
+      expect(r.request.method).toBe('GET');
+      r.flush({ success: true, data: { enabled: true, mode: 'connected', remainingToday: 12 } });
+      expect(estado).toEqual({ enabled: true, mode: 'connected', remainingToday: 12 });
+    });
+
+    it('assistantPropose manda POST …/assistant/propose con el cuerpo tal cual y entrega el resultado sin sobre', () => {
+      const cuerpo = { peticion: 'Agrega una respuesta', pantalla: 'guion', seleccion: '3' };
+      const resultado = { mensaje: 'Listo', cambios: [{ op: 'addOption' }], changes: 1, model: 'm', modo: 'connected' };
+      let recibido: unknown;
+      api.assistantPropose(9, cuerpo).subscribe(e => (recibido = e));
+      const r = http.expectOne('/api/authoring/cases/9/assistant/propose');
+      expect(r.request.method).toBe('POST');
+      expect(r.request.body).toEqual(cuerpo);
+      r.flush({ success: true, data: resultado });
+      expect(recibido).toEqual(resultado);
+    });
+
+    it('assistantGuide manda POST …/assistant/guide con el cuerpo tal cual y entrega la guía sin sobre', () => {
+      const cuerpo = { pregunta: '¿Dónde pongo el contexto?', acciones: [{ id: 'datos-del-caso', nombre: 'Datos', pantalla: 'datos' }] };
+      const guia = { accionId: 'datos-del-caso', modo: 'resaltar', mensaje: 'Aquí', model: 'm', changes: 0 };
+      let recibido: unknown;
+      api.assistantGuide(9, cuerpo).subscribe(e => (recibido = e));
+      const r = http.expectOne('/api/authoring/cases/9/assistant/guide');
+      expect(r.request.method).toBe('POST');
+      expect(r.request.body).toEqual(cuerpo);
+      r.flush({ success: true, data: guia });
+      expect(recibido).toEqual(guia);
+    });
+  });
+
   describe('la generación de casos con IA (SIEP-244)', () => {
     it('el estado se pide al servidor y llega sin sobre', () => {
       let estado: unknown;
@@ -316,23 +351,6 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       const peticion = http.expectOne(r => r.url === '/api/authoring/generations/g1/scenes/sala-1');
       expect(peticion.request.params.get('repair')).toBe('1');
       peticion.flush({ data: {} });
-    });
-  });
-
-  describe('lo que aún no tiene backend', () => {
-    it('el asistente se ve apagado sin pedir nada al servidor', () => {
-      let estado: unknown;
-      api.assistantStatus(9).subscribe(e => (estado = e));
-      expect(estado).toEqual({ enabled: false, mode: 'disabled', remainingToday: 0 });
-    });
-
-    const sinBackend: Array<[string, (a: AuthoringApi) => Observable<unknown>]> = [
-      ['assistantPropose', a => a.assistantPropose(9, {} as never)],
-    ];
-    it.each(sinBackend)('%s falla con un 404 explicado, sin red', (_n, llamar) => {
-      let fallo: { status?: number } | null = null;
-      llamar(api).subscribe({ error: (e: { status?: number }) => (fallo = e) });
-      expect((fallo as { status?: number } | null)?.status).toBe(404);
     });
   });
 });

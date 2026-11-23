@@ -9,7 +9,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { UiDialog } from '../../../../shared/ui/dialog/ui-dialog';
 import { UiMenu, type UiMenuItem } from '../../../../shared/ui/menu/ui-menu';
-import { ENSAYO_DISPONIBLE, RUTA_ENSAYO, alPulsarProbar } from '../../ensayo';
+import { RUTA_ENSAYO, alPulsarProbar } from '../../ensayo';
 import { CasoStore } from '../../estado/caso.store';
 import { AutoAltoDirective } from '../../marco/auto-alto.directive';
 import { DeshacerBorrado } from '../../marco/deshacer-borrado';
@@ -90,7 +90,6 @@ export class GuionComponent {
 
   /** El número que el servidor le dio a la escena: sin él (la escena aún no se guardó) no hay desde dónde probar. */
   protected readonly nodoParaProbar = computed(() => (this.store.caso(), this.store.guardando(), this.store.nodoDeEscena(this.escenaId())));
-  protected readonly ensayoDisponible = ENSAYO_DISPONIBLE;
   protected readonly rutaEnsayo = (nodo: number): string => RUTA_ENSAYO(this.store.caso()!.id, nodo);
 
   /** «Antes de decidir» va cerrado si está vacío (§3.4, punto 2); con algo escrito, abierto. Se recalcula al cambiar de escena. */
@@ -382,7 +381,7 @@ export class GuionComponent {
     if (evento.key === 'Enter' && (evento.ctrlKey || evento.metaKey) && evento.shiftKey) {
       evento.preventDefault();
       this.agregarRespuesta(e);
-    } else if (ENSAYO_DISPONIBLE && evento.altKey && !evento.ctrlKey && (evento.key === 'p' || evento.key === 'P')) {
+    } else if (evento.altKey && !evento.ctrlKey && (evento.key === 'p' || evento.key === 'P')) {
       const nodo = this.nodoParaProbar();
       if (nodo === null) return;
       evento.preventDefault();

@@ -16,7 +16,7 @@ import { ProgresoDelCaso } from '../../marco/progreso.service';
 import type { Etapa } from '../../modelo/pendientes';
 import { type Falta, avisosDeLectura, faltasDelServidor, puedeEnviar, sugerencias } from '../../modelo/revision';
 import { RutasAutoria, rutaDelEditor } from '../../rutas';
-import { ENSAYO_DISPONIBLE, RUTA_ENSAYO, alPulsarProbar } from '../../ensayo';
+import { RUTA_ENSAYO, alPulsarProbar } from '../../ensayo';
 import {
   type Comando, EstudioHerramientaComponent, EstudioRanuraDirective, EstudioService, injectComandos,
 } from '../../marco/estudio';
@@ -271,7 +271,6 @@ export class RevisionComponent {
    * «Probar» abre el borrador en el juego real: con clic normal en esta pestaña; con Ctrl o clic central, en otra ya al día
    * (`alPulsarProbar`). El clic central no llega como `click` sino como `auxclick`: por eso se escuchan los dos.
    */
-  protected readonly ensayoDisponible = ENSAYO_DISPONIBLE;
   protected readonly rutaEnsayo = computed(() => RUTA_ENSAYO(this.store.caso()?.id ?? ''));
   protected probar(evento: MouseEvent): void {
     void alPulsarProbar(evento, this.store);

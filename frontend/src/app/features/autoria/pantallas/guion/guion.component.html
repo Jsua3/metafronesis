@@ -230,7 +230,6 @@
         <!-- La vista del estudiante: mini simulación en la piel del juego, junto al libreto (se pega arriba al desplazar). -->
         <aside class="guion__vista" aria-labelledby="vista-titulo" data-accion="vista-del-estudiante">
           <app-vista-estudiante [escena]="e" [personajes]="personajes()" [lineaEnfocada]="lineaVista()" />
-          @if (ensayoDisponible) {
           @if (nodoParaProbar(); as nodo) {
                 <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
                 <a class="boton boton-secundario" [attr.href]="rutaEnsayo(nodo)" target="_blank" rel="noopener" data-accion="probar" aria-keyshortcuts="Alt+P"
@@ -239,7 +238,6 @@
                 <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
                 <button type="button" class="boton" aria-disabled="true" aria-describedby="probar-aviso" data-accion="probar">Probar desde aquí ↗</button>
                 <span id="probar-aviso" class="nota">Guarda la escena para probarla.</span>
-          }
           }
         </aside>
       </app-estudio-seccion>

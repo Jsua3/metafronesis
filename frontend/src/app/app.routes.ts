@@ -154,7 +154,14 @@ export const routes: Routes = [
         canActivate: [roleGuard(...rolesFor('casos'))],
         loadChildren: () => import('./features/autoria/autoria.routes').then(m => m.rutasNuevoCaso)
       },
-      // La pantalla del ensayo del borrador (`casos/:caseVersionId/ensayo`) llega en un PR siguiente.
+      {
+        // Bloque B: la docente ensaya su borrador en el juego real (la misma pantalla en modo ensayo). El servidor vuelve a comprobar el permiso.
+        path: 'casos/:caseVersionId/ensayo',
+        title: 'Ensayo del caso',
+        data: { chrome: 'hidden', mode: 'rehearsal' },
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadComponent: () => import('./features/simulator/simulation-play.component').then(m => m.SimulationPlayComponent)
+      },
       {
         // P6: el editor nuevo de casos. Un PROFESOR solo abre los suyos (lo hace cumplir el servidor).
         path: 'casos/:caseVersionId/editor',

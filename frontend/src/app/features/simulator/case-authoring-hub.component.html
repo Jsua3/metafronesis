@@ -53,7 +53,6 @@
     }
     <div class="hub-card__actions">
       <a ui-button [routerLink]="item.status === 'IN_REVIEW' ? ['/portal/casos', item.caseVersionId, 'editor', 'revision'] : ['/portal/casos', item.caseVersionId, 'editor']">{{ accion(item.status) }}</a>
-      <!-- «Probar» (el ensayo del caso publicado) llega en un PR siguiente: su backend aún no existe. -->
     </div>
   </ui-card>
 </ng-template>

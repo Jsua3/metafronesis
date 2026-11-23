@@ -15,7 +15,7 @@ import { UiMenu, UiMenuItem } from '../../shared/ui/menu/ui-menu';
 import { TemaSelectorComponent } from '../../shared/ui/tema/tema-selector.component';
 
 import { AvisosGuardadoComponent } from './avisos-guardado.component';
-import { ENSAYO_DISPONIBLE, RUTA_ENSAYO, alPulsarProbar } from './ensayo';
+import { RUTA_ENSAYO, alPulsarProbar } from './ensayo';
 import { CasoStore } from './estado/caso.store';
 import { BuscadorComponent } from './guia/buscador.component';
 import { FocoGuiaComponent } from './guia/foco-guia.component';
@@ -94,10 +94,8 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
           }
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
-            @if (ensayoDisponible) {
-              <a class="boton-barra enlace-probar" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar"
-                 aria-label="Probar el caso en el juego (con Ctrl o clic central se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
-            }
+            <a class="boton-barra enlace-probar" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar"
+               aria-label="Probar el caso en el juego (con Ctrl o clic central se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
             <button type="button" class="boton-barra boton-pendientes" data-accion="ver-pendientes" aria-haspopup="dialog"
                     [attr.title]="textoPendientes()" (click)="abrirPendientes($event)">
               <!-- El nombre es el texto para lectores («Pendientes: …», empieza por la palabra visible), no un aria-label:
@@ -413,7 +411,6 @@ export class AutoriaShellComponent implements CanLeave {
    */
   protected readonly bloqueado = computed(() => this.store.soloLectura() && !/\/(revision|datos)$/.test(this.direccion().split('?')[0]));
   /** «Probar» lleva el borrador al juego real, en esta pestaña (con Ctrl o clic central, en otra), desde la escena de inicio. */
-  protected readonly ensayoDisponible = ENSAYO_DISPONIBLE;
   protected readonly rutaEnsayo = computed(() => RUTA_ENSAYO(this.store.caso()?.id ?? ''));
   protected probar(evento: MouseEvent): void {
     void alPulsarProbar(evento, this.store);

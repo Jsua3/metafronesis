@@ -4,12 +4,6 @@ import type { CasoStore } from './estado/caso.store';
 export const RUTA_ENSAYO = (caseVersionId: string, desde?: number): string =>
   `/portal/casos/${encodeURIComponent(caseVersionId)}/ensayo${desde ? `?desde=${desde}` : ''}`;
 
-/**
- * El ensayo del borrador (el juego real con el caso en edición) llega en un PR siguiente: su backend aún no existe en
- * metafronesis. Mientras sea `false`, el editor no ofrece «Probar» ni sugiere probar el caso hasta un final.
- */
-export const ENSAYO_DISPONIBLE = false;
-
 type Abrir = (url: string, destino: string) => Window | null;
 
 /**

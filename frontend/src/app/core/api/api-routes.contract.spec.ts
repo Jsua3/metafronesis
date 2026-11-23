@@ -62,7 +62,7 @@ const CLIENT_FILES = [
  * (`GET /api/simulation/attempts/{id}/state`, SIEP-239). Mientras no estén en `develop` se exceptúan; la última prueba
  * falla cuando la ruta ya existe, para quitarla de esta lista y que el contrato la vigile.
  */
-// El estado del intento (#57), los reportes (#60), el editor (#55) y el ensayo (#58) ya están en `develop`.
+// El estado del intento (#57), los reportes (#60), el editor (#55) y el ensayo (#58) ya están en `develop`; no queda ninguna ruta pendiente.
 const RUTAS_PENDIENTES: readonly string[] = [];
 
 describe('Rutas del cliente: cada URL existe en el servidor', () => {
