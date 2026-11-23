@@ -389,11 +389,19 @@
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/lifecycle",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura del ciclo de vida de un caso visible"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/lifecycle",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "json-small",
       "throttle": null,
-      "audit": "CASE_SUBMITTED,CASE_ARCHIVED"
+      "audit": "CASE_SUBMITTED,CASE_ARCHIVED,CASE_REJECTED"
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/maps",
