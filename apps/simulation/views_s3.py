@@ -58,7 +58,7 @@ class Attempts(APIView):
         body = StartRequest(data=request.data)
         body.is_valid(raise_exception=True)
         attempt, created = attempt_api.start(
-            request.user, body.validated_data["case_version_id"]
+            request.user, body.validated_data["case_version_id"], body.validated_data.get("expectedAttemptId")
         )
         return Response(AttemptSerializer(attempt).data, status=201 if created else 200)
 

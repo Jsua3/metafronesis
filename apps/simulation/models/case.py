@@ -232,6 +232,7 @@ class SimulationNode(models.Model):
     position_y = models.IntegerField(null=True, blank=True, default=0)
     # El enunciado de la decisión (E3-6, RF-06): lo que el estudiante lee antes de elegir. Texto
     # plano y blando: vacío = la escena no lo declara.
+    comments_json = models.TextField(default="[]", db_default="[]")
     decision_prompt = models.TextField(default="", db_default="")
     # Orden informativo con que el editor lista los nodos (E3-6, RF-08): no cambia el grafo.
     display_order = models.IntegerField(default=0, db_default=0)
@@ -294,6 +295,8 @@ class DecisionOption(models.Model):
     # Los efectos de la opción como datos del caso: ``{persona, milestones, competencies}``. Vacío = la opción no
     # trae efectos propios (la persona se mueve según su clase y no marca hitos).
     effects = models.TextField(default="{}", db_default="{}")
+    requires_json = models.TextField(default="{}", db_default="{}")
+    reaction_json = models.TextField(default="{}", db_default="{}")
     # La clase de la respuesta (modelo de respuesta): ``RECOMMENDED`` | ``ACCEPTABLE`` | ``RISKY`` |
     # ``CONTRAINDICATED``; ver ``casedef.vocabulary.ResponseClass``. Toda opción la tiene: la ``CONTRAINDICATED`` es la
     # conducta que se debe evitar y exige ``prohibition_reason``.

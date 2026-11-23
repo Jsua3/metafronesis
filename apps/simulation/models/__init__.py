@@ -69,3 +69,9 @@ from .world import (
 
 __all__ += ["SceneMap", "SceneHint", "CaseCharacter", "MapObject", "CollisionZone",
             "DialogueTree", "DialogueLine", "DialogueChoice", "ClinicalTool"]
+
+from .attempt import AttemptHintView
+
+from .attempt import ReflectionJournal
+
+from .attempt import AttemptReport

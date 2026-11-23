@@ -66,3 +66,53 @@ class EntradaSala(APIView):
         if not isinstance(request.data, dict):
             raise ValidationError("El cuerpo debe ser un objeto JSON.")
         return api_ok(world.entrar(request.user, pk, request.data))
+
+
+from .services import world_actions
+from .serializers.world_contract import PistasRespuesta, SolicitudPista, SolicitudHerramienta, InteraccionRespuesta, HerramientaRespuesta
+
+
+def _cuerpo(request):
+    if not isinstance(request.data, dict):
+        raise ValidationError("El cuerpo debe ser un objeto JSON.")
+    return request.data
+
+
+class Pistas(APIView):
+    permission_classes = [policy_permission("attempt", "play")]
+
+    @extend_schema(responses={200: envelope_of(PistasRespuesta), **error_responses(401, 403, 404)})
+    def get(self, request, pk):
+        return api_ok(world_actions.pistas(request.user, pk))
+
+
+class SiguientePista(APIView):
+    permission_classes = [policy_permission("attempt", "play")]
+
+    @extend_schema(request=SolicitudPista, responses={200: envelope_of(PistasRespuesta), **error_responses(400, 401, 403, 404, 409)})
+    def post(self, request, pk):
+        return api_ok(world_actions.siguiente(request.user, pk, _cuerpo(request)))
+
+
+class Interaccion(APIView):
+    permission_classes = [policy_permission("attempt", "play")]
+
+    @extend_schema(request=None, responses={200: envelope_of(InteraccionRespuesta), **error_responses(400, 401, 403, 404)})
+    def post(self, request, pk, key):
+        return api_ok(world_actions.interactuar(request.user, pk, key))
+
+
+class UsoHerramienta(APIView):
+    permission_classes = [policy_permission("attempt", "play")]
+
+    @extend_schema(request=SolicitudHerramienta, responses={200: envelope_of(HerramientaRespuesta), **error_responses(400, 401, 403, 404)})
+    def post(self, request, pk):
+        return api_ok(world_actions.usar(request.user, pk, _cuerpo(request)))
+
+
+class Personaje(APIView):
+    permission_classes = [policy_permission("attempt", "play")]
+
+    @extend_schema(request=None, responses={200: envelope_of(MundoRespuesta), **error_responses(400, 401, 403, 404)})
+    def post(self, request, pk, key):
+        return api_ok(world_actions.personaje(request.user, pk, key))

@@ -24,6 +24,7 @@ class AttemptSerializer(serializers.ModelSerializer):
 
 class StartRequest(serializers.Serializer):
     case_version_id = serializers.IntegerField(min_value=1)
+    expectedAttemptId = serializers.UUIDField(required=False, allow_null=True)
 
 
 class DecisionRequest(serializers.Serializer):

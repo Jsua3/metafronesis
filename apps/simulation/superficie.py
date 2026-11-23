@@ -1,4 +1,12 @@
 AUDITORIA_POR_RUTA = {
+    ("api/simulation/attempts/<uuid:pk>/student-report", "GET"): "EXENTO: el estudiante consulta su propio informe",
+    ("api/simulation/attempts/<uuid:pk>/reflections", "POST"): "REFLECTION_SAVED",
+    ("api/simulation/attempts/<uuid:pk>/safe-exit", "POST"): "SAFE_EXIT_REQUESTED",
+    ("api/simulation/attempts/<uuid:pk>/hints", "GET"): "EXENTO: consulta de pistas del propio intento",
+    ("api/simulation/attempts/<uuid:pk>/hints/next", "POST"): "EXENTO: la pista queda registrada en el intento",
+    ("api/simulation/attempts/<uuid:pk>/interactions/<str:key>", "POST"): "EXENTO: la interacción queda registrada en el intento",
+    ("api/simulation/attempts/<uuid:pk>/tools/use", "POST"): "EXENTO: el uso queda registrado en el intento",
+    ("api/simulation/attempts/<uuid:pk>/npcs/<str:key>", "POST"): "EXENTO: el diálogo queda registrado en el intento",
     ("api/simulation/attempts/<uuid:pk>/world", "GET"): "EXENTO: el estudiante consulta su propio mundo",
     ("api/simulation/attempts/<uuid:pk>/progress-map", "GET"): "EXENTO: el estudiante consulta su propio progreso",
     ("api/simulation/attempts/<uuid:pk>/world-state", "PATCH"): "EXENTO: el estudiante actualiza su propia posición",
