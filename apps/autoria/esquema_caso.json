@@ -58,6 +58,13 @@
             "type": "string"
           }
         },
+        "contentWarnings": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string"
+          }
+        },
         "estimatedMinutes": {
           "type": [
             "integer",
