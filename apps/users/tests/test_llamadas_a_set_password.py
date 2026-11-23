@@ -39,6 +39,9 @@ PERMITIDAS = {
     ("apps.users.services.account_service", "reset_admin_account"): (
         "reposición del ADMIN por terminal (``create_admin --reset``, R1b2): clave temporal con fecha, la pone el operador"
     ),
+    ("apps.publicacion.siembra_demostracion", "_cuenta"): (
+        "siembra de demostración (SIEP-234): clave temporal común que llega por variable de entorno, con cambio obligatorio y fecha"
+    ),
 }
 
 
