@@ -31,7 +31,8 @@ def exigir_revision(version, revision: int | None) -> None:
         if settings.REVISION_REQUIRED:
             raise ApiError("REVISION_REQUIRED", "La revisión es obligatoria.", 400)
     elif revision != version.version:
-        raise ApiError("REVISION_CONFLICT", "La revisión no está actualizada.", 409)
+        from .editor import vista  # perezoso: editor importa este módulo
+        raise ApiError("REVISION_CONFLICT", "La revisión no está actualizada.", 409, revision=version.version, current=vista(version))
 
 
 def tocar(version, usuario) -> None:

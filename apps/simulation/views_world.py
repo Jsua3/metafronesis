@@ -5,11 +5,14 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 
 from shared.openapi import envelope_of, error_responses
-from shared.permissions import policy_permission
+from shared.permissions import policy_permission_any
 from shared.response import api_ok
 from .services import world
 from .serializers.world_contract import EntradaSolicitud, MundoRespuesta, ProgresoMundo
 
+
+# El mundo lo juega el estudiante o lo ensaya la docente autora (SIEP-243); el servicio decide de quién es el intento.
+JUGAR_O_ENSAYAR = policy_permission_any(("attempt", "play"), ("attempt", "rehearse"))
 
 RESPUESTA_POSICION = {
     "anyOf": [
@@ -33,7 +36,7 @@ SOLICITUD_POSICION = {
 
 
 class Mundo(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(responses={200: envelope_of(MundoRespuesta), **error_responses(401, 403, 404)})
     def get(self, request, pk):
@@ -41,7 +44,7 @@ class Mundo(APIView):
 
 
 class MapaProgreso(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(responses={200: envelope_of(ProgresoMundo), **error_responses(401, 403, 404)})
     def get(self, request, pk):
@@ -49,7 +52,7 @@ class MapaProgreso(APIView):
 
 
 class PosicionMundo(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=SOLICITUD_POSICION, responses={200: RESPUESTA_POSICION, **error_responses(400, 401, 403, 404)})
     def patch(self, request, pk):
@@ -59,7 +62,7 @@ class PosicionMundo(APIView):
 
 
 class EntradaSala(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=EntradaSolicitud, responses={200: envelope_of(MundoRespuesta), **error_responses(400, 401, 403, 404)})
     def post(self, request, pk):
@@ -79,7 +82,7 @@ def _cuerpo(request):
 
 
 class Pistas(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(responses={200: envelope_of(PistasRespuesta), **error_responses(401, 403, 404)})
     def get(self, request, pk):
@@ -87,7 +90,7 @@ class Pistas(APIView):
 
 
 class SiguientePista(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=SolicitudPista, responses={200: envelope_of(PistasRespuesta), **error_responses(400, 401, 403, 404, 409)})
     def post(self, request, pk):
@@ -95,7 +98,7 @@ class SiguientePista(APIView):
 
 
 class Interaccion(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=None, responses={200: envelope_of(InteraccionRespuesta), **error_responses(400, 401, 403, 404)})
     def post(self, request, pk, key):
@@ -103,7 +106,7 @@ class Interaccion(APIView):
 
 
 class UsoHerramienta(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=SolicitudHerramienta, responses={200: envelope_of(HerramientaRespuesta), **error_responses(400, 401, 403, 404)})
     def post(self, request, pk):
@@ -111,7 +114,7 @@ class UsoHerramienta(APIView):
 
 
 class Personaje(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=None, responses={200: envelope_of(MundoRespuesta), **error_responses(400, 401, 403, 404)})
     def post(self, request, pk, key):

@@ -67,6 +67,9 @@ class CaseVersion(models.Model):
     # Los objetivos de aprendizaje del caso (E3-4, RF-16): una lista de textos planos en JSON
     # (como los demás ``*_json``). Los redacta Psicología; ``[]`` = el caso aún no los tiene.
     learning_objectives = models.TextField(default="[]", db_default="[]")
+    # Las advertencias de contenido de la ficha (temas sensibles que lee el estudiante antes de empezar): lista de
+    # textos planos en JSON; ``[]`` = el caso no declara ninguna.
+    content_warnings = models.TextField(default="[]", db_default="[]")
     cloned_from = models.ForeignKey(
         "self",
         null=True,

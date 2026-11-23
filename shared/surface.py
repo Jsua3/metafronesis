@@ -75,6 +75,9 @@ def _exento(motivo):
 # se audita; una exención dice por qué la ruta no deja fila. Las lecturas públicas y las del ESTUDIANTE sobre su propio
 # intento no se declaran (el ``audit`` va vacío). Los códigos deben existir en ``AUDIT_TAXONOMY`` y en el código.
 AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
+    ('api/reportes/dashboard', 'GET'): 'ANALYTICS_VIEWED',
+    ('api/reportes/grupo/<int:grupo_id>', 'GET'): 'REPORT_VIEWED',
+    ('api/reportes/estudiante/<int:estudiante_id>', 'GET'): 'REPORT_VIEWED',
     # ── Acceso y sesión ──
     ("api/auth/login", "POST"): "LOGIN_SUCCEEDED,LOGIN_FAILED,LOGIN_LOCKED",
     ("api/auth/google", "POST"): "LOGIN_SUCCEEDED",

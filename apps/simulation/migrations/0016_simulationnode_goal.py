@@ -2,7 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("simulation", "0012_rubriccriterion_level_descriptors")]
+    dependencies = [("simulation", "0015_casegeneration")]
 
     operations = [
         migrations.AddField(

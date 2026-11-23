@@ -43,6 +43,8 @@ def _mundo_de(version):
 def huella_de(version) -> str:
     arbol = arbol_de(version)
     documento = _campos(version, ('narrative_context', 'learning_objectives', 'estimated_minutes', 'rules', 'world_schema_version'))
+    if version.content_warnings != '[]':
+        documento['content_warnings'] = version.content_warnings
     documento['caso'] = _campos(version.simulation_case, ('code', 'title', 'description'))
     claves = {h.escena.pk: h.escena.node_key for h in arbol.hijos}
     documento['escenas'] = []
