@@ -59,11 +59,14 @@ def test_conserva_retroalimentacion_y_clasificacion_de_cada_opcion(documento):
         assert opcion.datos["response_class"] == fuente["clase"]
 
 
-def test_pregunta_derivada_no_se_confunde_con_pregunta_de_autor(documento):
+def test_pregunta_de_autor_precede_a_la_pregunta_derivada_del_dsl(documento):
     plan = traducir(documento)
-    assert all(not nodo.datos["decision_prompt"] for nodo in plan.nodos)
-    documento["escenas"][0]["decision"]["pregunta"] = "¿Qué se debe hacer?"
-    assert traducir(documento).nodos[0].datos["decision_prompt"] == "¿Qué se debe hacer?"
+    preguntas = [nodo.datos["decision_prompt"] for nodo in plan.nodos]
+    assert sum(bool(pregunta) for pregunta in preguntas) == 16
+    assert preguntas[0] == documento["escenas"][0]["decision"]["pregunta"]
+    documento["x-siep"]["escenas"][0]["pregunta"] = "¿Cuál es la pregunta de autor?"
+    documento["x-siep"]["escenas"][0]["preguntaDerivada"] = False
+    assert traducir(documento).nodos[0].datos["decision_prompt"] == "¿Cuál es la pregunta de autor?"
 
 
 def test_informa_campos_desconocidos_y_el_plan_es_inmutable(documento):

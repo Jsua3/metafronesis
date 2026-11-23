@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -88,6 +89,7 @@ def test_comando_informa_estado(documento, autor):
     call_command('cargar_caso_insignia', autor=autor.email, stdout=salida)
     assert 'No soportado: 0' in salida.getvalue()
     assert 'Estado de publicación: DRAFT' in salida.getvalue()
+    assert 'Indica --minutos-estimados' in salida.getvalue()
 
 
 def test_recorrido_por_api_sobre_caso_cargado(documento, autor):
@@ -117,3 +119,17 @@ def test_recorrido_por_api_sobre_caso_cargado(documento, autor):
     opcion = version.nodes.get(start_node=True).options.first()
     decision = cliente.post(base + '/decisions', {'decision_option_id': opcion.pk, 'request_id': 'decision-prueba'}, format='json')
     assert decision.status_code == 200, decision.content
+
+
+@pytest.mark.parametrize('minutos', [0, -1])
+def test_comando_rechaza_minutos_no_positivos(autor, minutos):
+    with pytest.raises(CommandError, match='entero positivo'):
+        call_command('cargar_caso_insignia', autor=autor.email, minutos_estimados=minutos)
+    assert not SimulationCase.objects.exists()
+
+
+def test_comando_guarda_minutos_indicados(autor):
+    salida = StringIO()
+    call_command('cargar_caso_insignia', autor=autor.email, minutos_estimados=45, stdout=salida)
+    assert CaseVersion.objects.get().estimated_minutes == 45
+    assert 'Indica --minutos-estimados' not in salida.getvalue()

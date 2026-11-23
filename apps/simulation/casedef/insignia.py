@@ -107,9 +107,8 @@ def traducir(documento):
         _campos(decision, 'id opciones pregunta pistas', f'{ruta}.decision', avisos)
         posicion = escena.get('posicion', {})
         _campos(posicion, 'x y', f'{ruta}.posicion', avisos)
-        pregunta = decision.get('pregunta', escena.get('pregunta', ''))
-        if escena.get('preguntaDerivada') and pregunta == '¿Qué decisión tomas en esta escena?':
-            pregunta = ''
+        pregunta_autor = escena.get('pregunta', '') if not escena.get('preguntaDerivada') else ''
+        pregunta = pregunta_autor or decision.get('pregunta', '')
         nodos.append(_elemento(clave, {
             'node_key': clave, 'title': (base or {}).get('titulo', escena.get('titulo', '')),
             'narrative': (base or {}).get('descripcion', escena.get('descripcion', '')),
