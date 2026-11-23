@@ -441,6 +441,11 @@ export class AuthoringApi {
       .pipe(map(r => r.data));
   }
 
+  /** Un JSON estático que sirve el propio frontend (el manifiesto de piezas de la biblioteca). */
+  staticJson(url: string) {
+    return this.http.get<unknown>(url);
+  }
+
   // ─── Checklist ──────────────────────────────────────────────────────────
 
   updateChecklist(caseVersionId: number, body: ChecklistUpdateRequest, revision?: number) {

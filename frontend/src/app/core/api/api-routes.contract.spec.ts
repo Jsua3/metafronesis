@@ -19,9 +19,9 @@ const moduleFile = (dotted: string) => join(BACKEND, ...dotted.split('.')) + '.p
 function routesOf(file: string, prefix = ''): string[] {
   const source = readFileSync(file, 'utf-8');
   const routes: string[] = [];
-  for (const match of source.matchAll(/(?:re_)?path\(\s*r?"([^"]*)"\s*,\s*([^\n]+)/g)) {
+  for (const match of source.matchAll(/(?:re_)?path\(\s*r?["']([^"']*)["']\s*,\s*([^\n]+)/g)) {
     const [, route, rest] = match;
-    const included = rest.match(/include\("([^"]+)"\)/);
+    const included = rest.match(/include\(["']([^"']+)["']\)/);
     if (included) routes.push(...routesOf(moduleFile(included[1]), prefix + route));
     else routes.push(prefix + route);
   }

@@ -1,3 +1,4 @@
+import { ENSAYO_DISPONIBLE } from '../../ensayo';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -278,7 +279,7 @@ describe('GuionComponent', () => {
   });
 });
 
-describe('GuionComponent · Probar desde aquí', () => {
+describe.skipIf(!ENSAYO_DISPONIBLE)('GuionComponent · Probar desde aquí', () => {
   it('es un enlace a la ruta del ensayo desde esa escena, que abre otra pestaña', async () => {
     const { store, id, raiz, listo } = await montar();
     vi.spyOn(store, 'nodoDeEscena').mockReturnValue(12);

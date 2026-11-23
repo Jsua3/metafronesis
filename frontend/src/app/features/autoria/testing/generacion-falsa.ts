@@ -3,7 +3,7 @@
  * Sigue la tabla de estados del contrato: `created` → `skeleton_ready` → `scenes_ready` → `imported`, con
  * `needs_repair` (hasta dos rondas), `failed` y `cancelled`; los mismos códigos de error y los mismos mensajes fijos.
  *
- * Como `HttpClient`, cada método es frío: no hace nada hasta que alguien se suscribe, y entonces registra la llamada.
+ * Como el cliente HTTP de Angular, cada método es frío: no hace nada hasta que alguien se suscribe, y entonces registra la llamada.
  * Una etapa se completa al instante salvo que la prueba la retenga (`retener`) para simular que sigue en curso; mientras
  * está retenida, pedir la misma parte otra vez da `GENERATION_BUSY`, y `liberar` la termina.
  *

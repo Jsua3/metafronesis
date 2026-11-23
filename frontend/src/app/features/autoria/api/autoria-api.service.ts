@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, firstValueFrom, forkJoin, map, of, switchMap } from 'rxjs';
 
@@ -31,12 +30,11 @@ export interface CasoLeido {
 export class AutoriaApiService {
   /** Las mutaciones, la validación y el asistente: llamadas directas con su revisión. */
   readonly api = inject(AuthoringApi);
-  private readonly http = inject(HttpClient);
   private manifiestoPendiente: Promise<ManifiestoDePiezas> | null = null;
 
   /** Comparte la petición en curso y conserva el resultado; un fallo permite volver a intentarlo. */
   manifiestoDePiezas(): Promise<ManifiestoDePiezas> {
-    return this.manifiestoPendiente ??= firstValueFrom(this.http.get<unknown>(MANIFIESTO_DE_PIEZAS_URL)).then((datos) => {
+    return this.manifiestoPendiente ??= firstValueFrom(this.api.staticJson(MANIFIESTO_DE_PIEZAS_URL)).then((datos) => {
       if (!esManifiestoDePiezas(datos)) throw new Error('Manifiesto de piezas inválido');
       return datos;
     }).catch((error: unknown) => {

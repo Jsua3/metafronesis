@@ -1,15 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { SCREEN_HANDLES_FORBIDDEN } from '../auth/http-error-chain';
 import type { LevelDescriptors } from '../models/simulation.model';
-
-/**
- * E2-2: una rúbrica ajena (la global o la de otra persona) es de solo lectura y el servidor responde 403 al
- * modificarla; la pantalla lo explica con su propio texto. Las órdenes marcan la petición para que el interceptor no
- * avise además «No tienes permisos…».
- */
-const SCREEN_EXPLAINS_403 = () => ({ context: new HttpContext().set(SCREEN_HANDLES_FORBIDDEN, true) });
+import { ApiDataResponse as ApiResponse } from './api-response';
 
 export interface RubricCriterionAdmin {
   id?: number;
@@ -47,7 +41,7 @@ export interface RubricUsage {
   evaluations: number;
 }
 
-/** Una competencia del catálogo del programa (`GET /api/competencies`): la fija Psicología, no quien hace la rúbrica. */
+/** Una competencia del catálogo del programa (el catálogo de competencias de la API): la fija Psicología, no quien hace la rúbrica. */
 export interface CompetencyCatalogItem {
   id: number;
   code: string;
@@ -82,18 +76,20 @@ export interface RubricAdmin {
   criteria?: RubricCriterionAdmin[];
 }
 
-interface ApiResponse<T> {
-  data: T;
-  message?: string | null;
-}
-
+/**
+ * Rúbricas: lo que el editor de casos lee y asigna. ADAPTADOR del servidor de metafronesis, que hoy tiene `POST /api/rubrics`,
+ * `GET /api/rubrics/{id}` y `GET|PUT /api/rubrics/case-versions/{id}`. Faltan en ese servidor la lista de rúbricas y el
+ * catálogo de competencias: se piden igual donde existe ruta y, donde no, fallan con un 404 explicado
+ * para que la pantalla diga que no pudo comprobarlo en lugar de quedarse a medias.
+ */
 @Injectable({ providedIn: 'root' })
 export class RubricService {
   private readonly http = inject(HttpClient);
   private readonly API = '/api/rubrics';
 
+  /** La lista de rúbricas que quien edita ve (ruta pendiente en el servidor: hoy responde 405). */
   list() {
-    return this.http.get<ApiResponse<RubricAdmin[]>>(`${this.API}/`).pipe(map(r => r.data));
+    return this.http.get<ApiResponse<RubricAdmin[]>>(this.API).pipe(map(r => r.data));
   }
 
   detail(id: number) {
@@ -101,27 +97,7 @@ export class RubricService {
   }
 
   create(payload: Partial<RubricAdmin>) {
-    return this.http.post<ApiResponse<RubricAdmin>>(`${this.API}/`, payload).pipe(map(r => r.data));
-  }
-
-  update(id: number, payload: Partial<RubricAdmin>) {
-    return this.http.put<ApiResponse<RubricAdmin>>(`${this.API}/${id}`, payload, SCREEN_EXPLAINS_403()).pipe(map(r => r.data));
-  }
-
-  activate(id: number) {
-    return this.http.post<ApiResponse<RubricAdmin>>(`${this.API}/${id}/activate`, {}, SCREEN_EXPLAINS_403()).pipe(map(r => r.data));
-  }
-
-  deactivate(id: number) {
-    return this.http.post<ApiResponse<RubricAdmin>>(`${this.API}/${id}/deactivate`, {}, SCREEN_EXPLAINS_403()).pipe(map(r => r.data));
-  }
-
-  duplicate(id: number) {
-    return this.http.post<ApiResponse<RubricAdmin>>(`${this.API}/${id}/duplicate`, {}).pipe(map(r => r.data));
-  }
-
-  setDefault(id: number) {
-    return this.http.post<ApiResponse<RubricAdmin>>(`${this.API}/${id}/default`, {}, SCREEN_EXPLAINS_403()).pipe(map(r => r.data));
+    return this.http.post<ApiResponse<RubricAdmin>>(this.API, payload).pipe(map(r => r.data));
   }
 
   /**
@@ -133,20 +109,17 @@ export class RubricService {
     return this.http.get<ApiResponse<RubricAdmin>>(`${this.API}/case-versions/${caseVersionId}`).pipe(map(r => r.data));
   }
 
-  /**
-   * El catálogo de competencias del programa: la lista «Competencia del programa» del editor de una rúbrica y el origen
-   * de «Con las competencias del programa». Trae también las inactivas (`active: false`); quien lo pinta ofrece solo
-   * las activas.
-   */
-  competencies() {
-    return this.http.get<ApiResponse<CompetencyCatalogItem[]>>('/api/competencies').pipe(map(r => r.data));
+  /** El catálogo de competencias del programa: el servidor de metafronesis aún no tiene la ruta (404 explicado). */
+  competencies(): Observable<CompetencyCatalogItem[]> {
+    return throwError(() => new HttpErrorResponse({
+      status: 404, statusText: 'Not Found',
+      error: { success: false, code: 'NOT_AVAILABLE', message: 'El catálogo de competencias aún no está disponible en este servidor.' },
+    }));
   }
 
   assignToCaseVersion(caseVersionId: number, rubricId: number) {
     return this.http.put<ApiResponse<{ caseVersionId: number; rubric: RubricAdmin }>>(
-      `${this.API}/case-versions/${caseVersionId}`,
-      { rubricId },
-      SCREEN_EXPLAINS_403(),
+      `${this.API}/case-versions/${caseVersionId}`, { rubricId },
     ).pipe(map(r => r.data));
   }
 }

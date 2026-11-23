@@ -1,3 +1,4 @@
+import { ENSAYO_DISPONIBLE } from '../ensayo';
 import type { ValidationIssue } from '../../../core/models/simulation.model';
 import type { CasoBorrador, Escena, Respuesta } from './caso';
 import { faltasDelServidor, puedeEnviar, sugerencias } from './revision';
@@ -243,7 +244,7 @@ describe('faltasDelServidor: lo que dice la compuerta, en lenguaje del docente y
   });
 });
 
-describe('sugerencias: «todavía no probaste el caso completo en el juego»', () => {
+describe.skipIf(!ENSAYO_DISPONIBLE)('sugerencias: «todavía no probaste el caso completo en el juego»', () => {
   const mensaje = 'Todavía no probaste el caso completo en el juego.';
 
   it('sale con probadoHastaElFinal falso o ausente y la guía señala el botón «Probar» de la barra', () => {

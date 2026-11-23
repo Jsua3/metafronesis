@@ -35,12 +35,12 @@ describe('Lista de casos de autoría', () => {
     expect(host().textContent).toContain('Aún no tienes casos');
     expect(host().querySelector('ui-vacio-ilustrado button')).toBeNull();
   });
-  it('ofrece la acción correspondiente a cada estado y el ensayo en otra pestaña', async () => {
+  it('ofrece la acción correspondiente a cada estado (el ensayo llega en un PR siguiente)', async () => {
     api.listAuthoringCases.mockReturnValue(of([caso(1, 'DRAFT'), caso(2, 'IN_REVIEW'), caso(3, 'PUBLISHED'), caso(4, 'ARCHIVED')])); await render();
     const texto = host().textContent ?? '';
-    for (const accion of ['Seguir editando', 'Ver revisión', 'Abrir en el editor', 'Probar', 'Ver']) expect(texto).toContain(accion);
+    for (const accion of ['Seguir editando', 'Ver revisión', 'Abrir en el editor', 'Ver']) expect(texto).toContain(accion);
     expect(host().querySelector('a[href="/portal/casos/2/editor/revision"]')).not.toBeNull();
-    expect(host().querySelector('a[href="/portal/casos/3/ensayo"]')?.getAttribute('target')).toBe('_blank');
+    expect(host().querySelector('a[href="/portal/casos/3/ensayo"]')).toBeNull();
     expect(texto).toContain('3 de 5 escenas con guion');
     expect(texto).not.toContain('nodos'); expect(texto).not.toContain('v0.1.0');
   });
