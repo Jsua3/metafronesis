@@ -76,7 +76,8 @@ def test_estado_es_solo_del_estudiante_dueno(intento):
     assert ajeno.get(intento["ruta"]).status_code == 404
     docente = APIClient()
     docente.force_authenticate(intento["teacher"])
-    assert docente.get(intento["ruta"]).status_code == 403
+    # La docente pasa la puerta de rol (ensaya su borrador por esta ruta), pero un intento de estudiante no es suyo: no existe para ella.
+    assert docente.get(intento["ruta"]).status_code == 404
     assert APIClient().get(intento["ruta"]).status_code in {401, 403}
 
 

@@ -26,8 +26,97 @@ class CrearFichaSerializer(FichaSerializer):
         return datos
 
 
+class AbrirEnsayoSerializer(serializers.Serializer):
+    desde = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+
+
 class AjusteEnsayoSerializer(serializers.Serializer):
-    irA = serializers.IntegerField(min_value=1, required=False)
+    """Lo que se quiere cambiar del ensayo; el servicio valida cada parte y nombra el campo que falla."""
+    irA = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    explorado = serializers.JSONField(required=False, allow_null=True)
+    persona = serializers.JSONField(required=False, allow_null=True)
+    hitos = serializers.JSONField(required=False, allow_null=True)
+
+
+class FaltanteEnsayoSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=["talked", "inspected", "has", "used"])
+    key = serializers.CharField()
+    label = serializers.CharField()
+
+
+class OpcionEnsayoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    offered = serializers.BooleanField()
+    missing = FaltanteEnsayoSerializer(many=True)
+    retainedBy = serializers.ChoiceField(choices=["facts", "condition", "broken"], allow_null=True)
+
+
+class ComentarioEnsayoSerializer(serializers.Serializer):
+    index = serializers.IntegerField()
+    personaje = serializers.CharField()
+    line = serializers.CharField()
+    due = serializers.BooleanField()
+    retainedBy = serializers.ChoiceField(choices=["broken", "condition", "absent"], allow_null=True)
+    missing = FaltanteEnsayoSerializer(many=True)
+
+
+class EscenaEnsayoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    key = serializers.CharField()
+    title = serializers.CharField()
+    start = serializers.BooleanField()
+    terminal = serializers.BooleanField()
+
+
+class ExploradoEnsayoSerializer(serializers.Serializer):
+    talked = serializers.ListField(child=serializers.CharField())
+    inspected = serializers.ListField(child=serializers.CharField())
+    has = serializers.ListField(child=serializers.CharField())
+    used = serializers.ListField(child=serializers.CharField())
+
+
+class PersonaEnsayoSerializer(serializers.Serializer):
+    bond = serializers.CharField()
+    activation = serializers.CharField()
+    label = serializers.CharField()
+
+
+class PasoEnsayoSerializer(serializers.Serializer):
+    nodeId = serializers.IntegerField()
+    title = serializers.CharField()
+
+
+class BloqueEnsayoSerializer(serializers.Serializer):
+    sceneId = serializers.IntegerField()
+    options = OpcionEnsayoSerializer(many=True)
+    comments = ComentarioEnsayoSerializer(many=True)
+    warnings = serializers.ListField(child=serializers.CharField())
+    persona = PersonaEnsayoSerializer()
+    milestones = serializers.ListField(child=serializers.CharField())
+    path = PasoEnsayoSerializer(many=True)
+    explored = ExploradoEnsayoSerializer()
+    explorable = FaltanteEnsayoSerializer(many=True)
+    scenes = EscenaEnsayoSerializer(many=True)
+
+
+class EnsayoBloqueSerializer(serializers.Serializer):
+    """``GET`` y ``PATCH``: solo el bloque."""
+    rehearsal = BloqueEnsayoSerializer()
+
+
+class EnsayoIniciadoSerializer(serializers.Serializer):
+    """``POST``: el estado del intento del juego (la forma de ``GET /api/simulation/attempts/{id}/state``) más el bloque."""
+    attemptId = serializers.UUIDField()
+    attemptToken = serializers.CharField(allow_blank=True)
+    caseVersionId = serializers.IntegerField()
+    caseTitle = serializers.CharField()
+    status = serializers.CharField()
+    persona = serializers.JSONField(allow_null=True)
+    currentNode = serializers.JSONField()
+    completionReport = serializers.JSONField(allow_null=True)
+    supportResources = serializers.ListField(child=serializers.CharField())
+    rehearsal = BloqueEnsayoSerializer()
 
 
 class RevisionSerializer(serializers.Serializer):
