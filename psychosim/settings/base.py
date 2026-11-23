@@ -259,6 +259,9 @@ AUTH_PASSWORD_VALIDATORS = [
     # BCrypt solo admite 72 bytes: más largo es un 400 con su campo, no un 500.
     {"NAME": "apps.users.password_validators.MaximumLengthBytesValidator"},
 ]
+#: Costo de bcrypt para las contraseñas NUEVAS y para el hash ficticio del inicio de sesión (S1-3). 12 es el mínimo que
+#: recomienda OWASP; los hashes existentes de 10 rondas se siguen verificando, porque bcrypt lee el costo del propio hash.
+SIEP_BCRYPT_ROUNDS = 12
 
 # E2-9 · Límites de la importación de estudiantes (.xlsx): se comprueban ANTES de leer el
 # libro (tamaño, firma ZIP, tamaño descomprimido, filas y tiempo).
@@ -288,6 +291,12 @@ AI_AUTHORING_PROVIDER = os.environ.get("AI_AUTHORING_PROVIDER", "")
 AI_AUTHORING_API_KEY = os.environ.get("AI_AUTHORING_API_KEY", "")
 AI_AUTHORING_MODEL = os.environ.get("AI_AUTHORING_MODEL", "claude-haiku-5-5")
 AI_AUTHORING_DAILY_LIMIT_PER_USER = int(os.environ.get("AI_AUTHORING_DAILY_LIMIT_PER_USER", "200"))
+# Asistente de autoría (propuestas y guía): modelo capaz para las propuestas (AI_AUTHORING_MODEL es el rápido de la guía),
+# tope mensual global del programa, espera máxima y tope de tokens de una propuesta.
+AI_AUTHORING_MODEL_CAPABLE = os.environ.get("AI_AUTHORING_MODEL_CAPABLE", "claude-opus-5-5")
+AI_AUTHORING_MONTHLY_LIMIT = int(os.environ.get("AI_AUTHORING_MONTHLY_LIMIT", "3000"))
+AI_AUTHORING_TIMEOUT_SECONDS = int(os.environ.get("AI_AUTHORING_TIMEOUT_SECONDS", "60"))
+AI_AUTHORING_MAX_TOKENS_PROPOSE = int(os.environ.get("AI_AUTHORING_MAX_TOKENS_PROPOSE", "8000"))
 
 
 #: Valores que APAGAN un interruptor de seguridad «cerrado» (sin mayúsculas ni espacios). Cualquier otro valor lo enciende.
@@ -688,3 +697,11 @@ SPA_DIST_DIR = BASE_DIR / "frontend_dist"
 if SPA_DIST_DIR.exists():
     WHITENOISE_ROOT = str(SPA_DIST_DIR)
 WHITENOISE_INDEX_FILE = False
+# Generación de casos con IA (SIEP-244): apagada por defecto (sin la variable, todo es un 404 salvo el estado). El proveedor es
+# una estrategia de ``apps/ia/proveedores.py`` (``falso`` es determinista y sin red); la clave y el modelo son los del asistente
+# de autoría. Topes: casos por docente y por día, casos de toda la plataforma por día y llamadas al proveedor por generación.
+AI_AUTHORING_GENERATIONS_ENABLED = _env_flag("AI_AUTHORING_GENERATIONS_ENABLED")
+AI_AUTHORING_GENERATIONS_PROVIDER = os.environ.get("AI_AUTHORING_GENERATIONS_PROVIDER", "falso")
+AI_AUTHORING_GENERATIONS_PER_DAY = int(os.environ.get("AI_AUTHORING_GENERATIONS_PER_DAY", "5"))
+AI_AUTHORING_GENERATIONS_GLOBAL_PER_DAY = int(os.environ.get("AI_AUTHORING_GENERATIONS_GLOBAL_PER_DAY", "30"))
+AI_AUTHORING_GENERATION_MAX_CALLS = int(os.environ.get("AI_AUTHORING_GENERATION_MAX_CALLS", "20"))

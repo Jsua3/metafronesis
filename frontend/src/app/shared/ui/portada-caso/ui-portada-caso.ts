@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, linkedSignal } from '@angular/core';
 
 export type UiPortadaTamano = 'mini' | 'tarjeta' | 'heroe';
 
@@ -19,7 +19,9 @@ export const PORTADA_MEDIDAS: Readonly<Record<UiPortadaTamano, { ancho: number; 
  * mosaico de doodles muy tenue y la puerta del consultorio a escala entera, una «puerta cerrada que espera». Nunca
  * queda un recuadro roto.
  *
- * Siempre es decorativa (`alt=""`): el título del caso va al lado.
+ * Siempre es decorativa (`alt=""`): el título del caso va al lado. Con `umbral`, la portada lleva el nombre de la
+ * transición de vistas que la lleva hasta el umbral del juego (DP-10). Solo la tarjeta que se pulsa debe llevarlo:
+ * dos elementos con el mismo nombre cancelan la transición.
  */
 @Component({
   selector: 'ui-portada-caso',
@@ -30,6 +32,7 @@ export const PORTADA_MEDIDAS: Readonly<Record<UiPortadaTamano, { ancho: number; 
     '[class.ui-portada-caso--tarjeta]': "tamano() === 'tarjeta'",
     '[class.ui-portada-caso--heroe]': "tamano() === 'heroe'",
     '[class.ui-portada-caso--respaldo]': '!imagen()',
+    '[class.vt-portada]': 'umbral()',
     '[attr.data-titulo]': 'titulo()',
     'aria-hidden': 'true',
   },
@@ -51,6 +54,9 @@ export class UiPortadaCaso {
   /** El título del caso (solo para depurar y para las pruebas: la portada no se lee). */
   readonly titulo = input.required<string>();
   readonly tamano = input<UiPortadaTamano>('tarjeta');
+  /** Esta portada viaja al umbral del juego con la transición de vistas. */
+  readonly umbral = input(false, { transform: booleanAttribute });
+
   /**
    * La imagen falló al cargar: se pasa al respaldo en vez de dejar el icono de imagen rota. Vuelve a falso cuando llega
    * otra portada (una URL nueva merece otra oportunidad).

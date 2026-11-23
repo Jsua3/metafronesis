@@ -1,0 +1,37 @@
+{
+  "id": "comisaria-familia",
+  "displayName": "Comisaria de familia",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "media-melena",
+    "face": "maduro",
+    "top": "blazer",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": [
+      "gafas"
+    ]
+  },
+  "colors": {
+    "skin": "piel-4",
+    "hair": "castano-oscuro",
+    "top": "marino",
+    "inner": "blanco",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": [
+    "neutral",
+    "preocupada",
+    "triste",
+    "alegre",
+    "cautelosa",
+    "en-crisis"
+  ],
+  "provenance": {
+    "source": "Kit SIEP",
+    "license": "SIEP-INTERNAL"
+  }
+}

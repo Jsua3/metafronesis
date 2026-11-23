@@ -6,14 +6,16 @@ apellido, role, activo, created_at. It has NO ``last_login`` / ``is_superuser``
 gives password handling + the auth interface) and drop the inherited
 ``last_login`` field.
 
-Passwords are BCrypt ($2b$, 10 rounds) to stay byte-compatible with Spring's
+Passwords are BCrypt ($2b$) to stay byte-compatible with Spring's
 ``BCryptPasswordEncoder`` — both directions (verify seeded users, write new ones
-Spring can read).
+Spring can read). New hashes use ``settings.SIEP_BCRYPT_ROUNDS`` (12); existing
+10-round hashes still verify because bcrypt reads the cost from the hash itself.
 """
 import functools
 import secrets
 
 import bcrypt
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 
@@ -90,12 +92,12 @@ class CustomUser(AbstractBaseUser):
         self.activo = value
 
     def set_password(self, raw_password):
-        """Store a raw BCrypt hash ($2b$, 10 rounds), Spring-compatible."""
+        """Store a raw BCrypt hash ($2b$, ``SIEP_BCRYPT_ROUNDS`` rounds), Spring-compatible."""
         if raw_password is None:
             self.password = "!"  # unusable
             self._password = None
             return
-        hashed = bcrypt.hashpw(raw_password.encode("utf-8"), bcrypt.gensalt(rounds=10))
+        hashed = bcrypt.hashpw(raw_password.encode("utf-8"), bcrypt.gensalt(rounds=_rondas_bcrypt()))
         self.password = hashed.decode("utf-8")
         self._password = raw_password
 
@@ -122,10 +124,15 @@ class CustomUser(AbstractBaseUser):
         return (not self.activo) and self.must_change_password and not self.has_usable_password()
 
 
+def _rondas_bcrypt():
+    """Costo de bcrypt configurado (``SIEP_BCRYPT_ROUNDS``)."""
+    return settings.SIEP_BCRYPT_ROUNDS
+
+
 @functools.lru_cache(maxsize=1)
 def _hash_ficticio():
-    """Hash bcrypt de 10 rondas de un secreto aleatorio, calculado la primera vez que hace falta (S1-3)."""
-    return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt(rounds=10))
+    """Hash bcrypt de un secreto aleatorio, con el MISMO costo que las contraseñas nuevas, calculado una vez (S1-3)."""
+    return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt(rounds=_rondas_bcrypt()))
 
 
 def burn_password_check(raw_password):

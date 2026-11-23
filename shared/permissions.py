@@ -29,3 +29,16 @@ def policy_permission(resource: str, action: str):
     )
 
 
+
+
+def policy_permission_any(*policy_pairs: tuple[str, str]):
+    """Como ``policy_permission``, pero admite a los roles de CUALQUIERA de las políticas (p. ej. jugar o ensayar).
+
+    ``policy`` es la primera pareja; ``policies`` las trae todas. El alcance (dueño, miembro) lo sigue decidiendo el servicio.
+    """
+    roles = frozenset().union(*(policies.allowed_roles(resource, action) for resource, action in policy_pairs))
+    return type(
+        "Policy[" + "|".join(f"{resource}.{action}" for resource, action in policy_pairs) + "]",
+        (_PolicyPermission,),
+        {"policy": policy_pairs[0], "policies": tuple(policy_pairs), "roles": roles},
+    )

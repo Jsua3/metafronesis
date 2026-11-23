@@ -76,7 +76,9 @@ def test_retry_after_nunca_baja_de_un_segundo(reloj, limitador_encendido):
 
 
 def test_key_hash_es_estable_distinto_por_parte_y_de_64_hex():
-    assert limiter.key_hash("a@ejemplo.org", "203.0.113.5") == limiter.key_hash("a@ejemplo.org", "203.0.113.5")
+    primera = limiter.key_hash("a@ejemplo.org", "203.0.113.5")
+    segunda = limiter.key_hash("a@ejemplo.org", "203.0.113.5")
+    assert primera == segunda
     assert limiter.key_hash("a@ejemplo.org", "203.0.113.5") != limiter.key_hash("a@ejemplo.org", "203.0.113.6")
     # Con separador, ("ab", "c") y ("a", "bc") no colisionan.
     assert limiter.key_hash("ab", "c") != limiter.key_hash("a", "bc")

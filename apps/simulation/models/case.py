@@ -67,6 +67,9 @@ class CaseVersion(models.Model):
     # Los objetivos de aprendizaje del caso (E3-4, RF-16): una lista de textos planos en JSON
     # (como los demás ``*_json``). Los redacta Psicología; ``[]`` = el caso aún no los tiene.
     learning_objectives = models.TextField(default="[]", db_default="[]")
+    # Las advertencias de contenido de la ficha (temas sensibles que lee el estudiante antes de empezar): lista de
+    # textos planos en JSON; ``[]`` = el caso no declara ninguna.
+    content_warnings = models.TextField(default="[]", db_default="[]")
     cloned_from = models.ForeignKey(
         "self",
         null=True,
@@ -221,6 +224,7 @@ class SimulationNode(models.Model):
     node_key = models.CharField(max_length=120)
     title = models.CharField(max_length=255)
     narrative = models.TextField()
+    goal = models.TextField(default="", blank=True, db_default="")
     support_resources_json = models.TextField(default="[]", db_default="[]")
     required_tools_json = models.TextField(default="[]", db_default="[]")
     sensitive_content = models.BooleanField(default=False, db_default=False)
@@ -232,7 +236,8 @@ class SimulationNode(models.Model):
     position_y = models.IntegerField(null=True, blank=True, default=0)
     # El enunciado de la decisión (E3-6, RF-06): lo que el estudiante lee antes de elegir. Texto
     # plano y blando: vacío = la escena no lo declara.
-    decision_prompt = models.TextField(default="", db_default="")
+    comments_json = models.TextField(default="[]", db_default="[]")
+    decision_prompt = models.TextField(default="", blank=True, db_default="")
     # Orden informativo con que el editor lista los nodos (E3-6, RF-08): no cambia el grafo.
     display_order = models.IntegerField(default=0, db_default=0)
     # La intensidad de la escena (modelo de respuesta): ``LOW`` | ``MEDIUM`` | ``HIGH``; ``HIGH`` por defecto en las
@@ -283,7 +288,7 @@ class DecisionOption(models.Model):
         db_column="target_node_id",
     )
     text = models.TextField()
-    immediate_feedback = models.TextField(default="")
+    immediate_feedback = models.TextField(default="", blank=True)
     prohibition_reason = models.TextField(blank=True, null=True)
     # Consecuencia narrativa (lo que se ve al elegir) frente a retroalimentación pedagógica (lo
     # que se explica al cierre, con su fundamento): decisiones 6 y 10, RN-08 (E1-7). Vacíos: la
@@ -294,6 +299,8 @@ class DecisionOption(models.Model):
     # Los efectos de la opción como datos del caso: ``{persona, milestones, competencies}``. Vacío = la opción no
     # trae efectos propios (la persona se mueve según su clase y no marca hitos).
     effects = models.TextField(default="{}", db_default="{}")
+    requires_json = models.TextField(default="{}", db_default="{}")
+    reaction_json = models.TextField(default="{}", db_default="{}")
     # La clase de la respuesta (modelo de respuesta): ``RECOMMENDED`` | ``ACCEPTABLE`` | ``RISKY`` |
     # ``CONTRAINDICATED``; ver ``casedef.vocabulary.ResponseClass``. Toda opción la tiene: la ``CONTRAINDICATED`` es la
     # conducta que se debe evitar y exige ``prohibition_reason``.

@@ -1,0 +1,185 @@
+<!-- Las herramientas del mapa van a la barra del estudio, sobre el lienzo (sin estudio alrededor, aquí mismo). -->
+<ng-template estudioRanura="herramientas">
+  <button type="button" class="acciones-boton" data-accion="conectar-escenas marcar-final" [cdkMenuTriggerFor]="elegidaEscena() ? menu : null"
+          #trigger="cdkMenuTriggerFor" (click)="!elegidaEscena() && pista.set('Primero elige una escena en el mapa.')"
+          [attr.aria-label]="elegidaEscena() ? 'Acciones de la escena ' + elegidaEscena()!.titulo : 'Acciones de la escena'"
+          [attr.aria-disabled]="elegidaEscena() ? null : 'true'">Acciones<svg class="chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" /></svg></button>
+  @if (!soloLectura()) {
+    <button type="button" estudioHerramienta="Agregar una escena" data-accion="agregar-escena" (click)="agregar.emit()">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="2" /><path d="M10 7.5v5M7.5 10h5" /></svg>
+    </button>
+    <button type="button" estudioHerramienta="Ordenar automáticamente" data-accion="ordenar-mapa" (click)="ordenar.emit()">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3" width="5" height="4" rx="1" /><rect x="12.5" y="3" width="5" height="4" rx="1" /><rect x="7.5" y="13" width="5" height="4" rx="1" /><path d="M5 7v2.5h10V7M10 9.5V13" /></svg>
+    </button>
+  }
+  <span class="separador" aria-hidden="true"></span>
+  <button type="button" estudioHerramienta="Alejar" atajo="−" (click)="zoomar(-1)">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5" /><path d="M6.5 9h5M13 13l4 4" /></svg>
+  </button>
+  <button type="button" class="zoom" title="Volver al 100 %" [attr.aria-label]="'Zoom: ' + porcentaje() + ' %. Volver al 100 %'" (click)="zoomA(1)">{{ porcentaje() }} %</button>
+  <button type="button" estudioHerramienta="Acercar" atajo="+" (click)="zoomar(1)">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5" /><path d="M6.5 9h5M9 6.5v5M13 13l4 4" /></svg>
+  </button>
+  <button type="button" estudioHerramienta="Ver todo el mapa" atajo="F" (click)="verTodo()">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7V3h4M17 7V3h-4M3 13v4h4M17 13v4h-4" /><rect x="7" y="7.5" width="6" height="5" rx="1" /></svg>
+  </button>
+  <button type="button" estudioHerramienta="Volver al inicio" (click)="volverAlInicio()">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10 10 4l7 6M5 9v7h10V9M8 16v-4h4v4" /></svg>
+  </button>
+  <span class="separador" aria-hidden="true"></span>
+  <div class="teclas-ancla">
+    <button type="button" estudioHerramienta="Teclas del mapa" aria-controls="mapa-ayuda" [attr.aria-expanded]="tecladoAbierto()"
+            (click)="tecladoAbierto.set(!tecladoAbierto())">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="5" width="16" height="10" rx="2" /><path d="M5 8.5h1M8.5 8.5h1M12 8.5h1M15 8.5h0M6.5 12h7" /></svg>
+    </button>
+    <!-- La ayuda existe siempre (describe el mapa para el lector); a la vista solo cuando se pide. -->
+    <div id="mapa-ayuda" class="globo-teclas" [hidden]="!tecladoAbierto()">
+      <p>Mapa del caso: {{ plural(caso().escenas.length, 'escena', 'escenas') }}.</p>
+      <ul>
+        <li><kbd>←</kbd> <kbd>→</kbd> van a la escena conectada; <kbd>↑</kbd> <kbd>↓</kbd>, a la anterior o la siguiente de la historia.</li>
+        <li><kbd>Enter</kbd> abre su guion; <kbd>Supr</kbd> la borra.</li>
+        <li><kbd>Mayús</kbd>+<kbd>F10</kbd> abre sus acciones.</li>
+        <li><kbd>Ctrl</kbd> y la rueda (o <kbd>+</kbd> <kbd>−</kbd>) acercan o alejan; <kbd>F</kbd> ve todo el mapa.</li>
+        <li>Arrastra el fondo, o mantén <kbd>Espacio</kbd> y arrastra, para mover el lienzo; la rueda también lo mueve.</li>
+      </ul>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template estudioRanura="estado">
+  <span class="est-dato">{{ plural(caso().escenas.length, 'escena', 'escenas') }} · {{ plural(flechas().length, 'camino', 'caminos') }}</span>
+</ng-template>
+
+<p role="status" class="texto-secundario pista">{{ pista() }}</p>
+
+@if (moviendo(); as m) {
+  <div role="group" aria-label="Moviendo una escena" class="tarjeta moviendo">
+    <p role="status"><strong>Moviendo: {{ tituloDe(m.escenaId) }}</strong></p>
+    <p class="texto-secundario">Usa las flechas del teclado o estos botones. <kbd>Enter</kbd> o «Listo» confirma; <kbd>Esc</kbd> cancela.</p>
+    <div class="acciones">
+      <button type="button" class="boton cuadrado" aria-label="Mover a la izquierda" (click)="empujar(-PASO, 0)">←</button>
+      <button type="button" class="boton cuadrado" aria-label="Mover hacia arriba" (click)="empujar(0, -PASO)">↑</button>
+      <button type="button" class="boton cuadrado" aria-label="Mover hacia abajo" (click)="empujar(0, PASO)">↓</button>
+      <button type="button" class="boton cuadrado" aria-label="Mover a la derecha" (click)="empujar(PASO, 0)">→</button>
+      <button type="button" class="boton boton-primario" (click)="terminarMover(true)">Listo</button>
+      <button type="button" class="boton" (click)="terminarMover(false)">Dejar donde estaba</button>
+    </div>
+  </div>
+}
+
+<div class="lienzo" #lienzo [style.block-size.px]="altoLienzo()">
+  <!-- En solo lectura las escenas quedan deshabilitadas (fieldset del editor): el mapa mismo toma el foco para moverlo con el teclado. -->
+  <div class="marco" #marco [class.mano]="espacio()" [class.arrastrando]="arrastre() !== null"
+       (wheel)="rueda($event)" (pointerdown)="empezarArrastre($event)" (pointermove)="arrastrar($event)"
+       (pointerup)="soltarArrastre($event)" (pointercancel)="soltarArrastre($event)" (focusin)="alEnfocar($event)"
+       (keydown)="teclaMarco($event)" (keydown.escape)="vista.set(null)"
+       [attr.tabindex]="soloLectura() ? 0 : null" [attr.role]="soloLectura() ? 'region' : null"
+       [attr.aria-label]="soloLectura() ? 'Mapa del caso (solo lectura): muévelo con las flechas' : null">
+    <div class="plano" role="group" aria-label="Mapa del caso" aria-describedby="mapa-ayuda" [class.compacto]="compacto()"
+         [class.animando]="animando()" [class.con-foco]="resaltadas().size > 0"
+         [style.width.px]="limites().ancho" [style.height.px]="limites().alto" [style.transform]="transformacion()">
+      <svg class="flechas" [attr.width]="limites().ancho" [attr.height]="limites().alto" [style.--zoom]="camara().z">
+        <defs>
+          <marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path class="punta" d="M0,0 L10,5 L0,10 z" />
+          </marker>
+          <marker id="punta-elegida" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path class="punta punta-elegida" d="M0,0 L10,5 L0,10 z" />
+          </marker>
+        </defs>
+        @for (f of flechas(); track f.id) {
+          <path class="flecha" [class.de-elegida]="f.deElegida" [class.iluminada]="resaltadas().has(f.id)" [attr.d]="f.d" tabindex="0" role="img"
+                [attr.marker-end]="f.deElegida || resaltadas().has(f.id) ? 'url(#punta-elegida)' : 'url(#punta)'"
+                [attr.aria-label]="'Respuesta: ' + (f.texto || 'sin escribir')"
+                (mouseenter)="flechaActiva.set(f.id)" (mouseleave)="flechaActiva.set(null)"
+                (focus)="flechaActiva.set(f.id)" (blur)="flechaActiva.set(null)" />
+        }
+        <!-- Puertos: cada respuesta sale de un punto lleno y entra en un aro (dónde se conecta, a la vista). -->
+        @for (f of flechas(); track f.id) {
+          <circle class="puerto puerto--salida" [class.iluminado]="resaltadas().has(f.id) || f.deElegida" [attr.cx]="f.ini.x" [attr.cy]="f.ini.y" r="4.5" />
+          <circle class="puerto puerto--entrada" [class.iluminado]="resaltadas().has(f.id) || f.deElegida" [attr.cx]="f.fin.x" [attr.cy]="f.fin.y" r="5" />
+        }
+      </svg>
+
+      @for (e of caso().escenas; track e.id; let i = $index) {
+        <button type="button" class="escena" [attr.data-escena]="e.id"
+                [class.elegida]="elegida() === e.id" [class.final]="e.esFinal" [class.con-aviso]="avisosDe(e.id).length" [class.marca-ia]="e.marcaIa"
+                [class.en-camino]="enCamino().has(e.id)"
+                [style.left.px]="pos(e).x" [style.top.px]="pos(e).y" [style.animation-delay.ms]="i < 12 ? i * 24 : 288"
+                [attr.tabindex]="tabParada() === e.id ? 0 : -1" [attr.aria-pressed]="elegida() === e.id"
+                (click)="elegir(e.id)" (dblclick)="abrirGuion.emit(e.id)"
+                (contextmenu)="menuContextual($event, e.id)" (keydown)="tecla($event, e)"
+                (mouseenter)="vista.set(e.id)" (mouseleave)="vista.set(null)" (focus)="vista.set(e.id)" (blur)="vista.set(null)">
+          <!-- La sala de la escena en pixel art: la tarjeta se reconoce de un vistazo. -->
+          <span class="miniatura" aria-hidden="true">
+            @if (miniatura(e); as src) {
+              <img class="miniatura__arte" [src]="src" alt="" width="208" height="64" decoding="async" draggable="false" />
+            } @else {
+              <span class="miniatura__vacia">@if (!e.salaId) { <span>Sin sala</span> }</span>
+            }
+            <span class="numero">{{ numero(e.id) }}</span>
+            <span class="etiquetas">
+              @if (caso().inicioId === e.id) { <span class="pildora pildora-primaria">Inicio</span> }
+              @if (e.esFinal) { <span class="pildora pildora-adecuada">Final</span> }
+              @if (e.marcaIa) { <span class="pildora pildora-ia">IA</span> }
+              @if (avisosDe(e.id).length === 1) {
+                <span class="pildora aviso">⚠ {{ nombreAviso[avisosDe(e.id)[0].tipo] }}</span>
+              } @else if (avisosDe(e.id).length > 1) {
+                <span class="pildora aviso">⚠ {{ avisosDe(e.id).length }} avisos</span>
+              }
+            </span>
+          </span>
+          <span class="cuerpo-tarjeta">
+            <span class="titulo">{{ e.titulo }}</span>
+            <span class="pie-tarjeta">
+              <span class="sala texto-secundario">{{ nombreSala(e.salaId) }}</span>
+              <span class="intensidad-marca" [attr.data-intensidad]="e.intensidad">
+                <span aria-hidden="true">{{ simboloIntensidad[e.intensidad] }}</span> <span class="solo-lector">Intensidad </span>{{ nombreIntensidad[e.intensidad].toLowerCase() }}
+              </span>
+            </span>
+          </span>
+          <span class="solo-lector">{{ detalle(e) }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Los globos van fuera de la escala, en píxeles de pantalla: a 50 % se leen igual que a 100 %. -->
+    @if (vistaEscena(); as v) {
+      <div class="vista" role="tooltip" [attr.id]="'vista-' + v.escena.id" [class.arriba]="v.arriba" [style.left.px]="v.x" [style.top.px]="v.y">
+        @if (v.fondo) { <img class="pixel" [src]="v.fondo" alt="" width="960" height="528" /> }
+        <strong>{{ v.titulo }}</strong>
+        <span>{{ v.sala }}</span>
+        <span class="texto-secundario">{{ v.resumen }}</span>
+      </div>
+    }
+    @if (flechaElegida(); as f) {
+      <div class="tarjeta-flecha" role="status" [style.left.px]="aPantalla(f.medio).x" [style.top.px]="aPantalla(f.medio).y">
+        <strong>{{ f.texto || 'Respuesta sin escribir' }}</strong>
+        <span class="hacia">{{ f.hacia }}</span>
+      </div>
+    }
+  </div>
+
+  @if (desborda()) {
+    <app-minimapa class="minimapa" [mundo]="{ w: limites().ancho, h: limites().alto }" [tamNodo]="tamNodo" [nodos]="nodosMini()"
+                  [ventana]="ventanaMundo()" (ir)="irA($event)" />
+  }
+</div>
+
+<ng-template #menu>
+  <!-- La capa del CDK vive fuera del editor: la piel se lee de quien abre el menú, como en UiDialog (C13). -->
+  <div cdkMenu class="menu" [attr.data-skin]="piel()" aria-label="Acciones de la escena">
+    <button cdkMenuItem class="item" (cdkMenuItemTriggered)="abrirGuion.emit(elegida()!)">Abrir guion <kbd>Enter</kbd></button>
+    @if (elegidaEscena()?.salaId; as salaId) {
+      <button cdkMenuItem class="item" (cdkMenuItemTriggered)="abrirSala.emit(salaId)">Abrir sala</button>
+    }
+    <button cdkMenuItem class="item" (cdkMenuItemTriggered)="empezarMover()">Mover</button>
+    <button cdkMenuItem class="item" (cdkMenuItemTriggered)="accion.emit({ tipo: 'duplicar', escenaId: elegida()! })">Duplicar</button>
+    <button cdkMenuItem class="item" (cdkMenuItemTriggered)="accion.emit({ tipo: 'conectar', escenaId: elegida()! })">Conectar con…</button>
+    <button cdkMenuItem class="item" (cdkMenuItemTriggered)="accion.emit({ tipo: 'final', escenaId: elegida()!, esFinal: !elegidaEscena()!.esFinal })">
+      {{ elegidaEscena()?.esFinal ? 'Quitar la marca de final' : 'Marcar como final' }}
+    </button>
+    <hr role="separator" />
+    <button cdkMenuItem class="item peligro" (cdkMenuItemTriggered)="accion.emit({ tipo: 'borrar', escenaId: elegida()! })">Borrar <kbd>Supr</kbd></button>
+  </div>
+</ng-template>

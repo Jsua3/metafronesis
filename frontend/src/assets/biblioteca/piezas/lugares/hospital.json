@@ -1,0 +1,1348 @@
+{
+  "descripcion": "Urgencias de un hospital: de la entrada a la habitación de recuperación.",
+  "esquema": 3,
+  "id": "hospital",
+  "nombre": "Hospital",
+  "salas": [
+    {
+      "descripcion": "Vestíbulo de urgencias: por la corrediza se llega a la sala de espera; las camillas pasan por la doble batiente.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 600,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "azulejo",
+          "paleta": "hospital",
+          "piso": "baldosa",
+          "variante": "b"
+        },
+        "ancho": 1200,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 250,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 690,
+            "tipo": "lampara"
+          },
+          {
+            "id": "cruz",
+            "modelo": "cruz",
+            "muro": "fondo",
+            "pos": 326,
+            "tipo": "cruz"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 378,
+            "tipo": "reloj"
+          },
+          {
+            "id": "gel",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 600,
+            "tipo": "gel"
+          },
+          {
+            "id": "senal",
+            "modelo": "senal",
+            "muro": "fondo",
+            "pos": 640,
+            "tipo": "senal"
+          },
+          {
+            "id": "extintor",
+            "modelo": "extintor",
+            "muro": "fondo",
+            "pos": 700,
+            "tipo": "extintor"
+          },
+          {
+            "id": "ventana",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 808,
+            "tipo": "ventana"
+          },
+          {
+            "id": "ventanal",
+            "modelo": "ventanal",
+            "muro": "derecha",
+            "pos": 150,
+            "tipo": "ventana"
+          }
+        ]
+      },
+      "id": "entrada-urgencias",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "camilla",
+          "x": 300,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "silla-ruedas",
+          "x": 900,
+          "y": 296
+        },
+        {
+          "espejo": false,
+          "ref": "silla-ruedas",
+          "x": 944,
+          "y": 304
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 1040,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "caneca",
+          "x": 760,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "portasuero",
+          "x": 236,
+          "y": 290
+        }
+      ],
+      "nombre": "Entrada de urgencias",
+      "personajes": [
+        {
+          "mirando": "abajo",
+          "ref": "seguridad",
+          "x": 700,
+          "y": 300
+        },
+        {
+          "mirando": "izquierda",
+          "ref": "madre-acompanante",
+          "x": 860,
+          "y": 420
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Pasar a la sala de espera",
+          "hacia": "sala-espera",
+          "id": "a-espera",
+          "modelo": "corrediza",
+          "muro": "fondo",
+          "par": "a-entrada",
+          "pos": 485
+        },
+        {
+          "etiqueta": "Pasar al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "urgencias",
+          "muro": "izquierda",
+          "par": "a-entrada",
+          "pos": 160
+        }
+      ]
+    },
+    {
+      "descripcion": "Sala de espera de urgencias, con máquina de café y dispensador de agua.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 720,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "hospital",
+          "piso": "vinilo",
+          "variante": "b"
+        },
+        "ancho": 1440,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 440,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 720,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-3",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 1084,
+            "tipo": "lampara"
+          },
+          {
+            "id": "ventanal-1",
+            "modelo": "ventanal",
+            "muro": "fondo",
+            "pos": 260,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cartelera",
+            "modelo": "cartelera",
+            "muro": "fondo",
+            "pos": 430,
+            "tipo": "cartelera"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 506,
+            "tipo": "reloj"
+          },
+          {
+            "id": "gel",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 650,
+            "tipo": "gel"
+          },
+          {
+            "id": "cuadro",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 710,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "ventanal-2",
+            "modelo": "ventanal",
+            "muro": "fondo",
+            "pos": 890,
+            "tipo": "ventana"
+          },
+          {
+            "id": "senal",
+            "modelo": "senal",
+            "muro": "fondo",
+            "pos": 1040,
+            "tipo": "senal"
+          },
+          {
+            "id": "extintor",
+            "modelo": "extintor",
+            "muro": "fondo",
+            "pos": 1136,
+            "tipo": "extintor"
+          }
+        ]
+      },
+      "id": "sala-espera",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 250,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 350,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 444,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 980,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 1074,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "maquina-cafe",
+          "x": 1196,
+          "y": 258
+        },
+        {
+          "espejo": false,
+          "ref": "dispensador-agua",
+          "x": 1240,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "caneca",
+          "x": 1280,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 520,
+          "y": 410
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro",
+          "x": 720,
+          "y": 400
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 920,
+          "y": 410
+        }
+      ],
+      "nombre": "Sala de espera",
+      "personajes": [
+        {
+          "mirando": "abajo",
+          "ref": "abuela-familia",
+          "x": 640,
+          "y": 330
+        },
+        {
+          "mirando": "abajo",
+          "ref": "paciente-espera",
+          "x": 1030,
+          "y": 300
+        },
+        {
+          "mirando": "derecha",
+          "ref": "madre-acompanante",
+          "x": 480,
+          "y": 318
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Pasar al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "vidrio",
+          "muro": "fondo",
+          "par": "a-espera",
+          "pos": 586
+        },
+        {
+          "etiqueta": "Salir a la entrada de urgencias",
+          "hacia": "entrada-urgencias",
+          "id": "a-entrada",
+          "modelo": "corrediza",
+          "muro": "camara",
+          "par": "a-espera",
+          "pos": 586
+        }
+      ]
+    },
+    {
+      "descripcion": "Pasillo de urgencias: todas las salas del hospital dan a él.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 840,
+        "y": 420
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "hospital",
+          "piso": "vinilo",
+          "variante": "a"
+        },
+        "ancho": 1680,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 325,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 615,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-3",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 905,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-4",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 1170,
+            "tipo": "lampara"
+          },
+          {
+            "id": "gel-1",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 250,
+            "tipo": "gel"
+          },
+          {
+            "id": "cartelera",
+            "modelo": "cartelera",
+            "muro": "fondo",
+            "pos": 325,
+            "tipo": "cartelera"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 560,
+            "tipo": "reloj"
+          },
+          {
+            "id": "senal",
+            "modelo": "senal",
+            "muro": "fondo",
+            "pos": 660,
+            "tipo": "senal"
+          },
+          {
+            "id": "extintor",
+            "modelo": "extintor",
+            "muro": "fondo",
+            "pos": 880,
+            "tipo": "extintor"
+          },
+          {
+            "id": "cuadro",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 940,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "gel-2",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 1130,
+            "tipo": "gel"
+          },
+          {
+            "id": "ventana",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 1294,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cruz",
+            "modelo": "cruz",
+            "muro": "izquierda",
+            "pos": 60,
+            "tipo": "cruz"
+          },
+          {
+            "id": "senal-lado",
+            "modelo": "senal",
+            "muro": "derecha",
+            "pos": 60,
+            "tipo": "senal"
+          }
+        ]
+      },
+      "id": "pasillo",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 478,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "dispensador-agua",
+          "x": 772,
+          "y": 260
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 1060,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "camilla",
+          "x": 1404,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "portasuero",
+          "x": 1330,
+          "y": 292
+        },
+        {
+          "espejo": false,
+          "ref": "silla-ruedas",
+          "x": 330,
+          "y": 424
+        },
+        {
+          "espejo": false,
+          "ref": "carro-curaciones",
+          "x": 1290,
+          "y": 440
+        }
+      ],
+      "nombre": "Pasillo",
+      "personajes": [
+        {
+          "mirando": "abajo",
+          "ref": "enfermera-urgencias",
+          "x": 900,
+          "y": 336
+        },
+        {
+          "mirando": "derecha",
+          "ref": "medico-guardia",
+          "x": 560,
+          "y": 350
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Pasar a triaje",
+          "hacia": "triaje",
+          "id": "a-triaje",
+          "modelo": "vidrio",
+          "muro": "fondo",
+          "par": "a-pasillo",
+          "pos": 180
+        },
+        {
+          "etiqueta": "Pasar a la sala de escucha",
+          "hacia": "sala-escucha",
+          "id": "a-escucha",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "a-pasillo",
+          "pos": 470
+        },
+        {
+          "etiqueta": "Pasar a trabajo social",
+          "hacia": "trabajo-social",
+          "id": "a-trabajo-social",
+          "modelo": "metalica",
+          "muro": "fondo",
+          "par": "a-pasillo",
+          "pos": 760
+        },
+        {
+          "etiqueta": "Pasar a la habitación de recuperación",
+          "hacia": "habitacion-recuperacion",
+          "id": "a-habitacion",
+          "modelo": "madera-ventanilla",
+          "muro": "fondo",
+          "par": "a-pasillo",
+          "pos": 1050
+        },
+        {
+          "etiqueta": "Pasar a la estación de enfermería",
+          "hacia": "estacion-enfermeria",
+          "id": "a-enfermeria",
+          "modelo": "paso",
+          "muro": "izquierda",
+          "par": "a-pasillo",
+          "pos": 160
+        },
+        {
+          "etiqueta": "Salir a la entrada de urgencias",
+          "hacia": "entrada-urgencias",
+          "id": "a-entrada",
+          "modelo": "urgencias",
+          "muro": "derecha",
+          "par": "a-pasillo",
+          "pos": 160
+        },
+        {
+          "etiqueta": "Volver a la sala de espera",
+          "hacia": "sala-espera",
+          "id": "a-espera",
+          "modelo": "vidrio",
+          "muro": "camara",
+          "par": "a-pasillo",
+          "pos": 687
+        }
+      ]
+    },
+    {
+      "descripcion": "Consultorio de triaje: camilla, monitor y escritorio de la enfermera.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 430
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "azulejo",
+          "paleta": "hospital",
+          "piso": "vinilo",
+          "variante": "a"
+        },
+        "ancho": 960,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "lampara"
+          },
+          {
+            "id": "cruz",
+            "modelo": "cruz",
+            "muro": "fondo",
+            "pos": 120,
+            "tipo": "cruz"
+          },
+          {
+            "id": "cartelera",
+            "modelo": "cartelera",
+            "muro": "fondo",
+            "pos": 240,
+            "tipo": "cartelera"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 400,
+            "tipo": "reloj"
+          },
+          {
+            "id": "ventana",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 560,
+            "tipo": "ventana"
+          },
+          {
+            "id": "gel",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 700,
+            "tipo": "gel"
+          }
+        ]
+      },
+      "id": "triaje",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "lavamanos",
+          "x": 150,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "escritorio",
+          "x": 300,
+          "y": 304
+        },
+        {
+          "espejo": false,
+          "ref": "silla-oficina",
+          "x": 300,
+          "y": 276
+        },
+        {
+          "espejo": false,
+          "ref": "silla-visitante",
+          "x": 400,
+          "y": 330
+        },
+        {
+          "espejo": false,
+          "ref": "archivador-clinico",
+          "x": 470,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "cortina",
+          "x": 548,
+          "y": 306
+        },
+        {
+          "espejo": false,
+          "ref": "camilla",
+          "x": 660,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "monitor",
+          "x": 740,
+          "y": 286
+        },
+        {
+          "espejo": false,
+          "ref": "portasuero",
+          "x": 600,
+          "y": 290
+        },
+        {
+          "espejo": false,
+          "ref": "carro-curaciones",
+          "x": 820,
+          "y": 304
+        }
+      ],
+      "nombre": "Triaje",
+      "personajes": [
+        {
+          "mirando": "derecha",
+          "ref": "enfermera-urgencias",
+          "x": 340,
+          "y": 380
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "vidrio",
+          "muro": "camara",
+          "par": "a-triaje",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "descripcion": "Estación de enfermería: mostrador, historias clínicas y tablero de turnos.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 700,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "paneles",
+          "paleta": "hospital",
+          "piso": "vinilo",
+          "variante": "a"
+        },
+        "ancho": 1200,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 300,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 760,
+            "tipo": "lampara"
+          },
+          {
+            "id": "tablero",
+            "modelo": "tablero",
+            "muro": "fondo",
+            "pos": 300,
+            "tipo": "tablero"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 420,
+            "tipo": "reloj"
+          },
+          {
+            "id": "cruz",
+            "modelo": "cruz",
+            "muro": "fondo",
+            "pos": 480,
+            "tipo": "cruz"
+          },
+          {
+            "id": "ventana",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 620,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cartelera",
+            "modelo": "cartelera",
+            "muro": "fondo",
+            "pos": 800,
+            "tipo": "cartelera"
+          },
+          {
+            "id": "gel",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 900,
+            "tipo": "gel"
+          }
+        ]
+      },
+      "id": "estacion-enfermeria",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "archivador-clinico",
+          "x": 200,
+          "y": 264
+        },
+        {
+          "espejo": false,
+          "ref": "archivador-clinico",
+          "x": 256,
+          "y": 264
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 330,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "mostrador-enfermeria",
+          "x": 560,
+          "y": 372
+        },
+        {
+          "espejo": false,
+          "ref": "silla-oficina",
+          "x": 520,
+          "y": 336
+        },
+        {
+          "espejo": false,
+          "ref": "carro-curaciones",
+          "x": 860,
+          "y": 296
+        },
+        {
+          "espejo": false,
+          "ref": "monitor",
+          "x": 780,
+          "y": 284
+        },
+        {
+          "espejo": false,
+          "ref": "dispensador-agua",
+          "x": 990,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "silla-ruedas",
+          "x": 240,
+          "y": 420
+        }
+      ],
+      "nombre": "Estación de enfermería",
+      "personajes": [
+        {
+          "mirando": "abajo",
+          "ref": "enfermera-urgencias",
+          "x": 600,
+          "y": 338
+        },
+        {
+          "mirando": "izquierda",
+          "ref": "medico-guardia",
+          "x": 800,
+          "y": 410
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "paso",
+          "muro": "derecha",
+          "par": "a-enfermeria",
+          "pos": 160
+        }
+      ]
+    },
+    {
+      "descripcion": "Sala de escucha: un lugar tranquilo para hablar, con luz cálida.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "hospital",
+          "piso": "madera",
+          "variante": "a"
+        },
+        "ancho": 960,
+        "momento": "noche",
+        "piezas": [
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 110,
+            "tipo": "reloj"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 200,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "ventana",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "ventana"
+          },
+          {
+            "id": "repisa",
+            "modelo": "repisa",
+            "muro": "fondo",
+            "pos": 620,
+            "tipo": "repisa"
+          },
+          {
+            "id": "lampara-pie",
+            "modelo": "pie",
+            "tipo": "lampara",
+            "x": 250,
+            "y": 312
+          },
+          {
+            "id": "lampara-mesa",
+            "modelo": "mesa",
+            "sobre": 18,
+            "tipo": "lampara",
+            "x": 716,
+            "y": 324
+          }
+        ],
+        "tapetes": [
+          {
+            "caja": [
+              300,
+              660,
+              300,
+              424
+            ],
+            "ruta": "piezas/tapetes/hospital-sala-escucha-1.png",
+            "x": 274,
+            "y": 300
+          }
+        ]
+      },
+      "id": "sala-escucha",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "estante",
+          "x": 160,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "sillon",
+          "x": 400,
+          "y": 336
+        },
+        {
+          "espejo": true,
+          "ref": "sillon",
+          "x": 560,
+          "y": 336
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro",
+          "x": 480,
+          "y": 384
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro",
+          "x": 716,
+          "y": 322
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 810,
+          "y": 264
+        },
+        {
+          "espejo": false,
+          "ref": "silla-visitante",
+          "x": 640,
+          "y": 400
+        }
+      ],
+      "nombre": "Sala de escucha",
+      "personajes": [],
+      "puertas": [
+        {
+          "etiqueta": "Volver al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "a-escucha",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "descripcion": "Oficina de trabajo social: escritorio, archivo y sillas para la familia.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "paneles",
+          "paleta": "hospital",
+          "piso": "vinilo",
+          "variante": "b"
+        },
+        "ancho": 960,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "lampara"
+          },
+          {
+            "id": "cartelera",
+            "modelo": "cartelera",
+            "muro": "fondo",
+            "pos": 200,
+            "tipo": "cartelera"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 300,
+            "tipo": "reloj"
+          },
+          {
+            "id": "ventana",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 560,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 690,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "lampara-mesa",
+            "modelo": "mesa",
+            "sobre": 42,
+            "tipo": "lampara",
+            "x": 436,
+            "y": 312
+          }
+        ]
+      },
+      "id": "trabajo-social",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "archivador-clinico",
+          "x": 150,
+          "y": 264
+        },
+        {
+          "espejo": false,
+          "ref": "estante",
+          "x": 800,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "silla-oficina",
+          "x": 480,
+          "y": 282
+        },
+        {
+          "espejo": false,
+          "ref": "escritorio",
+          "x": 480,
+          "y": 312
+        },
+        {
+          "espejo": false,
+          "ref": "silla-visitante",
+          "x": 440,
+          "y": 366
+        },
+        {
+          "espejo": false,
+          "ref": "silla-visitante",
+          "x": 524,
+          "y": 366
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 300,
+          "y": 264
+        },
+        {
+          "espejo": false,
+          "ref": "dispensador-agua",
+          "x": 720,
+          "y": 262
+        }
+      ],
+      "nombre": "Oficina de trabajo social",
+      "personajes": [
+        {
+          "mirando": "abajo",
+          "ref": "trabajadora-social",
+          "x": 480,
+          "y": 290
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "metalica",
+          "muro": "camara",
+          "par": "a-trabajo-social",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "descripcion": "Habitación de recuperación con dos camas separadas por una cortina.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 600,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "hospital",
+          "piso": "vinilo",
+          "variante": "b"
+        },
+        "ancho": 1200,
+        "momento": "noche",
+        "piezas": [
+          {
+            "encendida": true,
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 300,
+            "tipo": "lampara"
+          },
+          {
+            "encendida": true,
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 874,
+            "tipo": "lampara"
+          },
+          {
+            "id": "gel",
+            "modelo": "gel",
+            "muro": "fondo",
+            "pos": 120,
+            "tipo": "gel"
+          },
+          {
+            "id": "reloj",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 470,
+            "tipo": "reloj"
+          },
+          {
+            "id": "cuadro",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 540,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "ventana",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 700,
+            "tipo": "ventana"
+          },
+          {
+            "id": "espejo",
+            "modelo": "espejo",
+            "muro": "fondo",
+            "pos": 880,
+            "tipo": "espejo"
+          }
+        ]
+      },
+      "id": "habitacion-recuperacion",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "lavamanos",
+          "x": 190,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "portasuero",
+          "x": 270,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "cama-recuperacion",
+          "x": 350,
+          "y": 324
+        },
+        {
+          "espejo": false,
+          "ref": "monitor",
+          "x": 440,
+          "y": 290
+        },
+        {
+          "espejo": false,
+          "ref": "cortina",
+          "x": 560,
+          "y": 344
+        },
+        {
+          "espejo": false,
+          "ref": "cama-recuperacion",
+          "x": 740,
+          "y": 324
+        },
+        {
+          "espejo": false,
+          "ref": "portasuero",
+          "x": 826,
+          "y": 298
+        },
+        {
+          "espejo": true,
+          "ref": "sillon",
+          "x": 960,
+          "y": 330
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro",
+          "x": 1040,
+          "y": 300
+        }
+      ],
+      "nombre": "Habitación de recuperación",
+      "personajes": [
+        {
+          "mirando": "izquierda",
+          "ref": "medico-guardia",
+          "x": 480,
+          "y": 400
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver al pasillo",
+          "hacia": "pasillo",
+          "id": "a-pasillo",
+          "modelo": "madera-ventanilla",
+          "muro": "camara",
+          "par": "a-habitacion",
+          "pos": 485
+        }
+      ]
+    }
+  ]
+}

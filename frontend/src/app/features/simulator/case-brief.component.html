@@ -1,0 +1,221 @@
+<div class="p-pagina ficha">
+  <!-- Cabecera ilustrada sin viñeta (ronda 3): la portada del caso, más abajo, es la ilustración de esta pantalla. -->
+  <ui-cabecera-ilustrada
+    [eyebrow]="brief() ? 'Ficha del caso' : null"
+    [title]="brief()?.title ?? 'Ficha del caso'"
+    [description]="meta()"
+    volverA="/portal/simulador"
+    volverEtiqueta="Tus casos" />
+
+  @switch (state()) {
+    @case ('loading') {
+      <div class="ficha__cargando" aria-busy="true">
+        <ui-skeleton shape="card" [lines]="4" />
+      </div>
+    }
+    @case ('error') {
+      <ui-error-state blocking autofocus [kind]="errorKind()" [status]="error()?.status" [message]="errorMessage()" (retry)="load()" />
+      <div class="ficha__acciones-error">
+        <a ui-button variant="secondary" icon="arrow_back" routerLink="/portal/simulador">Volver a tus casos</a>
+      </div>
+    }
+    @case ('ready') {
+      @if (brief(); as b) {
+        <div class="p-dividida ficha__columnas">
+          <div class="ficha__lectura">
+            @if (access(); as notice) {
+              <p class="ficha__acceso brief-access" [attr.data-tone]="notice.tone">
+                <mat-icon aria-hidden="true">{{ notice.icon }}</mat-icon>
+                <span><strong>{{ notice.title }}.</strong> {{ notice.detail }}</span>
+              </p>
+            }
+
+            <!-- 1 · El aviso va ANTES del contexto (el orden es la decisión de cuidado). Sin rojo: informa, no alarma. -->
+            <ui-card id="aviso" superficie="hundida" class="ficha__aviso" tabindex="-1">
+              <section class="ficha__aviso-cuerpo" aria-labelledby="aviso-titulo">
+                <span class="ficha__icono" aria-hidden="true"><mat-icon>health_and_safety</mat-icon></span>
+                <div class="ficha__aviso-texto">
+                  <h2 id="aviso-titulo">Antes de leer</h2>
+                  <p>{{ noticeText.contenido }}</p>
+                  <p>{{ noticeText.salida }}</p>
+                  @if (temas().length) {
+                    <p class="ficha__temas-titulo">En este caso aparecen:</p>
+                    <ul class="ficha__temas">
+                      @for (tema of temas(); track $index) { <li>{{ tema }}</li> }
+                    </ul>
+                  }
+                  <ui-scope-notice class="ficha__alcance" />
+                </div>
+              </section>
+            </ui-card>
+
+            <!-- En una columna, «Tu entrada» se parte: el estado y la seguridad, aquí, justo después del aviso. -->
+            @if (!amplio()) {
+              <ui-card class="ficha__entrada ficha__entrada--en-linea" superficie="tinte">
+                <section aria-labelledby="entrada-titulo-linea">
+                  <h2 id="entrada-titulo-linea" class="ds-sr-only">Tu entrada</h2>
+                  <ng-container [ngTemplateOutlet]="cabezaEntrada" />
+                  @if (intentoAbierto()) {
+                    <div class="ficha__botones"><ng-container [ngTemplateOutlet]="secundaria" /></div>
+                  }
+                  <ng-container [ngTemplateOutlet]="seguridad" />
+                </section>
+              </ui-card>
+            }
+
+            @if (hasObjectives()) {
+              <ui-section class="ficha__seccion" title="Qué vas a practicar">
+                <ul class="ficha__objetivos">
+                  @for (objective of b.learningObjectives; track $index) {
+                    <li class="brief-objective">{{ objective }}</li>
+                  }
+                </ul>
+              </ui-section>
+            }
+
+            <ui-section class="ficha__seccion" title="Cómo funciona esta práctica">
+              <p class="ficha__parrafo">{{ copy.briefFictionContract.text }}</p>
+              @if (b.conRubrica) {
+                <p class="ficha__parrafo">{{ copy.briefFictionRubric.text }}</p>
+              }
+              <h3 class="ficha__subtitulo">Cómo se juega en 30 segundos</h3>
+              <ul class="ficha__como">
+                @for (item of comoSeJuega(); track item.icono) {
+                  <li><mat-icon aria-hidden="true">{{ item.icono }}</mat-icon><span>{{ item.texto }}</span></li>
+                }
+              </ul>
+            </ui-section>
+
+            @if (hasContext()) {
+              <ui-section class="ficha__seccion" title="Contexto">
+                <ui-card superficie="opaca" class="ficha__contexto-tarjeta">
+                  <p class="brief-context">{{ b.context }}</p>
+                </ui-card>
+              </ui-section>
+            }
+
+            @if (characters().length) {
+              <ui-section class="ficha__seccion" title="Quiénes aparecen">
+                <div class="ficha__personajes">
+                  @for (character of characters(); track character.id) {
+                    <ui-card class="brief-character">
+                      @if (character.visual; as visual) {
+                        <app-kit-figure [visual]="visual" portrait="neutral" [scale]="3" />
+                      }
+                      <div class="brief-character__text">
+                        <h3 class="brief-character__name">{{ character.displayName }}</h3>
+                        <p class="brief-character__role">{{ character.roleLabel }}</p>
+                      </div>
+                    </ui-card>
+                  }
+                </div>
+              </ui-section>
+            }
+
+            @if (isPending()) {
+              <p class="brief-pending">{{ copy.briefPending.text }}</p>
+            }
+          </div>
+
+          @if (amplio()) {
+            <aside class="ficha__lateral p-pegajosa p-pegajosa--desplaza" aria-labelledby="entrada-titulo">
+              <ui-card class="ficha__entrada" superficie="tinte">
+                <h2 id="entrada-titulo" class="ficha__entrada-titulo">Tu entrada</h2>
+                <ng-container [ngTemplateOutlet]="cabezaEntrada" />
+                <!-- Las acciones antes de la seguridad: a 1440 × 900 la principal queda a la vista sin desplazar. -->
+                <ng-container [ngTemplateOutlet]="acciones" />
+                <ng-container [ngTemplateOutlet]="seguridad" />
+              </ui-card>
+            </aside>
+          }
+        </div>
+
+        @if (!amplio()) {
+          <ui-barra-acciones class="ficha__barra" [nota]="lineaConsentimiento()">
+            <ng-container [ngTemplateOutlet]="principal" />
+          </ui-barra-acciones>
+          <ng-container [ngTemplateOutlet]="errorDeEntrada" />
+        }
+      }
+    }
+  }
+</div>
+
+<!-- La portada (la que viaja al umbral: DP-10) y el estado del caso en palabras. -->
+<ng-template #cabezaEntrada>
+  @if (brief(); as b) {
+    <ui-portada-caso class="ficha__portada" tamano="tarjeta" [umbral]="true" [titulo]="b.title" [portada]="b.portada" />
+  }
+  <p class="ficha__estado" [attr.data-tono]="estado().tono">
+    <span class="ficha__estado-etiqueta">{{ estado().etiqueta }}</span>
+    <span class="ficha__estado-detalle">{{ estado().detalle }}</span>
+  </p>
+  @if (!intentoAbierto() && terminado(); as attemptId) {
+    <a class="ficha__enlace" [routerLink]="['/portal/simulador', brief()?.caseVersionId, 'cierre', attemptId]">Ver tu recorrido</a>
+  }
+</ng-template>
+
+<ng-template #seguridad>
+  <div class="ficha__seguridad">
+    <h3 class="ficha__seguridad-titulo">Tu seguridad</h3>
+    <ul>
+      <li><mat-icon aria-hidden="true">pause</mat-icon><span>Salida segura (Esc) pausa el caso en cualquier momento y guarda tu avance.</span></li>
+      <li><mat-icon aria-hidden="true">restart_alt</mat-icon><span>Puedes volver cuando quieras.</span></li>
+      <li><mat-icon aria-hidden="true">favorite</mat-icon><span>{{ copy.supportResourcesPending.text }}</span></li>
+    </ul>
+  </div>
+</ng-template>
+
+<ng-template #acciones>
+  <div class="ficha__acciones">
+    @if (lineaConsentimiento(); as linea) {
+      <p class="ficha__consentimiento">{{ linea }} <a href="#aviso" class="ficha__enlace" (click)="irAlAviso($event)">Leer el aviso</a></p>
+    }
+    <div class="ficha__botones"><ng-container [ngTemplateOutlet]="botones" /></div>
+    <ng-container [ngTemplateOutlet]="errorDeEntrada" />
+    <a class="ficha__enlace ficha__volver" routerLink="/portal/simulador">Volver a tus casos</a>
+  </div>
+</ng-template>
+
+<!-- UNA acción principal (la última, a la derecha en la barra del pie); la secundaria al lado, en la columna. -->
+<ng-template #botones>
+  <ng-container [ngTemplateOutlet]="secundaria" />
+  <ng-container [ngTemplateOutlet]="principal" />
+</ng-template>
+
+<ng-template #principal>
+  @if (intentoAbierto()) {
+    <button ui-button type="button" variant="primary" [size]="amplio() ? 'lg' : 'md'" icon="play_arrow" class="ficha__boton"
+      [loading]="entrando() === 'continuar'" [disabledReason]="entrando() && entrando() !== 'continuar' ? 'Entrando al caso' : null"
+      (click)="continuar()">Continuar donde quedaste</button>
+  } @else {
+    <button ui-button type="button" variant="primary" [size]="amplio() ? 'lg' : 'md'" icon="play_arrow" class="ficha__boton"
+      [loading]="entrando() === 'comenzar'" [disabledReason]="startBlockedReason()"
+      (click)="comenzar()">Comenzar</button>
+  }
+</ng-template>
+
+<!-- «Empezar de nuevo» destruye el intento abierto: en móvil va en «Tu entrada», lejos de la barra del pulgar. -->
+<ng-template #secundaria>
+  @if (intentoAbierto()) {
+    <button ui-button type="button" variant="secondary" [size]="amplio() ? 'lg' : 'md'" icon="restart_alt" class="ficha__boton"
+      [loading]="entrando() === 'nuevo'" [disabledReason]="entrando() && entrando() !== 'nuevo' ? 'Entrando al caso' : startBlockedReason()"
+      (click)="empezarDeNuevo()">Empezar de nuevo</button>
+  }
+</ng-template>
+
+<!-- Sin role propio (una región que nace con su texto falla con los lectores): se anuncia por LiveRegionAnnouncer. -->
+<ng-template #errorDeEntrada>
+  @if (errorEntrada(); as motivo) {
+    <div class="ficha__error">
+      <mat-icon aria-hidden="true">error</mat-icon>
+      @if (motivo === 'aviso') {
+        <p>{{ copy.briefConsentStale.text }}</p>
+        <button ui-button type="button" variant="secondary" size="sm" (click)="recargar()">Recargar</button>
+      } @else {
+        <p>{{ copy.briefConsentError.text }}</p>
+        <button ui-button type="button" variant="secondary" size="sm" (click)="reintentarEntrada()">Reintentar</button>
+      }
+    </div>
+  }
+</ng-template>

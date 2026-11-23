@@ -271,6 +271,10 @@ PERSON_SCOPE: dict[str, tuple[Pertenencia, ...]] = {
     "student_case_completion": (Pertenencia(TITULAR, lambda p: Q(student_id=p.pk)),),
     # ── Uso del asistente de IA de autoría (P5): los contadores diarios del docente ──
     "authoring_assistant_usage": (Pertenencia(TITULAR, lambda p: Q(user_id=p.pk)),),
+    # ── La generación de casos con IA: lo que escribió la docente y lo que escribió el modelo con su texto ──
+    "authoring_generations": (
+        Pertenencia(TITULAR, lambda p: Q(owner_id=p.pk), solo=("lugar_id", "description", "status", "created_at")),
+    ),
     "rubric_evaluations": (
         Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk), excluir=("instructor_id",)),
         Pertenencia(
@@ -408,25 +412,20 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
         valor=_detalle_sin_texto_de_la_persona(),
     ),
     **_columnas("attempt_hint_views", ("attempt_id", "viewed_at"), Regla(CONSERVAR, _M_CONDUCTA)),
-    **_columnas("attempt_reports", ("attempt_id", "attempt_ordinal"), Regla(CONSERVAR, _M_CONDUCTA)),
-    ("attempt_reports", "report_json"): Regla(
-        LIMPIAR_JSON,
-        "informe congelado sin nombre ni correo: solo se limpia el motivo escrito de una salida segura, que copia en su línea "
-        "de tiempo; el resto es lo que hizo la persona y queda",
-        valor=_informe_sin_el_motivo_de_la_salida_segura,
-    ),
+    **_columnas("attempt_reports", ("attempt_id", "report_json"), Regla(CONSERVAR, _M_CONDUCTA)),
     **_columnas("attempt_feedback", ("attempt_id", "rating", "created_at"), Regla(CONSERVAR, _M_CONDUCTA)),
     ("attempt_feedback", "comment"): Regla(
         VACIAR, "texto libre de la persona (el comentario de la encuesta): se vacía; la calificación queda como lo que hizo"
     ),
+    # La supresión de cualquiera de los datos sensibles elimina la bitácora cifrada completa.
     **_columnas("reflection_journals", ("attempt_id", "encrypted_text"), Regla(
         BORRAR_FILA, "texto libre de la persona (cifrado): la bitácora se borra entera"
     )),
     **_columnas(
         "attempt_world_states",
         (
-            "attempt_id", "scene_map_id", "player_x", "player_y", "inventory_json", "inspected_object_keys_json",
-            "viewed_dialogue_keys_json", "used_tool_keys_json", "flags_json",
+            "attempt_id", "scene_map_id", "player_x", "player_y", "inventory", "inspected_object_keys",
+            "viewed_dialogue_keys", "used_tool_keys", "flags",
         ),
         Regla(CONSERVAR, _M_CONDUCTA),
     ),
@@ -438,6 +437,16 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
             CONSERVAR,
             "contador diario de uso del asistente, sin el texto de las peticiones, enlazado a una cuenta ya seudonimizada; "
             "el tope mensual suma estas filas de todos los docentes, así que borrarlas lo alteraría (SD-9)",
+        ),
+    ),
+    # ── La generación de casos con IA: texto libre de la docente y texto del modelo derivado de él; se borra la fila entera ──
+    **_columnas(
+        "authoring_generations",
+        ("owner_id", "description", "skeleton_json", "scenes_json", "report_json", "repair_json", "document_json"),
+        Regla(
+            BORRAR_FILA,
+            "texto libre de la docente y lo que el modelo escribió a partir de él: la generación se borra entera; el caso "
+            "importado, si lo hubo, es contenido del programa y queda",
         ),
     ),
     # ── Evaluaciones docentes: la institución decide (SD-9); hoy se conservan ──

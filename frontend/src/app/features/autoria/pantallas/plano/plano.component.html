@@ -1,0 +1,119 @@
+<section class="plano-caso" [class.plano-caso--angosto]="!conDibujo()" aria-labelledby="plano-caso-titulo">
+  <header class="plano-caso__cabecera">
+    <div class="plano-caso__titulo">
+      <p class="sobretitulo">Etapa 2 · Lugar</p>
+      <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+      <h1 id="plano-caso-titulo">Plano del caso</h1>
+      <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+      <p id="plano-caso-descripcion" class="plano-caso__descripcion">
+        Las salas por piezas del caso y sus puertas. Elige una sala para abrir su editor.
+      </p>
+    </div>
+  </header>
+
+  @switch (estado().tipo) {
+    @case ('cargando') {
+      <!-- Cargando: un esqueleto con la forma del plano (tres salas), no un párrafo suelto. -->
+      <div class="plano-caso__esqueleto" aria-hidden="true">
+        <span class="hueso hueso--a"></span><span class="hueso hueso--b"></span><span class="hueso hueso--c"></span>
+      </div>
+      <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+      <p class="plano-caso__estado plano-caso__estado--suave" role="status">Cargando el plano…</p>
+    }
+    @case ('error') {
+      <div class="plano-caso__estado">
+        <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+        <p role="alert">No se pudo cargar el plano.</p>
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+    @case ('listo') {
+      @if (plano(); as plano) {
+        <!-- El dibujo con las miniaturas: para el ratón y la vista; el teclado usa la lista del Inspector. -->
+        <div class="plano-caso__visor">
+          <svg class="plano-caso__dibujo" [attr.viewBox]="viewBox()" role="img" [attr.aria-label]="resumen()"
+            preserveAspectRatio="xMidYMid meet" focusable="false">
+            <defs>
+              @for (sala of dibujo().salas; track sala.clave) {
+                <clipPath [attr.id]="recorte(sala.clave)">
+                  <rect [attr.x]="sala.x" [attr.y]="sala.y" [attr.width]="sala.ancho" [attr.height]="sala.alto" rx="24" />
+                </clipPath>
+              }
+            </defs>
+            @for (sala of dibujo().salas; track sala.clave) {
+              <g class="sala" [attr.data-miniatura]="sala.clave" (click)="abrir(sala.clave)">
+                <rect class="sala__piso" [attr.x]="sala.x" [attr.y]="sala.y" [attr.width]="sala.ancho" [attr.height]="sala.alto" rx="24" />
+                @if (miniaturas().get(sala.clave); as arte) {
+                  <image class="sala__arte" [attr.href]="arte" [attr.x]="sala.x" [attr.y]="sala.y" [attr.width]="sala.ancho"
+                    [attr.height]="sala.alto" preserveAspectRatio="xMidYMid slice" [attr.clip-path]="'url(#' + recorte(sala.clave) + ')'" />
+                }
+                <rect class="sala__velo" [attr.x]="sala.x" [attr.y]="sala.y + sala.alto * 0.62" [attr.width]="sala.ancho"
+                  [attr.height]="sala.alto * 0.38" [attr.clip-path]="'url(#' + recorte(sala.clave) + ')'" />
+                <rect class="sala__borde" [attr.x]="sala.x" [attr.y]="sala.y" [attr.width]="sala.ancho" [attr.height]="sala.alto"
+                  rx="24" vector-effect="non-scaling-stroke" />
+                @for (p of sala.puertas; track $index) {
+                  <rect class="puerta" vector-effect="non-scaling-stroke"
+                    [attr.x]="horizontal(p.muro) ? p.x - PUERTA_LARGO : p.x - PUERTA_GROSOR"
+                    [attr.y]="horizontal(p.muro) ? p.y - PUERTA_GROSOR : p.y - PUERTA_LARGO"
+                    [attr.width]="horizontal(p.muro) ? 2 * PUERTA_LARGO : 2 * PUERTA_GROSOR"
+                    [attr.height]="horizontal(p.muro) ? 2 * PUERTA_GROSOR : 2 * PUERTA_LARGO" />
+                }
+                <!-- El nombre cabe en su sala: la letra se achica con el largo del nombre y, si aun así sobra, se recorta. -->
+                <text class="sala__nombre" [attr.x]="sala.x + 32" [attr.y]="sala.y + sala.alto - 36" [attr.font-size]="letraDe(sala)"
+                  [attr.clip-path]="'url(#' + recorte(sala.clave) + ')'">{{ sala.titulo }}</text>
+              </g>
+            }
+            @for (r of rotasDibujadas(); track $index) {
+              <g class="rota">
+                <circle vector-effect="non-scaling-stroke" [attr.cx]="r.x" [attr.cy]="r.y" r="44" />
+                <text [attr.x]="r.x" [attr.y]="r.y" text-anchor="middle" dominant-baseline="central" font-size="64">×</text>
+              </g>
+            }
+          </svg>
+          <p class="plano-caso__leyenda" aria-hidden="true">
+            <span class="leyenda__puerta"></span>Puerta
+            @if (rotas().length) { <span class="leyenda__rota"></span>Puerta sin regreso }
+          </p>
+        </div>
+
+        <!-- Inspector: la lista de salas (la del juego, legible y con teclado); cada una abre su editor. -->
+        <ng-template estudioRanura="inspector">
+          <aside class="plano-caso__salas" aria-labelledby="plano-caso-salas">
+            <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+            <h2 id="plano-caso-salas">Salas <span class="cuenta">{{ plano.salas.length }}</span></h2>
+            <app-plano-del-lugar class="plano-caso__lista" [plano]="plano" modo="completo" [visitadas]="todas()"
+              [rotas]="rotas()" [elegible]="true" (salaElegida)="abrir($event)" />
+          </aside>
+        </ng-template>
+        <ng-template estudioRanura="estado">
+          <span class="est-dato">{{ plano.salas.length }} {{ plano.salas.length === 1 ? 'sala' : 'salas' }}</span>
+          @if (rotas().length) { <span class="est-dato">{{ rotas().length }} sin regreso</span> }
+        </ng-template>
+      } @else {
+        <!-- El vacío con arte del simulador (EDITOR-PRO.md, punto 8): un plano dibujado con tres cuartos reales y una salida. -->
+        <section class="plano-caso__vacio" aria-labelledby="plano-vacio-titulo">
+          <div class="vacio-plano" aria-hidden="true">
+            <img class="vacio-plano__cuarto vacio-plano__cuarto--a" src="assets/biblioteca/piezas/propios/comisaria-recepcion.png" alt="" width="240" height="132" />
+            <span class="vacio-plano__puerta vacio-plano__puerta--h"></span>
+            <img class="vacio-plano__cuarto vacio-plano__cuarto--b" src="assets/biblioteca/piezas/propios/comisaria-sala-espera.png" alt="" width="240" height="132" />
+            <span class="vacio-plano__puerta vacio-plano__puerta--v"></span>
+            <img class="vacio-plano__cuarto vacio-plano__cuarto--c" src="assets/biblioteca/piezas/propios/casa-sala.png" alt="" width="240" height="132" />
+          </div>
+          <div class="plano-caso__vacio-texto">
+            <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+            <h2 id="plano-vacio-titulo">Este caso aún no tiene salas por piezas</h2>
+            <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+            <p role="status">El plano dibuja las salas armadas por piezas y sus puertas. Las salas de este caso son de imagen fija: se editan desde el mapa del caso.</p>
+            <a class="boton boton-primario" [routerLink]="rutas.a('/editor')">Ir al mapa del caso</a>
+          </div>
+        </section>
+      }
+    }
+  }
+</section>
+
+<ng-template estudioRanura="herramientas">
+  <a estudioHerramienta="Volver al mapa" [routerLink]="rutas.a('/editor')">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 5 3 10l5 5M3.5 10H17" /></svg>
+  </a>
+</ng-template>

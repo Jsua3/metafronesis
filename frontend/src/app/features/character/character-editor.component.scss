@@ -1,0 +1,284 @@
+// Editor de avatar (plan visual F5-4; VD-13): piel portal; el escenario de la vista previa lleva data-skin="game" en
+// la plantilla. Solo tokens --ds-*; opciones de 44 px con el radio nativo dentro (oculto a la vista, no al teclado):
+// la opción elegida se marca con borde y fondo, el foco con el anillo del sistema, y con colores forzados el borde
+// grueso sigue distinguiendo la elegida.
+@use 'mixins' as m;
+
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  color: var(--ds-text-1);
+}
+
+.ce-loading,
+.ce-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 19rem) minmax(0, 1fr) minmax(0, 18rem);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .ce-loading,
+  .ce-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ce-panel {
+  display: grid;
+  gap: var(--ds-space-4);
+}
+
+.ce-group {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ce-group legend {
+  margin-bottom: var(--ds-space-2);
+  padding: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  font-weight: var(--ds-type-caption-weight);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ce-cast {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: var(--ds-space-2);
+}
+
+.ce-uniforms {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ds-space-2);
+}
+
+.ce-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+}
+
+// Opción: la fila entera es el objetivo (≥ 44 px); el radio nativo vive dentro, oculto a la vista.
+.ce-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-height: var(--ds-target-min);
+  min-width: var(--ds-target-min);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  font-weight: 600;
+  cursor: pointer;
+  @include m.ds-press;
+
+  @include m.ds-hover {
+    background: var(--ds-surface-2);
+  }
+
+  &:has(.ce-radio:checked) {
+    border: 2px solid var(--ds-primary);
+    background: var(--ds-primary-subtle);
+    color: var(--ds-primary);
+  }
+
+  &:has(.ce-radio:focus-visible) {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ce-option:active {
+  scale: 0.97;
+}
+
+.ce-radio {
+  @include m.ds-sr-only;
+}
+
+.ce-option--figure {
+  flex-direction: column;
+  padding: var(--ds-space-2) var(--ds-space-1);
+}
+
+.ce-option--swatch {
+  padding: var(--ds-space-1);
+}
+
+// La muestra de color: el valor entra como variable desde la rampa del kit. Con colores forzados conserva su color
+// (si no, todas serían círculos iguales: el color ES la información).
+.ce-swatch {
+  forced-color-adjust: none;
+  display: block;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: var(--ds-radius-pill);
+  border: 1px solid var(--ds-border-strong);
+  background: var(--ce-swatch, transparent);
+}
+
+// ── Escenario (piel juego) ──────────────────────────────────────────────────────────────────────────────────────
+.ce-stage {
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-4);
+  min-width: 0;
+  padding: var(--ds-space-5);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-page);
+  color: var(--ds-text-1);
+}
+
+.ce-views {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ds-space-3);
+}
+
+.ce-view {
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  font-weight: var(--ds-type-caption-weight);
+}
+
+.ce-group--inline {
+  justify-items: center;
+}
+
+// ── Resumen y pie ───────────────────────────────────────────────────────────────────────────────────────────────
+.ce-subtitle {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.ce-summary {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+}
+
+.ce-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.ce-summary dt {
+  color: var(--ds-text-2);
+}
+
+.ce-summary dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: end;
+}
+
+.ce-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding-top: var(--ds-space-4);
+  border-top: 1px solid var(--ds-border);
+}
+
+.ce-dirty {
+  min-height: 1.5rem;
+  margin: 0;
+}
+
+.ce-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+// Una sola vista conserva los píxeles enteros y deja espacio para las opciones.
+.ce-grid { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+.ce-vista { display: grid; justify-items: center; gap: var(--ds-space-3); min-width: 0; position: sticky; top: var(--l-alto-barra, 6rem); }
+.ce-vista .ce-stage { justify-self: stretch; }
+.ce-stage { box-shadow: var(--l-sombra-trabajo); }
+.ce-preview { display: flex; align-items: center; justify-content: center; gap: var(--ds-space-3); }
+.ce-turn {
+  min-width: var(--ds-target-min); min-height: var(--ds-target-min);
+  border: 1px solid var(--ds-border-strong); border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface-1); color: var(--ds-text-1);
+  font-size: var(--ds-type-h2-size); cursor: pointer;
+  &:focus-visible { @include m.ds-focus-ring; }
+}
+.ce-preview-mobile { display: none; }
+.ce-cast { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ce-option--figure { min-width: 0; overflow-wrap: break-word; text-align: center; }
+.ce-option--swatch { padding: var(--ds-space-2); }
+.ce-help { margin: 0; color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
+.ce-stage .ce-help { text-align: center; }
+.ce-panel { min-width: 0; }
+.ce-footer {
+  position: fixed; inset-inline: var(--ds-space-4); bottom: var(--ds-space-3);
+  z-index: var(--ds-z-elevado); margin-inline: auto; max-width: var(--l-ancho-pagina, 75rem);
+  padding: var(--ds-space-2) var(--ds-space-3); border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg); background: var(--ds-surface-1); box-shadow: var(--l-sombra-trabajo);
+}
+// Lo último (la nota de «Personalizado», «Sin bata / Con bata») nunca queda bajo la barra fija: se reserva su alto
+// (barra de dos filas de botones a lo sumo + su margen inferior + aire).
+:host { padding-bottom: calc(8rem + env(safe-area-inset-bottom)); }
+.ce-sin-cambios { color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); }
+@media (max-width: 67.5rem) {
+  .ce-grid { grid-template-columns: minmax(0, 1fr); }
+  .ce-vista { position: static; }
+}
+// La navegación inferior vive hasta 63.999rem (glass-bar): el pie se sube sobre ella en todo ese intervalo.
+@media (max-width: 63.999rem) {
+  .ce-footer { bottom: calc(var(--asb-alto-modulo-inferior, 4.5rem) + env(safe-area-inset-bottom)); }
+  :host { padding-bottom: calc(var(--asb-alto-modulo-inferior, 4.5rem) + 9rem + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 40rem) {
+  .ce-stage { padding: var(--ds-space-3); gap: var(--ds-space-2); }
+  .ce-preview-desktop { display: none; }
+  .ce-preview-mobile { display: inline-block; }
+  // Tira horizontal con encaje: 13 personajes en columna alargaban la página a más de 1700 px; así se ven
+  // todos con un gesto y la tarjeta siguiente asoma para avisar que hay más.
+  .ce-cast {
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 5.75rem;
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+    padding: var(--ds-space-1); margin: calc(var(--ds-space-1) * -1);
+  }
+  .ce-cast .ce-option--figure { scroll-snap-align: start; }
+  .ce-summary { display: none; }
+  .ce-actions { gap: var(--ds-space-1); }
+  .ce-dirty:empty { display: none; }
+  .ce-footer--quieto { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ce-option { transition: none; }
+  .ce-option:active { scale: 1; }
+}
+@media (forced-colors: active) { .ce-option:has(.ce-radio:checked) { outline: 2px solid CanvasText; } }

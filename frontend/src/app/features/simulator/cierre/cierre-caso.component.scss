@@ -1,0 +1,334 @@
+@use 'mixins' as m;
+
+// Cierre del caso (DISENO §4.5): el momento de análisis del debriefing, en la piel del portal. Lectura a ritmo propio:
+// una sola columna de ancho de lectura, superficies opacas (el vidrio queda para los controles) y la personalidad en los
+// bordes (la firma de la cabecera, el icono del apoyo). Solo tokens --ds-* y --l-*; `minmax(0, 1fr)` en las rejillas y
+// `overflow-wrap` en el texto largo para que nada ensanche la página a 390 px.
+
+:host {
+  display: block;
+  color: var(--ds-text-1);
+}
+
+.cierre {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-6);
+  padding-block-end: var(--ds-space-7, var(--ds-space-6));
+  overflow-wrap: anywhere;
+
+  p {
+    margin: 0;
+  }
+}
+
+.cierre__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-start: var(--ds-space-4);
+}
+
+// ── Apoyo: arriba, hundido y sin rojo (informa con calma) ───────────────────────────────────────────────────
+.cierre__apoyo-cuerpo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+.cierre__icono {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  border: 1px solid var(--l-tinte-filo, var(--ds-border));
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  color: var(--l-acento-tinta, var(--ds-primary));
+}
+
+.cierre__apoyo-texto {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+
+  h2 {
+    margin: 0;
+    font-size: var(--ds-type-h3-size);
+    line-height: var(--ds-type-h3-line);
+    letter-spacing: var(--ds-type-h3-track);
+    font-weight: var(--ds-type-h3-weight);
+  }
+}
+
+.cierre__objetivos {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding-inline-start: var(--ds-space-5);
+}
+
+// ── Recorrido ───────────────────────────────────────────────────────────────────────────────────────────────
+.cierre__recorrido {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  min-inline-size: 0;
+}
+
+.cierre__rotulo {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  font-weight: var(--ds-type-caption-weight);
+}
+
+.cierre__rotulo--aparte {
+  margin-block-start: var(--ds-space-4);
+}
+
+.cierre__tenue {
+  color: var(--ds-text-2);
+}
+
+.cierre__final section {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+
+  h3 {
+    margin: 0;
+    font-size: var(--ds-type-h3-size);
+    line-height: var(--ds-type-h3-line);
+    letter-spacing: var(--ds-type-h3-track);
+    font-weight: var(--ds-type-h3-weight);
+  }
+}
+
+.cierre__lista {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding-inline-start: var(--ds-space-5);
+}
+
+.cierre__subtitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  font-weight: var(--ds-type-h3-weight);
+  color: var(--ds-text-1);
+
+  mat-icon {
+    flex: none;
+    color: var(--l-acento-tinta, var(--ds-primary));
+  }
+}
+
+// Hitos: dos columnas desde que caben (nunca más estrechas de 16rem), una sola en el teléfono.
+.cierre__hitos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--ds-space-4);
+}
+
+.cierre__marca {
+  display: inline-block;
+  margin-inline-start: var(--ds-space-1);
+  padding: 0 var(--ds-space-2);
+  border: 1px solid var(--l-tinte-filo, var(--ds-border));
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  color: var(--l-acento-tinta, var(--ds-primary));
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+// ── Decisiones: una escena por bloque plegable, la primera abierta ─────────────────────────────────────────
+.cierre__decisiones {
+  display: grid;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+
+  .cierre__subtitulo {
+    margin: 0;
+  }
+}
+
+.cierre__escena {
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  min-inline-size: 0;
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+    min-block-size: var(--ds-target-min, 2.75rem);
+    padding: var(--ds-space-2) var(--ds-space-4);
+    cursor: pointer;
+    list-style: none;
+    font-weight: var(--ds-type-h3-weight);
+    border-radius: inherit;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible {
+      @include m.ds-focus-ring;
+    }
+  }
+
+  &[open] > summary {
+    border-block-end: 1px solid var(--l-filo, var(--ds-border));
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+}
+
+.cierre__escena-titulo {
+  min-inline-size: 0;
+}
+
+.cierre__escena-flecha {
+  flex: none;
+  color: var(--ds-text-2);
+  transition: transform var(--ds-dur-fast, 120ms) var(--ds-ease-out, ease-out);
+
+  .cierre__escena[open] > summary & {
+    transform: rotate(180deg);
+  }
+}
+
+.cierre__decisiones-lista {
+  display: grid;
+  gap: var(--ds-space-4);
+  margin: 0;
+  padding: var(--ds-space-4);
+  list-style: none;
+}
+
+.cierre__decision {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+  padding-block-end: var(--ds-space-4);
+  border-block-end: 1px solid var(--l-filo, var(--ds-border));
+
+  &:last-child {
+    padding-block-end: 0;
+    border-block-end: 0;
+  }
+}
+
+.cierre__elegiste {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// La clase de la respuesta va en una pastilla neutra (sin semáforo ni orden de peor a mejor): es palabra, no nota.
+.cierre__clase {
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.cierre__clase--nota {
+  background: var(--ds-warning-bg);
+}
+
+.cierre__base,
+.cierre__faltaron {
+  padding: var(--ds-space-3);
+  border-inline-start: var(--l-pixel, 2px) solid var(--ds-primary);
+  border-radius: var(--ds-radius-sm, 0.25rem);
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+}
+
+// ── Competencias en palabras ───────────────────────────────────────────────────────────────────────────────
+.cierre__competencias {
+  display: grid;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+
+  .cierre__subtitulo {
+    margin: 0;
+  }
+}
+
+.cierre__competencias-lista {
+  display: grid;
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--ds-space-1) var(--ds-space-3);
+    min-inline-size: 0;
+    padding: var(--ds-space-3) var(--ds-space-4);
+    border: 1px solid var(--l-filo, var(--ds-border));
+    border-radius: var(--l-radio-control, var(--ds-radius-md));
+    background: var(--l-superficie, var(--ds-surface-1));
+  }
+}
+
+.cierre__competencia-nombre {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.cierre__nivel {
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+  font-size: var(--ds-type-body-s-size);
+}
+
+.cierre__competencia-base {
+  flex-basis: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cierre__escena-flecha {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .cierre__escena,
+  .cierre__competencias-lista li,
+  .cierre__clase,
+  .cierre__nivel,
+  .cierre__marca {
+    border: 1px solid CanvasText;
+  }
+}
+
+.cierre__persona {
+  display: grid;
+  gap: var(--ds-space-1);
+}
+
+.cierre__hitos {
+  align-items: start;
+}
+
+// El título largo ocupa la banda completa; la viñeta acompaña en la fila siguiente.
+:host ::ng-deep ui-cabecera-ilustrada { grid-template-columns: minmax(0, 1fr); }
+:host ::ng-deep .ui-cabecera-ilustrada__vineta { justify-self: end; }
+:host ::ng-deep .ui-page-header__text { max-inline-size: none; }

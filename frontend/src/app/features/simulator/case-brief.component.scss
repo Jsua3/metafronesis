@@ -1,0 +1,468 @@
+@use 'mixins' as m;
+
+// Ficha del caso (DISENO §4.3): el expediente sereno del portal. Superficies opacas para leer; la personalidad va en los
+// bordes (la firma de tres píxeles, la portada pixel art a escala entera y la columna «Tu entrada»). Solo tokens
+// --ds-* y --l-*; `minmax(0, 1fr)` en todas las rejillas para que nada ensanche la página (nada se desborda a 390 px).
+
+:host {
+  display: block;
+  color: var(--ds-text-1);
+}
+
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-6);
+  padding-block-end: var(--ds-space-7, var(--ds-space-6));
+}
+
+.ficha__cargando {
+  max-inline-size: var(--l-ancho-lectura);
+}
+
+.ficha__acciones-error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+// «Tu entrada» un poco más ancha que la columna lateral por defecto (22rem): «Continuar donde quedaste» cabe en una línea.
+.ficha__columnas {
+  --p-lateral: 24rem;
+}
+
+// ── Columna de lectura ──────────────────────────────────────────────────────────────────────────────────────
+.ficha__lectura {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-6);
+  min-inline-size: 0;
+  max-inline-size: var(--l-ancho-lectura);
+}
+
+.ficha__acceso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--l-filo-fuerte, var(--ds-border-strong));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--ds-info-bg);
+  color: var(--ds-text-1);
+}
+
+.ficha__acceso[data-tone='warning'] {
+  background: var(--ds-warning-bg);
+}
+
+// El aviso: hundido (un bloque que se lee antes que nada), con el icono en una pastilla violeta tenue. Sin rojo: avisa
+// con calma, no alarma. El margen de desplazamiento deja ver su título bajo la barra cuando se salta a `#aviso`.
+.ficha__aviso {
+  scroll-margin-block-start: calc(var(--l-alto-barra, 5.5rem) + var(--ds-space-4));
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ficha__aviso-cuerpo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+.ficha__icono {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  border: 1px solid var(--l-tinte-filo, var(--ds-border));
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  color: var(--l-acento-tinta, var(--ds-primary));
+}
+
+.ficha__aviso-texto {
+  display: grid;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+
+  h2 {
+    margin: 0;
+    font-size: var(--ds-type-h3-size);
+    line-height: var(--ds-type-h3-line);
+    letter-spacing: var(--ds-type-h3-track);
+    font-weight: var(--ds-type-h3-weight);
+    color: var(--ds-text-1);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.ficha__temas-titulo {
+  font-weight: var(--ds-type-caption-weight);
+}
+
+.ficha__temas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: var(--ds-space-1) var(--ds-space-3);
+    border: 1px solid var(--l-filo-fuerte, var(--ds-border-strong));
+    border-radius: var(--ds-radius-pill);
+    font-size: var(--ds-type-body-s-size);
+    line-height: var(--ds-type-body-s-line);
+  }
+}
+
+// El alcance (RN-01) como nota al pie: menor y en el segundo tono, sin competir con el aviso.
+.ficha__alcance {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.ficha__seccion {
+  min-inline-size: 0;
+}
+
+.ficha__parrafo {
+  margin: 0 0 var(--ds-space-3);
+}
+
+.ficha__subtitulo {
+  margin: var(--ds-space-5) 0 var(--ds-space-3);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  font-weight: var(--ds-type-h3-weight);
+  color: var(--ds-text-1);
+}
+
+.ficha__objetivos {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding-inline-start: var(--ds-space-5);
+}
+
+// «Cómo se juega»: cuatro filas con su icono, en dos columnas si caben (nunca más estrechas de 15rem).
+.ficha__como {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-3);
+    border: 1px solid var(--l-filo, var(--ds-border));
+    border-radius: var(--l-radio-control, var(--ds-radius-md));
+    background: var(--l-superficie, var(--ds-surface-1));
+  }
+
+  mat-icon {
+    flex: none;
+    color: var(--l-acento-tinta, var(--ds-primary));
+  }
+}
+
+// El contexto: tarjeta opaca con densidad de lectura; los párrafos del servidor se separan por sus saltos de línea.
+.ficha__contexto-tarjeta {
+  padding: var(--ds-space-5) var(--ds-space-6);
+}
+
+.brief-context {
+  margin: 0;
+  white-space: pre-line;
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+}
+
+.ficha__personajes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--ds-space-4);
+}
+
+.brief-character {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+}
+
+.brief-character__text {
+  min-width: 0;
+}
+
+.brief-character__name {
+  margin: 0;
+  font-size: var(--ds-type-h3-size);
+  line-height: var(--ds-type-h3-line);
+  font-weight: var(--ds-type-h3-weight);
+  overflow-wrap: anywhere;
+}
+
+.brief-character__role {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.brief-pending {
+  margin: 0;
+  color: var(--ds-text-2);
+}
+
+// ── Tu entrada ──────────────────────────────────────────────────────────────────────────────────────────────
+.ficha__lateral {
+  min-inline-size: 0;
+}
+
+.ficha__entrada {
+  display: grid;
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+  box-shadow:
+    inset 0 1px 0 var(--l-brillo, transparent),
+    var(--l-sombra-alta, var(--ds-shadow-e0));
+}
+
+.ficha__entrada--en-linea {
+  box-shadow: inset 0 1px 0 var(--l-brillo, transparent);
+
+  section {
+    display: grid;
+    gap: var(--ds-space-4);
+  }
+}
+
+// El título lleva la firma de tres píxeles de la marca (cian, azul, violeta): la identidad del simulador en el borde.
+.ficha__entrada-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin: 0;
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.08em;
+  font-weight: var(--ds-type-caption-weight);
+  text-transform: uppercase;
+  color: var(--ds-text-2);
+
+  // La misma receta que `.p-etiqueta` (`_portal.scss`): cuadrados de 5 px separados por 2 px.
+  &::before {
+    content: '';
+    flex: none;
+    inline-size: 0.3125rem;
+    block-size: 0.3125rem;
+    margin-inline-end: 0.875rem;
+    background: var(--marca-cian, var(--ds-info));
+    box-shadow:
+      0.4375rem 0 0 var(--marca-azul, var(--ds-primary)),
+      0.875rem 0 0 var(--l-acento, var(--ds-primary));
+  }
+}
+
+// La portada a escala entera (240 × 132) que viaja al umbral; si la columna es más estrecha, se encoge con ella.
+.ficha__portada {
+  justify-self: start;
+  max-inline-size: 100%;
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  overflow: hidden;
+}
+
+.ficha__estado {
+  display: grid;
+  gap: var(--ds-space-1);
+  margin: 0;
+}
+
+.ficha__estado-etiqueta {
+  inline-size: fit-content;
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  border: 1px solid var(--l-tinte-filo, var(--ds-border));
+  background: var(--l-superficie, var(--ds-surface-1));
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  font-weight: var(--ds-type-caption-weight);
+  color: var(--l-acento-tinta, var(--ds-primary));
+}
+
+.ficha__estado[data-tono='hecho'] .ficha__estado-etiqueta {
+  border-color: var(--l-filo-fuerte, var(--ds-border-strong));
+  color: var(--ds-success, var(--ds-text-1));
+}
+
+.ficha__estado-detalle {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.ficha__seguridad {
+  display: grid;
+  gap: var(--ds-space-2);
+  padding-block-start: var(--ds-space-4);
+  border-block-start: 1px solid var(--l-filo, var(--ds-border));
+
+  ul {
+    display: grid;
+    gap: var(--ds-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ds-space-2);
+    font-size: var(--ds-type-body-s-size);
+    line-height: var(--ds-type-body-s-line);
+  }
+
+  mat-icon {
+    flex: none;
+    color: var(--l-acento-tinta, var(--ds-primary));
+  }
+}
+
+.ficha__seguridad-titulo {
+  margin: 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  font-weight: var(--ds-type-h3-weight);
+  color: var(--ds-text-1);
+}
+
+.ficha__acciones {
+  display: grid;
+  gap: var(--ds-space-3);
+}
+
+.ficha__consentimiento {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// En la columna los botones van uno sobre otro, a lo ancho: la principal abajo, la más cerca del pulgar y del ojo.
+.ficha__botones {
+  display: grid;
+  gap: var(--ds-space-2);
+
+  .ficha__boton {
+    inline-size: 100%;
+  }
+}
+
+.ficha__enlace {
+  inline-size: fit-content;
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--l-acento-tinta, var(--ds-primary));
+  font-weight: var(--ds-type-caption-weight);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  border-radius: var(--ds-radius-sm);
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ficha__consentimiento .ficha__enlace {
+  min-block-size: 0;
+  display: inline;
+}
+
+.ficha__volver {
+  justify-self: center;
+}
+
+.ficha__error {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ds-space-2) var(--ds-space-3);
+  align-items: start;
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-danger, var(--ds-border-strong));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--ds-danger-bg, var(--ds-surface-2));
+
+  p {
+    margin: 0;
+    font-size: var(--ds-type-body-s-size);
+    line-height: var(--ds-type-body-s-line);
+  }
+
+  button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  mat-icon {
+    color: var(--ds-danger, var(--ds-text-1));
+  }
+}
+
+// La barra del pie trae solo la acción principal, a lo ancho: un blanco grande en la zona del pulgar.
+.ficha__barra .ficha__boton {
+  inline-size: 100%;
+}
+
+// En una columna la barra del pie trae las acciones; el error queda justo encima de ella, a lo ancho de la lectura.
+@media (max-width: 63.999rem) {
+  .ficha__error {
+    margin-block-start: var(--ds-space-4);
+  }
+
+  .ficha__contexto-tarjeta {
+    padding: var(--ds-space-4);
+  }
+
+  .ficha__aviso-cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .ficha__icono,
+  .ficha__como li,
+  .ficha__portada,
+  .ficha__error {
+    corner-shape: squircle;
+  }
+}
+
+@media (forced-colors: active) {
+  .ficha__icono,
+  .ficha__como li,
+  .ficha__estado-etiqueta,
+  .ficha__error,
+  .ficha__temas li {
+    border-color: CanvasText;
+  }
+
+  .ficha__entrada-titulo::before {
+    background: CanvasText;
+    box-shadow: none;
+  }
+}

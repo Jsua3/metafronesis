@@ -1,0 +1,26 @@
+{
+  "id": "profesional-psicosocial",
+  "displayName": "Profesional psicosocial",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "bob-flequillo",
+    "face": "sereno",
+    "top": "blusa",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": [
+      "gafete"
+    ]
+  },
+  "colors": {
+    "skin": "piel-6",
+    "hair": "negro",
+    "top": "morado",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

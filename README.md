@@ -2,7 +2,7 @@
 
 API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-**Versión actual:** [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) · **Alcance:** backend y, desde esta versión, frontend de la primera ola: acceso, cuenta, administración de usuarios, grupos e invitaciones · Última revisión de este archivo: 22 de noviembre de 2026.
+**Versión actual:** [`v0.6.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.0) · **Alcance:** backend y frontend completos: el estudiante juega los casos por salas, el docente los arma en el editor y los revisa, y la administración gestiona usuarios y rúbricas · Última revisión de este archivo: 23 de noviembre de 2026.
 
 > **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
@@ -14,16 +14,16 @@ API en Django del simulador de casos situacionales de psicología social: el doc
 | `grupos` | Grupos, invitaciones y asignación de casos a grupos |
 | `privacy` | Consentimiento y clasificación de datos personales |
 | `security` | Límites de uso y cabeceras de seguridad |
-| `simulation` | Casos, versiones, escenas y decisiones, intentos, rúbricas, calificación y resultado final |
+| `simulation` | Casos, versiones, escenas y decisiones, intentos, el mundo por salas (moverse, puertas, pistas, herramientas, bitácora), rúbricas, calificación y resultado final |
 | `progression` | Progresión del estudiante |
 | `biblioteca` | Catálogo de materiales por API |
-| `autoria` | Borrador del caso con su ficha, escenas y decisiones; exportar e importar en JSON |
+| `autoria` | Editor del caso: ficha, escenas y decisiones, salas, mundo, diálogos y reglas; ensayo del borrador; exportar e importar en JSON |
 | `publicacion` | Validar, enviar a revisión, publicar, archivar y clonar versiones |
 | `sesiones` | Sesiones y convocatorias con código, ingreso, repetición excepcional y cierre automático |
-| `revision` | Revisión docente: participaciones y retroalimentación general |
-| `reportes` | Reporte de participación en CSV o JSON, por grupo y por sesión |
+| `revision` | Revisión docente: participaciones, retroalimentación general y valoración con rúbrica |
+| `reportes` | Reporte de participación en CSV o JSON, por grupo y por sesión; panel docente y reportes del grupo y del estudiante |
 | `notificaciones` | Avisos por correo y por la API |
-| `ia` | Asistentes de IA, apagados por defecto y sin datos personales hacia el proveedor |
+| `ia` | Asistentes de IA, generación de casos y asistente de autoría, apagados por defecto y sin datos personales hacia el proveedor |
 | `auditoria` | Consulta de auditoría para el ADMIN |
 | `shared`, `psychosim` | Respuesta uniforme, políticas de permisos, eventos del dominio e inventario de rutas; configuración y rutas del proyecto |
 
@@ -50,6 +50,7 @@ Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` 
 | [`v0.3.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.3.0) | Ola 1 de la migración: borrador del caso, escenas y decisiones, validar y publicar, reporte de participación, rúbrica, calificación y resultado |
 | [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) | Ola 2: revisión docente, notificaciones, IA y auditoría, incompletos y tiempo máximo, permiso de autoría, exportar e importar, sesiones y convocatorias, repetición, reporte completo e ingreso con código |
 | [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) | Frontend de la primera ola (acceso, cuenta, usuarios, grupos e invitaciones) y licencia MIT |
+| [`v0.6.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.0) | Ola 3: mundo por salas, caso insignia, editor de casos con ensayo, IA de autoría, rúbricas y reportes, frontend del estudiante y del docente, tutorial y despliegue en Cloud Run |
 
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
@@ -61,6 +62,7 @@ El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 - La validación del caso tiene tres huecos conocidos (publicar sin revisión aprobada con `REVIEW_WORKFLOW_STRICT`, sugerencias de IA sin revisar y camino de la escena inicial a un final); están en el seguimiento SIEP-62.
 - El ingreso tardío se niega pasada la mitad de la duración de la sesión (`SIEP_INGRESO_TARDIO_FRACCION`, 0,5 por defecto): es un supuesto declarado, por confirmar con la docente.
 - La nota es el nivel formativo de 1,00 a 4,00, no una nota de 0 a 5; es una equivalencia declarada.
+- El CI todavía no corre las pruebas del frontend ni `apps/ia/tests`; tampoco hay pruebas e2e.
 
 ## Cómo ejecutarlo
 
@@ -92,6 +94,8 @@ Comprobado el 10 de noviembre de 2026 sobre `main` con PostgreSQL 17: `manage.py
 
 En producción se usa `psychosim.settings.production`, que exige secretos y hosts propios; los nombres de las variables están en `.env.example`.
 
+Para producción hay una imagen única (`Dockerfile`: build de Angular + Django con gunicorn). Cómo desplegarla en Google Cloud Run con Cloud SQL (PostgreSQL), cuánto cuesta y cómo apagarla: [`docs/despliegue-gcp.md`](docs/despliegue-gcp.md).
+
 ## Pruebas
 
 `pytest` usa `psychosim.settings.test`, que exige una base de datos desechable y su propio nonce:
@@ -118,6 +122,7 @@ Las rutas están en `psychosim/urls.py` y en el `urls.py` de cada app; el invent
 | Rutas, arquitectura y ejecución | `docs/api.md`, `docs/arquitectura.md`, `docs/ejecucion.md`: borradores del corte de los sprints 1 a 4; no incluyen las apps de las olas 1 y 2 y `ejecucion.md` trae pasos sin verificar, así que usa los de este archivo |
 | Documentación por app | `docs/apps/`: solo `grupos`, `privacy`, `psychosim`, `security`, `shared` y `users`; faltan las demás |
 | Fichas de sprint y diagramas | `docs/sprints/` y `docs/diagramas/` |
+| Despliegue | `docs/despliegue-gcp.md`: Google Cloud Run + Cloud SQL (PostgreSQL), con el workflow `.github/workflows/despliegue-gcp.yml` |
 
 ## Flujo de trabajo
 

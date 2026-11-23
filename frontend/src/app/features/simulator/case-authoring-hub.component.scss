@@ -1,0 +1,36 @@
+:host { display: block; color: var(--ds-text-1); min-width: 0; }
+.hub-cases { display: block; min-width: 0; margin-block-start: var(--ds-space-6); }
+ui-filtros { display: block; min-width: 0; margin-block-end: var(--ds-space-5); }
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); gap: var(--ds-space-4); margin: 0; padding: 0; list-style: none; }
+.hub-grupo { min-width: 0; }
+.hub-card { display: flex; flex-direction: column; gap: var(--ds-space-3); min-width: 0; height: 100%; }
+.hub-card__title { margin: 0; font-size: var(--ds-type-h3-size); line-height: var(--ds-type-h3-line); font-weight: var(--ds-type-h3-weight); overflow-wrap: anywhere; }
+.hub-card__code, .hub-card__meta { margin: 0; color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); overflow-wrap: anywhere; }
+// El código es un identificador (como el nombre de un proyecto en Unity Hub): monoespaciado y en una línea recortada,
+// con el texto de apoyo de contraste AA (no el terciario), para que se lea sobre el fondo oscuro.
+.hub-card__code { align-self: flex-start; max-inline-size: 100%; padding: 2px var(--ds-space-2); border-radius: var(--ds-radius-sm); background: var(--l-relleno, var(--ds-surface-2)); font-family: var(--ds-font-mono); font-size: var(--ds-type-caption-size); line-height: var(--ds-type-caption-line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+// Las acciones se apoyan en el pie de la tarjeta, tras un filo: en una fila de tarjetas de alto distinto quedan alineadas.
+.hub-card__actions { display: flex; flex-wrap: wrap; gap: var(--ds-space-2); margin-block-start: auto; padding-block-start: var(--ds-space-3); border-block-start: 1px solid var(--l-filo, var(--ds-border)); }
+.hub-versiones { margin-block-start: var(--ds-space-2); }
+.hub-versiones summary { min-height: var(--ds-target-min); display: flex; align-items: center; cursor: pointer; color: var(--ds-text-1); }
+.hub-versiones summary:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.hub-versiones__lista { display: grid; gap: var(--ds-space-3); }
+@media (forced-colors: active) { .hub-versiones summary:focus-visible { outline-color: CanvasText; } }
+
+// «Aprende a crear un caso»: la tarjeta del tutorial del editor, sobre la lista. El filo discontinuo es el de la guía.
+.hub-tutorial {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem;
+  margin-block-end: 1.5rem; padding: 1rem 1.25rem; border: 2px dashed var(--ds-info); border-radius: var(--ds-radius-lg, 16px);
+  background: var(--ds-surface-1);
+}
+.hub-tutorial__mentor { border-radius: 8px; image-rendering: pixelated; background: var(--ds-surface-2, transparent); }
+.hub-tutorial__texto { display: flex; flex-direction: column; gap: 0.25rem; min-inline-size: 0; }
+.hub-tutorial__texto h2 { margin: 0; font-size: 1.125rem; }
+.hub-tutorial__texto p { margin: 0; color: var(--ds-text-2); }
+.hub-tutorial__texto .hub-tutorial__avance { font-weight: 700; color: var(--ds-text-1); }
+.hub-tutorial progress { inline-size: min(16rem, 100%); accent-color: var(--ds-info); }
+.hub-tutorial__texto .hub-tutorial__error { color: var(--ds-danger); font-weight: 700; }
+@media (max-width: 40rem) {
+  .hub-tutorial { grid-template-columns: auto minmax(0, 1fr); }
+  .hub-tutorial__accion { grid-column: 1 / -1; }
+}

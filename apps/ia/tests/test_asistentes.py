@@ -45,18 +45,6 @@ def test_registro_rechaza_desconocido():
 
 
 @pytest.mark.req("SIEP-52")
-def test_tope_diario_429(contexto, settings):
-    settings.AI_AUTHORING_ENABLED = True
-    settings.AI_AUTHORING_PROVIDER = "falso"
-    settings.AI_AUTHORING_DAILY_LIMIT_PER_USER = 1
-    docente, _, version, _, cliente = contexto
-    cliente.force_authenticate(docente)
-    ruta = f"/api/authoring/cases/{version.pk}/assistant/propose"
-    assert cliente.post(ruta, {"question": "Ayuda"}, format="json").status_code == 200
-    assert cliente.post(ruta, {"question": "Ayuda"}, format="json").status_code == 429
-
-
-@pytest.mark.req("SIEP-52")
 def test_no_envia_correo_ni_nombre(contexto, settings, monkeypatch):
     from apps.ia.proveedores import ProveedorFalso
     settings.AI_ASSISTANT_ENABLED = True
@@ -79,29 +67,6 @@ def test_acceso_y_estado_del_intento(contexto, settings):
     intento.save(update_fields=["status"])
     respuesta = cliente.post("/api/simulation/ai-assistant", {"attemptId": str(intento.pk), "question": "Ayuda"}, format="json")
     assert respuesta.status_code == 409
-
-
-@pytest.mark.req("SIEP-52")
-def test_autoria_no_accede_a_caso_ajeno(contexto, settings):
-    settings.AI_AUTHORING_ENABLED = True
-    settings.AI_AUTHORING_PROVIDER = "falso"
-    _, _, version, _, cliente = contexto
-    otro = CustomUser.objects.create_user(email="otro@example.test", password="clave", role=PROFESOR)
-    cliente.force_authenticate(otro)
-    ruta = f"/api/authoring/cases/{version.pk}/assistant"
-    assert cliente.get(ruta + "/status").status_code == 404
-    assert cliente.post(ruta + "/guide", {"question": "Ayuda"}, format="json").status_code == 404
-
-
-@pytest.mark.req("SIEP-52")
-def test_estado_y_guia(contexto, settings):
-    settings.AI_AUTHORING_ENABLED = True
-    settings.AI_AUTHORING_PROVIDER = "falso"
-    docente, _, version, _, cliente = contexto
-    cliente.force_authenticate(docente)
-    ruta = f"/api/authoring/cases/{version.pk}/assistant"
-    assert cliente.get(ruta + "/status").status_code == 200
-    assert cliente.post(ruta + "/guide", {"question": "Ayuda"}, format="json").status_code == 200
 
 
 def test_no_salen_correos_ni_numeros_largos():

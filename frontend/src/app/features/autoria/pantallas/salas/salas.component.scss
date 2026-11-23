@@ -1,0 +1,167 @@
+// Paso 2 de crear un caso: nombre, ideas y salas a la izquierda; inspector (vista previa grande y recorrido) a la derecha.
+.crear { gap: 1.25rem; }
+.titulo { display: flex; flex-direction: column; gap: 0.25rem; }
+.titulo h1, .titulo p { margin: 0; }
+.sobre, .seccion {
+  margin: 0; font-size: var(--autoria-texto-14); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+.seccion { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+.cuantas { font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+// ── ¿Cómo quieres empezar? (solo con la IA encendida): dos opciones como tarjetas de radio.
+.forma { margin: 0; padding: 0; border: 0; min-inline-size: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.forma legend { padding: 0; font-weight: 700; font-size: var(--autoria-texto-18); line-height: 1.75rem; }
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 0.75rem; }
+.opcion {
+  display: flex; gap: 0.625rem; align-items: flex-start; padding: 0.75rem; cursor: pointer;
+  border: 1px solid var(--linea); border-radius: var(--radio-tarjeta); background: var(--l-superficie, var(--superficie));
+}
+.opcion.elegida { border-color: var(--primario); box-shadow: inset 0 0 0 1px var(--primario); }
+.opcion input { inline-size: 1.5rem; block-size: 1.5rem; margin: 0.125rem 0 0; flex: none; accent-color: var(--primario); }
+.dato-opcion { display: flex; flex-direction: column; gap: 0.125rem; min-inline-size: 0; }
+.dato-opcion .nombre { font-weight: 700; }
+.dato-opcion .texto-secundario { font-size: var(--autoria-texto-14); line-height: 1.375rem; }
+
+// ── El estudio: columna de trabajo y, en pantallas anchas, el inspector fijo a la derecha.
+.estudio { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.zona { display: flex; flex-direction: column; gap: 1.5rem; min-inline-size: 0; }
+.bloque { display: flex; flex-direction: column; gap: 0.75rem; min-inline-size: 0; }
+
+// El nombre del caso es el primer campo: ancho de lectura y no de página, con la ayuda debajo.
+.nombre-caso { display: flex; flex-direction: column; gap: 0.25rem; max-inline-size: 36rem; }
+.nombre-caso label { font-weight: 700; font-size: var(--autoria-texto-16); }
+.nombre-caso input {
+  min-block-size: 2.75rem; padding: 0 0.75rem; font: inherit; color: var(--tinta); background: var(--superficie);
+  border: 1px solid var(--borde-control); border-radius: var(--radio-control);
+}
+.nombre-caso input:focus-visible { outline: 3px solid var(--foco); outline-offset: 1px; }
+.nombre-caso p { margin: 0; font-size: var(--autoria-texto-14); line-height: 1.375rem; }
+
+// ── Ideas: fichas compactas en una fila, con el recorrido en miniaturas en vez de una lista de nombres.
+.ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.75rem; }
+.idea {
+  display: flex; flex-direction: column; gap: 0.5rem; min-inline-size: 0; padding: 0.75rem;
+  border: 1px solid var(--linea); border-radius: var(--radio-tarjeta); background: var(--l-superficie, var(--superficie));
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-out), box-shadow var(--ds-dur-base) var(--ds-ease-out);
+}
+.idea h3 { margin: 0; font-size: var(--autoria-texto-16); line-height: 1.375rem; }
+.idea p { margin: 0; font-size: var(--autoria-texto-14); line-height: 1.375rem; }
+.idea .texto-secundario { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.idea.elegida { border-color: var(--adecuada-borde); box-shadow: inset 0 0 0 1px var(--adecuada-borde); }
+.idea .boton, .idea .pildora { align-self: flex-start; margin-block-start: auto; }
+.tira { display: flex; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
+.tira li { flex: 1 1 0; max-inline-size: 4rem; min-inline-size: 0; }
+.tira img, .tira .hueco {
+  display: block; inline-size: 100%; block-size: auto; aspect-ratio: 16 / 9; object-fit: cover;
+  border-radius: var(--l-pixel, 2px); border: 1px solid var(--linea);
+}
+
+// ── Rejilla de salas: miniatura, casilla con nombre y «Ver sala» (la vía del toque y del teclado).
+.salas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: 0.75rem; }
+.sala {
+  display: flex; flex-direction: column; gap: 0.25rem; padding: 0.375rem; min-inline-size: 0;
+  border: 1px solid var(--linea); border-radius: var(--radio-tarjeta); background: var(--l-superficie, var(--superficie));
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-out), box-shadow var(--ds-dur-base) var(--ds-ease-out),
+    transform var(--ds-dur-move) var(--ds-spring-soft);
+}
+.sala.marcada { border-color: var(--primario); box-shadow: inset 0 0 0 1px var(--primario); }
+// La que se ve en grande lleva un filo de acento abajo, de 2 px: dice «esta es la del visor» sin competir con la marcada.
+.sala.vista-activa { box-shadow: inset 0 calc(-1 * var(--l-pixel, 2px)) 0 var(--l-acento, var(--primario)); }
+.sala.marcada.vista-activa { box-shadow: inset 0 0 0 1px var(--primario), inset 0 calc(-1 * var(--l-pixel, 2px)) 0 var(--l-acento, var(--primario)); }
+.sala:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
+.marca-sala { display: flex; flex-direction: column; gap: 0.5rem; cursor: pointer; min-inline-size: 0; }
+.miniatura { position: relative; display: block; overflow: hidden; aspect-ratio: 16 / 9; border-radius: var(--radio-control); background: var(--fondo-hundido); }
+.miniatura img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.hueco {
+  display: block; inline-size: 100%; block-size: 100%;
+  background: repeating-conic-gradient(var(--fondo-hundido) 0 25%, color-mix(in oklab, var(--fondo-hundido) 80%, var(--linea)) 0 50%) 0 0 / 1rem 1rem;
+}
+// El número de orden: cuadrito con esquinas de 2 px (el «cuadrito de estado» pixel), entra con un leve resorte.
+.orden {
+  position: absolute; inset-block-start: 0.375rem; inset-inline-start: 0.375rem; inline-size: 1.75rem; block-size: 1.75rem;
+  border-radius: var(--l-pixel, 2px); display: grid; place-items: center; font-weight: 700; font-size: var(--autoria-texto-14);
+  background: var(--primario); color: var(--sobre-primario); animation: marcar var(--ds-dur-move) var(--ds-spring-live);
+}
+@keyframes marcar { from { transform: scale(0.6); opacity: 0; } }
+.dato { display: flex; gap: 0.5rem; align-items: flex-start; min-inline-size: 0; padding-inline: 0.125rem; }
+.dato input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0.125rem 0 0; flex: none; accent-color: var(--primario); }
+.dato > span { display: flex; flex-direction: column; min-inline-size: 0; }
+.nombre { font-weight: 700; font-size: var(--autoria-texto-14); line-height: 1.25rem; overflow-wrap: anywhere; }
+.encuadre { font-size: var(--autoria-texto-14); line-height: 1.25rem; }
+.ver { align-self: flex-start; min-block-size: 2.75rem; padding-inline: 0.25rem; font-size: var(--autoria-texto-14); }
+
+// ── Inspector.
+.inspector {
+  display: flex; flex-direction: column; gap: 1.25rem; min-inline-size: 0; padding: 1rem;
+  border-radius: var(--l-radio-tarjeta, var(--radio-tarjeta)); border: 1px solid var(--linea);
+  background: var(--l-superficie-hundida, var(--fondo-hundido));
+}
+
+// ── El grupo de la barra: el estado a la izquierda del botón, recortado con puntos suspensivos si no cabe.
+.pie { display: flex; align-items: center; gap: 0.75rem; min-inline-size: 0; }
+.pie__texto { min-inline-size: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--autoria-texto-14); }
+.pie__error { color: var(--peligro); font-weight: 700; }
+.pie__vacio { color: var(--texto-secundario); }
+.pie .boton { flex: none; }
+.pie .boton-primario { min-block-size: 3rem; }
+
+.error { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.error p { margin: 0; flex: 1 1 20rem; }
+.esqueleto { display: flex; flex-direction: column; gap: 1rem; }
+.raya { display: block; border-radius: var(--l-pixel, 2px); background: var(--fondo-hundido); }
+.raya--titulo { block-size: 2.5rem; inline-size: min(28rem, 80%); }
+.raya--campo { block-size: 2.75rem; inline-size: min(36rem, 100%); }
+.esqueleto .hueco { aspect-ratio: 16 / 9; border-radius: var(--radio-control); }
+
+@media (hover: hover) and (pointer: fine) {
+  .sala:hover { border-color: var(--borde-control); }
+  .idea:hover { border-color: var(--borde-control); }
+}
+
+// El leve ascenso al pasar, solo con ratón y sin movimiento reducido.
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) { .sala:hover { transform: translateY(-1px); } }
+
+@media (min-width: 64rem) {
+  .estudio { grid-template-columns: minmax(0, 1fr) 24rem; }
+  .inspector {
+    position: sticky; inset-block-start: 1rem;
+    max-block-size: calc(100dvh - var(--alto-barra, 4.5rem) - 7.5rem); overflow-y: auto; overscroll-behavior: contain;
+  }
+}
+@media (min-width: 90rem) { .estudio { grid-template-columns: minmax(0, 1fr) 28rem; } }
+
+@media (max-width: 63.999rem) {
+  // Sin espacio para un visor al lado: vacío no se muestra y, con una sala, es una hoja sobre la barra (Cerrar o Esc).
+  .previa:not(.con-sala) { display: none; }
+  // La barra de pasos queda SIEMPRE encima de la hoja de la sala: con «3 salas» la barra crece y la hoja tapaba
+  // «Crear el caso» (en un teléfono no se podía pulsar; lo encontró la prueba táctil del 2026-11-22).
+  app-barra-de-pasos { z-index: var(--autoria-capa-10); }
+  .previa.con-sala {
+    position: fixed; inset-inline: 0.75rem; inset-block-end: 6.5rem; z-index: var(--autoria-capa-5);
+    max-block-size: min(60dvh, 30rem); overflow-y: auto; padding: 0.75rem;
+    border: 1px solid var(--l-filo-fuerte, var(--linea)); border-radius: var(--l-radio-tarjeta, var(--radio-tarjeta));
+    background: var(--superficie); box-shadow: var(--sombra-menu);
+  }
+}
+@media (max-width: 40rem) {
+  .crear { gap: 1rem; }
+  // Las ideas, en un carrusel: la siguiente asoma por el borde (dice que hay más) y las salas quedan a un pulgar.
+  .ideas {
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 85%;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-block-end: 0.25rem;
+  }
+  .idea { scroll-snap-align: start; }
+  // Dos salas por fila: una por fila hacía la página de 3.400 px.
+  .salas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+  .ver { padding-inline: 0.125rem; }
+  .inspector { padding: 0.75rem; }
+  .pie { gap: 0.5rem; }
+  .pie__orden, .pie__resto { display: none; }
+  // Sin salas el aviso no cabe junto al botón; el error al pulsar «Crear» ya dice qué falta.
+  .pie__vacio { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sala, .idea { transition: none; }
+  .orden { animation: none; }
+}

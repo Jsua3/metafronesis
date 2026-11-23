@@ -19,9 +19,9 @@ const moduleFile = (dotted: string) => join(BACKEND, ...dotted.split('.')) + '.p
 function routesOf(file: string, prefix = ''): string[] {
   const source = readFileSync(file, 'utf-8');
   const routes: string[] = [];
-  for (const match of source.matchAll(/(?:re_)?path\(\s*r?"([^"]*)"\s*,\s*([^\n]+)/g)) {
+  for (const match of source.matchAll(/(?:re_)?path\(\s*r?["']([^"']*)["']\s*,\s*([^\n]+)/g)) {
     const [, route, rest] = match;
-    const included = rest.match(/include\("([^"]+)"\)/);
+    const included = rest.match(/include\(["']([^"']+)["']\)/);
     if (included) routes.push(...routesOf(moduleFile(included[1]), prefix + route));
     else routes.push(prefix + route);
   }
@@ -57,6 +57,14 @@ const CLIENT_FILES = [
   join(__dirname, '..', 'auth', 'auth.service.ts'),
 ];
 
+/**
+ * Rutas que el cliente ya pide y que llegan con otro PR del servidor: llega con el PR del estado del intento
+ * (`GET /api/simulation/attempts/{id}/state`, SIEP-239). Mientras no estén en `develop` se exceptúan; la última prueba
+ * falla cuando la ruta ya existe, para quitarla de esta lista y que el contrato la vigile.
+ */
+// El estado del intento (#57), los reportes (#60), el editor (#55) y el ensayo (#58) ya están en `develop`; no queda ninguna ruta pendiente.
+const RUTAS_PENDIENTES: readonly string[] = [];
+
 describe('Rutas del cliente: cada URL existe en el servidor', () => {
   const routes = routesOf(join(BACKEND, 'psychosim', 'urls.py')).filter(route => route.startsWith('api/'));
   const used = CLIENT_FILES.flatMap(file => clientUrls(readFileSync(file, 'utf-8')).map(url => ({ file, url })));
@@ -70,10 +78,15 @@ describe('Rutas del cliente: cada URL existe en el servidor', () => {
     expect(used.filter(({ url }) => url.includes('desconocida'))).toEqual([]);
   });
 
-  it.each(used.map(({ file, url }) => [file.split(/[\\/]/).pop(), url]))(
+  it.each(used.filter(({ url }) => !RUTAS_PENDIENTES.includes(url)).map(({ file, url }) => [file.split(/[\\/]/).pop(), url]))(
     '%s pide «%s», que casa con una ruta declarada (sin barra final de más ni de menos)',
     (_file, url) => {
       expect(routes.some(route => routePattern(route).test(url!)), `${url} no está en las rutas de Django`).toBe(true);
     },
   );
+
+  it('cada ruta pendiente la pide el cliente y todavía no existe en el servidor (si ya existe, quitarla de RUTAS_PENDIENTES)', () => {
+    expect(RUTAS_PENDIENTES.filter(url => !used.some(entry => entry.url === url)), 'ya no las pide el cliente').toEqual([]);
+    expect(RUTAS_PENDIENTES.filter(url => routes.some(route => routePattern(route).test(url))), 'ya existen en el servidor').toEqual([]);
+  });
 });

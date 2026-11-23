@@ -295,6 +295,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "status": TECHNICAL,
             "narrative_context": PUBLIC,
             "learning_objectives": PUBLIC,
+            "content_warnings": PUBLIC,
             "estimated_minutes": PUBLIC,
             "cloned_from_id": TECHNICAL,
             "published_at": TECHNICAL,
@@ -353,6 +354,8 @@ DATA_INVENTORY: dict[str, dict] = {
             "theory_basis": PUBLIC,
             "feedback_text": PUBLIC,
             "effects": PUBLIC,
+            "requires_json": PUBLIC,
+            "reaction_json": PUBLIC,
             "response_class": PUBLIC,
             "ai_suggested": PUBLIC,
         },
@@ -374,6 +377,47 @@ DATA_INVENTORY: dict[str, dict] = {
             "count": (PERSONAL, "cuántas veces lo usó ese día el docente"),
         },
         "exits": {"user_id": [], "day": [], "count": ["api"]},
+    },
+    "authoring_generations": {
+        "purpose": (
+            "La generación de un caso con IA por etapas (C1): la descripción que escribió la docente, el esqueleto y las escenas "
+            "que escribió el modelo, el informe de faltas y, solo si falla, el documento para diagnóstico. Una sola docente la ve."
+        ),
+        "retention": (
+            "Sin plazo definido (SD-9, pendiente de la institución). Se borra con la cuenta; la descripción puede traer lo que la "
+            "docente decidió contar, aunque el servidor rechaza correos, teléfonos y documentos de identidad."
+        ),
+        "default": None,
+        "columns": {
+            "id": TECHNICAL,
+            "owner_id": (PERSONAL, "docente que generó el caso"),
+            "lugar_id": TECHNICAL,
+            "description": (SENSITIVE, "texto libre de la docente sobre la situación que quiere simular"),
+            "status": TECHNICAL,
+            "skeleton_json": (SENSITIVE, "esqueleto que el modelo escribió a partir de la descripción de la docente"),
+            "scenes_json": (SENSITIVE, "escenas que el modelo escribió a partir de la descripción de la docente, y la respuesta cruda rechazada con sus motivos"),
+            "skeleton_started_at": TECHNICAL,
+            "repair_rounds": TECHNICAL,
+            "repair_json": (SENSITIVE, "faltas por escena de la ronda de reparación, con su ruta dentro del documento que escribió el modelo"),
+            "report_json": (SENSITIVE, "faltas del caso generado, con su ruta dentro del documento que escribió el modelo"),
+            "document_json": (SENSITIVE, "documento completo del caso que no pasó las comprobaciones, guardado para diagnóstico"),
+            "last_error_json": TECHNICAL,
+            "calls": TECHNICAL,
+            "tokens_in": TECHNICAL,
+            "tokens_out": TECHNICAL,
+            "case_version_id": TECHNICAL,
+            "created_at": TECHNICAL,
+            "updated_at": TECHNICAL,
+        },
+        "exits": {
+            "owner_id": ["api"],
+            "description": ["api"],
+            "skeleton_json": ["api"],
+            "scenes_json": [],
+            "report_json": ["api"],
+            "repair_json": ["api"],
+            "document_json": [],
+        },
     },
     "rubrics": {
         "purpose": "Rúbricas de evaluación: nombre, versión y docente que las creó.",
@@ -543,6 +587,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "active_seconds": (SENSITIVE, "tiempo activo del estudiante en el intento"),
             "last_activity_at": (SENSITIVE, "última actividad del estudiante (sirve al cronómetro)"),
             "state_json": (SENSITIVE, "estado del intento derivado de las decisiones del estudiante"),
+            "is_rehearsal": (TECHNICAL, "marca de ensayo del borrador de una docente; no identifica a la persona"),
         },
         "exits": {
             "id": ["api"],
@@ -557,6 +602,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "replace_reason": [],
             "last_activity_at": [],
             "state_json": ["api"],
+            "is_rehearsal": [],
         },
         "forbidden_exits": {"attempt_token_hash": ["api", "csv", "reporte", "correo", "registro"]},
     },
@@ -618,21 +664,14 @@ DATA_INVENTORY: dict[str, dict] = {
         "columns": {
             "id": TECHNICAL,
             "attempt_id": (SENSITIVE, "intento al que pertenece el informe"),
-            "report_json": (
-                SENSITIVE,
-                "informe congelado del intento (v3): decisiones y su clase, hitos cumplidos y faltantes, estado de la persona usuaria, "
-                "motivo del final, evidencia por nivel de competencia y tiempos; su línea de tiempo copia el motivo "
-                "escrito de una salida segura (texto libre de la persona)",
-            ),
+            "report_json": (SENSITIVE, "Informe congelado del intento sin texto libre del estudiante"),
             "report_schema_version": TECHNICAL,
             "definition_hash": TECHNICAL,
-            "attempt_ordinal": (SENSITIVE, "número de intento del estudiante en ese caso"),
             "created_at": TECHNICAL,
         },
         "exits": {
             "attempt_id": ["api", "reporte"],
             "report_json": ["api", "reporte"],
-            "attempt_ordinal": ["reporte"],
         },
     },
     "attempt_feedback": {
@@ -668,14 +707,14 @@ DATA_INVENTORY: dict[str, dict] = {
             "node_id": TECHNICAL,
             "encrypted_text": (
                 SENSITIVE,
-                "texto libre de la bitácora del estudiante, cifrado; el docente lo ve descifrado en la traza",
+                "texto libre de la bitácora del estudiante, cifrado en reposo",
             ),
             "encryption_key_ref": TECHNICAL,
             "locked": TECHNICAL,
             "created_at": TECHNICAL,
             "updated_at": TECHNICAL,
         },
-        "exits": {"attempt_id": ["api"], "encrypted_text": ["api", "reporte"]},
+        "exits": {"attempt_id": [], "encrypted_text": []},
         "forbidden_exits": {"encrypted_text": ["registro", "csv", "correo"]},
     },
     "attempt_world_states": {
@@ -684,14 +723,15 @@ DATA_INVENTORY: dict[str, dict] = {
         "default": None,
         "columns": {
             "attempt_id": (SENSITIVE, "intento al que pertenece el estado del mundo"),
+            "synced_node_id": TECHNICAL,
             "scene_map_id": (SENSITIVE, "escena en la que está el estudiante"),
             "player_x": (SENSITIVE, "posición del estudiante en la escena (x)"),
             "player_y": (SENSITIVE, "posición del estudiante en la escena (y)"),
-            "inventory_json": (SENSITIVE, "objetos que el estudiante recogió"),
-            "inspected_object_keys_json": (SENSITIVE, "objetos que el estudiante revisó"),
-            "viewed_dialogue_keys_json": (SENSITIVE, "diálogos que el estudiante vio"),
-            "used_tool_keys_json": (SENSITIVE, "herramientas que el estudiante usó"),
-            "flags_json": (
+            "inventory": (SENSITIVE, "objetos que el estudiante recogió"),
+            "inspected_object_keys": (SENSITIVE, "objetos que el estudiante revisó"),
+            "viewed_dialogue_keys": (SENSITIVE, "diálogos que el estudiante vio"),
+            "used_tool_keys": (SENSITIVE, "herramientas que el estudiante usó"),
+            "flags": (
                 SENSITIVE,
                 "banderas del caso que el estudiante ha activado, los hitos que ha cumplido y el estado de la persona usuaria "
                 "en la ficción (vínculo y activación) según sus decisiones",
@@ -703,11 +743,11 @@ DATA_INVENTORY: dict[str, dict] = {
             "scene_map_id": ["api"],
             "player_x": ["api"],
             "player_y": ["api"],
-            "inventory_json": ["api"],
-            "inspected_object_keys_json": ["api"],
-            "viewed_dialogue_keys_json": ["api"],
-            "used_tool_keys_json": ["api"],
-            "flags_json": ["api", "reporte"],
+            "inventory": ["api"],
+            "inspected_object_keys": ["api"],
+            "viewed_dialogue_keys": ["api"],
+            "used_tool_keys": ["api"],
+            "flags": ["api", "reporte"],
         },
     },
     "student_case_completion": {

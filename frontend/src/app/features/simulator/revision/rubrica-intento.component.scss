@@ -1,0 +1,635 @@
+@use 'mixins' as m;
+
+// Panel de valoración (bloque R2 sobre la extracción de B5b). Vive en la tercera columna de Revisión (26rem) o solo en
+// el teléfono: todo va en una columna. Cada criterio es una fila de la matriz criterio × nivel, girada; los niveles son
+// un control segmentado de acabado iOS (pista hundida, pastilla elegida con filo de acento, presión a 0,97) con el
+// escalón de píxeles del simulador como firma. Solo tokens --ds-* y --l-*.
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+  color: var(--ds-text-1);
+}
+
+// ── Cabecera ─────────────────────────────────────────────────────────────────────────────────────────────────
+.ri__cabecera {
+  position: relative;
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+}
+
+.ri__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+}
+
+.ri__epigrafe {
+  margin: 0;
+  color: var(--l-acento-tinta, var(--ds-text-2));
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ri__titulo {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-body-line);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.ri__ayuda,
+.ri__vacio {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+}
+
+// El total de la valoración (RN-09): una palabra, nunca un número.
+.ri-valoracion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+}
+
+// Rótulo quieto: el título de la rúbrica manda y el estado lo dice la pastilla (crítica de NVIDIA, vuelta 2).
+.ri-valoracion__rotulo {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+}
+
+// Un `summary` con el aspecto de un control: 44 px, foco visible y un chevrón que gira (sin animación infinita).
+%ri-resumen {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-block-size: var(--ds-target-min);
+  list-style: none;
+  font-size: var(--ds-type-body-s-size);
+  font-weight: var(--ds-type-h3-weight);
+  cursor: pointer;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::after {
+    content: '';
+    inline-size: 0.4rem;
+    block-size: 0.4rem;
+    margin-inline-start: auto;
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    rotate: 45deg;
+    transition: rotate var(--ds-dur-fast) var(--ds-spring-soft);
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ri-niveles {
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+
+  summary {
+    @extend %ri-resumen;
+    padding-inline: var(--ds-space-3);
+    border-radius: inherit;
+  }
+
+  &[open] summary::after {
+    rotate: -135deg;
+  }
+}
+
+.ri-niveles__cuerpo {
+  display: grid;
+  gap: var(--ds-space-3);
+  padding: 0 var(--ds-space-3) var(--ds-space-3);
+}
+
+.ri-niveles__lista {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+
+  dt {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    font-weight: var(--ds-type-h3-weight);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--ds-text-2);
+  }
+}
+
+// ── El globo «Teclas» ─────────────────────────────────────────────────────────────────────────────────────────
+.ri-teclas {
+  min-inline-size: 0;
+}
+
+.ri-teclas__boton {
+  @extend %ri-resumen;
+  padding-inline: var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--ds-radius-pill);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+
+  @include m.ds-hover {
+    color: var(--ds-text-1);
+    border-color: var(--l-filo-fuerte, var(--ds-border-strong));
+  }
+}
+
+.ri-teclas[open] .ri-teclas__boton {
+  color: var(--l-acento-tinta, var(--ds-text-1));
+  border-color: var(--l-tinte-filo, var(--ds-border-strong));
+  background: var(--l-tinte, var(--ds-surface-2));
+}
+
+.ri-teclas[open] .ri-teclas__boton::after {
+  rotate: -135deg;
+}
+
+// Cerrado no ocupa caja: Chrome mantiene la del contenido de un `details` cerrado y se saldría de la columna.
+.ri-teclas:not([open]) .ri-teclas__globo {
+  display: none;
+}
+
+// El globo flota bajo el botón, sobre el resto de la cabecera, a lo ancho del panel: la cabecera es su referencia,
+// así que nunca sale de la columna (que se desplaza en vertical y recortaría un globo más ancho).
+.ri-teclas__globo {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(var(--ds-target-min) + var(--ds-space-1));
+  z-index: var(--ds-z-elevado);
+  display: grid;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--l-tinte-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: var(--l-sombra-alta, var(--ds-shadow-e2)), inset 0 1px 0 var(--l-brillo, transparent);
+}
+
+.ri-teclas__nota {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+.ri-teclas__lista {
+  display: grid;
+  gap: var(--ds-space-1);
+  margin: 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+
+  div {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, max-content) minmax(0, 1fr);
+    gap: var(--ds-space-2);
+    align-items: baseline;
+  }
+
+  dt {
+    white-space: nowrap;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--ds-text-2);
+  }
+}
+
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.5rem;
+  padding: 0 var(--ds-space-1);
+  border: 1px solid var(--l-filo-fuerte, var(--ds-border-strong));
+  border-block-end-width: 2px;
+  border-radius: var(--l-radio-chico, var(--ds-radius-sm));
+  background: var(--l-superficie, var(--ds-surface-1));
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+// ── Criterios ────────────────────────────────────────────────────────────────────────────────────────────────
+.ri-criterios {
+  display: grid;
+  gap: var(--ds-space-3);
+}
+
+.ri-criterio {
+  // Contenedor de su escala: los cuatro niveles van en una fila si caben y en 2 × 2 si no (EDITOR §5.4).
+  container-type: inline-size;
+  display: grid;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: inset 0 1px 0 var(--l-brillo, transparent);
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+
+// El criterio con el foco se distingue sin moverse: su filo toma el tinte del acento (sus decisiones, a la izquierda).
+.ri-criterio:focus-within {
+  border-color: var(--l-tinte-filo, var(--ds-border-strong));
+}
+
+.ri-criterio--error {
+  border-color: var(--ds-danger);
+}
+
+.ri-criterio__titulo {
+  margin: 0;
+  min-inline-size: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-body-line);
+  overflow-wrap: anywhere;
+}
+
+// ── La escala: un control segmentado con cuatro niveles ──────────────────────────────────────────────────────
+.ri-escala {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-1);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+}
+
+.ri-criterio--error .ri-escala {
+  border-color: var(--ds-danger);
+}
+
+// Bajo 18rem de tarjeta (una columna más angosta que la de Revisión o un teléfono pequeño) los nombres ya no caben.
+@container (max-width: 18rem) {
+  .ri-escala {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ri-nivel {
+  @include m.ds-press;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--ds-space-1);
+  min-block-size: var(--ds-target-min);
+  min-inline-size: 0;
+  padding: var(--ds-space-2) var(--ds-space-1);
+  border: 1px solid transparent;
+  border-radius: calc(var(--l-radio-control, var(--ds-radius-md)) - 2px);
+  color: var(--ds-text-2);
+  // El tamaño de un control segmentado de iOS: «En proceso» y «Destacado» caben enteros en un cuarto de 26rem.
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-caption-weight);
+  line-height: var(--ds-type-caption-line);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    scale var(--ds-dur-press) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) var(--ds-spring-soft),
+    border-color var(--ds-dur-fast) var(--ds-spring-soft),
+    color var(--ds-dur-fast) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    color: var(--ds-text-1);
+    background: var(--l-superficie, var(--ds-surface-1));
+  }
+
+  // El foco del teclado se dibuja en la pastilla entera, no en el círculo nativo (que va oculto).
+  &:has(.ri-nivel__input:focus-visible) {
+    @include m.ds-focus-ring;
+    z-index: var(--ds-z-elevado);
+  }
+}
+
+// El nivel elegido: la pastilla sube a la superficie, con el filo y la tinta del acento (sin rojo ni verde: el tono es
+// formativo, ningún nivel «avergüenza»).
+.ri-nivel--elegido {
+  // Filo de acento entero (3:1 contra la pista, WCAG 1.4.11) y el tinte encima de la superficie: el elegido se
+  // reconoce también sin el anillo de foco, en las dos pieles (crítica de NVIDIA, vuelta 1).
+  border-color: var(--l-acento, var(--ds-primary));
+  background: linear-gradient(var(--l-tinte, transparent), var(--l-tinte, transparent)), var(--l-superficie, var(--ds-surface-1));
+  color: var(--l-acento-tinta, var(--ds-text-1));
+  box-shadow: var(--l-sombra-trabajo, var(--ds-shadow-e1)), inset 0 1px 0 var(--l-brillo, transparent);
+}
+
+.ri-nivel__input {
+  @include m.ds-sr-only;
+}
+
+.ri-nivel__nombre {
+  min-inline-size: 0;
+  overflow-wrap: break-word;
+}
+
+// El escalón de píxeles: uno a cuatro peldaños según el nivel. Cuadros de borde duro, sin suavizado: la firma del juego.
+.ri-escalon {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  block-size: 0.75rem;
+}
+
+.ri-escalon__peldano {
+  inline-size: 0.25rem;
+  border-radius: 0;
+  background: var(--l-filo, var(--ds-border));
+
+  &:nth-child(1) { block-size: 0.25rem; }
+  &:nth-child(2) { block-size: 0.4375rem; }
+  &:nth-child(3) { block-size: 0.625rem; }
+  &:nth-child(4) { block-size: 0.75rem; }
+}
+
+.ri-escalon__peldano--lleno {
+  background: var(--l-filo-fuerte, var(--ds-text-2));
+}
+
+.ri-nivel--elegido .ri-escalon__peldano--lleno {
+  background: var(--l-acento, var(--ds-primary));
+}
+
+// ── Significado, error, evidencia y sistema ─────────────────────────────────────────────────────────────────
+.ri-criterio__significado {
+  margin: 0;
+  min-block-size: calc(2 * var(--ds-type-body-s-line));
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+
+  strong {
+    color: var(--l-acento-tinta, var(--ds-text-1));
+    font-weight: var(--ds-type-h3-weight);
+  }
+}
+
+.ri-criterio__significado--ayuda {
+  color: var(--ds-text-2);
+}
+
+.ri-criterio__error {
+  margin: 0;
+  color: var(--ds-danger);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.ri-evidencia {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+}
+
+.ri-evidencia__rotulo,
+.ri-criterio__sistema {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+.ri-evidencia__rotulo {
+  font-weight: var(--ds-type-caption-weight);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ri-evidencia__fichas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+
+  li {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}
+
+// Una ficha por decisión: el minuto (la misma columna de tiempo de la evidencia) y la escena. Pulsarla lleva a ella.
+.ri-ficha {
+  @include m.ds-press;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  max-inline-size: 100%;
+  min-block-size: var(--ds-target-min);
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+  color: var(--ds-text-1);
+  font: inherit;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  cursor: pointer;
+  transition: scale var(--ds-dur-press) var(--ds-ease-out), border-color var(--ds-dur-fast) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    border-color: var(--l-tinte-filo, var(--ds-border-strong));
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+// El cuadro de color repite el filo de la decisión en la línea de tiempo: se reconoce la misma decisión a los dos lados.
+.ri-ficha__punto {
+  flex: none;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  background: var(--l-filo-fuerte, var(--ds-border-strong));
+}
+
+.ri-ficha[data-accent='recommended'] .ri-ficha__punto { background: var(--ds-success); }
+.ri-ficha[data-accent='acceptable'] .ri-ficha__punto { background: var(--ds-primary); }
+.ri-ficha[data-accent='risky'] .ri-ficha__punto { background: var(--ds-warning-text); }
+.ri-ficha[data-accent='contraindicated'] .ri-ficha__punto { background: var(--ds-danger); }
+
+.ri-ficha__tiempo {
+  flex: none;
+  color: var(--ds-text-2);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.ri-ficha__lugar {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ri-criterio__sistema {
+  padding-inline-start: var(--ds-space-2);
+  border-inline-start: 2px solid var(--l-filo, var(--ds-border));
+}
+
+.ri-criterio__abrir {
+  justify-self: start;
+}
+
+// ── Retroalimentación, acciones sin entregar y pie ──────────────────────────────────────────────────────────
+.ri__extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin-block-start: calc(-1 * var(--ds-space-2));
+}
+
+// En la columna estrecha cada acción del pie ocupa su fila: así su texto nunca se parte en dos líneas.
+.ri__accion {
+  grid-column: 1 / -1;
+}
+
+// Guardar siempre a la vista: el pie se pega al borde inferior del área que se desplaza (la columna en escritorio,
+// la pantalla, sobre las pestañas de la barra, en el teléfono).
+.ri__pie {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--ds-z-pegajoso);
+  display: grid;
+  gap: var(--ds-space-1);
+  margin-inline: calc(-1 * var(--ds-space-1));
+  padding: var(--ds-space-1) var(--ds-space-1) var(--ds-space-3);
+  background: var(--l-superficie, var(--ds-surface-1));
+
+  // Borde de desplazamiento al estilo iOS: lo que sigue se funde bajo el pie en vez de cortarse en seco.
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 100%;
+    block-size: var(--ds-space-5);
+    background: linear-gradient(to bottom, transparent, var(--l-superficie, var(--ds-surface-1)));
+    pointer-events: none;
+  }
+}
+
+.ri__mensaje,
+.ri__entrega {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  text-wrap: pretty;
+}
+
+.ri__mensaje {
+  padding-block-start: var(--ds-space-2);
+}
+
+.ri__mensaje--error {
+  color: var(--ds-danger);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.ri__entrega {
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+// Tras entregar, corregir se avisa con la tinta del acento (no es un error: es saber qué verá el estudiante).
+.ri__entrega--aviso {
+  color: var(--l-acento-tinta, var(--ds-text-1));
+}
+
+// En el teléfono la página entera se desplaza: el pie se apoya sobre las pestañas de la barra y su zona segura.
+@media (max-width: 63.999rem) {
+  .ri__pie {
+    inset-block-end: calc(var(--asb-alto-modulo-inferior, 0px) + env(safe-area-inset-bottom, 0px) + var(--ds-space-2));
+    margin-inline: 0;
+    padding-inline: var(--ds-space-3);
+    border: 1px solid var(--l-filo-fuerte, var(--ds-border));
+    border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+    box-shadow: var(--l-sombra, var(--ds-shadow-e2));
+
+    // Aquí el pie es una tarjeta que flota sobre la página: su sombra ya lo separa.
+    &::before {
+      content: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ri-niveles summary::after,
+  .ri-teclas__boton::after,
+  .ri-criterio {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ri__pie,
+  .ri-criterio,
+  .ri-valoracion,
+  .ri-escala,
+  .ri-ficha {
+    border: 1px solid CanvasText;
+  }
+
+  .ri-nivel--elegido {
+    border: 2px solid Highlight;
+    color: Highlight;
+  }
+
+  .ri-escalon__peldano,
+  .ri-ficha__punto {
+    background: CanvasText;
+  }
+
+  .ri-nivel--elegido .ri-escalon__peldano--lleno {
+    background: Highlight;
+  }
+}
+
+// En una pantalla táctil sin teclado las teclas no sirven: el globo no se ofrece.
+@media (hover: none) and (pointer: coarse) {
+  .ri-teclas {
+    display: none;
+  }
+}

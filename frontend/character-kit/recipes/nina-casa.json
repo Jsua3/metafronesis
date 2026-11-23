@@ -1,0 +1,34 @@
+{
+  "id": "nina-casa",
+  "displayName": "Niña de la casa",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "trenza",
+    "face": "sereno",
+    "top": "camiseta",
+    "bottom": "falda-rodilla",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "castano-oscuro",
+    "top": "coral",
+    "bottom": "marino",
+    "shoes": "carbon",
+    "sole": "gris-claro"
+  },
+  "portraits": [
+    "neutral",
+    "preocupada",
+    "triste",
+    "alegre",
+    "cautelosa",
+    "en-crisis"
+  ],
+  "provenance": {
+    "source": "Kit SIEP",
+    "license": "SIEP-INTERNAL"
+  }
+}

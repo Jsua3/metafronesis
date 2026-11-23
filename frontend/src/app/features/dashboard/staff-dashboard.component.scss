@@ -1,0 +1,32 @@
+﻿/* El mismo contenedor de página que el inicio del estudiante (ronda 3): ancho de lectura del portal, centrado, y la
+   cabecera arranca a la misma altura bajo la barra en los tres roles. */
+:host { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-space-6); box-sizing: border-box; inline-size: 100%; min-inline-size: 0; max-inline-size: var(--l-ancho-pagina); margin-inline: auto; color: var(--ds-text-1); }
+section, article, .panel { min-width: 0; }
+section { display: grid; gap: var(--ds-space-4); }
+h2, h3, p { margin: 0; overflow-wrap: anywhere; }
+h2 { font-size: var(--ds-type-h2-size); line-height: var(--ds-type-h2-line); }
+h3 { font-size: var(--ds-type-h3-size); line-height: var(--ds-type-h3-line); }
+p, small, .casos span { color: var(--ds-text-2); }
+.encabezado, .fila, .acciones { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ds-space-3); }
+.epigrafe { color: var(--l-acento); font-size: var(--ds-type-body-s-size); font-weight: var(--ds-type-h3-weight); }
+.panel { display: grid; align-content: start; gap: var(--ds-space-4); padding: var(--ds-space-5); border: 1px solid var(--ds-border); border-radius: var(--l-radio-tarjeta); background: var(--l-superficie); box-shadow: var(--l-sombra-trabajo); }
+.protagonista { border-top: var(--l-pixel) solid var(--l-acento); }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--ds-space-4); }
+.filas, .casos { display: grid; gap: var(--ds-space-3); margin: 0; padding: 0; list-style: none; }
+.filas > li + li { border-top: 1px solid var(--ds-border); padding-top: var(--ds-space-3); }
+.fila > div { min-width: 0; flex: 1 1 14rem; }
+.casos li { display: grid; gap: var(--ds-space-1); padding-block: var(--ds-space-2); border-top: 1px solid var(--ds-border); overflow-wrap: anywhere; }
+.correo { overflow-wrap: anywhere; }
+a:not([ui-button]) { display: inline-flex; align-items: center; min-height: var(--ds-target-min); color: var(--l-acento); font-weight: var(--ds-type-h3-weight); }
+.sistema { gap: var(--ds-space-2); }
+/* El rótulo del resumen hereda el tamaño del antetítulo, no el de un h2. */
+.sistema h2.epigrafe { font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
+/* Las filas con botones (solicitudes) pasan los botones debajo del texto cuando falta ancho, sin desbordar. */
+.acciones { justify-content: flex-start; }
+.fila .acciones { flex: 0 1 auto; }
+.casos ui-progress { margin-top: var(--ds-space-1); }
+@media (max-width: 40rem) {
+  .panel { padding: var(--ds-space-4); }
+  .fila > a[ui-button], .fila .acciones, .fila .acciones > * { flex: 1 1 100%; }
+  .acciones > a[ui-button], .acciones > button[ui-button] { flex: 1 1 auto; }
+}

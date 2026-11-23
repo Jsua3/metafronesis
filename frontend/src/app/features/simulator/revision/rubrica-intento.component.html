@@ -1,0 +1,185 @@
+@if (evaluacion(); as rub) {
+  <header class="ri__cabecera">
+    <div class="ri__fila">
+      <p class="ri__epigrafe">Tu valoración</p>
+      <!-- Las teclas, en un globo que se abre a pedido: quien usa el ratón no las necesita a la vista. -->
+      <details class="ri-teclas" (keydown.escape)="cerrarGlobo($event)">
+        <summary class="ri-teclas__boton">Teclas</summary>
+        <div class="ri-teclas__globo">
+          <p class="ri-teclas__nota">Con el foco en los niveles de un criterio:</p>
+          <dl class="ri-teclas__lista">
+            <div><dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></dt><dd>Elige el nivel y pasa al siguiente criterio</dd></div>
+            <div><dt><kbd>0</kbd> o <kbd>Supr</kbd></dt><dd>Quita el nivel</dd></div>
+            <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Criterio anterior o siguiente</dd></div>
+            <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Nivel anterior o siguiente</dd></div>
+            <div><dt><kbd>C</kbd></dt><dd>Abre la observación</dd></div>
+            <div><dt><kbd>Ctrl</kbd> + <kbd>Enter</kbd></dt><dd>Guarda la evaluación, desde cualquier campo</dd></div>
+          </dl>
+        </div>
+      </details>
+    </div>
+    <h2 class="ri__titulo">{{ clean(rub.rubricName, 'Rúbrica del caso') }}</h2>
+    <p class="ri-valoracion">
+      <span class="ri-valoracion__rotulo">{{ valuationLabel }}</span>
+      <ui-badge [tone]="levelTone(rub.overallLevel)">{{ levelLabel(rub.overallLevel) }}</ui-badge>
+    </p>
+
+    <!-- Plegados: cada criterio ya dice lo que significa su nivel; aquí están la rúbrica y los cuatro niveles juntos. -->
+    <details class="ri-niveles">
+      <summary>Qué significa cada nivel</summary>
+      <div class="ri-niveles__cuerpo">
+        @if (rub.description) {
+          <p class="ri__ayuda">{{ rub.description }}</p>
+        }
+        <dl class="ri-niveles__lista">
+          @for (level of rubricLevels(); track level.value; let k = $index) {
+            <div>
+              <dt>
+                <span class="ri-escalon" aria-hidden="true">
+                  @for (p of peldanos; track p) { <span class="ri-escalon__peldano" [class.ri-escalon__peldano--lleno]="p <= k"></span> }
+                </span>
+                {{ level.label }}
+              </dt>
+              @if (level.descriptor) { <dd>{{ level.descriptor }}</dd> }
+            </div>
+          }
+        </dl>
+      </div>
+    </details>
+  </header>
+
+  @if (!criteria().length) {
+    <p class="ri__vacio">Esta rúbrica no tiene criterios: puedes guardar solo la retroalimentación.</p>
+  }
+
+  <div class="ri-criterios">
+    @for (criterion of criteria(); track criterion.id; let n = $index) {
+      <div class="ri-criterio tr-criterion" role="group" [attr.aria-labelledby]="tituloId(criterion)"
+        [class.ri-criterio--con-nivel]="!!levels()[criterion.id]" [class.ri-criterio--error]="!!fieldError(criterion.id)"
+        (focusin)="onFocoCriterio(criterion)">
+        <h3 class="ri-criterio__titulo" [id]="tituloId(criterion)">{{ clean(criterion.title, 'Criterio de evaluación') }}</h3>
+        @if (criterion.description) {
+          <p class="ri__ayuda">{{ criterion.description }}</p>
+        }
+
+        <!-- La fila de la matriz: los cuatro niveles como botones de opción NATIVOS (Tab entra por el elegido, las
+             flechas ← → cambian de nivel, Espacio sobre el elegido lo quita). -->
+        <div class="ri-escala" role="radiogroup" [attr.aria-label]="'Nivel logrado: ' + clean(criterion.title, 'criterio')"
+          aria-required="true" [attr.aria-invalid]="fieldError(criterion.id) ? 'true' : null"
+          [attr.aria-describedby]="describedBy(criterion)"
+          (keydown)="onTeclaEscala($event, n)" (focusout)="onEscalaSale($event)">
+          @for (level of rubricLevels(); track level.value; let k = $index) {
+            <label class="ri-nivel ds-motion" [class.ri-nivel--elegido]="levels()[criterion.id] === level.value">
+              <input class="ri-nivel__input" type="radio" [name]="grupo(criterion)" [value]="level.value"
+                [checked]="levels()[criterion.id] === level.value"
+                (click)="onNivelClick(criterion, level.value)" (change)="onNivelChange(criterion, level.value)"
+                (focus)="onNivelFoco(criterion, level.value)" />
+              <span class="ri-escalon" aria-hidden="true">
+                @for (p of peldanos; track p) { <span class="ri-escalon__peldano" [class.ri-escalon__peldano--lleno]="p <= k"></span> }
+              </span>
+              <span class="ri-nivel__nombre">{{ level.label }}</span>
+            </label>
+          }
+        </div>
+
+        <p class="ri-criterio__significado" [id]="descriptorId(criterion)" [class.ri-criterio__significado--ayuda]="!tieneSignificado(criterion)">
+          @if (tieneSignificado(criterion) && significadoNivel(criterion); as nombre) {
+            <strong>{{ nombre }}.</strong>
+          }
+          {{ significado(criterion) }}
+        </p>
+        @if (fieldError(criterion.id); as error) {
+          <p class="ri-criterio__error ui-field__message--error" [id]="errorId(criterion)">{{ error }}</p>
+        }
+
+        <!-- RK-4: las decisiones que tocan esta competencia. Sin el campo del servidor, el bloque no existe. -->
+        @if (conEvidencia()) {
+          <div class="ri-evidencia">
+            <p class="ri-evidencia__rotulo" [id]="prefijo + '-evidencia-' + criterion.id">Evidencia</p>
+            @if (evidenciaDe(criterion); as grupo) {
+              <ul class="ri-evidencia__fichas" [attr.aria-labelledby]="prefijo + '-evidencia-' + criterion.id">
+                @for (item of grupo.items; track item.order) {
+                  <li>
+                    <button type="button" class="ri-ficha ds-motion" [attr.data-accent]="acento(item)"
+                      [attr.aria-label]="nombreFicha(item)" [uiTooltip]="clean(item.optionText, '')" (click)="irA(item)">
+                      <span class="ri-ficha__punto" aria-hidden="true"></span>
+                      @if (marca(item); as cuando) { <span class="ri-ficha__tiempo">{{ cuando }}</span> }
+                      <span class="ri-ficha__lugar">{{ clean(item.nodeTitle, 'Escena') }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="ri__ayuda">{{ copy.noEvidence }}</p>
+            }
+          </div>
+        }
+
+        <!-- Lo que calculó el sistema: solo llega después de guardar la valoración propia (no se copia sin mirar). -->
+        @if (sistemaDe(criterion); as sistema) {
+          <p class="ri-criterio__sistema">
+            @if (sistema.level) {
+              El sistema lo leyó como «{{ levelLabel(sistema.level) }}».
+            } @else {
+              El sistema no encontró evidencia suficiente.
+            }
+          </p>
+        }
+
+        @if (observacionAbierta(criterion)) {
+          <ui-field class="ri-criterio__observacion" label="Observación del criterio">
+            <textarea uiControl rows="2" [id]="observacionId(criterion)" [value]="comments()[criterion.id] ?? ''"
+              (input)="onCriterionComment(criterion.id, value($event))"
+              placeholder="Evidencia, decisiones o qué mejorar."></textarea>
+          </ui-field>
+        } @else {
+          <button ui-button type="button" variant="ghost" size="sm" icon="add" class="ri-criterio__abrir"
+            [attr.aria-label]="'Agregar observación a ' + clean(criterion.title, 'este criterio')"
+            (click)="abrirObservacion(criterion)">Observación</button>
+        }
+      </div>
+    }
+  </div>
+
+  <ui-field class="ri__general" label="Retroalimentación docente"
+    hint="Escribe una retroalimentación formativa orientada a decisiones, ética profesional y rutas de atención.">
+    <textarea uiControl rows="4" [value]="comment()" (input)="onComment(value($event))"
+      placeholder="Retroalimentación general para el estudiante."></textarea>
+  </ui-field>
+
+  <!-- Lo que se hace con lo escrito sin entregarlo: dejarlo pendiente (RK-5, solo antes de la primera entrega) y ver
+       cómo lo leerá el estudiante. Van al final del recorrido y no en el pie: el pie fijo de una columna de 26rem solo
+       tiene sitio para UNA acción ancha sin partir su texto en dos líneas (D-39). -->
+  <div class="ri__extra">
+    @if (puedeGuardarSinEntregar()) {
+      <button ui-button type="button" variant="secondary" size="sm" icon="schedule" [loading]="saving() === 'borrador'"
+        (click)="guardarSinEntregar()">
+        {{ saving() === 'borrador' ? 'Guardando' : 'Guardar sin entregar' }}
+      </button>
+    }
+    <button ui-button type="button" variant="ghost" size="sm" icon="visibility" (click)="verComoLoLeera($any($event.currentTarget))">
+      Ver cómo lo leerá
+    </button>
+  </div>
+
+  <!-- Guardar siempre a la vista: el pie se pega al borde inferior de la columna (o de la pantalla en el teléfono), con
+       el aviso de lo que falta y, bajo el botón, lo que pasa al guardar. -->
+  <div class="ri__pie">
+    @if (mensaje()) {
+      <p class="ri__mensaje" [class.ri__mensaje--error]="mensajeEsError()">{{ mensaje() }}</p>
+    }
+    <ui-barra-acciones posicion="columna" [nota]="avance()">
+      <!-- Recién entregada, lo siguiente es el próximo intento: pasa a ser la acción principal. -->
+      @if (mostrarSiguiente()) {
+        <button ui-button type="button" class="ri__accion" iconEnd="arrow_forward" (click)="siguiente.emit()">
+          Siguiente por revisar
+        </button>
+      }
+      <button ui-button type="button" class="ri__accion" icon="save" [variant]="mostrarSiguiente() ? 'secondary' : 'primary'"
+        [loading]="saving() === 'entrega'" [disabledReason]="hasErrors() ? copy.missingReason : null" (click)="save()">
+        {{ saving() === 'entrega' ? 'Guardando evaluación' : 'Guardar evaluación' }}
+      </button>
+    </ui-barra-acciones>
+    <p class="ri__entrega" [class.ri__entrega--aviso]="entregada()">{{ notaEntrega() }}</p>
+  </div>
+}

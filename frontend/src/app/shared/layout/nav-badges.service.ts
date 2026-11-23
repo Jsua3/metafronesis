@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
  * «Grupos» tiene el id `invitaciones` (DISENO §4.6 dice «grupos», que es el id del destino del DOCENTE; D-22). El tipo
  * cerrado hace que escribir `grupos` desde el Inicio del estudiante falle al compilar en vez de no pintar nada.
  */
-export type DestinoConInsignia = 'invitaciones' | 'usuarios';
+export type DestinoConInsignia = 'invitaciones' | 'trazabilidad' | 'usuarios';
 
 interface Registro {
   /** Id de la persona de la sesión cuando se escribió la cuenta. */

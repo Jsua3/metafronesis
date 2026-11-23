@@ -10,6 +10,9 @@ from urllib.request import Request, urlopen
 
 from django.core.exceptions import ImproperlyConfigured
 
+from .asistente import falso as falso_del_asistente
+from .generacion import falso
+
 TIEMPO_MAXIMO_SEGUNDOS = 20
 
 
@@ -19,23 +22,34 @@ class ProveedorIA(ABC):
         self.modelo = modelo
 
     @abstractmethod
-    def responder(self, instrucciones: str, mensajes: list[dict]) -> str:
-        """Texto de respuesta para las instrucciones y los mensajes dados."""
+    def responder(self, instrucciones: str, mensajes: list[dict], *, max_tokens: int | None = None, tiempo: int | None = None) -> str:
+        """Texto de respuesta para las instrucciones y los mensajes dados.
+
+        ``max_tokens`` y ``tiempo`` (segundos) son opcionales: sin ellos vale el tope de cada proveedor.
+        """
 
 
 class ProveedorFalso(ProveedorIA):
     """Determinista y sin red: es el que usan las pruebas y el desarrollo."""
 
-    def responder(self, instrucciones: str, mensajes: list[dict]) -> str:
+    def responder(self, instrucciones: str, mensajes: list[dict], *, max_tokens: int | None = None, tiempo: int | None = None) -> str:
+        if instrucciones.startswith(falso.MARCA):
+            return falso.responder(mensajes)
+        if instrucciones.startswith(falso_del_asistente.MARCA_PROPONER):
+            return falso_del_asistente.proponer()
+        if instrucciones.startswith(falso_del_asistente.MARCA_GUIA):
+            return falso_del_asistente.guiar(mensajes)
         return "Revisa el contexto del caso y considera las alternativas disponibles."
 
 
 class ProveedorOpenAI(ProveedorIA):
     URL = "https://api.openai.com/v1/chat/completions"
 
-    def responder(self, instrucciones: str, mensajes: list[dict]) -> str:
+    def responder(self, instrucciones: str, mensajes: list[dict], *, max_tokens: int | None = None, tiempo: int | None = None) -> str:
         datos = {"model": self.modelo, "messages": [{"role": "system", "content": instrucciones}, *mensajes]}
-        respuesta = _solicitar(self.URL, datos, {"Authorization": f"Bearer {self.clave}"})
+        if max_tokens:
+            datos["max_tokens"] = max_tokens
+        respuesta = _solicitar(self.URL, datos, {"Authorization": f"Bearer {self.clave}"}, tiempo)
         return respuesta["choices"][0]["message"]["content"]
 
 
@@ -44,16 +58,16 @@ class ProveedorAnthropic(ProveedorIA):
     VERSION_API = "2023-06-01"
     MAXIMO_DE_TOKENS = 1024
 
-    def responder(self, instrucciones: str, mensajes: list[dict]) -> str:
-        datos = {"model": self.modelo, "max_tokens": self.MAXIMO_DE_TOKENS, "system": instrucciones, "messages": mensajes}
-        respuesta = _solicitar(self.URL, datos, {"x-api-key": self.clave, "anthropic-version": self.VERSION_API})
+    def responder(self, instrucciones: str, mensajes: list[dict], *, max_tokens: int | None = None, tiempo: int | None = None) -> str:
+        datos = {"model": self.modelo, "max_tokens": max_tokens or self.MAXIMO_DE_TOKENS, "system": instrucciones, "messages": mensajes}
+        respuesta = _solicitar(self.URL, datos, {"x-api-key": self.clave, "anthropic-version": self.VERSION_API}, tiempo)
         return "".join(bloque["text"] for bloque in respuesta["content"] if bloque["type"] == "text")
 
 
-def _solicitar(url, datos, cabeceras):
+def _solicitar(url, datos, cabeceras, tiempo=None):
     cuerpo = json.dumps(datos).encode("utf-8")
     solicitud = Request(url, data=cuerpo, headers={"Content-Type": "application/json", **cabeceras}, method="POST")
-    with urlopen(solicitud, timeout=TIEMPO_MAXIMO_SEGUNDOS) as respuesta:
+    with urlopen(solicitud, timeout=tiempo or TIEMPO_MAXIMO_SEGUNDOS) as respuesta:
         return json.load(respuesta)
 
 

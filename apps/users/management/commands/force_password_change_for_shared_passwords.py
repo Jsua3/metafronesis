@@ -25,7 +25,8 @@ from apps.users.models import UserRole
 from apps.users.services import account_service
 
 #: La contraseña por defecto que tenía la importación antes de E2-9 (consta en el historial de Git).
-LEGACY_DEFAULT_PASSWORD = "Siep2026!"
+#: Se conoce a propósito: el comando la busca para obligar a cambiarla, nunca la asigna.
+LEGACY_DEFAULT_PASSWORD = "Siep2026!"  # NOSONAR
 ENV_VARIABLE = "IMPORTED_STUDENT_DEFAULT_PASSWORD"
 
 

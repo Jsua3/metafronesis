@@ -1,0 +1,247 @@
+// Phaser inicializa un canvas WebGL al importarse, cosa que jsdom no soporta (mismo doble que el resto
+// de specs de la pantalla de juego): solo se evalúa `extends Phaser.Scene` al cargar el módulo.
+vi.mock('phaser', () => ({
+  __esModule: true,
+  default: {
+    Scene: class {},
+    AUTO: 0,
+    Scale: { FIT: 0, CENTER_BOTH: 0 },
+    Math: { Clamp: (value: number) => value },
+    Input: { Keyboard: { JustDown: () => false } },
+  },
+}));
+
+import { Component, EventEmitter } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { EMPTY, of } from 'rxjs';
+import type { Mock } from 'vitest';
+
+import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
+import { SimulationService } from '../../core/api/simulation.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { MapObjectState, SimulationAttemptState, SimulationWorldState } from '../../core/models/simulation.model';
+import { AudioDirectorService } from './audio-director.service';
+import { CONSENT_RECORDER, SessionConsentRecorder } from './consent-recorder';
+import { DRAFT_COPY } from './draft-copy';
+import { GameWorldComponent } from './game-world.component';
+import { SimulationPlayComponent } from './simulation-play.component';
+import type { PlaceCandidate } from './world-places.util';
+
+/**
+ * Tarea 9: la sala ocupa la pantalla. La ficha del objetivo reemplaza la lista «Qué hacer», el HUD nombra la escena y
+ * llegan los dos avisos («puedes conocer más», «hay otra forma de responder»). Se pinta la plantilla de verdad con un
+ * mundo falso en lugar del lienzo de Phaser (que no entra en jsdom); `places()` lo decide cada prueba.
+ */
+
+let lugares: PlaceCandidate[] = [];
+
+@Component({
+  selector: 'app-game-world',
+  template: '',
+  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused',
+    'sfxMuted', 'reduceMotion', 'activation', 'intensity', 'doorStates', 'doorMessages', 'nextTargetKey', 'dimmedKeys', 'compact', 'showLoader'],
+  outputs: ['worldReady', 'patientVisual', 'proximity', 'proximityAlso', 'nothingNearby', 'interact', 'npcInteract', 'walkEnded',
+    'bootFailed', 'roomExit', 'enterRoom', 'positionChange'],
+})
+class MundoFalso {
+  worldReady = new EventEmitter<unknown>();
+  patientVisual = new EventEmitter<unknown>();
+  proximity = new EventEmitter<unknown>();
+  proximityAlso = new EventEmitter<unknown>();
+  nothingNearby = new EventEmitter<unknown>();
+  interact = new EventEmitter<unknown>();
+  npcInteract = new EventEmitter<unknown>();
+  walkEnded = new EventEmitter<unknown>();
+  bootFailed = new EventEmitter<unknown>();
+  roomExit = new EventEmitter<unknown>();
+  enterRoom = new EventEmitter<unknown>();
+  positionChange = new EventEmitter<unknown>();
+  places() { return lugares; }
+  focus() {}
+  playerPosition() { return undefined; }
+  refreshScale() {}
+  updatePatientVisualState() {}
+  setPersonaState() {}
+  playRevealEffects() {}
+  walkToKey() { return true; }
+  retryLoad() {}
+  // La cámara dirigida (M1): la pantalla le pasa ajustes, el plano congelado y el momento al pintar cada cuadro.
+  setCameraOptions() {}
+  setCameraFrozen() {}
+  setCameraMoment() {}
+}
+
+const PERSONA_SIN_VER: PlaceCandidate = { key: 'npc:enfermera', label: 'Enfermera', kind: 'person' };
+const PERSONA_VISTA: PlaceCandidate = PERSONA_SIN_VER;
+
+const decision = (id: number) => ({ key: `o${id}`, text: `Opción ${id}`, decisionOptionId: id, requiredToolCode: null, effect: {} });
+
+function objeto(key: string, choices: unknown[]): MapObjectState {
+  return {
+    key, label: key, type: 'OBJECT', x: 10, y: 10, width: 20, height: 20, color: '#fff', icon: '', shortCode: '', collision: false,
+    interactionPrompt: '', interactionText: '', decisionOptionId: null, toolCode: null,
+    dialogue: { key: `d-${key}`, speakerName: 'A', portraitKey: null, emotion: 'neutral', lines: [], choices },
+  } as unknown as MapObjectState;
+}
+const OBJETO_CON_DECISION = objeto('carpeta', [decision(1)]);
+const OBJETO_SIN_DECISION = objeto('caja', []);
+
+function mundo(extra: Record<string, unknown> = {}): SimulationWorldState {
+  return {
+    map: { key: 'sala-x', title: 'Sala X' }, objects: [OBJETO_CON_DECISION, OBJETO_SIN_DECISION], tools: [],
+    inventory: [], usedToolKeys: [], inspectedObjectKeys: [], flags: {}, ...extra,
+  } as unknown as SimulationWorldState;
+}
+
+const resultadoConOpciones = (options: Array<{ id: number; text: string }>, obj = OBJETO_SIN_DECISION) => ({
+  world: mundo({ decisionOptions: options }), interaction: obj, dialogue: obj.dialogue,
+  preparedDecisionOptionId: null, unlockedToolCode: null,
+});
+
+describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)', () => {
+  let sim: Record<string, Mock>;
+  let announcer: { announce: Mock };
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    sessionStorage.clear();
+    localStorage.clear();
+    lugares = [];
+    sim = {
+      getActiveAttempt: vi.fn(() => EMPTY), getProgressMap: vi.fn(() => EMPTY), getWorld: vi.fn(() => EMPTY),
+      safeExit: vi.fn(() => EMPTY), startAttempt: vi.fn(() => EMPTY), updateWorldState: vi.fn(() => EMPTY),
+      openInteraction: vi.fn(() => EMPTY), getHints: vi.fn(() => of({ available: 1, shown: [] })),
+    };
+    announcer = { announce: vi.fn() };
+    TestBed.configureTestingModule({
+      imports: [SimulationPlayComponent],
+      providers: [
+        { provide: SimulationService, useValue: sim },
+        { provide: AudioDirectorService, useValue: { init: vi.fn(), setScene: vi.fn(), isMusicMuted: vi.fn(() => false), isSfxMuted: vi.fn(() => false), dispose: vi.fn(), stopIntroLament: vi.fn(), playIntroLament: vi.fn(), playSfx: vi.fn() } },
+        { provide: AuthService, useValue: {} },
+        { provide: CONSENT_RECORDER, useValue: new SessionConsentRecorder() },
+        { provide: LiveRegionAnnouncer, useValue: announcer },
+        { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ caseVersionId: '7' }) } } },
+      ],
+    });
+    TestBed.overrideComponent(SimulationPlayComponent, { remove: { imports: [GameWorldComponent] }, add: { imports: [MundoFalso] } });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    sessionStorage.clear();
+    TestBed.resetTestingModule();
+  });
+
+  function montarConMundo(o: { goal?: string; title?: string; options?: Array<{ id: number; text: string }>; lugares?: PlaceCandidate[]; vistos?: string[] } = {}) {
+    lugares = o.lugares ?? [];
+    const fixture = TestBed.createComponent(SimulationPlayComponent);
+    const component = fixture.componentInstance;
+    component.attempt.set({
+      attemptId: 'a1', caseVersionId: 7, caseTitle: 'Caso', status: 'IN_PROGRESS',
+      persona: { bond: 'GUARDED', activation: 'TENSE', label: 'x' },
+      currentNode: { id: 1, key: 'nodo-1', title: o.title ?? 'Escena', narrative: 'N', terminal: false, goal: o.goal, options: o.options ?? [{ id: 1, text: 'A' }] },
+      completionReport: null,
+    } as unknown as SimulationAttemptState);
+    component.world.set(mundo());
+    if (o.vistos) (component as any).viewedNpcKeys.set(new Set(o.vistos));
+    component.worldStarted.set(true);
+    component.loading.set(false);
+    fixture.detectChanges();
+    return { fixture, component, announcer, service: sim };
+  }
+
+  it('la ficha recibe el objetivo de la escena y no hay contador ni «Ahora:»', () => {
+    const { fixture } = montarConMundo({ goal: 'Contener a la familia' });
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('app-scene-goal-card')!.getAttribute('data-goal')).toBe('Contener a la familia');
+    expect(el.textContent).not.toMatch(/Decisión \d+ de \d+|Ahora:/);
+  });
+
+  it('el HUD nombra la escena', () => {
+    const { component } = montarConMundo({ title: 'Urgencias' });
+    expect(component.stageLabel()).toBe('Urgencias');
+  });
+
+  it('abrir la ficha refresca «En esta sala» con lo que hay ahora en la sala', () => {
+    const { fixture } = montarConMundo({ goal: 'G' });
+    lugares = [PERSONA_SIN_VER];
+    const el: HTMLElement = fixture.nativeElement;
+    const toggle = el.querySelector<HTMLButtonElement>('app-scene-goal-card button.goal-card__toggle')!;
+    // Desde V7 la ficha arranca abierta: se pliega y se vuelve a abrir.
+    if (toggle.getAttribute('aria-expanded') === 'true') { toggle.click(); fixture.detectChanges(); }
+    toggle.click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('Enfermera');
+    expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('aún no');
+  });
+
+  it('con algo por conocer, la conversación con decisiones avisa «Puedes conocer más…»', () => {
+    const { component } = montarConMundo({ lugares: [PERSONA_SIN_VER] });
+    sim['openInteraction'].mockReturnValue(of(resultadoConOpciones([{ id: 1, text: 'A' }], OBJETO_CON_DECISION)));
+    component.openInteraction(OBJETO_CON_DECISION);
+    expect(component.dialogue()!.notice).toBe('Puedes conocer más antes de responder.');
+  });
+
+  it('con todo visto no hay aviso', () => {
+    const { component } = montarConMundo({ lugares: [PERSONA_VISTA], vistos: ['enfermera'] });
+    sim['openInteraction'].mockReturnValue(of(resultadoConOpciones([{ id: 1, text: 'A' }], OBJETO_CON_DECISION)));
+    component.openInteraction(OBJETO_CON_DECISION);
+    expect(component.dialogue()!.notice).toBeUndefined();
+  });
+
+  it('una opción nueva tras explorar se avisa una vez y se anuncia', () => {
+    const { component, announcer } = montarConMundo({ options: [{ id: 1, text: 'A' }] });
+    const dos = [{ id: 1, text: 'A' }, { id: 2, text: 'B' }];
+    sim['openInteraction'].mockReturnValue(of(resultadoConOpciones(dos)));
+    component.openInteraction(OBJETO_SIN_DECISION);
+    expect(component.softNotice()).toBe('Ahora conoces algo más: hay otra forma de responder.');
+    expect(announcer.announce).toHaveBeenCalledWith('Ahora conoces algo más: hay otra forma de responder.', 'polite');
+    sim['openInteraction'].mockReturnValue(of(resultadoConOpciones(dos)));
+    component.openInteraction(OBJETO_SIN_DECISION);
+    expect(announcer.announce.mock.calls.filter(([t]) => String(t).startsWith('Ahora conoces')).length).toBe(1);
+  });
+
+  it('sin opciones nuevas (las mismas) no hay aviso', () => {
+    const { component, announcer } = montarConMundo({ options: [{ id: 1, text: 'A' }] });
+    sim['openInteraction'].mockReturnValue(of(resultadoConOpciones([{ id: 1, text: 'A' }])));
+    component.openInteraction(OBJETO_SIN_DECISION);
+    expect(component.softNotice()).toBe('');
+    expect(announcer.announce).not.toHaveBeenCalled();
+  });
+
+  it('una opción nueva con la conversación abierta se avisa una sola vez y la conversación la muestra', () => {
+    const dosDecisiones = objeto('carpeta', [decision(1), decision(2)]);
+    const { component, announcer } = montarConMundo({ options: [{ id: 1, text: 'A' }] });
+    sim['openInteraction'].mockReturnValue(of(resultadoConOpciones([{ id: 1, text: 'A' }], dosDecisiones)));
+    component.openInteraction(dosDecisiones);
+    const ids = () => component.dialogue()!.choices.map(c => c.decisionOptionId);
+    expect(ids()).toEqual([1]);
+
+    (component as any).applyDecisionOptions(mundo({ decisionOptions: [{ id: 1, text: 'A' }, { id: 2, text: 'B' }] }));
+    expect(ids()).toEqual([1, 2]);
+    (component as any).applyDecisionOptions(mundo({ decisionOptions: [{ id: 1, text: 'A' }, { id: 2, text: 'B' }] }));
+    expect(announcer.announce.mock.calls.filter(([t]) => String(t).startsWith('Ahora conoces')).length).toBe(1);
+  });
+
+  it('si el nodo cambió entre una lectura y otra, la opción «nueva» es de otro nodo y no hay aviso', () => {
+    const { component, announcer } = montarConMundo({ options: [{ id: 1, text: 'A' }] });
+    (component as any).applyDecisionOptions(mundo({ decisionOptions: [{ id: 1, text: 'A' }] }));
+    // La decisión llevó al estudiante al nodo 2, que nace con la opción 1; la lectura siguiente ofrece la 1 y la 2.
+    component.attempt.update(game => ({ ...game!, currentNode: { ...game!.currentNode, id: 2, key: 'nodo-2', options: [{ id: 1, text: 'A' }] } }));
+    (component as any).applyDecisionOptions(mundo({ decisionOptions: [{ id: 1, text: 'A' }, { id: 2, text: 'B' }] }));
+    expect(component.softNotice()).toBe('');
+    expect(announcer.announce).not.toHaveBeenCalled();
+    // En el nodo 2, ya registrado, explorar sí avisa.
+    (component as any).applyDecisionOptions(mundo({ decisionOptions: [{ id: 1, text: 'A' }, { id: 2, text: 'B' }, { id: 3, text: 'C' }] }));
+    expect(component.softNotice()).toBe('Ahora conoces algo más: hay otra forma de responder.');
+  });
+
+  it('ningún aviso dice cuál opción es la adecuada', () => {
+    for (const texto of [DRAFT_COPY.noticeMoreToKnow.text, DRAFT_COPY.noticeNewOption.text]) {
+      expect(texto).not.toMatch(/recomendad|correct|adecuad|mejor|riesgo/i);
+    }
+  });
+});

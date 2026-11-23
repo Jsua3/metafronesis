@@ -3,7 +3,7 @@
      queda display:none, también para los lectores de pantalla), así la pantalla siempre tiene un único h1. -->
 <ui-cabecera-ilustrada [herramienta]="true" class="gl-cab gl-cab--lista" [class.gl-cab--con-detalle]="!!grupoActivo() && !!grupoId()"
   [escena]="state() === 'empty' ? null : 'grupos'" eyebrow="Cohortes académicas" title="Grupos"
-  description="Organiza estudiantes e invitaciones de cada grupo.">
+  description="Organiza estudiantes y asigna casos a cada grupo.">
   @if (state() !== 'empty') { <button ui-button uiHerramientaAcciones type="button" icon="add" (click)="nuevoGrupo()">Nuevo grupo</button> }
 </ui-cabecera-ilustrada>
 @if (grupoActivo(); as abierto) {
@@ -17,7 +17,7 @@
   <ui-error-state kind="server" message="No pudimos cargar los grupos." (retry)="cargar()" />
 } @else if (state() === 'empty') {
   <ui-vacio-ilustrado escena="grupos" titulo="Aún no tienes grupos" marco="placa"
-    frase="Un grupo reúne a tus estudiantes: le pones un nombre y un código, y los invitas.">
+    frase="Un grupo reúne a tus estudiantes: le pones un nombre y un código, los invitas y le asignas casos.">
   </ui-vacio-ilustrado>
   <ng-container [ngTemplateOutlet]="formularioGrupo" />
 } @else {
@@ -141,7 +141,12 @@
               </div>
             </ng-template>
 
-<ng-template uiTab="invitaciones" [label]="etiquetaInvitaciones()">
+<ng-template uiTab="casos" label="Casos asignados">
+              <app-group-assignments [grupoId]="grupo.id" [cases]="casosDisponibles()" [casesStatus]="casosEstado()"
+                (assignedChange)="casosAsignadosTotal.set($event)" />
+            </ng-template>
+
+            <ng-template uiTab="invitaciones" [label]="etiquetaInvitaciones()">
               <div class="gl-stack">
                 @if (detailLoading()) {
                   <p class="gl-hint">Cargando invitaciones…</p>

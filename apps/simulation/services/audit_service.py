@@ -57,6 +57,9 @@ AUDIT_TAXONOMY: dict[str, str] = {
     "AI_ASSISTANT_QUERY": "asistente.consultar",
     "AI_AUTHORING_PROPOSE": "asistente_autoria.proponer",
     "AI_AUTHORING_GUIDE": "asistente_autoria.guiar",
+    "AI_GENERATION_CREATED": "generacion.crear",
+    "AI_GENERATION_CANCELLED": "generacion.cancelar",
+    "AI_GENERATION_STAGE": "generacion.etapa",
     "TRACE_VIEWED": "traza.leer",
     "RUBRIC_SAVED": "rubrica.evaluar",
     "ANALYTICS_VIEWED": "analitica.ver",
@@ -117,8 +120,9 @@ AUDIT_TAXONOMY: dict[str, str] = {
     "ASSIGNMENT_UPDATED": "asignacion.actualizar",
     "ASSIGNMENT_REMOVED": "asignacion.eliminar",
     "USER_APPROVED": "usuario.aprobar",
-    "PASSWORD_CHANGED": "usuario.cambiar_clave",
-    "PASSWORD_SET_BY_ADMIN": "usuario.fijar_clave",
+    # Nombres de eventos de auditoría, no credenciales.
+    "PASSWORD_CHANGED": "usuario.cambiar_clave",  # NOSONAR
+    "PASSWORD_SET_BY_ADMIN": "usuario.fijar_clave",  # NOSONAR
     "SESSIONS_REVOKED": "sesion.revocar",
     # S4-1 · quién entró, quién cambió qué y quién leyó datos de otra persona (RNF-007, SIEP-RNF-02).
     "LOGIN_SUCCEEDED": "sesion.entrar",
@@ -189,6 +193,8 @@ CONTEXT_WHITELIST: dict[str, frozenset[str]] = {
     # texto de la petición ni de la respuesta.
     "AI_AUTHORING_PROPOSE": frozenset({"screen", "model", "changes", "duration_ms", "outcome"}),
     "AI_AUTHORING_GUIDE": frozenset({"screen", "model", "changes", "duration_ms", "outcome"}),
+    # Generación de casos: etapa, resultado, ronda de reparación, duración y tipo de falla. Nunca la descripción ni el texto del modelo.
+    "AI_GENERATION_STAGE": frozenset({"stage", "outcome", "round", "duration_ms", "kind"}),
     "CONSENT_ACCEPTED": frozenset({"caseVersionId", "noticeVersion"}),
     "CONSENT_WITHDRAWN": frozenset({"caseVersionId", "noticeVersion"}),
     # S3-4 · solo ids (de la persona y del ADMIN que ejecuta) y recuentos: nunca el correo, el nombre ni un texto de la persona.

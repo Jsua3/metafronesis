@@ -1,0 +1,106 @@
+{
+  "scenarioKey": "urgencias-crisis",
+  "startRoomKey": "sala-urgencias",
+  "rooms": [
+    {
+      "key": "sala-urgencias",
+      "tiledMapKey": "map-urgencias-sala",
+      "tiledJsonPath": "/assets/game/maps/urgencias-sala.json",
+      "displayName": "Sala de Urgencias — Hospital",
+      "spawnX": 480,
+      "spawnY": 420,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "enfermera-urgencias",
+          "npcType": "colleague",
+          "displayName": "Enfermera de turno",
+          "portrait": "👩‍⚕️",
+          "x": 736,
+          "y": 372,
+          "recipeId": "enfermera-urgencias",
+          "facing": "down",
+          "emotion": "calm",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Llegó hace 20 minutos. Hematomas en rostro y brazos, llanto contenido. Los niños están en la sala de espera con otra enfermera.", "emotion": "neutral" },
+              { "text": "Esta es la tercera vez en seis meses. La última vez solo se le dio el alta sin seguimiento.", "emotion": "negative" },
+              { "text": "Cuando tengas el contexto completo, la sala de escucha está lista. Empieza por estabilizar: nada de cuestionarios todavía.", "emotion": "neutral" }
+            ]
+          }
+        },
+        {
+          "key": "madre-familiar",
+          "npcType": "family",
+          "displayName": "Madre de la consultante",
+          "portrait": "👩",
+          "x": 190,
+          "y": 444,
+          "recipeId": "madre-acompanante",
+          "facing": "right",
+          "emotion": "anxious",
+          "motion": {
+            "behavior": "pace",
+            "speed": 22,
+            "zone": { "x": 150, "y": 424, "width": 110, "height": 56 },
+            "anchors": [
+              { "x": 170, "y": 436, "pauseMs": 1900, "face": "right" },
+              { "x": 240, "y": 452, "pauseMs": 1400, "face": "up" },
+              { "x": 198, "y": 470, "pauseMs": 2400, "face": "left" }
+            ]
+          },
+          "dialogue": {
+            "lines": [
+              { "text": "Es mi hija. Llevaba meses diciéndome que todo estaba bien… y hoy llegó así.", "emotion": "anxious" },
+              { "text": "Los niños están afuera con mi hermana. Tienen 7 y 10 años; el menor lo vio todo.", "emotion": "negative" },
+              { "text": "Ella no quiere denunciar. Dice que si habla, él la mata. Por favor, no la presionen.", "emotion": "anxious" }
+            ]
+          }
+        },
+        {
+          "key": "seguridad-entrada",
+          "npcType": "witness",
+          "displayName": "Seguridad del hospital",
+          "portrait": "💂",
+          "x": 620,
+          "y": 464,
+          "recipeId": "seguridad",
+          "facing": "left",
+          "emotion": "neutral",
+          "motion": {
+            "behavior": "patrol",
+            "speed": 26,
+            "anchors": [
+              { "x": 560, "y": 462, "pauseMs": 1300, "face": "left" },
+              { "x": 760, "y": 462, "pauseMs": 1300, "face": "right" }
+            ]
+          },
+          "dialogue": {
+            "lines": [
+              { "text": "¿Quiere que llame a la Policía de una vez? Yo los hago pasar ya mismo.", "emotion": "neutral" },
+              { "text": "(Activar a la autoridad sin protocolo ni consentimiento puede escalar el peligro. La decisión clínica es tuya.)", "emotion": "negative" }
+            ]
+          }
+        },
+        {
+          "key": "colega-guardia",
+          "npcType": "colleague",
+          "displayName": "Colega de guardia",
+          "portrait": "🧑‍⚕️",
+          "x": 320,
+          "y": 306,
+          "recipeId": "enfermera-urgencias",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "subtle-wander", "radius": 18, "pauseMs": 2800 },
+          "dialogue": {
+            "lines": [
+              { "text": "Recuerda: primero estabilización emocional. Los PAP son la primera línea, no los cuestionarios.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

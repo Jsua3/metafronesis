@@ -29,6 +29,8 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
 SIEP_THROTTLE_ENABLED = os.environ.get("SIEP_THROTTLE_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
 # S1-3 · el aviso al administrador corre en el acto en las pruebas (se revisa mail.outbox al volver).
 SIEP_BACKGROUND_INLINE = True
+# Las pruebas crean muchas cuentas: con 10 rondas la suite no se alarga. Producción usa SIEP_BCRYPT_ROUNDS de base.py.
+SIEP_BCRYPT_ROUNDS = 10
 # WhiteNoise sirve los estáticos de producción (S2-4: la subclase del SPA, sin su index.html), pero en test intenta
 # inspeccionar STATIC_ROOT (que no debe existir ni se necesita para la API).
 MIDDLEWARE = [

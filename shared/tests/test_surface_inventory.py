@@ -112,3 +112,26 @@ def test_control_negativo_vista_sin_permisos_aparece_publica_y_la_prueba_la_rech
 
     with pytest.raises(AssertionError, match="api/nueva"):
         rutas_publicas.test_public_api_routes_are_exactly_the_declared_ones()
+
+
+def test_rutas_del_editor_declaradas_en_el_inventario():
+    filas = {(fila["route"], fila["method"]): fila for fila in surface.render_inventory()["routes"]}
+    base = "api/authoring/cases/<int:case_version_id>"
+    for terminacion, metodo in (("editor", "GET"), ("plan", "GET"), ("checklist", "PUT")):
+        fila = filas[(f"{base}/{terminacion}", metodo)]
+        assert fila["exposure"] == "role:ADMIN,PROFESOR"
+        assert fila["audit"]
+
+
+def test_rutas_de_revision_nueva_en_inventario():
+    filas = {(fila["route"], fila["method"]): fila for fila in _inventario_versionado()["routes"]}
+    rutas = {
+        ("api/instructor/attempts/recent", "GET"): "INSTRUCTOR_ATTEMPTS_VIEWED",
+        ("api/instructor/attempts/<uuid:attempt_id>/replace", "POST"): "ATTEMPT_REPLACED",
+        ("api/instructor/attempts/<uuid:attempt_id>/trace", "GET"): "traza.leer",
+        ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "GET"): "traza.leer",
+        ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "PUT"): "rubrica.evaluar",
+    }
+    for clave, auditoria in rutas.items():
+        assert filas[clave]["audit"] == auditoria
+        assert filas[clave]["exposure"] == "role:ADMIN,PROFESOR"

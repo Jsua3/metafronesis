@@ -1,0 +1,145 @@
+@if (store.caso(); as caso) {
+  <div class="lienzo">
+    <div class="hoja">
+      <header class="cabecera">
+        <div class="cabecera__titulos">
+          <p class="sobretitulo">Etapa 1 · Datos</p>
+          <h1>Datos del caso</h1>
+          <p class="bajada">Lo que lee el estudiante antes de empezar y lo que se espera que logre al terminar.</p>
+        </div>
+        <p class="estado" role="status" data-estado-datos [attr.data-forma]="situacion().forma">{{ situacion().texto }}</p>
+      </header>
+
+      @if (soloLectura()) {
+        <p class="nota-lectura" role="note">El caso ya no es un borrador: se puede leer, pero no cambiar.</p>
+      }
+
+      <!-- Un formulario como un inspector: secciones plegables con su resumen a la vista, campos de 14 px con su rótulo arriba. -->
+      <form class="formulario" novalidate (submit)="$event.preventDefault()">
+        <app-estudio-seccion titulo="Identidad" [resumen]="nombre().trim() || 'Sin nombre'" [(abierta)]="abiertaIdentidad">
+          <div class="grupo">
+            <label for="d-nombre" class="etiqueta">Nombre del caso</label>
+            <input id="d-nombre" class="campo" type="text" autocomplete="off" [readOnly]="soloLectura()" [value]="nombre()"
+                   [attr.aria-invalid]="errores().nombre ? 'true' : null"
+                   [attr.aria-describedby]="'d-nombre-ayuda' + (errores().nombre ? ' d-nombre-error' : '')"
+                   (input)="nombre.set($any($event.target).value)" (change)="guardarAlSalir()" />
+            <p id="d-nombre-ayuda" class="ayuda">Así reconocen el caso Psicología y el estudiante. Si ya hay otra versión publicada, el nombre no se puede cambiar.</p>
+            @if (errores().nombre; as error) { <p id="d-nombre-error" class="error">{{ error }}</p> }
+          </div>
+        </app-estudio-seccion>
+
+        <app-estudio-seccion titulo="Antes de empezar" [resumen]="resumenContexto()" [(abierta)]="abiertaContexto">
+          <div class="grupo">
+            <div class="etiqueta-fila">
+              <label for="d-contexto" class="etiqueta">Contexto que lee el estudiante</label>
+              <span id="d-contexto-cuenta" class="cuenta" [attr.data-cerca]="contexto().length > maxContexto * 0.9 ? '' : null">{{ tope(contexto().length) }} de {{ tope(maxContexto) }} caracteres</span>
+            </div>
+            <textarea autoAlto id="d-contexto" class="campo campo--largo" rows="6" data-accion="datos-del-caso" [readOnly]="soloLectura()" [value]="contexto()"
+                      [attr.aria-invalid]="errores().contexto ? 'true' : null"
+                      [attr.aria-describedby]="'d-contexto-ayuda d-contexto-cuenta' + (errores().contexto ? ' d-contexto-error' : '')"
+                      (input)="contexto.set($any($event.target).value)" (change)="guardarAlSalir()"></textarea>
+            <p id="d-contexto-ayuda" class="ayuda">Lo que la persona lee antes de empezar. Texto plano, hasta {{ tope(maxContexto) }} caracteres.</p>
+            @if (errores().contexto; as error) { <p id="d-contexto-error" class="error">{{ error }}</p> }
+          </div>
+
+          @if (conTemas()) {
+            <fieldset class="grupo conjunto" data-accion="temas-sensibles" aria-describedby="d-temas-ayuda">
+              <legend class="etiqueta">Temas sensibles del caso</legend>
+              <p id="d-temas-ayuda" class="ayuda">Frases cortas que el estudiante lee antes de empezar, como «violencia de pareja». Hasta {{ maxTemas }} temas de {{ maxLargoTema }} caracteres.</p>
+              @if (temas().length) {
+                <ul class="fichas">
+                  @for (tema of temas(); track tema) {
+                    <li class="ficha">
+                      <span class="ficha__marca" aria-hidden="true"></span>
+                      <span class="ficha__texto">{{ tema }}</span>
+                      @if (!soloLectura()) {
+                        <button type="button" class="ficha__quitar" [attr.aria-label]="'Quitar el tema ' + tema" (click)="quitarTema(tema)">
+                          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="ayuda vacio">Todavía no hay temas.</p>
+              }
+              @if (!soloLectura()) {
+                <div class="fila fila--tema">
+                  <label for="d-tema" class="solo-lector">Nuevo tema sensible</label>
+                  <input id="d-tema" class="campo" type="text" autocomplete="off" placeholder="Escribe un tema y pulsa Enter" [value]="temaNuevo()"
+                         [attr.aria-invalid]="errorTema() ? 'true' : null" [attr.aria-describedby]="errorTema() ? 'd-tema-error' : null"
+                         (input)="temaNuevo.set($any($event.target).value)" (keydown.enter)="agregarTema($event)" />
+                  <button type="button" class="accion-texto" (click)="agregarTema()">Agregar tema</button>
+                </div>
+                @if (errorTema(); as error) { <p id="d-tema-error" class="error">{{ error }}</p> }
+              }
+            </fieldset>
+          }
+        </app-estudio-seccion>
+
+        <app-estudio-seccion titulo="Lo que va a practicar" [resumen]="objetivosVista().length + ' de ' + maxObjetivos" [(abierta)]="abiertaObjetivos">
+          <fieldset class="grupo conjunto" [attr.aria-describedby]="'d-objetivos-ayuda' + (errores().objetivos ? ' d-objetivos-error' : '')">
+            <legend class="etiqueta">Objetivos de aprendizaje</legend>
+            <p id="d-objetivos-ayuda" class="ayuda">Hasta {{ maxObjetivos }} objetivos de {{ maxLargoObjetivo }} caracteres cada uno. Los revisa Psicología.</p>
+            @if (objetivos().length) {
+              <ol class="filas">
+                @for (objetivo of objetivos(); track $index) {
+                  <li class="fila fila--objetivo">
+                    <span class="fila__numero" aria-hidden="true">{{ $index + 1 }}</span>
+                    <!-- Un objetivo es una frase: crece con lo escrito, pero Enter no abre otro renglón. -->
+                    <textarea autoAlto class="campo" rows="1" [id]="'d-objetivo-' + $index" [readOnly]="soloLectura()" [value]="objetivo"
+                              [attr.aria-label]="'Objetivo ' + ($index + 1)"
+                              [attr.aria-invalid]="errores().objetivos ? 'true' : null"
+                              (keydown.enter)="$event.preventDefault()"
+                              (input)="escribirObjetivo($index, $any($event.target).value)" (change)="guardarAlSalir()"></textarea>
+                    @if (!soloLectura()) {
+                      <button type="button" class="quitar" [attr.aria-label]="'Quitar el objetivo ' + ($index + 1)" title="Quitar" (click)="quitarObjetivo($index)">
+                        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.6 7.5h4.8L11 5" /></svg>
+                      </button>
+                    }
+                  </li>
+                }
+              </ol>
+            }
+            @if (errores().objetivos; as error) { <p id="d-objetivos-error" class="error">{{ error }}</p> }
+            @if (!soloLectura()) {
+              <button type="button" class="accion-texto" [attr.aria-disabled]="objetivos().length >= maxObjetivos" (click)="agregarObjetivo()">Agregar objetivo</button>
+            }
+          </fieldset>
+        </app-estudio-seccion>
+      </form>
+    </div>
+  </div>
+
+  <!-- El Inspector de esta etapa es la vista previa: lo que se escribe a la izquierda se redibuja aquí con cada letra. -->
+  <ng-template estudioRanura="inspector">
+    <aside class="vista-lateral" aria-labelledby="d-vista">
+      <h2 id="d-vista" class="vista-titulo">Así aparece para el estudiante</h2>
+      <div class="marco-vista">
+        <article class="vista">
+          <ui-portada-caso class="vista__portada" [titulo]="nombre()" tamano="tarjeta" />
+          <h3 class="vista__nombre">{{ nombre().trim() || 'Sin nombre' }}</h3>
+          <p class="vista__contexto" [class.vacio]="!contexto().trim()">{{ contexto().trim() || 'Aquí se verá el contexto cuando lo escribas.' }}</p>
+          @if (objetivosVista().length) {
+            <h4 class="vista__sub">Lo que vas a practicar</h4>
+            <ul class="vista__lista">
+              @for (objetivo of objetivosVista(); track $index) { <li>{{ objetivo }}</li> }
+            </ul>
+          }
+          @if (temas().length) {
+            <h4 class="vista__sub">En este caso aparecen</h4>
+            <ul class="vista__fichas">
+              @for (tema of temas(); track tema) { <li>{{ tema }}</li> }
+            </ul>
+          }
+        </article>
+      </div>
+      <p class="vista-nota">En su lista, el estudiante ve el contexto recortado a tres renglones; la ficha completa, al abrir el caso.</p>
+    </aside>
+  </ng-template>
+
+  <ng-template estudioRanura="estado">
+    <span class="est-dato">{{ objetivosVista().length }} {{ objetivosVista().length === 1 ? 'objetivo' : 'objetivos' }}</span>
+    @if (conTemas()) { <span class="est-dato">{{ temas().length }} {{ temas().length === 1 ? 'tema sensible' : 'temas sensibles' }}</span> }
+  </ng-template>
+}

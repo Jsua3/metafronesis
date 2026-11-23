@@ -1,0 +1,253 @@
+@if (store.caso(); as caso) {
+  <div class="lienzo">
+    <div class="hoja hoja--ancha">
+      <header class="cabecera">
+        <div class="cabecera__titulos">
+          <p class="sobretitulo">Etapa 5 · Enviar</p>
+          <h1>Enviar a revisión</h1>
+          <p class="bajada">Psicología revisa el caso antes de publicarlo. Mientras esté en revisión se puede ver, pero no editar.</p>
+        </div>
+      </header>
+
+      @if (devuelto(); as d) {
+        <section aria-labelledby="dv" class="aviso-devuelto devuelto" data-accion="devuelto-por-psicologia">
+          <h2 id="dv">Psicología devolvió el caso</h2>
+          <p>Motivo: {{ d.motivo }}.</p>
+          @if (d.nota) { <p>Nota: {{ d.nota }}</p> }
+        </section>
+      }
+
+      @if (store.soloLectura()) {
+        <p role="status" class="listo">{{ textoSoloLectura() }}</p>
+        <section aria-labelledby="dc" class="panel bloque" data-accion="decision-caso">
+          <h2 id="dc">Estado y decisión del caso</h2>
+          <app-case-review-panel [caseVersionId]="casoId()" [revision]="caso.revision" [editable]="false" />
+          @if (puedeCrearVersion()) {
+            <div class="version-nueva">
+              <p class="ayuda">Un caso publicado o archivado no se cambia: se crea una versión nueva, que sí se puede editar.</p>
+              <button type="button" class="boton" [attr.aria-disabled]="creandoVersion()" aria-describedby="vnp" (click)="crearVersion()">Crear una versión nueva</button>
+              <p role="status" id="vnp" [class.error]="!!falloVersion()">
+                @if (falloVersion(); as fallo) { {{ fallo }} } @else if (creandoVersion()) { Creando la versión nueva… }
+              </p>
+            </div>
+          }
+        </section>
+      } @else {
+        <!-- «Problemas», como en un IDE: agrupados por etapa, una fila por problema; la fila entera lleva a él (Enter o clic). -->
+        <section aria-labelledby="fl" class="panel por-resolver" (keydown)="moverEntreFilas($event)">
+          <div class="panel__cab">
+            <h2 id="fl">Por resolver ({{ faltas().length }})</h2>
+          </div>
+          @if (consultando()) {
+            <p class="comprobando" role="status"><span class="comprobando__barra" aria-hidden="true"></span>Comprobando el caso…</p>
+          }
+
+          <!-- Un grupo por etapa: su cuenta y la hoja «Pendientes» de esa etapa; debajo, sus problemas. -->
+          <ul class="etapas" aria-label="Estado de cada etapa">
+            @for (e of etapas(); track e.etapa) {
+              <li class="etapa" [attr.data-listo]="e.total === 0">
+                <div class="etapa__cab" [attr.data-etapa]="e.etapa">
+                  <span class="marca" aria-hidden="true"></span>
+                  <span class="etapa__nombre">{{ e.nombre }}</span>
+                  <span class="etapa__estado" [class.pendiente]="e.total > 0">{{ e.texto }}</span>
+                  @if (e.total > 0) {
+                    <button type="button" class="icono-boton etapa__ver" [attr.aria-label]="'Ver los pendientes de ' + e.nombre" title="Ver en la hoja de pendientes" (click)="abrirPendientes($event)">
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><path d="M10 3v10" /></svg>
+                    </button>
+                  }
+                </div>
+                @if (e.problemas.length) {
+                  <ul class="problemas">
+                    @for (p of e.problemas; track $index) {
+                      <li class="problema" [attr.data-tipo]="p.tipo">
+                        <button type="button" class="problema__boton fila-problema" (click)="llevar(p)">
+                          <span class="icono-tipo" aria-hidden="true"></span>
+                          <span class="problema__texto">{{ p.mensaje }}</span>
+                          @if (p.donde) { <span class="problema__donde">{{ p.donde }}</span> }
+                          <span class="solo-lector">{{ p.tipo === 'por-corregir' ? '(por corregir)' : '(por escribir)' }}</span>
+                          <span class="ir" aria-hidden="true">Llévame ahí</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+
+          @if (faltasDelServidor().length) {
+            <p class="sub">Además, Psicología pide:</p>
+            <ul class="problemas">
+              @for (f of faltasDelServidor(); track $index) {
+                <li class="falta problema" data-tipo="por-corregir">
+                  <span class="icono-tipo" aria-hidden="true"></span>
+                  <p>{{ f.mensaje }}</p>
+                  <button type="button" class="ir-boton fila-problema" [attr.aria-label]="'Llévame ahí: ' + f.mensaje" (click)="llevar(f)">Llévame ahí</button>
+                </li>
+              }
+            </ul>
+          }
+          @if (faltasDeLista().length) {
+            <p class="sub">De la lista de verificación:</p>
+            <ul class="problemas">
+              @for (f of faltasDeLista(); track $index) {
+                <li class="falta problema" data-tipo="por-corregir">
+                  <span class="icono-tipo" aria-hidden="true"></span>
+                  <p>{{ f.mensaje }}</p>
+                  <button type="button" class="ir-boton fila-problema" [attr.aria-label]="'Llévame ahí: ' + f.mensaje" (click)="llevar(f)">Llévame ahí</button>
+                </li>
+              }
+            </ul>
+          }
+          @if (faltas().length === 0 && !consultando()) {
+            <p class="nada"><span class="nada__marca" aria-hidden="true"></span>Nada por resolver.</p>
+          }
+          @if (noSeComprobo()) {
+            <p class="aviso" role="note">No se pudo comprobar el caso con Psicología: revisa tu conexión. Lo de arriba es lo que se ve desde aquí.</p>
+          }
+
+          <div class="probado" data-probado [attr.data-listo]="!!caso.probadoHastaElFinal">
+            <span class="marca" aria-hidden="true"></span>
+            <span class="probado__texto">{{ caso.probadoHastaElFinal ? 'Lo probaste hasta un final.' : 'Aún no lo has probado hasta un final.' }}</span>
+            <a class="accion-enlace" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar" (click)="probar($event)" (auxclick)="probar($event)">Probar</a>
+          </div>
+        </section>
+
+        @if (sugeridas().length) {
+          <details class="panel plegable">
+            <summary><span class="chev" aria-hidden="true"></span>Sugerencias ({{ sugeridas().length }}) <span class="resumen-suave">· no impiden enviar</span></summary>
+            <ul class="problemas">
+              @for (s of sugeridas(); track $index) {
+                <li class="falta problema" data-tipo="sugerencia">
+                  <span class="icono-tipo" aria-hidden="true"></span>
+                  <p>{{ s.mensaje }}</p>
+                  @if (s.ir.accionId === 'probar') {
+                    <button type="button" class="ir-boton fila-problema" [attr.aria-label]="'Llévame ahí: ' + s.mensaje" (click)="llevar(s)">Llévame ahí</button>
+                  } @else {
+                    <a class="ir-boton fila-problema" [routerLink]="rutas.a(s.ir.ruta)">Ir a revisarlo</a>
+                  }
+                </li>
+              }
+            </ul>
+          </details>
+        }
+
+        @if (listo().length) {
+          <details class="panel plegable" aria-label="Lo que ya está listo">
+            <summary><span class="chev" aria-hidden="true"></span>Ya está listo ({{ listo().length }})</summary>
+            <ul class="hechos">
+              @for (l of listo(); track l) { <li><span class="hechos__marca" aria-hidden="true"></span>{{ l }}</li> }
+            </ul>
+          </details>
+        }
+      }
+      <p role="status" class="solo-lector">{{ anuncio() }}</p>
+    </div>
+  </div>
+
+  <ng-template estudioRanura="herramientas">
+    @if (!store.soloLectura()) {
+      <button type="button" estudioHerramienta="Comprobar de nuevo" (click)="comprobar()">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.5 8A6 6 0 1 0 16 12" /><path d="M16 4v4h-4" /></svg>
+      </button>
+      <button type="button" estudioHerramienta="Ver todos los pendientes" (click)="abrirPendientes($event)">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6h9M7 10h9M7 14h9" /><path d="M4 6h.01M4 10h.01M4 14h.01" /></svg>
+      </button>
+    }
+  </ng-template>
+
+  <!-- Inspector: el caso, la lista que declara la docente y el envío (la única acción primaria de la vista). -->
+  <ng-template estudioRanura="inspector">
+    <section aria-label="El caso" class="resumen insp">
+      <div class="resumen__texto">
+        <h2>{{ caso.titulo }}</h2>
+        @if (lugar(); as nombre) { <p>{{ nombre }} · {{ textoFinales() }}</p> } @else { <p>{{ textoFinales() }}</p> }
+      </div>
+      <span class="pildora estado">{{ nombreEstado() }}</span>
+      <div class="cifras">
+        <ui-stat label="Escenas" [value]="caso.escenas.length" />
+        <ui-stat label="Respuestas" [value]="cuantasRespuestas()" />
+        <ui-stat label="Finales posibles" [value]="cuantosFinales()" />
+      </div>
+      <p class="panel__linea linea-estado" data-linea-estado [attr.data-tono]="tonoDeEstado()">{{ lineaDeEstado() }}</p>
+      <ol class="linea-ciclo" aria-label="Recorrido del caso">
+        @for (paso of pasosDelCiclo(); track paso.nombre) {
+          <li [attr.data-paso]="paso.estado" [attr.aria-current]="paso.estado === 'actual' ? 'step' : null">{{ paso.nombre }}</li>
+        }
+      </ol>
+    </section>
+
+    @if (!store.soloLectura()) {
+      @if (caso.lista; as lista) {
+        @if (lista.items.length) {
+          <section aria-labelledby="lv" class="insp" id="lista-verificacion" tabindex="-1">
+            <h2 id="lv">Lista de verificación</h2>
+            <p class="ayuda">Lo declaras tú: marca lo que ya revisaste del caso. Los ítems obligatorios hay que marcarlos para poder enviarlo a Psicología.</p>
+            <ul class="lista">
+              @for (i of casillas(); track i.codigo) {
+                <li class="item-lista">
+                  <label class="casilla">
+                    <input type="checkbox" [attr.data-codigo]="i.codigo" [checked]="i.cumplido" (change)="marcarItem(i.codigo, $any($event.target).checked)" />
+                    <span>{{ i.texto }}</span>
+                  </label>
+                  <span class="etiquetas">
+                    <span class="pildora">{{ i.obligatorio ? 'Obligatorio' : 'Opcional' }}</span>
+                    @if (i.quien === 'constancia') { <span class="pildora">Psicología lo confirma al aprobar</span> }
+                    @if (i.enBorrador) { <span class="pildora">Texto pendiente de validar con Psicología</span> }
+                  </span>
+                </li>
+              }
+            </ul>
+            @if (deSistema().length) {
+              <p class="sub">Lo comprueba el sistema: no se marca, se cumple solo cuando el caso lo tiene.</p>
+              <ul class="lista filas-estado" aria-label="Comprobaciones del sistema">
+                @for (i of deSistema(); track i.codigo) {
+                  <li class="item-estado" [attr.data-codigo]="i.codigo" [attr.data-listo]="i.respaldado === true">
+                    <span class="marca" aria-hidden="true"></span>
+                    <span class="item-estado__texto">{{ i.texto }}</span>
+                    <span class="pildora">{{ i.respaldado ? 'Hecho' : 'Falta' }}</span>
+                    @if (i.respaldo) { <span class="item-estado__respaldo">{{ i.respaldo }}</span> }
+                  </li>
+                }
+              </ul>
+            }
+            <p class="ayuda constancia">
+              @if (lista.constanciaRegistrada) {
+                Constancia de Psicología registrada.
+              } @else {
+                Pendiente: la constancia la registra Psicología al aprobar el caso; no es una casilla tuya.
+              }
+            </p>
+          </section>
+        }
+      }
+
+      <section aria-labelledby="ms" class="insp envio" data-accion="enviar-revision">
+        <label id="ms" for="mp" class="etiqueta">Mensaje para Psicología (opcional)</label>
+        <textarea id="mp" class="campo" rows="3" aria-describedby="mph" [value]="mensaje()" (input)="mensaje.set($any($event.target).value)"></textarea>
+        <p id="mph" class="ayuda">Por ejemplo, qué quieres que revisen con más cuidado.</p>
+        <button type="button" class="boton boton-primario enviar" [attr.aria-disabled]="!puedeEnviarAhora()" aria-describedby="eph" (click)="enviar()">Enviar a Psicología</button>
+        <p role="status" id="eph" [class.error]="!!falloEnvio()">
+          @if (falloEnvio(); as fallo) {
+            {{ fallo }}
+          } @else if (enviando()) {
+            Enviando el caso a Psicología…
+          } @else if (!puedeEnviarAhora() && faltas().length) {
+            Resuelve {{ faltas().length === 1 ? 'la cosa' : 'las ' + faltas().length + ' cosas' }} de «Por resolver» para poder enviar el caso.
+          } @else if (!puedeEnviarAhora() && !consultando()) {
+            En este momento no puedes enviar este caso a revisión.
+          }
+        </p>
+      </section>
+    }
+  </ng-template>
+
+  <ng-template estudioRanura="estado">
+    @if (!store.soloLectura()) {
+      <span class="est-dato">{{ faltas().length }} por resolver</span>
+      <span class="est-dato">{{ sugeridas().length }} {{ sugeridas().length === 1 ? 'sugerencia' : 'sugerencias' }}</span>
+    } @else {
+      <span class="est-dato">{{ nombreEstado() }}</span>
+    }
+  </ng-template>
+}

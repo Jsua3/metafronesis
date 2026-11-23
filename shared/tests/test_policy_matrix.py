@@ -14,6 +14,9 @@ from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework.views import APIView
 
+from apps.autoria.reglas_views import AceptarView, FinalesView, HitosView, RiesgoView, RubricaView
+from apps.autoria.views import ChecklistView, EditorView, PlanoView
+from apps.autoria.dialogos_views import DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView
 from shared import policies
 from shared.permissions import policy_permission
 
@@ -40,6 +43,14 @@ EXPECTED = [
     ("attempt", "review", PROFESOR, {"member": False}, False),
     ("attempt", "review", ADMIN, {}, True),
     # Reporte de finalización de un intento: su dueño, el docente con alcance o el ADMIN.
+    ("attempt", "replace", ESTUDIANTE, {"member": True}, False),
+    ("attempt", "replace", PROFESOR, {"member": True}, True),
+    ("attempt", "replace", PROFESOR, {"member": False}, False),
+    ("attempt", "replace", ADMIN, {}, True),
+    ("attempt", "rehearse", ESTUDIANTE, {"owner_id": ME}, False),
+    ("attempt", "rehearse", PROFESOR, {"owner_id": ME}, True),
+    ("attempt", "rehearse", PROFESOR, {"owner_id": 99}, False),
+    ("attempt", "rehearse", ADMIN, {}, True),
     ("attempt", "report", ESTUDIANTE, {"owner_id": ME}, True),
     ("attempt", "report", ESTUDIANTE, {"owner_id": 99}, False),
     ("attempt", "report", PROFESOR, {"member": True}, True),
@@ -212,3 +223,18 @@ def test_scope_of_exposes_the_role_scope_for_filtering_lists():
     assert policies.scope_of(actor(ADMIN), "case", "author") == "all"
     assert policies.scope_of(actor(ESTUDIANTE), "case", "author") is None
     assert policies.scope_of(None, "case", "author") is None
+
+
+def test_las_vistas_del_editor_usan_la_politica_de_autoria():
+    for vista in (AceptarView, FinalesView, HitosView, RiesgoView, RubricaView, ChecklistView, EditorView, PlanoView, DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView):
+        permiso = vista.permission_classes[0]()
+        assert permiso.policy == ("case", "author")
+
+
+def test_rutas_de_revision_nueva_usan_politica_de_alcance():
+    from apps.revision.views import IntentosRecientesView, TrazaView, ValoracionRubricaView, ReemplazarIntentoView
+
+    for vista in (IntentosRecientesView, TrazaView, ValoracionRubricaView):
+        assert vista.permission_classes[0].policy == ("attempt", "review")
+    assert ReemplazarIntentoView.permission_classes[0].policy == ("attempt", "replace")
+    assert policies.MATRIX[("attempt", "replace")] == {PROFESOR: policies.MEMBER, ADMIN: policies.ALL}
