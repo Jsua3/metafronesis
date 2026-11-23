@@ -69,7 +69,7 @@ export interface DestinoPosible { id: string; etiqueta: string }
       </div>
     }
 
-    <fieldset class="clasificacion" (focusin)="claseEnfocada.set(r.clase)" (focusout)="alSalirDeClase($event)">
+    <fieldset class="clasificacion" (focusin)="alEntrarEnClase(r.clase)" (focusout)="alSalirDeClase($event)">
       <legend class="solo-lector">Clasificación de la respuesta {{ i + 1 }}</legend>
       @for (c of clases; track c.valor) {
         <label class="opcion" [class]="'opcion ' + c.valor">
@@ -327,6 +327,14 @@ export class RespuestaComponent {
       el?.scrollIntoView?.({ block: 'center' });
       el?.focus();
     }, { injector: this.injector });
+  }
+
+  /**
+   * `focusin` llega DESPUÉS del `focus` del radio: si ya hay una clase enfocada (la del radio), no se pisa con la guardada.
+   * Antes, al pulsar «Con riesgo» la nota decía la consecuencia de la clase anterior.
+   */
+  protected alEntrarEnClase(guardada: ClaseRespuesta | null): void {
+    if (this.claseEnfocada() === undefined) this.claseEnfocada.set(guardada);
   }
 
   protected alSalirDeClase(evento: FocusEvent): void {
