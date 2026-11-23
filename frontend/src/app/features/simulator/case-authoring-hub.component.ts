@@ -1,6 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { CasoStore } from '../autoria/estado/caso.store';
+import { BibliotecaService } from '../autoria/modelo/biblioteca.service';
+import { CAPITULOS } from '../autoria/tutorial/capitulos';
+import { asegurarCasoDePractica } from '../autoria/tutorial/caso-de-practica';
+import { guardarProgreso, leerProgreso } from '../autoria/tutorial/progreso-tutorial';
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthoringApi } from '../../core/api/authoring.api';
 import { SimulationCaseSummary } from '../../core/models/simulation.model';
@@ -79,6 +84,47 @@ export class CaseAuthoringHubComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCases();
+  }
+
+  // ─── «Aprende a crear un caso» (tutorial del editor) ─────────────────────────
+  private readonly router = inject(Router);
+  /** El store y la biblioteca se piden al pulsar: piden HttpClient, y la lista no los necesita para pintarse. */
+  private readonly injector = inject(Injector);
+  protected readonly totalCapitulos = CAPITULOS.length;
+  /** El progreso del tutorial de esta docente (se lee al entrar a la pantalla). */
+  protected readonly tutorial = signal(leerProgreso(this.auth.currentUser()?.id ?? null));
+  protected readonly tutorialAccion = computed(() => {
+    const p = this.tutorial();
+    // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
+    if (p.terminado) return 'Repetir';
+    return p.completados.length || p.paso || p.capitulo ? 'Continuar' : 'Empezar';
+  });
+  protected readonly tutorialAbriendo = signal(false);
+  protected readonly tutorialError = signal('');
+
+  async abrirTutorial(): Promise<void> {
+    // Con la lista aún cargando no se sabe si el caso de práctica ya existe: se crearía otro.
+    if (this.tutorialAbriendo() || this.loading()) return;
+    this.tutorialAbriendo.set(true);
+    this.tutorialError.set('');
+    const usuario = this.auth.currentUser()?.id ?? null;
+    try {
+      const store = this.injector.get(CasoStore);
+      const id = await asegurarCasoDePractica({
+        existentes: this.cases(),
+        casoGuardado: this.tutorial().casoId,
+        biblioteca: this.injector.get(BibliotecaService),
+        crear: (t, l, s, d) => store.crearCaso(t, l, s, d),
+      });
+      if (id !== this.tutorial().casoId) guardarProgreso(usuario, { ...this.tutorial(), casoId: id });
+      const modo = this.tutorial().terminado ? 'repetir' : '1';
+      await this.router.navigateByUrl(`/portal/casos/${encodeURIComponent(id)}/editor?tutorial=${modo}`);
+    } catch (e) {
+      // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
+      this.tutorialError.set(e instanceof Error ? e.message : 'No se pudo preparar el caso de práctica.');
+    } finally {
+      this.tutorialAbriendo.set(false);
+    }
   }
 
   statusTone(status: string | null | undefined): UiBadgeTone {

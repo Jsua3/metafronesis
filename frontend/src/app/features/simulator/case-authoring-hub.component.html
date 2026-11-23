@@ -4,6 +4,20 @@
   <a ui-button uiHerramientaAcciones variant="primary" icon="add_circle" routerLink="/portal/casos/nuevo">Crear un caso</a>
 </ui-cabecera-ilustrada>
 <p class="ds-sr-only" role="status">{{ statusText() }}</p>
+<!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+<section class="hub-tutorial" aria-labelledby="hub-tutorial-titulo">
+  <img class="hub-tutorial__mentor" src="/assets/characters/kit/docente-universidad/portrait-alegre.png" alt="" width="64" height="64" />
+  <div class="hub-tutorial__texto">
+    <h2 id="hub-tutorial-titulo">Aprende a crear un caso</h2>
+    <p>Un recorrido guiado por el editor, paso a paso, sobre un caso de práctica que no afecta tus casos.</p>
+    <p class="hub-tutorial__avance">{{ tutorial().completados.length }} de {{ totalCapitulos }} capítulos</p>
+    <progress [value]="tutorial().completados.length" [max]="totalCapitulos" aria-label="Capítulos del tutorial terminados"></progress>
+    @if (tutorialError()) { <p class="hub-tutorial__error" role="alert">{{ tutorialError() }}</p> }
+  </div>
+  <button ui-button type="button" variant="primary" class="hub-tutorial__accion" [disabled]="tutorialAbriendo() || loading()" (click)="abrirTutorial()">
+    {{ tutorialAbriendo() ? 'Preparando…' : tutorialAccion() }}
+  </button>
+</section>
 <ui-section class="hub-cases" title="Tus casos">
   @switch (listState()) {
     @case ('loading') {
