@@ -316,12 +316,68 @@
       "audit": "EXENTO: lectura de casos propios o visibles para el administrador"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/hints/<int:hint_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ADMIN_DELETE_HINT"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/hints/<int:hint_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_UPDATE_HINT"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/lifecycle",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "CASE_SUBMITTED,CASE_ARCHIVED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/maps",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CREATE_MAP"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/maps/<int:map_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ADMIN_DELETE_MAP"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/maps/<int:map_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_UPDATE_MAP"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/maps/<int:map_id>/hints",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CREATE_HINT"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/maps/<int:map_id>/objects",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CREATE_OBJECT"
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/nodes",
@@ -348,6 +404,22 @@
       "audit": "NODE_UPDATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/objects/<int:object_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ADMIN_DELETE_OBJECT"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/objects/<int:object_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_UPDATE_OBJECT"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/plan",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
@@ -370,6 +442,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: validación sin cambios sobre el caso propio o accesible al administrador"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/world",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de un caso visible"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/world",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_SAVE_WORLD"
     },
     {
       "route": "api/authoring/cases/import",

@@ -2,8 +2,16 @@ from django.urls import path
 from .views import CasosView, DefinicionView, FichaView, EscenasView, EscenaView, DecisionesView, DecisionView
 
 from .views import ChecklistView, EditorView, ExportarCasoView, ImportarCasoView, PlanoView
+from .mundo_views import MundoView, MapaView, MapasView, ObjetoView, ObjetosView, PistaView, PistasView
 
 urlpatterns = [
+    path("cases/<int:case_version_id>/world", MundoView.as_view()),
+    path("cases/<int:case_version_id>/maps", MapasView.as_view()),
+    path("cases/<int:case_version_id>/maps/<int:map_id>", MapaView.as_view()),
+    path("cases/<int:case_version_id>/maps/<int:map_id>/objects", ObjetosView.as_view()),
+    path("cases/<int:case_version_id>/objects/<int:object_id>", ObjetoView.as_view()),
+    path("cases/<int:case_version_id>/maps/<int:map_id>/hints", PistasView.as_view()),
+    path("cases/<int:case_version_id>/hints/<int:hint_id>", PistaView.as_view()),
     path("cases/<int:case_version_id>/editor", EditorView.as_view()),
     path("cases/<int:case_version_id>/checklist", ChecklistView.as_view()),
     path("cases/<int:case_version_id>/plan", PlanoView.as_view()),

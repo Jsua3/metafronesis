@@ -1,15 +1,16 @@
 from collections import deque
 
-from apps.simulation.models.world import MapObject, SceneMap
+from apps.simulation.models.world import DEFAULT_MAP_WIDTH, MapObject, SceneMap
 from shared.jsonutils import read_map
 
 SEPARACION = 96
 ALTO_SALA = 528
-ANCHO_SALA = 960
+ANCHO_SALA = DEFAULT_MAP_WIDTH
+PASO_ANCHO = 240
 PASO = 8
 MAX_PASOS = 400
 MAX_FILAS = 12
-ANCHOS = (960, 1200, 1440, 1680, 1920)
+ANCHOS = tuple(ANCHO_SALA + PASO_ANCHO * indice for indice in range(5))
 ENCUADRES = {"tres-paredes": (True, True), "dos-paredes-izquierda": (True, False), "dos-paredes-derecha": (False, True), "una-pared": (False, False)}
 PISO = 230
 MARGEN = 24
@@ -52,7 +53,7 @@ def plano(version):
         if muro not in OPUESTO or type(posicion) is not int:
             ancho = salas[origen]["width"] if salas[origen]["width"] in ANCHOS else ANCHO_SALA
             izquierda, derecha = ENCUADRES[salas[origen]["frame"]]
-            borde = 96 + 19 * (ancho - ANCHO_SALA) // 240
+            borde = SEPARACION + 19 * (ancho - ANCHO_SALA) // PASO_ANCHO
             limite_izquierdo = borde if izquierda else 0
             zona_izquierda = borde if izquierda else MARGEN
             zona_derecha = ancho - borde if derecha else ancho - MARGEN
@@ -118,7 +119,7 @@ def plano(version):
                 else:
                     sala_puerta = salas[destino] if inverso else salas[origen]
                     ancho_geometria = sala_puerta["width"] if sala_puerta["width"] in ANCHOS else ANCHO_SALA
-                    borde = 96 + 19 * (ancho_geometria - ANCHO_SALA) // 240
+                    borde = SEPARACION + 19 * (ancho_geometria - ANCHO_SALA) // PASO_ANCHO
                     limite_izquierdo = borde if ENCUADRES[sala_puerta["frame"]][0] else 0
                     if inverso:
                         coordenada = origen_x + salas[origen]["width"] // 2 - limite_izquierdo - posicion
