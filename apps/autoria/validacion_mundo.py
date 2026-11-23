@@ -2,6 +2,7 @@
 from apps.simulation.models.world import CollisionZone, DialogueChoice, DialogueTree, MapObject, SceneMap
 from shared.jsonutils import read_map
 from .activos_mundo import recurso_permitido
+from .validacion_estructura import validar as validar_estructura
 
 ANCHO_MAXIMO = 2560
 ALTO_MAXIMO = 1920
@@ -133,4 +134,5 @@ def validar(version):
             errores[-1]["detail"] = eleccion.required_tool_code
     if not any(objeto.object_type == "EXIT" for objeto in objetos):
         agregar("NO_SAFE_EXIT", "El caso debe tener una salida segura.")
+    errores.extend(validar_estructura(version))
     return {"errors": errores, "warnings": advertencias, "canPublish": not errores}
