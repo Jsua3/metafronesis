@@ -19,7 +19,7 @@ const moduleFile = (dotted: string) => join(BACKEND, ...dotted.split('.')) + '.p
 function routesOf(file: string, prefix = ''): string[] {
   const source = readFileSync(file, 'utf-8');
   const routes: string[] = [];
-  for (const match of source.matchAll(/(?:re_)?path\(\s*r?"([^"]*)"\s*,\s*([^\n]+)/g)) {
+  for (const match of source.matchAll(/(?:re_)?path\(\s*r?["']([^"']*)["']\s*,\s*([^\n]+)/g)) {
     const [, route, rest] = match;
     const included = rest.match(/include\("([^"]+)"\)/);
     if (included) routes.push(...routesOf(moduleFile(included[1]), prefix + route));
@@ -68,7 +68,8 @@ const CLIENT_FILES = [
  * (`GET /api/simulation/attempts/{id}/state`, SIEP-239). Mientras no estén en `develop` se exceptúan; la última prueba
  * falla cuando la ruta ya existe, para quitarla de esta lista y que el contrato la vigile.
  */
-const RUTAS_PENDIENTES = ['api/simulation/attempts/ID/state'];
+// El estado del intento (#57) y los reportes (#60) ya están en `develop`: no queda ninguna pendiente.
+const RUTAS_PENDIENTES: readonly string[] = [];
 
 describe('Rutas del cliente: cada URL existe en el servidor', () => {
   const routes = routesOf(join(BACKEND, 'psychosim', 'urls.py')).filter(route => route.startsWith('api/'));
@@ -90,8 +91,8 @@ describe('Rutas del cliente: cada URL existe en el servidor', () => {
     },
   );
 
-  it.each(RUTAS_PENDIENTES)('la ruta pendiente «%s» sigue sin existir en el servidor (si ya existe, quitarla de RUTAS_PENDIENTES)', url => {
-    expect(used.some(entry => entry.url === url), `${url} ya no la pide el cliente`).toBe(true);
-    expect(routes.some(route => routePattern(route).test(url)), `${url} ya existe en el servidor: quítala de RUTAS_PENDIENTES`).toBe(false);
+  it('cada ruta pendiente la pide el cliente y todavía no existe en el servidor (si ya existe, quitarla de RUTAS_PENDIENTES)', () => {
+    expect(RUTAS_PENDIENTES.filter(url => !used.some(entry => entry.url === url)), 'ya no las pide el cliente').toEqual([]);
+    expect(RUTAS_PENDIENTES.filter(url => routes.some(route => routePattern(route).test(url))), 'ya existen en el servidor').toEqual([]);
   });
 });

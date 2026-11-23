@@ -25,7 +25,14 @@ const DEV_ONLY_ROUTES: Routes = (typeof ngDevMode === 'undefined' || ngDevMode)
 
 function destinoInicial(): string {
   const rol = inject(AuthService).currentUser()?.role;
-  return rol === 'ADMIN' ? '/portal/admin/usuarios' : rol === 'PROFESOR' ? '/portal/grupos' : '/portal/dashboard';
+  // Cada rol tiene su inicio en /portal/dashboard (el del personal y el del estudiante, cada uno con su `canMatch`).
+  return rol === 'ADMIN' || rol === 'PROFESOR' || rol === 'ESTUDIANTE' ? '/portal/dashboard' : '/portal/invitaciones';
+}
+
+/** El inicio del docente y de la administración: el del estudiante es otra ruta con su propio `canMatch`. */
+function esPersonal(): boolean {
+  const rol = inject(AuthService).currentUser()?.role;
+  return rol === 'ADMIN' || rol === 'PROFESOR';
 }
 
 export const routes: Routes = [
@@ -54,14 +61,22 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: () => destinoInicial() },
       {
-        // SIEP-239: el inicio del estudiante (sus casos, su siguiente paso y su recorrido). Los demás roles siguen a su destino.
+        path: 'dashboard',
+        pathMatch: 'full',
+        title: 'Inicio',
+        canMatch: [esPersonal],
+        loadComponent: () => import('./features/dashboard/staff-dashboard.component').then(m => m.StaffDashboardComponent)
+      },
+      {
+        // SIEP-239: el inicio del estudiante (sus casos, su siguiente paso y su recorrido).
         path: 'dashboard',
         pathMatch: 'full',
         title: 'Inicio',
         canMatch: [() => inject(AuthService).currentUser()?.role === 'ESTUDIANTE'],
         loadComponent: () => import('./features/dashboard/student-dashboard.component').then(m => m.StudentDashboardComponent)
       },
-      { path: 'dashboard', pathMatch: 'full', redirectTo: () => destinoInicial() },
+      // Sin otro inicio que coincida, a la bandeja de grupos (una redirección fija: no puede volver a /portal/dashboard).
+      { path: 'dashboard', pathMatch: 'full', redirectTo: '/portal/invitaciones' },
       {
         // ED-5: solo el estudiante juega (`attempt.play`); al resto el servidor le responde 403.
         path: 'jugar',
@@ -126,6 +141,36 @@ export const routes: Routes = [
         loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
       },
       {
+        path: 'docente/trazabilidad',
+        title: 'Revisión formativa',
+        canActivate: [roleGuard(...rolesFor('trazabilidad'))],
+        canDeactivate: [canLeaveGuard],
+        loadComponent: () => import('./features/simulator/instructor-trace.component').then(m => m.InstructorTraceComponent)
+      },
+      {
+        path: 'rubricas',
+        title: 'Rúbricas',
+        canActivate: [roleGuard(...rolesFor('rubricas'))],
+        canDeactivate: [canLeaveGuard],
+        // Biblioteca y editor viven en la misma ruta (`?rubrica=`); la guardia de salida corre también al cambiar ese
+        // parámetro, para preguntar antes de dejar una rúbrica con cambios sin guardar.
+        runGuardsAndResolvers: 'paramsOrQueryParamsChange',
+        loadComponent: () => import('./features/admin/rubrics.component').then(m => m.RubricsComponent)
+      },
+      {
+        path: 'reportes',
+        title: 'Reportes',
+        canActivate: [roleGuard(...rolesFor('reportes'))],
+        loadComponent: () => import('./features/reportes/reporte-grupo.component').then(m => m.ReporteGrupoComponent)
+      },
+      {
+        // Los intentos de un estudiante; se llega desde la tabla del reporte del grupo.
+        path: 'reportes/estudiante/:estudianteId',
+        title: 'Reporte del estudiante',
+        canActivate: [roleGuard(...rolesFor('reportes'))],
+        loadComponent: () => import('./features/reportes/reporte-estudiante.component').then(m => m.ReporteEstudianteComponent)
+      },
+      {
         path: 'admin/usuarios',
         title: 'Usuarios',
         canActivate: [roleGuard(...rolesFor('usuarios'))],
@@ -162,6 +207,9 @@ export const routes: Routes = [
     loadComponent: () => import('./features/public/offline.component').then(m => m.OfflineComponent)
   },
   { path: 'dashboard', redirectTo: 'portal/dashboard', pathMatch: 'full' },
+  { path: 'docente', redirectTo: 'portal/docente/trazabilidad', pathMatch: 'full' },
+  { path: 'rubricas', redirectTo: 'portal/rubricas', pathMatch: 'full' },
+  { path: 'reportes', redirectTo: 'portal/reportes', pathMatch: 'full' },
   { path: 'grupos', redirectTo: 'portal/grupos', pathMatch: 'full' },
   { path: 'usuarios', redirectTo: 'portal/admin/usuarios', pathMatch: 'full' },
   ...DEV_ONLY_ROUTES,

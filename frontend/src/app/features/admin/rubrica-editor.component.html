@@ -1,0 +1,247 @@
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+@if (readOnly()) {
+  <div class="rb-readonly re-aviso re-aviso--peligro">
+    <mat-icon class="re-aviso__icono" aria-hidden="true">lock</mat-icon>
+    <p class="rb-message rb-message--error">{{ message() }}</p>
+    <button ui-button type="button" variant="secondary" icon="content_copy" (click)="duplicate()">Duplicar para personalizar</button>
+  </div>
+} @else if (messageIsError() && message() && carga() !== 'error') {
+  <p class="rb-message rb-message--error re-aviso re-aviso--peligro">{{ message() }}</p>
+}
+
+@if (carga() === 'cargando') {
+  <div class="re-cargando" aria-busy="true">
+    <ui-skeleton shape="card" [lines]="2" />
+    <ui-skeleton shape="card" [lines]="4" />
+  </div>
+} @else if (carga() === 'error') {
+  <ui-error-state kind="server" message="No fue posible abrir la rúbrica." (retry)="reintentarApertura()" />
+} @else if (soloLectura()) {
+  <!-- Rúbrica ajena conocida de antemano: la matriz entera, sin campos, y la salida que la resuelve. -->
+  <div class="rb-readonly re-aviso">
+    <mat-icon class="re-aviso__icono" aria-hidden="true">lock</mat-icon>
+    <p class="rb-message">{{ mensajeSoloLectura }}</p>
+  </div>
+
+  <div class="re-marco re-marco--sola">
+    <section class="re-criterios" aria-labelledby="re-criterios-titulo">
+      <div class="re-criterios__cabecera">
+        <h2 id="re-criterios-titulo" class="re-criterios__titulo">Criterios <span class="re-cuenta">{{ selected()?.criteria?.length ?? 0 }}</span></h2>
+        <span class="re-total p-numeros" [class.re-total--ok]="selected()?.totalWeight === 100">Suma {{ numero(selected()?.totalWeight ?? 0) }} %</span>
+      </div>
+      <!-- Cabecera de columnas de la matriz (hoja de cálculo): fija bajo la barra mientras se recorre la rúbrica. Es
+           decorativa para el lector de pantalla: cada celda ya dice su nivel en su propio <dt>. -->
+      <div class="re-matriz__cabeza" aria-hidden="true">
+        <span class="re-matriz__columna">Criterio</span>
+        @for (nivel of niveles; track nivel.clave) {
+          <span class="re-matriz__columna re-matriz__nivel" [attr.data-nivel]="nivel.clave">{{ nivel.nombre }}</span>
+        }
+      </div>
+      <ol class="re-lectura">
+        @for (criterio of selected()?.criteria ?? []; track criterio.id ?? $index; let i = $index) {
+          <li class="re-lectura__criterio">
+            <div class="re-lectura__cabeza">
+              <span class="criterion__numero" aria-hidden="true">{{ i + 1 }}</span>
+              <div class="re-lectura__texto">
+                <h3 class="re-lectura__titulo">{{ criterio.title }}</h3>
+                <p class="re-lectura__meta">{{ nombreCompetencia(criterio) }} · {{ numero(criterio.weight) }}&nbsp;%</p>
+                @if (criterio.description) { <p class="re-lectura__descripcion">{{ criterio.description }}</p> }
+              </div>
+            </div>
+            <dl class="re-niveles__celdas re-niveles--lectura">
+              @for (nivel of niveles; track nivel.clave) {
+                @let aplicado = descriptorAplicado(criterio, nivel);
+                <div class="re-nivel" [attr.data-nivel]="nivel.clave">
+                  <dt class="re-nivel__nombre">{{ nivel.nombre }}</dt>
+                  <dd class="re-nivel__texto" [class.re-nivel__texto--general]="aplicado.general">
+                    {{ aplicado.texto }}
+                    @if (aplicado.general) { <span class="re-nivel__marca">Descriptor general</span> }
+                  </dd>
+                </div>
+              }
+            </dl>
+          </li>
+        }
+      </ol>
+    </section>
+  </div>
+
+  <ui-barra-acciones nota="Para cambiarla, haz tu propia copia.">
+    <button ui-button type="button" icon="content_copy" (click)="duplicate()">Duplicar para personalizar</button>
+  </ui-barra-acciones>
+} @else {
+  <form [formGroup]="form" novalidate class="re-form" [attr.aria-busy]="saving() || null" (ngSubmit)="save()">
+    @if (selected()?.usage?.evaluations; as usadas) {
+      <div class="re-aviso re-aviso--uso">
+        <mat-icon class="re-aviso__icono" aria-hidden="true">schedule</mat-icon>
+        <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología. -->
+        <p class="re-aviso__texto">
+          Esta rúbrica ya se usó en {{ usadas }} {{ usadas === 1 ? 'valoración' : 'valoraciones' }}. Si cambias sus criterios,
+          esas valoraciones se verán con los criterios nuevos. Para no tocarlas, duplícala y edita la copia.
+        </p>
+        <button ui-button type="button" variant="secondary" size="sm" icon="content_copy" [disabledReason]="selectedReason()" (click)="duplicate()">Duplicar</button>
+      </div>
+    }
+
+    <div class="re-marco" [inert]="saving()">
+      <section class="re-tarjeta re-datos" aria-labelledby="re-datos-titulo">
+        <div class="re-tarjeta__cabeza">
+          <h2 id="re-datos-titulo" class="re-tarjeta__titulo">Datos</h2>
+          @if (selected(); as guardada) {
+            <!-- El estado de una rúbrica guardada; una nueva no lleva insignia (el pie ya dice que está sin guardar). -->
+            <ui-badge [tone]="estadoTono(guardada)">{{ estadoEtiqueta(guardada) }}</ui-badge>
+          }
+        </div>
+        <ui-field label="Nombre" required [error]="fieldError(form.controls.name, 'Escribe el nombre de la rúbrica.')">
+          <textarea uiControl class="re-crece re-nombre" rows="1" formControlName="name" autocomplete="off"></textarea>
+        </ui-field>
+        <ui-field label="Descripción">
+          <textarea uiControl class="re-crece" rows="2" formControlName="description"></textarea>
+        </ui-field>
+        <ui-field label="Versión" required [error]="fieldError(form.controls.version, 'Escribe la versión.')">
+          <input uiControl type="text" formControlName="version" autocomplete="off">
+        </ui-field>
+      </section>
+      <section class="re-criterios" aria-labelledby="re-criterios-titulo">
+        <div class="re-criterios__cabecera">
+          <h2 id="re-criterios-titulo" class="re-criterios__titulo">Criterios <span class="re-cuenta">{{ criteria.length }}</span></h2>
+          <span class="rb-weight re-total p-numeros" [class.re-total--ok]="totalWeight() === 100">
+            <mat-icon class="re-total__icono" aria-hidden="true">{{ totalWeight() === 100 ? 'check_circle' : 'warning' }}</mat-icon>
+            {{ resumenPeso() }}
+          </span>
+          <div class="re-criterios__acciones">
+            <button ui-button type="button" variant="ghost" size="sm" icon="balance" [disabledReason]="criteria.length ? null : 'Agrega un criterio primero.'" (click)="repartirPeso()">Repartir el peso por igual</button>
+            <button ui-button type="button" variant="secondary" size="sm" icon="add" (click)="addCriterion()">Agregar criterio</button>
+          </div>
+        </div>
+        @if (totalWeight() !== 100) {
+          <p id="rubric-weight-hint" class="rb-hint re-pista">Para activarla o hacerla predeterminada, la ponderación debe sumar 100 %.</p>
+        }
+
+        @if (criteria.length) {
+          <ol formArrayName="criteria" class="re-lista">
+            @for (criterion of criteria.controls; track criterion; let i = $index) {
+              @let abierto = criterioAbierto() === i;
+              <li class="criterion" [class.criterion--abierto]="abierto" [class.criterion--destino]="destinoArrastre() === i"
+                [class.criterion--invalido]="criterion.invalid && criterion.touched" [formGroupName]="i"
+                (dragstart)="iniciarArrastre(i, $event)" (dragover)="sobreCriterio(i, $event)" (drop)="soltarCriterio($event, i)"
+                (dragend)="terminarArrastre($event)">
+                <div class="criterion__fila">
+                  <span class="criterion__asa" aria-hidden="true" title="Arrastra para cambiar el orden"
+                    (pointerdown)="tomarAsa($event)" (pointerup)="soltarAsa($event)">
+                    <mat-icon>menu</mat-icon>
+                  </span>
+                  <button type="button" class="criterion__resumen" [attr.aria-expanded]="abierto"
+                    [attr.aria-controls]="'re-criterio-' + i" (click)="alternarCriterio(i)">
+                    <span class="criterion__numero" aria-hidden="true">{{ i + 1 }}</span>
+                    <span class="criterion__texto">
+                      <span class="criterion__titulo">{{ criterion.get('title')?.value || 'Criterio sin nombre' }}</span>
+                      <span class="criterion__meta">{{ metaDe(criterion) }}</span>
+                    </span>
+                    <span class="criterion__peso">
+                      <span class="p-numeros">{{ numero(pesoDe(criterion)) }} %</span>
+                      <span class="criterion__barra" aria-hidden="true"><span class="criterion__relleno" [style.--peso]="barraDe(criterion)"></span></span>
+                    </span>
+                    <mat-icon class="criterion__chevron" aria-hidden="true">expand_more</mat-icon>
+                  </button>
+                  <ui-menu class="criterion__menu" iconOnly [label]="'Acciones del criterio ' + (i + 1)" [items]="accionesCriterio(i)"
+                    (itemSelected)="accionCriterio(i, $event)" />
+                </div>
+
+                @if (abierto) {
+                  <div class="criterion__cuerpo" [id]="'re-criterio-' + i">
+                    <div class="criterion__campos">
+                      <ui-field label="Nombre" required [error]="fieldError(criterion.get('title')!, 'Escribe el nombre del criterio.')">
+                        <input uiControl type="text" formControlName="title" autocomplete="off">
+                      </ui-field>
+                      <ui-field label="Peso %" required [error]="fieldError(criterion.get('weight')!, 'El peso va de 0 a 100.')">
+                        <input uiControl type="number" min="0" max="100" step="0.01" formControlName="weight" inputmode="decimal">
+                      </ui-field>
+                      <ui-field label="Competencia del programa"
+                        [hint]="criterion.get('competencyId')?.value ? null : 'Sin competencia del programa, este criterio no entra en la valoración automática.'">
+                        <select uiControl formControlName="competencyId" (change)="cambioCompetencia(criterion)">
+                          <option [ngValue]="null">Ninguna</option>
+                          @for (competencia of competencias(); track competencia.id) {
+                            <option [ngValue]="competencia.id">{{ competencia.name }}</option>
+                          }
+                        </select>
+                      </ui-field>
+                    </div>
+                    <ui-field label="Qué se observa" hint="Lo que mira quien valora en el intento, en una o dos frases.">
+                      <textarea uiControl class="re-crece" rows="2" formControlName="description"></textarea>
+                    </ui-field>
+
+                    <fieldset class="re-niveles" formGroupName="levelDescriptors">
+                      <legend class="re-niveles__titulo">Qué significa cada nivel en este criterio</legend>
+                      <p class="re-niveles__ayuda">Una celda vacía usa el descriptor general, el que se ve en gris.</p>
+                      <div class="re-niveles__celdas">
+                        @for (nivel of niveles; track nivel.clave) {
+                          @let aviso = avisoCelda(criterion, nivel.clave);
+                          <div class="re-nivel" [attr.data-nivel]="nivel.clave">
+                            <ui-field class="re-nivel__campo" [class.re-nivel__campo--aviso]="!!aviso" [label]="nivel.nombre" [hint]="aviso">
+                              <textarea uiControl class="re-crece" rows="3" maxlength="600" [formControlName]="nivel.clave"
+                                [placeholder]="nivel.general"></textarea>
+                            </ui-field>
+                          </div>
+                        }
+                      </div>
+                    </fieldset>
+
+                    <div class="criterion__pie">
+                      <button ui-button type="button" variant="ghost" size="sm" icon="delete_outline" [attr.aria-label]="'Eliminar criterio ' + (i + 1)"
+                        (click)="removeCriterion(i)">Eliminar criterio</button>
+                      <button ui-button type="button" variant="secondary" size="sm" (click)="alternarCriterio(i)">Listo</button>
+                    </div>
+                  </div>
+                }
+              </li>
+            }
+          </ol>
+        } @else {
+          <div class="re-vacio">
+            <p>Esta rúbrica todavía no tiene criterios.</p>
+            <button ui-button type="button" variant="secondary" icon="add" (click)="addCriterion()">Agregar criterio</button>
+          </div>
+        }
+      </section>
+      <section class="re-tarjeta re-uso rb-assign" aria-labelledby="re-uso-titulo">
+        <h2 id="re-uso-titulo" class="re-tarjeta__titulo">Dónde se usa</h2>
+        @if (casoTexto(); as caso) {
+          <p class="re-tarjeta__texto">Es la rúbrica del caso «{{ caso }}».</p>
+        }
+        @if (usoTexto(); as uso) {
+          <p class="re-tarjeta__texto">{{ uso }}</p>
+        }
+        <ui-field label="Usar en un caso en borrador">
+          <select uiControl [value]="caseVersionId()" (change)="selectCaseVersion($any($event.target).value)">
+            <option [value]="0">Elige un caso</option>
+            @for (caseItem of cases(); track caseItem.caseVersionId) {
+              <option [value]="caseItem.caseVersionId">{{ caseItem.title }} · v{{ caseItem.semanticVersion }}</option>
+            }
+          </select>
+        </ui-field>
+        <button ui-button type="button" variant="secondary" icon="assignment_turned_in" [disabledReason]="assignReason()" (click)="assign()">Usar en el caso</button>
+      </section>
+    </div>
+
+    <ui-barra-acciones class="re-pie" [nota]="notaPie()">
+      <div class="re-mas" (keydown.escape)="cerrarMas(true)">
+        <button ui-button type="button" variant="secondary" class="re-mas__boton" iconEnd="keyboard_arrow_up"
+          [attr.aria-expanded]="masAbierto()" aria-controls="re-mas-panel" (click)="alternarMas()">Más</button>
+        <div id="re-mas-panel" class="re-mas__panel ds-motion" role="group" aria-label="Más acciones de la rúbrica" [hidden]="!masAbierto()">
+          @if (selected()?.active) {
+            <button ui-button type="button" variant="ghost" class="re-mas__accion" icon="do_not_disturb_on" [disabledReason]="selectedReason()" (click)="accionMas('desactivar')">Desactivar</button>
+          } @else {
+            <button ui-button type="button" variant="ghost" class="re-mas__accion" icon="check_circle" [disabledReason]="activateReason()" (click)="accionMas('activar')">Activar</button>
+          }
+          <button ui-button type="button" variant="ghost" class="re-mas__accion" icon="content_copy" [disabledReason]="selectedReason()" (click)="accionMas('duplicar')">Duplicar</button>
+          @if (canSetDefault) {
+            <button ui-button type="button" variant="ghost" class="re-mas__accion" icon="star" [disabledReason]="activateReason()" (click)="accionMas('predeterminada')">Predeterminada</button>
+          }
+        </div>
+      </div>
+      <button ui-button type="submit" icon="save" [loading]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</button>
+    </ui-barra-acciones>
+  </form>
+}

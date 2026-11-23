@@ -445,7 +445,7 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
     it('la pestaña «Invitaciones» lleva el conteo y lista solo las pendientes, con su cancelación', async () => {
       await render({ estudiantes: () => of([activa, laura, rechazo]) });
       const tabs = [...host().querySelectorAll('.ui-tabs__tab')].map(t => text(t));
-      expect(tabs).toEqual(['Estudiantes', 'Invitaciones · 1']);
+      expect(tabs).toEqual(['Estudiantes', 'Casos asignados', 'Invitaciones · 1']);
 
       await abrirPestana('invitaciones');
       const pendientes = [...host().querySelectorAll('.gl-detail .gl-people .gl-person')];

@@ -1,0 +1,46 @@
+<ui-section title="Casos asignados" [level]="3">
+  <div class="ga-stack">
+    <p class="ga-hint">Los estudiantes del grupo solo ven los casos asignados, dentro de sus fechas.</p>
+
+    <div class="ga-toolbar">
+      <button ui-button type="button" data-ga-assign icon="assignment_add" [disabledReason]="assignReason() ?? busyReason()" (click)="assign()">Asignar un caso</button>
+    </div>
+
+    @switch (state()) {
+      @case ('loading') {
+        <div class="ga-loading" aria-busy="true">
+          @for (bone of [1, 2]; track bone) {
+            <ui-skeleton shape="row" />
+          }
+        </div>
+      }
+      @case ('error') {
+        <ui-error-state [kind]="errorKind()" message="No pudimos cargar los casos asignados." (retry)="load()" />
+      }
+      @case ('empty') {
+        <p class="ga-empty">No hay casos asignados. Los estudiantes no verán casos hasta que asignes uno.</p>
+      }
+      @case ('ready') {
+        <ul class="ga-list">
+          @for (row of rows(); track row.assignment.id) {
+            <li class="ga-item">
+              <span class="ga-item__text">
+                <strong>{{ row.title }}</strong>
+                @if (row.detail) {
+                  <span>{{ row.detail }}</span>
+                }
+                <span class="ga-window">{{ row.window }}</span>
+              </span>
+              <ui-badge class="ga-item__state" [tone]="row.tone">{{ row.label }}</ui-badge>
+              <span class="ga-item__actions">
+                <button ui-button type="button" size="sm" variant="secondary" [attr.aria-label]="'Cambiar fechas de «' + row.title + '»'" [disabledReason]="busyReason()" (click)="changeDates(row)">Cambiar fechas</button>
+                <button ui-button type="button" size="sm" variant="secondary" [attr.aria-label]="(row.assignment.active ? 'Pausar «' : 'Reanudar «') + row.title + '»'" [disabledReason]="busyReason()" (click)="togglePause(row)">{{ row.assignment.active ? 'Pausar' : 'Reanudar' }}</button>
+                <button ui-icon-button type="button" icon="delete_outline" [label]="'Retirar «' + row.title + '» del grupo'" [disabledReason]="busyReason()" (click)="remove(row)"></button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</ui-section>

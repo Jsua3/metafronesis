@@ -1,0 +1,75 @@
+@if (enEditor()) {
+  <!-- El editor de una rúbrica: la cabecera dice cuál es y vuelve a la biblioteca (la guardia pregunta si hay cambios). -->
+  <ui-page-header class="rb-cabecera rb-cabecera--editor" [title]="editor()?.titulo() ?? 'Rúbrica'"
+    volverA="/portal/rubricas" volverEtiqueta="Biblioteca de rúbricas" />
+  <app-rubrica-editor [rubricId]="idEditor()" [comienzo]="desde()" (guardada)="alGuardar($event)" (perdida)="alPerderse()" />
+} @else {
+  <ui-cabecera-ilustrada [herramienta]="true" class="rb-cabecera" [escena]="listState() === 'empty' ? null : 'rubricas'" eyebrow="Evaluación" title="Rúbricas"
+    description="Los criterios con los que se valora cada intento, y qué significa cada nivel en cada uno.">
+    <button ui-button uiHerramientaAcciones type="button" icon="add" (click)="nueva()">Nueva rúbrica</button>
+  </ui-cabecera-ilustrada>
+
+  <p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+  <ui-section class="rb-list" title="Biblioteca de rúbricas" [level]="2">
+    <div class="rb-stack">
+      @if (listState() === 'ready') {
+        <ui-filtros class="rb-filters" etiquetaBusqueda="Buscar rúbricas" [(busqueda)]="query"
+          [total]="rubrics().length" [visibles]="filtradas().length"
+          [hayFiltros]="statusFilter() !== 'ALL'" (limpiar)="clearFilters()">
+          <ui-segmentado etiqueta="Estado" [opciones]="filtrosEstado()" [(valor)]="statusFilter" />
+        </ui-filtros>
+      }
+
+      @switch (listState()) {
+        @case ('loading') {
+          <div class="rb-stack" aria-busy="true">
+            @for (bone of [1, 2, 3]; track bone) {
+              <ui-skeleton shape="row" />
+            }
+          </div>
+        }
+        @case ('error') {
+          <ui-error-state kind="server" [message]="message()" (retry)="load()" />
+        }
+        @case ('empty') {
+          <ui-empty-state kind="first-use" [figura]="figura" title="Aún no hay rúbricas"
+            description="Crea la primera para valorar los intentos de tus estudiantes con criterios y niveles."
+            actionLabel="Nueva rúbrica" (action)="nueva()" />
+        }
+        @case ('ready') {
+          <!-- Sin coincidencias, el vacío «No hay resultados» con «Limpiar filtros» lo pinta ui-filtros, bajo los controles. -->
+          @if (filtradas().length) {
+            @for (grupo of grupos(); track grupo.id) {
+              <div class="rb-grupo">
+                @if (grupo.titulo) {
+                  <div class="rb-grupo__cabeza">
+                    <h3 class="rb-grupo__titulo">{{ grupo.titulo }} <span class="rb-grupo__cuenta">{{ grupo.rubricas.length }}</span></h3>
+                    <p class="rb-grupo__descripcion">{{ grupo.descripcion }}</p>
+                  </div>
+                }
+                <ul class="rb-rows">
+                  @for (rubric of grupo.rubricas; track rubric.id) {
+                    <li class="rb-row">
+                      <a class="rb-row__abrir" [routerLink]="[]" [queryParams]="{ rubrica: rubric.id }">
+                        <span class="rb-row__marca" aria-hidden="true"><mat-icon>{{ rubric.caseVersion ? 'folder_open' : 'grading' }}</mat-icon></span>
+                        <span class="rb-row__text">
+                          <strong class="rb-row__nombre">{{ rubric.name }}</strong>
+                          <small>{{ rowMeta(rubric) }}</small>
+                          @if (rowFecha(rubric); as fecha) { <small class="rb-row__fecha">{{ fecha }}</small> }
+                        </span>
+                      </a>
+                      <ui-badge class="rb-row__estado" [tone]="rowTone(rubric)">{{ rowLabel(rubric) }}</ui-badge>
+                      <ui-menu class="rb-row__menu" iconOnly [label]="'Más acciones de ' + rubric.name" [items]="rowItems(rubric)"
+                        (itemSelected)="rowAction(rubric, $event)" />
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          }
+        }
+      }
+    </div>
+  </ui-section>
+}

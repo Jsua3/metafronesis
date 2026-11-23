@@ -1,0 +1,85 @@
+<ui-cabecera-ilustrada [herramienta]="true" escena="cierre" eyebrow="Reportes académicos" [title]="titleText()"
+  description="Los intentos de este estudiante, con su tiempo activo y el de reloj. Sin puntajes: lo que hizo, en palabras.">
+  <a ui-button uiHerramientaAcciones variant="secondary" icon="arrow_back" routerLink="/portal/reportes" [queryParams]="backParams()">Volver a los reportes</a>
+</ui-cabecera-ilustrada>
+
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+@switch (state()) {
+  @case ('loading') {
+    <div class="re-loading" aria-busy="true">
+      <ui-skeleton shape="row" />
+      <ui-skeleton shape="row" />
+      <ui-skeleton shape="row" />
+      <ui-skeleton shape="row" />
+    </div>
+  }
+  @case ('error') {
+    <div class="re-error">
+      <ui-error-state blocking [kind]="errorKind()" [status]="errorStatus()" [message]="errorMessage()" (retry)="load()" />
+    </div>
+  }
+  @case ('empty') {
+    @if (caseFilter() !== null) {
+      <ui-empty-state kind="no-results" title="Sin intentos de este caso"
+        description="Este estudiante no tiene intentos del caso elegido. Prueba con todos los casos."
+        actionLabel="Ver todos los casos" (action)="clearFilter()" />
+    } @else {
+      <ui-empty-state kind="first-use" title="Este estudiante aún no tiene intentos"
+        description="Cuando inicie un caso, sus intentos aparecerán aquí." />
+    }
+  }
+  @case ('ready') {
+    @if (report(); as current) {
+      <ui-section class="re-section" title="Intentos">
+        @if (caseFilter() !== null) {
+          <p class="re-filter">
+            Solo del caso «{{ filterTitle() }}».
+            <button ui-button type="button" variant="ghost" size="sm" (click)="clearFilter()">Ver todos los casos</button>
+          </p>
+        }
+        <p #coverageLine class="re-coverage" tabindex="-1">{{ coverage(current) }}</p>
+        @for (caseGroup of caseGroups(); track caseGroup.id) {
+        <ui-card class="re-case-card">
+          <h3>{{ caseGroup.title }}</h3>
+          <p class="re-status">{{ caseStatus(caseGroup.attempts) }}</p>
+        <ui-table label="Intentos del estudiante" density="compact" apilar>
+          <table ui-table>
+            <thead>
+              <tr>
+                <th scope="col" class="re-num">Intento</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Inicio</th>
+                <th scope="col" class="re-num">Tiempo activo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of caseGroup.attempts; track item.attemptId) {
+                <tr uiRow>
+                  <th scope="row" class="re-num">{{ item.ordinal }}</th>
+                  <td class="re-nowrap"><ui-badge [tone]="tone(item.status)">{{ label(item.status) }}</ui-badge></td>
+                  <td class="re-nowrap">{{ start(item.startedAt) }}</td>
+                  <td class="re-num">
+                    {{ item.activeSeconds === 0 ? 'Sin actividad registrada' : duration(item.activeSeconds) }}
+                    <span class="re-clock" tabindex="0" role="note" [attr.aria-label]="clockText(item.clockSeconds)"
+                      [uiTooltip]="clockText(item.clockSeconds)">Reloj</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </ui-table>
+        </ui-card>
+        }
+        <p class="re-privacy">Las valoraciones se hacen en <a ui-link routerLink="/portal/docente/trazabilidad">Revisión</a>, sin el nombre del estudiante.</p>
+        @if (canLoadMore()) {
+          <div class="re-more">
+            <button ui-button type="button" variant="secondary" icon="expand_more" [loading]="loadingMore()" (click)="showMore()">Ver más intentos</button>
+          </div>
+        } @else if (atCap()) {
+          <p class="re-limit">Una consulta trae como máximo {{ maxLimit }} intentos. Para ver los demás, elige un caso desde el reporte del grupo.</p>
+        }
+      </ui-section>
+    }
+  }
+}
