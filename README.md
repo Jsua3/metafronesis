@@ -92,6 +92,8 @@ Comprobado el 10 de noviembre de 2026 sobre `main` con PostgreSQL 17: `manage.py
 
 En producción se usa `psychosim.settings.production`, que exige secretos y hosts propios; los nombres de las variables están en `.env.example`.
 
+Para producción hay una imagen única (`Dockerfile`: build de Angular + Django con gunicorn). Cómo desplegarla en Azure Container Apps con PostgreSQL Flexible Server, cuánto cuesta y cómo apagarla: [`docs/despliegue-azure.md`](docs/despliegue-azure.md).
+
 ## Pruebas
 
 `pytest` usa `psychosim.settings.test`, que exige una base de datos desechable y su propio nonce:
@@ -118,6 +120,7 @@ Las rutas están en `psychosim/urls.py` y en el `urls.py` de cada app; el invent
 | Rutas, arquitectura y ejecución | `docs/api.md`, `docs/arquitectura.md`, `docs/ejecucion.md`: borradores del corte de los sprints 1 a 4; no incluyen las apps de las olas 1 y 2 y `ejecucion.md` trae pasos sin verificar, así que usa los de este archivo |
 | Documentación por app | `docs/apps/`: solo `grupos`, `privacy`, `psychosim`, `security`, `shared` y `users`; faltan las demás |
 | Fichas de sprint y diagramas | `docs/sprints/` y `docs/diagramas/` |
+| Despliegue | `docs/despliegue-azure.md`: Azure Container Apps + PostgreSQL Flexible Server, con el workflow `.github/workflows/despliegue-azure.yml` |
 
 ## Flujo de trabajo
 
