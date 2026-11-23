@@ -35,9 +35,13 @@ describe('login: nombres accesibles y roles', () => {
     expect(html).not.toContain('siep-login__back');
   });
 
-  it('el selector de perfil es un grupo de botones, no un radiogroup sin radios', () => {
-    expect(html).toContain('<div class="acceso__roles" role="group" aria-label="Seleccionar rol de acceso">');
+  it('el rol se elige al solicitar acceso, en un grupo de botones con su rótulo visible (no un radiogroup sin radios)', () => {
+    expect(html).toContain('<div class="acceso__roles" role="group" aria-labelledby="registro-rol-label">');
+    expect(html).toContain('id="registro-rol-label">Solicito acceso como</p>');
     expect(html).not.toContain('radiogroup');
+    // Solo hay un selector de rol, y está en la solicitud (después de su encabezado), no al iniciar sesión.
+    expect(html.match(/class="acceso__roles"/g)).toHaveLength(1);
+    expect(html.indexOf('class="acceso__roles"')).toBeGreaterThan(html.indexOf('>Solicitar acceso</h1>'));
   });
 
   it('los tres campos del registro tienen etiqueta VISIBLE (ui-field), no solo placeholder (H-29)', () => {

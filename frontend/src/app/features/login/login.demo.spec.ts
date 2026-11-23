@@ -36,15 +36,16 @@ describe('login: «Usar demo» solo en desarrollo', () => {
 
   afterEach(() => { window.matchMedia = originalMatchMedia; });
 
-  it('rellena correo y contraseña del perfil elegido y cambia el correo al cambiar de perfil', async () => {
+  it('ofrece una cuenta demo por rol y rellena su correo y contraseña', async () => {
     const fixture = TestBed.createComponent(LoginComponent);
     await fixture.whenStable();
     await vi.waitFor(() => expect(fixture.componentInstance.demo()).not.toBeNull());
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
-    [...host.querySelectorAll<HTMLButtonElement>('form button')].find(button => button.textContent!.trim() === 'Usar demo')!.click();
+    const demo = (rol: string) => host.querySelector<HTMLButtonElement>(`.acceso__demo button[aria-label="Usar la cuenta demo de ${rol}"]`)!;
+    demo('Estudiante').click();
     expect(fixture.componentInstance.form.getRawValue()).toMatchObject({ email: 'estudiante@psychosim.edu.co', password: 'Estudiante123!' });
-    fixture.componentInstance.selectRole('PROFESOR');
-    expect(fixture.componentInstance.form.controls.email.value).toBe('profesora@psychosim.edu.co');
+    demo('Docente').click();
+    expect(fixture.componentInstance.form.getRawValue()).toMatchObject({ email: 'profesora@psychosim.edu.co', password: 'Profesor123!' });
   });
 });

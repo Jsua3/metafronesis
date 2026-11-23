@@ -284,7 +284,7 @@ export class UsersComponent implements OnInit {
       nombre: request.nombre,
       apellido: request.apellido,
       email: request.email,
-      role: 'ESTUDIANTE',
+      role: request.rol,
       password: '',
     });
     this.setPasswordRules(true);

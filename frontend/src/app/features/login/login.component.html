@@ -25,28 +25,21 @@
               </p>
             }
 
-            <div class="acceso__perfil">
-              <p class="acceso__perfil-label">Entro como</p>
-              <div class="acceso__roles" role="group" aria-label="Seleccionar rol de acceso">
-                @for (role of roles; track role.id) {
-                  <button type="button" class="acceso__role" [attr.aria-pressed]="selectedRole() === role.id" (click)="selectRole(role.id)">{{ role.label }}</button>
-                }
-              </div>
-              <p class="acceso__role-hint">{{ activeRole().hint }}</p>
-            </div>
-
+            <!-- El rol ya no se elige al entrar: lo trae la cuenta. Se elige al solicitar acceso. -->
             @if (demo(); as demo) {
               <div class="acceso__demo">
-                <span>Credenciales demo ({{ activeRole().label }}):</span>
-                <code>{{ demo[selectedRole()].email }}</code>
-                <button type="button" class="acceso__link" (click)="fillDemoCredentials()">Usar demo</button>
+                <span>Usar demo:</span>
+                @for (role of roles; track role.id) {
+                  <button type="button" class="acceso__link" [attr.aria-label]="'Usar la cuenta demo de ' + role.label" [title]="demo[role.id].email"
+                          (click)="fillDemoCredentials(role.id)">{{ role.label }}</button>
+                }
               </div>
             }
 
             <div class="acceso__campos">
               <ui-field label="Correo institucional" required
                 [error]="fieldError(form.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, signInTried())">
-                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" [placeholder]="activeRole().emailPlaceholder" />
+                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" placeholder="nombre@institucion.edu.co" />
               </ui-field>
               <ui-field label="Contraseña" required revealable
                 [error]="fieldError(form.controls.password, { required: 'Escribe tu contraseña.' }, signInTried())">
@@ -94,6 +87,17 @@
             <div class="acceso__titulos">
               <h1 #heading id="acceso-titulo" tabindex="-1">Solicitar acceso</h1>
               <p class="acceso__subtitle">Déjanos tus datos y el equipo académico revisará tu solicitud. Te responderemos por correo.</p>
+            </div>
+
+            <!-- El rol que se pide viaja con la solicitud; el administrador decide el definitivo al crear la cuenta. -->
+            <div class="acceso__perfil">
+              <p class="acceso__perfil-label" id="registro-rol-label">Solicito acceso como</p>
+              <div class="acceso__roles" role="group" aria-labelledby="registro-rol-label">
+                @for (role of roles; track role.id) {
+                  <button type="button" class="acceso__role" [attr.aria-pressed]="selectedRole() === role.id" (click)="selectRole(role.id)">{{ role.label }}</button>
+                }
+              </div>
+              <p class="acceso__role-hint">{{ activeRole().hint }}</p>
             </div>
 
             <div class="acceso__campos">
