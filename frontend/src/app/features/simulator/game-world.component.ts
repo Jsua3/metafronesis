@@ -517,12 +517,12 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.load.tilemapTiledJSON(`map-${key}`, `/assets/game/maps/${key}.json`);
     }
 
-    // ── Audio: Kenney Foley footsteps + Interface Sounds blip (CC0) ──────────
+    // ── Audio: pasos (ruido filtrado, tres variantes) y aviso de proximidad de la biblioteca de sonidos propia ──
     // Missing files fail silently via the 'loaderror' handler above — no crash.
-    this.load.audio('step0', '/assets/game/audio/footstep_concrete_000.ogg');
-    this.load.audio('step1', '/assets/game/audio/footstep_concrete_001.ogg');
-    this.load.audio('step2', '/assets/game/audio/footstep_concrete_002.ogg');
-    this.load.audio('proximity-blip', '/assets/game/audio/blip_select.ogg');
+    this.load.audio('step0', '/assets/game/audio/sfx/pasos/footstep_tile_1.wav');
+    this.load.audio('step1', '/assets/game/audio/sfx/pasos/footstep_tile_2.wav');
+    this.load.audio('step2', '/assets/game/audio/sfx/pasos/footstep_tile_3.wav');
+    this.load.audio('proximity-blip', '/assets/game/audio/sfx/interfaz/proximity_blip.wav');
 
     this.load.once('complete', () => {
       this.assetsLoaded = true;
