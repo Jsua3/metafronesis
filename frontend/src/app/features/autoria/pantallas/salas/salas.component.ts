@@ -103,7 +103,7 @@ export class SalasComponent {
       this.generacion.set(estado.enabled ? 'encendida' : 'apagada');
       // Con una generación a medio hacer, el aviso de retomar debe verse sin que la docente adivine la opción. Pero la
       // respuesta puede llegar tarde: si la docente ya empezó a mano (eligió forma, salas, una idea o escribió el nombre), no
-      // se le cambia la pantalla bajo los dedos; «Describe tu caso» sigue a un clic y ahí ve el aviso (Codex, hallazgo 3).
+      // se le cambia la pantalla bajo los dedos; «Describe tu caso» sigue a un clic y ahí ve el aviso.
       if (estado.enabled && estado.inProgress && !this.yaEmpezo()) this.forma.set('describe');
     } catch {
       // Sin saberlo, la opción queda disponible: «Describe tu caso» dice por sí misma si no se pudo comprobar.

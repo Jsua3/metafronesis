@@ -107,7 +107,7 @@ describe('SalasComponent', () => {
     expect(raiz.querySelector('#ideas')).toBeNull();
   });
 
-  it('si el estado de la generación llega tarde, no cambia a «Describe tu caso» a quien ya empezó a mano (Codex, hallazgo 3)', async () => {
+  it('si el estado de la generación llega tarde, no cambia a «Describe tu caso» a quien ya empezó a mano', async () => {
     const estado = new Subject<unknown>();
     await TestBed.configureTestingModule({
       imports: [SalasComponent],

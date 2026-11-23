@@ -52,7 +52,7 @@ export function dependenciasDeRespuesta(caso: CasoBorrador, respuesta: Respuesta
 /**
  * ¿Una respuesta está en blanco? Entonces borrarla no pierde nada y no hace falta preguntar. Cuenta TODO lo que puede llevar
  * (cualquier efecto: pasos, persona, competencias…) y lo que apunta a ella desde el caso (un objeto de sala que la ofrece):
- * una respuesta sin texto pero con competencias o referenciada no está en blanco (revisión de Codex, hallazgo 2).
+ * una respuesta sin texto pero con competencias o referenciada no está en blanco.
  */
 export function respuestaEnBlanco(caso: CasoBorrador, r: Respuesta): boolean {
   return !r.texto.trim() && !r.clase && !r.retroalimentacion.trim() && !r.razon.trim() && r.destinoId === null
