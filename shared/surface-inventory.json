@@ -628,6 +628,14 @@
       "audit": "EXENTO: catálogo de lugares, salas y objetos de la biblioteca (archivos del servidor): no son datos de personas"
     },
     {
+      "route": "api/competencies",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": null
+    },
+    {
       "route": "api/grupos",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
@@ -782,6 +790,46 @@
       "audit": "ATTEMPT_FEEDBACK_SAVED"
     },
     {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/replace",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_REPLACED"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "traza.leer"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "rubrica.evaluar"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/trace",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "traza.leer"
+    },
+    {
+      "route": "api/instructor/attempts/recent",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "INSTRUCTOR_ATTEMPTS_VIEWED"
+    },
+    {
       "route": "api/me/invitations",
       "method": "GET",
       "exposure": "role:ADMIN,ESTUDIANTE",
@@ -855,6 +903,14 @@
     },
     {
       "route": "api/rubrics",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de rúbricas sin datos de personas"
+    },
+    {
+      "route": "api/rubrics",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "json-small",
@@ -868,6 +924,46 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: consulta de criterios de una rúbrica sin datos de personas"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_UPDATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/activate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_ACTIVATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/deactivate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_ACTIVATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/default",
+      "method": "POST",
+      "exposure": "role:ADMIN",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_UPDATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/duplicate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_CREATED"
     },
     {
       "route": "api/rubrics/case-versions/<int:case_version_id>",
@@ -984,12 +1080,52 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/enter-room",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el paso de sala queda registrado en el intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/evaluation",
       "method": "GET",
       "exposure": "authenticated",
       "body": "none",
       "throttle": null,
       "audit": null
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/hints",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de pistas del propio intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/hints/next",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: la pista queda registrada en el intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/interactions/<str:key>",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: la interacción queda registrada en el intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/npcs/<str:key>",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el diálogo queda registrado en el intento"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/pause",
@@ -1006,6 +1142,22 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: el estudiante consulta el progreso de su propio intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/progress-map",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio progreso"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/reflections",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "REFLECTION_SAVED"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/replace",
@@ -1038,6 +1190,46 @@
       "body": "json-small",
       "throttle": null,
       "audit": "ATTEMPT_REVISITED"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/safe-exit",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SAFE_EXIT_REQUESTED"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/student-report",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio informe"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/tools/use",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el uso queda registrado en el intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/world",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio mundo"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/world-state",
+      "method": "PATCH",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante actualiza su propia posición"
     },
     {
       "route": "api/simulation/attempts/history",

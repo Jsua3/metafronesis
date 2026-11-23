@@ -84,6 +84,25 @@ def _en_railway():
     return any(os.environ.get(name, "").strip() for name in RAILWAY_VARIABLES)
 
 
+#: SIEP-237 · Cloud Run inyecta K_SERVICE (el nombre del servicio) en cada instancia: basta para saber que el arranque es
+#: en Cloud Run, donde el frente de Google siempre va delante de Django. El dominio público (``*.run.app``) no llega en
+#: ninguna variable: va en DJANGO_ALLOWED_HOSTS (docs/despliegue-gcp.md).
+CLOUD_RUN_VARIABLES = ("K_SERVICE",)
+
+
+def _en_cloud_run():
+    return any(os.environ.get(name, "").strip() for name in CLOUD_RUN_VARIABLES)
+
+
+def _plataforma_con_proxy():
+    """La plataforma que siempre pone un proxy delante de Django, o ``""`` si no se reconoce ninguna."""
+    if _en_railway():
+        return "Railway"
+    if _en_cloud_run():
+        return "Google Cloud Run"
+    return ""
+
+
 # S1-1 · base.py convierte SIEP_TRUSTED_PROXIES con int() al importarse: un valor que no sea un entero ≥ 0 se
 # rechaza AQUÍ, antes del ``from .base import *``, para que la causa salga como ImproperlyConfigured.
 def _validate_trusted_proxies():
@@ -98,14 +117,16 @@ def _validate_trusted_proxies():
             "SIEP_TRUSTED_PROXIES debe ser un entero ≥ 0: número de proxies de confianza delante de Django "
             "(0 = ninguno)."
         )
-    # R1b · en Railway siempre hay un proxy delante de Django. Con 0, Django toma la IP del borde como la de todos los
-    # clientes y los límites por IP se vuelven un cierre global. El mensaje explica la causa y no muestra el valor.
-    if int(value) == 0 and _en_railway():
+    # R1b · en Railway (y en Google Cloud Run, SIEP-237) siempre hay un proxy delante de Django. Con 0, Django toma la
+    # IP del borde como la de todos los clientes y los límites por IP se vuelven un cierre global. El mensaje explica la
+    # causa y no muestra el valor.
+    plataforma = _plataforma_con_proxy()
+    if int(value) == 0 and plataforma:
         raise ImproperlyConfigured(
             # BORRADOR
-            "SIEP_TRUSTED_PROXIES no puede ser 0 en Railway: hay un proxy delante de Django. Con 0, todos los clientes "
-            "comparten una sola IP y los límites por IP se vuelven un cierre global. Mide el número de proxies en el "
-            "primer despliegue (en Railway suele ser 1)."
+            f"SIEP_TRUSTED_PROXIES no puede ser 0 en {plataforma}: hay un proxy delante de Django. Con 0, todos los "
+            "clientes comparten una sola IP y los límites por IP se vuelven un cierre global. Mide el número de proxies "
+            "en el primer despliegue (en Railway suele ser 1)."
         )
 
 

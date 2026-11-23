@@ -121,3 +121,17 @@ def test_rutas_del_editor_declaradas_en_el_inventario():
         fila = filas[(f"{base}/{terminacion}", metodo)]
         assert fila["exposure"] == "role:ADMIN,PROFESOR"
         assert fila["audit"]
+
+
+def test_rutas_de_revision_nueva_en_inventario():
+    filas = {(fila["route"], fila["method"]): fila for fila in _inventario_versionado()["routes"]}
+    rutas = {
+        ("api/instructor/attempts/recent", "GET"): "INSTRUCTOR_ATTEMPTS_VIEWED",
+        ("api/instructor/attempts/<uuid:attempt_id>/replace", "POST"): "ATTEMPT_REPLACED",
+        ("api/instructor/attempts/<uuid:attempt_id>/trace", "GET"): "traza.leer",
+        ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "GET"): "traza.leer",
+        ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "PUT"): "rubrica.evaluar",
+    }
+    for clave, auditoria in rutas.items():
+        assert filas[clave]["audit"] == auditoria
+        assert filas[clave]["exposure"] == "role:ADMIN,PROFESOR"

@@ -47,6 +47,7 @@ def _production(monkeypatch, *, recargar_base=True, **overrides):
     env = {**BASE_ENV, **overrides}
     for name in (
         "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID", "RAILWAY_PUBLIC_DOMAIN",
+        "K_SERVICE",
         "DJANGO_ALLOWED_HOSTS", "DATABASE_URL", "EMAIL_BACKEND",
         "ACCESS_REQUEST_NOTIFY_EMAILS", "ACCESS_REQUEST_NOTIFY_DISABLED", "SIEP_ALLOW_CONSOLE_EMAIL",
         "SIEP_TRUSTED_PROXIES", "DJANGO_SECURE_SSL_REDIRECT", "SIEP_HSTS_SECONDS",
@@ -603,3 +604,44 @@ def test_fuera_de_railway_cero_proxies_sigue_arrancando(monkeypatch):
     settings = _production(monkeypatch, SIEP_TRUSTED_PROXIES="0")
 
     assert settings["SIEP_TRUSTED_PROXIES"] == 0
+
+
+
+# ── SIEP-237 · Google Cloud Run: el frente de Google va siempre delante de Django ─────────────────────────────────────
+# Cloud Run inyecta K_SERVICE en cada instancia. Su dominio (``*.run.app``) no llega en ninguna variable: se declara en
+# DJANGO_ALLOWED_HOSTS.
+
+
+@pytest.mark.req("SIEP-RNF-02")
+@pytest.mark.security
+def test_en_cloud_run_con_cero_proxies_de_confianza_no_arranca(monkeypatch):
+    with pytest.raises(ImproperlyConfigured, match="SIEP_TRUSTED_PROXIES no puede ser 0 en Google Cloud Run"):
+        _production(monkeypatch, SIEP_TRUSTED_PROXIES="0", K_SERVICE="metafronesis")
+
+
+@pytest.mark.req("SIEP-RNF-02")
+@pytest.mark.security
+def test_en_cloud_run_con_un_proxy_arranca(monkeypatch):
+    settings = _production(monkeypatch, SIEP_TRUSTED_PROXIES="1", K_SERVICE="metafronesis")
+
+    assert settings["SIEP_TRUSTED_PROXIES"] == 1
+
+
+@pytest.mark.req("SIEP-RNF-02")
+@pytest.mark.security
+def test_k_service_vacia_no_cuenta_como_cloud_run(monkeypatch):
+    settings = _production(monkeypatch, SIEP_TRUSTED_PROXIES="0", K_SERVICE="  ")
+
+    assert settings["SIEP_TRUSTED_PROXIES"] == 0
+
+
+def test_en_cloud_run_el_dominio_va_en_django_allowed_hosts(monkeypatch):
+    # Cloud Run no inyecta su dominio: sin DJANGO_ALLOWED_HOSTS el arranque falla con la causa, no con un 400 en cada página.
+    with pytest.raises(ImproperlyConfigured, match="DJANGO_ALLOWED_HOSTS"):
+        _production(monkeypatch, DJANGO_ALLOWED_HOSTS=None, K_SERVICE="metafronesis")
+
+    settings = _production(
+        monkeypatch, DJANGO_ALLOWED_HOSTS="metafronesis-123456789012.us-east1.run.app", K_SERVICE="metafronesis"
+    )
+    assert "metafronesis-123456789012.us-east1.run.app" in settings["ALLOWED_HOSTS"]
+    assert "https://metafronesis-123456789012.us-east1.run.app" in settings["CSRF_TRUSTED_ORIGINS"]
