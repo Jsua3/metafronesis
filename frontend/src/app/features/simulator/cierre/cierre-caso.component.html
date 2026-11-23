@@ -1,0 +1,207 @@
+<div class="p-pagina p-pagina--lectura cierre">
+  <!-- Cabecera ilustrada (ronda 3): el diario de reflexión suspendido sobre el registro, como cierre del recorrido. -->
+  <ui-cabecera-ilustrada
+    escena="cierre"
+    [eyebrow]="copy.eyebrow"
+    [title]="titulo()"
+    [description]="descripcion()"
+    volverA="/portal/simulador"
+    [volverEtiqueta]="copy.volver" />
+
+  @if (bloqueado()) {
+    <!-- Un intento ajeno o inexistente: solo se explica, ningún dato (ni la ficha ni la valoración se piden). -->
+    <ui-error-state blocking autofocus [kind]="tipoBloqueo()" [status]="estadoReporte()" [message]="mensajeBloqueo()" />
+    <div class="cierre__acciones">
+      <a ui-button variant="secondary" icon="arrow_back" routerLink="/portal/simulador">{{ copy.volverCasos }}</a>
+    </div>
+  } @else {
+    <!-- 1 · Apoyo: primero y sin alarma. Es el estándar ante un malestar inesperado. -->
+    <ui-card superficie="hundida" class="cierre__apoyo">
+      <section class="cierre__apoyo-cuerpo" aria-labelledby="cierre-apoyo">
+        <span class="cierre__icono" aria-hidden="true"><mat-icon>favorite</mat-icon></span>
+        <div class="cierre__apoyo-texto">
+          <h2 id="cierre-apoyo">{{ copy.apoyoTitulo }}</h2>
+          <p>{{ apoyo }}</p>
+        </div>
+      </section>
+    </ui-card>
+
+    <!-- 2 · Qué buscaba el caso. Si la ficha da 403 la sección se omite; si falla por otra causa, se dice. -->
+    @if (cargandoFicha()) {
+      <div aria-busy="true"><ui-skeleton shape="card" [lines]="2" /></div>
+    } @else if (errorFicha()) {
+      <ui-section [title]="copy.objetivosTitulo">
+        <ui-error-state [kind]="tipoError(estadoFicha())" [status]="estadoFicha()" [message]="copy.objetivosError" (retry)="reintentarFicha()" />
+      </ui-section>
+    } @else if (objetivos().length) {
+      <ui-section [title]="copy.objetivosTitulo">
+        <ul class="cierre__objetivos">
+          @for (objetivo of objetivos(); track $index) { <li>{{ objetivo }}</li> }
+        </ul>
+      </ui-section>
+    }
+
+    <!-- 3 · El recorrido. -->
+    <ui-section [title]="copy.recorridoTitulo">
+      @if (cargandoRecorrido()) {
+        <div aria-busy="true"><ui-skeleton shape="card" [lines]="5" /></div>
+      } @else if (errorRecorrido()) {
+        <ui-error-state [kind]="tipoError(estadoReporte())" [status]="estadoReporte()" [message]="copy.recorridoError" (retry)="reintentarRecorrido()" />
+      } @else if (r(); as reporte) {
+        <div class="cierre__recorrido">
+          @if (!reporte.ending && !reporte.persona?.label && !reporte.milestones && !escenas().length && !competencias().length) {
+            <p class="cierre__tenue">Este recorrido no tiene información disponible para mostrar.</p>
+          }
+          @if (!reporte.ending) { @if (persona(); as label) { <p class="cierre__persona"><span class="cierre__rotulo">{{ copy.personaTitulo }}</span> {{ label }}</p> } }
+          @if (reporte.ending; as final) {
+            <!-- Sin tono semáforo: el final se lee igual para todos (R-18); `tone` es del docente. -->
+            <ui-card superficie="tinte" class="cierre__final">
+              <section aria-labelledby="cierre-final">
+                <p class="cierre__rotulo">{{ copy.finalTitulo }}</p>
+                <h3 id="cierre-final">{{ final.title }}</h3>
+                <p>{{ final.message }}</p>
+                @if (persona(); as label) {
+                  <p class="cierre__persona"><span class="cierre__rotulo">{{ copy.personaTitulo }}</span><span>{{ label }}</span></p>
+                }
+                @if (final.reason.length) {
+                  <p class="cierre__rotulo cierre__rotulo--aparte">{{ draft.endingReasonTitle.text }}</p>
+                  <ul class="cierre__lista">
+                    @for (razon of final.reason; track $index) { <li>{{ razon }}</li> }
+                  </ul>
+                }
+              </section>
+            </ui-card>
+          }
+
+          @if (reporte.milestones; as hitos) {
+            <div class="cierre__hitos">
+              <ui-card class="cierre__hito cierre__hito--logrado">
+                <section aria-labelledby="cierre-logros">
+                  <h3 id="cierre-logros" class="cierre__subtitulo">
+                    <mat-icon aria-hidden="true">check_circle</mat-icon>{{ copy.logrosTitulo }}
+                  </h3>
+                  @if (hitos.done.length) {
+                    <ul class="cierre__lista">
+                      @for (hito of hitos.done; track hito.key) {
+                        <li>{{ hito.label }} @if (marcaDelHito(hito); as marca) { <span class="cierre__marca">{{ marca }}</span> }</li>
+                      }
+                    </ul>
+                  } @else {
+                    <p class="cierre__tenue">{{ draft.milestonesNoneDone.text }}</p>
+                  }
+                </section>
+              </ui-card>
+              <ui-card class="cierre__hito cierre__hito--pendiente">
+                <section aria-labelledby="cierre-pendientes">
+                  <h3 id="cierre-pendientes" class="cierre__subtitulo">
+                    <mat-icon aria-hidden="true">flag</mat-icon>{{ copy.pendientesTitulo }}
+                  </h3>
+                  @if (hitos.missing.length) {
+                    <ul class="cierre__lista">
+                      @for (hito of hitos.missing; track hito.key) {
+                        <li>{{ hito.label }} @if (marcaDelHito(hito); as marca) { <span class="cierre__marca">{{ marca }}</span> }</li>
+                      }
+                    </ul>
+                  } @else {
+                    <p class="cierre__tenue">{{ draft.milestonesNoneMissing.text }}</p>
+                  }
+                </section>
+              </ui-card>
+            </div>
+          }
+
+          @if (escenas().length) {
+            <section class="cierre__decisiones" aria-labelledby="cierre-decisiones">
+              <h3 id="cierre-decisiones" class="cierre__subtitulo">{{ copy.decisionesTitulo }}</h3>
+              <p class="cierre__tenue">{{ copy.decisionesAyuda }}</p>
+              @for (escena of escenas(); track escena.nodeId) {
+                <details class="cierre__escena" [open]="$first">
+                  <summary>
+                    <span class="cierre__escena-titulo">{{ escena.titulo }}</span>
+                    <mat-icon class="cierre__escena-flecha" aria-hidden="true">expand_more</mat-icon>
+                  </summary>
+                  <ol class="cierre__decisiones-lista">
+                    @for (decision of escena.decisiones; track decision.order) {
+                      <li class="cierre__decision">
+                        <p class="cierre__elegiste"><span class="cierre__rotulo">{{ copy.elegiste }}</span> {{ decision.chosen.label || decision.chosen.text }}</p>
+                        @if (decision.reconsidered; as primera) {
+                          <p class="cierre__tenue">{{ reconsideradoEtiqueta }}: {{ primera.firstOptionText }}</p>
+                        }
+                        @if (claseEnPalabras(decision.class); as palabra) {
+                          <p class="cierre__clase">{{ palabra }}</p>
+                        }
+                        @if (decision.prohibited) { <p class="cierre__clase cierre__clase--nota">{{ draft.decisionProhibitedNote.text }}</p> }
+                        @if (decision.consequence) { <p>{{ decision.consequence }}</p> }
+                        @if (decision.feedback.explanation) {
+                          <p>{{ decision.feedback.explanation }}</p>
+                        } @else {
+                          <p class="cierre__tenue">{{ draft.decisionNoExplanation.text }}</p>
+                        }
+                        @if (decision.feedback.theoryBasis) {
+                          <p class="cierre__base"><span class="cierre__rotulo">{{ draft.decisionBasisLabel.text }}:</span> {{ decision.feedback.theoryBasis }}</p>
+                        }
+                        @if (decision.missed?.length) {
+                          <div class="cierre__faltaron">
+                            <p class="cierre__rotulo">{{ draft.missedTitle.text }}</p>
+                            <ul class="cierre__lista">
+                              @for (opcion of decision.missed; track opcion.optionId) {
+                                <li>{{ opcion.text }} <span class="cierre__tenue">· {{ faltoPara(opcion) }}</span></li>
+                              }
+                            </ul>
+                          </div>
+                        }
+                      </li>
+                    }
+                  </ol>
+                </details>
+              }
+            </section>
+          }
+
+          @if (competencias().length) {
+            <section class="cierre__competencias" aria-labelledby="cierre-competencias">
+              <h3 id="cierre-competencias" class="cierre__subtitulo">{{ copy.competenciasTitulo }}</h3>
+              <ul class="cierre__competencias-lista">
+                @for (competencia of competencias(); track competencia.code) {
+                  <li>
+                    <span class="cierre__competencia-nombre">{{ competencia.name }}</span>
+                    <span class="cierre__nivel">{{ nivelEnPalabras(competencia.level) }}</span>
+                    @if (competencia.basis) { <span class="cierre__tenue cierre__competencia-base">{{ competencia.basis }}</span> }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          <ui-scope-notice />
+        </div>
+      }
+    </ui-section>
+
+    <!-- 4 · Retroalimentación docente (BK-5): la misma pieza que ve la docente. Falla sola, con su «Reintentar». -->
+    <ui-section [title]="copy.retroTitulo">
+      @if (cargandoValoracion()) {
+        <div aria-busy="true"><ui-skeleton shape="card" [lines]="3" /></div>
+      } @else if (errorValoracion()) {
+        <ui-error-state [kind]="tipoError(estadoValoracion())" [status]="estadoValoracion()" [message]="copy.retroError" (retry)="reintentarValoracion()" />
+      } @else {
+        <app-valoracion-docente [valoracion]="valoracionDocente()" />
+      }
+    </ui-section>
+
+    <!-- 5 · Qué sigue. -->
+    <ui-section [title]="copy.siguienteTitulo">
+      @if (recomendaciones().length) {
+        <ul class="cierre__lista cierre__recomendaciones">
+          @for (texto of recomendaciones(); track $index) { <li>{{ texto }}</li> }
+        </ul>
+      } @else {
+        <p class="cierre__tenue">{{ copy.siguienteSinRecomendaciones }}</p>
+      }
+      <div class="cierre__acciones">
+        <a ui-button icon="home" routerLink="/portal/dashboard">{{ copy.volverInicio }}</a>
+        <a ui-button variant="secondary" icon="replay" [routerLink]="['/portal/simulador', casoParaEnlaces(), 'ficha']">{{ copy.intentarDeNuevo }}</a>
+      </div>
+    </ui-section>
+  }
+</div>

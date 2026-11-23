@@ -1,0 +1,3720 @@
+{
+  "caso": {
+    "descripcion": "Caso formativo basado en el documento canónico de Psicología Social: tentativa de feminicidio con víctima de 22 años, feminicidio de su hija de 3 años, atención hospitalaria en crisis y restablecimiento de derechos en Comisaría de Familia (Resolución 459 de 2012, Ley 1257 de 2008, Ley 2126 de 2021, Ley 1098 de 2006).",
+    "escenaInicial": "E01",
+    "estado": "PUBLICADO",
+    "id": "SIM-VBG-001",
+    "objetivosAprendizaje": [
+      "Identifica necesidades inmediatas y estabiliza a la víctima y su red de apoyo.",
+      "Aplica referentes legales y activa rutas institucionales adecuadas.",
+      "Toma decisiones clínicas que minimizan revictimización y riesgo.",
+      "Registra aprendizajes y justifica el criterio de intervención."
+    ],
+    "rubrica": "RUB-01",
+    "titulo": "Violencia Familiar y Tentativa de Feminicidio",
+    "version": "2.1.0"
+  },
+  "escenas": [
+    {
+      "advertencia": "Este caso aborda violencia de género, tentativa de feminicidio y la muerte de una niña. Puedes usar la salida segura en cualquier momento.",
+      "contenidoSensible": true,
+      "decision": {
+        "id": "D01",
+        "opciones": [
+          {
+            "clasificacion": "INADECUADA",
+            "conductaProhibida": true,
+            "id": "OP01",
+            "motivoProhibicion": "Comunicar una muerte sin protocolo ni contención aumenta el daño y revictimiza a la familia.",
+            "siguienteEscena": "E02",
+            "texto": "Notificar de inmediato la muerte de la niña a la abuela y la familia, sin estabilización previa ni protocolo."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP02",
+            "siguienteEscena": "E02",
+            "texto": "Brindar contención emocional, acompañamiento en el duelo inicial y estabilización de la crisis mediante Primeros Auxilios Psicológicos (PAP)."
+          },
+          {
+            "clasificacion": "INADECUADA",
+            "conductaProhibida": true,
+            "id": "OP03",
+            "motivoProhibicion": "Priorizar la información sobre la estabilización vulnera la dignidad de la víctima y la revictimiza.",
+            "siguienteEscena": "E02",
+            "texto": "Interrogar a la víctima herida para obtener detalles del agresor antes de que entre a cirugía."
+          }
+        ],
+        "pregunta": "¿Qué decisión tomas en esta escena?"
+      },
+      "descripcion": "Son las 11 de la noche. Una mujer de 22 años ingresa a urgencias con 28 heridas de arma cortopunzante tras una tentativa de feminicidio; su hija de 3 años falleció en el ataque. La madre de la sobreviviente y sus hermanos llegan alterados exigiendo ver a la niña. Estabiliza emocionalmente a la familia y evita acciones prematuras que aumenten la crisis.",
+      "id": "E01",
+      "orden": 1,
+      "titulo": "Urgencias: crisis y contención"
+    },
+    {
+      "decision": {
+        "id": "D02",
+        "opciones": [
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP04",
+            "siguienteEscena": "E03",
+            "texto": "Aplicar solo la Resolución 459 de 2012 (protocolo de atención integral a víctimas de violencia sexual y de género)."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP05",
+            "siguienteEscena": "E03",
+            "texto": "Resolución 459 de 2012 + Ley 1257 de 2008."
+          },
+          {
+            "clasificacion": "RIESGOSA",
+            "id": "OP06",
+            "siguienteEscena": "E03",
+            "texto": "Resolución 459 de 2012 + Ley 1448 de 2011 como eje principal."
+          }
+        ],
+        "pregunta": "¿Qué decisión tomas en esta escena?"
+      },
+      "descripcion": "Con el foco inmediato definido, establece el marco normativo y técnico que orienta la atención hospitalaria de este caso.",
+      "id": "E02",
+      "orden": 2,
+      "titulo": "Sala de escucha: marco normativo"
+    },
+    {
+      "decision": {
+        "id": "D03",
+        "opciones": [
+          {
+            "clasificacion": "RIESGOSA",
+            "id": "OP07",
+            "siguienteEscena": "E04",
+            "texto": "Escucha activa sin juicios, intervenir la disonancia cognitiva, indagar antecedentes de la relación y activar ruta por psicología clínica y psiquiatría."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP08",
+            "siguienteEscena": "E04",
+            "texto": "PAP a la familia + escucha activa y sin juicios a la víctima (cuando esté consciente) + protocolo EPICEE/SPIKES para comunicar el fallecimiento de la menor."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP09",
+            "siguienteEscena": "E04",
+            "texto": "Lo anterior + antecedentes de la relación para determinar el ciclo de la violencia + manejo interdisciplinario del caso."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP10",
+            "siguienteEscena": "E04",
+            "texto": "PAP + escucha activa + EPICEE/SPIKES + evaluación psicosocial de la familia (factores protectores y de riesgo en el duelo) + decisiones interdisciplinarias (derivación a psiquiatría y psicoterapia)."
+          }
+        ],
+        "pregunta": "¿Qué decisión tomas en esta escena?"
+      },
+      "descripcion": "La familia sigue en la sala de escucha y la sobreviviente saldrá de cirugía en unas horas. Define qué hacer —y qué evitar— técnica y éticamente.",
+      "id": "E03",
+      "orden": 3,
+      "titulo": "Acción técnica y ética"
+    },
+    {
+      "decision": {
+        "id": "D04",
+        "opciones": [
+          {
+            "clasificacion": "INADECUADA",
+            "conductaProhibida": true,
+            "id": "OP11",
+            "motivoProhibicion": "La mediación/conciliación con el agresor está proscrita en violencia de género: aumenta el riesgo de feminicidio.",
+            "siguienteEscena": "E05",
+            "texto": "Instar a la mujer a escuchar al agresor en pro de la unidad familiar (mediación) y el perdón."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP12",
+            "siguienteEscena": "E05",
+            "texto": "Valorar el riesgo de feminicidio, activar medidas de protección y asesorar sobre sus derechos económicos y de justicia."
+          },
+          {
+            "clasificacion": "RIESGOSA",
+            "id": "OP13",
+            "siguienteEscena": "E05",
+            "texto": "Centrar la intervención en psicoterapia para hallar los patrones de infancia que desencadenan su elección de pareja."
+          }
+        ],
+        "pregunta": "¿Qué decisión tomas en esta escena?"
+      },
+      "descripcion": "El bloque hospitalario quedó registrado. Quince días después, tras el alta médica, la sobreviviente inicia la ruta de restablecimiento de derechos. La salida institucional está habilitada: dirígete a la Comisaría de Familia.",
+      "id": "E04",
+      "orden": 4,
+      "titulo": "Quince días después"
+    },
+    {
+      "decision": {
+        "id": "D05",
+        "opciones": [
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP14",
+            "siguienteEscena": "E06",
+            "texto": "Ley 2126 de 2021 + Ley 1098 de 2006 + Ley 1257 de 2008."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP15",
+            "siguienteEscena": "E06",
+            "texto": "Ley 1098 de 2006 + Ley 1257 de 2008."
+          },
+          {
+            "clasificacion": "RIESGOSA",
+            "id": "OP16",
+            "siguienteEscena": "E06",
+            "texto": "Ley 1098 de 2006 + Ley 1257 de 2008 + Ley 1448 de 2011 como eje principal."
+          }
+        ],
+        "pregunta": "¿Qué decisión tomas en esta escena?"
+      },
+      "descripcion": "La sobreviviente presenta secuelas físicas y trauma complejo. Tras definir la prioridad psicosocial, establece el marco normativo del restablecimiento de derechos.",
+      "id": "E05",
+      "orden": 5,
+      "titulo": "Consultorio: protección y marco"
+    },
+    {
+      "decision": {
+        "id": "D06",
+        "opciones": [
+          {
+            "clasificacion": "RIESGOSA",
+            "id": "OP17",
+            "siguienteEscena": "E07",
+            "texto": "Escucha activa, intervenir la disonancia, antecedentes y ciclos de violencia, valoración de riesgo de feminicidio y ruta por psicología clínica y psiquiatría."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP18",
+            "siguienteEscena": "E07",
+            "texto": "Valoración inicial psicológica y emocional de la víctima y de las personas dependientes o en situación de vulnerabilidad + escucha activa + antecedentes y ciclos + rutas de derivación a salud y salud mental."
+          },
+          {
+            "clasificacion": "ADECUADA",
+            "id": "OP19",
+            "siguienteEscena": "E07",
+            "texto": "Lo anterior + establecer el nivel de riesgo de vulneración de derechos + valoración del riesgo de feminicidio + rutas de derivación a salud y salud mental."
+          }
+        ],
+        "pregunta": "¿Qué decisión tomas en esta escena?"
+      },
+      "descripcion": "Cierra la actuación técnica y ética del restablecimiento de derechos: víctima, dependientes y rutas.",
+      "id": "E06",
+      "orden": 6,
+      "titulo": "Consultorio: acción técnica y ética"
+    },
+    {
+      "descripcion": "El caso queda consolidado. Revisa tu reporte final: decisiones, métricas y el final alcanzado.",
+      "id": "E07",
+      "orden": 7,
+      "titulo": "Cierre del caso"
+    }
+  ],
+  "herramientas": [
+    {
+      "categoria": "crisis",
+      "descripcion": "Contención y estabilización emocional en crisis.",
+      "id": "H01",
+      "nombre": "Primeros Auxilios Psicológicos"
+    },
+    {
+      "categoria": "comunicacion",
+      "descripcion": "Comunicación protocolizada de noticias difíciles.",
+      "id": "H02",
+      "nombre": "Protocolo EPICEE/SPIKES"
+    },
+    {
+      "categoria": "evaluacion",
+      "descripcion": "Valoración estructurada del riesgo de feminicidio.",
+      "id": "H03",
+      "nombre": "Valoración de riesgo"
+    },
+    {
+      "categoria": "proteccion",
+      "descripcion": "Activación de medidas de protección y rutas institucionales.",
+      "id": "H04",
+      "nombre": "Ruta de protección"
+    },
+    {
+      "categoria": "reflexion",
+      "descripcion": "Registro reflexivo del proceso de intervención.",
+      "id": "H05",
+      "nombre": "Bitácora reflexiva"
+    }
+  ],
+  "personajes": [],
+  "retroalimentacion": [],
+  "rubricas": [
+    {
+      "activa": true,
+      "criterios": [
+        {
+          "competencia": "CONTENCION",
+          "descripcion": "Identifica necesidades inmediatas y estabiliza a la víctima y su red de apoyo.",
+          "id": "CR01",
+          "orden": 1,
+          "titulo": "Contención emocional y manejo de crisis"
+        },
+        {
+          "competencia": "MARCO_NORMATIVO",
+          "descripcion": "Aplica referentes legales y activa rutas institucionales adecuadas.",
+          "id": "CR02",
+          "orden": 2,
+          "titulo": "Marco normativo y rutas de atención"
+        },
+        {
+          "competencia": "INTERVENCION_ETICA",
+          "descripcion": "Toma decisiones clínicas que minimizan revictimización y riesgo.",
+          "id": "CR03",
+          "orden": 3,
+          "titulo": "Intervención técnica y ética"
+        },
+        {
+          "competencia": "REFLEXION",
+          "descripcion": "Registra aprendizajes y justifica el criterio de intervención.",
+          "id": "CR04",
+          "orden": 4,
+          "titulo": "Reflexión profesional"
+        }
+      ],
+      "descripcion": "Evaluación por competencias psicosociales del caso SIM-VBG-001: contención, marco normativo, intervención ética y reflexión profesional.",
+      "id": "RUB-01",
+      "nombre": "Rúbrica formativa — Violencia de género y rutas de protección",
+      "version": "1.0"
+    }
+  ],
+  "versionDsl": "1.0",
+  "x-siep": {
+    "contexto": "Son las 11 de la noche en un barrio con altas condiciones de vulnerabilidad: pobreza, violencias urbanas, robos, expendio de drogas, presencia de grupos armados ilegales y riñas callejeras entre vecinos.\n\nUn hombre de aproximadamente 28 años entra a su domicilio, donde reside con su pareja actual, una mujer de 22 años. Ella tiene una hija de 3 años.\n\nEn horas de la tarde, el hombre había tenido un altercado verbal con su pareja. Hubo groserías, maltrato psicológico y chantaje emocional: le dijo que sin él no era nadie, que era una mujer mantenida y que estaba seguro de que ella le era infiel.\n\nEsa noche, cuando él entra a la residencia, la mujer le reclama por llegar tarde y haberse perdido toda la tarde.\n\nEl hombre, sin mediar palabra, saca una navaja y hiere a la niña de 3 años, causándole la muerte de manera inmediata. Luego hiere a la mujer con 28 heridas de arma cortopunzante, dejándola gravemente herida.\n\nTu intervención inicia en urgencias. Lee el contexto con cuidado: cada conversación, herramienta y decisión puede cambiar el curso de la atención.",
+    "escenas": [
+      {
+        "apoyo": [],
+        "clave": "hospital-urgencias",
+        "comentarios": [
+          {
+            "emocion": "preocupada",
+            "gesto": "se-acerca",
+            "linea": "Nadie nos dice nada… solo queremos saber si ellas están bien.",
+            "personaje": "familia-crisis"
+          },
+          {
+            "cuando": {
+              "inspected": "zona-restringida"
+            },
+            "emocion": "en-crisis",
+            "gesto": "se-agita",
+            "linea": "Dicen que no podemos pasar por ahí… ¿qué es lo que no nos quieren decir?",
+            "personaje": "familia-crisis"
+          }
+        ],
+        "herramientasRequeridas": [],
+        "id": "E01",
+        "inicial": true,
+        "intensidad": "HIGH",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "enfermera-urgencias",
+              "medico-guardia",
+              "psicologa-orientadora"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "enfermera-urgencias",
+                "label": "Enfermera de urgencias",
+                "x": 560,
+                "y": 330
+              },
+              {
+                "interactionRadius": 60,
+                "key": "medico-guardia",
+                "x": 640,
+                "y": 290
+              },
+              {
+                "interactionRadius": 60,
+                "key": "psicologa-orientadora",
+                "x": 780,
+                "y": 440
+              }
+            ],
+            "mood": "clinical-urgent",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "hospital-urgencias",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 56,
+              "ancho": 220,
+              "clave": "mostrador-triage",
+              "etiqueta": "Mostrador de triage",
+              "x": 380,
+              "y": 252
+            },
+            {
+              "alto": 38,
+              "ancho": 150,
+              "clave": "sillas-espera",
+              "etiqueta": "Sillas de espera",
+              "x": 120,
+              "y": 308
+            },
+            {
+              "alto": 46,
+              "ancho": 110,
+              "clave": "camilla",
+              "etiqueta": "Camilla",
+              "x": 700,
+              "y": 300
+            },
+            {
+              "alto": 40,
+              "ancho": 44,
+              "clave": "planta-urgencias",
+              "etiqueta": "Planta",
+              "x": 800,
+              "y": 380
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "familia-crisis",
+              "elecciones": [
+                {
+                  "clave": "pap-familia",
+                  "efecto": {},
+                  "herramientaRequerida": "PAP",
+                  "opcion": null,
+                  "orden": 1,
+                  "texto": "Aplicar PAP a la familia en crisis"
+                }
+              ],
+              "emocion": "concerned",
+              "hablante": "Abuela de la niña",
+              "lineas": [
+                {
+                  "emocion": "anxious",
+                  "hablante": "Abuela de la niña",
+                  "orden": 1,
+                  "texto": "¡Déjenme pasar! ¡Quiero ver a mi nieta y a mi hija! ¿Por qué nadie nos dice nada?"
+                },
+                {
+                  "emocion": "anxious",
+                  "hablante": "Abuela de la niña",
+                  "orden": 2,
+                  "texto": "Llegamos apenas supimos… ¿están bien? ¡Dígame que están bien!"
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Abuela de la niña",
+                  "orden": 3,
+                  "texto": "(La familia necesita contención antes de cualquier información difícil. La sala de escucha está al fondo a la derecha.)"
+                }
+              ],
+              "objeto": "familia-crisis",
+              "retrato": null
+            },
+            {
+              "clave": "zona-restringida",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Acceso a quirófano",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Acceso a quirófano",
+                  "orden": 1,
+                  "texto": "Acceso restringido: la sobreviviente está en cirugía (28 heridas con arma cortopunzante). El personal pide manejar la información con prudencia: la niña de 3 años falleció y la familia aún no lo sabe con certeza."
+                }
+              ],
+              "objeto": "zona-restringida",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "familia-crisis",
+              "codigoCorto": "FAM",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Familia en crisis",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Hablar con la familia en crisis",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "familia-crisis",
+              "texto": "La abuela de la niña y los hermanos de la sobreviviente exigen verla.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 190,
+              "y": 420,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "zona-restringida",
+              "codigoCorto": "RES",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Acceso a quirófano",
+              "herramienta": null,
+              "icono": "do_not_disturb_on",
+              "indicacion": "Observar la zona restringida",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Acceso restringido: la sobreviviente está en cirugía (28 heridas con arma cortopunzante). El personal pide manejar la información con prudencia: la niña de 3 años falleció y la familia aún no lo sabe con certeza.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 660,
+              "y": 268,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-pap",
+              "codigoCorto": "PAP",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Kit PAP",
+              "herramienta": "PAP",
+              "icono": "healing",
+              "indicacion": "Tomar el kit de Primeros Auxilios Psicológicos",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Primeros Auxilios Psicológicos: contención, estabilización y enlace.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 318,
+              "y": 428,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-sala-escucha",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Sala de escucha familiar",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Entrar a la sala de escucha familiar",
+              "metadatos": {
+                "entryX": 160,
+                "entryY": 452,
+                "label": "Sala de escucha familiar",
+                "lockedMessage": "Primero identifica la necesidad de contención: habla con la familia en crisis.",
+                "requiresInspected": [
+                  "familia-crisis"
+                ],
+                "targetNodeKey": "hospital-sala-escucha"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Sala de escucha familiar",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 838,
+              "y": 440,
+              "z": 0
+            }
+          ],
+          "tema": "hospital-urgencias",
+          "titulo": "Hospital — Urgencias"
+        },
+        "objetivo": "Entiende qué está viviendo la familia y qué necesita ahora, antes de decidir cómo acompañarla.",
+        "opciones": [
+          {
+            "clase": "CONTRAINDICATED",
+            "clave": "h1-noticia-sin-protocolo",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 1,
+                "bond": -1
+              }
+            },
+            "id": "OP01",
+            "retroalimentacionInmediata": "La noticia de una muerte exige protocolo (EPICEE/SPIKES), contención y estabilización previa. Sin eso, la crisis escala."
+          },
+          {
+            "clase": "RECOMMENDED",
+            "clave": "h1-pap-contencion",
+            "efectos": {
+              "milestones": [
+                "familia_contenida",
+                "pap_aplicado"
+              ],
+              "persona": {
+                "activation": -1,
+                "bond": 1
+              }
+            },
+            "id": "OP02",
+            "reaccion": {
+              "emocion": "triste",
+              "gesto": "se-acerca",
+              "linea": "(La abuela respira un poco más despacio y te sostiene la mirada.) Gracias por quedarse… nadie nos había explicado nada. Solo díganme la verdad cuando se pueda."
+            },
+            "requiere": {
+              "all": [
+                {
+                  "talked": "enfermera-urgencias"
+                },
+                {
+                  "used": "PAP"
+                }
+              ]
+            },
+            "retroalimentacionInmediata": "Los PAP son la primera línea en crisis: estabilizan, contienen y preparan a la familia para el proceso de duelo."
+          },
+          {
+            "clase": "CONTRAINDICATED",
+            "clave": "h1-interrogar-victima",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 1,
+                "bond": -1
+              }
+            },
+            "id": "OP03",
+            "retroalimentacionInmediata": "La urgencia vital y la estabilización van primero: interrogar a una víctima en shock la revictimiza."
+          }
+        ],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "preguntaDerivada": true,
+        "salidaSeguraObligatoria": false,
+        "terminal": false
+      },
+      {
+        "apoyo": [],
+        "clave": "hospital-sala-escucha",
+        "comentarios": [
+          {
+            "emocion": "triste",
+            "gesto": "baja-la-mirada",
+            "linea": "Sigo sin entender qué pasó… solo quiero que alguien me explique con calma.",
+            "personaje": "familia-duelo"
+          },
+          {
+            "cuando": {
+              "inspected": "marco-normativo-hospital"
+            },
+            "emocion": "cautelosa",
+            "gesto": "se-acerca",
+            "linea": "Si hay normas para esto, ¿alguien las va a cumplir por nosotras?",
+            "personaje": "familia-duelo"
+          }
+        ],
+        "herramientasRequeridas": [],
+        "id": "E02",
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "trabajadora-social"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "trabajadora-social",
+                "x": 480,
+                "y": 380
+              }
+            ],
+            "mood": "warm-private",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "hospital-sala-escucha",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 64,
+              "ancho": 130,
+              "clave": "sofa-escucha",
+              "etiqueta": "Sofá de escucha",
+              "x": 130,
+              "y": 300
+            },
+            {
+              "alto": 36,
+              "ancho": 90,
+              "clave": "mesa-centro",
+              "etiqueta": "Mesa de centro",
+              "x": 280,
+              "y": 370
+            },
+            {
+              "alto": 44,
+              "ancho": 150,
+              "clave": "estante-protocolos",
+              "etiqueta": "Estante de protocolos",
+              "x": 600,
+              "y": 256
+            },
+            {
+              "alto": 36,
+              "ancho": 56,
+              "clave": "silla-profesional",
+              "etiqueta": "Silla",
+              "x": 680,
+              "y": 330
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "familia-duelo",
+              "elecciones": [
+                {
+                  "clave": "h1-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h1-noticia-sin-protocolo",
+                  "orden": 1,
+                  "texto": "Notificar de inmediato la muerte de la niña a la familia"
+                },
+                {
+                  "clave": "h1-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h1-pap-contencion",
+                  "orden": 2,
+                  "texto": "Aplicar PAP: contención emocional, acompañamiento en duelo y estabilización de la crisis"
+                },
+                {
+                  "clave": "h1-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h1-interrogar-victima",
+                  "orden": 3,
+                  "texto": "Interrogar a la víctima herida sobre el agresor antes de cirugía"
+                }
+              ],
+              "emocion": "concerned",
+              "hablante": "Abuela de la niña",
+              "lineas": [
+                {
+                  "emocion": "anxious",
+                  "hablante": "Abuela de la niña",
+                  "orden": 1,
+                  "texto": "¡Por favor! Nadie nos dice nada de la niña… ¿dónde está mi nieta? ¡Quiero verla!"
+                },
+                {
+                  "emocion": "negative",
+                  "hablante": "Abuela de la niña",
+                  "orden": 2,
+                  "texto": "Mi hija sigue en cirugía… dicen que son 28 heridas. ¿Quién pudo hacerle esto?"
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Abuela de la niña",
+                  "orden": 3,
+                  "texto": "(La familia está en crisis. Define el foco inmediato de tu intervención.)"
+                }
+              ],
+              "objeto": "familia-duelo",
+              "retrato": null
+            },
+            {
+              "clave": "marco-normativo-hospital",
+              "elecciones": [
+                {
+                  "clave": "h2-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h2-solo-459",
+                  "orden": 1,
+                  "texto": "Aplicar solo la Resolución 459 de 2012"
+                },
+                {
+                  "clave": "h2-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h2-459-1257",
+                  "orden": 2,
+                  "texto": "Resolución 459 de 2012 + Ley 1257 de 2008"
+                },
+                {
+                  "clave": "h2-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h2-459-1448",
+                  "orden": 3,
+                  "texto": "Resolución 459 de 2012 + Ley 1448 de 2011 como eje"
+                }
+              ],
+              "emocion": "neutral",
+              "hablante": "Marco normativo y técnico",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 1,
+                  "texto": "Disponibles: Resolución 459 de 2012 (protocolo de atención integral a violencias sexuales y de género), Ley 1257 de 2008, Ley 1448 de 2011."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 2,
+                  "texto": "(Define el marco normativo y técnico que orienta la atención.)"
+                }
+              ],
+              "objeto": "marco-normativo-hospital",
+              "retrato": null
+            },
+            {
+              "clave": "psicologa-acompanante",
+              "elecciones": [
+                {
+                  "clave": "h3-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-parcial-disonancia",
+                  "orden": 1,
+                  "texto": "Escucha activa + disonancia + antecedentes + ruta clínica/psiquiátrica"
+                },
+                {
+                  "clave": "h3-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-pap-epicee",
+                  "orden": 2,
+                  "texto": "PAP a la familia + escucha sin juicios + EPICEE/SPIKES"
+                },
+                {
+                  "clave": "h3-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-epicee-ciclo",
+                  "orden": 3,
+                  "texto": "Lo anterior + ciclo de la violencia + manejo interdisciplinario"
+                },
+                {
+                  "clave": "h3-d",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-integral-psicosocial",
+                  "orden": 4,
+                  "texto": "PAP + escucha + EPICEE/SPIKES + evaluación psicosocial familiar + interdisciplina"
+                }
+              ],
+              "emocion": "positive",
+              "hablante": "Psicóloga hospitalaria",
+              "lineas": [
+                {
+                  "emocion": "positive",
+                  "hablante": "Psicóloga hospitalaria",
+                  "orden": 1,
+                  "texto": "La familia sigue en la sala y la sobreviviente saldrá de cirugía en unas horas. El equipo espera tu propuesta."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Psicóloga hospitalaria",
+                  "orden": 2,
+                  "texto": "(Define qué hacer —y qué evitar— técnica y éticamente.)"
+                }
+              ],
+              "objeto": "psicologa-acompanante",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "familia-duelo",
+              "codigoCorto": "FAM",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Familia en crisis",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Acompañar a la familia",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "familia-duelo",
+              "texto": "La abuela de la niña y los hermanos de la sobreviviente esperan noticias.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 168,
+              "y": 408,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "marco-normativo-hospital",
+              "codigoCorto": "LEY",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Marco normativo",
+              "herramienta": null,
+              "icono": "menu_book",
+              "indicacion": "Revisar el marco normativo",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Protocolos y normas disponibles en el servicio de urgencias.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 660,
+              "y": 320,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "psicologa-acompanante",
+              "codigoCorto": "PSI",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Psicóloga hospitalaria",
+              "herramienta": null,
+              "icono": "psychology",
+              "indicacion": "Definir la actuación con la psicóloga",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "psicologa-acompanante",
+              "texto": "La psicóloga hospitalaria coordina la propuesta de intervención.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 740,
+              "y": 400,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-pap",
+              "codigoCorto": "PAP",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Kit PAP",
+              "herramienta": "PAP",
+              "icono": "healing",
+              "indicacion": "Tomar el kit de Primeros Auxilios Psicológicos",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Primeros Auxilios Psicológicos: contención, estabilización y enlace.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 318,
+              "y": 430,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-spikes",
+              "codigoCorto": "EPI",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Protocolo EPICEE",
+              "herramienta": "SPIKES",
+              "icono": "description",
+              "indicacion": "Revisar el protocolo EPICEE/SPIKES",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Protocolo EPICEE (SPIKES): comunicación de noticias difíciles por etapas.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 480,
+              "y": 300,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-bitacora",
+              "codigoCorto": "BIT",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Bitácora",
+              "herramienta": "REFLECTION_JOURNAL",
+              "icono": "edit_note",
+              "indicacion": "Tomar la bitácora reflexiva",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Registra una reflexión breve del bloque hospitalario.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 560,
+              "y": 430,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-urgencias",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Sala de urgencias",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Volver a urgencias",
+              "metadatos": {
+                "entryX": 786,
+                "entryY": 440,
+                "label": "Sala de urgencias",
+                "targetNodeKey": "hospital-urgencias"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Sala de urgencias",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 122,
+              "y": 460,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "salida-institucional",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Salida institucional",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Iniciar la ruta institucional",
+              "metadatos": {
+                "entryX": 160,
+                "entryY": 452,
+                "label": "Comisaría de Familia",
+                "lockedMessage": "La ruta institucional aún no está lista. Completa la contención y registra la decisión hospitalaria.",
+                "requiresNodes": [
+                  "hospital-cierre-bloque"
+                ],
+                "targetNodeKey": "comisaria-recepcion"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Comisaría de Familia",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 838,
+              "y": 440,
+              "z": 0
+            }
+          ],
+          "tema": "hospital-escucha",
+          "titulo": "Hospital — Sala de escucha familiar"
+        },
+        "objetivo": "Ubica qué te exige la norma en salud frente a un caso como este.",
+        "opciones": [
+          {
+            "clase": "ACCEPTABLE",
+            "clave": "h2-solo-459",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 0,
+                "bond": 0
+              }
+            },
+            "id": "OP04",
+            "retroalimentacionInmediata": "La Resolución 459 aplica, pero sola queda incompleta: la Ley 1257 de 2008 es el eje de protección frente a las violencias contra la mujer."
+          },
+          {
+            "clase": "RECOMMENDED",
+            "clave": "h2-459-1257",
+            "efectos": {
+              "milestones": [
+                "marco_hospital_correcto"
+              ],
+              "persona": {
+                "activation": -1,
+                "bond": 1
+              }
+            },
+            "id": "OP05",
+            "retroalimentacionInmediata": "Correcto: protocolo de atención integral en salud más el marco de protección de la Ley 1257 de 2008."
+          },
+          {
+            "clase": "RISKY",
+            "clave": "h2-459-1448",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 0,
+                "bond": -1
+              }
+            },
+            "id": "OP06",
+            "retroalimentacionInmediata": "La Ley 1448 (víctimas del conflicto armado) no es el eje de este caso: el marco correcto es la Ley 1257 de 2008."
+          }
+        ],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "preguntaDerivada": true,
+        "salidaSeguraObligatoria": false,
+        "terminal": false
+      },
+      {
+        "apoyo": [],
+        "clave": "hospital-accion-etica",
+        "herramientasRequeridas": [],
+        "id": "E03",
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "trabajadora-social"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "trabajadora-social",
+                "x": 480,
+                "y": 380
+              }
+            ],
+            "mood": "warm-private",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "hospital-sala-escucha-accion",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 64,
+              "ancho": 130,
+              "clave": "sofa-escucha",
+              "etiqueta": "Sofá de escucha",
+              "x": 130,
+              "y": 300
+            },
+            {
+              "alto": 36,
+              "ancho": 90,
+              "clave": "mesa-centro",
+              "etiqueta": "Mesa de centro",
+              "x": 280,
+              "y": 370
+            },
+            {
+              "alto": 44,
+              "ancho": 150,
+              "clave": "estante-protocolos",
+              "etiqueta": "Estante de protocolos",
+              "x": 600,
+              "y": 256
+            },
+            {
+              "alto": 36,
+              "ancho": 56,
+              "clave": "silla-profesional",
+              "etiqueta": "Silla",
+              "x": 680,
+              "y": 330
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "familia-duelo",
+              "elecciones": [
+                {
+                  "clave": "h1-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h1-noticia-sin-protocolo",
+                  "orden": 1,
+                  "texto": "Notificar de inmediato la muerte de la niña a la familia"
+                },
+                {
+                  "clave": "h1-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h1-pap-contencion",
+                  "orden": 2,
+                  "texto": "Aplicar PAP: contención emocional, acompañamiento en duelo y estabilización de la crisis"
+                },
+                {
+                  "clave": "h1-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h1-interrogar-victima",
+                  "orden": 3,
+                  "texto": "Interrogar a la víctima herida sobre el agresor antes de cirugía"
+                }
+              ],
+              "emocion": "concerned",
+              "hablante": "Abuela de la niña",
+              "lineas": [
+                {
+                  "emocion": "anxious",
+                  "hablante": "Abuela de la niña",
+                  "orden": 1,
+                  "texto": "¡Por favor! Nadie nos dice nada de la niña… ¿dónde está mi nieta? ¡Quiero verla!"
+                },
+                {
+                  "emocion": "negative",
+                  "hablante": "Abuela de la niña",
+                  "orden": 2,
+                  "texto": "Mi hija sigue en cirugía… dicen que son 28 heridas. ¿Quién pudo hacerle esto?"
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Abuela de la niña",
+                  "orden": 3,
+                  "texto": "(La familia está en crisis. Define el foco inmediato de tu intervención.)"
+                }
+              ],
+              "objeto": "familia-duelo",
+              "retrato": null
+            },
+            {
+              "clave": "marco-normativo-hospital",
+              "elecciones": [
+                {
+                  "clave": "h2-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h2-solo-459",
+                  "orden": 1,
+                  "texto": "Aplicar solo la Resolución 459 de 2012"
+                },
+                {
+                  "clave": "h2-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h2-459-1257",
+                  "orden": 2,
+                  "texto": "Resolución 459 de 2012 + Ley 1257 de 2008"
+                },
+                {
+                  "clave": "h2-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h2-459-1448",
+                  "orden": 3,
+                  "texto": "Resolución 459 de 2012 + Ley 1448 de 2011 como eje"
+                }
+              ],
+              "emocion": "neutral",
+              "hablante": "Marco normativo y técnico",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 1,
+                  "texto": "Disponibles: Resolución 459 de 2012 (protocolo de atención integral a violencias sexuales y de género), Ley 1257 de 2008, Ley 1448 de 2011."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 2,
+                  "texto": "(Define el marco normativo y técnico que orienta la atención.)"
+                }
+              ],
+              "objeto": "marco-normativo-hospital",
+              "retrato": null
+            },
+            {
+              "clave": "psicologa-acompanante",
+              "elecciones": [
+                {
+                  "clave": "h3-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-parcial-disonancia",
+                  "orden": 1,
+                  "texto": "Escucha activa + disonancia + antecedentes + ruta clínica/psiquiátrica"
+                },
+                {
+                  "clave": "h3-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-pap-epicee",
+                  "orden": 2,
+                  "texto": "PAP a la familia + escucha sin juicios + EPICEE/SPIKES"
+                },
+                {
+                  "clave": "h3-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-epicee-ciclo",
+                  "orden": 3,
+                  "texto": "Lo anterior + ciclo de la violencia + manejo interdisciplinario"
+                },
+                {
+                  "clave": "h3-d",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "h3-integral-psicosocial",
+                  "orden": 4,
+                  "texto": "PAP + escucha + EPICEE/SPIKES + evaluación psicosocial familiar + interdisciplina"
+                }
+              ],
+              "emocion": "positive",
+              "hablante": "Psicóloga hospitalaria",
+              "lineas": [
+                {
+                  "emocion": "positive",
+                  "hablante": "Psicóloga hospitalaria",
+                  "orden": 1,
+                  "texto": "La familia sigue en la sala y la sobreviviente saldrá de cirugía en unas horas. El equipo espera tu propuesta."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Psicóloga hospitalaria",
+                  "orden": 2,
+                  "texto": "(Define qué hacer —y qué evitar— técnica y éticamente.)"
+                }
+              ],
+              "objeto": "psicologa-acompanante",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "familia-duelo",
+              "codigoCorto": "FAM",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Familia en crisis",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Acompañar a la familia",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "familia-duelo",
+              "texto": "La abuela de la niña y los hermanos de la sobreviviente esperan noticias.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 168,
+              "y": 408,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "marco-normativo-hospital",
+              "codigoCorto": "LEY",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Marco normativo",
+              "herramienta": null,
+              "icono": "menu_book",
+              "indicacion": "Revisar el marco normativo",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Protocolos y normas disponibles en el servicio de urgencias.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 660,
+              "y": 320,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "psicologa-acompanante",
+              "codigoCorto": "PSI",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Psicóloga hospitalaria",
+              "herramienta": null,
+              "icono": "psychology",
+              "indicacion": "Definir la actuación con la psicóloga",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "psicologa-acompanante",
+              "texto": "La psicóloga hospitalaria coordina la propuesta de intervención.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 740,
+              "y": 400,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-pap",
+              "codigoCorto": "PAP",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Kit PAP",
+              "herramienta": "PAP",
+              "icono": "healing",
+              "indicacion": "Tomar el kit de Primeros Auxilios Psicológicos",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Primeros Auxilios Psicológicos: contención, estabilización y enlace.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 318,
+              "y": 430,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-spikes",
+              "codigoCorto": "EPI",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Protocolo EPICEE",
+              "herramienta": "SPIKES",
+              "icono": "description",
+              "indicacion": "Revisar el protocolo EPICEE/SPIKES",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Protocolo EPICEE (SPIKES): comunicación de noticias difíciles por etapas.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 480,
+              "y": 300,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-bitacora",
+              "codigoCorto": "BIT",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Bitácora",
+              "herramienta": "REFLECTION_JOURNAL",
+              "icono": "edit_note",
+              "indicacion": "Tomar la bitácora reflexiva",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Registra una reflexión breve del bloque hospitalario.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 560,
+              "y": 430,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-urgencias",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Sala de urgencias",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Volver a urgencias",
+              "metadatos": {
+                "entryX": 786,
+                "entryY": 440,
+                "label": "Sala de urgencias",
+                "targetNodeKey": "hospital-urgencias"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Sala de urgencias",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 122,
+              "y": 460,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "salida-institucional",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Salida institucional",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Iniciar la ruta institucional",
+              "metadatos": {
+                "entryX": 160,
+                "entryY": 452,
+                "label": "Comisaría de Familia",
+                "lockedMessage": "La ruta institucional aún no está lista. Completa la contención y registra la decisión hospitalaria.",
+                "requiresNodes": [
+                  "hospital-cierre-bloque"
+                ],
+                "targetNodeKey": "comisaria-recepcion"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Comisaría de Familia",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 838,
+              "y": 440,
+              "z": 0
+            }
+          ],
+          "tema": "hospital-escucha",
+          "titulo": "Hospital — Sala de escucha familiar"
+        },
+        "objetivo": "Decide cómo actuar con la familia con criterio técnico y ético.",
+        "opciones": [
+          {
+            "clase": "RISKY",
+            "clave": "h3-parcial-disonancia",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 0,
+                "bond": -1
+              }
+            },
+            "id": "OP07",
+            "retroalimentacionInmediata": "Parcial: falta protocolo de noticia difícil, PAP a la familia y articulación interdisciplinaria."
+          },
+          {
+            "clase": "ACCEPTABLE",
+            "clave": "h3-pap-epicee",
+            "efectos": {
+              "milestones": [
+                "epicee_aplicado"
+              ],
+              "persona": {
+                "activation": 0,
+                "bond": 0
+              }
+            },
+            "id": "OP08",
+            "retroalimentacionInmediata": "Buena base, pero incompleta: falta la evaluación psicosocial familiar y el manejo interdisciplinario."
+          },
+          {
+            "clase": "ACCEPTABLE",
+            "clave": "h3-epicee-ciclo",
+            "efectos": {
+              "milestones": [
+                "epicee_aplicado"
+              ],
+              "persona": {
+                "activation": 0,
+                "bond": 0
+              }
+            },
+            "id": "OP09",
+            "retroalimentacionInmediata": "Sólida, pero aún sin la evaluación psicosocial de factores protectores y de riesgo en el afrontamiento del duelo."
+          },
+          {
+            "clase": "RECOMMENDED",
+            "clave": "h3-integral-psicosocial",
+            "efectos": {
+              "milestones": [
+                "duelo_acompanado",
+                "epicee_aplicado"
+              ],
+              "persona": {
+                "activation": -1,
+                "bond": 1
+              }
+            },
+            "id": "OP10",
+            "requiere": {
+              "has": "SPIKES"
+            },
+            "retroalimentacionInmediata": "Intervención integral: contención, protocolo de noticia difícil, evaluación psicosocial e interdisciplina."
+          }
+        ],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "preguntaDerivada": true,
+        "salidaSeguraObligatoria": false,
+        "terminal": false
+      },
+      {
+        "apoyo": [],
+        "clave": "hospital-cierre-bloque",
+        "herramientasRequeridas": [],
+        "id": "E04",
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "trabajadora-social"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "trabajadora-social",
+                "x": 480,
+                "y": 380
+              }
+            ],
+            "mood": "warm-private",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "hospital-sala-escucha-cierre",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 64,
+              "ancho": 130,
+              "clave": "sofa-escucha",
+              "etiqueta": "Sofá de escucha",
+              "x": 130,
+              "y": 300
+            },
+            {
+              "alto": 36,
+              "ancho": 90,
+              "clave": "mesa-centro",
+              "etiqueta": "Mesa de centro",
+              "x": 280,
+              "y": 370
+            },
+            {
+              "alto": 44,
+              "ancho": 150,
+              "clave": "estante-protocolos",
+              "etiqueta": "Estante de protocolos",
+              "x": 600,
+              "y": 256
+            },
+            {
+              "alto": 36,
+              "ancho": 56,
+              "clave": "silla-profesional",
+              "etiqueta": "Silla",
+              "x": 680,
+              "y": 330
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "familia-duelo",
+              "elecciones": [],
+              "emocion": "positive",
+              "hablante": "Abuela de la niña",
+              "lineas": [
+                {
+                  "emocion": "relieved",
+                  "hablante": "Abuela de la niña",
+                  "orden": 1,
+                  "texto": "Gracias por no dejarnos solas en esto…"
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Abuela de la niña",
+                  "orden": 2,
+                  "texto": "Sé que viene un camino largo. ¿Qué sigue ahora para mi hija?"
+                }
+              ],
+              "objeto": "familia-duelo",
+              "retrato": null
+            },
+            {
+              "clave": "resumen-bloque",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Registro hospitalario",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Registro hospitalario",
+                  "orden": 1,
+                  "texto": "Bloque hospitalario registrado: contención realizada, marco normativo definido y articulación interdisciplinaria en curso. La salida institucional hacia la Comisaría de Familia está habilitada."
+                }
+              ],
+              "objeto": "resumen-bloque",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "familia-duelo",
+              "codigoCorto": "FAM",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Familia acompañada",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Despedirte de la familia",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "familia-duelo-hospital-sala-escucha-cierre",
+              "texto": "La familia quedó contenida y orientada.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 168,
+              "y": 408,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "resumen-bloque",
+              "codigoCorto": "REG",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Registro hospitalario",
+              "herramienta": null,
+              "icono": "assignment_turned_in",
+              "indicacion": "Revisar el registro hospitalario",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Bloque hospitalario registrado: contención realizada, marco normativo definido y articulación interdisciplinaria en curso. La salida institucional hacia la Comisaría de Familia está habilitada.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 480,
+              "y": 360,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-bitacora",
+              "codigoCorto": "BIT",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Bitácora",
+              "herramienta": "REFLECTION_JOURNAL",
+              "icono": "edit_note",
+              "indicacion": "Registrar una reflexión",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Registra una reflexión breve antes de la ruta institucional.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 560,
+              "y": 430,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-urgencias",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Sala de urgencias",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Volver a urgencias",
+              "metadatos": {
+                "entryX": 786,
+                "entryY": 440,
+                "label": "Sala de urgencias",
+                "targetNodeKey": "hospital-urgencias"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Sala de urgencias",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 122,
+              "y": 460,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "salida-institucional",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Salida institucional",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Iniciar la ruta institucional",
+              "metadatos": {
+                "entryX": 160,
+                "entryY": 452,
+                "label": "Comisaría de Familia",
+                "targetNodeKey": "comisaria-recepcion"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Comisaría de Familia",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 838,
+              "y": 440,
+              "z": 0
+            }
+          ],
+          "tema": "hospital-escucha",
+          "titulo": "Hospital — Sala de escucha familiar"
+        },
+        "objetivo": "Valora el riesgo y define a dónde debe seguir la atención.",
+        "opciones": [
+          {
+            "clase": "CONTRAINDICATED",
+            "clave": "c1-mediacion-perdon",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 1,
+                "bond": -1
+              }
+            },
+            "id": "OP11",
+            "retroalimentacionInmediata": "La Ley 2126 de 2021 y los estándares de VBG prohíben la mediación: eleva el riesgo y revictimiza."
+          },
+          {
+            "clase": "RECOMMENDED",
+            "clave": "c1-riesgo-proteccion-derechos",
+            "efectos": {
+              "milestones": [
+                "asesoria_derechos_realizada",
+                "medidas_proteccion_activadas",
+                "riesgo_feminicidio_valorado"
+              ],
+              "persona": {
+                "activation": -1,
+                "bond": 1
+              }
+            },
+            "id": "OP12",
+            "requiere": {
+              "used": "RISK_METER"
+            },
+            "retroalimentacionInmediata": "Prioridad correcta: valoración de riesgo, protección efectiva y enfoque de derechos."
+          },
+          {
+            "clase": "RISKY",
+            "clave": "c1-patrones-infancia",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 0,
+                "bond": -1
+              }
+            },
+            "id": "OP13",
+            "retroalimentacionInmediata": "Enfoque desviado: psicologizar la elección de pareja desplaza la responsabilidad del agresor y pospone la protección."
+          }
+        ],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "preguntaDerivada": true,
+        "salidaSeguraObligatoria": false,
+        "terminal": false
+      },
+      {
+        "apoyo": [],
+        "clave": "comisaria-consultorio",
+        "comentarios": [
+          {
+            "emocion": "cautelosa",
+            "gesto": "baja-la-mirada",
+            "linea": "No sé por dónde empezar… solo quiero estar segura.",
+            "personaje": "sobreviviente-consulta"
+          },
+          {
+            "cuando": {
+              "inspected": "marco-normativo-comisaria"
+            },
+            "emocion": "cautelosa",
+            "gesto": "se-acerca",
+            "linea": "¿Eso que usted está leyendo me protege a mí también?",
+            "personaje": "sobreviviente-consulta"
+          }
+        ],
+        "herramientasRequeridas": [],
+        "id": "E05",
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "apoyo-psicosocial"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "apoyo-psicosocial",
+                "x": 660,
+                "y": 430
+              }
+            ],
+            "mood": "reserved",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "comisaria-consultorio",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 60,
+              "ancho": 200,
+              "clave": "escritorio-consultorio",
+              "etiqueta": "Escritorio",
+              "x": 430,
+              "y": 268
+            },
+            {
+              "alto": 44,
+              "ancho": 90,
+              "clave": "archivador-consultorio",
+              "etiqueta": "Archivador",
+              "x": 760,
+              "y": 254
+            },
+            {
+              "alto": 32,
+              "ancho": 44,
+              "clave": "silla-izquierda",
+              "etiqueta": "Silla",
+              "x": 380,
+              "y": 352
+            },
+            {
+              "alto": 32,
+              "ancho": 44,
+              "clave": "silla-derecha",
+              "etiqueta": "Silla",
+              "x": 560,
+              "y": 352
+            },
+            {
+              "alto": 40,
+              "ancho": 44,
+              "clave": "planta-consultorio",
+              "etiqueta": "Planta",
+              "x": 110,
+              "y": 380
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "sobreviviente-consulta",
+              "elecciones": [
+                {
+                  "clave": "c1-aplicar-riesgo",
+                  "efecto": {},
+                  "herramientaRequerida": "RISK_METER",
+                  "opcion": null,
+                  "orden": 1,
+                  "texto": "Aplicar valoración estructurada de riesgo de feminicidio"
+                },
+                {
+                  "clave": "c1-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c1-mediacion-perdon",
+                  "orden": 2,
+                  "texto": "Instar a escuchar al agresor por la unidad familiar (mediación y perdón)"
+                },
+                {
+                  "clave": "c1-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c1-riesgo-proteccion-derechos",
+                  "orden": 3,
+                  "texto": "Valorar riesgo de feminicidio + medidas de protección + derechos"
+                },
+                {
+                  "clave": "c1-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c1-patrones-infancia",
+                  "orden": 4,
+                  "texto": "Psicoterapia centrada en patrones de infancia y elección de pareja"
+                }
+              ],
+              "emocion": "danger",
+              "hablante": "Sobreviviente (22 años)",
+              "lineas": [
+                {
+                  "emocion": "sad",
+                  "hablante": "Sobreviviente (22 años)",
+                  "orden": 1,
+                  "texto": "Salí del hospital hace unos días… las heridas duelen menos que todo lo demás."
+                },
+                {
+                  "emocion": "anxious",
+                  "hablante": "Sobreviviente (22 años)",
+                  "orden": 2,
+                  "texto": "Su familia me busca para que lo perdone, dicen que la familia se respeta. Yo solo quiero estar segura."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Sobreviviente (22 años)",
+                  "orden": 3,
+                  "texto": "(Define la prioridad de la asesoría psicosocial.)"
+                }
+              ],
+              "objeto": "sobreviviente-consulta",
+              "retrato": null
+            },
+            {
+              "clave": "marco-normativo-comisaria",
+              "elecciones": [
+                {
+                  "clave": "c2-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c2-2126-1098-1257",
+                  "orden": 1,
+                  "texto": "Ley 2126 de 2021 + Ley 1098 de 2006 + Ley 1257 de 2008"
+                },
+                {
+                  "clave": "c2-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c2-1098-1257",
+                  "orden": 2,
+                  "texto": "Ley 1098 de 2006 + Ley 1257 de 2008"
+                },
+                {
+                  "clave": "c2-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c2-eje-1448",
+                  "orden": 3,
+                  "texto": "Ley 1098 + Ley 1257 + Ley 1448 de 2011 como eje"
+                }
+              ],
+              "emocion": "neutral",
+              "hablante": "Marco normativo y técnico",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 1,
+                  "texto": "Disponibles: Ley 2126 de 2021 (Comisarías de Familia), Ley 1098 de 2006 (infancia y adolescencia), Ley 1257 de 2008, Ley 1448 de 2011."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 2,
+                  "texto": "(Define el marco normativo del restablecimiento de derechos.)"
+                }
+              ],
+              "objeto": "marco-normativo-comisaria",
+              "retrato": null
+            },
+            {
+              "clave": "profesional-psicosocial",
+              "elecciones": [
+                {
+                  "clave": "c3-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c3-parcial-clinica",
+                  "orden": 1,
+                  "texto": "Escucha + disonancia + ciclos + valoración de feminicidio + ruta clínica"
+                },
+                {
+                  "clave": "c3-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c3-valoracion-dependientes",
+                  "orden": 2,
+                  "texto": "Valoración de víctima y dependientes + escucha + ciclos + rutas de salud"
+                },
+                {
+                  "clave": "c3-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c3-integral-derechos",
+                  "orden": 3,
+                  "texto": "Lo anterior + nivel de vulneración de derechos + valoración de feminicidio + rutas"
+                }
+              ],
+              "emocion": "neutral",
+              "hablante": "Profesional psicosocial",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Profesional psicosocial",
+                  "orden": 1,
+                  "texto": "Cerramos la valoración: queda definir la actuación técnica y ética con la sobreviviente y su red familiar."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Profesional psicosocial",
+                  "orden": 2,
+                  "texto": "(Define qué hacer —y qué evitar— en el restablecimiento de derechos.)"
+                }
+              ],
+              "objeto": "profesional-psicosocial",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "sobreviviente-consulta",
+              "codigoCorto": "SOB",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Sobreviviente",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Escuchar a la sobreviviente",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "sobreviviente-consulta",
+              "texto": "Mujer de 22 años; alta médica hace 15 días, secuelas físicas y trauma complejo.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 220,
+              "y": 408,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "marco-normativo-comisaria",
+              "codigoCorto": "LEY",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Marco normativo",
+              "herramienta": null,
+              "icono": "menu_book",
+              "indicacion": "Revisar el marco normativo",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Normas del restablecimiento de derechos.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 790,
+              "y": 318,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "profesional-psicosocial",
+              "codigoCorto": "PRO",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Profesional psicosocial",
+              "herramienta": null,
+              "icono": "psychology",
+              "indicacion": "Cerrar la actuación técnica",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "profesional-psicosocial",
+              "texto": "El equipo psicosocial de la comisaría consolida el plan.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 700,
+              "y": 400,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-riesgo",
+              "codigoCorto": "RIE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Valoración de riesgo",
+              "herramienta": "RISK_METER",
+              "icono": "monitor_heart",
+              "indicacion": "Tomar el instrumento de valoración de riesgo",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Instrumento estructurado de valoración del riesgo de feminicidio.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 318,
+              "y": 436,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-ruta",
+              "codigoCorto": "RUT",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Ruta de protección",
+              "herramienta": "SAFETY_ROUTE",
+              "icono": "alt_route",
+              "indicacion": "Tomar la ruta de protección",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Medidas de protección y articulación institucional disponibles.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 610,
+              "y": 436,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-recepcion",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Recepción",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Volver a recepción",
+              "metadatos": {
+                "entryX": 786,
+                "entryY": 440,
+                "label": "Recepción",
+                "targetNodeKey": "comisaria-recepcion"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Recepción",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 122,
+              "y": 460,
+              "z": 0
+            }
+          ],
+          "tema": "comisaria-consultorio",
+          "titulo": "Comisaría de Familia — Consultorio"
+        },
+        "objetivo": "Identifica qué derechos hay que restablecer y con qué respaldo legal.",
+        "opciones": [
+          {
+            "clase": "RECOMMENDED",
+            "clave": "c2-2126-1098-1257",
+            "efectos": {
+              "milestones": [
+                "marco_comisaria_correcto"
+              ],
+              "persona": {
+                "activation": -1,
+                "bond": 1
+              }
+            },
+            "id": "OP14",
+            "retroalimentacionInmediata": "Correcto: competencia de las comisarías (Ley 2126), protección de NNA (Ley 1098) y protección de la mujer (Ley 1257)."
+          },
+          {
+            "clase": "ACCEPTABLE",
+            "clave": "c2-1098-1257",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 0,
+                "bond": 0
+              }
+            },
+            "id": "OP15",
+            "retroalimentacionInmediata": "Incompleto: falta la Ley 2126 de 2021, que regula la actuación de las Comisarías de Familia."
+          },
+          {
+            "clase": "RISKY",
+            "clave": "c2-eje-1448",
+            "efectos": {
+              "milestones": [],
+              "persona": {
+                "activation": 0,
+                "bond": -1
+              }
+            },
+            "id": "OP16",
+            "retroalimentacionInmediata": "La Ley 1448 no es el eje de este caso: el restablecimiento se rige por 2126 + 1098 + 1257."
+          }
+        ],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "preguntaDerivada": true,
+        "salidaSeguraObligatoria": false,
+        "terminal": false
+      },
+      {
+        "apoyo": [],
+        "clave": "comisaria-accion-final",
+        "herramientasRequeridas": [],
+        "id": "E06",
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "apoyo-psicosocial"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "apoyo-psicosocial",
+                "x": 660,
+                "y": 430
+              }
+            ],
+            "mood": "reserved",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "comisaria-consultorio-marco",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 60,
+              "ancho": 200,
+              "clave": "escritorio-consultorio",
+              "etiqueta": "Escritorio",
+              "x": 430,
+              "y": 268
+            },
+            {
+              "alto": 44,
+              "ancho": 90,
+              "clave": "archivador-consultorio",
+              "etiqueta": "Archivador",
+              "x": 760,
+              "y": 254
+            },
+            {
+              "alto": 32,
+              "ancho": 44,
+              "clave": "silla-izquierda",
+              "etiqueta": "Silla",
+              "x": 380,
+              "y": 352
+            },
+            {
+              "alto": 32,
+              "ancho": 44,
+              "clave": "silla-derecha",
+              "etiqueta": "Silla",
+              "x": 560,
+              "y": 352
+            },
+            {
+              "alto": 40,
+              "ancho": 44,
+              "clave": "planta-consultorio",
+              "etiqueta": "Planta",
+              "x": 110,
+              "y": 380
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "sobreviviente-consulta",
+              "elecciones": [
+                {
+                  "clave": "c1-aplicar-riesgo",
+                  "efecto": {},
+                  "herramientaRequerida": "RISK_METER",
+                  "opcion": null,
+                  "orden": 1,
+                  "texto": "Aplicar valoración estructurada de riesgo de feminicidio"
+                },
+                {
+                  "clave": "c1-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c1-mediacion-perdon",
+                  "orden": 2,
+                  "texto": "Instar a escuchar al agresor por la unidad familiar (mediación y perdón)"
+                },
+                {
+                  "clave": "c1-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c1-riesgo-proteccion-derechos",
+                  "orden": 3,
+                  "texto": "Valorar riesgo de feminicidio + medidas de protección + derechos"
+                },
+                {
+                  "clave": "c1-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c1-patrones-infancia",
+                  "orden": 4,
+                  "texto": "Psicoterapia centrada en patrones de infancia y elección de pareja"
+                }
+              ],
+              "emocion": "danger",
+              "hablante": "Sobreviviente (22 años)",
+              "lineas": [
+                {
+                  "emocion": "sad",
+                  "hablante": "Sobreviviente (22 años)",
+                  "orden": 1,
+                  "texto": "Salí del hospital hace unos días… las heridas duelen menos que todo lo demás."
+                },
+                {
+                  "emocion": "anxious",
+                  "hablante": "Sobreviviente (22 años)",
+                  "orden": 2,
+                  "texto": "Su familia me busca para que lo perdone, dicen que la familia se respeta. Yo solo quiero estar segura."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Sobreviviente (22 años)",
+                  "orden": 3,
+                  "texto": "(Define la prioridad de la asesoría psicosocial.)"
+                }
+              ],
+              "objeto": "sobreviviente-consulta",
+              "retrato": null
+            },
+            {
+              "clave": "marco-normativo-comisaria",
+              "elecciones": [
+                {
+                  "clave": "c2-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c2-2126-1098-1257",
+                  "orden": 1,
+                  "texto": "Ley 2126 de 2021 + Ley 1098 de 2006 + Ley 1257 de 2008"
+                },
+                {
+                  "clave": "c2-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c2-1098-1257",
+                  "orden": 2,
+                  "texto": "Ley 1098 de 2006 + Ley 1257 de 2008"
+                },
+                {
+                  "clave": "c2-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c2-eje-1448",
+                  "orden": 3,
+                  "texto": "Ley 1098 + Ley 1257 + Ley 1448 de 2011 como eje"
+                }
+              ],
+              "emocion": "neutral",
+              "hablante": "Marco normativo y técnico",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 1,
+                  "texto": "Disponibles: Ley 2126 de 2021 (Comisarías de Familia), Ley 1098 de 2006 (infancia y adolescencia), Ley 1257 de 2008, Ley 1448 de 2011."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Marco normativo y técnico",
+                  "orden": 2,
+                  "texto": "(Define el marco normativo del restablecimiento de derechos.)"
+                }
+              ],
+              "objeto": "marco-normativo-comisaria",
+              "retrato": null
+            },
+            {
+              "clave": "profesional-psicosocial",
+              "elecciones": [
+                {
+                  "clave": "c3-a",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c3-parcial-clinica",
+                  "orden": 1,
+                  "texto": "Escucha + disonancia + ciclos + valoración de feminicidio + ruta clínica"
+                },
+                {
+                  "clave": "c3-b",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c3-valoracion-dependientes",
+                  "orden": 2,
+                  "texto": "Valoración de víctima y dependientes + escucha + ciclos + rutas de salud"
+                },
+                {
+                  "clave": "c3-c",
+                  "efecto": {},
+                  "herramientaRequerida": null,
+                  "opcion": "c3-integral-derechos",
+                  "orden": 3,
+                  "texto": "Lo anterior + nivel de vulneración de derechos + valoración de feminicidio + rutas"
+                }
+              ],
+              "emocion": "neutral",
+              "hablante": "Profesional psicosocial",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Profesional psicosocial",
+                  "orden": 1,
+                  "texto": "Cerramos la valoración: queda definir la actuación técnica y ética con la sobreviviente y su red familiar."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Profesional psicosocial",
+                  "orden": 2,
+                  "texto": "(Define qué hacer —y qué evitar— en el restablecimiento de derechos.)"
+                }
+              ],
+              "objeto": "profesional-psicosocial",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "sobreviviente-consulta",
+              "codigoCorto": "SOB",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Sobreviviente",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Escuchar a la sobreviviente",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "sobreviviente-consulta",
+              "texto": "Mujer de 22 años; alta médica hace 15 días, secuelas físicas y trauma complejo.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 220,
+              "y": 408,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "marco-normativo-comisaria",
+              "codigoCorto": "LEY",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Marco normativo",
+              "herramienta": null,
+              "icono": "menu_book",
+              "indicacion": "Revisar el marco normativo",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Normas del restablecimiento de derechos.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 790,
+              "y": 318,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "profesional-psicosocial",
+              "codigoCorto": "PRO",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Profesional psicosocial",
+              "herramienta": null,
+              "icono": "psychology",
+              "indicacion": "Cerrar la actuación técnica",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "profesional-psicosocial",
+              "texto": "El equipo psicosocial de la comisaría consolida el plan.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 700,
+              "y": 400,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-riesgo",
+              "codigoCorto": "RIE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Valoración de riesgo",
+              "herramienta": "RISK_METER",
+              "icono": "monitor_heart",
+              "indicacion": "Tomar el instrumento de valoración de riesgo",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Instrumento estructurado de valoración del riesgo de feminicidio.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 318,
+              "y": 436,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-ruta",
+              "codigoCorto": "RUT",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Ruta de protección",
+              "herramienta": "SAFETY_ROUTE",
+              "icono": "alt_route",
+              "indicacion": "Tomar la ruta de protección",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Medidas de protección y articulación institucional disponibles.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 610,
+              "y": 436,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-recepcion",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Recepción",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Volver a recepción",
+              "metadatos": {
+                "entryX": 786,
+                "entryY": 440,
+                "label": "Recepción",
+                "targetNodeKey": "comisaria-recepcion"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Recepción",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 122,
+              "y": 460,
+              "z": 0
+            }
+          ],
+          "tema": "comisaria-consultorio",
+          "titulo": "Comisaría de Familia — Consultorio"
+        },
+        "objetivo": "Define la actuación de protección y cierra la atención.",
+        "opciones": [
+          {
+            "clase": "RISKY",
+            "clave": "c3-parcial-clinica",
+            "efectos": {
+              "milestones": [
+                "riesgo_feminicidio_valorado"
+              ],
+              "persona": {
+                "activation": 0,
+                "bond": -1
+              }
+            },
+            "id": "OP17",
+            "retroalimentacionInmediata": "Parcial: omite la valoración de dependientes y el nivel de vulneración de derechos."
+          },
+          {
+            "clase": "ACCEPTABLE",
+            "clave": "c3-valoracion-dependientes",
+            "efectos": {
+              "milestones": [
+                "derivacion_salud_mental_activada",
+                "valoracion_dependientes_realizada"
+              ],
+              "persona": {
+                "activation": 0,
+                "bond": 0
+              }
+            },
+            "id": "OP18",
+            "retroalimentacionInmediata": "Buena, pero falta establecer el nivel de riesgo de vulneración de derechos y la valoración de feminicidio."
+          },
+          {
+            "clase": "RECOMMENDED",
+            "clave": "c3-integral-derechos",
+            "efectos": {
+              "milestones": [
+                "derivacion_salud_mental_activada",
+                "riesgo_feminicidio_valorado",
+                "valoracion_dependientes_realizada"
+              ],
+              "persona": {
+                "activation": -1,
+                "bond": 1
+              }
+            },
+            "id": "OP19",
+            "requiere": {
+              "used": "RISK_METER"
+            },
+            "retroalimentacionInmediata": "Actuación integral: víctima y dependientes valorados, riesgos establecidos y rutas activadas."
+          }
+        ],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "preguntaDerivada": true,
+        "salidaSeguraObligatoria": false,
+        "terminal": false
+      },
+      {
+        "apoyo": [],
+        "clave": "cierre-caso",
+        "herramientasRequeridas": [],
+        "id": "E07",
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "apoyo-psicosocial"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "apoyo-psicosocial",
+                "x": 660,
+                "y": 430
+              }
+            ],
+            "mood": "reserved",
+            "music": "none"
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 480,
+            "y": 430
+          },
+          "clave": "comisaria-consultorio-cierre",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 60,
+              "ancho": 200,
+              "clave": "escritorio-consultorio",
+              "etiqueta": "Escritorio",
+              "x": 430,
+              "y": 268
+            },
+            {
+              "alto": 44,
+              "ancho": 90,
+              "clave": "archivador-consultorio",
+              "etiqueta": "Archivador",
+              "x": 760,
+              "y": 254
+            },
+            {
+              "alto": 32,
+              "ancho": 44,
+              "clave": "silla-izquierda",
+              "etiqueta": "Silla",
+              "x": 380,
+              "y": 352
+            },
+            {
+              "alto": 32,
+              "ancho": 44,
+              "clave": "silla-derecha",
+              "etiqueta": "Silla",
+              "x": 560,
+              "y": 352
+            },
+            {
+              "alto": 40,
+              "ancho": 44,
+              "clave": "planta-consultorio",
+              "etiqueta": "Planta",
+              "x": 110,
+              "y": 380
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "cierre-resumen",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Cierre del caso",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Cierre del caso",
+                  "orden": 1,
+                  "texto": "Caso cerrado: revisa tu reporte final con métricas, decisiones y final alcanzado."
+                }
+              ],
+              "objeto": "cierre-resumen",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "cierre-resumen",
+              "codigoCorto": "FIN",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Cierre del caso",
+              "herramienta": null,
+              "icono": "assignment_turned_in",
+              "indicacion": "Revisar el cierre del caso",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Caso cerrado: revisa tu reporte final con métricas, decisiones y final alcanzado.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 480,
+              "y": 360,
+              "z": 0
+            }
+          ],
+          "tema": "comisaria-consultorio",
+          "titulo": "Comisaría de Familia — Consultorio"
+        },
+        "opciones": [],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "salidaSeguraObligatoria": false,
+        "terminal": true
+      },
+      {
+        "advertencia": "",
+        "apoyo": [],
+        "clave": "comisaria-recepcion",
+        "descripcion": "Recepción de la Comisaría de Familia: revisa el expediente y la orientación de ingreso antes de pasar al consultorio.",
+        "herramientasRequeridas": [],
+        "inicial": false,
+        "intensidad": "MEDIUM",
+        "mapa": {
+          "alto": 528,
+          "ambiente": {
+            "ambientNpcKeys": [
+              "orientadora-juridica",
+              "sobreviviente-espera",
+              "madre-acompanante"
+            ],
+            "ambientNpcs": [
+              {
+                "interactionRadius": 60,
+                "key": "orientadora-juridica",
+                "x": 320,
+                "y": 360
+              },
+              {
+                "interactionRadius": 60,
+                "key": "sobreviviente-espera",
+                "x": 180,
+                "y": 380
+              },
+              {
+                "interactionRadius": 60,
+                "key": "madre-acompanante",
+                "x": 230,
+                "y": 396
+              }
+            ],
+            "mood": "institutional",
+            "music": "none",
+            "transitionText": "Quince días después, tras el alta médica, inicia la ruta de restablecimiento de derechos."
+          },
+          "ancho": 960,
+          "aparicion": {
+            "x": 160,
+            "y": 452
+          },
+          "clave": "comisaria-recepcion",
+          "colisiones": [
+            {
+              "alto": 236,
+              "ancho": 960,
+              "clave": "pared-fondo",
+              "etiqueta": "pared-fondo",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 42,
+              "ancho": 960,
+              "clave": "borde-frontal",
+              "etiqueta": "borde-frontal",
+              "x": 0,
+              "y": 486
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-izquierda",
+              "etiqueta": "pared-izquierda",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "alto": 528,
+              "ancho": 96,
+              "clave": "pared-derecha",
+              "etiqueta": "pared-derecha",
+              "x": 864,
+              "y": 0
+            },
+            {
+              "alto": 56,
+              "ancho": 220,
+              "clave": "mostrador-recepcion",
+              "etiqueta": "Mostrador de recepción",
+              "x": 380,
+              "y": 252
+            },
+            {
+              "alto": 46,
+              "ancho": 130,
+              "clave": "archivadores",
+              "etiqueta": "Archivadores",
+              "x": 700,
+              "y": 250
+            },
+            {
+              "alto": 38,
+              "ancho": 150,
+              "clave": "sillas-espera-comisaria",
+              "etiqueta": "Sillas de espera",
+              "x": 120,
+              "y": 308
+            }
+          ],
+          "dialogos": [
+            {
+              "clave": "expediente-caso",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Expediente del caso",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Expediente del caso",
+                  "orden": 1,
+                  "texto": "Expediente: mujer de 22 años, sobreviviente de tentativa de feminicidio (28 heridas con arma cortopunzante). Su hija de 3 años fue asesinada por la pareja, hombre de 28 años. Alta médica hace 15 días; secuelas físicas y trauma complejo. Se requiere valoración de riesgo, medidas de protección y asesoría de derechos."
+                }
+              ],
+              "objeto": "expediente-caso",
+              "retrato": null
+            },
+            {
+              "clave": "funcionaria-recepcion",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Funcionaria de recepción",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Funcionaria de recepción",
+                  "orden": 1,
+                  "texto": "Bienvenida. El caso llegó remitido desde el hospital con la historia clínica y la denuncia."
+                },
+                {
+                  "emocion": "neutral",
+                  "hablante": "Funcionaria de recepción",
+                  "orden": 2,
+                  "texto": "La comisaría puede dictar medidas de protección y orientar derechos económicos y de justicia. El consultorio queda al fondo a la derecha; revisa primero el expediente."
+                }
+              ],
+              "objeto": "funcionaria-recepcion",
+              "retrato": null
+            }
+          ],
+          "objetos": [
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "expediente-caso",
+              "codigoCorto": "EXP",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Expediente del caso",
+              "herramienta": null,
+              "icono": "folder_open",
+              "indicacion": "Revisar el expediente",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Expediente: mujer de 22 años, sobreviviente de tentativa de feminicidio (28 heridas con arma cortopunzante). Su hija de 3 años fue asesinada por la pareja, hombre de 28 años. Alta médica hace 15 días; secuelas físicas y trauma complejo. Se requiere valoración de riesgo, medidas de protección y asesoría de derechos.",
+              "tipo": "OBJECT",
+              "visible": true,
+              "x": 740,
+              "y": 312,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "funcionaria-recepcion",
+              "codigoCorto": "REC",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Funcionaria de recepción",
+              "herramienta": null,
+              "icono": "support_agent",
+              "indicacion": "Recibir orientación de ingreso",
+              "metadatos": {},
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": "funcionaria-recepcion",
+              "texto": "La funcionaria orienta el ingreso del caso.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 480,
+              "y": 332,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 36,
+              "clave": "puerta-consultorio",
+              "codigoCorto": "EXIT",
+              "colision": false,
+              "color": "#B69CFF",
+              "desbloqueo": {},
+              "etiqueta": "Consultorio",
+              "herramienta": null,
+              "icono": "door_front",
+              "indicacion": "Entrar al consultorio",
+              "metadatos": {
+                "entryX": 160,
+                "entryY": 452,
+                "label": "Consultorio",
+                "lockedMessage": "Revisa primero el expediente y la orientación de ingreso.",
+                "requiresInspected": [
+                  "expediente-caso"
+                ],
+                "targetNodeKey": "comisaria-consultorio"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "Consultorio",
+              "tipo": "EXIT",
+              "visible": true,
+              "x": 838,
+              "y": 440,
+              "z": 0
+            }
+          ],
+          "tema": "comisaria-recepcion",
+          "titulo": "Comisaría de Familia — Recepción"
+        },
+        "objetivo": "Reconoce cómo recibe la institución a la sobreviviente y qué necesita de ti.",
+        "opciones": [],
+        "pistas": [],
+        "posicion": {
+          "x": 0,
+          "y": 0
+        },
+        "pregunta": "",
+        "salidaSeguraObligatoria": false,
+        "sensible": false,
+        "terminal": false,
+        "titulo": "Comisaría de Familia: recepción"
+      }
+    ],
+    "herramientas": [
+      {
+        "activa": true,
+        "codigo": "PAP",
+        "icono": "healing",
+        "id": "H01"
+      },
+      {
+        "activa": true,
+        "codigo": "SPIKES",
+        "icono": "description",
+        "id": "H02"
+      },
+      {
+        "activa": true,
+        "codigo": "RISK_METER",
+        "icono": "monitor_heart",
+        "id": "H03"
+      },
+      {
+        "activa": true,
+        "codigo": "SAFETY_ROUTE",
+        "icono": "alt_route",
+        "id": "H04"
+      },
+      {
+        "activa": true,
+        "codigo": "REFLECTION_JOURNAL",
+        "icono": "edit_note",
+        "id": "H05"
+      }
+    ],
+    "mundoVersion": 1,
+    "personajes": [
+      {
+        "clave": "familia-crisis",
+        "enFicha": false,
+        "nombre": "Familia en crisis",
+        "orden": 0,
+        "retrato": "",
+        "rol": ""
+      },
+      {
+        "clave": "familia-duelo",
+        "enFicha": false,
+        "nombre": "Familia en crisis",
+        "orden": 1,
+        "retrato": "",
+        "rol": ""
+      },
+      {
+        "clave": "psicologa-acompanante",
+        "enFicha": false,
+        "nombre": "Psicóloga hospitalaria",
+        "orden": 2,
+        "retrato": "",
+        "rol": ""
+      },
+      {
+        "clave": "familia-duelo-hospital-sala-escucha-cierre",
+        "enFicha": false,
+        "nombre": "Familia acompañada",
+        "orden": 3,
+        "retrato": "",
+        "rol": ""
+      },
+      {
+        "clave": "funcionaria-recepcion",
+        "enFicha": false,
+        "nombre": "Funcionaria de recepción",
+        "orden": 4,
+        "retrato": "",
+        "rol": ""
+      },
+      {
+        "clave": "sobreviviente-consulta",
+        "enFicha": false,
+        "nombre": "Sobreviviente",
+        "orden": 5,
+        "retrato": "",
+        "rol": ""
+      },
+      {
+        "clave": "profesional-psicosocial",
+        "enFicha": false,
+        "nombre": "Profesional psicosocial",
+        "orden": 6,
+        "retrato": "",
+        "rol": ""
+      }
+    ],
+    "reglas": {
+      "endings": [
+        {
+          "key": "critica",
+          "message": "La intervención aumentó el riesgo de revictimización y falló en activar medidas de protección básicas. Se requiere supervisión y corrección inmediata.",
+          "title": "Final 4 — Intervención Crítica / Revictimizante",
+          "tone": "critical",
+          "when": {
+            "any": [
+              {
+                "count": "contraindicated",
+                "gte": 2
+              },
+              {
+                "all": [
+                  {
+                    "count": "contraindicated",
+                    "gte": 1
+                  },
+                  {
+                    "not": {
+                      "all": [
+                        {
+                          "milestone": "riesgo_feminicidio_valorado"
+                        },
+                        {
+                          "milestone": "medidas_proteccion_activadas"
+                        },
+                        {
+                          "milestone": "asesoria_derechos_realizada"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "key": "protectora",
+          "message": "Lograste una intervención protectora, ética e interdisciplinaria. La ruta institucional queda activada y la sobreviviente recibe orientación integral.",
+          "title": "Final 1 — Intervención Protectora Integral",
+          "tone": "positive",
+          "when": {
+            "all": [
+              {
+                "count": "contraindicated",
+                "eq": 0
+              },
+              {
+                "count": "risky",
+                "lte": 1
+              },
+              {
+                "milestone": "riesgo_feminicidio_valorado"
+              },
+              {
+                "milestone": "medidas_proteccion_activadas"
+              },
+              {
+                "milestone": "asesoria_derechos_realizada"
+              }
+            ]
+          }
+        },
+        {
+          "key": "riesgo_persistente",
+          "message": "El acompañamiento redujo parte de la crisis, pero el riesgo institucional y psicosocial permanece alto por omisiones críticas.",
+          "title": "Final 3 — Riesgo Persistente",
+          "tone": "warning",
+          "when": {
+            "any": [
+              {
+                "not": {
+                  "milestone": "riesgo_feminicidio_valorado"
+                }
+              },
+              {
+                "not": {
+                  "milestone": "medidas_proteccion_activadas"
+                }
+              },
+              {
+                "not": {
+                  "milestone": "asesoria_derechos_realizada"
+                }
+              },
+              {
+                "count": "risky",
+                "gte": 3
+              }
+            ]
+          }
+        },
+        {
+          "key": "con_brechas",
+          "message": "La intervención contiene elementos adecuados, pero dejó brechas en la valoración o articulación institucional que deben corregirse.",
+          "title": "Final 2 — Intervención Adecuada con Brechas",
+          "tone": "neutral"
+        }
+      ],
+      "milestones": [
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "familia_contenida",
+          "label": "Contener a la familia"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "pap_aplicado",
+          "label": "Aplicar primeros auxilios psicológicos"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "marco_hospital_correcto",
+          "label": "Aplicar el marco normativo del hospital"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "epicee_aplicado",
+          "label": "Aplicar el protocolo EPICEE"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "duelo_acompanado",
+          "label": "Acompañar el duelo"
+        },
+        {
+          "decisive": true,
+          "description": "A confirmar con Psicología.",
+          "key": "asesoria_derechos_realizada",
+          "label": "Informar sobre derechos"
+        },
+        {
+          "decisive": true,
+          "description": "A confirmar con Psicología.",
+          "key": "medidas_proteccion_activadas",
+          "label": "Recomendar medidas de protección"
+        },
+        {
+          "decisive": true,
+          "description": "A confirmar con Psicología.",
+          "key": "riesgo_feminicidio_valorado",
+          "label": "Valorar el riesgo de feminicidio"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "marco_comisaria_correcto",
+          "label": "Aplicar el marco normativo de la comisaría"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "derivacion_salud_mental_activada",
+          "label": "Derivar a salud mental"
+        },
+        {
+          "decisive": false,
+          "description": "A confirmar con Psicología.",
+          "key": "valoracion_dependientes_realizada",
+          "label": "Valorar a las personas dependientes"
+        }
+      ],
+      "riskLevel": "EXTREME",
+      "secondChance": true
+    },
+    "rubricas": [
+      {
+        "criterios": [
+          {
+            "activo": true,
+            "competenciaCodigo": "CONTENCION",
+            "id": "CR01",
+            "peso": "25.00",
+            "puntajeMaximo": 5
+          },
+          {
+            "activo": true,
+            "competenciaCodigo": "MARCO_NORMATIVO",
+            "id": "CR02",
+            "peso": "25.00",
+            "puntajeMaximo": 5
+          },
+          {
+            "activo": true,
+            "competenciaCodigo": "INTERVENCION_ETICA",
+            "id": "CR03",
+            "peso": "25.00",
+            "puntajeMaximo": 5
+          },
+          {
+            "activo": true,
+            "competenciaCodigo": "REFLEXION",
+            "id": "CR04",
+            "peso": "25.00",
+            "puntajeMaximo": 5
+          }
+        ],
+        "id": "RUB-01"
+      }
+    ],
+    "version": "2.1"
+  }
+}

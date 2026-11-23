@@ -1,0 +1,197 @@
+@use 'mixins' as m;
+
+// Inicio del estudiante (DISENO §4.1): una página de lectura corta, centrada, con UN protagonista. El mismo ancho y
+// ritmo de la maquetación del portal (.p-pagina); el canal lateral ya lo pone el <main> del armazón.
+:host {
+  display: grid;
+  gap: var(--ds-space-6);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: var(--l-ancho-pagina);
+  margin-inline: auto;
+  color: var(--ds-text-1);
+}
+
+
+.sd-cargando {
+  display: grid;
+  gap: var(--ds-space-4);
+}
+
+// ── Invitaciones pendientes ───────────────────────────────────────────────────────────────────────────────────
+.sd-invitacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+}
+
+.sd-invitacion__texto {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
+.sd-invitacion__titulo {
+  margin: 0;
+  font-size: var(--ds-type-h3-size);
+  line-height: var(--ds-type-h3-line);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.sd-invitacion__ayuda {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// ── Siguiente paso (el protagonista) ──────────────────────────────────────────────────────────────────────────
+// Dos columnas cuando caben; en el teléfono la portada va arriba y el texto debajo. `min-inline-size: 0` deja que la
+// portada (que se encoge con su contenedor) nunca ensanche la página.
+.sd-protagonista {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-5) var(--ds-space-6);
+}
+
+.sd-protagonista__portada {
+  flex: 0 1 30rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+// Teléfono estrecho: la portada va en tamaño «tarjeta» (puerta ×1) y ocupa todo el ancho de la tarjeta; ver
+// CONSULTA_ESTRECHA en el componente.
+.sd-protagonista__portada--compacta {
+  inline-size: 100%;
+}
+
+.sd-protagonista__contenido {
+  display: grid;
+  flex: 1 1 18rem;
+  justify-items: start;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.sd-protagonista__titulo {
+  margin: 0;
+  font-size: var(--ds-type-h2-size);
+  line-height: var(--ds-type-h2-line);
+  font-weight: var(--ds-type-h2-weight);
+}
+
+.sd-protagonista__contexto {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-lead-size);
+}
+
+.sd-protagonista__accion {
+  margin-block-start: var(--ds-space-2);
+}
+
+// Sin acción (todo terminado y sin intento que mostrar) el hueco no deja un margen suelto.
+.sd-protagonista__accion:empty {
+  display: none;
+}
+
+// ── Listas de casos y de cierres ──────────────────────────────────────────────────────────────────────────────
+.sd-lista {
+  display: grid;
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  min-block-size: var(--ds-target-min-strict);
+  min-inline-size: 0;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  overflow-wrap: anywhere;
+}
+
+.sd-fila__texto {
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+.sd-fila__titulo {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.sd-fila__meta {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// Las filas que llevan a algún lado lo dicen con un chevrón al final (dibujado con dos bordes, sin icono extra); al pasar
+// el cursor se corre un poco hacia la derecha. Las quietas (bloqueadas) no lo llevan.
+a.sd-fila::after {
+  content: '';
+  flex: none;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline: var(--ds-space-1) var(--ds-space-2);
+  border-block-start: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  color: var(--ds-text-2);
+  rotate: 45deg;
+  transition: translate var(--ds-dur-press) var(--ds-ease-out);
+}
+
+@media (hover: hover) {
+  a.sd-fila:hover::after {
+    translate: 2px -2px;
+  }
+}
+
+.sd-fila__ir {
+  flex: none;
+  color: var(--l-acento, var(--ds-primary));
+  font-size: var(--ds-type-body-s-size);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+a.sd-fila--cierre::after {
+  margin-inline-start: 0;
+  color: var(--l-acento, var(--ds-primary));
+}
+
+// Un caso bloqueado no lleva a ningún lado: se lee un poco más callado, pero conserva el contraste AA.
+.sd-fila--quieta .sd-fila__titulo {
+  color: var(--ds-text-2);
+}
+
+.sd-ver-todos {
+  justify-self: start;
+  margin-block-start: var(--ds-space-3);
+}
+
+// En el teléfono el rótulo «Ver tu recorrido» se calla: la fila entera ya es el enlace y el chevrón dice adónde va; así
+// el título del caso no se aprieta. Su texto sigue en el nombre accesible del enlace.
+@media (max-width: 30rem) {
+  .sd-fila__ir {
+    @include m.ds-sr-only;
+  }
+}
+
+// El progreso en palabras, entre el siguiente paso y los cierres: una línea tranquila, no una cifra protagonista.
+.sd-progreso {
+  margin: 0;
+  padding-inline-start: var(--ds-space-3);
+  border-inline-start: 2px solid var(--ds-border);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+}

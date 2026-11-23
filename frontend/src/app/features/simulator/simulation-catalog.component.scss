@@ -1,0 +1,172 @@
+// Casos del estudiante (DISENO §4.2): la biblioteca como una rejilla de tarjetas (.p-rejilla--24, global) y, dentro de cada
+// una, sus intentos. Solo tokens: sin vidrio ni sombras duras. `minmax(0, 1fr)` y `min-inline-size: 0` hacen que nada
+// ensanche la página: la tabla de intentos se apila en tarjetas cuando su contenedor es estrecho.
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-6);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: var(--l-ancho-pagina);
+  margin-inline: auto;
+  color: var(--ds-text-1);
+}
+
+.cs-biblioteca {
+  display: grid;
+  gap: var(--ds-space-5);
+  min-inline-size: 0;
+}
+
+.cs-tarjeta {
+  display: grid;
+  align-content: start;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+}
+
+.cs-cuerpo {
+  display: grid;
+  align-content: start;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+}
+
+// Un solo caso: una columna a todo el ancho y, cuando la rejilla mide al menos 44rem, la tarjeta acostada. La consulta
+// es de contenedor (la rejilla), no de ventana: así responde al ancho real de la página dentro del armazón.
+.cs-rejilla--uno {
+  grid-template-columns: minmax(0, 1fr);
+  container-type: inline-size;
+}
+
+@container (min-width: 44rem) {
+  .cs-rejilla--uno .cs-tarjeta {
+    // 15rem = el ancho de la portada «tarjeta» (240 px): con `auto` su ancho en porcentaje se volvía circular y caía a 0.
+    grid-template-columns: 15rem minmax(0, 1fr);
+    column-gap: var(--ds-space-6);
+  }
+
+  // A todo el ancho, la descripción no pasa de una medida cómoda de lectura.
+  .cs-rejilla--uno .cs-descripcion {
+    max-inline-size: 65ch;
+  }
+
+  .cs-rejilla--uno .cs-portada {
+    align-self: start;
+  }
+
+  .cs-rejilla--uno .cs-intentos {
+    grid-column: 1 / -1;
+  }
+}
+
+// El caso que se pidió por dirección estando bloqueado: el filo de marca lo señala (el aviso dice por qué).
+.cs-tarjeta--resaltada {
+  border-color: var(--l-acento, var(--ds-primary));
+}
+
+.cs-codigo {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+.cs-titulo {
+  margin: 0;
+  font-size: var(--ds-type-h3-size);
+  line-height: var(--ds-type-h3-line);
+  font-weight: var(--ds-type-h3-weight);
+  overflow-wrap: anywhere;
+}
+
+// Dos líneas: el texto completo, incluido el lenguaje legal, vive en la ficha.
+.cs-descripcion {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ds-text-2);
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cs-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.cs-detalle {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.cs-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+// ── Intentos del caso ─────────────────────────────────────────────────────────────────────────────────────────
+.cs-intentos {
+  min-inline-size: 0;
+  margin-block-start: var(--ds-space-2);
+  padding-block-start: var(--ds-space-3);
+  border-block-start: 1px solid var(--ds-border);
+}
+
+.cs-intentos > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  min-block-size: var(--ds-target-min-strict);
+  cursor: pointer;
+  font-weight: var(--ds-type-h3-weight);
+  list-style: none;
+}
+
+.cs-intentos > summary::-webkit-details-marker {
+  display: none;
+}
+
+// El chevron que dice «se abre»: lo dibuja el borde de un cuadrado girado, sin imagen ni icono extra.
+.cs-intentos > summary::after {
+  content: '';
+  flex: none;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline-end: var(--ds-space-1);
+  border-inline-end: 2px solid var(--ds-text-2);
+  border-block-end: 2px solid var(--ds-text-2);
+  rotate: 45deg;
+}
+
+.cs-intentos[open] > summary::after {
+  rotate: -135deg;
+}
+
+.cs-intentos > summary:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-md);
+}
+
+.cs-nowrap {
+  white-space: nowrap;
+}
+
+.cs-sin-accion {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+}

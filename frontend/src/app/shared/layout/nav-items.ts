@@ -33,6 +33,10 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
+  // SIEP-239: el estudiante vuelve a tener su inicio, sus casos y su personaje.
+  { id: 'panel', label: 'Inicio', route: '/portal/dashboard', icon: 'home', roles: ['ESTUDIANTE'], fold: [], order: 5 },
+  { id: 'simulador', label: 'Casos', route: '/portal/simulador', icon: 'play_circle', roles: ['ESTUDIANTE'], fold: [], order: 25 },
+  { id: 'personaje', label: 'Mi personaje', etiquetaCorta: 'Personaje', route: '/portal/personaje', icon: 'face', roles: ['ESTUDIANTE'], fold: [], order: 28 },
   { id: 'usuarios', label: 'Usuarios', route: '/portal/admin/usuarios', icon: 'manage_accounts', roles: ['ADMIN'], fold: [], order: 10 },
   { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 20 },
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 30 },
