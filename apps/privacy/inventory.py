@@ -353,6 +353,8 @@ DATA_INVENTORY: dict[str, dict] = {
             "theory_basis": PUBLIC,
             "feedback_text": PUBLIC,
             "effects": PUBLIC,
+            "requires_json": PUBLIC,
+            "reaction_json": PUBLIC,
             "response_class": PUBLIC,
             "ai_suggested": PUBLIC,
         },
@@ -618,21 +620,14 @@ DATA_INVENTORY: dict[str, dict] = {
         "columns": {
             "id": TECHNICAL,
             "attempt_id": (SENSITIVE, "intento al que pertenece el informe"),
-            "report_json": (
-                SENSITIVE,
-                "informe congelado del intento (v3): decisiones y su clase, hitos cumplidos y faltantes, estado de la persona usuaria, "
-                "motivo del final, evidencia por nivel de competencia y tiempos; su línea de tiempo copia el motivo "
-                "escrito de una salida segura (texto libre de la persona)",
-            ),
+            "report_json": (SENSITIVE, "Informe congelado del intento sin texto libre del estudiante"),
             "report_schema_version": TECHNICAL,
             "definition_hash": TECHNICAL,
-            "attempt_ordinal": (SENSITIVE, "número de intento del estudiante en ese caso"),
             "created_at": TECHNICAL,
         },
         "exits": {
             "attempt_id": ["api", "reporte"],
             "report_json": ["api", "reporte"],
-            "attempt_ordinal": ["reporte"],
         },
     },
     "attempt_feedback": {
@@ -668,14 +663,14 @@ DATA_INVENTORY: dict[str, dict] = {
             "node_id": TECHNICAL,
             "encrypted_text": (
                 SENSITIVE,
-                "texto libre de la bitácora del estudiante, cifrado; el docente lo ve descifrado en la traza",
+                "texto libre de la bitácora del estudiante, cifrado en reposo",
             ),
             "encryption_key_ref": TECHNICAL,
             "locked": TECHNICAL,
             "created_at": TECHNICAL,
             "updated_at": TECHNICAL,
         },
-        "exits": {"attempt_id": ["api"], "encrypted_text": ["api", "reporte"]},
+        "exits": {"attempt_id": [], "encrypted_text": []},
         "forbidden_exits": {"encrypted_text": ["registro", "csv", "correo"]},
     },
     "attempt_world_states": {

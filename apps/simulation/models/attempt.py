@@ -182,3 +182,30 @@ class AttemptHintView(models.Model):
     class Meta:
         db_table = "attempt_hint_views"
         constraints = [models.UniqueConstraint(fields=["attempt", "hint"], name="uq_attempt_hint_view")]
+
+
+class ReflectionJournal(models.Model):
+    """Bitácora cifrada de una escena del intento."""
+    attempt = models.ForeignKey(SimulationAttempt, on_delete=models.CASCADE, related_name="reflections")
+    node = models.ForeignKey(SimulationNode, on_delete=models.PROTECT)
+    encrypted_text = models.TextField()
+    encryption_key_ref = models.CharField(max_length=100)
+    locked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "reflection_journals"
+        constraints = [models.UniqueConstraint(fields=["attempt", "node"], name="uq_reflection_attempt_node")]
+
+
+class AttemptReport(models.Model):
+    """Informe del estudiante congelado al completar el intento."""
+    attempt = models.OneToOneField(SimulationAttempt, on_delete=models.CASCADE, related_name="reports")
+    report_json = models.JSONField()
+    report_schema_version = models.PositiveIntegerField(default=1)
+    definition_hash = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "attempt_reports"

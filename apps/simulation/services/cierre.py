@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.simulation.assessment.evaluation import freeze
-from apps.simulation.models import AttemptEvent, AttemptStatus, SimulationAttempt
+from apps.simulation.models import AttemptEvent, AttemptStatus, SimulationAttempt, ReflectionJournal
 from . import attempt_lifecycle as lifecycle
 from .audit_service import auditable
 from .calificacion import calificar_y_guardar
@@ -17,6 +17,7 @@ def cerrar_como_incompleto(intento, motivo: str) -> SimulationAttempt:
     lifecycle.apply(intento, lifecycle.EXPIRE)
     intento.ended_at = intento.locked_at = timezone.now()
     intento.save(update_fields=["status", "ended_at", "locked_at"])
+    ReflectionJournal.objects.filter(attempt=intento, locked=False).update(locked=True, updated_at=intento.locked_at)
     AttemptEvent.objects.create(attempt=intento, node=intento.current_node, event_type="ATTEMPT_EXPIRED", detail=motivo)
     freeze(intento)
     calificar_y_guardar(intento)

@@ -9,10 +9,10 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from apps.simulation.models import SimulationAttempt, AttemptEvent, DecisionOption
+from apps.simulation.models import SimulationAttempt, AttemptEvent, DecisionOption, ReflectionJournal
 from .access import available_versions
 from . import attempt_lifecycle as lifecycle
-from . import limites, reglas_de_inicio
+from . import informe_estudiante, limites, reglas_de_inicio
 from .cierre import cerrar_como_incompleto
 from .calificacion import calificar_y_guardar
 from .attempt_duration import touch, reset_clock
@@ -126,6 +126,7 @@ def _transition(user, pk, action):
         touch(attempt, now)
     if action == lifecycle.REPLACE:
         attempt.ended_at = attempt.locked_at = now
+        ReflectionJournal.objects.filter(attempt=attempt, locked=False).update(locked=True, updated_at=now)
         attempt.replaced_by = user
         attempt.replace_reason = "Reemplazo solicitado por el propietario"
     attempt.save()
@@ -218,10 +219,12 @@ def _advance(attempt, option, now, aplicar=True):
     """Aplica los efectos de la opción, mueve el intento a la escena destino y lo cierra si es terminal."""
     if aplicar:
         attempt.state_json = apply_effects(attempt.state_json, option)
+    ReflectionJournal.objects.filter(attempt=attempt, node=option.source_node, locked=False).update(locked=True, updated_at=now)
     attempt.current_node = option.target_node
     if option.target_node.terminal_node:
         lifecycle.apply(attempt, lifecycle.COMPLETE)
         attempt.ended_at = attempt.locked_at = now
+        ReflectionJournal.objects.filter(attempt=attempt, locked=False).update(locked=True, updated_at=now)
     attempt.save()
 
 
@@ -236,6 +239,7 @@ def _close_if_completed(attempt, result, event):
     detail["evaluation"] = result["evaluation"]
     event.detail = json.dumps(detail)
     event.save(update_fields=["detail"])
+    informe_estudiante.congelar(attempt)
     attempt_completed.send(sender=SimulationAttempt, attempt=attempt)
 
 

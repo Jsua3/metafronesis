@@ -1,4 +1,7 @@
 AUDITORIA_POR_RUTA = {
+    ("api/simulation/attempts/<uuid:pk>/student-report", "GET"): "EXENTO: el estudiante consulta su propio informe",
+    ("api/simulation/attempts/<uuid:pk>/reflections", "POST"): "REFLECTION_SAVED",
+    ("api/simulation/attempts/<uuid:pk>/safe-exit", "POST"): "SAFE_EXIT_REQUESTED",
     ("api/simulation/attempts/<uuid:pk>/hints", "GET"): "EXENTO: consulta de pistas del propio intento",
     ("api/simulation/attempts/<uuid:pk>/hints/next", "POST"): "EXENTO: la pista queda registrada en el intento",
     ("api/simulation/attempts/<uuid:pk>/interactions/<str:key>", "POST"): "EXENTO: la interacción queda registrada en el intento",
