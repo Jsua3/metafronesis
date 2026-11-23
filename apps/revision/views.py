@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import serializers
+from django.db import transaction
+from rest_framework import serializers, status
 from rest_framework.views import APIView
 
 from apps.simulation.services import audit_service
@@ -9,6 +10,8 @@ from shared.permissions import policy_permission
 from shared.response import api_ok
 from shared.openapi import envelope_of, error_responses
 from .serializers import IntentoRecienteSerializer, TrazaSerializer, ValoracionSerializer, GuardarValoracionSerializer
+
+from .serializers import ReemplazarIntentoSerializer, IntentoReemplazadoSerializer
 
 from . import consultas
 
@@ -94,4 +97,26 @@ class ValoracionRubricaView(APIView):
         from . import valoracion
         resultado = valoracion.guardar(consultas.intento_de(request.user, attempt_id), request.user, request.data)
         audit_service.record("rubrica.evaluar", "ATTEMPT", attempt_id, {})
+        return api_ok(resultado)
+
+
+class ReemplazarIntentoView(APIView):
+    permission_classes = [policy_permission("attempt", "replace")]
+
+    @extend_schema(request=ReemplazarIntentoSerializer, responses={200: envelope_of(IntentoReemplazadoSerializer), **error_responses(400, 401, 403, 404, 409)})
+    def post(self, request, attempt_id):
+        from apps.simulation.services import attempt_lifecycle, attempt_api
+        from apps.simulation.services.attempt_lock import lock_attempt_row
+
+        serializer = ReemplazarIntentoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            lock_attempt_row(attempt_id)
+            intento = consultas.intento_de(request.user, attempt_id)
+            if not attempt_lifecycle.state_of(intento).is_open:
+                raise ApiError("ATTEMPT_NOT_OPEN", "El intento ya está cerrado y no puede reemplazarse.", status.HTTP_409_CONFLICT)
+            motivo = serializer.validated_data["reason"]
+            attempt_api.reemplazar_abierto(intento, request.user, motivo)
+            resultado = {"attemptId": str(intento.pk), "status": intento.status, "reason": motivo, "replacedAt": intento.ended_at.isoformat()}
+        audit_service.record("ATTEMPT_REPLACED", "ATTEMPT", attempt_id, {})
         return api_ok(resultado)

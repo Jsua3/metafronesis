@@ -534,6 +534,14 @@
       "audit": "ATTEMPT_FEEDBACK_SAVED"
     },
     {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/replace",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_REPLACED"
+    },
+    {
       "route": "api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",

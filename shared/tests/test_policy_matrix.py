@@ -40,6 +40,10 @@ EXPECTED = [
     ("attempt", "review", PROFESOR, {"member": False}, False),
     ("attempt", "review", ADMIN, {}, True),
     # Reporte de finalización de un intento: su dueño, el docente con alcance o el ADMIN.
+    ("attempt", "replace", ESTUDIANTE, {"member": True}, False),
+    ("attempt", "replace", PROFESOR, {"member": True}, True),
+    ("attempt", "replace", PROFESOR, {"member": False}, False),
+    ("attempt", "replace", ADMIN, {}, True),
     ("attempt", "report", ESTUDIANTE, {"owner_id": ME}, True),
     ("attempt", "report", ESTUDIANTE, {"owner_id": 99}, False),
     ("attempt", "report", PROFESOR, {"member": True}, True),
@@ -215,7 +219,9 @@ def test_scope_of_exposes_the_role_scope_for_filtering_lists():
 
 
 def test_rutas_de_revision_nueva_usan_politica_de_alcance():
-    from apps.revision.views import IntentosRecientesView, TrazaView, ValoracionRubricaView
+    from apps.revision.views import IntentosRecientesView, TrazaView, ValoracionRubricaView, ReemplazarIntentoView
 
     for vista in (IntentosRecientesView, TrazaView, ValoracionRubricaView):
         assert vista.permission_classes[0].policy == ("attempt", "review")
+    assert ReemplazarIntentoView.permission_classes[0].policy == ("attempt", "replace")
+    assert policies.MATRIX[("attempt", "replace")] == {PROFESOR: policies.MEMBER, ADMIN: policies.ALL}

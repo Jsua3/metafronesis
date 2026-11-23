@@ -108,18 +108,35 @@ def _transition(user, pk, action):
         return attempt
     now = timezone.now()
     previous = attempt.status
+    if action == lifecycle.REPLACE:
+        return reemplazar_abierto(attempt, user, "Reemplazo solicitado por el propietario", "REPLACE")
     lifecycle.apply(attempt, action)
     if action == lifecycle.RESUME:
         reset_clock(attempt, now)
     elif previous == "IN_PROGRESS":
         touch(attempt, now)
-    if action == lifecycle.REPLACE:
-        attempt.ended_at = attempt.locked_at = now
-        attempt.replaced_by = user
-        attempt.replace_reason = "Reemplazo solicitado por el propietario"
     attempt.save()
     AttemptEvent.objects.create(
         attempt=attempt, node=attempt.current_node, event_type=action.upper()
+    )
+    return attempt
+
+
+
+def reemplazar_abierto(attempt, actor, reason, event_type="ATTEMPT_REPLACED"):
+    """Cierra el intento bloqueado y conserva el motivo y el evento de reemplazo."""
+    previous = attempt.status
+    lifecycle.apply(attempt, lifecycle.REPLACE)
+    now = timezone.now()
+    if previous == lifecycle.INITIAL_STATUS:
+        touch(attempt, now)
+    attempt.ended_at = attempt.locked_at = now
+    attempt.replaced_by = actor
+    attempt.replace_reason = reason
+    attempt.save()
+    AttemptEvent.objects.create(
+        attempt=attempt, node=attempt.current_node, event_type=event_type,
+        detail=reason if event_type == "ATTEMPT_REPLACED" else None,
     )
     return attempt
 
@@ -237,7 +254,7 @@ def _decide(attempt, option_id, request_id):
     vigentes = decisiones_vigentes(attempt)
     cambiada = any(evento.node_id == option.source_node_id for evento in vigentes)
     if cambiada:
-        # La opci?n cambiada conserva su posici?n original en la secuencia.
+        # La opción cambiada conserva su posición original en la secuencia.
         estado = {}
         for evento in vigentes:
             estado = apply_effects(estado, option if evento.node_id == option.source_node_id else evento.decision_option)

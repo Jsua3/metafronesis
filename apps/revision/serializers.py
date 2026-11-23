@@ -89,3 +89,14 @@ class TrazaSerializer(serializers.Serializer):
     systemEvaluationAvailable = serializers.BooleanField()
     competenciesDeclared = serializers.BooleanField()
     evidenceByCompetency = serializers.ListField()
+
+
+class ReemplazarIntentoSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500)
+
+
+class IntentoReemplazadoSerializer(serializers.Serializer):
+    attemptId = serializers.UUIDField()
+    status = serializers.CharField()
+    reason = serializers.CharField()
+    replacedAt = serializers.DateTimeField()

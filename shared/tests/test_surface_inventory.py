@@ -118,6 +118,7 @@ def test_rutas_de_revision_nueva_en_inventario():
     filas = {(fila["route"], fila["method"]): fila for fila in _inventario_versionado()["routes"]}
     rutas = {
         ("api/instructor/attempts/recent", "GET"): "INSTRUCTOR_ATTEMPTS_VIEWED",
+        ("api/instructor/attempts/<uuid:attempt_id>/replace", "POST"): "ATTEMPT_REPLACED",
         ("api/instructor/attempts/<uuid:attempt_id>/trace", "GET"): "traza.leer",
         ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "GET"): "traza.leer",
         ("api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation", "PUT"): "rubrica.evaluar",

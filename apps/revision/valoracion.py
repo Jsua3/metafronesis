@@ -3,11 +3,14 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 from django.utils import timezone
+from rest_framework import status
 
 from apps.simulation.models import CriterionScore, Rubric, RubricEvaluation, SimulationAttempt, SimulationRubricAssignment
 from apps.simulation.models.rubric import EvaluationOrigin, LEVEL_INDEX
 from apps.simulation.services.gestion_rubricas import descriptores
 from shared.exceptions import ApiError
+
+PESO_TOTAL = Decimal("100")
 
 NIVELES = [
     {"value": "EN_INICIO", "label": "En inicio", "descriptor": "Muestra los primeros acercamientos al criterio; necesita acompañamiento para sostenerlo."},
@@ -28,7 +31,7 @@ def rubrica_para_revision(case_version_id):
 def _rubrica(intento):
     rubrica = rubrica_para_revision(intento.case_version_id)
     if rubrica is None:
-        raise ApiError("RUBRIC_MISSING", "El intento no tiene una rúbrica activa.", 409)
+        raise ApiError("RUBRIC_MISSING", "El intento no tiene una rúbrica activa.", status.HTTP_409_CONFLICT)
     return rubrica
 
 
@@ -66,46 +69,46 @@ def consultar(intento):
 @transaction.atomic
 def guardar(intento, docente, datos):
     if not isinstance(datos, dict):
-        raise ApiError("VALIDATION_ERROR", "La valoración debe ser un objeto.", 400)
+        raise ApiError("VALIDATION_ERROR", "La valoración debe ser un objeto.", status.HTTP_400_BAD_REQUEST)
     entregar = datos.get("deliver", True)
     if not isinstance(entregar, bool):
-        raise ApiError("VALIDATION_ERROR", "deliver debe ser verdadero o falso.", 400, field="deliver")
+        raise ApiError("VALIDATION_ERROR", "deliver debe ser verdadero o falso.", status.HTTP_400_BAD_REQUEST, field="deliver")
     intento = SimulationAttempt.objects.select_for_update().get(pk=intento.pk)
     rubrica = _rubrica(intento)
     evaluacion = RubricEvaluation.objects.filter(attempt=intento, rubric=rubrica, instructor=docente, origin=EvaluationOrigin.DOCENTE).first()
     if evaluacion and evaluacion.status == "EVALUATED" and not entregar:
-        raise ApiError("EVALUATION_ALREADY_DELIVERED", "Esta valoración ya se entregó al estudiante. Para corregirla, guárdala entregada.", 409)
+        raise ApiError("EVALUATION_ALREADY_DELIVERED", "Esta valoración ya se entregó al estudiante. Para corregirla, guárdala entregada.", status.HTTP_409_CONFLICT)
     criterios = _criterios(rubrica)
-    if not criterios or sum((criterio.weight or criterio.max_score for criterio in criterios), Decimal(0)) != 100:
-        raise ApiError("RUBRIC_WEIGHTS", "Los pesos de los criterios activos deben sumar 100.", 400)
+    if not criterios or sum((criterio.weight or criterio.max_score for criterio in criterios), Decimal(0)) != PESO_TOTAL:
+        raise ApiError("RUBRIC_WEIGHTS", "Los pesos de los criterios activos deben sumar 100.", status.HTTP_400_BAD_REQUEST)
     filas = datos.get("scores") or datos.get("items") or []
     if not isinstance(filas, list):
-        raise ApiError("VALIDATION_ERROR", "Las valoraciones deben ser una lista.", 400, field="scores")
+        raise ApiError("VALIDATION_ERROR", "Las valoraciones deben ser una lista.", status.HTTP_400_BAD_REQUEST, field="scores")
     permitidos = {criterio.pk for criterio in criterios}
     puntuaciones = {}
     for fila in filas:
         if not isinstance(fila, dict):
-            raise ApiError("VALIDATION_ERROR", "Cada valoración debe ser un objeto.", 400, field="scores")
+            raise ApiError("VALIDATION_ERROR", "Cada valoración debe ser un objeto.", status.HTTP_400_BAD_REQUEST, field="scores")
         try:
             identificador = int(fila.get("criterionId") or fila.get("criterion_id"))
         except (TypeError, ValueError):
-            raise ApiError("VALIDATION_ERROR", "Cada valoración necesita su criterio.", 400, field="scores") from None
+            raise ApiError("VALIDATION_ERROR", "Cada valoración necesita su criterio.", status.HTTP_400_BAD_REQUEST, field="scores") from None
         nivel = fila.get("level")
         if identificador not in permitidos or identificador in puntuaciones or "score" in fila or (nivel not in (None, "") and (not isinstance(nivel, str) or nivel not in LEVEL_INDEX)):
-            raise ApiError("VALIDATION_ERROR", "El criterio o nivel de la valoración no es válido.", 400, field="scores")
+            raise ApiError("VALIDATION_ERROR", "El criterio o nivel de la valoración no es válido.", status.HTTP_400_BAD_REQUEST, field="scores")
         if nivel:
             comentario = fila.get("comment") or fila.get("observations") or ""
             if not isinstance(comentario, str):
-                raise ApiError("VALIDATION_ERROR", "La observación debe ser texto.", 400, field="scores")
+                raise ApiError("VALIDATION_ERROR", "La observación debe ser texto.", status.HTTP_400_BAD_REQUEST, field="scores")
             puntuaciones[identificador] = (nivel, comentario)
     comentario = datos.get("comment") or datos.get("general_observations") or ""
     if not isinstance(comentario, str):
-        raise ApiError("VALIDATION_ERROR", "El comentario debe ser texto.", 400, field="comment")
+        raise ApiError("VALIDATION_ERROR", "El comentario debe ser texto.", status.HTTP_400_BAD_REQUEST, field="comment")
     if evaluacion is None:
         evaluacion = RubricEvaluation(attempt=intento, rubric=rubrica, instructor=docente, origin=EvaluationOrigin.DOCENTE, created_at=timezone.now())
     evaluacion.status = "EVALUATED" if entregar and len(puntuaciones) == len(criterios) else "PENDING"
     evaluacion.comment = comentario
-    evaluacion.total_score = sum((Decimal(LEVEL_INDEX[puntuaciones[criterio.pk][0]]) * (criterio.weight or criterio.max_score) / 100 for criterio in criterios if criterio.pk in puntuaciones), Decimal(0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    evaluacion.total_score = sum((Decimal(LEVEL_INDEX[puntuaciones[criterio.pk][0]]) * (criterio.weight or criterio.max_score) / PESO_TOTAL for criterio in criterios if criterio.pk in puntuaciones), Decimal(0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     evaluacion.snapshot_json = json.dumps({"rubricId": rubrica.pk, "rubricName": rubrica.name, "criteria": [{"id": criterio.pk, "title": criterio.title, "weight": str(criterio.weight), "description": criterio.description} for criterio in criterios], "valoracionRubrica": True}, ensure_ascii=False)
     evaluacion.updated_at = timezone.now()
     evaluacion.save()
