@@ -291,6 +291,12 @@ AI_AUTHORING_PROVIDER = os.environ.get("AI_AUTHORING_PROVIDER", "")
 AI_AUTHORING_API_KEY = os.environ.get("AI_AUTHORING_API_KEY", "")
 AI_AUTHORING_MODEL = os.environ.get("AI_AUTHORING_MODEL", "claude-haiku-5-5")
 AI_AUTHORING_DAILY_LIMIT_PER_USER = int(os.environ.get("AI_AUTHORING_DAILY_LIMIT_PER_USER", "200"))
+# Asistente de autoría (propuestas y guía): modelo capaz para las propuestas (AI_AUTHORING_MODEL es el rápido de la guía),
+# tope mensual global del programa, espera máxima y tope de tokens de una propuesta.
+AI_AUTHORING_MODEL_CAPABLE = os.environ.get("AI_AUTHORING_MODEL_CAPABLE", "claude-opus-5-5")
+AI_AUTHORING_MONTHLY_LIMIT = int(os.environ.get("AI_AUTHORING_MONTHLY_LIMIT", "3000"))
+AI_AUTHORING_TIMEOUT_SECONDS = int(os.environ.get("AI_AUTHORING_TIMEOUT_SECONDS", "60"))
+AI_AUTHORING_MAX_TOKENS_PROPOSE = int(os.environ.get("AI_AUTHORING_MAX_TOKENS_PROPOSE", "8000"))
 
 
 #: Valores que APAGAN un interruptor de seguridad «cerrado» (sin mayúsculas ni espacios). Cualquier otro valor lo enciende.
