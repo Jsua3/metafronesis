@@ -1,7 +1,11 @@
+import json
+
 import pytest
+from django.db import connection
+from drf_spectacular.generators import SchemaGenerator
 from rest_framework.test import APIClient
 
-from apps.simulation.models import Rubric, RubricCriterion
+from apps.simulation.models import AuditLog, Rubric, RubricCriterion
 from apps.users.models import CustomUser
 from shared.policies import ADMIN, ESTUDIANTE, PROFESOR
 
@@ -96,9 +100,6 @@ def test_creacion_y_detalle_con_descriptores(escenario):
 
 
 def test_auditoria_registra_accion_y_origen(escenario):
-    import json
-    from apps.simulation.models import AuditLog
-
     respuesta = escenario["cliente"].post(f"/api/rubrics/{escenario['rubrica'].pk}/duplicate", {}, format="json")
     registro = AuditLog.objects.filter(action="RUBRIC_CREATED", resource_id=str(respuesta.data["data"]["id"])).get()
     contexto = json.loads(registro.context_json)
@@ -144,8 +145,6 @@ def test_predeterminada_inactiva_y_activacion_sin_pesos_validos(escenario):
 
 
 def test_migracion_conserva_un_valor_predeterminado_en_base(escenario):
-    from django.db import connection
-
     with connection.cursor() as cursor:
         cursor.execute("SELECT column_default FROM information_schema.columns WHERE table_name = %s AND column_name = %s", ["rubric_criteria", "level_descriptors_json"])
         assert "{}" in cursor.fetchone()[0]
@@ -153,8 +152,6 @@ def test_migracion_conserva_un_valor_predeterminado_en_base(escenario):
 
 
 def test_esquema_documenta_contrato_de_gestion():
-    from drf_spectacular.generators import SchemaGenerator
-
     esquema = SchemaGenerator().get_schema(public=True)
     operacion = esquema["paths"]["/api/rubrics"]["get"]
     referencia = operacion["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]

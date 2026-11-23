@@ -6,12 +6,17 @@ from django.db import connection, transaction
 from django.db.models import Q
 from django.http import Http404
 from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 
 from apps.simulation.models import Competency, Rubric, RubricCriterion, RubricEvaluation, SimulationRubricAssignment
 from apps.simulation.models.rubric import EvaluationOrigin, FormativeLevel
 from apps.simulation.services.audit_service import auditable
 from shared import policies
 from shared.exceptions import ApiError
+
+
+PESO_TOTAL = 100
+LARGO_MAXIMO_NOMBRE = 255
 
 
 def visibles(actor):
@@ -26,7 +31,7 @@ def buscar(rubric_id, actor, editable=False):
     if rubrica is None:
         raise Http404
     if editable and not policies.can(actor, "rubric", "edit", owner_id=rubrica.created_by_id):
-        raise ApiError("RUBRIC_READ_ONLY", "Esta rúbrica es de solo lectura; duplícala para personalizarla.", 403)
+        raise PermissionDenied("Esta rúbrica es de solo lectura; duplícala para personalizarla.")
     if editable and rubrica.case_version_id and rubrica.case_version.status != "DRAFT":
         raise ApiError("VERSION_NOT_EDITABLE", "La versión no se puede editar.", 409)
     return rubrica
@@ -70,7 +75,7 @@ def resumen(rubrica, actor, incluir_criterios=False):
 
 def validar_pesos(rubrica):
     pesos = list(rubrica.criteria.filter(active=True).values_list("weight", flat=True))
-    if not pesos or sum(pesos, Decimal(0)) != 100:
+    if not pesos or sum(pesos, Decimal(0)) != PESO_TOTAL:
         raise ApiError("RUBRIC_WEIGHTS", "Los pesos de los criterios activos deben sumar 100.")
 
 
@@ -99,7 +104,7 @@ def guardar_criterios(rubrica, criterios):
             raise ApiError("VALIDATION_ERROR", "Cada criterio debe ser un objeto.")
         try:
             peso = Decimal(str(datos.get("weight", 0)))
-            if not peso.is_finite() or peso < 0 or peso > 100 or peso.as_tuple().exponent < -2:
+            if not peso.is_finite() or peso < 0 or peso > PESO_TOTAL or peso.as_tuple().exponent < -2:
                 raise ValueError
             orden = int(datos.get("displayOrder", indice + 1))
         except (ValueError, TypeError, InvalidOperation):
@@ -120,7 +125,7 @@ def guardar_criterios(rubrica, criterios):
             criterio.competency_ref = competencia
         elif texto != anterior:
             criterio.competency_ref = Competency.objects.filter(code=texto).first()
-        criterio.title = str(datos.get("title") or datos.get("name") or "").strip()[:255]
+        criterio.title = str(datos.get("title") or datos.get("name") or "").strip()[:LARGO_MAXIMO_NOMBRE]
         criterio.description = str(datos.get("description") or "").strip()
         criterio.weight = peso
         criterio.max_score = int(peso)
@@ -143,7 +148,7 @@ def bloquear_predeterminada():
 
 def fijar_default(rubrica, actor):
     if not policies.can(actor, "rubric", "default"):
-        raise ApiError("RUBRIC_DEFAULT_ADMIN_ONLY", "Solo un administrador fija la rúbrica predeterminada.", 403)
+        raise PermissionDenied("Solo un administrador fija la rúbrica predeterminada.")
     if not rubrica.active:
         raise ApiError("VALIDATION_ERROR", "La rúbrica predeterminada debe estar activa.")
     validar_pesos(rubrica)
@@ -161,7 +166,7 @@ def editar(rubric_id, datos, actor):
     for campo in ("name", "description", "version"):
         if campo in datos:
             valor = datos[campo]
-            if not isinstance(valor, str) or (campo == "name" and not valor.strip()) or (campo == "name" and len(valor) > 255) or (campo == "version" and len(valor) > 30):
+            if not isinstance(valor, str) or (campo == "name" and not valor.strip()) or (campo == "name" and len(valor) > LARGO_MAXIMO_NOMBRE) or (campo == "version" and len(valor) > 30):
                 raise ApiError("VALIDATION_ERROR", "El campo de la rúbrica no es válido.", field=campo)
             setattr(rubrica, campo, valor.strip())
     if "active" in datos:
@@ -202,7 +207,7 @@ def cambiar_estado(rubric_id, activo, actor):
            context=lambda args, kwargs, result: {"rubricId": result.pk, "sourceId": args[0]})
 def duplicar(rubric_id, actor):
     origen = buscar(rubric_id, actor)
-    copia = Rubric.objects.create(name=("Copia de " + origen.name)[:255], description=origen.description,
+    copia = Rubric.objects.create(name=("Copia de " + origen.name)[:LARGO_MAXIMO_NOMBRE], description=origen.description,
                                  active=False, version=origen.version, created_by=actor, updated_at=timezone.now())
     for criterio in origen.criteria.all():
         criterio.pk = None

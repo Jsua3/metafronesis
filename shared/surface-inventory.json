@@ -534,6 +534,38 @@
       "audit": "ATTEMPT_FEEDBACK_SAVED"
     },
     {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "traza.leer"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/rubric-evaluation",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "rubrica.evaluar"
+    },
+    {
+      "route": "api/instructor/attempts/<uuid:attempt_id>/trace",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "traza.leer"
+    },
+    {
+      "route": "api/instructor/attempts/recent",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "INSTRUCTOR_ATTEMPTS_VIEWED"
+    },
+    {
       "route": "api/me/invitations",
       "method": "GET",
       "exposure": "role:ADMIN,ESTUDIANTE",

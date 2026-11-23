@@ -212,3 +212,10 @@ def test_scope_of_exposes_the_role_scope_for_filtering_lists():
     assert policies.scope_of(actor(ADMIN), "case", "author") == "all"
     assert policies.scope_of(actor(ESTUDIANTE), "case", "author") is None
     assert policies.scope_of(None, "case", "author") is None
+
+
+def test_rutas_de_revision_nueva_usan_politica_de_alcance():
+    from apps.revision.views import IntentosRecientesView, TrazaView, ValoracionRubricaView
+
+    for vista in (IntentosRecientesView, TrazaView, ValoracionRubricaView):
+        assert vista.permission_classes[0].policy == ("attempt", "review")
