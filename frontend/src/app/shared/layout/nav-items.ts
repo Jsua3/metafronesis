@@ -41,6 +41,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
   // E2-10 (C5): la bandeja del estudiante. Se llama «Grupos» porque muestra sus invitaciones Y sus membresías.
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 40 },
+  { id: 'reportes', label: 'Reportes', route: '/portal/reportes', icon: 'analytics', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 50 },
   { id: 'rubricas', label: 'Rúbricas', route: '/portal/rubricas', icon: 'grading', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 60 },
 ];
 

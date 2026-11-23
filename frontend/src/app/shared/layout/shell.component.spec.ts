@@ -88,16 +88,16 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
   it('el docente pliega Rúbricas; Inicio, Revisión y Grupos quedan a la vista (DISENO §3.2)', async () => {
     currentUser.set(user('PROFESOR'));
     await fixture.whenStable();
-    expect(labels()).toEqual(['Inicio', 'Revisión', 'Grupos', 'Rúbricas']);
-    expect(folded()).toEqual(['Rúbricas']);
+    expect(labels()).toEqual(['Inicio', 'Revisión', 'Grupos', 'Reportes', 'Rúbricas']);
+    expect(folded()).toEqual(['Reportes', 'Rúbricas']);
   });
 
   it('cambiar de sesión sin recargar actualiza destinos y plegados (Review Focus 3)', async () => {
     currentUser.set(user('ADMIN'));
     await fixture.whenStable();
     // ED-5 (E2): el administrador no tiene «Mi personaje» (no juega). «Usuarios» ya no se pliega: es su tarea principal.
-    expect(labels()).toEqual(['Inicio', 'Usuarios', 'Revisión', 'Rúbricas']);
-    expect(folded()).toEqual(['Revisión', 'Rúbricas']);
+    expect(labels()).toEqual(['Inicio', 'Usuarios', 'Revisión', 'Reportes', 'Rúbricas']);
+    expect(folded()).toEqual(['Revisión', 'Reportes', 'Rúbricas']);
     currentUser.set(user('ESTUDIANTE'));
     await fixture.whenStable();
     expect(labels()).toEqual(['Grupos']);

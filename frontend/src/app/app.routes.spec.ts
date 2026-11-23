@@ -22,7 +22,7 @@ describe('rutas de la ola 1', () => {
   });
   it('conserva las pantallas del portal y elimina las rutas de olas posteriores', () => {
     const paths = portal.children!.map(route => route.path);
-    expect(paths).toEqual(expect.arrayContaining(['', 'dashboard', 'invitaciones', 'grupos', 'grupos/:grupoId', 'admin/usuarios', 'cuenta/contrasena', 'rubricas', 'docente/trazabilidad']));
-    for (const path of ['simulador', 'casos', 'reportes']) expect(paths).not.toContain(path);
+    expect(paths).toEqual(expect.arrayContaining(['', 'dashboard', 'invitaciones', 'grupos', 'grupos/:grupoId', 'admin/usuarios', 'cuenta/contrasena', 'rubricas', 'docente/trazabilidad', 'reportes', 'reportes/estudiante/:estudianteId']));
+    for (const path of ['simulador', 'casos']) expect(paths).not.toContain(path);
   });
 });

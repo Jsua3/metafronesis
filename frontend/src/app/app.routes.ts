@@ -106,6 +106,19 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/rubrics.component').then(m => m.RubricsComponent)
       },
       {
+        path: 'reportes',
+        title: 'Reportes',
+        canActivate: [roleGuard(...rolesFor('reportes'))],
+        loadComponent: () => import('./features/reportes/reporte-grupo.component').then(m => m.ReporteGrupoComponent)
+      },
+      {
+        // Los intentos de un estudiante; se llega desde la tabla del reporte del grupo.
+        path: 'reportes/estudiante/:estudianteId',
+        title: 'Reporte del estudiante',
+        canActivate: [roleGuard(...rolesFor('reportes'))],
+        loadComponent: () => import('./features/reportes/reporte-estudiante.component').then(m => m.ReporteEstudianteComponent)
+      },
+      {
         path: 'admin/usuarios',
         title: 'Usuarios',
         canActivate: [roleGuard(...rolesFor('usuarios'))],
@@ -144,6 +157,7 @@ export const routes: Routes = [
   { path: 'dashboard', redirectTo: 'portal/dashboard', pathMatch: 'full' },
   { path: 'docente', redirectTo: 'portal/docente/trazabilidad', pathMatch: 'full' },
   { path: 'rubricas', redirectTo: 'portal/rubricas', pathMatch: 'full' },
+  { path: 'reportes', redirectTo: 'portal/reportes', pathMatch: 'full' },
   { path: 'grupos', redirectTo: 'portal/grupos', pathMatch: 'full' },
   { path: 'usuarios', redirectTo: 'portal/admin/usuarios', pathMatch: 'full' },
   ...DEV_ONLY_ROUTES,
