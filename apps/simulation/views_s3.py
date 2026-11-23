@@ -11,7 +11,7 @@ from .serializers_s3 import (
     DecisionRequest,
 )
 from .services.access import available_versions
-from .services import attempt_api
+from .services import attempt_api, estado_intento
 from shared.policies import ADMIN, ESTUDIANTE, PROFESOR
 
 
@@ -80,7 +80,7 @@ class Decision(APIView):
         body = DecisionRequest(data=request.data)
         body.is_valid(raise_exception=True)
         return Response(
-            attempt_api.decide(
+            estado_intento.decidir(
                 request.user,
                 pk,
                 body.validated_data["decision_option_id"],

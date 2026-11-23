@@ -295,6 +295,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "status": TECHNICAL,
             "narrative_context": PUBLIC,
             "learning_objectives": PUBLIC,
+            "content_warnings": PUBLIC,
             "estimated_minutes": PUBLIC,
             "cloned_from_id": TECHNICAL,
             "published_at": TECHNICAL,

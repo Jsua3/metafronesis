@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('simulation', '0012_rubriccriterion_level_descriptors'),
+        ('simulation', '0013_caseversion_content_warnings'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
