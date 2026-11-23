@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
-import { AuthService } from '../auth/auth.service';
 import { Escenario, LugarResumen } from '../models/biblioteca.model';
 import {
   BriefUpdateRequest,
@@ -105,8 +104,7 @@ interface ResumenServidor {
  * hablando con los tipos del editor (`CaseEditorView`, …) y esta clase traduce. Lo que el servidor devuelve distinto:
  *  - escenas, decisiones y ficha responden lo suyo (no el editor): se vuelve a leer el editor para devolver la vista
  *    nueva con la revisión siguiente;
- *  - las escenas usan `key`/`question`/`start`/`terminal` y las decisiones `feedback`; los campos que ese servidor aún
- *    no guarda se omiten al enviar (ver los comentarios de cada método);
+ *  - escenas y decisiones aceptan los campos del editor tal cual (solo `goal` aún no se guarda y no se envía);
  *  - el ciclo de vida y la validación salen de `apps/publicacion` (`validate`, `lifecycle`, `publish`, `clone-version`).
  * Rutas sin backend todavía (generación con IA, ensayo, asistente con la forma de v3): fallan con un 404 explicado o
  * responden «apagado».
@@ -114,7 +112,6 @@ interface ResumenServidor {
 @Injectable({ providedIn: 'root' })
 export class AuthoringApi {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
   private readonly caseList = inject(CaseListCache);
   private readonly caseChanged = new Subject<number>();
   /**
@@ -152,27 +149,24 @@ export class AuthoringApi {
     }))));
   }
 
-  /** Crea el borrador. El servidor exige `code` (se genera del título) y todavía no copia salas de un lugar: `lugarId`, `salas` y `porPiezas` no viajan. */
+  /**
+   * Crea el borrador. El servidor exige `code` (se genera del título); con `lugarId` y `salas` copia las salas de la
+   * biblioteca (por piezas si `porPiezas`). Responde con el resumen, así que se lee el editor para devolver la vista.
+   */
   createCase(body: CaseCreateRequest) {
-    const cuerpo = { code: body.code || codigoDe(body.title), title: body.title, description: body.description ?? '' };
+    const cuerpo: Record<string, unknown> = { code: body.code || codigoDe(body.title), title: body.title, description: body.description ?? '' };
+    if (body.lugarId) { cuerpo['lugarId'] = body.lugarId; cuerpo['salas'] = body.salas ?? []; }
+    if (body.lugarId && body.porPiezas !== undefined) cuerpo['porPiezas'] = body.porPiezas;
     return this.http.post<ApiResponse<ResumenServidor>>(this.API, cuerpo)
       .pipe(switchMap(response => this.caseEditor(response.data.versionId)));
   }
 
   // ─── Node CRUD ──────────────────────────────────────────────────────────
 
-  /**
-   * Cuerpo de una escena para el servidor: `key`, `title`, `narrative`, `question`, `start`, `terminal`. Los demás campos
-   * del editor (recursos, herramientas, sensibilidad, salida segura, posición, intensidad, objetivo, comentarios) los
-   * muestra el servidor pero aún no los guarda: no se envían.
-   */
+  /** Cuerpo de una escena: el servidor acepta los nombres del editor (`nodeKey`, `startNode`, `decisionPrompt`). `goal` aún no se guarda. */
   private cuerpoNodo(body: NodeUpsertRequest, revision?: number) {
-    const cuerpo: Record<string, unknown> = {
-      key: body.nodeKey, title: body.title, narrative: body.narrative,
-      start: body.startNode, terminal: body.terminal,
-    };
-    if (body.decisionPrompt !== undefined) cuerpo['question'] = body.decisionPrompt;
-    return conRevision(cuerpo, revision);
+    const { goal: _goal, ...resto } = body;
+    return conRevision(resto, revision);
   }
 
   createNode(caseVersionId: number, body: NodeUpsertRequest, revision?: number) {
@@ -192,17 +186,9 @@ export class AuthoringApi {
 
   // ─── Decision CRUD ─────────────────────────────────────────────────────────
 
-  /**
-   * Cuerpo de una decisión para el servidor: origen, destino, texto, clase, `feedback` (= `feedbackText`) y fundamento.
-   * La razón de prohibición, la retroalimentación inmediata, la consecuencia, los efectos, el requisito y la reacción aún
-   * no se guardan en ese servidor: no se envían. La clave de la opción la asigna el servidor.
-   */
+  /** Cuerpo de una decisión: el servidor acepta `feedbackText` como sinónimo de `feedback` y guarda todos los campos del editor. */
   private cuerpoDecision(body: DecisionOptionUpsertRequest, revision?: number) {
-    const cuerpo: Record<string, unknown> = { sourceNodeId: body.sourceNodeId, targetNodeId: body.targetNodeId, text: body.text };
-    if (body.responseClass !== undefined) cuerpo['responseClass'] = body.responseClass;
-    if (body.feedbackText !== undefined) cuerpo['feedback'] = body.feedbackText;
-    if (body.theoryBasis !== undefined) cuerpo['theoryBasis'] = body.theoryBasis;
-    return conRevision(cuerpo, revision);
+    return conRevision({ ...body }, revision);
   }
 
   createDecision(caseVersionId: number, body: DecisionOptionUpsertRequest, revision?: number) {
@@ -351,14 +337,14 @@ export class AuthoringApi {
   }
 
   /**
-   * La ficha del caso. El servidor guarda `narrativeContext` (= `context`), los objetivos y el título; los temas sensibles
-   * (`contentWarnings`) aún no. Responde con el resumen, así que se vuelve a leer el editor.
+   * La ficha del caso: `context` viaja como `narrativeContext`; objetivos, título y temas sensibles (hasta 8) se guardan. Responde con el resumen, así que se vuelve a leer el editor.
    */
   updateBrief(caseVersionId: number, body: BriefUpdateRequest, revision?: number) {
     const cuerpo: Record<string, unknown> = {};
     if (body.context !== undefined) cuerpo['narrativeContext'] = body.context;
     if (body.learningObjectives !== undefined) cuerpo['learningObjectives'] = body.learningObjectives;
     if (body.title !== undefined) cuerpo['title'] = body.title;
+    if (body.contentWarnings !== undefined) cuerpo['contentWarnings'] = body.contentWarnings;
     return this.http.put<unknown>(`${this.API}/${caseVersionId}/brief`, conRevision(cuerpo, revision), withRevision(revision))
       .pipe(switchMap(() => this.caseEditor(caseVersionId)));
   }
@@ -494,49 +480,39 @@ export class AuthoringApi {
       }));
   }
 
-  /**
-   * C4: el estado de la versión y las transiciones que quien llama puede hacer. El servidor no tiene una lectura aparte:
-   * el estado sale del editor y las transiciones, de ese estado y del rol (enviar, la autora; aprobar, el administrador;
-   * clonar, lo publicado o archivado; archivar, lo publicado).
-   */
+  /** C4: el estado de la versión, las transiciones que quien llama puede hacer, el motivo de bloqueo y la última revisión. */
   lifecycle(caseVersionId: number): Observable<CaseLifecycle> {
-    return this.caseEditor(caseVersionId).pipe(map(vista => this.cicloDe(vista.caseVersionId, vista.status)));
-  }
-
-  private cicloDe(caseVersionId: number, status: string): CaseLifecycle {
-    const state = status as CaseLifecycle['state'];
-    const admin = this.auth.currentUser()?.role === 'ADMIN';
-    const allowedTransitions: CaseLifecycle['allowedTransitions'] = [];
-    if (state === 'DRAFT') allowedTransitions.push('submit');
-    if (state === 'IN_REVIEW' && admin) allowedTransitions.push('approve');
-    if (state === 'PUBLISHED' || state === 'ARCHIVED') allowedTransitions.push('clone');
-    if (state === 'PUBLISHED') allowedTransitions.push('archive');
-    return { caseVersionId, state, allowedTransitions };
+    return this.http.get<ApiResponse<CaseLifecycle>>(`${this.API}/${caseVersionId}/lifecycle`).pipe(map(r => r.data));
   }
 
   /**
-   * C4: enviar a revisión (`lifecycle`), aprobar (`publish`), archivar (`lifecycle`) o clonar (`clone-version`); devuelve el
-   * ciclo resultante (el de la copia si es clonar). Devolver con nota (`reject`) aún no tiene ruta en el servidor.
+   * C4: enviar a revisión, devolver a borrador (`reject`, solo administrador, con `reason` y `note`) y archivar responden con
+   * el ciclo resultante; aprobar (`publish`) y clonar (`clone-version`) responden con la versión y se lee su ciclo.
    */
   transitionCase(caseVersionId: number, request: CaseTransitionRequest, revision?: number): Observable<CaseLifecycle> {
-    type Resultado = ApiResponse<{ versionId: number; status: string }>;
+    type Version = ApiResponse<{ versionId: number; status: string }>;
     let llamada: Observable<CaseLifecycle>;
     switch (request.action) {
       case 'submit':
       case 'archive':
-        llamada = this.http.post<Resultado>(`${this.API}/${caseVersionId}/lifecycle`, { action: request.action }, withRevision(revision))
-          .pipe(map(r => this.cicloDe(r.data.versionId, r.data.status)));
+      case 'reject': {
+        const cuerpo: Record<string, unknown> = { action: request.action };
+        if (request.reason) cuerpo['reason'] = request.reason;
+        if (request.note) cuerpo['note'] = request.note;
+        llamada = this.http.post<ApiResponse<CaseLifecycle>>(`${this.API}/${caseVersionId}/lifecycle`, cuerpo, withRevision(revision))
+          .pipe(map(r => r.data));
         break;
+      }
       case 'approve':
-        llamada = this.http.post<Resultado>(`${this.API}/${caseVersionId}/publish`, {}, withRevision(revision))
-          .pipe(map(r => this.cicloDe(r.data.versionId, r.data.status)));
+        llamada = this.http.post<Version>(`${this.API}/${caseVersionId}/publish`, {}, withRevision(revision))
+          .pipe(switchMap(r => this.lifecycle(r.data.versionId)));
         break;
       case 'clone':
-        llamada = this.http.post<Resultado>(`${this.API}/${caseVersionId}/clone-version`, {})
-          .pipe(map(r => this.cicloDe(r.data.versionId, r.data.status)));
+        llamada = this.http.post<Version>(`${this.API}/${caseVersionId}/clone-version`, {})
+          .pipe(switchMap(r => this.lifecycle(r.data.versionId)));
         break;
       default:
-        return sinRuta('Devolver el caso con una nota');
+        return sinRuta('Esa transición');
     }
     return llamada.pipe(
       tap({

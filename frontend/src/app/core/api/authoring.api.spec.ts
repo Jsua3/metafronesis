@@ -90,31 +90,34 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
     expect(peticion.body == null || !('revision' in (peticion.body as object))).toBe(true);
   });
 
-  it('una escena viaja con las claves del servidor: key, question, start, terminal', () => {
+  it('una escena viaja con los campos del editor (sin goal) y la revisión', () => {
     api.createNode(9, {
-      nodeKey: 'escena-3', title: 'T', narrative: 'N', requiredTools: [], supportResources: [], sensitiveContent: false,
-      safeExitRequired: false, warningMessage: null, terminal: false, startNode: true, positionX: null, positionY: null,
-      decisionPrompt: '¿Qué haces?',
+      nodeKey: 'escena-3', title: 'T', narrative: 'N', requiredTools: ['a'], supportResources: [], sensitiveContent: true,
+      safeExitRequired: false, warningMessage: 'aviso', terminal: false, startNode: true, positionX: 1, positionY: 2,
+      decisionPrompt: '¿Qué haces?', intensity: 'HIGH', goal: 'no viaja',
     }, 4).subscribe();
     const peticion = responder('/api/authoring/cases/9/nodes', true);
-    expect(peticion.body).toEqual({ key: 'escena-3', title: 'T', narrative: 'N', start: true, terminal: false, question: '¿Qué haces?', revision: 4 });
-  });
-
-  it('una decisión manda feedback (= feedbackText) y no los campos que el servidor aún no guarda', () => {
-    api.updateDecision(9, 2, {
-      sourceNodeId: 1, targetNodeId: 2, optionKey: 'o', text: 'Texto', responseClass: 'RECOMMENDED', prohibitedConduct: false,
-      prohibitionReason: null, immediateFeedback: 'x', feedbackText: 'Porque sí', theoryBasis: 'Teoría',
-    }, 4).subscribe();
-    const peticion = responder('/api/authoring/cases/9/decisions/2', true);
     expect(peticion.body).toEqual({
-      sourceNodeId: 1, targetNodeId: 2, text: 'Texto', responseClass: 'RECOMMENDED', feedback: 'Porque sí', theoryBasis: 'Teoría', revision: 4,
+      nodeKey: 'escena-3', title: 'T', narrative: 'N', requiredTools: ['a'], supportResources: [], sensitiveContent: true,
+      safeExitRequired: false, warningMessage: 'aviso', terminal: false, startNode: true, positionX: 1, positionY: 2,
+      decisionPrompt: '¿Qué haces?', intensity: 'HIGH', revision: 4,
     });
   });
 
-  it('la ficha manda narrativeContext en lugar de context', () => {
+  it('una decisión manda todos sus campos, incluidos feedbackText, efectos y reacción', () => {
+    const decision = {
+      sourceNodeId: 1, targetNodeId: 2, optionKey: 'o', text: 'Texto', responseClass: 'RECOMMENDED' as const, prohibitedConduct: false,
+      prohibitionReason: null, immediateFeedback: 'x', feedbackText: 'Porque sí', theoryBasis: 'Teoría', consequenceText: 'c',
+      effects: { milestones: ['h'] }, requires: {}, reaction: { linea: 'ok' },
+    };
+    api.updateDecision(9, 2, decision, 4).subscribe();
+    expect(responder('/api/authoring/cases/9/decisions/2', true).body).toEqual({ ...decision, revision: 4 });
+  });
+
+  it('la ficha manda narrativeContext en lugar de context, y los temas sensibles', () => {
     api.updateBrief(9, { context: 'Contexto', learningObjectives: ['a'], contentWarnings: ['x'] }, 3).subscribe();
     const peticion = responder('/api/authoring/cases/9/brief', true);
-    expect(peticion.body).toEqual({ narrativeContext: 'Contexto', learningObjectives: ['a'], revision: 3 });
+    expect(peticion.body).toEqual({ narrativeContext: 'Contexto', learningObjectives: ['a'], contentWarnings: ['x'], revision: 3 });
   });
 
   it('las reglas viajan dentro de su clave: «milestones», «riskLevel» y «endings»', () => {
@@ -129,6 +132,14 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
   });
 
   describe('crear y listar casos', () => {
+    it('crear con un lugar manda lugarId, salas y porPiezas', () => {
+      api.createCase({ title: 'C', code: 'X', lugarId: 'universidad', salas: ['a', 'b'], porPiezas: true }).subscribe();
+      const peticion = http.expectOne('/api/authoring/cases');
+      expect(peticion.request.body).toEqual({ code: 'X', title: 'C', description: '', lugarId: 'universidad', salas: ['a', 'b'], porPiezas: true });
+      peticion.flush({ data: { versionId: 9 } });
+      http.expectOne('/api/authoring/cases/9/editor').flush({ data: vista });
+    });
+
     it('crear manda código (generado del título), título y descripción, y devuelve el editor', () => {
       let recibida: unknown;
       api.createCase({ title: 'Caso de prueba' }).subscribe(v => (recibida = v));
@@ -186,36 +197,45 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       });
     });
 
-    it('el ciclo sale del estado del editor: un borrador solo se envía', () => {
+    it('el ciclo se lee de GET lifecycle', () => {
       let ciclo: unknown;
       api.lifecycle(9).subscribe(c => (ciclo = c));
-      http.expectOne('/api/authoring/cases/9/editor').flush({ data: vista });
+      const peticion = http.expectOne('/api/authoring/cases/9/lifecycle');
+      expect(peticion.request.method).toBe('GET');
+      peticion.flush({ data: { caseVersionId: 9, state: 'DRAFT', allowedTransitions: ['submit'] } });
       expect(ciclo).toEqual({ caseVersionId: 9, state: 'DRAFT', allowedTransitions: ['submit'] });
     });
 
-    it('enviar a revisión: POST lifecycle con la acción y la cabecera', () => {
+    it('enviar a revisión: POST lifecycle con la acción y la cabecera; la respuesta ya es el ciclo', () => {
       let ciclo: unknown;
       api.transitionCase(9, { action: 'submit' }, 3).subscribe(c => (ciclo = c));
       const peticion = http.expectOne('/api/authoring/cases/9/lifecycle');
       expect(peticion.request.body).toEqual({ action: 'submit' });
       expect(peticion.request.headers.get('X-Case-Revision')).toBe('3');
-      peticion.flush({ data: { versionId: 9, status: 'IN_REVIEW' } });
-      expect(ciclo).toEqual({ caseVersionId: 9, state: 'IN_REVIEW', allowedTransitions: [] });
+      peticion.flush({ data: { versionId: 9, status: 'IN_REVIEW', caseVersionId: 9, state: 'IN_REVIEW', allowedTransitions: [] } });
+      expect(ciclo).toMatchObject({ caseVersionId: 9, state: 'IN_REVIEW', allowedTransitions: [] });
     });
 
-    it('aprobar publica por su ruta y devolver con nota aún no tiene ruta (404 explicado)', () => {
-      api.transitionCase(9, { action: 'approve' }, 3).subscribe();
+    it('devolver: POST lifecycle con reject, motivo y nota', () => {
+      api.transitionCase(9, { action: 'reject', reason: 'FORMA', note: 'Falta algo' }, 3).subscribe();
+      const peticion = http.expectOne('/api/authoring/cases/9/lifecycle');
+      expect(peticion.request.body).toEqual({ action: 'reject', reason: 'FORMA', note: 'Falta algo' });
+      peticion.flush({ data: { caseVersionId: 9, state: 'DRAFT', allowedTransitions: ['submit'] } });
+    });
+
+    it('aprobar publica y luego lee el ciclo de la versión', () => {
+      let ciclo: unknown;
+      api.transitionCase(9, { action: 'approve' }, 3).subscribe(c => (ciclo = c));
       http.expectOne('/api/authoring/cases/9/publish').flush({ data: { versionId: 9, status: 'PUBLISHED' } });
-      let fallo: { status?: number } | null = null;
-      api.transitionCase(9, { action: 'reject' }, 3).subscribe({ error: e => (fallo = e) });
-      expect((fallo as { status?: number } | null)?.status).toBe(404);
+      http.expectOne('/api/authoring/cases/9/lifecycle').flush({ data: { caseVersionId: 9, state: 'PUBLISHED', allowedTransitions: ['archive'] } });
+      expect(ciclo).toEqual({ caseVersionId: 9, state: 'PUBLISHED', allowedTransitions: ['archive'] });
     });
 
     it('caseChanges emite al aplicar una transición y ante un 409 de revisión o de estado, no ante otros errores', () => {
       const vistos: number[] = [];
       api.caseChanges.subscribe(id => vistos.push(id));
       api.transitionCase(9, { action: 'submit' }).subscribe();
-      http.expectOne('/api/authoring/cases/9/lifecycle').flush({ data: { versionId: 9, status: 'IN_REVIEW' } });
+      http.expectOne('/api/authoring/cases/9/lifecycle').flush({ data: { caseVersionId: 9, state: 'IN_REVIEW', allowedTransitions: [] } });
       expect(vistos).toEqual([9]);
 
       api.transitionCase(9, { action: 'approve' }).subscribe({ error: () => undefined });
