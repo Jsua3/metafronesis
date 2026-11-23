@@ -154,15 +154,25 @@ gcloud projects add-iam-policy-binding $PROYECTO --member "serviceAccount:$SA_RU
 Cloud Run no le pasa a Django su dominio: se declara en `DJANGO_ALLOWED_HOSTS`. El dominio tiene la forma
 `<servicio>-<número del proyecto>.<región>.run.app`. El correo de este primer arranque es el de **consola** (paso 10).
 
+Las variables que no son secretas van en un archivo YAML (`--env-vars-file`): en Windows `gcloud` es un `.cmd` y
+`cmd.exe` se come el `^` de los delimitadores alternativos, así que un valor con comas (la lista de hosts) no pasa bien
+por `--set-env-vars`.
+
 ```powershell
 $HOST_APP = "$SERVICIO-$NUM.$REGION.run.app"
 $SECRETOS = "DJANGO_SECRET_KEY=django-secret-key:latest,JWT_SIGNING_KEY=jwt-signing-key:latest," + `
             "REFLECTION_ENCRYPTION_KEY=reflection-encryption-key:latest,REFLECTION_KEYS=reflection-keys:latest," + `
             "DATABASE_URL=database-url:latest"
-$VARS = "DJANGO_ALLOWED_HOSTS=$HOST_APP,SIEP_PUBLIC_URL=https://$HOST_APP,REFLECTION_ACTIVE_KEY=k1," + `
-        "SIEP_TRUSTED_PROXIES=1,SIEP_ALLOW_CONSOLE_EMAIL=true,ACCESS_REQUEST_NOTIFY_DISABLED=true"
+function Set-Variables([string]$Hosts) {
+  $script:VARS = "$env:TEMP\metafronesis-vars.yaml"
+  @(
+    "DJANGO_ALLOWED_HOSTS: `"$Hosts`"", "SIEP_PUBLIC_URL: `"https://$HOST_APP`"", "REFLECTION_ACTIVE_KEY: `"k1`"",
+    "SIEP_TRUSTED_PROXIES: `"1`"", "SIEP_ALLOW_CONSOLE_EMAIL: `"true`"", "ACCESS_REQUEST_NOTIFY_DISABLED: `"true`""
+  ) | Set-Content -Encoding ascii $script:VARS
+}
+Set-Variables $HOST_APP
 gcloud run deploy $SERVICIO --image $IMG --region $REGION --service-account $SA_RUN `
-  --set-cloudsql-instances $CONN --set-secrets $SECRETOS --set-env-vars $VARS `
+  --set-cloudsql-instances $CONN --set-secrets $SECRETOS --env-vars-file $VARS `
   --cpu 1 --memory 1Gi --min-instances 1 --max-instances 1 --timeout 120 --cpu-boost --allow-unauthenticated
 ```
 
@@ -170,20 +180,23 @@ Comprueba:
 
 ```powershell
 curl.exe -s "https://$HOST_APP/api/health"
-gcloud run services describe $SERVICIO --region $REGION --format "value(status.url)"
+$ANTIGUA = (gcloud run services describe $SERVICIO --region $REGION --format "value(status.url)").Replace("https://", "")
+$ANTIGUA
 ```
 
-`/api/health` debe devolver `{"success": true, "data": {"status": "ok", "db": "ok"}}`. Si la segunda línea muestra otra
-URL (la forma antigua, `…-uc.a.run.app`), agrégala también a los hosts o comparte solo `https://$HOST_APP`:
+`/api/health` debe devolver `{"success": true, "data": {"status": "ok", "db": "ok"}}`. Cloud Run publica además una URL
+con la forma antigua (`<servicio>-<hash>-ue.a.run.app`), que es la que muestra la consola; sin agregarla a los hosts
+responde 400. Agrégala:
 
 ```powershell
-gcloud run services update $SERVICIO --region $REGION --update-env-vars "^@^DJANGO_ALLOWED_HOSTS=$HOST_APP,<otra-url-sin-https>"
+Set-Variables "$HOST_APP,$ANTIGUA"
+gcloud run services update $SERVICIO --region $REGION --env-vars-file $VARS
 ```
 
 Notas sobre las variables:
 
 - `SIEP_TRUSTED_PROXIES` **no puede ser 0** en Cloud Run (el arranque lo rechaza): el frente de Google siempre va
-  delante. Mídelo en el paso 8.
+  delante. Medido el 2026-11-22 en `us-east1`: **1** es correcto (paso 8).
 - Las demás variables opcionales (Google, banderas, retención…) están documentadas en [`.env.example`](../.env.example).
   Con inicio de sesión de Google, agrega `https://$HOST_APP` a los orígenes autorizados de JavaScript del cliente OAuth.
 
@@ -201,7 +214,7 @@ Set-Secreto admin-temp-password ([Runtime.InteropServices.Marshal]::PtrToStringA
 Remove-Variable CLAVE
 gcloud run jobs create crear-admin --image $IMG --region $REGION --service-account $SA_RUN `
   --set-cloudsql-instances $CONN --set-secrets "$SECRETOS,SIEP_ADMIN_PASSWORD=admin-temp-password:latest" `
-  --set-env-vars $VARS --command python `
+  --env-vars-file $VARS --command python `
   --args "manage.py,create_admin,--email,tu-correo@unihumboldt.edu.co,--nombre,Nombre,--apellido,Apellido"
 gcloud run jobs execute crear-admin --region $REGION --wait
 gcloud run jobs delete crear-admin --region $REGION --quiet
@@ -219,10 +232,13 @@ try {
     -Headers @{ "X-Forwarded-For" = "6.6.6.6" } -Body '{"email":"nadie@example.com","password":"x"}'
 } catch { $_.Exception.Response.StatusCode }
 Invoke-RestMethod https://api.ipify.org
+# El código no lleva comas: --args las usa como separador.
+$CODIGO = "from apps.simulation.models import AuditLog as A; r = A.objects.filter(action='LOGIN_FAILED').order_by('-id').first(); print('IP_AUDITORIA=' + str(r.ip_address))"
 gcloud run jobs create consulta-ip --image $IMG --region $REGION --service-account $SA_RUN `
-  --set-cloudsql-instances $CONN --set-secrets $SECRETOS --set-env-vars $VARS --command python `
-  --args "^|^manage.py|shell|-c|from apps.simulation.models import AuditLog; print('IP_AUDITORIA', AuditLog.objects.filter(action='LOGIN_FAILED').order_by('-id').values_list('ip_address', flat=True).first())"
+  --set-cloudsql-instances $CONN --set-secrets $SECRETOS --env-vars-file $VARS --command python `
+  --args "manage.py,shell,-c,$CODIGO"
 gcloud run jobs execute consulta-ip --region $REGION --wait
+Start-Sleep -Seconds 15
 gcloud logging read "resource.type=cloud_run_job AND resource.labels.job_name=consulta-ip AND textPayload:IP_AUDITORIA" --limit 1 --format "value(textPayload)"
 gcloud run jobs delete consulta-ip --region $REGION --quiet
 ```
@@ -326,7 +342,7 @@ En la consola: *Cloud Run → metafronesis → Registros*, o *Logs Explorer* con
 El crédito restante se ve en la consola, en *Facturación → Descripción general*. En una sesión nueva de PowerShell las
 variables ya no existen: vuelve a definirlas como en el paso 3, con `$PROYECTO` igual al id real
 (`gcloud projects list`), y recupera `$NUM`, `$CONN`, `$SA_RUN`, `$HOST_APP`, `$SECRETOS` y `$VARS` con sus mismos
-comandos.
+comandos (y `Set-Variables` con los dos hosts).
 
 ## 13. Problemas comunes
 
