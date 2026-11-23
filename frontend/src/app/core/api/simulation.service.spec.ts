@@ -24,14 +24,15 @@ describe('SimulationService (API de metafronesis)', () => {
     id: A, case_version: 7, current_node: 11, status: 'IN_PROGRESS', started_at: '2026-11-01T10:00:00Z', ended_at: null, active_seconds: 0, ...extra,
   });
 
-  /** Responde las lecturas con las que `estadoDe` arma el estado del intento. */
-  function responderEstado(status = 'IN_PROGRESS', opciones = [{ id: 5, text: 'Preguntar' }]) {
-    // El título se guarda tras la primera lectura: en las demás jugadas ya no se pide la ficha.
-    http.match(`${S}/cases/7/brief`).forEach(r => r.flush({ success: true, data: { caseVersionId: 7, code: 'C', title: 'Caso siete', description: '', narrativeContext: '', learningObjectives: [], estimatedMinutes: null } }));
-    http.expectOne(`${att}/progress-map`).flush({ success: true, data: { nodes: [{ key: 'inicio', label: 'Recepción', start: true, terminal: false }], visitedNodeKeys: ['inicio'], currentNodeKey: 'inicio' } });
-    if (status === 'IN_PROGRESS') http.expectOne(`${att}/world`).flush({ success: true, data: { attemptId: A, decisionOptions: opciones } });
-    if (status === 'COMPLETED') http.expectOne(`${att}/student-report`).flush({ success: true, data: { attemptId: A, caseTitle: 'Caso siete', status: 'COMPLETED', summaryMessage: 'ok' } });
-  }
+  /** El estado completo que entrega `GET …/state`. */
+  const estado = (extra: Record<string, unknown> = {}) => ({
+    attemptId: A, caseVersionId: 7, caseTitle: 'Caso siete', status: 'IN_PROGRESS',
+    persona: { bond: 'GUARDED', activation: 'TENSE', label: 'se muestra cautelosa y tensa' },
+    currentNode: { id: 11, key: 'inicio', title: 'Recepción', narrative: 'Llega una persona.', terminal: false, options: [{ id: 5, text: 'Preguntar' }] },
+    completionReport: null, supportResources: [], ...extra,
+  });
+  const responderEstado = (extra: Record<string, unknown> = {}, id = A) =>
+    http.expectOne(`${S}/attempts/${id}/state`).flush({ success: true, data: estado(extra) });
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [SimulationService, provideHttpClient(), provideHttpClientTesting()] });
@@ -187,47 +188,40 @@ describe('SimulationService (API de metafronesis)', () => {
     });
   });
 
-  describe('intentos (formas nuevas: snake_case y estado armado en el adaptador)', () => {
-    it('startAttempt crea el intento con `case_version_id` y arma el estado con título, escena y opciones', () => {
-      let estado: SimulationAttemptState | undefined;
-      service.startAttempt(7).subscribe(r => (estado = r));
+  describe('intentos (formas nuevas: snake_case y estado desde `GET …/state`)', () => {
+    it('startAttempt crea el intento con `case_version_id` y lee el estado completo', () => {
+      let resultado: SimulationAttemptState | undefined;
+      service.startAttempt(7).subscribe(r => (resultado = r));
       const request = http.expectOne(`${S}/attempts`);
       expect(request.request.method).toBe('POST');
       expect(request.request.body).toEqual({ case_version_id: 7 });
       expect(request.request.context.get(SCREEN_HANDLES_FORBIDDEN)).toBe(true);
       request.flush(intento(), { status: 201, statusText: 'Created' });
       responderEstado();
-      expect(estado).toMatchObject({
-        attemptId: A, caseVersionId: 7, caseTitle: 'Caso siete', status: 'IN_PROGRESS',
-        currentNode: { id: 11, key: 'inicio', title: 'Recepción', terminal: false, options: [{ id: 5, text: 'Preguntar' }] },
-        completionReport: null,
-      });
-      expect('attemptToken' in (estado as object)).toBe(false);
+      expect(resultado).toMatchObject({ attemptId: A, caseTitle: 'Caso siete', currentNode: { narrative: 'Llega una persona.', options: [{ id: 5, text: 'Preguntar' }] } });
+      expect('attemptToken' in (resultado as object)).toBe(false);
     });
 
     it('al reemplazar manda el intento que la persona aceptó perder, lo reemplaza y abre otro', () => {
-      let estado: SimulationAttemptState | undefined;
-      service.startAttempt(7, true, A).subscribe(r => (estado = r));
+      let resultado: SimulationAttemptState | undefined;
+      service.startAttempt(7, true, A).subscribe(r => (resultado = r));
       const primero = http.expectOne(`${S}/attempts`);
       expect(primero.request.body).toEqual({ case_version_id: 7, expectedAttemptId: A });
       primero.flush(intento(), { status: 200, statusText: 'OK' });
       const reemplazo = http.expectOne(`${att}/replace`);
       expect(reemplazo.request.method).toBe('POST');
       reemplazo.flush(intento({ status: 'REPLACED' }));
-      const segundo = http.expectOne(`${S}/attempts`);
-      segundo.flush(intento({ id: 'att-2' }), { status: 201, statusText: 'Created' });
-      http.expectOne(`${S}/cases/7/brief`).flush({ success: true, data: { title: 'Caso siete' } });
-      http.expectOne(`${S}/attempts/att-2/progress-map`).flush({ success: true, data: { nodes: [], visitedNodeKeys: [], currentNodeKey: '' } });
-      http.expectOne(`${S}/attempts/att-2/world`).flush({ success: true, data: { decisionOptions: [] } });
-      expect(estado?.attemptId).toBe('att-2');
+      http.expectOne(`${S}/attempts`).flush(intento({ id: 'att-2' }), { status: 201, statusText: 'Created' });
+      responderEstado({ attemptId: 'att-2' }, 'att-2');
+      expect(resultado?.attemptId).toBe('att-2');
     });
 
     it('si ya había un intento abierto y no se pidió reemplazo, devuelve ese', () => {
-      let estado: SimulationAttemptState | undefined;
-      service.startAttempt(7).subscribe(r => (estado = r));
+      let resultado: SimulationAttemptState | undefined;
+      service.startAttempt(7).subscribe(r => (resultado = r));
       http.expectOne(`${S}/attempts`).flush(intento(), { status: 200, statusText: 'OK' });
       responderEstado();
-      expect(estado?.attemptId).toBe(A);
+      expect(resultado?.attemptId).toBe(A);
     });
 
     it('el 409 ATTEMPT_CHANGED del servidor llega a la pantalla sin reemplazar nada', () => {
@@ -237,7 +231,7 @@ describe('SimulationService (API de metafronesis)', () => {
       expect(fallo?.status).toBe(409);
     });
 
-    it('getActiveAttempt devuelve null sin intento abierto y el estado armado con él', () => {
+    it('getActiveAttempt devuelve null sin intento abierto y el estado con él', () => {
       let abierto: SimulationAttemptState | null | undefined;
       service.getActiveAttempt(7).subscribe(r => (abierto = r));
       http.expectOne(`${S}/cases/7/active-attempt`).flush({ success: true, data: { attemptId: null } });
@@ -245,63 +239,58 @@ describe('SimulationService (API de metafronesis)', () => {
 
       service.getActiveAttempt(7).subscribe(r => (abierto = r));
       http.expectOne(`${S}/cases/7/active-attempt`).flush({ success: true, data: { attemptId: A, caseVersionId: 7, status: 'PAUSED', currentNodeId: 11 } });
-      responderEstado('PAUSED');
-      expect(abierto).toMatchObject({ attemptId: A, status: 'PAUSED' });
+      responderEstado({ status: 'PAUSED', supportResources: ['Línea de apoyo'] });
+      expect(abierto).toMatchObject({ attemptId: A, status: 'PAUSED', supportResources: ['Línea de apoyo'] });
     });
 
-    it('getAttempt y resumeAttempt leen el intento del servidor y arman el estado (en pausa no piden el mundo)', () => {
-      let estado: SimulationAttemptState | undefined;
-      service.getAttempt(A).subscribe(r => (estado = r));
-      const lectura = http.expectOne(att);
+    it('getAttempt lee `GET …/state` sin token', () => {
+      let resultado: SimulationAttemptState | undefined;
+      service.getAttempt(A).subscribe(r => (resultado = r));
+      const lectura = http.expectOne(`${att}/state`);
       expect(lectura.request.method).toBe('GET');
       sinToken(lectura);
-      lectura.flush(intento({ status: 'PAUSED' }));
-      responderEstado('PAUSED');
-      expect(estado?.status).toBe('PAUSED');
+      lectura.flush({ success: true, data: estado({ completionReport: { summaryMessage: 'ok' }, status: 'COMPLETED' }) });
+      expect(resultado?.completionReport?.summaryMessage).toBe('ok');
+    });
 
-      service.resumeAttempt(A).subscribe(r => (estado = r));
+    it('resumeAttempt reanuda por POST y lee el estado', () => {
+      let resultado: SimulationAttemptState | undefined;
+      service.resumeAttempt(A).subscribe(r => (resultado = r));
       const reanudar = http.expectOne(`${att}/resume`);
       expect(reanudar.request.method).toBe('POST');
       sinToken(reanudar);
       reanudar.flush(intento());
       responderEstado();
-      expect(estado?.status).toBe('IN_PROGRESS');
-    });
-
-    it('un intento completado trae su informe congelado en el estado', () => {
-      let estado: SimulationAttemptState | undefined;
-      service.getAttempt(A).subscribe(r => (estado = r));
-      http.expectOne(att).flush(intento({ status: 'COMPLETED' }));
-      responderEstado('COMPLETED');
-      expect(estado?.completionReport?.summaryMessage).toBe('ok');
+      expect(resultado?.status).toBe('IN_PROGRESS');
     });
   });
 
   describe('decisiones', () => {
-    it('chooseDecision manda `decision_option_id` y `request_id`; con reintento no hay avance y la reacción llega', () => {
+    it('chooseDecision manda `decision_option_id` y `request_id` y devuelve el estado, la consecuencia, el reintento y la reacción', () => {
       let resultado: unknown;
       service.chooseDecision(A, 5, 'req-1').subscribe(r => (resultado = r));
       const request = http.expectOne(`${att}/decisions`);
       expect(request.request.method).toBe('POST');
       expect(request.request.body).toEqual({ decision_option_id: 5, request_id: 'req-1' });
       sinToken(request);
-      request.flush({ attempt_id: A, node_id: 11, status: 'IN_PROGRESS', retry_required: true, reaction: { line: 'Mmm', emotion: null, gesture: 'baja-la-mirada', objectKey: null } });
-      http.expectOne(att).flush(intento());
-      responderEstado();
+      request.flush({
+        attempt_id: A, retry_required: false, attempt: estado({ currentNode: { id: 12, key: 'b', title: 'B', narrative: '', terminal: false, options: [] } }),
+        consequence: { text: 'Ella respira hondo.', source: 'OPTION' }, retry: { allowed: true, message: 'Otra vez' },
+        reaction: { line: 'Mmm', emotion: null, gesture: 'baja-la-mirada', objectKey: null },
+      });
       expect(resultado).toMatchObject({
-        attemptId: A, consequence: null, retry: { allowed: true, message: '' }, reaction: { line: 'Mmm', gesture: 'baja-la-mirada' },
+        attemptId: A, currentNode: { id: 12 }, consequence: { text: 'Ella respira hondo.', source: 'OPTION' },
+        retry: { allowed: true, message: 'Otra vez' }, reaction: { gesture: 'baja-la-mirada' },
       });
     });
 
-    it('sin requestId genera uno (el servidor lo exige) y sin reintento `retry` es null', () => {
-      let resultado: { retry: unknown; reaction: unknown } | undefined;
+    it('sin requestId genera uno (el servidor lo exige); sin reintento ni reacción llegan null', () => {
+      let resultado: { retry: unknown; reaction: unknown; consequence: unknown } | undefined;
       service.chooseDecision(A, 5).subscribe(r => (resultado = r as never));
       const request = http.expectOne(`${att}/decisions`);
       expect((request.request.body as { request_id: string }).request_id).toMatch(/\S+/);
-      request.flush({ attempt_id: A, node_id: 12, status: 'IN_PROGRESS', retry_required: false });
-      http.expectOne(att).flush(intento({ current_node: 12 }));
-      responderEstado();
-      expect(resultado).toMatchObject({ retry: null, reaction: null });
+      request.flush({ attempt: estado() });
+      expect(resultado).toMatchObject({ retry: null, reaction: null, consequence: null });
     });
   });
 });

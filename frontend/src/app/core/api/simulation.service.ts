@@ -11,18 +11,17 @@ import {
   CaseAccessReason,
   CaseBrief,
   CatalogItem,
+  DecisionConsequence,
   DecisionReaction,
   DecisionRetry,
   HintState,
   InteractionResult,
   OwnerEvaluation,
-  Persona,
   ProgressMapState,
   ScenarioConfig,
   SimulationAttemptState,
   SimulationCaseSummary,
   SimulationDecisionResult,
-  SimulationNodeState,
   SimulationWorldState,
   StudentAttemptSummary,
   ToolUseResult,
@@ -83,10 +82,9 @@ interface BriefWire {
 
 /** La respuesta de una decisión (`POST …/decisions`, sin sobre): solo el resultado de la jugada, no el estado del intento. */
 interface DecisionWire {
-  attempt_id: string;
-  node_id: number;
-  status: string;
-  retry_required: boolean;
+  attempt: SimulationAttemptState;
+  consequence?: DecisionConsequence | null;
+  retry?: DecisionRetry | null;
   reaction?: DecisionReaction | null;
 }
 
@@ -96,9 +94,6 @@ interface PositionAck {
   map: { key: string };
   player: { x: number; y: number };
 }
-
-/** La persona que usa el servidor al abrir un caso (`INITIAL_PERSONA`: vínculo cauto, activación tensa), mientras no mande otra. */
-const PERSONA_INICIAL: Persona = { bond: 'GUARDED', activation: 'TENSE', label: 'se muestra cautelosa y tensa' };
 
 function segundosEntre(desde: string | null | undefined, hasta: string | null | undefined): number | null {
   if (!desde || !hasta) return null;
@@ -112,9 +107,7 @@ function segundosEntre(desde: string | null | undefined, hasta: string | null | 
  * el servidor de metafronesis. La sesión es el JWT: no existe `attemptToken`. Las operaciones de autoría y las del
  * docente están en sus propios adaptadores (Interface Segregation).
  *
- * El servidor no tiene un «estado del intento» completo (título del caso, escena con sus opciones, persona, informe):
- * `estadoDe()` lo arma con lo que sí existe (ficha, mapa de progreso, mundo y reporte) para que las pantallas sigan
- * leyendo `SimulationAttemptState`.
+ * El estado del intento lo entrega el servidor completo (`GET …/state`) y la respuesta de una decisión lo trae en `attempt`.
  */
 @Injectable({ providedIn: 'root' })
 export class SimulationService {
@@ -123,67 +116,18 @@ export class SimulationService {
   /** Título de cada versión, para no pedir la ficha en cada jugada. */
   private readonly titulos = new Map<number, string>();
 
-  // ───────────────────────────── Armado del estado del intento ─────────────────────────────
+  // ───────────────────────────── Estado del intento ─────────────────────────────
 
-  private tituloDe(caseVersionId: number): Observable<string> {
-    const guardado = this.titulos.get(caseVersionId);
-    if (guardado !== undefined) return of(guardado);
-    return this.http.get<ApiDataResponse<BriefWire>>(`${this.API}/cases/${caseVersionId}/brief`, {
-      context: new HttpContext().set(SCREEN_HANDLES_FORBIDDEN, true),
-    }).pipe(
-      map(response => response.data.title),
-      catchError(() => of('')),
-      map(titulo => { if (titulo) this.titulos.set(caseVersionId, titulo); return titulo; }),
-    );
-  }
-
-  /** Arma `SimulationAttemptState` desde el intento del servidor, leyendo ficha, progreso, mundo y reporte según haga falta. */
-  private estadoDe(wire: { attemptId: string; caseVersionId: number; status: string; currentNodeId: number | null }): Observable<SimulationAttemptState> {
-    const status = wire.status as SimulationAttemptState['status'];
-    const jugando = status === 'IN_PROGRESS';
-    return forkJoin({
-      titulo: this.tituloDe(wire.caseVersionId),
-      progreso: this.getProgressMap(wire.attemptId).pipe(catchError(() => of(null as ProgressMapState | null))),
-      mundo: jugando ? this.getWorld(wire.attemptId).pipe(catchError(() => of(null as SimulationWorldState | null))) : of(null),
-      informe: status === 'COMPLETED' ? this.studentReport(wire.attemptId).pipe(catchError(() => of(null))) : of(null),
-    }).pipe(map(({ titulo, progreso, mundo, informe }) => {
-      const nodo = progreso?.nodes.find(item => item.key === progreso.currentNodeKey);
-      const escena: SimulationNodeState = {
-        id: wire.currentNodeId ?? 0,
-        key: progreso?.currentNodeKey ?? '',
-        title: nodo?.label ?? '',
-        narrative: '',
-        supportResources: [],
-        requiredTools: [],
-        sensitiveContent: false,
-        safeExitRequired: false,
-        warningMessage: null,
-        terminal: nodo?.terminal ?? false,
-        intensity: 'LOW',
-        options: mundo?.decisionOptions ?? [],
-      };
-      return {
-        attemptId: wire.attemptId,
-        caseVersionId: wire.caseVersionId,
-        caseTitle: titulo,
-        status,
-        persona: PERSONA_INICIAL,
-        currentNode: escena,
-        completionReport: informe,
-        supportResources: [],
-      };
-    }));
-  }
-
-  private estadoDeIntento(wire: AttemptWire): Observable<SimulationAttemptState> {
-    return this.estadoDe({ attemptId: wire.id, caseVersionId: wire.case_version, status: wire.status, currentNodeId: wire.current_node });
+  /** El estado completo del intento (`GET …/state`): escena con narrativa y opciones, persona, informe y recursos de apoyo. */
+  private estadoDe(attemptId: string): Observable<SimulationAttemptState> {
+    return this.http.get<ApiDataResponse<SimulationAttemptState>>(`${this.API}/attempts/${attemptId}/state`).pipe(map(response => response.data));
   }
 
   // ───────────────────────────── Catálogo, casos y ficha ─────────────────────────────
 
   /** El intento tal como está ahora; lo usa el juego para retomar el estado. */
   getAttempt(attemptId: string): Observable<SimulationAttemptState> {
-    return this.http.get<AttemptWire>(`${this.API}/attempts/${attemptId}`).pipe(switchMap(wire => this.estadoDeIntento(wire)));
+    return this.estadoDe(attemptId);
   }
 
   /**
@@ -263,10 +207,10 @@ export class SimulationService {
       switchMap(respuesta => {
         const wire = respuesta.body as AttemptWire;
         // 201 = intento nuevo; 200 = ya había uno abierto, que solo se reemplaza si la persona lo pidió.
-        if (!forceNew || respuesta.status === 201) return this.estadoDeIntento(wire);
+        if (!forceNew || respuesta.status === 201) return this.estadoDe(wire.id);
         return this.http.post<AttemptWire>(`${this.API}/attempts/${wire.id}/replace`, {}).pipe(
           switchMap(() => abrir()),
-          switchMap(nuevo => this.estadoDeIntento(nuevo.body as AttemptWire)),
+          switchMap(nuevo => this.estadoDe((nuevo.body as AttemptWire).id)),
         );
       }),
     );
@@ -277,12 +221,7 @@ export class SimulationService {
       switchMap(response => {
         const abierto = response.data;
         if (!abierto.attemptId) return of(null);
-        return this.estadoDe({
-          attemptId: abierto.attemptId,
-          caseVersionId: abierto.caseVersionId ?? caseVersionId,
-          status: abierto.status ?? 'IN_PROGRESS',
-          currentNodeId: abierto.currentNodeId ?? null,
-        });
+        return this.estadoDe(abierto.attemptId);
       }),
     );
   }
@@ -290,7 +229,7 @@ export class SimulationService {
   /** Reanuda un intento en pausa segura (mismo attemptId, estado intacto). */
   resumeAttempt(attemptId: string): Observable<SimulationAttemptState> {
     return this.http.post<AttemptWire>(`${this.API}/attempts/${attemptId}/resume`, {})
-      .pipe(switchMap(wire => this.estadoDeIntento(wire)));
+      .pipe(switchMap(wire => this.estadoDe(wire.id)));
   }
 
   /** Los intentos de la persona, con el título del caso (la API del historial no lo trae: sale del catálogo y de la ficha). */
@@ -401,17 +340,12 @@ export class SimulationService {
     return this.http.post<DecisionWire>(`${this.API}/attempts/${attemptId}/decisions`, {
       decision_option_id: decisionOptionId,
       request_id: solicitud,
-    }).pipe(
-      switchMap(resultado => {
-        const retry: DecisionRetry | null = resultado.retry_required ? { allowed: true, message: '' } : null;
-        return this.getAttempt(attemptId).pipe(map(estado => ({
-          ...estado,
-          consequence: null,
-          retry,
-          reaction: resultado.reaction ?? null,
-        })));
-      }),
-    );
+    }).pipe(map(({ attempt, consequence, retry, reaction }) => ({
+      ...attempt,
+      consequence: consequence ?? null,
+      retry: retry ?? null,
+      reaction: reaction ?? null,
+    })));
   }
 
   saveReflection(attemptId: string, nodeId: number, text: string): Observable<{ nodeId: number; locked: boolean }> {
