@@ -20,7 +20,7 @@ describe('dependencias de un borrado', () => {
     expect(respuestaEnBlanco(c, respuesta({ clase: 'RISKY' }))).toBe(false);
   });
 
-  it('sin texto pero con competencias, o la ofrece un objeto de la sala, no está en blanco: pide confirmación (Codex, hallazgo 2)', () => {
+  it('sin texto pero con competencias, o la ofrece un objeto de la sala, no está en blanco: pide confirmación', () => {
     const c = caso();
     expect(respuestaEnBlanco(c, respuesta({ efectos: { competencias: ['C1'] } }))).toBe(false);
     expect(respuestaEnBlanco(c, respuesta({ efectos: { competencias: {} } }))).toBe(true);

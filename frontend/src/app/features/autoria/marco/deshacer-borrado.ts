@@ -15,7 +15,7 @@ export interface AvisoDeshacer {
 
 /**
  * «Deshacer» de los borrados del guion que nada del caso referencia: una línea, una frase al acercarse y una pista
- * (EDITOR.md §4.6, revisado tras Codex, hallazgo 5). El borrado va al store EN EL ACTO —así el modelo, los pendientes, la
+ * (EDITOR.md §4.6). El borrado va al store EN EL ACTO —así el modelo, los pendientes, la
  * vista del estudiante y el servidor nunca difieren de la pantalla— y durante 8 s se ofrece «Deshacer», que VUELVE A CREAR
  * el elemento con la API pública del store (la línea con `agregarLinea` + `editarLinea` + `moverLinea` hasta su sitio; las
  * frases y las pistas se vuelven a insertar en su sitio, sobre la lista de ese momento). Que lo recreado tenga otro
@@ -60,7 +60,7 @@ export class DeshacerBorrado {
   /**
    * Borra una frase al acercarse (por su posición) y ofrece volver a ponerla. Se guarda SOLO la frase y su sitio, no la lista
    * entera: si entre el borrado y «Deshacer» la docente edita o agrega otra frase, restaurar la lista vieja se llevaría esos
-   * cambios (revisión de Codex de la pasada final, hallazgo 1).
+   * cambios.
    */
   comentario(escenaId: string, indice: number): void {
     const antes = this.store.caso()?.escenas.find((e) => e.id === escenaId)?.comentarios;

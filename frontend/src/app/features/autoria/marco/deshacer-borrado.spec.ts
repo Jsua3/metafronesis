@@ -91,7 +91,7 @@ describe('DeshacerBorrado', () => {
     expect(sinIds(store.caso())).toEqual(antes);
   });
 
-  it('«Deshacer» una frase no se lleva lo que se editó o agregó después del borrado (revisión de Codex, hallazgo 1)', () => {
+  it('«Deshacer» una frase no se lleva lo que se editó o agregó después del borrado', () => {
     const { store, escenaId, deshacer } = montar();
     const p = 'psicologa-bienestar';
     store.fijarComentarios(escenaId, [{ personaje: p, linea: 'Uno.' }, { personaje: p, linea: 'Dos.' }]);
