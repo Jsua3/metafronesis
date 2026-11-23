@@ -1,8 +1,19 @@
 import { navItemsFor, rolesFor } from './nav-items';
 
 describe('navegación de la ola 1', () => {
-  it.each([['ESTUDIANTE', '/portal/invitaciones'], ['PROFESOR', '/portal/grupos'], ['ADMIN', '/portal/admin/usuarios']] as const)('%s ve su destino', (rol, ruta) => {
-    expect(navItemsFor(rol).map(item => item.route)).toEqual([ruta]);
+  it('ESTUDIANTE ve su destino', () => {
+    expect(navItemsFor('ESTUDIANTE').map(item => item.route)).toEqual(['/portal/invitaciones']);
+  });
+  it('PROFESOR ve Inicio, Revisión, Grupos y Rúbricas, en ese orden', () => {
+    expect(navItemsFor('PROFESOR').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/docente/trazabilidad', '/portal/grupos', '/portal/rubricas']);
+  });
+  it('ADMIN ve Inicio, Usuarios, Revisión y Rúbricas, en ese orden', () => {
+    expect(navItemsFor('ADMIN').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/admin/usuarios', '/portal/docente/trazabilidad', '/portal/rubricas']);
+  });
+  it('Revisión y Rúbricas son del personal y Rúbricas se pliega al desplazarse', () => {
+    expect(rolesFor('trazabilidad')).toEqual(['PROFESOR', 'ADMIN']);
+    expect(rolesFor('rubricas')).toEqual(['PROFESOR', 'ADMIN']);
+    expect(navItemsFor('PROFESOR').filter(item => item.fold.includes('PROFESOR')).map(item => item.id)).toEqual(['rubricas']);
   });
   it('rechaza destinos desconocidos', () => expect(() => rolesFor('no-existe')).toThrow());
 });

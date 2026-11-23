@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
 import { AuthService } from './core/auth/auth.service';
 import { authGuard, passwordChangeGuard, roleGuard } from './core/auth/auth.guard';
+import { canLeaveGuard } from './core/navigation/can-leave.guard';
 import { rolesFor } from './shared/layout/nav-items';
 
 /**
@@ -23,7 +24,13 @@ const DEV_ONLY_ROUTES: Routes = (typeof ngDevMode === 'undefined' || ngDevMode)
 
 function destinoInicial(): string {
   const rol = inject(AuthService).currentUser()?.role;
-  return rol === 'ADMIN' ? '/portal/admin/usuarios' : rol === 'PROFESOR' ? '/portal/grupos' : '/portal/invitaciones';
+  return rol === 'ADMIN' || rol === 'PROFESOR' ? '/portal/dashboard' : '/portal/invitaciones';
+}
+
+/** El inicio del docente y de la administración: el del estudiante es otra ruta con su propio `canMatch`. */
+function esPersonal(): boolean {
+  const rol = inject(AuthService).currentUser()?.role;
+  return rol === 'ADMIN' || rol === 'PROFESOR';
 }
 
 export const routes: Routes = [
@@ -51,7 +58,15 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layout/shell.component').then(m => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: () => destinoInicial() },
-      { path: 'dashboard', pathMatch: 'full', redirectTo: () => destinoInicial() },
+      {
+        path: 'dashboard',
+        pathMatch: 'full',
+        title: 'Inicio',
+        canMatch: [esPersonal],
+        loadComponent: () => import('./features/dashboard/staff-dashboard.component').then(m => m.StaffDashboardComponent)
+      },
+      // Sin otro inicio que coincida (el del estudiante lo declara con su propio `canMatch`), a la bandeja de grupos.
+      { path: 'dashboard', pathMatch: 'full', redirectTo: '/portal/invitaciones' },
       {
         // E2-10 (C5): el estudiante acepta, rechaza o deja los grupos a los que lo invitan.
         path: 'invitaciones',
@@ -72,6 +87,23 @@ export const routes: Routes = [
         title: 'Grupos',
         canActivate: [roleGuard(...rolesFor('grupos'))],
         loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
+      },
+      {
+        path: 'docente/trazabilidad',
+        title: 'Revisión formativa',
+        canActivate: [roleGuard(...rolesFor('trazabilidad'))],
+        canDeactivate: [canLeaveGuard],
+        loadComponent: () => import('./features/simulator/instructor-trace.component').then(m => m.InstructorTraceComponent)
+      },
+      {
+        path: 'rubricas',
+        title: 'Rúbricas',
+        canActivate: [roleGuard(...rolesFor('rubricas'))],
+        canDeactivate: [canLeaveGuard],
+        // Biblioteca y editor viven en la misma ruta (`?rubrica=`); la guardia de salida corre también al cambiar ese
+        // parámetro, para preguntar antes de dejar una rúbrica con cambios sin guardar.
+        runGuardsAndResolvers: 'paramsOrQueryParamsChange',
+        loadComponent: () => import('./features/admin/rubrics.component').then(m => m.RubricsComponent)
       },
       {
         path: 'admin/usuarios',
@@ -110,6 +142,8 @@ export const routes: Routes = [
     loadComponent: () => import('./features/public/offline.component').then(m => m.OfflineComponent)
   },
   { path: 'dashboard', redirectTo: 'portal/dashboard', pathMatch: 'full' },
+  { path: 'docente', redirectTo: 'portal/docente/trazabilidad', pathMatch: 'full' },
+  { path: 'rubricas', redirectTo: 'portal/rubricas', pathMatch: 'full' },
   { path: 'grupos', redirectTo: 'portal/grupos', pathMatch: 'full' },
   { path: 'usuarios', redirectTo: 'portal/admin/usuarios', pathMatch: 'full' },
   ...DEV_ONLY_ROUTES,

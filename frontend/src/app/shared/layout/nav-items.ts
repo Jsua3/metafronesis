@@ -33,9 +33,15 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { id: 'usuarios', label: 'Usuarios', route: '/portal/admin/usuarios', icon: 'manage_accounts', roles: ['ADMIN'], fold: [], order: 10 },
-  { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 20 },
-  { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 30 },
+  { id: 'panel', label: 'Inicio', route: '/portal/dashboard', icon: 'home', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 10 },
+  { id: 'usuarios', label: 'Usuarios', route: '/portal/admin/usuarios', icon: 'manage_accounts', roles: ['ADMIN'], fold: [], order: 15 },
+  // «Revisión» (antes «Trazabilidad», que se partía en dos líneas en las pestañas). Para el administrador es secundaria
+  // y va después de «Casos».
+  { id: 'trazabilidad', label: 'Revisión', route: '/portal/docente/trazabilidad', icon: 'fact_check', roles: ['PROFESOR', 'ADMIN'], fold: ['ADMIN'], order: 20, orden: { ADMIN: 35 } },
+  { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
+  // E2-10 (C5): la bandeja del estudiante. Se llama «Grupos» porque muestra sus invitaciones Y sus membresías.
+  { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 40 },
+  { id: 'rubricas', label: 'Rúbricas', route: '/portal/rubricas', icon: 'grading', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 60 },
 ];
 
 /** Posición del destino para un rol. */

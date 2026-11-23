@@ -1,0 +1,184 @@
+<!-- Cabecera ilustrada (ronda 3), el mismo armazón del inicio del estudiante: para el docente, el escritorio de la
+     orientadora con tres herramientas del simulador; para la administración, el archivo de expedientes. -->
+<ui-cabecera-ilustrada [eyebrow]="isAdmin() ? 'Administración' : 'Docencia'" [title]="titulo()" [description]="descripcion()"
+  [escena]="isAdmin() ? 'archivo' : 'orientadora'" />
+<p class="ds-sr-only" role="status">{{ loading() ? 'Cargando el inicio…' : '' }}</p>
+@if (state() === 'loading' || state() === 'pending') {
+  <div aria-busy="true"><ui-skeleton shape="row" /><ui-skeleton shape="row" /></div>
+} @else {
+  @if (!isAdmin()) {
+    <section aria-labelledby="revision-titulo">
+      <div class="encabezado">
+        <div><p class="epigrafe">Tu bandeja</p><h2 id="revision-titulo">Por revisar</h2></div>
+      </div>
+      <div class="panel protagonista">
+        @if (fallo('revision')) {
+          <ui-error-state message="No pudimos cargar los recorridos por revisar." (retry)="reload()" />
+        } @else if (!totalRevision()) {
+          <p>Nada por revisar. Cuando un estudiante termine un caso, aparecerá aquí.</p>
+        } @else {
+          <ul class="filas">
+            @for (intento of revision()?.items; track intento.attemptId) {
+              <li class="fila">
+                <div>
+                  <strong>{{ intento.studentAlias }}</strong>
+                  <p>{{ intento.caseTitle }}@if (numeroIntento()[intento.attemptId]; as numero) { · {{ numero }}}</p>
+                  <small>{{ terminoTexto(intento.endedAt) }}</small>
+                </div>
+                <a ui-button variant="secondary" routerLink="/portal/docente/trazabilidad" [queryParams]="{ intento: intento.attemptId }">Revisar<span class="ds-sr-only"> {{ intento.caseTitle }} de {{ intento.studentAlias }}@if (numeroIntento()[intento.attemptId]; as numero) {, {{ numero }}}</span></a>
+              </li>
+            }
+          </ul>
+          <a class="enlace" routerLink="/portal/docente/trazabilidad" [queryParams]="{ evaluacion: 'pendiente' }">Ver todos ({{ totalRevision() }}) →</a>
+        }
+      </div>
+    </section>
+
+    <section aria-labelledby="grupos-titulo">
+      <div class="encabezado">
+        <div><p class="epigrafe">Seguimiento</p><h2 id="grupos-titulo">Tus grupos</h2></div>
+        <a class="enlace" routerLink="/portal/grupos">Ver grupos →</a>
+      </div>
+      @if (fallo('grupos')) { <ui-error-state message="No pudimos cargar todos los datos de tus grupos." (retry)="reload()" /> }
+      @if (!fallo('grupos') && !grupos().length) {
+        <div class="panel"><ui-empty-state figura="docente-universidad" title="Aún no tienes grupos" description="Crea un grupo para acompañar a tus estudiantes." actionLabel="Crear grupo" (action)="irGrupos()" /></div>
+      } @else if (grupos().length) {
+        <div class="rejilla">
+          @for (vista of grupos(); track vista.grupo.id) {
+            <article class="panel">
+              <div>
+                <h3>{{ vista.grupo.nombre }}</h3>
+                <p>{{ cantidad(vista.grupo.totalEstudiantes, 'estudiante', 'estudiantes') }}</p>
+              </div>
+              @if (vista.asignaciones === null) {
+                <p>No pudimos cargar las asignaciones.</p>
+              } @else if (!vista.asignaciones.length) {
+                <p>Sin casos asignados.</p>
+              } @else {
+                <ul class="casos">
+                  @for (asignacion of vista.asignaciones; track asignacion.id) {
+                    <li>
+                      <strong>{{ nombreCaso(asignacion.caseVersionId) }}</strong>
+                      <span>{{ cierre(asignacion.closesAt) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+              <div class="acciones">
+                <a ui-button variant="secondary" [routerLink]="['/portal/grupos', vista.grupo.id]">Ver grupo</a>
+                <!-- «Ver reporte» vuelve con el backend de reportes (`/portal/reportes`): hoy no hay a dónde llevar. -->
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    @if (fallo('casos')) {
+      <section aria-labelledby="edicion-titulo">
+        <div class="encabezado"><div><p class="epigrafe">Autoría</p><h2 id="edicion-titulo">Tus casos en edición</h2></div></div>
+        <ui-error-state message="No pudimos cargar tus casos." (retry)="reload()" /></section>
+    } @else if (casosEdicion().length) {
+      <section aria-labelledby="edicion-titulo">
+        <div class="encabezado">
+          <div><p class="epigrafe">Autoría</p><h2 id="edicion-titulo">Tus casos en edición</h2></div>
+          <a class="enlace" routerLink="/portal/casos">Ver casos →</a>
+        </div>
+        <div class="panel">
+          <ul class="filas">
+            @for (caso of casosEdicion(); track caso.caseVersionId) {
+              <li class="fila">
+                <div><strong>{{ caso.title }}</strong><p>{{ caso.status === 'DRAFT' ? 'Borrador' : 'En revisión' }}</p></div>
+                <a ui-button variant="secondary" [routerLink]="['/portal/casos', caso.caseVersionId, 'editor']">{{ caso.status === 'DRAFT' ? 'Seguir editando' : 'Ver revisión' }}</a>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
+  } @else {
+    <section aria-labelledby="atender-titulo">
+      <div class="encabezado"><div><p class="epigrafe">Pendientes</p><h2 id="atender-titulo">Por atender</h2></div></div>
+      @if (!failedSources().size && !totalAdmin()) {
+        <div class="panel"><ui-empty-state figura="funcionaria-recepcion" title="Todo al día" description="No hay solicitudes, cuentas ni casos por aprobar." /></div>
+      }
+      <div class="rejilla">
+        @if (fallo('solicitudes')) {
+          <div class="panel"><h3>Solicitudes de acceso</h3><ui-error-state message="No pudimos cargar las solicitudes." (retry)="reload()" /></div>
+        } @else if (solicitudes().length) {
+          <article class="panel protagonista">
+            <h3>Solicitudes de acceso ({{ solicitudes().length }})</h3>
+            <ul class="filas">
+              @for (solicitud of solicitudes().slice(0, 3); track solicitud.id) {
+                <li class="fila">
+                  <div>
+                    <strong>{{ solicitud.nombre }} {{ solicitud.apellido }}</strong>
+                    <p class="correo">{{ solicitud.email }}</p>
+                    <small>Pidió acceso el {{ fecha(solicitud.createdAt) }}</small>
+                  </div>
+                  <div class="acciones">
+                    <a ui-button variant="secondary" routerLink="/portal/admin/usuarios" [queryParams]="{ vista: 'solicitudes' }">Crear cuenta<span class="ds-sr-only"> para {{ solicitud.nombre }} {{ solicitud.apellido }}</span></a>
+                    <button ui-button variant="ghost" type="button" [disabled]="descartando() !== null" (click)="descartar(solicitud)">Descartar<span class="ds-sr-only"> la solicitud de {{ solicitud.nombre }} {{ solicitud.apellido }}</span></button>
+                  </div>
+                </li>
+              }
+            </ul>
+            <a class="enlace" routerLink="/portal/admin/usuarios" [queryParams]="{ vista: 'solicitudes' }">Ver todas →</a>
+          </article>
+        }
+        @if (fallo('usuarios')) {
+          <div class="panel"><h3>Cuentas por aprobar</h3><ui-error-state message="No pudimos cargar las cuentas." (retry)="reload()" /></div>
+        } @else if (pendientesCuentas()) {
+          <article class="panel protagonista">
+            <h3>Cuentas por aprobar ({{ pendientesCuentas() }})</h3>
+            <p>{{ cantidad(pendientesCuentas(), 'cuenta importada espera', 'cuentas importadas esperan') }} tu aprobación.</p>
+            <a ui-button variant="secondary" routerLink="/portal/admin/usuarios" [queryParams]="{ vista: 'por-aprobar' }">Aprobar {{ cantidad(pendientesCuentas(), 'cuenta', 'cuentas') }}</a>
+          </article>
+        }
+        @if (fallo('casos')) {
+          <div class="panel"><h3>Casos por aprobar</h3><ui-error-state message="No pudimos cargar los casos." (retry)="reload()" /></div>
+        } @else if (casosRevision().length) {
+          <article class="panel protagonista">
+            <h3>Casos por aprobar ({{ casosRevision().length }})</h3>
+            <ul class="filas">
+              @for (caso of casosRevision().slice(0, 3); track caso.caseVersionId) {
+                <li class="fila">
+                  <div><strong>{{ caso.title }}</strong><p>Versión {{ caso.semanticVersion }}</p></div>
+                  <a ui-button variant="secondary" [routerLink]="['/portal/casos', caso.caseVersionId, 'editor']">Revisar<span class="ds-sr-only"> {{ caso.title }}</span></a>
+                </li>
+              }
+            </ul>
+            @if (casosRevision().length > 3) { <a class="enlace" routerLink="/portal/casos">Ver todos →</a> }
+          </article>
+        }
+      </div>
+    </section>
+    <section aria-labelledby="actividad-titulo">
+      <div class="encabezado"><div><p class="epigrafe">Registro</p><h2 id="actividad-titulo">Actividad reciente</h2></div></div>
+      @if (fallo('auditoria')) {
+        <div class="panel"><ui-error-state message="No pudimos cargar el registro de actividad." (retry)="reload()" /></div>
+      } @else if (!actividad().length) {
+        <div class="panel"><p>Todavía no hay actividad registrada.</p></div>
+      } @else {
+        <div class="panel">
+          <ul class="filas">
+            @for (entrada of actividad(); track entrada.id) {
+              <li class="fila">
+                <div><strong>{{ entrada.action }}</strong><p>{{ entrada.actorId ? 'Cuenta n.º ' + entrada.actorId : 'Sin cuenta asociada' }}</p></div>
+                <small>{{ fechaHora(entrada.occurredAt) }}</small>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+    @if (!fallo('usuarios')) {
+      <section class="panel sistema" aria-labelledby="sistema-titulo">
+        <!-- Un resumen, no un pendiente: va como rótulo de sección, por debajo de «Por atender» en la jerarquía. -->
+        <h2 id="sistema-titulo" class="epigrafe">El sistema en una línea</h2>
+        <p>{{ cantidad(cuentasActivas().length, 'cuenta activa', 'cuentas activas') }}: {{ cantidad(contarRol('ESTUDIANTE'), 'estudiante', 'estudiantes') }}, {{ cantidad(contarRol('PROFESOR'), 'docente', 'docentes') }} y {{ cantidad(contarRol('ADMIN'), 'administrador', 'administradores') }}.</p>
+        <a class="enlace" routerLink="/portal/admin/usuarios">Gestionar usuarios →</a>
+      </section>
+    }
+  }
+}
