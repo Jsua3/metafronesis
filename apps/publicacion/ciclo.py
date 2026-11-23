@@ -5,7 +5,7 @@ from django.db import transaction
 from django.http import Http404
 from django.utils import timezone
 
-from apps.simulation.models import CaseVersion
+from apps.simulation.models import CaseReview, CaseVersion, ReviewDecision, ReviewReason
 from apps.simulation.services.audit_service import auditable
 from shared.exceptions import ApiError
 from shared.policies import can
@@ -63,6 +63,28 @@ def publicar(admin, case_version_id):
     version.status = CaseVersionStatus.PUBLISHED
     version.published_at = timezone.now()
     version.save(update_fields=['status', 'published_at', 'validated_at', 'definition_hash'])
+    return version
+
+
+@auditable('CASE_REJECTED', 'CASE_VERSION', resource_id_param_index=1)
+@transaction.atomic
+def devolver_a_borrador(admin, case_version_id, motivo, nota):
+    """El administrador devuelve una versión en revisión a borrador, con un motivo (FORMA o CONTENIDO) y una nota para quien la autora."""
+    version = version_accesible(admin, case_version_id, 'publish', lock=True)
+    _exigir_estado(version, (CaseVersionStatus.IN_REVIEW,))
+    nota = (nota or '').strip()
+    if motivo not in ReviewReason.values:
+        raise ApiError('VALIDATION_ERROR', 'El motivo debe ser FORMA o CONTENIDO.', 400, field='reason')
+    if not nota:
+        raise ApiError('VALIDATION_ERROR', 'Devolver un caso a borrador exige una nota para quien lo autora.', 400, field='note')
+    CaseReview.objects.create(case_version=version, requested_by=version.simulation_case.created_by, decided_by=admin,
+                              decided_at=timezone.now(), decision=ReviewDecision.REJECTED, reason=motivo, note=nota)
+    version.status = CaseVersionStatus.DRAFT
+    version.validated_at = None
+    version.definition_hash = None
+    version.version += 1
+    version.last_edited_by = admin
+    version.save(update_fields=['status', 'validated_at', 'definition_hash', 'version', 'last_edited_by'])
     return version
 
 

@@ -138,7 +138,7 @@ def _crear_borrador(actor, esqueleto: dict, escenas: dict, lugar: dict) -> int:
     mapas = {mapa.node_id: mapa for mapa in SceneMap.objects.filter(case_version=version)}
     for posicion, outline in enumerate(esqueleto["escenas"]):
         escrita = escenas[outline["sala"]]
-        nodo = copia.nodos[outline["sala"]]
+        nodo = copia.nodo_por_sala[outline["sala"]]
         nodo.title, nodo.narrative, nodo.decision_prompt = outline["titulo"], escrita["narracion"], escrita["pregunta"]
         nodo.intensity = outline["intensidad"]
         nodo.sensitive_content = outline["intensidad"] == Intensity.HIGH.value
@@ -159,12 +159,12 @@ def _crear_borrador(actor, esqueleto: dict, escenas: dict, lugar: dict) -> int:
 
 def _decisiones_y_guion(version, copia, mapas, outline: dict, escrita: dict, hitos_del_caso: list[str]) -> None:
     sala = outline["sala"]
-    nodo = copia.nodos[sala]
+    nodo = copia.nodo_por_sala[sala]
     opciones = []
     for opcion in escrita["opciones"]:
         opciones.append(DecisionOption.objects.create(
             case_version=version, option_key=f"{sala}-{opcion['clave']}", source_node=nodo,
-            target_node=copia.nodos[opcion["destino"]], text=opcion["texto"], immediate_feedback=opcion["retroalimentacion"],
+            target_node=copia.nodo_por_sala[opcion["destino"]], text=opcion["texto"], immediate_feedback=opcion["retroalimentacion"],
             feedback_text=opcion["retroalimentacion"], prohibition_reason=opcion["razonProhibicion"] or None,
             response_class=opcion["clase"], effects=json.dumps(_efectos(opcion, hitos_del_caso), ensure_ascii=False),
             requires_json=json.dumps(opcion["requiere"], ensure_ascii=False),
@@ -174,7 +174,7 @@ def _decisiones_y_guion(version, copia, mapas, outline: dict, escrita: dict, hit
     persona.metadata_json = json.dumps({**json.loads(persona.metadata_json), "personaClave": True}, ensure_ascii=False)
     persona.ai_suggested = True
     persona.save(update_fields=["metadata_json", "ai_suggested"])
-    nombres = copia.personajes
+    nombres = copia.nombre_por_personaje
     arbol = DialogueTree(
         scene_map=mapas[nodo.pk], map_object=persona, tree_key=f"guion-{sala}",
         speaker_name=nombres[escrita["lineas"][0]["personaje"]], emotion=EMOCION_DEL_GUION,

@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.views import APIView
 
-from apps.simulation.services import bitacora
+from apps.simulation.services import bitacora, estado_intento
 from shared.openapi import envelope_of, error_responses
 from shared.permissions import policy_permission
 from shared.response import api_ok
@@ -59,3 +59,11 @@ class SalidaSegura(APIView):
         solicitud = SolicitudSalida(data=request.data)
         solicitud.is_valid(raise_exception=True)
         return api_ok(bitacora.salida_segura(request.user, pk, solicitud.validated_data.get("reason")))
+
+
+class EstadoIntento(APIView):
+    permission_classes = [policy_permission("attempt", "play")]
+
+    @extend_schema(responses={200: envelope_of(RespuestaSalida), **error_responses(401, 403, 404)})
+    def get(self, request, pk):
+        return api_ok(estado_intento.leer(request.user, pk))

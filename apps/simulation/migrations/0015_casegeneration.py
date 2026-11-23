@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('simulation', '0012_rubriccriterion_level_descriptors'),
+        ('simulation', '0014_ensayo_del_borrador'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

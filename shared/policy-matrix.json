@@ -48,6 +48,13 @@
     },
     {
       "resource": "attempt",
+      "action": "rehearse",
+      "ESTUDIANTE": null,
+      "PROFESOR": "own",
+      "ADMIN": "all"
+    },
+    {
+      "resource": "attempt",
       "action": "replace",
       "ESTUDIANTE": null,
       "PROFESOR": "member",
