@@ -1,6 +1,7 @@
 """Bitácora cifrada y salida segura del intento propio."""
 
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -10,6 +11,7 @@ from apps.simulation.models import AttemptEvent, ReflectionJournal, SimulationAt
 from apps.simulation.services import attempt_duration, attempt_lifecycle, crypto_service, estado_intento, world
 from apps.simulation.services.attempt_lock import lock_attempt_row
 from apps.simulation.services.audit_service import auditable
+from shared import policies
 from shared.idempotency import normalize_request_id
 
 MOTIVO_MAXIMO = 500
@@ -18,7 +20,8 @@ MOTIVO_MAXIMO = 500
 @auditable("REFLECTION_SAVED", "ATTEMPT", resource_id_param_index=1)
 def guardar(usuario, identificador, datos):
     def ejecutar(intento):
-        require_consent(usuario, intento.case_version)
+        if not intento.is_rehearsal:  # el ensayo de la docente no pasa por el consentimiento del estudiante
+            require_consent(usuario, intento.case_version)
         solicitud = normalize_request_id(datos.get("requestId"))
         nodo_id = datos["nodeId"]
         if solicitud:
@@ -55,8 +58,10 @@ def guardar(usuario, identificador, datos):
 def salida_segura(usuario, identificador, motivo):
     with transaction.atomic():
         lock_attempt_row(identificador)
-        intento = get_object_or_404(SimulationAttempt.objects.select_related("case_version__simulation_case", "current_node"),
+        intento = get_object_or_404(SimulationAttempt.all_objects.select_related("case_version__simulation_case", "current_node"),
                                     pk=identificador, student=usuario)
+        if intento.is_rehearsal and not policies.can(usuario, "attempt", "rehearse", owner_id=intento.student_id):
+            raise Http404
         if attempt_lifecycle.state_of(intento).can(attempt_lifecycle.PAUSE):
             attempt_duration.touch(intento, timezone.now())
             attempt_lifecycle.apply(intento, attempt_lifecycle.PAUSE)

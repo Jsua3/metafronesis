@@ -1266,7 +1266,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/reflections",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "REFLECTION_SAVED"
@@ -1306,7 +1306,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/safe-exit",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "SAFE_EXIT_REQUESTED"
@@ -1314,18 +1314,18 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/state",
       "method": "GET",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "none",
       "throttle": null,
-      "audit": "EXENTO: el estudiante consulta el estado de su propio intento"
+      "audit": "EXENTO: el estudiante (o la docente que ensaya) consulta el estado de su propio intento"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/student-report",
       "method": "GET",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "none",
       "throttle": null,
-      "audit": "EXENTO: el estudiante consulta su propio informe"
+      "audit": "EXENTO: el estudiante (o la docente que ensaya) consulta su propio informe"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/tools/use",

@@ -4,7 +4,7 @@ from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
 from shared.openapi import envelope_of, error_responses
 from . import decisiones, editor, ensayo, escenas, plano, servicios
-from .serializers import (AjusteEnsayoSerializer, CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
+from .serializers import (AbrirEnsayoSerializer, AjusteEnsayoSerializer, EnsayoBloqueSerializer, EnsayoIniciadoSerializer, CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
                           ChecklistSerializer, DecisionSerializer, EscenaSerializer, FichaSerializer, PlanoSerializer,
                           RevisionSerializer, VistaEditorSerializer)
 
@@ -144,18 +144,23 @@ class EnsayoView(APIView):
     """``POST …/rehearsal``: abre el ensayo del borrador (201) o reanuda el que ya está abierto (200)."""
     permission_classes = [policy_permission("attempt", "rehearse")]
 
+    @extend_schema(request=AbrirEnsayoSerializer, responses={200: envelope_of(EnsayoIniciadoSerializer), 201: envelope_of(EnsayoIniciadoSerializer), **error_responses(400, 401, 403, 404, 409)})
     def post(self, request, case_version_id):
-        datos, creado = ensayo.abrir(request.user, case_version_id)
+        solicitud = AbrirEnsayoSerializer(data=request.data)
+        solicitud.is_valid(raise_exception=True)
+        datos, creado = ensayo.abrir(request.user, case_version_id, solicitud.validated_data.get("desde"))
         return api_created(datos) if creado else api_ok(datos)
 
 
 class EnsayoDetalleView(APIView):
-    """``GET/PATCH …/rehearsal/{attemptId}``: lee el ensayo o lo mueve a otra escena (``irA``)."""
+    """``GET/PATCH …/rehearsal/{attemptId}``: el bloque del ensayo; el PATCH lo mueve de escena y marca lo explorado."""
     permission_classes = [policy_permission("attempt", "rehearse")]
 
+    @extend_schema(responses={200: envelope_of(EnsayoBloqueSerializer), **error_responses(401, 403, 404, 409)})
     def get(self, request, case_version_id, attempt_id):
         return api_ok(ensayo.leer(request.user, case_version_id, attempt_id))
 
+    @extend_schema(request=AjusteEnsayoSerializer, responses={200: envelope_of(EnsayoBloqueSerializer), **error_responses(400, 401, 403, 404, 409)})
     def patch(self, request, case_version_id, attempt_id):
         datos = _datos(AjusteEnsayoSerializer, request)
         return api_ok(ensayo.ajustar(request.user, case_version_id, attempt_id, datos))

@@ -17,6 +17,16 @@ def _leer(texto, defecto):
         return defecto
 
 
+leer_json = _leer
+
+
+def sala_clave(mapa):
+    """La clave de sala del mapa: ``salaId`` del ambiente o, sin ella, la clave del mapa."""
+    ambiente = _leer(mapa.ambient_json, {})
+    sala = ambiente.get("salaId") if isinstance(ambiente, dict) else None
+    return sala if isinstance(sala, str) and sala.strip() else mapa.map_key
+
+
 def registrar(estado, tipo, clave):
     """Conserva los hechos por sala y la exploración de intentos anteriores."""
     flags = dict(estado.flags)
@@ -24,9 +34,7 @@ def registrar(estado, tipo, clave):
     if not isinstance(salas, dict):
         salas = {}
         flags["exploredBeforeSala"] = {"talked": flags.get("viewedNpcKeys", []), "inspected": estado.inspected_object_keys}
-    ambiente = _leer(estado.scene_map.ambient_json, {})
-    sala = ambiente.get("salaId") if isinstance(ambiente, dict) else None
-    sala = sala if isinstance(sala, str) and sala.strip() else estado.scene_map.map_key
+    sala = sala_clave(estado.scene_map)
     entrada = dict(salas.get(sala, {}))
     entrada[tipo] = list(dict.fromkeys([*entrada.get(tipo, []), clave]))
     salas[sala] = entrada
@@ -47,9 +55,7 @@ def contexto(intento, estado):
         salas = flags.get("exploredBySala")
         if isinstance(salas, dict):
             mapa = estado.scene_map if estado.scene_map.node_id == intento.current_node_id else SceneMap.objects.filter(node_id=intento.current_node_id).first()
-            ambiente = _leer(mapa.ambient_json, {}) if mapa else {}
-            sala = ambiente.get("salaId") if isinstance(ambiente, dict) else None
-            sala = sala if isinstance(sala, str) and sala.strip() else (mapa.map_key if mapa else "")
+            sala = sala_clave(mapa) if mapa else ""
             entrada = salas.get(sala, {})
             anterior = flags.get("exploredBeforeSala", {})
             for tipo in ("talked", "inspected"):
@@ -78,27 +84,46 @@ def opciones(intento, estado=None):
     return ofrecidas or disponibles
 
 
-def comentarios(intento, estado):
+def evaluar_comentarios(intento, estado):
+    """Cada comentario bien formado de la escena con su motivo de retención; ``motivo`` es ``None`` si se dice ahora.
+
+    Motivos: ``broken`` (la condición ``cuando`` no es válida), ``condition`` (no se cumple) y ``absent`` (se cumple, pero
+    ningún personaje visible puede decirlo). ``posicion`` es el índice en la lista del documento; ``dto`` solo si se dice.
+    """
     documentos = _leer(intento.current_node.comments_json, [])
     if not isinstance(documentos, list):
         return []
     contexto_actual = contexto(intento, estado)
+    mapa_id = estado.scene_map_id if estado else None
     personas = list(MapObject.objects.filter(scene_map__case_version=intento.case_version, object_type="PERSON", visible=True, character__isnull=False).select_related("character", "scene_map").order_by("id"))
     resultado = []
     for posicion, comentario in enumerate(documentos):
         if not isinstance(comentario, dict) or not isinstance(comentario.get("personaje"), str) or not isinstance(comentario.get("linea"), str):
             continue
         condicion = comentario.get("cuando", {})
-        if condicion != {} and (not conditions.is_valid(condicion, facts=True) or not conditions.evaluate(condicion, contexto_actual)):
+        evaluado = {"posicion": posicion, "comentario": comentario, "motivo": None, "dto": None}
+        resultado.append(evaluado)
+        if condicion != {}:
+            if not conditions.is_valid(condicion, facts=True):
+                evaluado["motivo"] = "broken"
+                continue
+            if not conditions.evaluate(condicion, contexto_actual):
+                evaluado["motivo"] = "condition"
+                continue
+        candidatos = [persona for persona in personas if persona.character.character_key == comentario["personaje"] and (persona.scene_map_id == mapa_id or persona.scene_map.node_id == intento.current_node_id)]
+        candidatos.sort(key=lambda persona: persona.scene_map_id != mapa_id)
+        if not candidatos:
+            evaluado["motivo"] = "absent"
             continue
-        candidatos = [persona for persona in personas if persona.character.character_key == comentario["personaje"] and (persona.scene_map_id == estado.scene_map_id or persona.scene_map.node_id == intento.current_node_id)]
-        candidatos.sort(key=lambda persona: persona.scene_map_id != estado.scene_map_id)
-        if candidatos:
-            emocion, gesto = comentario.get("emocion"), comentario.get("gesto")
-            resultado.append({"id": f"{intento.current_node_id}-{posicion}", "objectKey": candidatos[0].object_key,
-                              "line": comentario["linea"], "emotion": emocion if emocion in EXPRESIONES else None,
-                              "gesture": gesto if gesto in GESTOS else None})
+        emocion, gesto = comentario.get("emocion"), comentario.get("gesto")
+        evaluado["dto"] = {"id": f"{intento.current_node_id}-{posicion}", "objectKey": candidatos[0].object_key,
+                           "line": comentario["linea"], "emotion": emocion if emocion in EXPRESIONES else None,
+                           "gesture": gesto if gesto in GESTOS else None}
     return resultado
+
+
+def comentarios(intento, estado):
+    return [evaluado["dto"] for evaluado in evaluar_comentarios(intento, estado) if evaluado["dto"] is not None]
 
 
 def reaccion(intento, opcion, mapa):
