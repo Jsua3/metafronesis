@@ -31,8 +31,8 @@ def test_traduce_el_documento_real_sin_perder_elementos(documento):
     assert len(plan.comentarios) == 63
     assert len(plan.personajes) == 13
     assert len(plan.herramientas) == 5
-    assert len(plan.no_soportado) == 17
-    assert all(".objetivo:" in aviso for aviso in plan.no_soportado)
+    assert not plan.no_soportado
+    assert plan.nodos[0].datos["goal"] == escenas[0].get("objetivo", "")
 
 
 def test_conserva_referencias_condiciones_y_reacciones(documento):

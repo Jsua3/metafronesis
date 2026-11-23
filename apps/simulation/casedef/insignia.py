@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from apps.simulation.casedef import conditions
+from apps.simulation.casedef.escritor_insignia import cargar
 
 
 def _congelar(valor):
@@ -97,8 +98,6 @@ def traducir(documento):
         ruta = f'x-siep.escenas[{indice}]'
         _campos(escena, 'id clave titulo descripcion sensible advertencia inicial terminal apoyo herramientasRequeridas salidaSeguraObligatoria intensidad posicion pregunta preguntaDerivada pistas opciones mapa objetivo comentarios', ruta, avisos)
         clave = escena['clave']
-        if escena.get('objetivo'):
-            avisos.append(f'{ruta}.objetivo: el modelo de nodo no tiene un campo para el objetivo de escena.')
         base = bases.get(escena.get('id'))
         if 'id' in escena and base is None:
             avisos.append(f'{ruta}.id: escena base inexistente.')
@@ -114,6 +113,7 @@ def traducir(documento):
         nodos.append(_elemento(clave, {
             'node_key': clave, 'title': (base or {}).get('titulo', escena.get('titulo', '')),
             'narrative': (base or {}).get('descripcion', escena.get('descripcion', '')),
+            'goal': escena.get('objetivo', ''),
             'sensitive_content': (base or {}).get('contenidoSensible', escena.get('sensible', False)),
             'warning_message': (base or {}).get('advertencia', escena.get('advertencia', '')),
             'start_node': escena['inicial'], 'terminal_node': escena['terminal'],
