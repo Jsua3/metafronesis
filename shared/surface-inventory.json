@@ -800,6 +800,14 @@
       "audit": "EXENTO: el estudiante consulta su propio progreso"
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/reflections",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "REFLECTION_SAVED"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/replace",
       "method": "POST",
       "exposure": "authenticated",
@@ -830,6 +838,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": "ATTEMPT_REVISITED"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/safe-exit",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SAFE_EXIT_REQUESTED"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/tools/use",

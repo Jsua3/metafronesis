@@ -71,3 +71,5 @@ __all__ += ["SceneMap", "SceneHint", "CaseCharacter", "MapObject", "CollisionZon
             "DialogueTree", "DialogueLine", "DialogueChoice", "ClinicalTool"]
 
 from .attempt import AttemptHintView
+
+from .attempt import ReflectionJournal

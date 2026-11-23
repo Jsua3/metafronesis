@@ -419,6 +419,7 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
     ("attempt_feedback", "comment"): Regla(
         VACIAR, "texto libre de la persona (el comentario de la encuesta): se vacía; la calificación queda como lo que hizo"
     ),
+    # La supresión de cualquiera de los datos sensibles elimina la bitácora cifrada completa.
     **_columnas("reflection_journals", ("attempt_id", "encrypted_text"), Regla(
         BORRAR_FILA, "texto libre de la persona (cifrado): la bitácora se borra entera"
     )),
