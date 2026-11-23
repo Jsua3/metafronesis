@@ -2,7 +2,7 @@
 
 API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-**Versión actual:** [`v0.6.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.0) · **Alcance:** backend y frontend completos: el estudiante juega los casos por salas, el docente los arma en el editor y los revisa, y la administración gestiona usuarios y rúbricas · Última revisión de este archivo: 23 de noviembre de 2026.
+**Versión actual:** [`v0.6.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.1) · **Alcance:** backend y frontend completos: el estudiante juega los casos por salas, el docente los arma en el editor y los revisa, y la administración gestiona usuarios y rúbricas · Última revisión de este archivo: 23 de noviembre de 2026.
 
 > **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
@@ -51,6 +51,7 @@ Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` 
 | [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) | Ola 2: revisión docente, notificaciones, IA y auditoría, incompletos y tiempo máximo, permiso de autoría, exportar e importar, sesiones y convocatorias, repetición, reporte completo e ingreso con código |
 | [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) | Frontend de la primera ola (acceso, cuenta, usuarios, grupos e invitaciones) y licencia MIT |
 | [`v0.6.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.0) | Ola 3: mundo por salas, caso insignia, editor de casos con ensayo, IA de autoría, rúbricas y reportes, frontend del estudiante y del docente, tutorial y despliegue en Cloud Run |
+| [`v0.6.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.1) | Salas por piezas con su luz, lugar hospital, editor sin parpadeo y proveedor de IA de NVIDIA |
 
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 

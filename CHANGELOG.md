@@ -15,7 +15,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - Pruebas e2e del juego y del editor.
 - Probar en el navegador, con el servidor real, el ensayo, el asistente de autoría, la generación con IA y el caso insignia.
 - El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
-- El caso insignia pide a la biblioteca el lugar `hospital`, que no existe (404).
+- Que mover una pieza en el editor se vea al instante: hoy la sala se rearma entera (ya sin parpadeo, desde el #75).
+
+## [0.6.1] - 2026-11-23
+
+Las salas por piezas del repositorio anterior, con su luz, el editor sin parpadeo y el proveedor de IA de NVIDIA.
+
+### Añadido
+- **Salas por piezas:** los casos nuevos, creados a mano o con la IA, copian cada sala de la biblioteca con su estructura completa (pisos, muros, puertas, ventanas, muebles, lámparas y el momento del día), y el juego y el editor la dibujan con las piezas y su luz: de día por las ventanas y de noche con la luna y las lámparas (#74).
+- **Lugar hospital** en la biblioteca, que solo existe por piezas; el caso insignia ya lo encuentra (#74).
+- La compuerta de publicación revisa dónde va cada pieza de una sala por piezas (#74).
+- **Proveedor de IA de NVIDIA** (`AI_AUTHORING_PROVIDER=nvidia`): con `nvidia/nemotron-3-ultra-550b-a55b` el asistente de autoría propone en unos 17 s y guía en unos 3 s. La generación de casos todavía no pasa las reglas del documento con los modelos de NVIDIA (#79).
+
+### Corregido
+- Mover un personaje, un objeto, una ventana o una puerta en el editor ya no deja la sala en negro unos segundos (#75).
 
 ## [0.6.0] - 2026-11-23
 
