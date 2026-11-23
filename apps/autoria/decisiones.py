@@ -1,11 +1,14 @@
+import json
+
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
-from apps.simulation.models import DecisionOption
+from apps.simulation.models import CaseCharacter, DecisionOption
+from apps.simulation.services import case_rules
 from apps.simulation.models.vocabulary import ResponseClass
 from apps.simulation.services.audit_service import auditable
 from shared.exceptions import ApiError
-from . import guardas, servicios
+from . import contenido, guardas, servicios
 
 
 def _aplicar(version, decision, datos):
@@ -23,6 +26,20 @@ def _aplicar(version, decision, datos):
                          ("feedback", "feedback_text"), ("theoryBasis", "theory_basis")):
         if clave in datos:
             setattr(decision, campo, datos[clave])
+    if "prohibitionReason" in datos:
+        decision.prohibition_reason = contenido.texto_plano(datos["prohibitionReason"], "prohibitionReason", contenido.MAX_TEXTO_DECISION, multilinea=True) or None
+    if "immediateFeedback" in datos:
+        decision.immediate_feedback = contenido.texto_plano(datos["immediateFeedback"], "immediateFeedback", contenido.MAX_TEXTO_DECISION, multilinea=True)
+    if "consequenceText" in datos:
+        decision.consequence_text = contenido.texto_plano(datos["consequenceText"], "consequenceText", contenido.MAX_TEXTO_DECISION, multilinea=True) or None
+    if "effects" in datos:
+        hitos = {hito.key for hito in case_rules.rules_of(version).milestones}
+        decision.effects = json.dumps(case_rules.validate_effects(datos["effects"], hitos), ensure_ascii=False)
+    if "requires" in datos:
+        decision.requires_json = json.dumps(contenido.requisito(datos["requires"]), ensure_ascii=False)
+    if "reaction" in datos:
+        personajes = set(CaseCharacter.objects.filter(case_version=version).values_list("character_key", flat=True))
+        decision.reaction_json = json.dumps(contenido.reaccion(datos["reaction"], personajes), ensure_ascii=False)
     decision.save()
 
 

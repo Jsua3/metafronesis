@@ -1,6 +1,7 @@
 import json
 from django.db import IntegrityError, transaction
 from apps.simulation.models import SimulationCase, CaseVersion, SimulationNode
+from apps.biblioteca.services import copiar_al_caso
 from shared.exceptions import ApiError
 
 
@@ -11,6 +12,9 @@ class ConstructorDeBorrador:
         self.contexto = ""
         self.objetivos = []
         self.minutos = None
+        self.advertencias = []
+        self.lugar = None
+        self.salas = []
         self.escena = ("Inicio", "", "")
 
     def con_ficha(self, code, title, description=""):
@@ -29,6 +33,15 @@ class ConstructorDeBorrador:
         self.minutos = minutos
         return self
 
+    def con_advertencias(self, advertencias: list[str]):
+        self.advertencias = advertencias
+        return self
+
+    def con_lugar(self, lugar: dict, salas: list[str]):
+        """El caso nace de un lugar de la biblioteca: las salas elegidas reemplazan a la escena de inicio vacía."""
+        self.lugar, self.salas = lugar, salas
+        return self
+
     def con_escena_inicial(self, titulo, narrativa, pregunta=""):
         self.escena = (titulo, narrativa, pregunta)
         return self
@@ -43,7 +56,11 @@ class ConstructorDeBorrador:
                 caso = SimulationCase.objects.create(created_by=self.autor, **self.ficha)
                 version = CaseVersion.objects.create(simulation_case=caso, created_by=self.autor,
                     semantic_version="1.0.0", narrative_context=self.contexto,
-                    learning_objectives=json.dumps(self.objetivos, ensure_ascii=False), estimated_minutes=self.minutos)
+                    learning_objectives=json.dumps(self.objetivos, ensure_ascii=False), estimated_minutes=self.minutos,
+                    content_warnings=json.dumps(self.advertencias, ensure_ascii=False))
+                if self.lugar is not None:
+                    copiar_al_caso.copiar_al_caso(version, self.lugar, self.salas)
+                    return version
                 titulo, narrativa, pregunta = self.escena
                 SimulationNode.objects.create(case_version=version, node_key="inicio", title=titulo,
                     narrative=narrativa, decision_prompt=pregunta, start_node=True)

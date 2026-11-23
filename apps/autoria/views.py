@@ -32,14 +32,19 @@ class FichaView(APIView):
     permission_classes = [policy_permission("case", "author")]
 
     def put(self, request, case_version_id):
-        serializer = FichaSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        datos = serializer.validated_data
+        datos = _datos(FichaSerializer, request)
         return api_ok(servicios.actualizar_ficha(request.user, case_version_id, datos, datos.get("revision")))
 
 
+CABECERA_REVISION = "X-Case-Revision"
+
+
 def _datos(serializer, request):
-    instancia = serializer(data=request.data)
+    """El cuerpo validado. La revisión del caso puede ir en el cuerpo o, como la manda el editor, en ``X-Case-Revision``."""
+    cuerpo = dict(request.data) if hasattr(request.data, "keys") else {}
+    if cuerpo.get("revision") in (None, "") and request.headers.get(CABECERA_REVISION) is not None:
+        cuerpo["revision"] = request.headers[CABECERA_REVISION]
+    instancia = serializer(data=cuerpo)
     instancia.is_valid(raise_exception=True)
     return instancia.validated_data
 
