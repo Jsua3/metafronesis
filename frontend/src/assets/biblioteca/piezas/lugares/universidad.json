@@ -1,0 +1,1295 @@
+{
+  "descripcion": "Campus universitario: atención psicológica, bienestar, clases y espacios comunes.",
+  "esquema": 3,
+  "id": "universidad",
+  "nombre": "Universidad",
+  "salas": [
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Portería y fachada de la facultad, donde se llega al campus.",
+      "encuadre": "una-pared",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "ladrillo",
+          "paleta": "universidad-entrada",
+          "piso": "adoquin",
+          "variante": "universidad-entrada"
+        },
+        "ancho": 960,
+        "exterior": true,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "alta-1",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 160,
+            "tipo": "ventana"
+          },
+          {
+            "id": "alta-2",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 304,
+            "tipo": "ventana"
+          },
+          {
+            "id": "alta-3",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 656,
+            "tipo": "ventana"
+          },
+          {
+            "id": "alta-4",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 800,
+            "tipo": "ventana"
+          },
+          {
+            "id": "senal-1",
+            "modelo": "senal",
+            "muro": "fondo",
+            "pos": 480,
+            "tipo": "senal"
+          }
+        ]
+      },
+      "id": "entrada",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "porteria",
+          "x": 200,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "banca",
+          "x": 720,
+          "y": 400
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 860,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "caneca",
+          "x": 620,
+          "y": 290
+        },
+        {
+          "espejo": false,
+          "ref": "cartelera",
+          "x": 330,
+          "y": 236
+        }
+      ],
+      "nombre": "Entrada del campus",
+      "objetos": [],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "derecha",
+          "ref": "vigilante",
+          "x": 290,
+          "y": 340
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Entrar a la facultad",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "vidrio",
+          "muro": "fondo",
+          "par": "puerta-entrada",
+          "pos": 480
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Pasillo central que comunica las aulas, las oficinas y los servicios.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "universidad-pasillo",
+          "piso": "baldosa",
+          "variante": "universidad-pasillo"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "reloj-1",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 752,
+            "tipo": "reloj"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 160,
+            "tipo": "lampara"
+          },
+          {
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 608,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "pasillo",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "cartelera",
+          "x": 442,
+          "y": 236
+        },
+        {
+          "espejo": false,
+          "ref": "dispensador-agua",
+          "x": 615,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "caneca",
+          "x": 800,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "banca",
+          "x": 300,
+          "y": 420
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 890,
+          "y": 300
+        }
+      ],
+      "nombre": "Pasillo de facultad",
+      "objetos": [
+        {
+          "ref": "afiche-bienestar",
+          "x": 230,
+          "y": 300
+        },
+        {
+          "ref": "buzon-bienestar",
+          "x": 540,
+          "y": 262
+        }
+      ],
+      "perdido": [
+        "encuadre una-pared: pasa a tres-paredes para que la salida lateral tenga muro"
+      ],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "izquierda",
+          "ref": "companera-clase",
+          "x": 640,
+          "y": 380
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir a la entrada del campus",
+          "hacia": "entrada",
+          "id": "puerta-entrada",
+          "modelo": "vidrio",
+          "muro": "camara",
+          "par": "puerta-pasillo",
+          "pos": 384
+        },
+        {
+          "etiqueta": "Entrar al aula",
+          "hacia": "aula",
+          "id": "puerta-aula",
+          "modelo": "madera-ventanilla",
+          "muro": "fondo",
+          "par": "puerta-pasillo",
+          "pos": 48
+        },
+        {
+          "etiqueta": "Entrar a la oficina de docentes",
+          "hacia": "oficina-docente",
+          "id": "puerta-oficina-docente",
+          "modelo": "madera-ventanilla",
+          "muro": "fondo",
+          "par": "puerta-pasillo",
+          "pos": 232
+        },
+        {
+          "etiqueta": "Ir a la sala de espera de Bienestar",
+          "hacia": "sala-espera",
+          "id": "puerta-sala-espera",
+          "modelo": "madera-ventanilla",
+          "muro": "fondo",
+          "par": "puerta-pasillo",
+          "pos": 424
+        },
+        {
+          "etiqueta": "Entrar a la biblioteca",
+          "hacia": "biblioteca",
+          "id": "puerta-biblioteca",
+          "modelo": "madera-ventanilla",
+          "muro": "fondo",
+          "par": "puerta-pasillo",
+          "pos": 616
+        },
+        {
+          "etiqueta": "Ir a la cafetería",
+          "hacia": "cafeteria",
+          "id": "puerta-cafeteria",
+          "modelo": "paso",
+          "muro": "izquierda",
+          "par": "puerta-pasillo",
+          "pos": 152
+        },
+        {
+          "etiqueta": "Ir a la enfermería",
+          "hacia": "enfermeria",
+          "id": "puerta-enfermeria",
+          "modelo": "paso",
+          "muro": "derecha",
+          "par": "puerta-pasillo",
+          "pos": 152
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Salón con tablero, escritorio del profesor y pupitres.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "universidad-aula",
+          "piso": "baldosa",
+          "variante": "universidad-aula"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "persiana-1",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 112,
+            "tipo": "ventana"
+          },
+          {
+            "id": "persiana-2",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 656,
+            "tipo": "ventana"
+          },
+          {
+            "id": "reloj-1",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 552,
+            "tipo": "reloj"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 216,
+            "tipo": "lampara"
+          },
+          {
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 552,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "aula",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "tablero",
+          "x": 480,
+          "y": 236
+        },
+        {
+          "espejo": false,
+          "ref": "escritorio",
+          "x": 480,
+          "y": 296
+        },
+        {
+          "espejo": false,
+          "ref": "pupitre",
+          "x": 240,
+          "y": 380
+        },
+        {
+          "espejo": false,
+          "ref": "pupitre",
+          "x": 360,
+          "y": 380
+        },
+        {
+          "espejo": false,
+          "ref": "pupitre",
+          "x": 600,
+          "y": 380
+        },
+        {
+          "espejo": false,
+          "ref": "pupitre",
+          "x": 720,
+          "y": 380
+        }
+      ],
+      "nombre": "Aula de clase",
+      "objetos": [
+        {
+          "ref": "mochila",
+          "x": 250,
+          "y": 450
+        }
+      ],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "izquierda",
+          "ref": "docente",
+          "x": 600,
+          "y": 300
+        },
+        {
+          "expresion": "triste",
+          "mirando": "izquierda",
+          "ref": "estudiante-consultante",
+          "x": 720,
+          "y": 410
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera-ventanilla",
+          "muro": "camara",
+          "par": "puerta-aula",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Oficina pequeña donde el profesor atiende a sus estudiantes.",
+      "encuadre": "dos-paredes-izquierda",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "universidad-oficina-docente",
+          "piso": "madera",
+          "variante": "universidad-oficina-docente"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "persiana-1",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 544,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 304,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "cuadro-2",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 744,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 376,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "oficina-docente",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "estante-libros",
+          "x": 180,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "archivador",
+          "x": 290,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "silla-oficina",
+          "x": 470,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "escritorio",
+          "x": 470,
+          "y": 300
+        },
+        {
+          "espejo": true,
+          "ref": "silla-visitante",
+          "x": 520,
+          "y": 350
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 860,
+          "y": 300
+        }
+      ],
+      "nombre": "Oficina de docente",
+      "objetos": [
+        {
+          "ref": "taza-cafe",
+          "x": 430,
+          "y": 262
+        },
+        {
+          "ref": "lampara-escritorio",
+          "x": 512,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "expresion": "preocupada",
+          "mirando": "derecha",
+          "ref": "docente",
+          "x": 340,
+          "y": 330
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera-ventanilla",
+          "muro": "camara",
+          "par": "puerta-oficina-docente",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Sillas de espera antes de pasar a la oficina de Bienestar.",
+      "encuadre": "dos-paredes-derecha",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "universidad-sala-espera",
+          "piso": "baldosa",
+          "variante": "universidad-sala-espera"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "ventanal-1",
+            "modelo": "ventanal",
+            "muro": "fondo",
+            "pos": 192,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 520,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "reloj-1",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 720,
+            "tipo": "reloj"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 336,
+            "tipo": "lampara"
+          },
+          {
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 624,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "sala-espera",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 300,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "sillas-espera",
+          "x": 300,
+          "y": 400
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro",
+          "x": 520,
+          "y": 340
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 110,
+          "y": 290
+        },
+        {
+          "espejo": false,
+          "ref": "dispensador-agua",
+          "x": 700,
+          "y": 262
+        }
+      ],
+      "nombre": "Sala de espera de Bienestar",
+      "objetos": [
+        {
+          "ref": "folleto-rutas",
+          "x": 520,
+          "y": 334
+        },
+        {
+          "ref": "cartelera-horarios",
+          "x": 620,
+          "y": 262
+        }
+      ],
+      "personajes": [
+        {
+          "expresion": "preocupada",
+          "mirando": "derecha",
+          "ref": "estudiante-consultante",
+          "x": 420,
+          "y": 330
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera-ventanilla",
+          "muro": "camara",
+          "par": "puerta-sala-espera",
+          "pos": 480
+        },
+        {
+          "etiqueta": "Pasar a Bienestar",
+          "hacia": "bienestar",
+          "id": "puerta-bienestar",
+          "modelo": "madera-ventanilla",
+          "muro": "derecha",
+          "par": "puerta-sala-espera",
+          "pos": 128
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Recepción de Bienestar, donde se pide la cita y se orienta a la persona.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 170,
+        "y": 390
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "universidad-bienestar",
+          "piso": "baldosa",
+          "variante": "universidad-bienestar"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "persiana-1",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 152,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 320,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 320,
+            "tipo": "lampara"
+          },
+          {
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 608,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "bienestar",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "silla-oficina",
+          "x": 420,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "mostrador",
+          "x": 420,
+          "y": 304
+        },
+        {
+          "espejo": false,
+          "ref": "archivador",
+          "x": 200,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "cartelera",
+          "x": 600,
+          "y": 236
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 820,
+          "y": 300
+        }
+      ],
+      "nombre": "Oficina de Bienestar Universitario",
+      "objetos": [
+        {
+          "ref": "planilla-turnos",
+          "x": 480,
+          "y": 290
+        },
+        {
+          "ref": "afiche-bienestar",
+          "x": 640,
+          "y": 262
+        },
+        {
+          "ref": "computador-oficina",
+          "x": 370,
+          "y": 266
+        },
+        {
+          "ref": "planta-maceta",
+          "x": 760,
+          "y": 280
+        }
+      ],
+      "personajes": [
+        {
+          "expresion": "alegre",
+          "mirando": "derecha",
+          "ref": "recepcionista-bienestar",
+          "x": 360,
+          "y": 262
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver a la sala de espera",
+          "hacia": "sala-espera",
+          "id": "puerta-sala-espera",
+          "modelo": "madera-ventanilla",
+          "muro": "izquierda",
+          "par": "puerta-bienestar",
+          "pos": 128
+        },
+        {
+          "etiqueta": "Entrar al consultorio",
+          "hacia": "consultorio",
+          "id": "puerta-consultorio",
+          "modelo": "madera-ventanilla",
+          "muro": "fondo",
+          "par": "puerta-bienestar",
+          "pos": 632
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Espacio privado para la primera escucha.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "universidad-consultorio",
+          "piso": "madera",
+          "variante": "universidad-consultorio"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "persiana-1",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 232,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 464,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "reloj-1",
+            "modelo": "reloj",
+            "muro": "fondo",
+            "pos": 704,
+            "tipo": "reloj"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 336,
+            "tipo": "lampara"
+          },
+          {
+            "id": "tubo-2",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 584,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "consultorio",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "silla-oficina",
+          "x": 690,
+          "y": 256
+        },
+        {
+          "espejo": false,
+          "ref": "escritorio",
+          "x": 690,
+          "y": 290
+        },
+        {
+          "espejo": false,
+          "ref": "sillon",
+          "x": 280,
+          "y": 340
+        },
+        {
+          "espejo": true,
+          "ref": "sillon",
+          "x": 460,
+          "y": 340
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro",
+          "x": 370,
+          "y": 360
+        },
+        {
+          "espejo": false,
+          "ref": "planta",
+          "x": 140,
+          "y": 290
+        }
+      ],
+      "nombre": "Consultorio de atención psicológica",
+      "objetos": [
+        {
+          "ref": "vaso-agua",
+          "x": 370,
+          "y": 352
+        },
+        {
+          "ref": "folleto-rutas",
+          "x": 650,
+          "y": 280
+        },
+        {
+          "ref": "caja-panuelos",
+          "x": 392,
+          "y": 350
+        }
+      ],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "izquierda",
+          "ref": "psicologa-bienestar",
+          "x": 520,
+          "y": 350
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir a Bienestar",
+          "hacia": "bienestar",
+          "id": "puerta-bienestar",
+          "modelo": "madera-ventanilla",
+          "muro": "camara",
+          "par": "puerta-consultorio",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Primeros auxilios del campus, con camilla y botiquín.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 170,
+        "y": 400
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "azulejo",
+          "paleta": "universidad-enfermeria",
+          "piso": "baldosa",
+          "variante": "universidad-enfermeria"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "persiana-1",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 640,
+            "tipo": "ventana"
+          },
+          {
+            "id": "espejo-1",
+            "modelo": "espejo",
+            "muro": "fondo",
+            "pos": 320,
+            "tipo": "espejo"
+          },
+          {
+            "id": "cruz-1",
+            "modelo": "cruz",
+            "muro": "fondo",
+            "pos": 464,
+            "tipo": "cruz"
+          },
+          {
+            "id": "tubo-1",
+            "modelo": "tubo",
+            "muro": "fondo",
+            "pos": 536,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "enfermeria",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "camilla",
+          "x": 600,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "biombo",
+          "x": 740,
+          "y": 280
+        },
+        {
+          "espejo": false,
+          "ref": "vitrina-medicamentos",
+          "x": 300,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "lavamanos",
+          "x": 420,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "silla-visitante",
+          "x": 260,
+          "y": 370
+        }
+      ],
+      "nombre": "Enfermería",
+      "objetos": [
+        {
+          "ref": "vaso-agua",
+          "x": 420,
+          "y": 240
+        },
+        {
+          "ref": "botiquin",
+          "x": 520,
+          "y": 250
+        }
+      ],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "izquierda",
+          "ref": "enfermera",
+          "x": 520,
+          "y": 360
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "paso",
+          "muro": "izquierda",
+          "par": "puerta-enfermeria",
+          "pos": 152
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Barra de comida y mesas donde se reúnen los estudiantes.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 860,
+        "y": 430
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "universidad-cafeteria",
+          "piso": "damero",
+          "variante": "universidad-cafeteria"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "persiana-1",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 528,
+            "tipo": "ventana"
+          },
+          {
+            "id": "persiana-2",
+            "modelo": "persiana",
+            "muro": "fondo",
+            "pos": 712,
+            "tipo": "ventana"
+          },
+          {
+            "id": "tablero-1",
+            "modelo": "tablero",
+            "muro": "fondo",
+            "pos": 208,
+            "tipo": "tablero"
+          },
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 416,
+            "tipo": "lampara"
+          },
+          {
+            "id": "colgante-2",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 624,
+            "tipo": "lampara"
+          }
+        ]
+      },
+      "id": "cafeteria",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "barra-cafeteria",
+          "x": 300,
+          "y": 290
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-cafeteria",
+          "x": 560,
+          "y": 360
+        },
+        {
+          "espejo": false,
+          "ref": "silla-cafeteria",
+          "x": 515,
+          "y": 362
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-cafeteria",
+          "x": 760,
+          "y": 320
+        },
+        {
+          "espejo": true,
+          "ref": "silla-cafeteria",
+          "x": 805,
+          "y": 322
+        },
+        {
+          "espejo": false,
+          "ref": "caneca",
+          "x": 880,
+          "y": 280
+        }
+      ],
+      "nombre": "Cafetería",
+      "objetos": [
+        {
+          "ref": "celular",
+          "x": 760,
+          "y": 314
+        },
+        {
+          "ref": "mochila",
+          "x": 470,
+          "y": 420
+        },
+        {
+          "ref": "carne-estudiantil",
+          "x": 575,
+          "y": 340
+        }
+      ],
+      "perdido": [
+        "encuadre dos-paredes-izquierda: pasa a tres-paredes para que la salida lateral tenga muro"
+      ],
+      "personajes": [
+        {
+          "expresion": "preocupada",
+          "mirando": "izquierda",
+          "ref": "companera-clase",
+          "x": 610,
+          "y": 400
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "paso",
+          "muro": "derecha",
+          "par": "puerta-cafeteria",
+          "pos": 152
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/universidad/escenario.json",
+      "descripcion": "Estanterías y mesas de estudio en silencio.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "paneles",
+          "paleta": "universidad-biblioteca",
+          "piso": "vinilo",
+          "variante": "universidad-biblioteca"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "ventanal-1",
+            "modelo": "ventanal",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "ventana"
+          },
+          {
+            "id": "alta-1",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 160,
+            "tipo": "ventana"
+          },
+          {
+            "id": "alta-2",
+            "modelo": "alta",
+            "muro": "fondo",
+            "pos": 608,
+            "tipo": "ventana"
+          }
+        ]
+      },
+      "id": "biblioteca",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "estante-biblioteca",
+          "x": 180,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "estante-biblioteca",
+          "x": 310,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "estante-biblioteca",
+          "x": 780,
+          "y": 252
+        },
+        {
+          "espejo": false,
+          "ref": "silla-visitante",
+          "x": 440,
+          "y": 320
+        },
+        {
+          "espejo": true,
+          "ref": "silla-visitante",
+          "x": 520,
+          "y": 320
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-estudio",
+          "x": 480,
+          "y": 350
+        }
+      ],
+      "nombre": "Biblioteca",
+      "objetos": [
+        {
+          "ref": "libro-abierto",
+          "x": 480,
+          "y": 322
+        },
+        {
+          "ref": "tablero-avisos",
+          "x": 640,
+          "y": 262
+        }
+      ],
+      "perdido": [
+        "piso de alfombra: queda como vinilo liso del mismo color",
+        "Tubo de techo: no cabe en el muro del fondo"
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera-ventanilla",
+          "muro": "camara",
+          "par": "puerta-biblioteca",
+          "pos": 384
+        }
+      ]
+    }
+  ]
+}
