@@ -115,3 +115,12 @@ def test_estudiante_no_valida(caso):
     estudiante = CustomUser.objects.create_user(email='estudiante@example.test', password='test-only')
     caso['cliente'].force_authenticate(estudiante)
     assert caso['cliente'].post(f"/api/authoring/cases/{caso['version'].pk}/validate", {}, format='json').status_code == 403
+
+
+def test_retroalimentacion_inmediata_cuenta_como_justificacion(caso):
+    opcion = caso['opciones'][0]
+    opcion.feedback_text = ''
+    opcion.theory_basis = ''
+    opcion.immediate_feedback = 'La respuesta explica la consecuencia de la decisión.'
+    opcion.save()
+    assert 'OPTION_NO_JUSTIFICATION' not in codigos(caso)

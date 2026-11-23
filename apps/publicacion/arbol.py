@@ -25,7 +25,9 @@ class OpcionHoja(ComponenteDelCaso):
     opcion: DecisionOption
 
     def problemas(self):
-        if not (self.opcion.feedback_text or '').strip() and not (self.opcion.theory_basis or '').strip():
+        if not any((texto or '').strip() for texto in (
+            self.opcion.feedback_text, self.opcion.theory_basis, self.opcion.immediate_feedback,
+        )):
             return [Problema('OPTION_NO_JUSTIFICATION', f'options/{self.opcion.pk}', 'La opción necesita una justificación.')]
         return []
 
