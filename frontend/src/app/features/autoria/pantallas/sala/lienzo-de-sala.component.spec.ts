@@ -43,6 +43,66 @@ describe('LienzoDeSalaComponent', () => {
     expect(crear).toHaveBeenCalledTimes(2);
     f.destroy();
   });
+  it('tras un cambio, la sala anterior sigue a la vista hasta que la nueva está lista (sin parpadeo en negro)', async () => {
+    const juegos: { destruir: ReturnType<typeof vi.fn>; listo: () => void; contenedor: HTMLElement }[] = [];
+    crear.mockImplementation((op: { contenedor: HTMLElement; listo: (plan: unknown) => void }) => {
+      const juego = { destruir: vi.fn(), listo: () => op.listo({}), contenedor: op.contenedor };
+      juegos.push(juego);
+      return juego;
+    });
+    const f = TestBed.createComponent(LienzoDeSalaComponent);
+    f.componentRef.setInput('sala', sala);
+    f.componentRef.setInput('actores', []);
+    f.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    juegos[0].listo();
+    const vieja = juegos[0].contenedor;
+    expect(vieja.isConnected).toBe(true);
+
+    f.componentRef.setInput('actores', []);
+    f.detectChanges();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(juegos).toHaveLength(2);
+    // Mientras la nueva carga, la vieja sigue entera y a la vista; la nueva se arma detrás, sin verse.
+    expect(juegos[0].destruir).not.toHaveBeenCalled();
+    expect(vieja.isConnected).toBe(true);
+    expect(juegos[1].contenedor.style.opacity).toBe('0');
+
+    juegos[1].listo();
+    expect(juegos[0].destruir).toHaveBeenCalledTimes(1);
+    expect(vieja.isConnected).toBe(false);
+    expect(juegos[1].contenedor.style.opacity).toBe('');
+    f.destroy();
+    expect(juegos[1].destruir).toHaveBeenCalledTimes(1);
+  });
+  it('un cambio que llega mientras la nueva sala carga descarta esa carga y no la vieja', async () => {
+    const juegos: { destruir: ReturnType<typeof vi.fn>; listo: () => void }[] = [];
+    crear.mockImplementation((op: { listo: (plan: unknown) => void }) => {
+      const juego = { destruir: vi.fn(), listo: () => op.listo({}) };
+      juegos.push(juego);
+      return juego;
+    });
+    const f = TestBed.createComponent(LienzoDeSalaComponent);
+    f.componentRef.setInput('sala', sala);
+    f.componentRef.setInput('actores', []);
+    f.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    juegos[0].listo();
+    f.componentRef.setInput('actores', []);
+    f.detectChanges();
+    await vi.advanceTimersByTimeAsync(200);
+    f.componentRef.setInput('actores', []);
+    f.detectChanges();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(juegos).toHaveLength(3);
+    expect(juegos[1].destruir).toHaveBeenCalledTimes(1);
+    expect(juegos[0].destruir).not.toHaveBeenCalled();
+    juegos[1].listo(); // llega tarde: ya no cuenta
+    expect(juegos[0].destruir).not.toHaveBeenCalled();
+    juegos[2].listo();
+    expect(juegos[0].destruir).toHaveBeenCalledTimes(1);
+    f.destroy();
+  });
   it('destruye el juego al destruirse', async () => {
     const f = TestBed.createComponent(LienzoDeSalaComponent);
     f.componentRef.setInput('sala', sala);
