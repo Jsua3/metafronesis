@@ -224,6 +224,7 @@ class SimulationNode(models.Model):
     node_key = models.CharField(max_length=120)
     title = models.CharField(max_length=255)
     narrative = models.TextField()
+    goal = models.TextField(default="", blank=True, db_default="")
     support_resources_json = models.TextField(default="[]", db_default="[]")
     required_tools_json = models.TextField(default="[]", db_default="[]")
     sensitive_content = models.BooleanField(default=False, db_default=False)
@@ -236,7 +237,7 @@ class SimulationNode(models.Model):
     # El enunciado de la decisión (E3-6, RF-06): lo que el estudiante lee antes de elegir. Texto
     # plano y blando: vacío = la escena no lo declara.
     comments_json = models.TextField(default="[]", db_default="[]")
-    decision_prompt = models.TextField(default="", db_default="")
+    decision_prompt = models.TextField(default="", blank=True, db_default="")
     # Orden informativo con que el editor lista los nodos (E3-6, RF-08): no cambia el grafo.
     display_order = models.IntegerField(default=0, db_default=0)
     # La intensidad de la escena (modelo de respuesta): ``LOW`` | ``MEDIUM`` | ``HIGH``; ``HIGH`` por defecto en las
@@ -287,7 +288,7 @@ class DecisionOption(models.Model):
         db_column="target_node_id",
     )
     text = models.TextField()
-    immediate_feedback = models.TextField(default="")
+    immediate_feedback = models.TextField(default="", blank=True)
     prohibition_reason = models.TextField(blank=True, null=True)
     # Consecuencia narrativa (lo que se ve al elegir) frente a retroalimentación pedagógica (lo
     # que se explica al cierre, con su fundamento): decisiones 6 y 10, RN-08 (E1-7). Vacíos: la

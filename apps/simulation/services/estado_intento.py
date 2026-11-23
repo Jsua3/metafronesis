@@ -35,7 +35,7 @@ def construir(intento):
                         "sensitiveContent": nodo.sensitive_content, "safeExitRequired": nodo.safe_exit_required,
                         "warningMessage": nodo.warning_message, "intensity": nodo.intensity,
                         "terminal": nodo.terminal_node, "decisionPrompt": nodo.decision_prompt,
-                        "goal": "", "displayOrder": nodo.display_order, "options": _opciones_ofrecidas(intento)},
+                        "goal": nodo.goal, "displayOrder": nodo.display_order, "options": _opciones_ofrecidas(intento)},
         "completionReport": informe_estudiante.congelado(intento),
         "supportResources": RECURSOS if intento.status == "PAUSED" else [],
     }
