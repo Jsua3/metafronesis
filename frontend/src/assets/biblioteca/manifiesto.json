@@ -1,0 +1,1461 @@
+{
+  "esquema": 1,
+  "sprites": {
+    "escenarios/casa/arte/herramientas/directorio-rutas.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/herramientas/ficha-plan-seguridad.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/herramientas/ficha-riesgo.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/herramientas/guia-primeros-auxilios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/armario.png": {
+      "alto": 92,
+      "ancho": 70,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/banco-patio.png": {
+      "alto": 36,
+      "ancho": 80,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/caja-juguetes.png": {
+      "alto": 32,
+      "ancho": 40,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/cama-doble.png": {
+      "alto": 66,
+      "ancho": 110,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/cama-sencilla.png": {
+      "alto": 58,
+      "ancho": 60,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/escritorio-infantil.png": {
+      "alto": 46,
+      "ancho": 70,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/estufa.png": {
+      "alto": 56,
+      "ancho": 56,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/lavaplatos.png": {
+      "alto": 50,
+      "ancho": 50,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/materas.png": {
+      "alto": 40,
+      "ancho": 60,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/mesa-centro-casa.png": {
+      "alto": 28,
+      "ancho": 50,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/mesa-comedor.png": {
+      "alto": 42,
+      "ancho": 110,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/mesa-noche.png": {
+      "alto": 38,
+      "ancho": 30,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/meson-cocina.png": {
+      "alto": 54,
+      "ancho": 120,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/mueble-tv.png": {
+      "alto": 30,
+      "ancho": 100,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/nevera.png": {
+      "alto": 72,
+      "ancho": 44,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/silla-comedor.png": {
+      "alto": 36,
+      "ancho": 22,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/sillon-casa.png": {
+      "alto": 38,
+      "ancho": 46,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/sofa-casa.png": {
+      "alto": 40,
+      "ancho": 90,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/tendedero.png": {
+      "alto": 62,
+      "ancho": 90,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/muebles/vitrina-comedor.png": {
+      "alto": 76,
+      "ancho": 60,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/cerrojo-puerta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/cerrojo-puerta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/cuaderno-escolar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/cuaderno-escolar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/maleta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/maleta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/nevera-notas-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/nevera-notas.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/papelera-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 2,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/papelera.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/peluche-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/peluche.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/planta-maceta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/planta-maceta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/portarretrato-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/portarretrato.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/telefono-fijo-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/telefono-fijo.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/televisor-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/televisor.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/ventana-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/objetos/ventana.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/cocina.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/comedor.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/escalera.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/fachada.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/habitacion-ninos.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/habitacion-principal.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/pasillo.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/patio.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/casa/arte/salas/sala.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/herramientas/acta-registro.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/herramientas/directorio-rutas.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/herramientas/ficha-riesgo.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/herramientas/guia-primeros-auxilios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/herramientas/tarjeta-contacto-bienestar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/herramientas/tarjeta-contacto-bienestar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/archivador-metalico.png": {
+      "alto": 52,
+      "ancho": 40,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/banca-exterior.png": {
+      "alto": 34,
+      "ancho": 100,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/bandera-asta.png": {
+      "alto": 90,
+      "ancho": 24,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/caja-archivo.png": {
+      "alto": 40,
+      "ancho": 40,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/caneca-comisaria.png": {
+      "alto": 32,
+      "ancho": 26,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/cartelera-comisaria.png": {
+      "alto": 100,
+      "ancho": 90,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/escritorio-funcionario.png": {
+      "alto": 62,
+      "ancho": 122,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/estante-expedientes.png": {
+      "alto": 96,
+      "ancho": 96,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/estante-juguetes.png": {
+      "alto": 42,
+      "ancho": 60,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/mesa-baja-nna.png": {
+      "alto": 34,
+      "ancho": 60,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/mesa-reunion.png": {
+      "alto": 60,
+      "ancho": 120,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/mostrador-recepcion.png": {
+      "alto": 64,
+      "ancho": 180,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/planta-oficina.png": {
+      "alto": 48,
+      "ancho": 36,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/silla-giratoria.png": {
+      "alto": 40,
+      "ancho": 26,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/silla-pequena.png": {
+      "alto": 28,
+      "ancho": 20,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/silla-visitante-comisaria.png": {
+      "alto": 34,
+      "ancho": 24,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/sillas-espera-comisaria.png": {
+      "alto": 36,
+      "ancho": 120,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/muebles/tapete-juegos.png": {
+      "alto": 60,
+      "ancho": 90,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/afiche-rutas-atencion-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/afiche-rutas-atencion.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/boligrafo-formularios-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/boligrafo-formularios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/caja-panuelos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/caja-panuelos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/camara-seguridad-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 2,
+      "fps": 4,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/camara-seguridad.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/carpeta-medidas-proteccion-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/carpeta-medidas-proteccion.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/cartel-linea-155-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/cartel-linea-155.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/dispensador-agua-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/dispensador-agua.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/dispensador-turnos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/dispensador-turnos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/papelera-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 2,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/papelera.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/sello-tinta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/objetos/sello-tinta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/archivo.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/consultorio-psicosocial.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/despacho-comisaria.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/fachada.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/orientacion-juridica.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/pasillo.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/recepcion.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/sala-entrevista-nna.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/comisaria/arte/salas/sala-espera.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/directorio-rutas-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/directorio-rutas.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/ficha-riesgo-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/ficha-riesgo.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/guia-primeros-auxilios-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/guia-primeros-auxilios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/protocolo-bienestar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/herramientas/protocolo-bienestar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/archivador.png": {
+      "alto": 52,
+      "ancho": 40,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/banca.png": {
+      "alto": 30,
+      "ancho": 100,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/barra-cafeteria.png": {
+      "alto": 70,
+      "ancho": 200,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/biombo.png": {
+      "alto": 60,
+      "ancho": 70,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/camilla.png": {
+      "alto": 42,
+      "ancho": 104,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/caneca.png": {
+      "alto": 34,
+      "ancho": 26,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/cartelera.png": {
+      "alto": 100,
+      "ancho": 90,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/dispensador-agua.png": {
+      "alto": 52,
+      "ancho": 26,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/escritorio.png": {
+      "alto": 58,
+      "ancho": 122,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/estante-biblioteca.png": {
+      "alto": 96,
+      "ancho": 96,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/estante-libros.png": {
+      "alto": 74,
+      "ancho": 62,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/lavamanos.png": {
+      "alto": 46,
+      "ancho": 40,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/mesa-cafeteria.png": {
+      "alto": 34,
+      "ancho": 56,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/mesa-centro.png": {
+      "alto": 22,
+      "ancho": 50,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/mesa-estudio.png": {
+      "alto": 44,
+      "ancho": 130,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/mostrador.png": {
+      "alto": 64,
+      "ancho": 180,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/planta.png": {
+      "alto": 48,
+      "ancho": 36,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/porteria.png": {
+      "alto": 86,
+      "ancho": 120,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/pupitre.png": {
+      "alto": 36,
+      "ancho": 46,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/silla-cafeteria.png": {
+      "alto": 32,
+      "ancho": 22,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/silla-oficina.png": {
+      "alto": 40,
+      "ancho": 26,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/silla-visitante.png": {
+      "alto": 34,
+      "ancho": 24,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/sillas-espera.png": {
+      "alto": 36,
+      "ancho": 120,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/sillon.png": {
+      "alto": 40,
+      "ancho": 46,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/sofa.png": {
+      "alto": 44,
+      "ancho": 88,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/tablero.png": {
+      "alto": 110,
+      "ancho": 180,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/tapete.png": {
+      "alto": 40,
+      "ancho": 120,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/muebles/vitrina-medicamentos.png": {
+      "alto": 70,
+      "ancho": 56,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/afiche-bienestar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/afiche-bienestar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/botiquin-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/botiquin.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/buzon-bienestar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/buzon-bienestar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/caja-panuelos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/caja-panuelos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/carne-estudiantil-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/carne-estudiantil.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/cartelera-horarios-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/cartelera-horarios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/celular-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/celular.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/computador-oficina-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/computador-oficina.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/folleto-rutas-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/folleto-rutas.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/lampara-escritorio-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/lampara-escritorio.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/libro-abierto-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/libro-abierto.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/mochila-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/mochila.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/planilla-turnos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/planilla-turnos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/planta-maceta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/planta-maceta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/tablero-avisos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/tablero-avisos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/taza-cafe-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/taza-cafe.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/vaso-agua-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/objetos/vaso-agua.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/aula.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/biblioteca.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/bienestar.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/cafeteria.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/consultorio.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/enfermeria.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/entrada.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/oficina-docente.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/pasillo.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "escenarios/universidad/arte/salas/sala-espera.png": {
+      "alto": 528,
+      "ancho": 960,
+      "origen": "lugar"
+    },
+    "modelos/arte/afiche-rutas-atencion-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/afiche-rutas-atencion.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/boligrafo-formularios-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/boligrafo-formularios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/botiquin-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/botiquin.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/buzon-bienestar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/buzon-bienestar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/caja-panuelos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/caja-panuelos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/camara-seguridad-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 2,
+      "fps": 4,
+      "origen": "modelo"
+    },
+    "modelos/arte/camara-seguridad.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/carne-estudiantil-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/carne-estudiantil.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/carpeta-medidas-proteccion-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/carpeta-medidas-proteccion.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/cartel-linea-155-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/cartel-linea-155.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/cartelera-horarios-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/cartelera-horarios.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/cerrojo-puerta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/cerrojo-puerta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/computador-oficina-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/computador-oficina.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/cuaderno-escolar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/cuaderno-escolar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/dispensador-agua-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/dispensador-agua.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/dispensador-turnos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/dispensador-turnos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/lampara-escritorio-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/lampara-escritorio.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/libro-abierto-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/libro-abierto.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/maleta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/maleta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/nevera-notas-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/nevera-notas.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/papelera-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 2,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/papelera.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/peluche-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/peluche.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/planta-maceta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/planta-maceta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/portarretrato-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/portarretrato.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/sello-tinta-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/sello-tinta.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/tablero-avisos-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/tablero-avisos.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/tarjeta-contacto-bienestar-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/tarjeta-contacto-bienestar.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/taza-cafe-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/taza-cafe.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/telefono-fijo-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/telefono-fijo.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/televisor-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 4,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/televisor.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/arte/ventana-cerca.png": {
+      "alto": 32,
+      "ancho": 32,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "modelo"
+    },
+    "modelos/arte/ventana.png": {
+      "alto": 32,
+      "ancho": 32,
+      "origen": "modelo"
+    },
+    "modelos/existentes/arte/object_acceso_restringido-cerca.png": {
+      "alto": 28,
+      "ancho": 15,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/object_cierre-cerca.png": {
+      "alto": 28,
+      "ancho": 26,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/object_expediente-cerca.png": {
+      "alto": 22,
+      "ancho": 28,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/object_marco_normativo-cerca.png": {
+      "alto": 28,
+      "ancho": 22,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/object_registro-cerca.png": {
+      "alto": 25,
+      "ancho": 28,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/tool_pap-cerca.png": {
+      "alto": 21,
+      "ancho": 28,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/tool_reflection_journal-cerca.png": {
+      "alto": 28,
+      "ancho": 22,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/tool_risk_meter-cerca.png": {
+      "alto": 26,
+      "ancho": 28,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/tool_safety_route-cerca.png": {
+      "alto": 28,
+      "ancho": 26,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    },
+    "modelos/existentes/arte/tool_spikes-cerca.png": {
+      "alto": 28,
+      "ancho": 23,
+      "cuadros": 3,
+      "fps": 6,
+      "origen": "existente"
+    }
+  }
+}

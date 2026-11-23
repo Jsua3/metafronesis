@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { FormativeLevel, OwnerEvaluation } from '../../core/models/revision.model';
+import { FormativeLevel, OwnerEvaluation } from '../../core/models/simulation.model';
 
 /**
  * La valoración del docente en palabras (R3): la MISMA pieza en el cierre del caso y en «Ver cómo lo leerá».

@@ -1,0 +1,25 @@
+{
+  "id": "supervisor-clinico",
+  "displayName": "Supervisor clínico",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-liso",
+    "face": "maduro",
+    "top": "sueter",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-4",
+    "hair": "canoso",
+    "top": "gris",
+    "inner": "celeste",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

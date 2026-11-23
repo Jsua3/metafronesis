@@ -1,0 +1,888 @@
+{
+  "descripcion": "Casa de barrio: sala, comedor, cocina, patio y las habitaciones del segundo piso. Visita domiciliaria y acompañamiento a la persona usuaria y a niñas, niños y adolescentes.",
+  "esquema": 3,
+  "id": "casa",
+  "nombre": "Casa",
+  "salas": [
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Frente de una casa de barrio: puerta, ventana con reja sencilla y el andén.",
+      "encuadre": "una-pared",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "casa-fachada",
+          "piso": "adoquin",
+          "variante": "casa-fachada"
+        },
+        "ancho": 960,
+        "exterior": true,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "corrediza-1",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 232,
+            "tipo": "ventana"
+          },
+          {
+            "id": "corrediza-2",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 728,
+            "tipo": "ventana"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/fachada",
+            "ruta": "piezas/propios/casa-fachada.png"
+          }
+        ]
+      },
+      "id": "fachada",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "materas",
+          "x": 200,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "banco-patio",
+          "x": 760,
+          "y": 330
+        }
+      ],
+      "nombre": "Fachada de la casa",
+      "objetos": [
+        {
+          "ref": "papelera",
+          "x": 640,
+          "y": 300
+        },
+        {
+          "ref": "cerrojo-puerta",
+          "x": 445,
+          "y": 250
+        }
+      ],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "derecha",
+          "ref": "vecina",
+          "x": 300,
+          "y": 370
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Entrar a la casa",
+          "hacia": "sala",
+          "id": "puerta-sala",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-fachada",
+          "pos": 480
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Sala de estar con sofá, televisor y las fotos de la familia.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "casa-sala",
+          "piso": "madera",
+          "variante": "casa-sala"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "corrediza-1",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 304,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 200,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 392,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/sala",
+            "ruta": "piezas/propios/casa-sala.png"
+          }
+        ]
+      },
+      "id": "sala",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "sofa-casa",
+          "x": 300,
+          "y": 330
+        },
+        {
+          "espejo": true,
+          "ref": "sillon-casa",
+          "x": 470,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-centro-casa",
+          "x": 330,
+          "y": 392
+        },
+        {
+          "espejo": false,
+          "ref": "mueble-tv",
+          "x": 660,
+          "y": 262
+        }
+      ],
+      "nombre": "Sala",
+      "objetos": [
+        {
+          "ref": "televisor",
+          "x": 650,
+          "y": 250
+        },
+        {
+          "ref": "portarretrato",
+          "x": 700,
+          "y": 252
+        }
+      ],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [
+        {
+          "expresion": "cautelosa",
+          "mirando": "izquierda",
+          "ref": "persona-usuaria",
+          "x": 560,
+          "y": 360
+        },
+        {
+          "expresion": "neutral",
+          "mirando": "derecha",
+          "ref": "psicologa-visitante",
+          "x": 400,
+          "y": 430
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir a la calle",
+          "hacia": "fachada",
+          "id": "puerta-fachada",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-sala",
+          "pos": 384
+        },
+        {
+          "etiqueta": "Pasar al comedor",
+          "hacia": "comedor",
+          "id": "puerta-comedor",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-sala",
+          "pos": 104
+        },
+        {
+          "etiqueta": "Ir a la escalera",
+          "hacia": "escalera",
+          "id": "puerta-escalera",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-sala",
+          "pos": 664
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Mesa con cuatro sillas y una vitrina; aquí se hacen las tareas.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "paneles",
+          "paleta": "casa-comedor",
+          "piso": "baldosa",
+          "variante": "casa-comedor"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "corrediza-1",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 688,
+            "tipo": "ventana"
+          },
+          {
+            "id": "cuadro-1",
+            "modelo": "cuadro",
+            "muro": "fondo",
+            "pos": 544,
+            "tipo": "cuadro"
+          },
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/comedor",
+            "ruta": "piezas/propios/casa-comedor.png"
+          }
+        ]
+      },
+      "id": "comedor",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "mesa-comedor",
+          "x": 480,
+          "y": 350
+        },
+        {
+          "espejo": false,
+          "ref": "silla-comedor",
+          "x": 430,
+          "y": 314
+        },
+        {
+          "espejo": false,
+          "ref": "silla-comedor",
+          "x": 530,
+          "y": 314
+        },
+        {
+          "espejo": true,
+          "ref": "silla-comedor",
+          "x": 430,
+          "y": 384
+        },
+        {
+          "espejo": true,
+          "ref": "silla-comedor",
+          "x": 530,
+          "y": 384
+        },
+        {
+          "espejo": false,
+          "ref": "vitrina-comedor",
+          "x": 200,
+          "y": 252
+        }
+      ],
+      "nombre": "Comedor",
+      "objetos": [
+        {
+          "ref": "planta-maceta",
+          "x": 300,
+          "y": 300
+        }
+      ],
+      "perdido": [
+        "encuadre dos-paredes-izquierda: pasa a tres-paredes para que la salida lateral tenga muro",
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [
+        {
+          "expresion": "cautelosa",
+          "mirando": "izquierda",
+          "ref": "nina-casa",
+          "x": 620,
+          "y": 400
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver a la sala",
+          "hacia": "sala",
+          "id": "puerta-sala",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-comedor",
+          "pos": 384
+        },
+        {
+          "etiqueta": "Pasar a la cocina",
+          "hacia": "cocina",
+          "id": "puerta-cocina",
+          "modelo": "paso",
+          "muro": "derecha",
+          "par": "puerta-comedor",
+          "pos": 152
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Cocina pequeña con nevera, mesón y estufa; en la nevera hay notas.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "azulejo",
+          "paleta": "casa-cocina",
+          "piso": "baldosa",
+          "variante": "casa-cocina"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "corrediza-1",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 544,
+            "tipo": "ventana"
+          },
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/cocina",
+            "ruta": "piezas/propios/casa-cocina.png"
+          }
+        ]
+      },
+      "id": "cocina",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "nevera",
+          "x": 160,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "meson-cocina",
+          "x": 400,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "estufa",
+          "x": 520,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "lavaplatos",
+          "x": 640,
+          "y": 262
+        }
+      ],
+      "nombre": "Cocina",
+      "objetos": [
+        {
+          "ref": "nevera-notas",
+          "x": 160,
+          "y": 240
+        },
+        {
+          "ref": "papelera",
+          "x": 740,
+          "y": 262
+        }
+      ],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [
+        {
+          "expresion": "preocupada",
+          "mirando": "izquierda",
+          "ref": "familiar",
+          "x": 480,
+          "y": 380
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver al comedor",
+          "hacia": "comedor",
+          "id": "puerta-comedor",
+          "modelo": "paso",
+          "muro": "izquierda",
+          "par": "puerta-cocina",
+          "pos": 152
+        },
+        {
+          "etiqueta": "Salir al patio",
+          "hacia": "patio",
+          "id": "puerta-patio",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-cocina",
+          "pos": 688
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Escalera al segundo piso, con una matera al pie.",
+      "encuadre": "dos-paredes-izquierda",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "casa-escalera",
+          "piso": "madera",
+          "variante": "casa-escalera"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "corrediza-1",
+            "modelo": "corrediza",
+            "muro": "fondo",
+            "pos": 80,
+            "tipo": "ventana"
+          },
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/escalera",
+            "ruta": "piezas/propios/casa-escalera.png"
+          }
+        ]
+      },
+      "id": "escalera",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "materas",
+          "x": 200,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-noche",
+          "x": 640,
+          "y": 262
+        }
+      ],
+      "nombre": "Escalera",
+      "objetos": [
+        {
+          "ref": "telefono-fijo",
+          "x": 640,
+          "y": 250
+        }
+      ],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "etiqueta": "Volver a la sala",
+          "hacia": "sala",
+          "id": "puerta-sala",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-escalera",
+          "pos": 384
+        },
+        {
+          "etiqueta": "Subir al segundo piso",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-escalera",
+          "pos": 208
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Pasillo corto entre las habitaciones; hay un peluche en el piso.",
+      "encuadre": "una-pared",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "casa-pasillo",
+          "piso": "madera",
+          "variante": "casa-pasillo"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 480,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/pasillo",
+            "ruta": "piezas/propios/casa-pasillo.png"
+          }
+        ]
+      },
+      "id": "pasillo",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "armario",
+          "x": 820,
+          "y": 256
+        }
+      ],
+      "nombre": "Pasillo del segundo piso",
+      "objetos": [
+        {
+          "ref": "peluche",
+          "x": 560,
+          "y": 420
+        }
+      ],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "etiqueta": "Bajar por la escalera",
+          "hacia": "escalera",
+          "id": "puerta-escalera",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-pasillo",
+          "pos": 480
+        },
+        {
+          "etiqueta": "Entrar a la habitación principal",
+          "hacia": "habitacion-principal",
+          "id": "puerta-habitacion-principal",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-pasillo",
+          "pos": 304
+        },
+        {
+          "etiqueta": "Entrar a la habitación de los niños",
+          "hacia": "habitacion-ninos",
+          "id": "puerta-habitacion-ninos",
+          "modelo": "madera",
+          "muro": "fondo",
+          "par": "puerta-pasillo",
+          "pos": 624
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Cama doble, armario y una maleta a medio hacer.",
+      "encuadre": "tres-paredes",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "zocalo-alto",
+          "paleta": "casa-habitacion-principal",
+          "piso": "madera",
+          "variante": "casa-habitacion-principal"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 384,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/habitacion-principal",
+            "ruta": "piezas/propios/casa-habitacion-principal.png"
+          }
+        ]
+      },
+      "id": "habitacion-principal",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "cama-doble",
+          "x": 300,
+          "y": 330
+        },
+        {
+          "espejo": false,
+          "ref": "mesa-noche",
+          "x": 400,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "armario",
+          "x": 700,
+          "y": 256
+        }
+      ],
+      "nombre": "Habitación principal",
+      "objetos": [
+        {
+          "ref": "maleta",
+          "x": 560,
+          "y": 420
+        }
+      ],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-habitacion-principal",
+          "pos": 384
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Cama sencilla, escritorio con tareas y una caja de juguetes.",
+      "encuadre": "dos-paredes-derecha",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "pintura",
+          "paleta": "casa-habitacion-ninos",
+          "piso": "vinilo",
+          "variante": "casa-habitacion-ninos"
+        },
+        "ancho": 960,
+        "momento": "dia",
+        "piezas": [
+          {
+            "id": "colgante-1",
+            "modelo": "colgante",
+            "muro": "fondo",
+            "pos": 480,
+            "tipo": "lampara"
+          }
+        ],
+        "propios": [
+          {
+            "ref": "casa/habitacion-ninos",
+            "ruta": "piezas/propios/casa-habitacion-ninos.png"
+          }
+        ]
+      },
+      "id": "habitacion-ninos",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "cama-sencilla",
+          "x": 240,
+          "y": 320
+        },
+        {
+          "espejo": false,
+          "ref": "escritorio-infantil",
+          "x": 500,
+          "y": 262
+        },
+        {
+          "espejo": false,
+          "ref": "caja-juguetes",
+          "x": 700,
+          "y": 300
+        }
+      ],
+      "nombre": "Habitación de los niños",
+      "objetos": [
+        {
+          "ref": "cuaderno-escolar",
+          "x": 500,
+          "y": 250
+        }
+      ],
+      "perdido": [
+        "piso de alfombra: queda como vinilo liso del mismo color",
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [
+        {
+          "expresion": "alegre",
+          "mirando": "izquierda",
+          "ref": "nina-casa",
+          "x": 620,
+          "y": 400
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Salir al pasillo",
+          "hacia": "pasillo",
+          "id": "puerta-pasillo",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-habitacion-ninos",
+          "pos": 480
+        }
+      ]
+    },
+    {
+      "convertidaDe": "escenarios/casa/escenario.json",
+      "descripcion": "Patio trasero con tendedero, materas y un banco; se puede hablar sin que nadie oiga.",
+      "encuadre": "una-pared",
+      "entrada": {
+        "x": 480,
+        "y": 440
+      },
+      "estructura": {
+        "acabados": {
+          "muro": "ladrillo",
+          "paleta": "casa-patio",
+          "piso": "baldosa",
+          "variante": "casa-patio"
+        },
+        "ancho": 960,
+        "exterior": true,
+        "momento": "dia",
+        "piezas": [],
+        "propios": [
+          {
+            "ref": "casa/patio",
+            "ruta": "piezas/propios/casa-patio.png"
+          }
+        ]
+      },
+      "id": "patio",
+      "muebles": [
+        {
+          "espejo": false,
+          "ref": "tendedero",
+          "x": 300,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "materas",
+          "x": 720,
+          "y": 300
+        },
+        {
+          "espejo": false,
+          "ref": "banco-patio",
+          "x": 520,
+          "y": 400
+        }
+      ],
+      "nombre": "Patio",
+      "objetos": [],
+      "perdido": [
+        "lo propio de la sala queda como una capa fija: no se puede mover ni cambia con la paleta"
+      ],
+      "personajes": [
+        {
+          "expresion": "neutral",
+          "mirando": "izquierda",
+          "ref": "persona-usuaria",
+          "x": 660,
+          "y": 380
+        }
+      ],
+      "puertas": [
+        {
+          "etiqueta": "Volver a la cocina",
+          "hacia": "cocina",
+          "id": "puerta-cocina",
+          "modelo": "madera",
+          "muro": "camara",
+          "par": "puerta-patio",
+          "pos": 480
+        }
+      ]
+    }
+  ]
+}

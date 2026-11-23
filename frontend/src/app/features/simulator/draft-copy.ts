@@ -1158,7 +1158,7 @@ export const DRAFT_COPY = {
   },
   /**
    * El intento abierto cambió entre la decisión y el envío (otra pestaña empezó de nuevo o lo continuó): no se reemplaza
-   * nada y se vuelve a preguntar con lo que hay ahora.
+   * nada y se vuelve a preguntar con lo que hay ahora (pasada final, hallazgo crítico).
    */
   intentoCambio: {
     decision: 'VD-23',

@@ -1,0 +1,34 @@
+<!-- La luz ambiental de la portada (dos radiales, violeta e info) sobre la página oscura de la piel game. -->
+<div class="umbral-caso__luz" aria-hidden="true"></div>
+
+<div class="umbral-caso__centro">
+  <ui-portada-caso class="umbral-caso__portada" [tamano]="tamanoPortada()" [umbral]="true"
+    [titulo]="titulo() || 'Caso'" [portada]="portada()" />
+
+  <!-- h2: el h1 (oculto) del juego ya es el nombre del caso. Sin título todavía (URL directa), se espera sin inventarlo. -->
+  @if (titulo(); as nombre) {
+    <h2 class="umbral-caso__titulo">{{ nombre }}</h2>
+  }
+
+  <p class="umbral-caso__cuidado">
+    <mat-icon aria-hidden="true">pause</mat-icon>
+    <span>{{ cuidado }}</span>
+  </p>
+
+  <div class="umbral-caso__progreso" [class.game-boot]="arrancando()">
+    <app-firma-progreso [pasos]="pasos()" [texto]="pasoTexto()" />
+    <!-- Visible solo pasado 1 s; la región de estado del juego ya anuncia «Cargando el caso» una sola vez. -->
+    <p class="umbral-caso__paso" [class.umbral-caso__paso--visible]="mostrarPaso()" aria-hidden="true">{{ mostrarPaso() ? pasoTexto() : '' }}</p>
+  </div>
+
+  @if (lento() && fase() !== 'listo') {
+    <div class="umbral-caso__lento">
+      <p>{{ textoLento }}</p>
+      <button ui-button type="button" variant="secondary" icon="arrow_back" (click)="volver.emit()">{{ volverEtiqueta() }}</button>
+    </div>
+  }
+
+  @if (salida()) {
+    <app-safe-exit-button class="umbral-caso__salida" variante="placa" [pausing]="pausando()" (pause)="salidaSegura.emit()" />
+  }
+</div>

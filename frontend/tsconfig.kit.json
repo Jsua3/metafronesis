@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "files": [
+    "src/app/features/character/kit/kit-engine.ts",
+    "src/app/features/simulator/world-scale.util.ts",
+    "src/app/features/simulator/sala/geometria.ts",
+    "src/app/features/simulator/sala/catalogo.ts",
+    "src/app/features/simulator/sala/luz.ts",
+    "src/app/features/simulator/sala/composicion.ts",
+    "src/app/features/simulator/sala/pintor.ts",
+    "src/app/features/simulator/sala/puerta.ts",
+    "src/app/features/simulator/sala/mundo-a-sala.ts"
+  ]
+}

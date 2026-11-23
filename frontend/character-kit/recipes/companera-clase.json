@@ -1,0 +1,25 @@
+{
+  "id": "companera-clase",
+  "displayName": "Compañera de clase",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "trenza",
+    "face": "sereno",
+    "top": "chaqueta-jean",
+    "bottom": "pantalon",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "castano-oscuro",
+    "top": "azul",
+    "inner": "blanco",
+    "bottom": "carbon",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

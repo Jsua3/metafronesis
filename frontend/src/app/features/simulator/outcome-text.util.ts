@@ -1,4 +1,4 @@
-import { FormativeLevel, MilestoneEntry, MissedFact, ResponseClass } from '../../core/models/revision.model';
+import { FormativeLevel, MilestoneEntry, MissedFact, ResponseClass } from '../../core/models/simulation.model';
 import { DRAFT_COPY } from './draft-copy';
 
 /**

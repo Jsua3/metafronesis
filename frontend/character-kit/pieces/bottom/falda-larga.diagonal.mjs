@@ -1,0 +1,291 @@
+/**
+ * Vistas diagonales (tres cuartos) de bottom:falda-larga.
+ * Nacieron de un borrador (scripts/character-kit/borrador-diagonal.mjs) y se
+ * corrigen a mano aquí: este archivo es la autoría.
+ */
+export const DIAGONAL = {
+  'down-left': [
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, at: [15, 38],
+      grid: `
+        ..SSSSSSSSS.......
+        ..SSSSSSSSS.......
+        ..SSSSSSSSS.......
+        ..SSSSSSSSS.......
+        ..SSSSSSSSS.......
+        ..SSSSSSSSS.......
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        .SSSSSSSSSS.....S.
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        SSSSSSSSSSS.....SS
+        JJJJJJJJJJJ.....JJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['idle'], at: [26, 38],
+      grid: `
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['walk'], frames: [2, 5], at: [26, 38],
+      grid: `
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['walk'], frames: [1, 4], at: [26, 38],
+      grid: `
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['walk'], frames: [0, 3], at: [26, 38],
+      grid: `
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        .SSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+  ],
+  'up-left': [
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, at: [15, 38],
+      grid: `
+        .......SSSSSSSSS..
+        .......SSSSSSSSS..
+        .......SSSSSSSSS..
+        .......SSSSSSSSS..
+        .......SSSSSSSSS..
+        .......SSSSSSSSS..
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        .S.....SSSSSSSSSS.
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        SS.....SSSSSSSSSSS
+        JJ.....JJJJJJJJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['idle'], at: [17, 38],
+      grid: `
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['walk'], frames: [2, 5], at: [17, 38],
+      grid: `
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['walk'], frames: [1, 4], at: [17, 38],
+      grid: `
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+    {
+      anchor: 'P', mode: 'cover', legend: {S: {mat: 'bottom'}, J: {mat: 'bottom', tone: 3}}, sheets: ['walk'], frames: [0, 3], at: [17, 38],
+      grid: `
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        SSSSS
+        JJJJJ
+      `,
+    },
+  ],
+};

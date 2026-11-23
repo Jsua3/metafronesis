@@ -1,8 +1,8 @@
 import { navItemsFor, rolesFor } from './nav-items';
 
 describe('navegación de la ola 1', () => {
-  it('ESTUDIANTE ve su destino', () => {
-    expect(navItemsFor('ESTUDIANTE').map(item => item.route)).toEqual(['/portal/invitaciones']);
+  it('ESTUDIANTE ve Inicio, Casos, Mi personaje y Grupos, en ese orden', () => {
+    expect(navItemsFor('ESTUDIANTE').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/simulador', '/portal/personaje', '/portal/invitaciones']);
   });
   it('PROFESOR ve Inicio, Revisión, Grupos y Rúbricas, en ese orden', () => {
     expect(navItemsFor('PROFESOR').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/docente/trazabilidad', '/portal/grupos', '/portal/reportes', '/portal/rubricas']);

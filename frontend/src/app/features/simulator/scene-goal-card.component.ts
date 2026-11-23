@@ -1,0 +1,184 @@
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+
+import type { ElementoSala, GuiaEscena } from './caso/guia';
+import { DRAFT_COPY } from './draft-copy';
+import { type HintAttemptRef, SceneHintComponent } from './scene-hint.component';
+
+let nextGoalCardId = 0;
+
+/**
+ * La ficha del objetivo de la escena (4.2): reemplaza la lista «Qué hacer». Plegada es un solo botón con el objetivo que
+ * escribió la docente (o un texto de respaldo si la escena no trae); abierta suma «En esta sala» —quién está y qué ya
+ * se revisó, con la marca en texto, nunca solo color— y el botón «Pedir una pista».
+ *
+ * Presentacional: pinta una `GuiaEscena` ya armada y no calcula nada del mundo. Va DENTRO del envoltorio
+ * `.objective-card` de la pantalla de juego (que aporta posición, borde y fondo casi opaco). No tiene región viva propia
+ * (los anuncios salen por `LiveRegionAnnouncer`) y Esc no la cierra: la cadena de Esc del juego no cambia. Arranca
+ * plegada también en compacto: la sala ocupa la pantalla y quien quiere ver la lista la abre.
+ */
+@Component({
+  selector: 'app-scene-goal-card',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SceneHintComponent],
+  host: {
+    '[attr.data-goal]': 'guia().objetivo',
+    '[attr.data-collapsed]': '!open()',
+  },
+  template: `
+    <section class="goal-card" [attr.aria-label]="copy.goalCardTitle.text" [class.goal-card--compact]="compact()"
+      [class.goal-card--pulso]="pulso()" (animationend)="pulso.set(false)">
+      <button type="button" class="goal-card__toggle u-boton u-sombra" [attr.aria-expanded]="open()" [attr.aria-controls]="open() ? bodyId : null" (click)="toggle()">
+        <span class="goal-card__kicker">{{ copy.goalCardTitle.text }}</span>
+        <span class="goal-card__goal">{{ visibleGoal() }}</span>
+<i class="goal-card__chevron u-seguir" [class.goal-card__chevron--open]="open()" aria-hidden="true"></i>
+      </button>
+
+      <!-- El cuerpo se crea al abrir por primera vez y después solo se oculta: así «Pedir una pista» conserva su enfriamiento y sus pistas. -->
+      @if (everOpened()) {
+        <div class="goal-card__body u-placa" [id]="bodyId" [hidden]="!open()">
+          <!-- El siguiente paso (V7): qué hacer, con quién o con qué, y dónde; con la cuenta de la sala. -->
+          @if (guia().siguiente; as paso) {
+            <p class="goal-card__paso" data-guia-paso>
+              <span class="goal-card__paso-cuenta">{{ cuentaDePasos() }}</span>
+              <span class="goal-card__paso-texto">{{ paso }}</span>
+            </p>
+          }
+          @if (guia().enEstaSala.length) {
+            <h3 class="goal-card__list-title">{{ copy.roomListTitle.text }}</h3>
+            <ul class="goal-card__list">
+              @for (el of guia().enEstaSala; track el.key) {
+                <li class="goal-card__item">{{ el.label }} · <span class="goal-card__mark" [class.goal-card__mark--hecha]="el.visto">{{ mark(el) }}</span></li>
+              }
+            </ul>
+          }
+          <!-- La pista se arma solo cuando la persona abre la ficha a mano: abierta sola (al empezar o al cambiar el objetivo)
+               no pide nada al servidor, que con una respuesta buena retiraría un aviso de conexión pendiente. -->
+          @if (abiertaAMano() && hintAttempt(); as attempt) {
+            <app-scene-hint variante="placa" [attemptId]="attempt.attemptId"
+              [buttonLabel]="copy.hintAskLabel.text" (consentRequired)="consentRequired.emit()" />
+          }
+        </div>
+      }
+    </section>
+  `,
+  styles: [`
+    /* Bloque U1: la ficha en las piezas del cuadro de diálogo (hoja común). Plegada es una placa-botón con el kicker en la
+       letra de las pestañas y la flecha de seguir; abierta suma una placa con «En esta sala» y «Pedir una pista» (la placa
+       de la pista de I1). Objetivo táctil de 44 px con cualquier puntero; ningún texto baja de 12 px. */
+    :host { display: block; min-width: 0; }
+    .goal-card { display: grid; min-width: 0; color: var(--pixel-tinta); font-family: var(--pixel-f-texto); font-size: var(--pixel-tam); }
+    .goal-card__toggle {
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'kicker chevron' 'goal chevron';
+      align-items: center;
+      gap: 1px calc(5 * var(--pixel-px));
+      width: 100%;
+      min-height: 44px;
+      padding: calc(2 * var(--pixel-px)) calc(5 * var(--pixel-px)) calc(3 * var(--pixel-px));
+      text-align: left;
+      white-space: normal;
+    }
+    .goal-card__kicker { grid-area: kicker; font-family: var(--pixel-f-nombre); font-size: var(--pixel-letra-chica); font-weight: 700; letter-spacing: .02em; color: var(--pixel-tinta-suave); }
+    .goal-card__goal { grid-area: goal; min-width: 0; font-weight: 600; line-height: 1.35; color: var(--pixel-tinta); overflow-wrap: anywhere; }
+    .goal-card__chevron { grid-area: chevron; }
+    .goal-card__chevron--open { transform: scaleY(-1); }
+    @media (hover: hover) and (pointer: fine) {
+      .goal-card__toggle:hover .goal-card__kicker { color: var(--luz); }
+      .goal-card__toggle:hover .goal-card__goal { color: var(--pixel-tinta); }
+    }
+
+    /* Teléfono (≤ 560 px): más sala a la vista. Sin el kicker, y plegada la ficha lleva el objetivo en una línea con puntos
+       suspensivos (el texto sigue entero en el DOM y la ficha se abre al tocar; abierta lo muestra completo). */
+    @media (max-width: 560px) {
+      .goal-card__kicker { display: none; }
+      .goal-card__toggle { grid-template-areas: 'goal chevron'; }
+      :host([data-collapsed='true']) .goal-card__goal { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
+
+    .goal-card__body { display: grid; gap: calc(3 * var(--pixel-px)); min-width: 0; margin-top: calc(-1 * var(--pixel-px)); padding: calc(3 * var(--pixel-px)) calc(5 * var(--pixel-px)) calc(4 * var(--pixel-px)); }
+    /* «display: grid» pisa el estilo de «hidden»: plegada, el cuerpo sigue vivo (conserva el enfriamiento de la pista) pero no se ve. */
+    .goal-card__body[hidden] { display: none; }
+    /* El siguiente paso (V7): la cuenta con la letra de las pestañas y el paso con la tinta clara. */
+    .goal-card__paso { display: grid; gap: var(--pixel-px); margin: 0; }
+    .goal-card__paso-cuenta { font-family: var(--pixel-f-nombre); font-size: var(--pixel-letra-chica); font-weight: 700; letter-spacing: .04em; color: var(--luz); }
+    .goal-card__paso-texto { font-weight: 600; line-height: 1.35; }
+    /* Al cambiar el objetivo la ficha se vuelve a abrir con un pulso suave, una vez; nada con movimiento reducido. */
+    .goal-card--pulso .goal-card__toggle { animation: goal-pulso 1.2s steps(6, jump-none) 1; }
+    @keyframes goal-pulso { 50% { box-shadow: 0 0 0 calc(2 * var(--pixel-px)) var(--luz); } }
+    @media (prefers-reduced-motion: reduce) { .goal-card--pulso .goal-card__toggle { animation: none; } }
+    .goal-card__list-title { margin: 0; font-family: var(--pixel-f-nombre); font-size: var(--pixel-letra-chica); font-weight: 700; color: var(--luz); }
+    .goal-card__list { display: grid; gap: var(--pixel-px); margin: 0; padding: 0; list-style: none; }
+    .goal-card__item { line-height: 1.35; color: var(--pixel-tinta); overflow-wrap: anywhere; }
+    .goal-card__mark { font-family: var(--pixel-f-nombre); font-size: var(--pixel-letra-chica); color: var(--pixel-tinta-suave); }
+    .goal-card__mark--hecha { color: var(--pixel-hecho); }
+    app-scene-hint { display: block; }
+  `],
+})
+export class SceneGoalCardComponent {
+  protected readonly copy = DRAFT_COPY;
+  /** Id propio de cada ficha: `aria-controls` apunta a un cuerpo que existe y que no choca con el de otra instancia. */
+  protected readonly bodyId = `goal-card-body-${nextGoalCardId++}`;
+
+  readonly guia = input.required<GuiaEscena>();
+  readonly hintAttempt = input<HintAttemptRef | null>(null);
+  /** Pantalla baja o táctil horizontal: la ficha pide menos sitio y arranca plegada. */
+  readonly compact = input(false);
+  /** El ajuste «Reducir movimiento» del juego: sin pulso al cambiar el objetivo. */
+  readonly reduceMotion = input(false);
+  /** Se abrió: la pantalla refresca «En esta sala» antes de que se lea. */
+  readonly opened = output<void>();
+  /** La pista recibió 403 `CONSENT_REQUIRED`: la pantalla vuelve al aviso previo como con cualquier otra orden. */
+  readonly consentRequired = output<void>();
+
+  protected readonly open = signal(false);
+  protected readonly everOpened = signal(false);
+  /** La persona la abrió con su botón al menos una vez: recién entonces se arma «Pedir una pista». */
+  protected readonly abiertaAMano = signal(false);
+  protected readonly visibleGoal = computed(() => this.guia().objetivo || DRAFT_COPY.goalCardFallback.text);
+  /** El pulso de una vez al cambiar el objetivo (la clase se quita al terminar la animación). */
+  protected readonly pulso = signal(false);
+  /** «Siguiente paso · 2 de 6» mientras queda algo en la sala; con todo hecho, «Todo hecho en esta sala». */
+  protected readonly cuentaDePasos = computed(() => {
+    const { hechos, total } = this.guia();
+    if (total === 0) return 'Siguiente paso';
+    return hechos >= total ? `Todo hecho en esta sala · ${total} de ${total}` : `Siguiente paso · ${hechos + 1} de ${total}`;
+  });
+  private objetivoVisto: string | null = null;
+
+  constructor() {
+    // Guía para las primeras testers (V7): al empezar el caso la ficha está abierta; al cambiar el objetivo se vuelve a
+    // abrir con un pulso. En compacto (pantalla baja o táctil horizontal) sigue plegada: la sala ocupa la pantalla.
+    effect(() => {
+      const objetivo = this.guia().objetivo;
+      if (!objetivo) return;
+      untracked(() => {
+        if (objetivo === this.objetivoVisto) return;
+        const primera = this.objetivoVisto === null;
+        this.objetivoVisto = objetivo;
+        if (this.compact()) return;
+        this.open.set(true);
+        this.everOpened.set(true);
+        if (!primera && !this.reduceMotion()) this.pulso.set(true);
+      });
+    });
+  }
+
+  protected toggle(): void {
+    const next = !this.open();
+    this.open.set(next);
+    if (next) {
+      this.everOpened.set(true);
+      this.abiertaAMano.set(true);
+      this.opened.emit();
+    }
+  }
+
+  /** La marca va en texto: una persona se «habla», un objeto se «revisa». */
+  protected mark(el: ElementoSala): string {
+    if (!el.visto) return DRAFT_COPY.roomMarkNotYet.text;
+    return el.tipo === 'persona' ? DRAFT_COPY.roomMarkTalked.text : DRAFT_COPY.roomMarkReviewed.text;
+  }
+}

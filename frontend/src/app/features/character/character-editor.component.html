@@ -1,0 +1,147 @@
+<!-- Cabecera ilustrada sin viñeta (ronda 3): aquí la figura protagonista es la de la persona, en su escenario. -->
+<ui-cabecera-ilustrada
+  eyebrow="Editor de personaje"
+  title="Personaliza tu avatar profesional"
+  description="Crea la identidad con la que entrarás a los casos. No afecta tu evaluación."
+/>
+
+@if (loadError()) {
+  <ui-error-state kind="server" message="No pudimos cargar los personajes." (retry)="loadKit()" />
+} @else if (!bundle()) {
+  @if (kitLoadingVisible()) {
+    <div class="ce-loading" aria-busy="true">
+      <ui-skeleton shape="card" [lines]="4" />
+      <ui-skeleton shape="chart" />
+      <ui-skeleton shape="card" [lines]="3" />
+    </div>
+  }
+} @else {
+  <div class="ce-grid">
+    <!-- La vista previa es una ventana al juego (piel «game», oscura en los dos temas, como el umbral). El control de
+         movimiento vive dentro, junto a la figura que anima: el portal re-emite sus materiales en la piel game
+         (_portal.scss), así que la opción elegida se lee igual en claro y en oscuro. -->
+    <div class="ce-vista">
+    <section class="ce-stage" data-skin="game" aria-label="Vista previa del personaje">
+      <div class="ce-preview">
+        <button class="ce-turn" type="button" aria-label="Girar a la izquierda" (click)="girar(-1)"><span aria-hidden="true">←</span></button>
+        <figure class="ce-view">
+          <app-kit-figure class="ce-preview-desktop" [visual]="visual()" [view]="views[viewIndex()].id" [sheet]="motion()" [scale]="4" [animated]="true" />
+          <app-kit-figure class="ce-preview-mobile" [visual]="visual()" [view]="views[viewIndex()].id" [sheet]="motion()" [scale]="2" [animated]="true" />
+          <figcaption>{{ views[viewIndex()].label }}</figcaption>
+        </figure>
+        <button class="ce-turn" type="button" aria-label="Girar a la derecha" (click)="girar(1)"><span aria-hidden="true">→</span></button>
+      </div>
+      <ui-segmentado etiqueta="Movimiento" [opciones]="movimientos" [valor]="motion()" (valorChange)="elegirMovimiento($event)" />
+      <p class="ce-help">Así te verán en el simulador. No afecta tu evaluación.</p>
+      <p class="ds-sr-only">{{ summary() }}</p>
+    </section>
+    </div>
+    <ui-card class="ce-panel">
+      <fieldset class="ce-group">
+        <legend>Elige tu personaje</legend>
+        <div class="ce-cast">
+          @for (member of cast(); track member.id) {
+            <label class="ce-option ce-option--figure">
+              <input type="radio" class="ce-radio" name="ce-elenco" [checked]="isElenco(member.id)" (change)="selectElenco(member.id)" />
+              <app-kit-figure [visual]="member.visual" [scale]="2" />
+              <span>{{ member.label }}</span>
+            </label>
+          }
+          <label class="ce-option ce-option--figure">
+            <input type="radio" class="ce-radio" name="ce-elenco" [checked]="!!custom()" (change)="selectPersonalizado()" />
+            <app-kit-figure [visual]="customVisual()" [scale]="2" />
+            <span>Personalizado</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <p class="ce-help">Personalizado te permite elegir complexión, piel, peinado y accesorios.</p>
+      @if (custom(); as c) {
+        <fieldset class="ce-group">
+          <legend>Complexión</legend>
+          <div class="ce-opts">
+            @for (id of complexions; track id) {
+              <label class="ce-option">
+                <input type="radio" class="ce-radio" name="ce-complexion" [checked]="c.complexion === id" (change)="setCustom({ complexion: id })" />
+                <span>{{ labels.complexion[id] }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+        <fieldset class="ce-group">
+          <legend>Piel</legend>
+          <div class="ce-opts">
+            @for (id of skins; track id; let i = $index) {
+              <label class="ce-option ce-option--swatch" [uiTooltip]="'Tono ' + (i + 1)">
+                <input type="radio" class="ce-radio" name="ce-skin" [checked]="c.skin === id" (change)="setCustom({ skin: id })" />
+                <span class="ce-swatch" aria-hidden="true" [style.--ce-swatch]="swatch(id)"></span>
+                <span class="ds-sr-only">Tono {{ i + 1 }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+        <fieldset class="ce-group">
+          <legend>Peinado</legend>
+          <div class="ce-opts">
+            @for (id of hairs; track id) {
+              <label class="ce-option">
+                <input type="radio" class="ce-radio" name="ce-hair" [checked]="c.hair === id" (change)="setCustom({ hair: id })" />
+                <span>{{ labels.hair[id] }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+        <fieldset class="ce-group">
+          <legend>Color de pelo</legend>
+          <div class="ce-opts">
+            @for (id of hairColors; track id) {
+              <label class="ce-option ce-option--swatch" [uiTooltip]="labels.hairColor[id]">
+                <input type="radio" class="ce-radio" name="ce-hair-color" [checked]="c.hairColor === id" (change)="setCustom({ hairColor: id })" />
+                <span class="ce-swatch" aria-hidden="true" [style.--ce-swatch]="swatch(id)"></span>
+                <span class="ds-sr-only">{{ labels.hairColor[id] }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+        <fieldset class="ce-group">
+          <legend>Accesorios</legend>
+          <div class="ce-opts">
+            @for (id of accessories; track id) {
+              <label class="ce-option">
+                <input type="checkbox" class="ce-radio" [checked]="c.accessories.includes(id)" (change)="toggleAccessory(id)" />
+                <span>{{ labels.accessory[id] }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+      }
+
+      <fieldset class="ce-group">
+        <legend>Uniforme de Psicología</legend>
+        <div class="ce-opts">
+          @for (option of bataOptions(); track option.bata) {
+            <label class="ce-option"><input type="radio" class="ce-radio" name="ce-bata" [checked]="avatar().bata === option.bata" (change)="setBata(option.bata)" /><span>{{ option.label }}</span></label>
+          }
+        </div>
+      </fieldset>
+      <dl class="ce-summary">
+        <div><dt>Rol</dt><dd>{{ roleLabel() }}</dd></div>
+        <div><dt>Personaje</dt><dd>{{ characterLabel() }}</dd></div>
+        <div><dt>Bata</dt><dd>{{ avatar().bata ? 'Con bata' : 'Sin bata' }}</dd></div>
+      </dl>
+    </ui-card>
+  </div>
+}
+
+<!-- En el móvil la barra solo aparece con cambios sin guardar (o con un destino al que volver): así no se apilan dos franjas
+     sobre el elenco. A la izquierda, el estado en palabras (role=status lo anuncia al cambiar). -->
+<footer class="ce-footer" [class.ce-footer--quieto]="!dirty() && !destino()">
+  <p class="ce-dirty" role="status">@if (dirty()) {<ui-badge tone="warning">Cambios sin guardar</ui-badge>} @else {<span class="ce-sin-cambios">Sin cambios</span>}</p>
+  <div class="ce-actions">
+    <button ui-button type="button" variant="ghost" (click)="restablecer()">Restablecer</button>
+    @if (destino()) {
+      <button ui-button type="button" variant="secondary" (click)="continuar()">Guardar y volver a {{ destinoEtiqueta() }}</button>
+    }
+    <button ui-button type="button" variant="primary" (click)="guardar()">Guardar</button>
+  </div>
+</footer>

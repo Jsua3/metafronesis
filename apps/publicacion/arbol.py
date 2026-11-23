@@ -25,7 +25,9 @@ class OpcionHoja(ComponenteDelCaso):
     opcion: DecisionOption
 
     def problemas(self):
-        if not (self.opcion.feedback_text or '').strip() and not (self.opcion.theory_basis or '').strip():
+        if not any((texto or '').strip() for texto in (
+            self.opcion.feedback_text, self.opcion.theory_basis, self.opcion.immediate_feedback,
+        )):
             return [Problema('OPTION_NO_JUSTIFICATION', f'options/{self.opcion.pk}', 'La opción necesita una justificación.')]
         return []
 
@@ -34,11 +36,12 @@ class OpcionHoja(ComponenteDelCaso):
 class EscenaCompuesta(ComponenteDelCaso):
     escena: SimulationNode
     hijos: list[OpcionHoja]
+    alcanzable_por_decisiones: bool = True
 
     def problemas(self):
         problemas = []
         lugar = f'nodes/{self.escena.pk}'
-        if not self.escena.terminal_node:
+        if not self.escena.terminal_node and (self.hijos or self.alcanzable_por_decisiones):
             if not (self.escena.decision_prompt or '').strip():
                 problemas.append(Problema('NODE_NO_QUESTION', lugar, 'La escena necesita una pregunta.'))
             if len(self.hijos) < 2:
@@ -76,7 +79,18 @@ def arbol_de(version) -> CasoCompuesto:
     opciones = DecisionOption.objects.order_by('option_key', 'pk')
     escenas = SimulationNode.objects.filter(case_version=version).order_by('node_key', 'pk').prefetch_related(
         Prefetch('options', queryset=opciones))
-    hijos = [EscenaCompuesta(escena, [OpcionHoja(o) for o in escena.options.all()]) for escena in escenas]
+    escenas = list(escenas)
+    por_id = {escena.pk: escena for escena in escenas}
+    pendientes = [escena.pk for escena in escenas if escena.start_node]
+    alcanzables = set()
+    while pendientes:
+        escena_id = pendientes.pop()
+        if escena_id in alcanzables or escena_id not in por_id:
+            continue
+        alcanzables.add(escena_id)
+        pendientes.extend(opcion.target_node_id for opcion in por_id[escena_id].options.all())
+    hijos = [EscenaCompuesta(escena, [OpcionHoja(opcion) for opcion in escena.options.all()],
+                             escena.pk in alcanzables) for escena in escenas]
     asignacion = (SimulationRubricAssignment.objects.filter(case_version=version, active=True)
                   .select_related('rubric').prefetch_related('rubric__criteria').first())
     return CasoCompuesto(version, hijos, asignacion)

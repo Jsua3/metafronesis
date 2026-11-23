@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { OwnerEvaluation } from '../../core/models/revision.model';
+import { OwnerEvaluation } from '../../core/models/simulation.model';
 import { ValoracionDocenteComponent } from './valoracion-docente.component';
 
 describe('ValoracionDocenteComponent', () => {

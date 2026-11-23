@@ -1,0 +1,35 @@
+{
+  "id": "policia-infancia",
+  "displayName": "Policía de infancia y adolescencia",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-liso",
+    "face": "sereno",
+    "top": "camisa-seguridad",
+    "bottom": "pantalon-uniforme",
+    "shoes": "botines",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "negro",
+    "top": "verde-azulado",
+    "accent": "marino",
+    "bottom": "verde-azulado",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": [
+    "neutral",
+    "preocupada",
+    "triste",
+    "alegre",
+    "cautelosa",
+    "en-crisis"
+  ],
+  "provenance": {
+    "source": "Kit SIEP",
+    "license": "SIEP-INTERNAL"
+  }
+}

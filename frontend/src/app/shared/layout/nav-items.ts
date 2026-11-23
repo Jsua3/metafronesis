@@ -33,11 +33,14 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { id: 'panel', label: 'Inicio', route: '/portal/dashboard', icon: 'home', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 10 },
+  // SIEP-239 y SIEP-241: cada rol tiene su inicio (el del estudiante y el del personal son pantallas distintas).
+  { id: 'panel', label: 'Inicio', route: '/portal/dashboard', icon: 'home', roles: ['ESTUDIANTE', 'PROFESOR', 'ADMIN'], fold: [], order: 5 },
   { id: 'usuarios', label: 'Usuarios', route: '/portal/admin/usuarios', icon: 'manage_accounts', roles: ['ADMIN'], fold: [], order: 15 },
   // «Revisión» (antes «Trazabilidad», que se partía en dos líneas en las pestañas). Para el administrador es secundaria
   // y va después de «Casos».
   { id: 'trazabilidad', label: 'Revisión', route: '/portal/docente/trazabilidad', icon: 'fact_check', roles: ['PROFESOR', 'ADMIN'], fold: ['ADMIN'], order: 20, orden: { ADMIN: 35 } },
+  { id: 'simulador', label: 'Casos', route: '/portal/simulador', icon: 'play_circle', roles: ['ESTUDIANTE'], fold: [], order: 25 },
+  { id: 'personaje', label: 'Mi personaje', etiquetaCorta: 'Personaje', route: '/portal/personaje', icon: 'face', roles: ['ESTUDIANTE'], fold: [], order: 28 },
   { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
   // E2-10 (C5): la bandeja del estudiante. Se llama «Grupos» porque muestra sus invitaciones Y sus membresías.
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 40 },

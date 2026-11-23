@@ -1,0 +1,26 @@
+{
+  "id": "medico-guardia",
+  "displayName": "Médico de guardia",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-liso",
+    "face": "sereno",
+    "top": "camisa",
+    "layer": "bata",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "negro",
+    "top": "celeste",
+    "layer": "blanco",
+    "bottom": "gris-oscuro",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

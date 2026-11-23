@@ -1,0 +1,24 @@
+{
+  "id": "funcionaria-recepcion",
+  "displayName": "Funcionaria de recepción",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "media-melena",
+    "face": "sereno",
+    "top": "camisa",
+    "bottom": "falda-rodilla",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-1",
+    "hair": "cobrizo",
+    "top": "celeste",
+    "bottom": "marino",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

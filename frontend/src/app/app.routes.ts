@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { AuthService } from './core/auth/auth.service';
 import { authGuard, passwordChangeGuard, roleGuard } from './core/auth/auth.guard';
 import { canLeaveGuard } from './core/navigation/can-leave.guard';
+import { caseUnlockedGuard } from './features/simulator/case-unlocked.guard';
 import { rolesFor } from './shared/layout/nav-items';
 
 /**
@@ -24,7 +25,8 @@ const DEV_ONLY_ROUTES: Routes = (typeof ngDevMode === 'undefined' || ngDevMode)
 
 function destinoInicial(): string {
   const rol = inject(AuthService).currentUser()?.role;
-  return rol === 'ADMIN' || rol === 'PROFESOR' ? '/portal/dashboard' : '/portal/invitaciones';
+  // Cada rol tiene su inicio en /portal/dashboard (el del personal y el del estudiante, cada uno con su `canMatch`).
+  return rol === 'ADMIN' || rol === 'PROFESOR' || rol === 'ESTUDIANTE' ? '/portal/dashboard' : '/portal/invitaciones';
 }
 
 /** El inicio del docente y de la administración: el del estudiante es otra ruta con su propio `canMatch`. */
@@ -65,8 +67,58 @@ export const routes: Routes = [
         canMatch: [esPersonal],
         loadComponent: () => import('./features/dashboard/staff-dashboard.component').then(m => m.StaffDashboardComponent)
       },
-      // Sin otro inicio que coincida (el del estudiante lo declara con su propio `canMatch`), a la bandeja de grupos.
+      {
+        // SIEP-239: el inicio del estudiante (sus casos, su siguiente paso y su recorrido).
+        path: 'dashboard',
+        pathMatch: 'full',
+        title: 'Inicio',
+        canMatch: [() => inject(AuthService).currentUser()?.role === 'ESTUDIANTE'],
+        loadComponent: () => import('./features/dashboard/student-dashboard.component').then(m => m.StudentDashboardComponent)
+      },
+      // Sin otro inicio que coincida, a la bandeja de grupos (una redirección fija: no puede volver a /portal/dashboard).
       { path: 'dashboard', pathMatch: 'full', redirectTo: '/portal/invitaciones' },
+      {
+        // ED-5: solo el estudiante juega (`attempt.play`); al resto el servidor le responde 403.
+        path: 'jugar',
+        title: 'Sala de simulación',
+        data: { chrome: 'hidden' },
+        canActivate: [roleGuard('ESTUDIANTE')],
+        loadComponent: () => import('./features/simulator/game-menu.component').then(m => m.GameMenuComponent)
+      },
+      {
+        path: 'simulador',
+        title: 'Casos',
+        canActivate: [roleGuard(...rolesFor('simulador'))],
+        loadComponent: () => import('./features/simulator/simulation-catalog.component').then(m => m.SimulationCatalogComponent)
+      },
+      {
+        // F10-1 (C8, RF-16): la ficha del caso se lee antes de empezar y no crea el intento; «Comenzar» abre el juego.
+        path: 'simulador/:caseVersionId/ficha',
+        title: 'Ficha del caso',
+        canActivate: [roleGuard('ESTUDIANTE')],
+        loadComponent: () => import('./features/simulator/case-brief.component').then(m => m.CaseBriefComponent)
+      },
+      {
+        // DP-13: el cierre del caso es una página del portal, con URL estable (se vuelve a ella desde Casos y desde el resultado del juego).
+        path: 'simulador/:caseVersionId/cierre/:attemptId',
+        title: 'Cierre del caso',
+        canActivate: [roleGuard('ESTUDIANTE')],
+        loadComponent: () => import('./features/simulator/cierre/cierre-caso.component').then(m => m.CierreCasoComponent)
+      },
+      {
+        path: 'simulador/:caseVersionId',
+        title: 'Simulación',
+        data: { chrome: 'hidden' },
+        canActivate: [roleGuard('ESTUDIANTE'), caseUnlockedGuard],
+        loadComponent: () => import('./features/simulator/simulation-play.component').then(m => m.SimulationPlayComponent)
+      },
+      {
+        path: 'personaje',
+        title: 'Mi personaje',
+        canActivate: [roleGuard(...rolesFor('personaje'))],
+        canDeactivate: [canLeaveGuard],
+        loadComponent: () => import('./features/character/character-editor.component').then(m => m.CharacterEditorComponent)
+      },
       {
         // E2-10 (C5): el estudiante acepta, rechaza o deja los grupos a los que lo invitan.
         path: 'invitaciones',

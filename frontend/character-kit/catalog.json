@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "defaultRecipe": "valentina",
+  "playables": ["valentina", "andres", "camila", "daniela", "david", "felipe", "jorge", "luisa", "mariana", "mateo", "paula", "samuel"],
+  "actors": {
+    "apoyo-psicosocial": "profesional-psicosocial",
+    "enfermera-urgencias": "enfermera-urgencias",
+    "escucha-segura": "sobreviviente",
+    "familia-crisis": "abuela-familia",
+    "familia-duelo": "abuela-familia",
+    "funcionaria-recepcion": "funcionaria-recepcion",
+    "madre-acompanante": "madre-acompanante",
+    "medico-guardia": "medico-guardia",
+    "orientadora-juridica": "orientadora-juridica",
+    "profesional-psicosocial": "profesional-psicosocial",
+    "psicologa-acompanante": "psicologa-hospitalaria",
+    "psicologa-orientadora": "psicologa-hospitalaria",
+    "sobreviviente-consulta": "sobreviviente",
+    "sobreviviente-espera": "sobreviviente",
+    "trabajadora-social": "trabajadora-social"
+  },
+  "speakers": {
+    "Abuela de la niña": "abuela-familia",
+    "Consultante": "sobreviviente",
+    "Funcionaria de recepción": "funcionaria-recepcion",
+    "Profesional psicosocial": "profesional-psicosocial",
+    "Psicóloga hospitalaria": "psicologa-hospitalaria",
+    "Sobreviviente (22 años)": "sobreviviente"
+  },
+  "voices": ["Criterio profesional", "Herramienta profesional", "Marco normativo y técnico", "Protocolo clínico", "Protocolo de protección", "Supervisión clínica"],
+  "portraitKeys": {
+    "escucha-segura": "sobreviviente",
+    "sobreviviente-consulta": "sobreviviente"
+  },
+  "templates": {
+    "adolescente": "adolescente",
+    "hombre-adulto": "paciente-espera",
+    "mujer-adulta": "madre-acompanante",
+    "profesional": "profesional-psicosocial"
+  },
+  "extras": "paciente-espera",
+  "emotionToPortrait": {
+    "neutral": "neutral",
+    "vulnerable": "preocupada",
+    "concerned": "preocupada",
+    "anxious": "preocupada",
+    "worried": "preocupada",
+    "danger": "triste",
+    "negative": "triste",
+    "sad": "triste",
+    "relieved": "neutral",
+    "calm": "neutral",
+    "receptive": "neutral",
+    "closed": "neutral",
+    "positive": "alegre",
+    "guarded": "cautelosa",
+    "crisis": "en-crisis"
+  },
+  "editor": {
+    "complexions": ["a", "b"],
+    "skins": ["piel-1", "piel-2", "piel-3", "piel-4", "piel-5", "piel-6"],
+    "hair": ["rapado", "corto-liso", "corto-rizado", "bob-flequillo", "media-melena", "largo-suelto", "cola-caballo", "mono", "trenza", "afro"],
+    "hairColors": ["negro", "castano-oscuro", "castano", "cobrizo", "rubio", "canoso"],
+    "face": "sereno",
+    "accessories": ["gafas", "gafete"],
+    "outfits": [
+      {
+        "id": "uniforme", "label": "Uniforme", "top": "uniforme-psicologia", "bottom": "jogger", "shoes": "tenis",
+        "variants": [{ "id": "institucional", "colors": { "top": "azul-humboldt", "accent": "blanco", "bottom": "azul-humboldt", "shoes": "blanco", "sole": "gris-claro" } }]
+      },
+      {
+        "id": "uniforme-bata", "label": "Uniforme con bata", "top": "uniforme-psicologia", "layer": "bata-psicologia", "bottom": "jogger", "shoes": "tenis",
+        "variants": [{ "id": "institucional", "colors": { "layer": "blanco", "top": "azul-humboldt", "accent": "blanco", "bottom": "azul-humboldt", "shoes": "blanco", "sole": "gris-claro" } }]
+      }
+    ]
+  },
+  "playableVariants": {
+    "bata": { "pieces": { "layer": "bata-psicologia" }, "colors": { "layer": "blanco" } }
+  }
+}

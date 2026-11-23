@@ -50,28 +50,30 @@ function clientUrls(source: string): string[] {
 }
 
 const API_DIR = join(__dirname);
+/**
+ * Excepción conocida (SIEP-239): el ensayo del borrador (`rehearsal.api.ts`, `/api/authoring/cases/{id}/rehearsal`) aún no
+ * tiene ruta en el servidor de metafronesis. La pantalla de juego conserva el modo ensayo, pero ninguna ruta del cliente lo
+ * abre hasta que el servidor lo traiga; entonces este archivo vuelve a la lista.
+ */
+const SIN_RUTA_EN_EL_SERVIDOR = ['rehearsal.api.ts'];
 const CLIENT_FILES = [
   ...readdirSync(API_DIR)
-    .filter(name => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
+    .filter(name => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !SIN_RUTA_EN_EL_SERVIDOR.includes(name))
     .map(name => join(API_DIR, name)),
   join(__dirname, '..', 'auth', 'auth.service.ts'),
 ];
 
 /**
- * Rutas que el cliente ya usa y llegan con el PR #60 (SIEP-242: reportes), todavía sin fusionar en `develop`. Al
- * fusionarlo se vacía esta lista: la última prueba falla mientras alguna ya exista, para que no quede una excepción
- * olvidada.
+ * Rutas que el cliente ya pide y que llegan con otro PR del servidor: llega con el PR del estado del intento
+ * (`GET /api/simulation/attempts/{id}/state`, SIEP-239). Mientras no estén en `develop` se exceptúan; la última prueba
+ * falla cuando la ruta ya existe, para quitarla de esta lista y que el contrato la vigile.
  */
-const PENDIENTES_DEL_PR_60 = [
-  'api/reportes/dashboard',
-  'api/reportes/grupo/ID',
-  'api/reportes/estudiante/ID',
-];
+// El estado del intento (#57) y los reportes (#60) ya están en `develop`: no queda ninguna pendiente.
+const RUTAS_PENDIENTES: readonly string[] = [];
 
 describe('Rutas del cliente: cada URL existe en el servidor', () => {
   const routes = routesOf(join(BACKEND, 'psychosim', 'urls.py')).filter(route => route.startsWith('api/'));
-  const used = CLIENT_FILES.flatMap(file => clientUrls(readFileSync(file, 'utf-8')).map(url => ({ file, url })))
-    .filter(({ url }) => !PENDIENTES_DEL_PR_60.includes(url));
+  const used = CLIENT_FILES.flatMap(file => clientUrls(readFileSync(file, 'utf-8')).map(url => ({ file, url })));
 
   it('el servidor declara las rutas de la API y el cliente usa al menos treinta', () => {
     expect(routes.length).toBeGreaterThanOrEqual(60);
@@ -82,15 +84,15 @@ describe('Rutas del cliente: cada URL existe en el servidor', () => {
     expect(used.filter(({ url }) => url.includes('desconocida'))).toEqual([]);
   });
 
-  it.each(used.map(({ file, url }) => [file.split(/[\\/]/).pop(), url]))(
+  it.each(used.filter(({ url }) => !RUTAS_PENDIENTES.includes(url)).map(({ file, url }) => [file.split(/[\\/]/).pop(), url]))(
     '%s pide «%s», que casa con una ruta declarada (sin barra final de más ni de menos)',
     (_file, url) => {
       expect(routes.some(route => routePattern(route).test(url!)), `${url} no está en las rutas de Django`).toBe(true);
     },
   );
 
-  it('las rutas pendientes del PR #60 todavía no están en develop (al fusionarlo, vaciar PENDIENTES_DEL_PR_60)', () => {
-    const existentes = PENDIENTES_DEL_PR_60.filter(url => routes.some(route => routePattern(route).test(url)));
-    expect(existentes).toEqual([]);
+  it('cada ruta pendiente la pide el cliente y todavía no existe en el servidor (si ya existe, quitarla de RUTAS_PENDIENTES)', () => {
+    expect(RUTAS_PENDIENTES.filter(url => !used.some(entry => entry.url === url)), 'ya no las pide el cliente').toEqual([]);
+    expect(RUTAS_PENDIENTES.filter(url => routes.some(route => routePattern(route).test(url))), 'ya existen en el servidor').toEqual([]);
   });
 });
