@@ -340,6 +340,30 @@
       "audit": "CASE_PUBLISHED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/rehearsal",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ATTEMPT_STARTED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/rehearsal/<uuid:attempt_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura del ensayo propio de la autora"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/rehearsal/<uuid:attempt_id>",
+      "method": "PATCH",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "NODE_ENTERED"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/validate",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -826,7 +850,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/enter-room",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: el paso de sala queda registrado en el intento"
@@ -842,7 +866,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/hints",
       "method": "GET",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: consulta de pistas del propio intento"
@@ -850,7 +874,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/hints/next",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: la pista queda registrada en el intento"
@@ -858,7 +882,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/interactions/<str:key>",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: la interacción queda registrada en el intento"
@@ -866,7 +890,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/npcs/<str:key>",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: el diálogo queda registrado en el intento"
@@ -890,7 +914,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/progress-map",
       "method": "GET",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: el estudiante consulta su propio progreso"
@@ -954,7 +978,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/tools/use",
       "method": "POST",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: el uso queda registrado en el intento"
@@ -962,7 +986,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/world",
       "method": "GET",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: el estudiante consulta su propio mundo"
@@ -970,7 +994,7 @@
     {
       "route": "api/simulation/attempts/<uuid:pk>/world-state",
       "method": "PATCH",
-      "exposure": "role:ESTUDIANTE",
+      "exposure": "role:ADMIN,ESTUDIANTE,PROFESOR",
       "body": "json-small",
       "throttle": null,
       "audit": "EXENTO: el estudiante actualiza su propia posición"

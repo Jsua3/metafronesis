@@ -17,6 +17,10 @@ class CrearFichaSerializer(FichaSerializer):
     title = serializers.CharField(max_length=255)
 
 
+class AjusteEnsayoSerializer(serializers.Serializer):
+    irA = serializers.IntegerField(min_value=1, required=False)
+
+
 class RevisionSerializer(serializers.Serializer):
     revision = serializers.IntegerField(min_value=0, required=False, allow_null=True)
 
