@@ -1,4 +1,3 @@
-import { ENSAYO_DISPONIBLE } from '../ensayo';
 /**
  * Acciones que la guía y el buscador saben mostrar. Cada una vive en una pantalla y tiene un
  * elemento marcado con `data-accion="<id>"` (puede haber varias ids separadas por espacio).
@@ -111,9 +110,7 @@ export const ACCIONES: readonly Accion[] = [
   { id: 'pedir-a-la-ia', nombre: 'Pedirle algo al asistente de IA', pantalla: PANTALLAS.cabecera, ruta: '', palabras: 'inteligencia artificial ayuda escribir generar', ayuda: 'Abre el asistente: tú pides, la IA propone y tú decides qué entra.' },
   { id: 'aceptar-ia', nombre: 'Aceptar lo que sugirió la IA', pantalla: PANTALLAS.cabecera, ruta: '', palabras: 'revisar sugerido marca aprobar', ayuda: 'Lo que agrega la IA queda marcado «Sugerido por la IA» con un botón «Aceptar» en cada parte.' },
   // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
-  ...(ENSAYO_DISPONIBLE ? [
-    { id: 'probar', nombre: 'Probar el caso en el juego', pantalla: PANTALLAS.cabecera, ruta: '', palabras: 'jugar ensayar ver como estudiante', ayuda: 'Abre tu borrador en el juego real, en otra pestaña, para jugarlo como un estudiante y ver por qué una respuesta no aparece.' },
-  ] : []),
+  { id: 'probar', nombre: 'Probar el caso en el juego', pantalla: PANTALLAS.cabecera, ruta: '', palabras: 'jugar ensayar ver como estudiante', ayuda: 'Abre tu borrador en el juego real, en otra pestaña, para jugarlo como un estudiante y ver por qué una respuesta no aparece.' },
   { id: 'enviar-revision', nombre: 'Enviar el caso a revisión', pantalla: PANTALLAS.cabecera, ruta: '', palabras: 'psicología publicar terminar revisar', ayuda: 'Revisa qué falta y envía el caso a Psicología.' },
   { id: 'buscar', nombre: 'Buscar una acción por su nombre', pantalla: PANTALLAS.cabecera, ruta: '', palabras: 'buscador encontrar ctrl k ayuda guía', ayuda: 'Escribe con tus palabras qué quieres hacer.' },
   // E0 (EDITOR.md §7.3): las acciones del marco nuevo. BORRADOR: textos nuevos, pendientes de la aprobación de Psicología.

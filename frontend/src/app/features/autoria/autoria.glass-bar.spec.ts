@@ -1,4 +1,3 @@
-import { ENSAYO_DISPONIBLE } from './ensayo';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -95,8 +94,7 @@ describe('Editor de casos: la barra de vidrio (tableros 45–51)', () => {
     // El guardado informa: vive en la barra de estado, junto a «Pendientes», no entre los botones de arriba.
     expect(cuenta.querySelector('[data-estado-guardado]')).toBeNull();
     expect(raiz.querySelector('app-estudio-barra-estado [data-estado-guardado]')).not.toBeNull();
-    // «Probar» solo está si el ensayo existe (llega en un PR siguiente).
-    expect(cuenta.querySelector('a.enlace-probar') !== null).toBe(ENSAYO_DISPONIBLE);
+    expect(cuenta.querySelector('a.enlace-probar')).not.toBeNull();
     expect(cuenta.querySelector('button[data-accion="ver-pendientes"] .solo-lector')!.textContent).toMatch(/^Pendientes: /);
     expect(cuenta.querySelector('app-tema-selector')).not.toBeNull();
     expect(cuenta.querySelector('ui-menu')).not.toBeNull();
@@ -167,7 +165,7 @@ describe('Editor de casos: la barra de vidrio (tableros 45–51)', () => {
     expect([...secciones.querySelectorAll('.marca-estado')].every((m) => !!m.getAttribute('data-estado'))).toBe(true);
     // La guía las encuentra por su acción.
     for (const accion of ['datos-del-caso', 'definir-finales', 'enviar-revision']) expect(secciones.querySelector(`[data-accion~="${accion}"]`)).not.toBeNull();
-    expect(raiz.querySelector('header [data-accion~="probar"]') !== null).toBe(ENSAYO_DISPONIBLE);
+    expect(raiz.querySelector('header [data-accion~="probar"]')).not.toBeNull();
     // La etapa en la que estás se marca para el lector de pantalla.
     expect(secciones.querySelector('a[aria-current="page"] .solo-lector')!.textContent).toMatch(/^Historia/);
   });
@@ -191,7 +189,7 @@ describe('Editor de casos: la barra de vidrio (tableros 45–51)', () => {
   });
 });
 
-describe.skipIf(!ENSAYO_DISPONIBLE)('AutoriaShellComponent · el botón «Probar» de la barra', () => {
+describe('AutoriaShellComponent · el botón «Probar» de la barra', () => {
   afterEach(() => { vi.restoreAllMocks(); document.querySelectorAll('body > app-autoria-shell, body > [ng-version]').forEach((n) => n.remove()); });
 
   it('es un enlace al ensayo del caso, que abre otra pestaña, y la guía lo encuentra como «probar»', async () => {
@@ -223,7 +221,7 @@ describe.skipIf(!ENSAYO_DISPONIBLE)('AutoriaShellComponent · el botón «Probar
 describe('AutoriaShellComponent · «Probar» ya no es una pantalla del editor', () => {
   afterEach(() => document.querySelectorAll('body > app-autoria-shell, body > [ng-version]').forEach((n) => n.remove()));
 
-  it.skipIf(!ENSAYO_DISPONIBLE)('la barra no tiene la sección «Probar como estudiante» y sí el botón «Probar»', async () => {
+  it('la barra no tiene la sección «Probar como estudiante» y sí el botón «Probar»', async () => {
     const { raiz } = await irA('/portal/casos/41/editor');
     const nombres = [...raiz.querySelectorAll('header a')].map((a) => a.getAttribute('aria-label'));
     expect(nombres).not.toContain('Probar como estudiante');

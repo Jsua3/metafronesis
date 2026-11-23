@@ -363,22 +363,22 @@ export class AuthoringApi {
   }
 
   // ─── Asistente de IA de autoría (P5) ────────────────────────────────────────
-  // El asistente del servidor de metafronesis responde con otra forma (`question` → `proposals`/`answer`, sin cambios
-  // validados contra la pantalla): hasta alinear el contrato, el editor lo ve apagado y no lo ofrece.
+  // `apps/ia` del servidor: responde con el sobre `{data}`. Errores: 429 `AI_LIMIT_EXCEEDED`, 502 `AI_PROVIDER_ERROR`,
+  // 422 `AI_REFUSED` o `AI_PROPOSAL_INVALID`; el panel (`features/autoria/ia`) los traduce.
 
-  /** Siempre «apagado» hasta que el contrato del asistente coincida con el del editor. */
-  assistantStatus(_caseVersionId: number): Observable<AssistantStatus> {
-    return of({ enabled: false, mode: 'disabled', remainingToday: 0 } as AssistantStatus);
+  /** Si el asistente está listo y cuánto cupo le queda hoy a quien lo usa. */
+  assistantStatus(caseVersionId: number): Observable<AssistantStatus> {
+    return this.http.get<ApiResponse<AssistantStatus>>(`${this.API}/${caseVersionId}/assistant/status`).pipe(map(r => r.data));
   }
 
-  /** Una propuesta de cambios para la pantalla del editor (sin backend compatible todavía). */
-  assistantPropose(_caseVersionId: number, _body: AssistantProposeBody): Observable<AssistantResult> {
-    return sinRuta('El asistente de autoría');
+  /** Una propuesta de cambios para la pantalla del editor: el servidor la valida y NO escribe nada (el cliente la aplica). */
+  assistantPropose(caseVersionId: number, body: AssistantProposeBody): Observable<AssistantResult> {
+    return this.http.post<ApiResponse<AssistantResult>>(`${this.API}/${caseVersionId}/assistant/propose`, body).pipe(map(r => r.data));
   }
 
-  /** La guía («¿cómo hago X?») (sin backend compatible todavía). */
-  assistantGuide(_caseVersionId: number, _body: AssistantGuideBody): Observable<AssistantGuide> {
-    return sinRuta('La guía del asistente');
+  /** La guía («¿cómo hago X?»): la acción del catálogo que responde, o ninguna. */
+  assistantGuide(caseVersionId: number, body: AssistantGuideBody): Observable<AssistantGuide> {
+    return this.http.post<ApiResponse<AssistantGuide>>(`${this.API}/${caseVersionId}/assistant/guide`, body).pipe(map(r => r.data));
   }
 
   // ─── Generación de casos con IA, por etapas (C1) ─────────────────────────────

@@ -1,7 +1,6 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { ENSAYO_DISPONIBLE } from '../../ensayo';
 import { ACCIONES } from '../../guia/acciones';
 import { GuiaService } from '../../guia/guia.service';
 import { CasoStore } from '../../estado/caso.store';
@@ -57,7 +56,7 @@ export function injectComandosDelCaso(marco: AccionesDelMarco): void {
       { id: 'vista:atajos', grupo: 'Vista', titulo: 'Atajos del teclado', atajo: '?', ejecutar: () => estudio.atajosAbiertos.set(true) },
     ];
     const caso_: Comando[] = [
-      ...(ENSAYO_DISPONIBLE ? [{ id: 'caso:probar', grupo: 'Caso', titulo: 'Probar el caso en el juego', palabras: 'ensayo jugar', ejecutar: marco.probar }] : []),
+      { id: 'caso:probar', grupo: 'Caso', titulo: 'Probar el caso en el juego', palabras: 'ensayo jugar', ejecutar: marco.probar },
       { id: 'caso:pendientes', grupo: 'Caso', titulo: 'Ver lo que falta (pendientes)', detalle: `${progreso.porCorregir().length} por corregir`,
         palabras: 'avisos errores', ejecutar: marco.verPendientes },
       { id: 'ayuda:buscar', grupo: 'Ayuda', titulo: 'Buscar en la ayuda', palabras: 'guia', ejecutar: marco.buscarEnLaAyuda },

@@ -1,4 +1,3 @@
-import { ENSAYO_DISPONIBLE } from './ensayo';
 import type { Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
@@ -165,7 +164,7 @@ describe('AutoriaShellComponent · como ruta del programa', () => {
     const enlaces = [...raiz.querySelectorAll<HTMLAnchorElement>('header a')].map((a) => a.getAttribute('href'));
     expect(enlaces).toEqual([
       '/portal/casos', '/portal/casos/41/editor/datos', '/portal/casos/41/editor/plano', '/portal/casos/41/editor',
-      '/portal/casos/41/editor/evaluacion', '/portal/casos/41/editor/revision', ...(ENSAYO_DISPONIBLE ? ['/portal/casos/41/ensayo'] : []), '/portal/casos',
+      '/portal/casos/41/editor/evaluacion', '/portal/casos/41/editor/revision', '/portal/casos/41/ensayo', '/portal/casos',
     ]);
   });
 

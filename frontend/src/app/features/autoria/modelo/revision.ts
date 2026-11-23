@@ -1,5 +1,4 @@
 import type { ValidationIssue } from '../../../core/models/simulation.model';
-import { ENSAYO_DISPONIBLE } from '../ensayo';
 import { revisarCaminos, type TipoAviso } from './caminos';
 import type { CasoBorrador, Escena, Respuesta, SalaCaso } from './caso';
 import { competenciasMarcadas } from './efectos';
@@ -410,7 +409,7 @@ export function avisosDeLectura(hallazgos: ValidationIssue[]): Falta[] {
 export function sugerencias(caso: CasoBorrador): Falta[] {
   const lista: Falta[] = [...avisosDeCompetencias(caso), ...avisosDeDialogoSinPersona(caso)];
   // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
-  if (ENSAYO_DISPONIBLE && caso.probadoHastaElFinal !== true) lista.push({ mensaje: 'Todavía no probaste el caso completo en el juego.', ir: { ruta: '/editor', accionId: 'probar' } });
+  if (caso.probadoHastaElFinal !== true) lista.push({ mensaje: 'Todavía no probaste el caso completo en el juego.', ir: { ruta: '/editor', accionId: 'probar' } });
   caso.escenas.forEach((e) => {
     const vaciasL = e.lineas.filter((l) => !l.texto.trim()).length;
     const vaciasR = e.respuestas.filter((r) => !r.texto.trim() || !r.retroalimentacion.trim()).length;

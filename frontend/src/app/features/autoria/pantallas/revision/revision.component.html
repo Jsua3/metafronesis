@@ -106,13 +106,11 @@
             <p class="aviso" role="note">No se pudo comprobar el caso con Psicología: revisa tu conexión. Lo de arriba es lo que se ve desde aquí.</p>
           }
 
-          @if (ensayoDisponible) {
           <div class="probado" data-probado [attr.data-listo]="!!caso.probadoHastaElFinal">
             <span class="marca" aria-hidden="true"></span>
             <span class="probado__texto">{{ caso.probadoHastaElFinal ? 'Lo probaste hasta un final.' : 'Aún no lo has probado hasta un final.' }}</span>
             <a class="accion-enlace" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar" (click)="probar($event)" (auxclick)="probar($event)">Probar</a>
           </div>
-          }
         </section>
 
         @if (sugeridas().length) {
