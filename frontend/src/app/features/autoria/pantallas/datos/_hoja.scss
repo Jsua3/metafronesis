@@ -1,0 +1,96 @@
+// La «hoja de estudio» de las pestañas de formulario del editor (Datos, Evaluación, Rúbrica, Finales, Revisión):
+// el lienzo hundido que se desplaza solo, una hoja centrada de medida de lectura y una cabecera compacta.
+// Vive aquí (y no en styles/) porque solo la usan estas pestañas; cada una la incluye con `@use '../datos/hoja'`.
+// Densidad de EDITOR-PRO.md, punto 2: rótulos de 14 px, campos de 14–16 px, filas de 36–40 px con área de toque de 44 px.
+
+@mixin lienzo {
+  :host { display: block; min-block-size: 0; block-size: 100%; }
+  .lienzo {
+    block-size: 100%; min-block-size: 0; overflow: auto; overscroll-behavior: contain;
+    background: var(--l-superficie-hundida);
+  }
+  .hoja {
+    display: flex; flex-direction: column; gap: 1rem; box-sizing: border-box;
+    inline-size: 100%; max-inline-size: 48rem; margin-inline: auto; padding: 1.25rem 1.25rem 3rem;
+  }
+  .hoja--ancha { max-inline-size: 64rem; }
+  .cabecera { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1rem; }
+  .cabecera__titulos { display: flex; flex-direction: column; gap: 0.125rem; min-inline-size: 0; }
+  .cabecera h1 { margin: 0; font-size: var(--autoria-texto-24); line-height: 1.2; letter-spacing: -0.01em; }
+  .sobretitulo {
+    margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); font-weight: 700;
+    font-variant-caps: all-small-caps; letter-spacing: 0.06em;
+  }
+  .bajada { margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); line-height: 1.45; }
+  // Las secciones plegables van sobre una sola superficie con filo, como un panel del inspector (no tarjetas sueltas).
+  .bloque {
+    display: block; border: 1px solid var(--l-filo); border-radius: var(--l-radio-control); background: var(--l-superficie);
+    overflow: clip;
+  }
+  .bloque > app-estudio-seccion:last-child { border-block-end: 0; }
+  .nota-lectura {
+    margin: 0; padding: 0.5rem 0.75rem; border-radius: var(--l-radio-chico); background: var(--ds-primary-subtle);
+    color: var(--ds-text-1); font-size: var(--autoria-texto-14); font-weight: 600;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hoja { animation: hoja-entra var(--ds-dur-move) var(--ds-ease-out); }
+  }
+  @keyframes hoja-entra { from { opacity: 0; translate: 0 0.375rem; } }
+}
+
+@mixin campos {
+  .grupo { display: flex; flex-direction: column; gap: 0.375rem; min-inline-size: 0; }
+  .conjunto { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+  .etiqueta { padding: 0; color: var(--ds-text-1); font-size: var(--autoria-texto-14); font-weight: 700; }
+  .etiqueta-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  .cuenta { color: var(--ds-text-2); font-size: var(--autoria-texto-14); font-variant-numeric: tabular-nums; }
+  .cuenta[data-cerca] { color: var(--ds-warning-text); font-weight: 700; }
+  .ayuda, .error { margin: 0; font-size: var(--autoria-texto-14); line-height: 1.45; }
+  .ayuda { color: var(--ds-text-2); }
+  .error { color: var(--ds-danger); font-weight: 700; }
+  .campo {
+    box-sizing: border-box; inline-size: 100%; min-inline-size: 0; min-block-size: 2.5rem; padding: 0.5rem 0.625rem;
+    border: 1px solid var(--l-filo-fuerte); border-radius: var(--l-radio-chico); background: var(--ds-surface-1);
+    color: var(--ds-text-1); font: inherit; font-size: var(--autoria-texto-16); line-height: 1.5;
+    transition: border-color var(--ds-dur-fast) var(--ds-ease-out), box-shadow var(--ds-dur-fast) var(--ds-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) { .campo:not([readonly]):hover { border-color: var(--ds-border-strong); } }
+  .campo:focus-visible { outline: none; border-color: var(--ds-focus); box-shadow: var(--ds-focus-halo); }
+  textarea.campo { resize: vertical; }
+  .campo[aria-invalid='true'] { border-color: var(--ds-danger); }
+  .campo[readonly] { background: var(--l-superficie-hundida); color: var(--ds-text-2); }
+  // La acción secundaria de una sección: un texto con su signo, sin contorno (EDITOR-PRO.md: nada de filas de botones de contorno).
+  .accion-texto {
+    position: relative; display: inline-flex; align-items: center; gap: 0.375rem; align-self: flex-start;
+    min-block-size: 2.25rem; padding: 0 0.5rem; margin-inline-start: -0.5rem; border: 0; border-radius: var(--l-radio-chico);
+    background: transparent; color: var(--ds-primary); font: inherit; font-size: var(--autoria-texto-14); font-weight: 700; cursor: pointer;
+    transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
+  }
+  .accion-texto::before {
+    content: '+'; display: inline-grid; place-items: center; inline-size: 1.125rem; block-size: 1.125rem;
+    border-radius: var(--l-radio-chico); background: var(--ds-primary-subtle); font-weight: 800; line-height: 1;
+  }
+  .accion-texto::after { content: ''; position: absolute; inset: -0.25rem 0; }
+  @media (hover: hover) and (pointer: fine) { .accion-texto:hover { background: var(--ds-primary-subtle); } }
+  .accion-texto[aria-disabled='true'] { color: var(--ds-text-3); cursor: not-allowed; }
+  .accion-texto:focus-visible, .icono-boton:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+  // Botón de solo icono (quitar, más): 32 px visibles, 44 de toque.
+  .icono-boton {
+    position: relative; display: inline-grid; place-items: center; flex: none; inline-size: 2rem; block-size: 2rem;
+    border: 0; border-radius: var(--l-radio-chico); background: transparent; color: var(--ds-text-2); cursor: pointer;
+    transition: background-color var(--ds-dur-fast) var(--ds-ease-out), color var(--ds-dur-fast) var(--ds-ease-out);
+  }
+  .icono-boton::after { content: ''; position: absolute; inset: -0.375rem; }
+  .icono-boton svg { inline-size: 1rem; block-size: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @media (hover: hover) and (pointer: fine) { .icono-boton:hover { background: var(--l-fila-encima); color: var(--ds-text-1); } }
+  .icono-boton:active { scale: 0.94; }
+  @media (forced-colors: active) { .campo { border: 1px solid CanvasText; } }
+}
+
+// Filas que entran con un leve desplazamiento (160–240 ms); con movimiento reducido, sin animación.
+@mixin entra($selector) {
+  @media (prefers-reduced-motion: no-preference) {
+    #{$selector} { animation: fila-entra var(--ds-dur-base) var(--ds-ease-out) both; }
+  }
+  @keyframes fila-entra { from { opacity: 0; translate: 0 0.25rem; } }
+}

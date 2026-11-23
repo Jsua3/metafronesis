@@ -1,0 +1,107 @@
+@use 'hoja';
+
+@include hoja.lienzo;
+@include hoja.campos;
+@include hoja.entra('.fila--objetivo, .ficha');
+
+// El formulario es un solo panel con filo; sus secciones se pliegan como las del Inspector.
+.formulario {
+  display: block; border: 1px solid var(--l-filo); border-radius: var(--l-radio-control); background: var(--l-superficie);
+  overflow: clip;
+}
+.formulario > app-estudio-seccion:last-child { border-block-end: 0; }
+.formulario .grupo + .conjunto { margin-block-start: 0.75rem; }
+
+.campo--largo { min-block-size: 8rem; }
+
+// El estado del guardado: un cuadrito de 8 px (la marca pixel del simulador) y el texto; la forma, no solo el color.
+.estado {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--ds-text-2);
+  font-size: var(--autoria-texto-14); font-weight: 700;
+}
+.estado::before { content: ''; inline-size: 0.5rem; block-size: 0.5rem; background: currentColor; }
+.estado:empty { display: none; }
+.estado[data-forma='guardando']::before { opacity: 0.5; }
+.estado[data-forma='error'], .estado[data-forma='corregir'] { color: var(--ds-danger); }
+.estado[data-forma='error']::before, .estado[data-forma='corregir']::before { rotate: 45deg; }
+.estado[data-forma='guardado'] { color: var(--ds-success); }
+
+// Objetivos: una lista numerada de frases, cada una en su fila con el número en un cuadro de 2 px de filo.
+.filas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.375rem; }
+.fila { display: flex; gap: 0.5rem; align-items: flex-start; min-inline-size: 0; }
+.fila .campo { flex: 1; }
+.fila textarea.campo { resize: none; min-block-size: 2.5rem; }
+.fila__numero {
+  display: inline-grid; place-items: center; flex: none; inline-size: 1.5rem; block-size: 1.5rem; margin-block-start: 0.5rem;
+  border-radius: var(--l-radio-chico); background: var(--l-superficie-hundida); color: var(--ds-text-2);
+  font-size: var(--autoria-texto-14); font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.quitar {
+  position: relative; display: inline-grid; place-items: center; flex: none; inline-size: 2rem; block-size: 2rem; margin-block-start: 0.25rem;
+  border: 0; border-radius: var(--l-radio-chico); background: transparent; color: var(--ds-text-2); cursor: pointer;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out), color var(--ds-dur-fast) var(--ds-ease-out);
+}
+.quitar::after { content: ''; position: absolute; inset: -0.375rem; }
+.quitar svg { inline-size: 1rem; block-size: 1rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) and (pointer: fine) {
+  .quitar:hover { background: var(--ds-danger-bg); color: var(--ds-danger); }
+  // El botón de quitar no compite con el texto: aparece del todo al pasar por la fila o al enfocarlo.
+  .fila--objetivo .quitar { opacity: 0.55; }
+  .fila--objetivo:hover .quitar, .fila--objetivo:focus-within .quitar { opacity: 1; }
+}
+.quitar:focus-visible, .ficha__quitar:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; opacity: 1; }
+.fila--tema .campo { min-block-size: 2.5rem; }
+.fila--tema .accion-texto { align-self: center; margin-inline-start: 0; flex: none; }
+
+// Temas sensibles: fichas compactas con una marca de 6 px a la izquierda.
+.fichas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.ficha {
+  display: inline-flex; align-items: center; gap: 0.375rem; max-inline-size: 100%; min-block-size: 2rem; padding-inline: 0.625rem 0.125rem;
+  border: 1px solid var(--l-filo-fuerte); border-radius: var(--l-radio-chico); background: var(--ds-surface-1);
+  font-size: var(--autoria-texto-14);
+}
+.ficha__marca { flex: none; inline-size: 0.375rem; block-size: 0.375rem; background: var(--ds-warning-text); }
+.ficha__texto { overflow-wrap: anywhere; }
+.ficha__quitar {
+  position: relative; display: inline-grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; border: 0;
+  border-radius: var(--l-radio-chico); background: transparent; color: var(--ds-text-2); cursor: pointer;
+}
+.ficha__quitar::after { content: ''; position: absolute; inset: -0.5rem -0.25rem; }
+.ficha__quitar svg { inline-size: 0.75rem; block-size: 0.75rem; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+@media (hover: hover) and (pointer: fine) { .ficha__quitar:hover { background: var(--ds-danger-bg); color: var(--ds-danger); } }
+.ficha__quitar:active, .quitar:active { scale: 0.92; }
+.vacio { font-style: italic; }
+
+// ── Inspector: la vista previa del estudiante ──
+.vista-lateral { display: flex; flex-direction: column; gap: 0.625rem; padding: 0.75rem; }
+.vista-titulo {
+  margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); font-weight: 700;
+  font-variant-caps: all-small-caps; letter-spacing: 0.06em;
+}
+// La ficha va en un «marco de dispositivo» hundido con la trama de puntos del lienzo: se lee como una vista previa, no como un campo.
+.marco-vista { padding: 0.75rem; border-radius: var(--l-radio-control); background-color: var(--l-superficie-hundida);
+  background-image: radial-gradient(var(--l-trama) 1px, transparent 1.5px); background-size: 0.5rem 0.5rem; }
+.vista {
+  display: flex; flex-direction: column; gap: 0.5rem; padding: 0.875rem; min-inline-size: 0;
+  border: 1px solid var(--l-filo); border-radius: var(--l-radio-tarjeta); background: var(--ds-surface-1); box-shadow: var(--ds-shadow-e1);
+}
+.vista__portada { align-self: center; max-inline-size: 100%; }
+.vista__nombre { margin: 0; font-size: var(--autoria-texto-18); line-height: 1.25; overflow-wrap: anywhere; }
+.vista__contexto {
+  margin: 0; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  overflow-wrap: anywhere; font-size: var(--autoria-texto-14); line-height: 1.5;
+}
+.vista__contexto.vacio { color: var(--ds-text-2); }
+.vista__sub { margin: 0.25rem 0 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); }
+.vista__lista { margin: 0; padding-inline-start: 1.125rem; display: flex; flex-direction: column; gap: 0.25rem; overflow-wrap: anywhere; font-size: var(--autoria-texto-14); }
+.vista__fichas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.vista__fichas li {
+  padding: 0.125rem 0.5rem; border-radius: var(--l-radio-chico); background: var(--ds-warning-bg); color: var(--ds-warning-text);
+  font-size: var(--autoria-texto-14); overflow-wrap: anywhere;
+}
+.vista-nota { margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); line-height: 1.45; }
+
+@media (max-width: 40rem) {
+  .fila--tema { flex-wrap: wrap; }
+}
+@media (forced-colors: active) { .vista, .formulario { border: 1px solid CanvasText; } }

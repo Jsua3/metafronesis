@@ -1,0 +1,105 @@
+// Una fila de «Pasos profesionales», dentro de un solo panel como las filas de un inspector (EDITOR-PRO.md, punto 2): filo
+// inferior, sin tarjeta. El estado del paso se dice con la marca de forma del hilo y con palabras para el lector de pantalla;
+// la franja de 3 px a la izquierda solo lo refuerza.
+:host { display: block; min-inline-size: 0; border-block-end: 1px solid var(--l-filo); }
+:host(:last-child) { border-block-end: 0; }
+
+.paso {
+  box-sizing: border-box; display: flex; flex-direction: column; gap: 0.375rem; min-inline-size: 0; padding: 0.375rem 0.5rem 0.75rem 1rem;
+  background: var(--l-superficie); scroll-margin-block: 1rem;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+.paso[data-estado='con-pendientes'] { box-shadow: inset 3px 0 0 var(--ds-warning-text); }
+:host(.abierta) .paso { background: var(--l-fila-elegida); }
+.paso:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
+
+// Arriba, no al centro: con un nombre de dos renglones el interruptor y «Más» se quedan en el primero, junto a donde empieza.
+// El relleno del nombre (10 px arriba y abajo) lo centra en el alto de 44 px de los controles cuando cabe en uno.
+.paso__cabeza { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.25rem 0.625rem; min-inline-size: 0; }
+.paso__nombre {
+  flex: 1 1 12rem; min-inline-size: 0; margin: 0; padding-block: 0.625rem; font-size: var(--autoria-texto-16); line-height: 1.5rem;
+  overflow-wrap: anywhere;
+}
+// «Texto por validar»: una etiqueta pasiva (sin borde de botón), en el primer renglón de la descripción.
+.insignia {
+  display: inline-block; margin-inline-end: 0.5rem; padding: 0 0.5rem; border-radius: 0.375rem; vertical-align: 0.0625rem;
+  background: var(--l-superficie-hundida); color: var(--ds-text-2); font-size: var(--autoria-texto-14); font-weight: 700; line-height: 1.375rem;
+  white-space: nowrap;
+}
+.paso__mas { flex: none; }
+
+// «Decide el final»: un interruptor de iOS hecho con la casilla misma (sigue siendo un control nativo con role="switch").
+.interruptor {
+  display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: 2.75rem; cursor: pointer;
+  color: var(--ds-text-2); font-size: var(--autoria-texto-14); font-weight: 700; white-space: nowrap;
+}
+.interruptor.encendido { color: var(--ds-text-1); }
+.interruptor input {
+  position: relative; flex: none; appearance: none; inline-size: 2.25rem; block-size: 1.375rem; margin: 0; border-radius: 999px;
+  background: var(--ds-border); box-shadow: inset 0 0 0 1px var(--ds-border-strong); cursor: inherit;
+  transition: background-color var(--ds-dur-fade) var(--ds-ease-out);
+}
+.interruptor input::before {
+  content: ''; position: absolute; inset-block-start: 0.1875rem; inset-inline-start: 0.1875rem; inline-size: 1rem; block-size: 1rem;
+  // Apagado: la perilla clara en relieve sobre la pista (como iOS), no un punto oscuro.
+  border-radius: 50%; background: var(--ds-surface-1); box-shadow: 0 0 0 1px var(--ds-border-strong), var(--ds-shadow-e1);
+  transition: translate var(--ds-dur-press) var(--ds-ease-out), background-color var(--ds-dur-fade) var(--ds-ease-out);
+}
+.interruptor input:checked { background: var(--ds-primary); box-shadow: none; }
+.interruptor input:checked::before { translate: 0.875rem 0; background: var(--ds-on-primary); box-shadow: var(--ds-shadow-e1); }
+.interruptor input:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.interruptor input:disabled { cursor: default; opacity: 0.7; }
+
+// La descripción, en dos renglones; «Ver más» la abre entera (details: funciona también en solo lectura).
+.paso__descripcion { margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); line-height: 1.375rem; overflow-wrap: anywhere; }
+.paso__descripcion summary { display: block; cursor: pointer; list-style: none; border-radius: 0.375rem; }
+.paso__descripcion summary::-webkit-details-marker { display: none; }
+.paso__descripcion summary:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.recorte { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+details[open] .recorte { display: block; -webkit-line-clamp: unset; line-clamp: none; }
+.ver-mas { color: var(--ds-primary); font-weight: 700; font-size: var(--autoria-texto-14); }
+.ver-mas::after { content: 'Ver más'; }
+details[open] .ver-mas::after { content: 'Ver menos'; }
+
+.paso__aviso { margin: 0; color: var(--ds-warning-text); font-size: var(--autoria-texto-14); font-weight: 700; line-height: 1.25rem; }
+
+// «Agregar una respuesta» va al final de las fichas (proyectado en su lista): una acción de texto con su signo, sin contorno
+// (EDITOR-PRO.md: nada de filas de botones de contorno); 32 px visibles y 44 de toque.
+.agregar-item { min-inline-size: 0; max-inline-size: 100%; list-style: none; }
+.agregar {
+  position: relative; display: inline-flex; align-items: center; gap: 0.375rem; min-block-size: 2rem; padding-inline: 0.5rem; border: 0;
+  border-radius: var(--l-radio-chico); background: transparent; color: var(--ds-primary); font: inherit; font-size: var(--autoria-texto-14);
+  font-weight: 700; cursor: pointer;
+  transition: scale var(--ds-dur-press) var(--ds-ease-out), background-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+.agregar::after { content: ''; position: absolute; inset: -0.375rem 0; }
+.agregar > span[aria-hidden] {
+  display: inline-grid; place-items: center; inline-size: 1.125rem; block-size: 1.125rem; border-radius: var(--l-radio-chico);
+  background: var(--ds-primary-subtle); font-weight: 800; line-height: 1;
+}
+@media (hover: hover) and (pointer: fine) { .agregar:hover { background: var(--ds-primary-subtle); } }
+.agregar[aria-expanded='true'] { background: var(--l-tinte); box-shadow: inset 0 0 0 1px var(--ds-primary); }
+.agregar:active { scale: 0.94; }
+.agregar:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+
+.editar, .confirmar {
+  display: flex; flex-direction: column; gap: 0.375rem; padding: 0.75rem; border-radius: var(--l-radio-control);
+  background: var(--l-superficie-hundida); box-shadow: inset 0 0 0 1px var(--l-filo-fuerte);
+}
+.etiqueta { font-weight: 700; font-size: var(--autoria-texto-14); }
+.campo { inline-size: 100%; box-sizing: border-box; font: inherit; font-size: var(--autoria-texto-16); line-height: 1.5; }
+textarea.campo { resize: none; }
+.editar__listo { align-self: flex-end; }
+.confirmar { box-shadow: inset 0 0 0 2px var(--ds-danger); }
+.confirmar p { margin: 0; }
+.confirmar__titulo { font-weight: 800; }
+.confirmar__acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .interruptor input, .interruptor input::before, .agregar { transition: none; }
+}
+@media (forced-colors: active) {
+  .paso, .editar, .confirmar { border: 1px solid CanvasText; }
+  .interruptor input { border: 1px solid CanvasText; }
+  .interruptor input:checked { background: Highlight; }
+}

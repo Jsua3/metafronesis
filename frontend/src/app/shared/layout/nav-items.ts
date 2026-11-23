@@ -33,6 +33,9 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
+  // E2-4 y P6: el profesor y el administrador entran a sus casos (lista, crear desde un lugar y el editor); el profesor
+  // solo ve y edita lo suyo (lo hace cumplir el servidor).
+  { id: 'casos', label: 'Casos', route: '/portal/casos', icon: 'edit_square', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 30 },
   { id: 'usuarios', label: 'Usuarios', route: '/portal/admin/usuarios', icon: 'manage_accounts', roles: ['ADMIN'], fold: [], order: 10 },
   { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 20 },
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 30 },

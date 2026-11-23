@@ -1,0 +1,104 @@
+:host {
+  display: flex; flex-direction: column; gap: 0.375rem; padding: 0.625rem 0.75rem 0.75rem; min-inline-size: 0;
+  border: 1px solid var(--linea); border-radius: var(--radio-tarjeta); background: var(--superficie);
+  transition: box-shadow var(--ds-dur-fade) var(--ds-ease-out), border-color var(--ds-dur-fade) var(--ds-ease-out);
+}
+/* La ficha que se está escribiendo se eleva: la elevación significa «aquí estás» (§4.7). */
+:host(:focus-within) { border-color: var(--borde-control); box-shadow: var(--sombra-foco); }
+:host(.marca-ia) { border-style: dashed; border-width: 2px; }
+.ficha__fila { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.5rem; align-items: start; }
+/* La letra con la que el estudiante ve la opción en el juego (A a D): firma pixel, cuadrada y con sombra dura. */
+.ficha__letra {
+  display: grid; place-items: center; inline-size: 2.75rem; block-size: 2.75rem; border-radius: 0.375rem;
+  background: var(--juego-fondo); color: var(--juego-acento-claro); font-weight: 800; font-size: var(--autoria-texto-18);
+  box-shadow: inset 0 -3px 0 var(--juego-hundido), 0 0 0 1px var(--juego-borde);
+}
+textarea.campo { inline-size: 100%; line-height: 1.5rem; resize: none; }
+/* En un teléfono la letra y «Más» suben a su propia fila: el texto de la respuesta usa todo el ancho. */
+@media (max-width: 40rem) {
+  .ficha__fila { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'letra . mas' 'texto texto texto'; }
+  .ficha__letra { grid-area: letra; }
+  .ficha__mas { grid-area: mas; }
+  .ficha__texto { grid-area: texto; }
+}
+.ficha__ia { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.boton-compacto { min-height: 2.75rem; padding: 0 0.75rem; }
+.clasificacion { display: flex; flex-wrap: wrap; gap: 0.125rem; margin: 0; padding: 0.1875rem; border: 1px solid var(--linea); border-radius: calc(var(--radio-control) + 0.1875rem); background: var(--fondo-hundido); }
+.opcion {
+  flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; min-block-size: 2.75rem;
+  padding: 0 0.5rem; border: 1px solid transparent; border-radius: var(--radio-control); cursor: pointer;
+  font-size: var(--autoria-texto-14); font-weight: 700; color: var(--texto-secundario); white-space: nowrap;
+  transition: background-color var(--ds-dur-fade) var(--ds-ease-out), color var(--ds-dur-fade) var(--ds-ease-out);
+}
+/* El radio nativo se conserva (teclado y lector) pero no se pinta: el segmento entero es la marca. */
+.opcion input { position: absolute; opacity: 0; inline-size: 1px; block-size: 1px; margin: 0; }
+.opcion:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 1px; }
+.opcion:has(input:checked) { background: var(--superficie); color: var(--tinta); box-shadow: var(--sombra-foco); border-color: var(--borde-control); }
+.opcion.RECOMMENDED:has(input:checked), .opcion.ACCEPTABLE:has(input:checked) { background: var(--adecuada-tinte); border-color: var(--adecuada-borde); color: var(--adecuada); }
+.opcion.RISKY:has(input:checked) { background: var(--riesgo-tinte); border-color: var(--riesgo-borde); color: var(--riesgo); }
+.opcion.CONTRAINDICATED:has(input:checked) { background: var(--peligro-tinte); border-color: var(--peligro); color: var(--peligro); }
+.opcion:active { scale: 0.97; }
+.consecuencia { padding-inline-start: 0.25rem; }
+/* El rótulo va sobre el filo del campo, como una leyenda: dice qué es sin gastar un renglón propio. */
+.campo-rotulado { position: relative; padding-block-start: 0.5rem; }
+.rotulo {
+  position: absolute; inset-block-start: 0; inset-inline-start: 0.625rem; padding: 0 0.25rem; max-inline-size: calc(100% - 1.25rem);
+  background: var(--superficie); color: var(--texto-secundario); font-size: var(--autoria-texto-14); font-weight: 700; line-height: 1rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none;
+}
+.campo-rotulado .campo { padding-block-start: 0.625rem; }
+.ficha__destino { display: flex; align-items: center; gap: 0.5rem; min-inline-size: 0; }
+.ficha__destino-rotulo { white-space: nowrap; font-weight: 700; font-size: var(--autoria-texto-14); color: var(--texto-secundario); }
+.ficha__destino select { flex: 1 1 auto; min-inline-size: 0; inline-size: 100%; text-overflow: ellipsis; }
+.facetas { position: relative; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.faceta {
+  display: inline-flex; align-items: center; gap: 0.25rem; min-block-size: 2.75rem; max-inline-size: 100%; padding: 0 0.5625rem;
+  border: 1px solid var(--linea); border-radius: 999px; background: var(--superficie); color: var(--tinta); cursor: pointer;
+  font-size: var(--autoria-texto-14); text-align: start;
+  transition: scale var(--ds-dur-press) var(--ds-ease-out), background-color var(--ds-dur-fade) var(--ds-ease-out);
+}
+.faceta__nombre { font-weight: 700; }
+.faceta__valor { color: var(--texto-secundario); overflow-wrap: anywhere; }
+.faceta[aria-expanded='true'] { border-color: var(--primario); background: var(--primario-tinte); color: var(--primario); }
+.faceta[aria-expanded='true'] .faceta__valor { color: var(--primario); }
+.faceta:active { scale: 0.97; }
+.ancla-plegada { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.faceta-panel {
+  display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin: 0; padding: 0.75rem;
+  border: 1px solid var(--linea); border-radius: var(--radio-control); background: var(--fondo-hundido);
+  animation: faceta-abre var(--ds-dur-fade) var(--ds-spring-soft, var(--ds-ease-out));
+}
+.faceta-panel--hijo { display: block; padding: 0; border: 0; background: transparent; }
+.faceta-panel legend { padding: 0 0.25rem; font-weight: 700; font-size: var(--autoria-texto-14); color: var(--texto-secundario); }
+.persona .dos-campos, .persona .nota { flex: 1 1 100%; }
+.dos-campos { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.campo-col { flex: 1 1 10rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.rotulo-simple { font-weight: 700; font-size: var(--autoria-texto-14); }
+.casilla, .opcion-simple { display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: 2.75rem; font-size: var(--autoria-texto-16); }
+.casilla input, .opcion-simple input { inline-size: 1.25rem; block-size: 1.25rem; accent-color: var(--primario); }
+.nota { margin: 0; color: var(--texto-secundario); font-size: var(--autoria-texto-14); line-height: 1.25rem; }
+.acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.creada { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.5rem 0.75rem; border-radius: var(--radio-control); background: var(--adecuada-tinte); }
+.creada p { margin: 0; flex: 1 1 16rem; }
+/* Lo que falta para guardar, pegado al borde inferior de la ficha: ámbar no (es de «Salida segura»); tinte de aviso. */
+.sin-guardar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin: 0.25rem -0.75rem -0.75rem; padding: 0.5rem 0.75rem;
+  border-block-start: 1px solid var(--linea); border-radius: 0 0 var(--radio-tarjeta) var(--radio-tarjeta);
+  background: var(--aviso-tinte); color: var(--aviso-texto); font-size: var(--autoria-texto-14); font-weight: 600;
+}
+.sin-guardar__marca { padding: 0 0.5rem; border: 1px solid currentColor; border-radius: 999px; font-weight: 800; white-space: nowrap; }
+button:active { scale: 0.97; }
+@media (hover: hover) and (pointer: fine) {
+  .faceta:hover { border-color: var(--primario); }
+  .opcion:hover:not(:has(input:checked)) { color: var(--tinta); background: color-mix(in oklab, var(--superficie) 60%, transparent); }
+}
+@keyframes faceta-abre { from { opacity: 0; translate: 0 -0.25rem; } }
+@media (prefers-reduced-motion: reduce) {
+  :host, .faceta, .opcion { transition: none; }
+  .faceta-panel { animation: none; }
+}
+@media (forced-colors: active) {
+  .opcion:has(input:checked), .faceta[aria-expanded='true'] { outline: 2px solid Highlight; }
+  .ficha__letra { forced-color-adjust: none; }
+}
+  

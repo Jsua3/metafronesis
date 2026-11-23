@@ -1,0 +1,168 @@
+// Paso 1 de crear un caso: plantillas a la izquierda, inspector de la elegida a la derecha y la barra de pasos al pie.
+.crear { gap: 1.25rem; }
+
+.titulo { display: flex; flex-direction: column; gap: 0.25rem; }
+.titulo h1 { margin: 0; }
+.titulo p { margin: 0; max-inline-size: 48rem; }
+.sobre, .seccion {
+  margin: 0; font-size: var(--autoria-texto-14); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+.seccion { display: flex; align-items: baseline; gap: 0.75rem; }
+// El conteo va junto al rótulo, en minúsculas y sin versalitas: es un dato, no una cabecera.
+.cuantos { font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+// ── Filtro compacto: fichas de 36 px visuales con área de toque de 44 (el ::after estira el blanco sin mover el ritmo).
+// Una sola fila a cualquier ancho: si no caben, se desliza; el borde con más fichas se desvanece y lleva su flecha (la
+// pantalla mide la fila y marca `data-mas-inicio` / `data-mas-fin`). Sin fichas escondidas, no hay desvanecido.
+.filtro-marco { position: relative; min-inline-size: 0; }
+.filtro {
+  --borde-inicio: 0rem; --borde-fin: 0rem;
+  display: flex; align-items: center; gap: 0.375rem; overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth;
+  padding: 0.25rem; margin-inline: -0.25rem; scroll-padding-inline: 3rem;
+  mask-image: linear-gradient(to right, transparent, var(--ds-text-1) var(--borde-inicio),
+    var(--ds-text-1) calc(100% - var(--borde-fin)), transparent);
+}
+.filtro::-webkit-scrollbar { display: none; }
+[data-mas-inicio] > .filtro { --borde-inicio: 3.5rem; }
+[data-mas-fin] > .filtro { --borde-fin: 3.5rem; }
+.desliza {
+  position: absolute; inset-block-start: 50%; translate: 0 -50%; display: grid; place-items: center;
+  inline-size: 2rem; block-size: 2rem; padding: 0; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--borde-control); background: var(--l-superficie, var(--superficie)); color: var(--tinta);
+  box-shadow: var(--l-sombra, var(--sombra-menu)); font: inherit; font-size: var(--autoria-texto-18); font-weight: 700; line-height: 1;
+  animation: desliza-entra var(--ds-dur-fast) var(--ds-ease-out);
+}
+.desliza::after { content: ''; position: absolute; inset: -0.375rem; }
+.desliza span { margin-block-start: -0.125rem; }
+.desliza--inicio { inset-inline-start: -0.25rem; }
+.desliza--fin { inset-inline-end: -0.25rem; }
+.desliza:active { scale: 0.94; }
+@keyframes desliza-entra { from { opacity: 0; } }
+.ficha, .etiqueta { flex: none; white-space: nowrap; }
+.etiqueta { font-size: var(--autoria-texto-14); font-weight: 700; color: var(--texto-secundario); margin-inline-end: 0.375rem; }
+.ficha {
+  position: relative; min-block-size: 2.25rem; padding: 0 0.875rem; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: var(--autoria-texto-14); font-weight: 600; color: var(--tinta);
+  background: var(--l-superficie, var(--superficie)); border: 1px solid var(--borde-control);
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out), border-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+@media (pointer: coarse) { .ficha { min-block-size: 2.75rem; } }
+.ficha::after { content: ''; position: absolute; inset: -0.25rem 0; }
+.ficha[aria-pressed='true'] { background: var(--primario-tinte); border-color: var(--primario); color: var(--primario-oscuro); }
+.ficha:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+.error, .aviso-filtro { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.error p, .aviso-filtro p { margin: 0; flex: 1 1 20rem; }
+
+// ── El estudio: rejilla de plantillas y, en pantallas anchas, el inspector fijo a la derecha.
+.estudio { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.zona { display: flex; flex-direction: column; gap: 0.75rem; min-inline-size: 0; }
+.plantillas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
+
+.plantilla {
+  position: relative; display: flex; flex-direction: column; gap: 0.625rem; padding: 0.5rem; min-inline-size: 0; cursor: pointer;
+  border-radius: var(--l-radio-tarjeta, var(--radio-tarjeta)); border: 1px solid var(--linea);
+  background: var(--l-superficie, var(--superficie));
+  transition: transform var(--ds-dur-move) var(--ds-spring-soft), border-color var(--ds-dur-fast) var(--ds-ease-out),
+    box-shadow var(--ds-dur-base) var(--ds-ease-out);
+}
+// El realce al pasar el cursor, solo con ratón: en táctil quedaría pegado tras el toque.
+@media (hover: hover) and (pointer: fine) {
+  .ficha:hover { border-color: var(--primario); }
+  .plantilla:not(.esqueleto):hover { transform: translateY(-2px); border-color: var(--borde-control); box-shadow: var(--l-sombra, var(--sombra-menu)); }
+}
+.plantilla:active { transform: translateY(0); }
+// La elegida: anillo de 2 px en el color de acción (el borde de 1 px más una sombra interior, sin cambiar la medida).
+.plantilla.elegida { border-color: var(--primario); box-shadow: inset 0 0 0 1px var(--primario), var(--l-sombra, var(--sombra-menu)); }
+.plantilla:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 3px; }
+.plantilla.pronto .arte { filter: saturate(0.4); }
+
+.arte {
+  position: relative; display: block; overflow: hidden; aspect-ratio: 16 / 9;
+  border-radius: var(--l-radio-chico, var(--radio-control)); background: var(--fondo-hundido);
+}
+.arte img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.patron, .esqueleto .arte {
+  display: block; inline-size: 100%; block-size: 100%;
+  background: repeating-conic-gradient(var(--fondo-hundido) 0 25%, color-mix(in oklab, var(--fondo-hundido) 80%, var(--linea)) 0 50%) 0 0 / 1.5rem 1.5rem;
+}
+// Insignia sobre el arte: placa en el color de acción (par AA en los dos temas; una placa clara en oscuro destellaba,
+// NVIDIA) con un filo pixel de 2 px abajo, como las etiquetas del simulador.
+.insignia {
+  position: absolute; inset-block-end: 0.5rem; inset-inline-start: 0.5rem; padding: 0.125rem 0.5rem;
+  font-size: var(--autoria-texto-14); font-weight: 700; color: var(--sobre-primario);
+  background: var(--primario);
+  box-shadow: inset 0 calc(-1 * var(--l-pixel, 2px)) 0 var(--primario-oscuro); border-radius: var(--l-pixel, 2px);
+}
+// El visto de la elegida: un cuadrito de 24 px con la marca dibujada por dos filos (sin glifo que dependa de la fuente).
+.visto {
+  position: absolute; inset-block-start: 0.5rem; inset-inline-end: 0.5rem; inline-size: 1.5rem; block-size: 1.5rem;
+  border-radius: var(--l-pixel, 2px); background: var(--primario); opacity: 0; transform: scale(0.6);
+  transition: opacity var(--ds-dur-fast) var(--ds-ease-out), transform var(--ds-dur-move) var(--ds-spring-live);
+}
+.visto::after {
+  content: ''; position: absolute; inset-inline-start: 0.5rem; inset-block-start: 0.25rem; inline-size: 0.375rem; block-size: 0.75rem;
+  border: solid var(--sobre-primario); border-width: 0 var(--l-pixel, 2px) var(--l-pixel, 2px) 0; transform: rotate(45deg);
+}
+.elegida .visto { opacity: 1; transform: none; }
+
+.texto { display: flex; flex-direction: column; gap: 0.25rem; padding: 0 0.25rem 0.25rem; min-inline-size: 0; }
+.nombre { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: var(--autoria-texto-18); font-weight: 700; line-height: 1.5rem; }
+// Dos renglones de descripción como máximo: el detalle completo vive en el inspector.
+.desc {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+  font-size: var(--autoria-texto-14); line-height: 1.375rem;
+}
+.esqueleto { cursor: default; }
+.raya { display: block; block-size: 1rem; inline-size: 60%; margin: 0.25rem; border-radius: var(--l-pixel, 2px); background: var(--fondo-hundido); }
+
+// ── Inspector de la plantilla elegida: panel con superficie sutil, fijo mientras se recorre la rejilla.
+.inspector:focus-visible { outline: 3px solid var(--foco); outline-offset: -3px; }
+.inspector {
+  min-inline-size: 0; padding: 1rem; border-radius: var(--l-radio-tarjeta, var(--radio-tarjeta));
+  border: 1px solid var(--linea); background: var(--l-superficie-hundida, var(--fondo-hundido));
+}
+
+// ── La barra: «Continuar» lleva su flecha y una medida mínima pareja; el aviso de «pronto» va en texto secundario.
+.continuar { min-inline-size: 9rem; gap: 0.5rem; }
+.pronto-texto { font-size: var(--autoria-texto-14); color: var(--texto-secundario); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (min-width: 64rem) {
+  .estudio { grid-template-columns: minmax(0, 1fr) 22rem; }
+  .inspector { overflow-y: auto; overscroll-behavior: contain; }
+}
+@media (min-width: 90rem) { .estudio { grid-template-columns: minmax(0, 1fr) 24rem; } }
+
+// Escritorio con alto suficiente: como el «Nuevo proyecto» de Unity Hub, la página no se desplaza. La página ocupa justo la
+// zona central (su caja posicionada es el contenedor del lienzo del estudio, que mide lo mismo que esa zona) y reparte el
+// alto: título y filtro arriba, la rejilla y el detalle se desplazan cada uno por su cuenta, y la barra de pasos queda en
+// su sitio al pie, sin nada que pase por detrás. Con poco alto, se vuelve al desplazamiento normal con la barra pegada.
+@media (min-width: 64rem) and (min-height: 36rem) {
+  .crear { position: absolute; inset: 0; padding-block: 1.5rem 1rem; gap: 1rem; }
+  .estudio { flex: 1; min-block-size: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  .zona { min-block-size: 0; }
+  // El relleno deja sitio al anillo de foco y al realce de la tarjeta, que el desplazamiento recortaría.
+  .plantillas {
+    flex: 1; min-block-size: 0; align-content: start; overflow-y: auto; overscroll-behavior: contain;
+    padding: 0.5rem; margin: -0.5rem; scroll-padding-block: 0.5rem;
+  }
+  .inspector { min-block-size: 0; }
+}
+
+// En el teléfono: plantillas acostadas, arte a la izquierda y texto a la derecha, para que las cuatro quepan sin desplazar media pantalla.
+@media (max-width: 39.999rem) {
+  .plantillas { gap: 0.625rem; }
+  .plantilla { flex-direction: row; align-items: center; }
+  .plantilla .arte { flex: none; inline-size: 42%; }
+  // En el arte chico la insignia tapaba el cuarto: el número de salas ya está en el inspector, debajo.
+  .insignia { display: none; }
+  .visto { inset-block-start: 0.25rem; inset-inline-end: 0.25rem; }
+  .inspector { padding: 0.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plantilla, .visto, .ficha { transition: none; }
+  .filtro { scroll-behavior: auto; }
+  .desliza { animation: none; }
+}

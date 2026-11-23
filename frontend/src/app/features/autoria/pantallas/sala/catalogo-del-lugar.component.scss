@@ -1,0 +1,139 @@
+// El catálogo del lugar (E4): salas de imagen fija, y los objetos de la sala por piezas.
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+}
+
+.catalogo h3 {
+  margin: 0;
+  font-size: var(--autoria-texto-16);
+}
+
+.catalogo__tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-1);
+}
+
+.catalogo__tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  min-block-size: var(--ds-target-min);
+  padding-inline: var(--ds-space-3);
+  border: 1px solid var(--l-filo-fuerte);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ds-text-2);
+  font: inherit;
+  font-size: var(--autoria-texto-14);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.catalogo__tipo:active {
+  scale: 0.97;
+}
+
+.catalogo__tipo[aria-selected='true'] {
+  background: var(--ds-primary-subtle);
+  border-color: var(--ds-primary);
+  color: var(--ds-text-1);
+}
+
+.catalogo__cuenta {
+  color: var(--ds-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.catalogo-lista {
+  display: grid;
+  gap: var(--ds-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalogo__item {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-space-3);
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding: var(--ds-space-1) var(--ds-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--l-radio-control);
+  background: transparent;
+  color: var(--ds-text-1);
+  font: inherit;
+  font-size: var(--autoria-texto-16);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.catalogo__item:active {
+  scale: 0.98;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .catalogo__item:hover,
+  .catalogo__tipo:hover {
+    background: var(--l-superficie-hundida);
+  }
+}
+
+.catalogo__arte {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: var(--l-radio-chico);
+  background: var(--juego-escenario);
+  overflow: hidden;
+}
+
+.catalogo__arte img {
+  max-inline-size: 2.5rem;
+  max-block-size: 2.5rem;
+  image-rendering: pixelated;
+}
+
+.catalogo__nombre {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta {
+  font-weight: 700;
+  font-size: var(--autoria-texto-16);
+}
+
+.campo {
+  min-block-size: var(--ds-target-min);
+  inline-size: 100%;
+  font: inherit;
+  font-size: var(--autoria-texto-16);
+}
+
+:is(.catalogo__tipo, .catalogo__item):focus-visible {
+  outline: 3px solid var(--ds-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalogo__tipo,
+  .catalogo__item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .catalogo__tipo[aria-selected='true'] {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+}
