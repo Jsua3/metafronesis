@@ -16,8 +16,13 @@ Por cada sala elegida, en el orden pedido (la primera es la escena de inicio):
 Del lugar entero pasan al caso las herramientas (``ClinicalTool``), los hitos y el nivel de riesgo (``rules``).
 
 Todas las posiciones son las de la biblioteca: el punto de apoyo en el suelo (centro inferior). ``metadata.apoyo =
-"pies"`` se lo dice al juego. Esta versión copia lugares de imagen fija (esquema 2 de la biblioteca): ``porPiezas`` se
-acepta pero un lugar sin plantilla por piezas se copia de imagen fija, como en v3.
+"pies"`` se lo dice al juego.
+
+**Salas por piezas (esquema 3).** Una sala con ``estructura`` (pisos, muros, ventanas, lámparas, momento del día...) la guarda
+tal cual en ``SceneMap.structure``: el navegador calcula la luz desde ella, así que no se quita ni se renombra ningún campo. Esa
+sala no lleva ``backgroundImage``; su ancho es el de la estructura; sus puertas van en un muro (``muro``, ``pos``, ``modelo``)
+y no llevan ``x, y`` ni ``pintada``: su umbral, su llegada y las paredes los fija ``geometria_salas.recalcular`` al final de
+la copia. Un lugar sin plantilla por piezas se copia de imagen fija, como siempre.
 """
 import copy
 import json
@@ -25,6 +30,8 @@ from dataclasses import dataclass, field
 
 from rest_framework import status
 
+from apps.autoria import geometria_salas
+from apps.autoria.plano import ANCHOS
 from apps.simulation.models import (
     CaseCharacter,
     ClinicalTool,
@@ -216,6 +223,18 @@ def _punto(entrada):
     return {"x": entrada["x"], "y": entrada["y"]}
 
 
+def _estructura(sala):
+    """La ``estructura`` de una sala armada por piezas (esquema 3), o ``None`` si es de imagen fija."""
+    estructura = sala.get("estructura")
+    return estructura if isinstance(estructura, dict) else None
+
+
+def _ancho(sala):
+    """El ancho de la sala: el de su estructura si es uno del catálogo; si no, el de siempre."""
+    ancho = (_estructura(sala) or {}).get("ancho")
+    return ancho if ancho in ANCHOS and not isinstance(ancho, bool) else ANCHO_SALA
+
+
 def _paredes(escena, sala):
     """Las paredes y bordes del encuadre de la sala: lo que el dibujo ya muestra como pared, ahora también en el mundo."""
     return [
@@ -264,22 +283,51 @@ def _personas(escena, sala, personajes, caracteres, claves):
     return resultado
 
 
-def _puertas(escena, sala, entradas, claves):
-    """Las puertas hacia salas elegidas; las otras no se crean. ``claves`` son las de las puertas elegidas, en orden
-    (``_asignar_claves``)."""
+def _puertas(escena, sala, entradas, claves, claves_de_puertas):
+    """Las puertas hacia salas elegidas; las otras no se crean. Una puerta en el muro (``muro``, ``pos``, ``modelo``) no lleva
+    ``x, y`` ni ``pintada``: su umbral y su llegada los fija ``recalcular`` al final de la copia. ``claves`` son las de las
+    puertas elegidas, en orden (``_asignar_claves``); ``claves_de_puertas`` guarda la clave que tomó cada puerta en el caso,
+    para traducir después los ``par`` que la nombran."""
     resultado = []
     elegidas = [puerta for puerta in sala.get("puertas", []) if puerta["hacia"] in entradas]  # las otras no se crean
     for puerta, clave in zip(elegidas, claves):
         destino = entradas[puerta["hacia"]]
         ancho, alto = TAMANO_PUERTA
         metadata = {"targetNodeKey": puerta["hacia"], "entryX": destino["x"], "entryY": destino["y"]}
-        x, y = puerta["x"], puerta["y"]
-        metadata["pintada"] = True
+        claves_de_puertas[(sala["id"], puerta["id"])] = clave
+        if "muro" in puerta:
+            x, y = 0, 0  # provisional: ``recalcular`` pone el umbral
+            metadata.update(muro=puerta["muro"], pos=puerta["pos"], modelo=puerta["modelo"])
+            if puerta.get("par"):
+                metadata["par"] = puerta["par"]
+            if puerta.get("sentidoUnico"):
+                metadata["sentidoUnico"] = True
+        else:
+            x, y = puerta["x"], puerta["y"]
+            metadata["pintada"] = True
         resultado.append(_objeto(
             escena, clave, puerta["etiqueta"], "EXIT", x, y, ancho, alto,
             interaction_prompt=puerta["etiqueta"], metadata=metadata,
         ))
     return resultado
+
+
+def _traducir_pares(puertas, claves_de_puertas):
+    """El ``par`` de la biblioteca es el id de la puerta en la sala de destino; en el caso es la clave que tomó allí."""
+    for objeto in puertas:
+        metadata = json.loads(objeto.metadata_json)
+        par = metadata.get("par")
+        if par is None:
+            continue
+        clave = claves_de_puertas.get((metadata["targetNodeKey"], par))
+        if clave is None:
+            metadata.pop("par")  # la puerta par está en una sala que no se eligió
+        elif clave == par:
+            continue
+        else:
+            metadata["par"] = clave
+        objeto.metadata_json = _json(metadata)
+        objeto.save(update_fields=["metadata_json"])
 
 
 def _personajes_del_caso(case_version, lugar, elegidas):
@@ -351,6 +399,7 @@ def copiar_al_caso(case_version, lugar, salas):
 
     cuenta = {"muebles": 0, "objetos": 0, "personajes": 0, "puertas": 0}
     nodo_por_sala = {}
+    claves_de_puertas, todas_las_puertas = {}, []
     for posicion, sala in enumerate(elegidas):
         nodo = SimulationNode.objects.create(
             case_version=case_version, node_key=sala["id"], title=sala["nombre"], narrative=sala["descripcion"],
@@ -358,22 +407,23 @@ def copiar_al_caso(case_version, lugar, salas):
             position_x=ORIGEN_X + (posicion % COLUMNAS) * SEPARACION_X,
             position_y=ORIGEN_Y + (posicion // COLUMNAS) * SEPARACION_Y, display_order=posicion,
         )
-        ambiente = {
-            "backgroundImage": url_de_arte(lugar_id, sala["fondo"]), "encuadre": sala["encuadre"],
-            "salaId": sala["id"], "lugarId": lugar_id,
-        }
+        estructura = _estructura(sala)
+        ambiente = {"encuadre": sala["encuadre"], "salaId": sala["id"], "lugarId": lugar_id}
+        if estructura is None:  # sala de imagen fija: el fondo va primero, como siempre
+            ambiente = {"backgroundImage": url_de_arte(lugar_id, sala["fondo"]), **ambiente}
         entrada = entradas[sala["id"]]
         escena = SceneMap.objects.create(
             case_version=case_version, node=nodo, map_key=f"sala-{sala['id']}", title=sala["nombre"],
-            width=ANCHO_SALA, height=ALTO_SALA, theme=TEMA, spawn_x=entrada["x"], spawn_y=entrada["y"],
-            ambient_json=_json(ambiente),
+            width=_ancho(sala), height=ALTO_SALA, theme=TEMA, spawn_x=entrada["x"], spawn_y=entrada["y"],
+            ambient_json=_json(ambiente), structure=copy.deepcopy(estructura),
         )
         claves = _asignar_claves(sala, entradas)
         de_muebles, zonas = _muebles(escena, sala, muebles, lugar_id, claves["muebles"])
         de_objetos = _objetos(escena, sala, objetos, lugar_id, claves["objetos"])
         de_personas = _personas(escena, sala, personajes, caracteres, claves["personajes"])
-        de_puertas = _puertas(escena, sala, entradas, claves["puertas"])
+        de_puertas = _puertas(escena, sala, entradas, claves["puertas"], claves_de_puertas)
         MapObject.objects.bulk_create(de_muebles + de_objetos + de_personas + de_puertas)
+        todas_las_puertas.extend(de_puertas)
         CollisionZone.objects.bulk_create(_paredes(escena, sala) + zonas)
         cuenta["muebles"] += len(de_muebles)
         cuenta["objetos"] += len(de_objetos)
@@ -381,6 +431,8 @@ def copiar_al_caso(case_version, lugar, salas):
         cuenta["puertas"] += len(de_puertas)
         nodo_por_sala[sala["id"]] = nodo
 
+    _traducir_pares(todas_las_puertas, claves_de_puertas)
+    geometria_salas.recalcular(case_version)
     herramientas = _herramientas(case_version, lugar)
     hitos = _reglas(case_version, lugar)
     return ResumenCopia(

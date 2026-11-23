@@ -249,6 +249,23 @@ def test_ensamblado_completo_crea_el_borrador_con_el_mundo(contexto):
     assert crear(cliente).status_code == 201
 
 
+def test_el_caso_generado_arma_las_salas_por_piezas_con_su_estructura(contexto):
+    """La generacion usa las plantillas por piezas (esquema 3): cada mapa lleva la estructura de su sala, sin fondo fijo."""
+    cliente, _ = contexto
+    generacion = ensamblada(cliente)
+    assert generacion["status"] == "imported", generacion["issues"]
+    version = CaseVersion.objects.get(pk=generacion["caseVersionId"])
+    plantilla = {sala["id"]: sala for sala in lugares.cargar_lugar(LUGAR, por_piezas=True)["salas"]}
+    mapas = list(SceneMap.objects.filter(case_version=version).select_related("node"))
+    assert len(mapas) == ESCENAS_DEL_FALSO
+    for mapa in mapas:
+        sala = json.loads(mapa.ambient_json)["salaId"]
+        assert mapa.structure == plantilla[sala]["estructura"]
+        assert "backgroundImage" not in json.loads(mapa.ambient_json)
+        assert mapa.width == mapa.structure["ancho"]
+    assert MapObject.objects.filter(scene_map__case_version=version, object_type="EXIT").exists()
+
+
 def test_el_borrador_generado_aparece_en_la_definicion_de_autoria(contexto):
     cliente, _ = contexto
     version_id = ensamblada(cliente)["caseVersionId"]

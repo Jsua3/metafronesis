@@ -5,6 +5,7 @@ Cada proveedor sabe hablar con un servicio; los asistentes solo conocen la inter
 """
 
 import json
+import re
 from abc import ABC, abstractmethod
 from urllib.request import Request, urlopen
 
@@ -53,6 +54,30 @@ class ProveedorOpenAI(ProveedorIA):
         return respuesta["choices"][0]["message"]["content"]
 
 
+#: El razonamiento que algunos modelos escriben antes de responder (``<think>…</think>``): no es parte de la respuesta.
+_RAZONAMIENTO = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
+
+
+class ProveedorNvidia(ProveedorOpenAI):
+    """Los modelos de NVIDIA (``build.nvidia.com``): la misma API que OpenAI, en ``integrate.api.nvidia.com``.
+
+    Son más lentos que los de OpenAI o Anthropic y algunos cortan la respuesta pronto si no se les da tope: sin
+    ``max_tokens`` ni ``tiempo`` (la generación de casos no los pasa) usa los suyos, que alcanzan para una escena entera.
+    """
+
+    URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+    MAXIMO_DE_TOKENS = 8192
+    TIEMPO_SEGUNDOS = 90
+
+    def responder(self, instrucciones: str, mensajes: list[dict], *, max_tokens: int | None = None, tiempo: int | None = None) -> str:
+        datos = {
+            "model": self.modelo, "messages": [{"role": "system", "content": instrucciones}, *mensajes],
+            "max_tokens": max_tokens or self.MAXIMO_DE_TOKENS,
+        }
+        respuesta = _solicitar(self.URL, datos, {"Authorization": f"Bearer {self.clave}"}, tiempo or self.TIEMPO_SEGUNDOS)
+        return _RAZONAMIENTO.sub("", respuesta["choices"][0]["message"]["content"] or "").strip()
+
+
 class ProveedorAnthropic(ProveedorIA):
     URL = "https://api.anthropic.com/v1/messages"
     VERSION_API = "2023-06-01"
@@ -72,7 +97,7 @@ def _solicitar(url, datos, cabeceras, tiempo=None):
 
 
 #: Nombre en la configuración → clase del proveedor.
-REGISTRO = {"falso": ProveedorFalso, "openai": ProveedorOpenAI, "anthropic": ProveedorAnthropic}
+REGISTRO = {"falso": ProveedorFalso, "openai": ProveedorOpenAI, "anthropic": ProveedorAnthropic, "nvidia": ProveedorNvidia}
 
 
 def proveedor_para(nombre, clave: str = "", modelo: str = "") -> ProveedorIA:

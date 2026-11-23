@@ -29,7 +29,7 @@ def test_catalogo_real_por_api_con_imagenes_existentes(settings, role):
     root = settings.BIBLIOTECA_DIR / "escenarios"
     index = json.loads((root / "indice.json").read_text(encoding="utf-8"))
     ids = [item["id"] for item in index["lugares"]]
-    assert set(ids) == {"casa", "comisaria", "universidad"}
+    assert set(ids) == {"casa", "comisaria", "universidad", "hospital"}
     client = APIClient()
     user = CustomUser.objects.create_user(
         email=f"catalogo-{role.lower()}@example.test", role=role
@@ -49,8 +49,11 @@ def test_catalogo_real_por_api_con_imagenes_existentes(settings, role):
         assert len(public["salas"]) == len(original["salas"]) > 0
         assert public["catalogo"] and public["hitos"]
         paths = list(art_paths(public))
-        assert paths
+        if lugar_id != "hospital":  # el hospital solo existe por piezas: no tiene arte propio de escenario
+            assert paths
         for path in paths:
+            if path.startswith("/assets/biblioteca/piezas/"):
+                continue  # arte del catalogo de piezas: lo publica el frontend (ver test_catalogo_piezas)
             prefix = "/assets/biblioteca/escenarios/"
             assert path.startswith(prefix)
             assert (root / path[len(prefix) :]).is_file(), path

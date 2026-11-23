@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 #: Donde el frontend publica el arte de la biblioteca (``frontend/src/assets/biblioteca``).
 URL_BASE = "/assets/biblioteca/escenarios"
+#: Donde el frontend publica ``biblioteca/`` entera: el arte de ``piezas/...`` cuelga de aquí.
+URL_PIEZAS = "/assets/biblioteca"
 #: La forma de un id de la biblioteca (``clave`` del esquema): minúsculas, números y guiones sueltos.
 _CLAVE = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 _MAX_ID = 60
@@ -35,7 +37,11 @@ _NO_EXISTE = "Ese lugar no está en la biblioteca."
 
 
 def url_de_arte(lugar_id, ruta):
-    """La URL pública de una imagen del lugar (``ruta`` es la del escenario, relativa a la carpeta del lugar)."""
+    """La URL pública de una imagen del lugar.
+
+    ``arte/...`` es relativa a la carpeta del lugar (``/assets/biblioteca/escenarios/<lugar>/...``); ``piezas/...`` (esquema 3)
+    es del catálogo de piezas, compartido por todos los lugares (``/assets/biblioteca/piezas/...``).
+    """
     if (
         not isinstance(ruta, str)
         or not ruta
@@ -49,6 +55,8 @@ def url_de_arte(lugar_id, ruta):
             _NO_DISPONIBLE,
             status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+    if ruta.startswith("piezas/"):
+        return f"{URL_PIEZAS}/{ruta}"
     return f"{URL_BASE}/{lugar_id}/{ruta}"
 
 
@@ -107,16 +115,23 @@ def listar_lugares():
                 "temas": list(entrada.get("temas", lugar.get("temas", []))),
                 "hitos": entrada.get("hitos", len(lugar.get("hitos") or [])),
                 "nivelRiesgoPorDefecto": lugar.get("nivelRiesgoPorDefecto"),
-                "portada": url_de_arte(lugar["id"], salas[0]["fondo"])
-                if salas
-                else None,
+                "portada": _portada(lugar["id"], salas),
             }
         )
     return resultado
 
 
-def cargar_lugar(lugar_id):
+def _portada(lugar_id, salas):
+    """La URL del fondo de la primera sala de imagen fija; una sala por piezas (esquema 3) no tiene imagen propia."""
+    fondo = next((sala["fondo"] for sala in salas if isinstance(sala.get("fondo"), str)), None)
+    return url_de_arte(lugar_id, fondo) if fondo else None
+
+
+def cargar_lugar(lugar_id, por_piezas=False):
     """El escenario del lugar tal como está en el archivo (rutas de arte relativas), como una copia nueva.
+
+    Con ``por_piezas`` se lee ``escenario-piezas.json`` (esquema 3: cada sala trae su ``estructura``) si el lugar lo tiene; un
+    lugar sin plantilla por piezas (o el hospital, que solo existe por piezas y vive en ``escenario.json``) se lee como siempre.
 
     404 si el id no tiene la forma de un id de la biblioteca o el índice no lo nombra.
     """
@@ -128,11 +143,17 @@ def cargar_lugar(lugar_id):
         raise NotFound(_NO_EXISTE)
     if lugar_id not in {entrada.get("id") for entrada in _indice()}:
         raise NotFound(_NO_EXISTE)
-    escenario = _leer(_carpeta() / lugar_id / "escenario.json")
-    if not isinstance(escenario, dict) or escenario.get("id") != lugar_id:
+    alternativo = _carpeta() / lugar_id / "escenario-piezas.json"
+    archivo = alternativo if por_piezas and alternativo.exists() else _carpeta() / lugar_id / "escenario.json"
+    escenario = _leer(archivo)
+    if (
+        not isinstance(escenario, dict)
+        or escenario.get("id") != lugar_id
+        or (archivo == alternativo and escenario.get("esquema") != 3)
+    ):
         logger.error(
             "biblioteca_no_disponible",
-            extra={"fields": {"archivo": "escenario.json", "causa": "id"}},
+            extra={"fields": {"archivo": archivo.name, "causa": "id_o_esquema"}},
         )
         raise ApiError(
             "BIBLIOTECA_NO_DISPONIBLE",
@@ -147,7 +168,8 @@ def lugar_publico(lugar):
     publico = copy.deepcopy(lugar)
     lugar_id = publico["id"]
     for sala in publico.get("salas", []):
-        sala["fondo"] = url_de_arte(lugar_id, sala["fondo"])
+        if isinstance(sala.get("fondo"), str):  # una sala por piezas trae ``estructura`` en vez de ``fondo``
+            sala["fondo"] = url_de_arte(lugar_id, sala["fondo"])
     catalogo = publico.get("catalogo", {})
     for grupo in ("muebles", "objetos", "herramientas"):
         for elemento in catalogo.get(grupo, []):
