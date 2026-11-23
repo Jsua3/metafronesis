@@ -88,7 +88,7 @@ export class CaseAuthoringHubComponent implements OnInit {
 
   // ─── «Aprende a crear un caso» (tutorial del editor) ─────────────────────────
   private readonly router = inject(Router);
-  /** El store y la biblioteca se piden al pulsar: piden HttpClient, y la lista no los necesita para pintarse. */
+  /** El store y la biblioteca se piden al pulsar: necesitan el cliente HTTP, y la lista no los necesita para pintarse. */
   private readonly injector = inject(Injector);
   protected readonly totalCapitulos = CAPITULOS.length;
   /** El progreso del tutorial de esta docente (se lee al entrar a la pantalla). */
