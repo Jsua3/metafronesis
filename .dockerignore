@@ -1,0 +1,41 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+frontend/dist
+frontend/.angular
+frontend/coverage
+staticfiles
+frontend_dist
+# Carpetas y archivos ocultos de la raíz (git, CI, herramientas locales): la imagen no copia ninguno.
+.*
+**/.pytest_cache
+**/coverage
+*.log
+# Lo que la imagen no necesita: documentación, scripts, pruebas, configuración local y secretos.
+docs/
+.superpowers/
+scripts/
+**/tests
+**/conftest.py
+**/pytest.ini
+.env*
+**/.env*
+!.env.example
+!**/.env.example
+**/psychosim/settings/local.py
+**/*.pem
+**/*.key
+**/*.crt
+**/*.p12
+*.sql
+.worktrees/
+frontend/e2e
+frontend/scripts
+# npm run build ejecuta frontend/scripts/ui/check-dist-dev-only.mjs: esa excepción conserva el script del build.
+!frontend/scripts/ui/check-dist-dev-only.mjs
+**/_sondeo
+# De la biblioteca de lugares la imagen solo necesita los JSON de biblioteca/escenarios/ (el arte ya viaja en el frontend).
+biblioteca/escenarios/*/arte
+biblioteca/escenarios/*/fuentes
+biblioteca/escenarios/*/*.png
