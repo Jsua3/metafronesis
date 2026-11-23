@@ -252,6 +252,14 @@
       "audit": "CASE_BRIEF_UPDATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/checklist",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CHECKLIST_UPDATE"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/clone-version",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -292,6 +300,14 @@
       "audit": null
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/editor",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de un caso visible para su autora o el administrador"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/export",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
@@ -330,6 +346,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": "NODE_UPDATED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/plan",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura del plano de un caso visible"
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/publish",

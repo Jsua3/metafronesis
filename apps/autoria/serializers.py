@@ -50,3 +50,39 @@ class CrearDecisionSerializer(DecisionSerializer):
     targetNodeId = serializers.IntegerField(min_value=1)
     text = serializers.CharField()
     responseClass = serializers.ChoiceField(choices=(ResponseClass.RECOMMENDED, ResponseClass.ACCEPTABLE, ResponseClass.RISKY, ResponseClass.CONTRAINDICATED))
+
+class ChecklistSerializer(RevisionSerializer):
+    contentOriginal = serializers.BooleanField(required=False)
+    ethicsReviewed = serializers.BooleanField(required=False)
+    safetyProtocols = serializers.BooleanField(required=False)
+    noStigmatizing = serializers.BooleanField(required=False)
+    triggerWarnings = serializers.BooleanField(required=False)
+    accessibilityOk = serializers.BooleanField(required=False)
+    scopeEducational = serializers.BooleanField(required=False)
+
+
+class VistaEditorSerializer(serializers.Serializer):
+    caseVersionId = serializers.IntegerField()
+    revision = serializers.IntegerField()
+    title = serializers.CharField()
+    semanticVersion = serializers.CharField()
+    status = serializers.CharField()
+    context = serializers.CharField(allow_blank=True)
+    learningObjectives = serializers.ListField(child=serializers.CharField())
+    contentWarnings = serializers.ListField(child=serializers.CharField())
+    rules = serializers.DictField()
+    nodes = serializers.ListField(child=serializers.DictField())
+    decisions = serializers.ListField(child=serializers.DictField())
+    maps = serializers.ListField(child=serializers.DictField())
+    objects = serializers.ListField(child=serializers.DictField())
+    tools = serializers.ListField(child=serializers.DictField())
+    hints = serializers.ListField(child=serializers.DictField())
+    characters = serializers.ListField(child=serializers.DictField())
+    rubrics = serializers.ListField(child=serializers.DictField())
+    checklistCompletion = serializers.IntegerField()
+    publishable = serializers.BooleanField()
+    checklist = serializers.DictField()
+
+
+class PlanoSerializer(serializers.Serializer):
+    plan = serializers.JSONField(allow_null=True)

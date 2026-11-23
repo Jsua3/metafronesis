@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework.views import APIView
 
+from apps.autoria.views import ChecklistView, EditorView, PlanoView
 from shared import policies
 from shared.permissions import policy_permission
 
@@ -212,3 +213,9 @@ def test_scope_of_exposes_the_role_scope_for_filtering_lists():
     assert policies.scope_of(actor(ADMIN), "case", "author") == "all"
     assert policies.scope_of(actor(ESTUDIANTE), "case", "author") is None
     assert policies.scope_of(None, "case", "author") is None
+
+
+def test_las_vistas_del_editor_usan_la_politica_de_autoria():
+    for vista in (ChecklistView, EditorView, PlanoView):
+        permiso = vista.permission_classes[0]()
+        assert permiso.policy == ("case", "author")

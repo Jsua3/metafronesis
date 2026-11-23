@@ -1,9 +1,12 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
-from . import decisiones, escenas, servicios
+from shared.openapi import envelope_of, error_responses
+from . import decisiones, editor, escenas, plano, servicios
 from .serializers import (CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
-                          DecisionSerializer, EscenaSerializer, FichaSerializer, RevisionSerializer)
+                          ChecklistSerializer, DecisionSerializer, EscenaSerializer, FichaSerializer, PlanoSerializer,
+                          RevisionSerializer, VistaEditorSerializer)
 
 
 class CasosView(APIView):
@@ -99,3 +102,34 @@ class ImportarCasoView(APIView):
         from apps.users.permisos import exigir_autoria
         exigir_autoria(request.user)
         return api_created(servicios.resumen(intercambio.importar(request.user, request.data)))
+
+class EditorView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    @extend_schema(responses={200: envelope_of(VistaEditorSerializer), **error_responses(401, 403, 404)})
+    def get(self, request, case_version_id):
+        return api_ok(editor.editor(request.user, case_version_id))
+
+
+class ChecklistView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    @extend_schema(request=ChecklistSerializer, parameters=[OpenApiParameter("X-Case-Revision", int, OpenApiParameter.HEADER)], responses={200: envelope_of(VistaEditorSerializer), **error_responses(400, 401, 403, 404, 409)})
+    def put(self, request, case_version_id):
+        datos = dict(request.data)
+        if datos.get("revision") in (None, ""):
+            revision = request.query_params.get("revision") or request.headers.get("X-Case-Revision")
+            if revision is not None:
+                datos["revision"] = revision
+        serializer = ChecklistSerializer(data=datos)
+        serializer.is_valid(raise_exception=True)
+        return api_ok(editor.actualizar_checklist(request.user, case_version_id, serializer.validated_data))
+
+
+class PlanoView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    @extend_schema(responses={200: envelope_of(PlanoSerializer), **error_responses(401, 403, 404)})
+    def get(self, request, case_version_id):
+        version = editor.version_visible(request.user, case_version_id)
+        return api_ok({"plan": plano.plano(version)})
