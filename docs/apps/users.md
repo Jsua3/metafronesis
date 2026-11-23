@@ -6,7 +6,7 @@ Borrador generado a partir del código; verificar antes de publicar
 
 ## Propósito y modelos
 
-CustomUser (apps/users/models.py:44) contiene campos id, password, email, nombre, apellido, role, activo, created_at, must_change_password, session_epoch y temp_password_set_at; no tiene FK. AccessRequest (apps/users/models.py:150) contiene nombre, apellido, email, status, created_at y reviewed_at; no tiene FK. Roles ADMIN, PROFESOR y ESTUDIANTE (apps/users/models.py:19).
+CustomUser (apps/users/models.py:44) contiene campos id, password, email, nombre, apellido, role, activo, created_at, must_change_password, session_epoch y temp_password_set_at; no tiene FK. AccessRequest (apps/users/models.py:163) contiene nombre, apellido, email, rol (el rol que pide: ADMIN, PROFESOR o ESTUDIANTE; por defecto ESTUDIANTE), status, created_at y reviewed_at; no tiene FK. Roles ADMIN, PROFESOR y ESTUDIANTE (apps/users/models.py:19).
 
 ## Servicios y funciones públicas
 

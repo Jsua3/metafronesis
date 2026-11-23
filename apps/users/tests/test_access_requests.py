@@ -111,3 +111,54 @@ def test_admin_updates_request_status(admin):
     assert resp.status_code == 200
     req.refresh_from_db()
     assert req.status == AccessRequestStatus.REVIEWED
+
+
+# ── El rol que pide quien solicita el acceso ────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("rol", ["ESTUDIANTE", "PROFESOR", "ADMIN"])
+def test_access_request_guarda_el_rol_pedido(db, rol):
+    email = f"pide-{rol.lower()}@psychosim.edu.co"
+    resp = cl().post(
+        "/api/auth/access-request",
+        {"nombre": "Paula", "apellido": "Rios", "email": email, "rol": rol},
+        format="json",
+    )
+    assert resp.status_code == 201
+    assert AccessRequest.objects.get(email=email).rol == rol
+
+
+def test_access_request_sin_rol_pide_estudiante(db):
+    # Un cliente anterior no manda el rol: la solicitud sigue entrando, como de estudiante.
+    resp = cl().post(
+        "/api/auth/access-request",
+        {"nombre": "Ana", "apellido": "Sol", "email": "sinrol@psychosim.edu.co"},
+        format="json",
+    )
+    assert resp.status_code == 201
+    assert AccessRequest.objects.get(email="sinrol@psychosim.edu.co").rol == "ESTUDIANTE"
+
+
+def test_access_request_rechaza_un_rol_que_no_existe(db):
+    resp = cl().post(
+        "/api/auth/access-request",
+        {"nombre": "Ana", "apellido": "Sol", "email": "rolmalo@psychosim.edu.co", "rol": "SUPERUSUARIO"},
+        format="json",
+    )
+    assert resp.status_code == 400
+    assert not AccessRequest.objects.filter(email="rolmalo@psychosim.edu.co").exists()
+
+
+def test_admin_ve_el_rol_pedido(admin):
+    AccessRequest.objects.create(nombre="Rosa", apellido="T", email="rosa-rol@x.com", rol="PROFESOR")
+    resp = cl(admin).get("/api/admin/access-requests?status=PENDING")
+    assert resp.status_code == 200
+    item = next(i for i in resp.data["data"] if i["email"] == "rosa-rol@x.com")
+    assert item["rol"] == "PROFESOR"
+
+
+def test_el_aviso_al_admin_dice_el_rol_pedido(db):
+    from apps.users.services.access_request_service import _texto_aviso
+
+    req = AccessRequest.objects.create(nombre="Rosa", apellido="T", email="rosa-aviso@x.com", rol="PROFESOR")
+    assert "Rol pedido: Docente" in _texto_aviso(req, 1)

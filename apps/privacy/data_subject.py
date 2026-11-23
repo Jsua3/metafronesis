@@ -357,6 +357,9 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
         SEUDONIMIZAR, "correo de quien pidió la cuenta: pasa a un seudónimo por solicitud (anonimizada-<id>@invalid)",
         valor=_por_id("anonimizada-", "@invalid"),
     ),
+    ("access_requests", "rol"): Regla(
+        CONSERVAR, "el rol pedido no identifica a nadie sin el nombre ni el correo y sirve para contar solicitudes por rol"
+    ),
     ("access_requests", "status"): Regla(
         CONSERVAR, "el estado del trámite no identifica a nadie sin el nombre ni el correo y sirve para contar solicitudes"
     ),

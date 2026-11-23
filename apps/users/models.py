@@ -164,6 +164,9 @@ class AccessRequest(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     email = models.EmailField(max_length=255)
+    # El rol que pide quien solicita el acceso (lo elige en la pantalla de acceso). Es una petición: el ADMIN decide
+    # el rol real al crear la cuenta.
+    rol = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.ESTUDIANTE)
     status = models.CharField(
         max_length=20,
         choices=AccessRequestStatus.choices,
