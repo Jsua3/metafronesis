@@ -32,7 +32,7 @@ def crear_borrador(autor, datos: dict):
         .con_advertencias(contenido.advertencias(datos.get("contentWarnings"))))
     if "lugarId" in datos:
         # El lugar y las salas se comprueban antes de crear nada: 404 si el lugar no está en la biblioteca, 400 si las salas no sirven.
-        lugar = lugares.cargar_lugar(datos["lugarId"])
+        lugar = lugares.cargar_lugar(datos["lugarId"], por_piezas=bool(datos.get("porPiezas")))
         constructor.con_lugar(lugar, copiar_al_caso.validar_salas(lugar, datos.get("salas")))
     return constructor.construir()
 

@@ -42,6 +42,9 @@ COPY apps/ ./apps/
 # La biblioteca de lugares del editor de casos: el servidor solo lee sus JSON (BIBLIOTECA_DIR = /app/biblioteca); el arte
 # lo sirve el frontend desde sus propios assets. El .dockerignore deja fuera los PNG.
 COPY biblioteca/escenarios/ ./biblioteca/escenarios/
+# El catálogo de piezas de las salas por piezas (BIBLIOTECA_DIR/piezas/manifiesto.json): copia exacta, en contenido, del que publica el
+# frontend (lo comprueba test_catalogo_piezas); el servidor lo lee para sus reglas, y el arte de las piezas lo sirve el frontend.
+COPY biblioteca/piezas/manifiesto.json ./biblioteca/piezas/manifiesto.json
 # El build de Angular (carpeta browser/) va a frontend_dist: base.py lo detecta y WhiteNoise lo sirve.
 COPY --from=frontend /fe/dist/psychosim-admin-panel/browser ./frontend_dist
 # Bytecode compilado en la imagen: con escalado a cero, cada arranque en frío importa Django sin compilar nada.
