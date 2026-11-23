@@ -10,6 +10,40 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - Retirar las pruebas heredadas del repositorio anterior que buscan archivos que este repositorio no tiene (hoy fallan 80).
 - Cubrir tres validaciones del caso detectadas en la revisión del #17: revisión aprobada antes de publicar con `REVIEW_WORKFLOW_STRICT`, rechazo de sugerencias de IA sin revisar y camino desde la escena inicial hasta un final.
 - Documentación por app y `docs/api.md`.
+- Job de CI para el frontend: hoy el workflow no corre `ng test` ni `npm run build` (por eso el #70 entró con una prueba en rojo, corregida en el #71).
+- Agregar `apps/ia/tests` a la lista de pruebas del workflow.
+- Pruebas e2e del juego y del editor.
+- Probar en el navegador, con el servidor real, el ensayo, el asistente de autoría, la generación con IA y el caso insignia.
+- El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
+- El caso insignia pide a la biblioteca el lugar `hospital`, que no existe (404).
+
+## [0.6.0] - 2026-11-23
+
+Ola 3: el mundo por salas, el editor de casos completo, la IA de autoría y el frontend del estudiante y del docente. Con esta versión queda migrado todo lo del repositorio anterior.
+
+### Añadido
+- **Mundo de la simulación por salas** (SIEP-234):
+  - modelos del mundo, leerlo, moverse y cruzar puertas (#47, #48);
+  - pistas, interacciones, herramientas, reacciones y `expectedAttemptId`; bitácora, salida segura e informe del estudiante (#51, #53, integradas con #54).
+- **Estado completo del intento** y consecuencia en las decisiones para el juego (#57).
+- **Caso insignia SIM-VBG-002:** se carga y queda publicado con `python manage.py cargar_caso_insignia --minutos-estimados 45`, solo en desarrollo (#64).
+- **Rúbricas, competencias y valoración docente** (#50).
+- **Panel docente, reporte del grupo y reporte del estudiante** (#60).
+- **Backend del editor de casos:** salas, mundo, diálogos, reglas y sugerencias de la IA (#55).
+- **Ensayo del borrador:** la autora juega su caso en borrador en el mundo real del juego, con el panel del ensayo (opciones, comentarios, lo explorado y elegir escena) y por las rutas normales del juego (#58, #66).
+- **IA de autoría**, apagada por defecto:
+  - generación de casos por etapas (#62);
+  - asistente que propone cambios validados contra el caso y guía por el editor, con cupo diario y mensual (#67).
+- **Imagen única y despliegue en Google Cloud Run** (#52).
+- **Frontend del estudiante:** inicio, casos, ficha, juego por salas, cierre del caso y personaje (#59).
+- **Frontend del docente y de la administración:** inicios propios, rúbricas, revisión formativa, casos asignados y reportes (#56).
+- **Frontend del editor de casos** (#61), conectado a la generación con IA (#65), al ensayo y al asistente (#68).
+- **Tutorial guiado de creación de casos** sobre el editor, con la tarjeta «Aprende a crear un caso» en Casos; sus textos están en borrador, pendientes de Psicología (#70).
+- **Sonidos y música ambiental propios del simulador** (#63).
+
+### Corregido
+- Clasificar una respuesta en el guion ya no deja el editor en negro, y la pestaña Evaluación se desplaza con la rueda (#69).
+- El contrato «ninguna pantalla usa HttpClient directamente» vuelve a pasar (#71).
 
 ## [0.5.0] - 2026-11-22
 
