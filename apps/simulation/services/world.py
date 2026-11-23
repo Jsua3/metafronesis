@@ -16,7 +16,7 @@ from shared.idempotency import normalize_request_id
 
 from apps.simulation.models import AttemptEvent, AttemptWorldState, ClinicalTool, DecisionOption, MapObject, SceneMap
 from apps.simulation.models.world import DEFAULT_MAP_HEIGHT, DEFAULT_MAP_WIDTH
-from . import attempt_api, attempt_duration, world_layout
+from . import attempt_api, attempt_duration, world_layout, disponibilidad_mundo
 from .attempt_lock import lock_attempt_row
 
 # Caja de choque del jugador, igual que en el cliente: ancho y alto en píxeles, anclada en los pies.
@@ -104,6 +104,9 @@ def _mundo(intento, estado):
     if isinstance(mapa.structure, dict) or (ambiente.get("backgroundImage") and not _recurso_permitido(ambiente["backgroundImage"])):
         ambiente.pop("backgroundImage", None)
     objetos = mapa.map_objects.filter(visible=True).order_by("id")
+    activo = intento.status == "IN_PROGRESS" and not intento.current_node.terminal_node
+    opciones = disponibilidad_mundo.opciones(intento, estado) if activo else []
+    comentarios = disponibilidad_mundo.comentarios(intento, estado) if activo else []
     return {
         "attemptId": str(intento.pk), "status": intento.status,
         "map": {"id": mapa.id, "key": mapa.map_key, "title": mapa.title, "width": mapa.width,
@@ -122,7 +125,7 @@ def _mundo(intento, estado):
         "inventory": estado.inventory, "inspectedObjectKeys": estado.inspected_object_keys,
         "viewedDialogueKeys": estado.viewed_dialogue_keys, "usedToolKeys": estado.used_tool_keys,
         "flags": {clave: estado.flags[clave] for clave in ("viewedNpcKeys",) if clave in estado.flags},
-        "decisionOptions": [], "comments": [], "layout": world_layout.construir(intento, mapa),
+        "decisionOptions": [{"id": opcion.id, "text": opcion.text} for opcion in opciones], "comments": comentarios, "layout": world_layout.construir(intento, mapa),
     }
 
 

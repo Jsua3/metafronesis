@@ -10,7 +10,11 @@ from shared.exceptions import ApiError
 from shared.idempotency import DUPLICATE_WINDOW_SECONDS, normalize_request_id
 from apps.simulation.models import AttemptEvent, AttemptHintView, ClinicalTool, MapObject, SceneHint
 from apps.simulation.models.world import DEFAULT_MAP_HEIGHT, DEFAULT_MAP_WIDTH
-from . import attempt_duration, world
+from . import attempt_duration, world, disponibilidad_mundo
+
+
+ALCANCE_INTERACCION = 120
+RADIO_DEAMBULACION = 160
 
 
 def _pistas(intento):
@@ -70,7 +74,7 @@ def _cerca(estado, objeto):
     movimiento = world._mapa_json(objeto.metadata_json).get("movimiento") if objeto.object_type == "PERSON" else None
     rectangulo = (origen_x, origen_y, ancho, alto)
     if movimiento == "deambula" or (isinstance(movimiento, dict) and movimiento.get("tipo") == "deambula"):
-        rectangulo = (origen_x - 160, origen_y - 160, ancho + 320, alto + 320)
+        rectangulo = (origen_x - RADIO_DEAMBULACION, origen_y - RADIO_DEAMBULACION, ancho + 2 * RADIO_DEAMBULACION, alto + 2 * RADIO_DEAMBULACION)
     elif isinstance(movimiento, dict):
         limite_x, limite_y = objeto.scene_map.width or DEFAULT_MAP_WIDTH, objeto.scene_map.height or DEFAULT_MAP_HEIGHT
         def acotar(punto):
@@ -99,10 +103,10 @@ def _cerca(estado, objeto):
                         posicion_y = inicio[1] + (fin[1] - inicio[1]) * paso / pasos
                         distancia = min(distancia, _distancia_rectangulo(estado.player_x, estado.player_y,
                                                                         (posicion_x, posicion_y, ancho, alto)))
-                if distancia > 120:
+                if distancia > ALCANCE_INTERACCION:
                     raise ValidationError("Estás demasiado lejos para interactuar.")
                 return
-    if _distancia_rectangulo(estado.player_x, estado.player_y, rectangulo) > 120:
+    if _distancia_rectangulo(estado.player_x, estado.player_y, rectangulo) > ALCANCE_INTERACCION:
         raise ValidationError("Estás demasiado lejos para interactuar.")
 
 
@@ -118,12 +122,14 @@ def interactuar(usuario, identificador, clave):
         objeto = get_object_or_404(MapObject, scene_map=estado.scene_map, object_key=clave, visible=True)
         _cerca(estado, objeto)
         # Como en v3, autoría conserva la condición; el juego no la evalúa al interactuar.
+        disponibilidad_mundo.registrar(estado, "inspected", clave)
         if clave not in estado.inspected_object_keys:
             estado.inspected_object_keys = [*estado.inspected_object_keys, clave]
         dialogo = world._dialogo(objeto)
         if dialogo and dialogo["key"] not in estado.viewed_dialogue_keys:
             estado.viewed_dialogue_keys = [*estado.viewed_dialogue_keys, dialogo["key"]]
         if dialogo and objeto.object_type == "PERSON":
+            disponibilidad_mundo.registrar(estado, "talked", clave)
             vistos = estado.flags.get("viewedNpcKeys", [])
             estado.flags = {**estado.flags, "viewedNpcKeys": list(dict.fromkeys([*vistos, clave, dialogo["key"]]))}
         herramienta = objeto.tool_code or None
@@ -190,6 +196,7 @@ def personaje(usuario, identificador, clave):
         else:
             objeto = get_object_or_404(MapObject, scene_map=estado.scene_map, object_key=clave, object_type="PERSON", visible=True)
             _cerca(estado, objeto)
+        disponibilidad_mundo.registrar(estado, "talked", clave)
         vistos = estado.flags.get("viewedNpcKeys", [])
         estado.flags = {**estado.flags, "viewedNpcKeys": list(dict.fromkeys([*vistos, clave]))}
         estado.save()

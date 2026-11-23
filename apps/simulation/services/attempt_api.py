@@ -158,6 +158,9 @@ def _valid_option(attempt, option_id):
         source_node=attempt.current_node,
         case_version=attempt.case_version,
     )
+    from . import disponibilidad_mundo
+    if option.pk not in {ofrecida.pk for ofrecida in disponibilidad_mundo.opciones(attempt)}:
+        raise ValidationError("La opci?n a?n no est? disponible.")
     if option.target_node.case_version_id != attempt.case_version_id:
         raise ValidationError("La escena destino pertenece a otro caso.")
     return option
@@ -196,9 +199,19 @@ def _record(attempt, option, request_id, event_type, result):
 
 def _ask_for_retry(attempt, option, request_id):
     result = _result(attempt, option, retry_required=True)
+    _agregar_reaccion(attempt, option, result)
     attempt.save()
     _record(attempt, option, request_id, "DECISION_RETRY_REQUIRED", result)
     return result
+
+
+def _agregar_reaccion(attempt, option, result):
+    from . import disponibilidad_mundo
+    from apps.simulation.models import AttemptWorldState
+    estado = AttemptWorldState.objects.filter(attempt=attempt).first()
+    reaccion = disponibilidad_mundo.reaccion(attempt, option, estado.scene_map_id if estado else None)
+    if reaccion is not None:
+        result["reaction"] = reaccion
 
 
 def _advance(attempt, option, now, aplicar=True):
@@ -256,6 +269,7 @@ def _decide(attempt, option_id, request_id):
     _advance(attempt, option, now, aplicar=not cambiada)
     result = _result(attempt, option, retry_required=False)
     result.update(effects=effects_of(option), state=attempt.state_json)
+    _agregar_reaccion(attempt, option, result)
     event = _record(attempt, option, request_id, "DECISION_CHANGED" if cambiada else "DECISION_SELECTED", result)
     _close_if_completed(attempt, result, event)
     return result

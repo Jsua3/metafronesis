@@ -48,9 +48,14 @@ def huella_de(version) -> str:
     documento['escenas'] = []
     for hijo in arbol.hijos:
         escena = _campos(hijo.escena, ('node_key', 'title', 'narrative', 'decision_prompt', 'start_node', 'terminal_node', 'display_order', 'support_resources_json', 'required_tools_json', 'sensitive_content', 'safe_exit_required', 'warning_message', 'position_x', 'position_y', 'intensity'))
+        if hijo.escena.comments_json != '[]':
+            escena['comments_json'] = hijo.escena.comments_json
         escena['opciones'] = []
         for hoja in hijo.hijos:
             opcion = _campos(hoja.opcion, ('option_key', 'text', 'response_class', 'immediate_feedback', 'feedback_text', 'theory_basis', 'prohibition_reason', 'consequence_text', 'effects'))
+            for campo in ('requires_json', 'reaction_json'):
+                if getattr(hoja.opcion, campo) != '{}':
+                    opcion[campo] = getattr(hoja.opcion, campo)
             opcion['destino'] = claves.get(hoja.opcion.target_node_id)
             escena['opciones'].append(opcion)
         documento['escenas'].append(escena)
