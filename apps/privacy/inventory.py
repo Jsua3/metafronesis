@@ -545,6 +545,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "active_seconds": (SENSITIVE, "tiempo activo del estudiante en el intento"),
             "last_activity_at": (SENSITIVE, "última actividad del estudiante (sirve al cronómetro)"),
             "state_json": (SENSITIVE, "estado del intento derivado de las decisiones del estudiante"),
+            "is_rehearsal": (TECHNICAL, "marca de ensayo del borrador de una docente; no identifica a la persona"),
         },
         "exits": {
             "id": ["api"],
@@ -559,6 +560,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "replace_reason": [],
             "last_activity_at": [],
             "state_json": ["api"],
+            "is_rehearsal": [],
         },
         "forbidden_exits": {"attempt_token_hash": ["api", "csv", "reporte", "correo", "registro"]},
     },

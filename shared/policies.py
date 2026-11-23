@@ -36,6 +36,8 @@ MATRIX: dict[tuple[str, str], dict[str, str]] = {
     # Intento ajeno: traza y evaluación. El profesor solo de estudiantes con membresía ACTIVE.
     ("attempt", "review"): {PROFESOR: MEMBER, ADMIN: ALL},
     ("attempt", "replace"): {PROFESOR: MEMBER, ADMIN: ALL},
+    # Ensayo del borrador (SIEP-243): la docente autora recorre su versión en el mundo del juego, sin contar como intento.
+    ("attempt", "rehearse"): {PROFESOR: OWN, ADMIN: ALL},
     # Reporte de finalización (sin el token del intento): su dueño o quien puede revisarlo.
     ("attempt", "report"): {ESTUDIANTE: OWN, PROFESOR: MEMBER, ADMIN: ALL},
     # Caso: crear y editar, enviar a revisión, archivar. Publicar solo el ADMIN, tras revisión.
