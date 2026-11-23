@@ -21,7 +21,7 @@ acepta pero un lugar sin plantilla por piezas se copia de imagen fija, como en v
 """
 import copy
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from rest_framework import status
 
@@ -84,6 +84,10 @@ class ResumenCopia:
     puertas: int
     herramientas: int
     hitos: int
+    #: ``id de sala → SimulationNode``: la generación con IA cuelga de cada escena sus opciones.
+    nodo_por_sala: dict = field(default_factory=dict, compare=False)
+    #: ``ref del personaje → nombre visible``: la generación con IA nombra con ellos a quien habla.
+    nombre_por_personaje: dict = field(default_factory=dict, compare=False)
 
 
 def _rechazar(mensaje):
@@ -346,6 +350,7 @@ def copiar_al_caso(case_version, lugar, salas):
     caracteres = _personajes_del_caso(case_version, lugar, elegidas)
 
     cuenta = {"muebles": 0, "objetos": 0, "personajes": 0, "puertas": 0}
+    nodo_por_sala = {}
     for posicion, sala in enumerate(elegidas):
         nodo = SimulationNode.objects.create(
             case_version=case_version, node_key=sala["id"], title=sala["nombre"], narrative=sala["descripcion"],
@@ -374,10 +379,12 @@ def copiar_al_caso(case_version, lugar, salas):
         cuenta["objetos"] += len(de_objetos)
         cuenta["personajes"] += len(de_personas)
         cuenta["puertas"] += len(de_puertas)
+        nodo_por_sala[sala["id"]] = nodo
 
     herramientas = _herramientas(case_version, lugar)
     hitos = _reglas(case_version, lugar)
     return ResumenCopia(
         lugar_id=lugar_id, salas=tuple(ids), nodos=len(ids), mapas=len(ids), personajes_del_caso=len(caracteres),
-        herramientas=herramientas, hitos=hitos, **cuenta,
+        herramientas=herramientas, hitos=hitos, **cuenta, nodo_por_sala=nodo_por_sala,
+        nombre_por_personaje={ref: caracter.display_name for ref, caracter in caracteres.items()},
     )

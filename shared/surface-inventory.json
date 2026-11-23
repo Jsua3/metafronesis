@@ -644,6 +644,62 @@
       "audit": "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED"
     },
     {
+      "route": "api/authoring/generations",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_GENERATION_CREATED"
+    },
+    {
+      "route": "api/authoring/generations/<uuid:gen_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "AI_GENERATION_CANCELLED"
+    },
+    {
+      "route": "api/authoring/generations/<uuid:gen_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de la generación propia"
+    },
+    {
+      "route": "api/authoring/generations/<uuid:gen_id>/assemble",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_GENERATION_STAGE"
+    },
+    {
+      "route": "api/authoring/generations/<uuid:gen_id>/scenes/<slug:clave>",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_GENERATION_STAGE"
+    },
+    {
+      "route": "api/authoring/generations/<uuid:gen_id>/skeleton",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_GENERATION_STAGE"
+    },
+    {
+      "route": "api/authoring/generations/status",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta del estado propio"
+    },
+    {
       "route": "api/biblioteca/lugares",
       "method": "GET",
       "exposure": "authenticated",
