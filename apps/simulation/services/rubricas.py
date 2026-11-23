@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 from django.db import transaction
@@ -14,10 +15,15 @@ from shared.exceptions import ApiError
 def crear_rubrica(docente, nombre: str, criterios: list[dict]) -> Rubric:
     if not criterios or sum((c["weight"] for c in criterios), Decimal("0")) != Decimal("100"):
         raise ApiError("RUBRIC_WEIGHTS", "Los pesos deben sumar 100.", 400)
+    from apps.simulation.services.gestion_rubricas import validar_descriptores
+
+    for indice, criterio in enumerate(criterios):
+        criterio["levelDescriptors"] = validar_descriptores(criterio.get("levelDescriptors"), indice)
     rubrica = Rubric.objects.create(name=nombre, created_by=docente)
     RubricCriterion.objects.bulk_create([
         RubricCriterion(rubric=rubrica, competency=c["competency"], title=c["competency"],
-                        description=c["description"], weight=c["weight"], display_order=orden)
+                        description=c["description"], weight=c["weight"], display_order=orden,
+                        level_descriptors_json=json.dumps(c["levelDescriptors"], ensure_ascii=False))
         for orden, c in enumerate(criterios)
     ])
     return rubrica
