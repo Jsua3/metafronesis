@@ -41,6 +41,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: 'trazabilidad', label: 'Revisión', route: '/portal/docente/trazabilidad', icon: 'fact_check', roles: ['PROFESOR', 'ADMIN'], fold: ['ADMIN'], order: 20, orden: { ADMIN: 35 } },
   { id: 'simulador', label: 'Casos', route: '/portal/simulador', icon: 'play_circle', roles: ['ESTUDIANTE'], fold: [], order: 25 },
   { id: 'personaje', label: 'Mi personaje', etiquetaCorta: 'Personaje', route: '/portal/personaje', icon: 'face', roles: ['ESTUDIANTE'], fold: [], order: 28 },
+  // E2-4 y P6: el profesor y el administrador entran a sus casos (lista, crear desde un lugar y el editor); el profesor
+  // solo ve y edita lo suyo (lo hace cumplir el servidor).
+  { id: 'casos', label: 'Casos', route: '/portal/casos', icon: 'edit_square', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 30 },
   { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
   // E2-10 (C5): la bandeja del estudiante. Se llama «Grupos» porque muestra sus invitaciones Y sus membresías.
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 40 },

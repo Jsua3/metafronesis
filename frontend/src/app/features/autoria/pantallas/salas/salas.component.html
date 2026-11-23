@@ -1,0 +1,147 @@
+<div class="pagina crear">
+  @if (escenario(); as e) {
+    <header class="titulo">
+      <p class="sobre">Nuevo caso · {{ e.nombre }}</p>
+      <h1>Elige las salas de tu caso</h1>
+      <p class="texto-secundario">{{ e.salas.length }} salas. Empieza con una idea o elige las salas una por una.</p>
+    </header>
+
+    <!-- Con la IA apagada no se muestra nada de ella: una opción que no se puede usar solo estorba. -->
+    @if (generacion() === 'encendida') {
+      <!-- BORRADOR: los textos de las dos opciones son nuevos, pendientes de la aprobación de Psicología -->
+      <fieldset class="forma">
+        <legend>¿Cómo quieres empezar?</legend>
+        <div class="opciones">
+          <label class="opcion" [class.elegida]="forma() === 'describe'">
+            <input type="radio" name="forma" value="describe" [checked]="forma() === 'describe'"
+                   aria-describedby="forma-describe-texto" (change)="elegirForma('describe')" />
+            <span class="dato-opcion">
+              <span class="nombre">Describe tu caso</span>
+              <span id="forma-describe-texto" class="texto-secundario">La IA arma un borrador completo a partir de tu descripción. Tú lo revisas y lo cambias.</span>
+            </span>
+          </label>
+          <label class="opcion" [class.elegida]="forma() === 'a-mano'">
+            <input type="radio" name="forma" value="a-mano" [checked]="forma() === 'a-mano'"
+                   aria-describedby="forma-a-mano-texto" (change)="elegirForma('a-mano')" />
+            <span class="dato-opcion">
+              <span class="nombre">Elegir salas a mano</span>
+              <span id="forma-a-mano-texto" class="texto-secundario">Eliges las salas y escribes tú cada escena.</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+    }
+
+    @if (forma() === 'describe') {
+      <app-describir [lugarId]="lugarId" [(descripcion)]="descripcionEscrita" />
+    } @else {
+      <div class="estudio" (keydown.escape)="cerrarVista()">
+        <div class="zona">
+          <div class="nombre-caso">
+            <label for="nombre-caso">Nombre del caso</label>
+            <input id="nombre-caso" type="text" autocomplete="off" [ngModel]="nombre()" (ngModelChange)="nombrar($event)"
+                   (focus)="seleccionar($event)" aria-describedby="nombre-ayuda" />
+            <p id="nombre-ayuda" class="texto-secundario">Si lo dejas vacío, se llamará «{{ nombrePorDefecto() }}».</p>
+          </div>
+
+          <section aria-labelledby="ideas" class="bloque">
+            <h2 id="ideas" class="seccion">Ideas para empezar</h2>
+            <div class="ideas">
+              @for (r of e.recorridosSugeridos; track r.id) {
+                <article class="idea" [class.elegida]="ideaElegida() === r.id">
+                  <h3>{{ r.nombre }}</h3>
+                  <p class="texto-secundario">{{ r.descripcion }}</p>
+                  <!-- El recorrido de la idea en miniaturas: se ve qué salas trae antes de leer sus nombres. -->
+                  <ol class="tira" [attr.aria-label]="'Salas de la idea ' + r.nombre">
+                    @for (id of r.salas; track id) {
+                      <li [attr.title]="nombreSala(id)">
+                        @if (vistas()[id]; as src) { <img class="pixel" [src]="src" alt="" width="64" height="36" loading="lazy" /> }
+                        @else { <span class="hueco" aria-hidden="true"></span> }
+                        <span class="solo-lector">{{ nombreSala(id) }}</span>
+                      </li>
+                    }
+                  </ol>
+                  @if (ideaElegida() === r.id) {
+                    <p class="pildora pildora-adecuada">✓ Elegida</p>
+                  } @else {
+                    <button type="button" class="boton boton-secundario" [attr.aria-label]="'Usar esta idea: ' + r.nombre" (click)="usarIdea(r)">Usar esta idea</button>
+                  }
+                </article>
+              }
+            </div>
+          </section>
+
+          <section aria-labelledby="lista" class="bloque" data-accion="elegir-salas">
+            <h2 id="lista" class="seccion">{{ tituloSalas() }} <span class="cuantas">{{ elegidas().length }} de {{ e.salas.length }} elegidas</span></h2>
+            <div class="salas">
+              @for (s of e.salas; track s.id) {
+                <div class="sala" [class.marcada]="posicion(s.id) > 0" [class.vista-activa]="vistaId() === s.id"
+                     (mouseenter)="alPasar(s.id)" (focusin)="alPasar(s.id)">
+                  <label class="marca-sala">
+                    <span class="miniatura">
+                      @if (vistas()[s.id]; as src) {
+                        <img class="pixel" [src]="src" alt="" width="960" height="528" loading="lazy" decoding="async" />
+                      } @else {
+                        <span class="hueco" aria-hidden="true"></span>
+                      }
+                      @if (posicion(s.id) > 0) { <span class="orden" aria-hidden="true">{{ posicion(s.id) }}</span> }
+                    </span>
+                    <span class="dato">
+                      <input type="checkbox" [value]="s.id" [checked]="posicion(s.id) > 0" (change)="alternar(s.id)" />
+                      <span>
+                        <span class="nombre">{{ s.nombre }}</span>
+                        <span class="texto-secundario encuadre">{{ encuadre(s) }}</span>
+                      </span>
+                    </span>
+                  </label>
+                  <button type="button" class="boton boton-texto ver" [attr.aria-expanded]="vistaId() === s.id" aria-controls="vista-sala"
+                          [attr.aria-label]="'Ver sala: ' + s.nombre" (click)="verSala(s.id)">
+                    {{ vistaId() === s.id ? 'Ocultar' : 'Ver sala' }}
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+
+        <aside class="inspector" aria-label="Vista previa y recorrido">
+          <app-vista-de-sala class="previa" [class.con-sala]="!!fichaVista()" [ficha]="fichaVista()" [espera]="vistas()[e.salas[0]?.id ?? ''] ?? null" (cerrar)="cerrarVista()" />
+          <app-recorrido [filas]="filas()" (mover)="moverA($event.desde, $event.hasta)" />
+          <p role="status" class="solo-lector">{{ anuncioOrden() }}</p>
+        </aside>
+      </div>
+    }
+
+    <app-barra-de-pasos [paso]="2" rotulo="Elegir las salas">
+      <a atras class="boton boton-texto" [routerLink]="rutas.a('/lugar')" [queryParams]="{ lugar: lugarId }" aria-label="Atrás: elegir otro lugar"><span aria-hidden="true">‹</span> Atrás</a>
+      @if (forma() !== 'describe') {
+        <div accion class="pie" role="group" aria-label="Crear el caso" data-accion="crear-caso">
+          @if (errorAlCrear(); as mensaje) {
+            <p class="pie__texto pie__error" role="alert">{{ mensaje }}</p>
+          } @else if (elegidas().length) {
+            <p class="pie__texto" role="status" [attr.title]="resumenOrden()">
+              <strong>{{ elegidas().length }} {{ elegidas().length === 1 ? 'sala' : 'salas' }}</strong><span class="pie__orden">: {{ resumenOrden() }}</span>
+            </p>
+          } @else {
+            <p class="pie__texto pie__vacio" role="status">Ninguna sala elegida</p>
+          }
+          <button type="button" class="boton boton-primario" [attr.aria-disabled]="creando()" (click)="crear()">
+            <span>{{ creando() ? 'Creando el caso…' : 'Crear el caso' }}<span class="pie__resto"> con estas salas</span></span>
+          </button>
+        </div>
+      }
+    </app-barra-de-pasos>
+  } @else if (error()) {
+    <div class="tarjeta error" role="alert">
+      <p>{{ error() }}</p>
+      <a class="boton" [routerLink]="rutas.a('/lugar')">Elegir otro lugar</a>
+    </div>
+  } @else {
+    <!-- Cargando: el esqueleto tiene la forma real (título, campo y rejilla de salas), sin saltos cuando llega. -->
+    <div class="esqueleto" role="status" aria-label="Cargando el lugar…">
+      <span class="raya raya--titulo"></span>
+      <span class="raya raya--campo"></span>
+      <div class="salas">@for (n of [1, 2, 3, 4, 5, 6]; track n) { <span class="hueco"></span> }</div>
+    </div>
+  }
+</div>

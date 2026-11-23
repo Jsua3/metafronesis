@@ -27,8 +27,8 @@ describe('rutas del portal', () => {
   it('conserva las pantallas del portal y elimina las rutas de olas posteriores', () => {
     const paths = portal.children!.map(route => route.path);
     expect(paths).toEqual(expect.arrayContaining(['', 'dashboard', 'invitaciones', 'grupos', 'grupos/:grupoId', 'admin/usuarios', 'cuenta/contrasena', 'rubricas', 'docente/trazabilidad', 'reportes', 'reportes/estudiante/:estudianteId']));
-    // SIEP-239: el estudiante vuelve a entrar al juego; las rutas del editor siguen fuera.
+    // SIEP-239: el estudiante vuelve a entrar al juego. SIEP-240: el personal edita casos.
     expect(paths).toEqual(expect.arrayContaining(['jugar', 'simulador', 'simulador/:caseVersionId/ficha', 'simulador/:caseVersionId/cierre/:attemptId', 'simulador/:caseVersionId', 'personaje']));
-    expect(paths).not.toContain('casos');
+    expect(paths).toEqual(expect.arrayContaining(['casos', 'casos/nuevo', 'casos/:caseVersionId/editor']));
   });
 });

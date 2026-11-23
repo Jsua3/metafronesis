@@ -88,7 +88,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
   it('el docente pliega Rúbricas; Inicio, Revisión y Grupos quedan a la vista (DISENO §3.2)', async () => {
     currentUser.set(user('PROFESOR'));
     await fixture.whenStable();
-    expect(labels()).toEqual(['Inicio', 'Revisión', 'Grupos', 'Reportes', 'Rúbricas']);
+    expect(labels()).toEqual(['Inicio', 'Revisión', 'Casos', 'Grupos', 'Reportes', 'Rúbricas']);
     expect(folded()).toEqual(['Reportes', 'Rúbricas']);
   });
 
@@ -96,7 +96,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     currentUser.set(user('ADMIN'));
     await fixture.whenStable();
     // ED-5 (E2): el administrador no tiene «Mi personaje» (no juega). «Usuarios» ya no se pliega: es su tarea principal.
-    expect(labels()).toEqual(['Inicio', 'Usuarios', 'Revisión', 'Reportes', 'Rúbricas']);
+    expect(labels()).toEqual(['Inicio', 'Usuarios', 'Casos', 'Revisión', 'Reportes', 'Rúbricas']);
     expect(folded()).toEqual(['Revisión', 'Reportes', 'Rúbricas']);
     currentUser.set(user('ESTUDIANTE'));
     await fixture.whenStable();
@@ -115,7 +115,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     expect(tabLabels()).toEqual(['Inicio', 'Casos', 'Personaje', 'Grupos']);
     currentUser.set(user('ADMIN'));
     await fixture.whenStable();
-    expect(tabLabels()).toEqual(['Inicio', 'Usuarios', 'Más']);
+    expect(tabLabels()).toEqual(['Inicio', 'Usuarios', 'Casos', 'Más']);
   });
 
   it('la cuenta muestra nombre y rol humanizado; su menú dice quién soy, ofrece «Cambiar contraseña» y «Cerrar sesión»', async () => {

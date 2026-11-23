@@ -1,0 +1,201 @@
+// Lienzo de Caminos (EDITOR-PRO.md, punto 3). Tamaño de tarjeta: modelo/trazado.ts (208 × 140).
+$ancho: 208px;
+$alto: 140px;
+$alto-miniatura: 64px;
+
+:host { display: flex; flex-direction: column; gap: 0.5rem; position: relative; min-inline-size: 0; }
+
+// ── Herramientas (van a la barra del estudio) ─────────────────────────────
+.acciones-boton {
+  position: relative; display: inline-flex; align-items: center; gap: 0.375rem; min-block-size: 2.25rem; padding: 0 0.625rem 0 0.75rem;
+  border: 1px solid var(--l-filo-fuerte); border-radius: var(--l-radio-chico, 0.5rem); background: var(--l-superficie);
+  color: var(--ds-text-1); font: inherit; font-size: var(--autoria-texto-14); font-weight: 700; cursor: pointer;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out), scale var(--ds-dur-press) var(--ds-ease-out);
+  &::after { content: ''; position: absolute; inset: -0.25rem 0; }
+  &:active { scale: 0.97; }
+  &[aria-disabled='true'] { color: var(--ds-text-2); cursor: not-allowed; }
+  &[aria-expanded='true'] { background: var(--l-tinte); border-color: var(--l-tinte-filo); }
+  .chevron { inline-size: 0.75rem; block-size: 0.75rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+}
+@media (hover: hover) and (pointer: fine) { .acciones-boton:not([aria-disabled='true']):hover { background: var(--l-superficie-hundida); } }
+.separador { flex: none; inline-size: 1px; block-size: 1.25rem; margin-inline: 0.25rem; background: var(--l-filo-fuerte); }
+.zoom {
+  position: relative; min-inline-size: 3.5rem; min-block-size: 2.25rem; padding: 0 0.25rem; border: 0; border-radius: 0.375rem;
+  background: transparent; color: var(--ds-text-2); font: inherit; font-size: var(--autoria-texto-14); font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  &::after { content: ''; position: absolute; inset: -0.25rem 0; }
+}
+@media (hover: hover) and (pointer: fine) { .zoom:hover { background: var(--l-superficie-hundida); color: var(--ds-text-1); } }
+@media (pointer: coarse) { .acciones-boton, .zoom { min-block-size: 2.75rem; } }
+.teclas-ancla { position: relative; }
+.globo-teclas {
+  position: absolute; z-index: var(--autoria-capa-10); inset-block-start: calc(100% + 0.5rem); inset-inline-end: 0;
+  inline-size: min(26rem, 80vw); padding: 0.875rem 1rem; border: 1px solid var(--l-filo-fuerte); border-radius: var(--l-radio-control);
+  background: var(--l-superficie); box-shadow: var(--l-sombra-alta); color: var(--ds-text-1);
+  font-size: var(--autoria-texto-14); line-height: 1.375rem;
+  &[hidden] { display: none; }
+  p { margin: 0 0 0.375rem; font-weight: 700; }
+  ul { margin: 0; padding-inline-start: 1.125rem; display: flex; flex-direction: column; gap: 0.25rem; }
+}
+
+// ── El lienzo ─────────────────────────────────────────────────────────────
+.lienzo { position: relative; block-size: 26rem; min-block-size: 20rem; }
+.marco {
+  position: absolute; inset: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--l-filo);
+  border-radius: var(--l-radio-tarjeta); background-color: var(--l-superficie-hundida); touch-action: none; cursor: default;
+  // Retícula de puntos: el papel cuadriculado del juego, apenas visible (fija: no se mueve con la cámara, como en Figma).
+  background-image: radial-gradient(circle, color-mix(in oklab, var(--l-filo-fuerte) 70%, transparent) 1px, transparent 1.5px);
+  background-size: 1.25rem 1.25rem;
+  &.mano { cursor: grab; }
+  &.arrastrando { cursor: grabbing; }
+  &:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
+}
+.plano {
+  position: absolute; inset-inline-start: 0; inset-block-start: 0; transform-origin: 0 0; will-change: transform;
+  // «Ver todo» y centrar en una escena se mueven con una cámara suave; arrastrar y la rueda, en el acto.
+  &.animando { transition: transform var(--ds-dur-slow) var(--ds-ease-out); }
+}
+.flechas { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+// El grosor se divide por el zoom: la flecha se ve de 2 px (3 la elegida) a cualquier escala, nunca un hilo de 1 px.
+.flecha {
+  fill: none; stroke: var(--borde-control); stroke-width: calc(2px / var(--zoom, 1)); cursor: pointer; pointer-events: stroke;
+  transition: stroke var(--ds-dur-fast) var(--ds-ease-out), opacity var(--ds-dur-base) var(--ds-ease-out);
+  &.de-elegida { stroke: var(--ds-primary); stroke-width: calc(3px / var(--zoom, 1)); }
+  &.iluminada { stroke: var(--ds-primary); stroke-width: calc(3px / var(--zoom, 1)); }
+  &:focus-visible { outline: none; stroke: var(--ds-focus); stroke-width: calc(4px / var(--zoom, 1)); }
+}
+// Con un camino a la vista, lo demás se aparta (no desaparece: se sigue leyendo el mapa entero).
+.con-foco .flecha:not(.iluminada):not(.de-elegida) { opacity: 0.35; }
+.punta { fill: var(--borde-control); }
+.punta-elegida { fill: var(--ds-primary); }
+.puerto { stroke-width: calc(2px / var(--zoom, 1)); transition: fill var(--ds-dur-fast) var(--ds-ease-out); }
+.puerto--salida { fill: var(--borde-control); stroke: var(--l-superficie); }
+.puerto--entrada { fill: var(--l-superficie); stroke: var(--borde-control); }
+.puerto--salida.iluminado { fill: var(--ds-primary); }
+.puerto--entrada.iluminado { stroke: var(--ds-primary); }
+
+// ── La tarjeta de una escena ──────────────────────────────────────────────
+.escena {
+  position: absolute; width: $ancho; height: $alto; display: grid; grid-template-rows: $alto-miniatura minmax(0, 1fr); padding: 0;
+  text-align: start; font: inherit; color: var(--ds-text-1); background: var(--l-superficie);
+  border: 1px solid var(--l-filo-fuerte); border-radius: var(--l-radio-control); cursor: pointer; overflow: hidden;
+  box-shadow: var(--l-sombra-trabajo);
+  transition: border-color var(--ds-dur-fast) var(--ds-ease-out), box-shadow var(--ds-dur-fast) var(--ds-ease-out),
+    translate var(--ds-dur-fast) var(--ds-ease-out);
+  animation: escena-entra var(--ds-dur-base) var(--ds-ease-out) both;
+  &:active { scale: 0.98; }
+  &.en-camino { border-color: var(--ds-primary); }
+  // Elegida: filo de 2 px y un halo tinte (forma, no solo color).
+  &.elegida { box-shadow: 0 0 0 2px var(--ds-primary), 0 0 0 6px var(--l-tinte), var(--l-sombra-trabajo); border-color: var(--ds-primary); }
+  // Final, IA y aviso se dicen con forma (doble, discontinuo) y con palabra, no solo con color.
+  &.final { border-style: double; border-width: 4px; }
+  &.con-aviso { border-color: var(--aviso); }
+  &.marca-ia { border-style: dashed; }
+  &:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 3px; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .escena:hover { translate: 0 -2px; box-shadow: var(--l-sombra-alta); }
+}
+@keyframes escena-entra { from { opacity: 0; translate: 0 6px; } }
+
+.miniatura { position: relative; display: block; overflow: hidden; border-block-end: 1px solid var(--l-filo); background: var(--l-superficie-hundida); }
+// La sala en pixel art: recorte centrado en el piso, nítida (sin suavizado).
+.miniatura__arte { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: 50% 62%; image-rendering: pixelated; }
+// Sala sin fondo dibujado (por piezas o sin lugar): un piso de baldosas en dos tonos, sin imagen rota.
+.miniatura__vacia {
+  display: grid; place-items: center; inline-size: 100%; block-size: 100%; color: var(--ds-text-1);
+  background: linear-gradient(90deg, var(--l-filo-fuerte) 4%, transparent 4% 96%, var(--l-filo-fuerte) 96%),
+    linear-gradient(var(--l-superficie-hundida) 0 60%, var(--l-filo-fuerte) 60% 64%, var(--l-superficie) 64%);
+}
+.miniatura__vacia span { padding: 0.125rem 0.5rem; background: var(--l-superficie); box-shadow: 0 0 0 2px var(--l-filo-fuerte); }
+
+// El número es una tesela de píxel, como en el riel: el mismo número en los dos sitios.
+.numero {
+  position: absolute; inset-block-start: 0.375rem; inset-inline-start: 0.375rem; display: grid; place-items: center;
+  min-inline-size: 1.625rem; block-size: 1.625rem; padding-inline: 0.25rem; border-radius: 0.3125rem;
+  background: var(--l-superficie); box-shadow: 0 0 0 1px var(--l-filo-fuerte); color: var(--ds-text-1);
+  font-size: var(--autoria-texto-14); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.escena.elegida .numero { background: var(--ds-primary); box-shadow: none; color: var(--ds-on-primary); }
+.etiquetas {
+  position: absolute; max-inline-size: calc(100% - 2.75rem); inset-block-start: 0.375rem; inset-inline: 2.375rem 0.375rem; display: flex; justify-content: flex-end;
+  flex-wrap: nowrap; gap: 0.25rem; overflow: hidden;
+  .pildora {
+    flex: none; min-block-size: 1.375rem; padding: 0 0.4375rem; font-size: var(--autoria-texto-14); line-height: 1.25rem; white-space: nowrap;
+    background: var(--l-superficie);
+  }
+}
+.pildora-ia { border-style: dashed; }
+.aviso { border-color: var(--aviso); color: var(--aviso-texto); background: var(--aviso-tinte); }
+.cuerpo-tarjeta { display: flex; flex-direction: column; gap: 0.125rem; min-block-size: 0; min-inline-size: 0; overflow: hidden; padding: 0.4375rem 0.625rem 0.5rem; }
+.titulo {
+  display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  font-size: var(--autoria-texto-18); font-weight: 700; line-height: 1.25rem; overflow-wrap: anywhere;
+}
+.pie-tarjeta { display: flex; align-items: baseline; gap: 0.5rem; margin-block-start: auto; min-inline-size: 0; font-size: var(--autoria-texto-14); line-height: 1.125rem; }
+.sala { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.intensidad-marca { flex: none; display: inline-flex; align-items: baseline; gap: 0.1875rem; font-weight: 700; color: var(--ds-text-2); }
+.intensidad-marca[data-intensidad='HIGH'] { color: var(--aviso-texto); }
+
+// Forma compacta (zoom bajo): número y título grandes; la sala y la intensidad quedan en el globo.
+.compacto {
+  .numero { min-inline-size: 2.25rem; block-size: 2.25rem; font-size: var(--autoria-texto-20); }
+  .titulo { font-size: var(--autoria-texto-22); line-height: 1.75rem; }
+  .pie-tarjeta { display: none; }
+}
+
+// ── Globos (en píxeles de pantalla) y minimapa ────────────────────────────
+.vista {
+  position: absolute; z-index: var(--autoria-capa-3); inline-size: 16.25rem; display: flex; flex-direction: column; gap: 0.25rem;
+  padding: 0.625rem; border: 1px solid var(--l-filo-fuerte); border-radius: var(--l-radio-control);
+  background: var(--l-superficie); box-shadow: var(--l-sombra-alta); color: var(--ds-text-1);
+  pointer-events: none; font-size: var(--autoria-texto-14); line-height: 1.25rem;
+  animation: globo-entra var(--ds-dur-fast) var(--ds-ease-out);
+  &.arriba { translate: 0 -100%; }
+  img { inline-size: 100%; block-size: auto; border-radius: 0.5rem; image-rendering: pixelated; margin-block-end: 0.25rem; }
+}
+.tarjeta-flecha {
+  position: absolute; z-index: var(--autoria-capa-3); translate: -50% -120%; max-inline-size: 16.25rem; padding: 0.375rem 0.625rem;
+  display: flex; flex-direction: column; gap: 0.125rem; border-radius: 0.5rem; background: var(--ds-text-1); color: var(--ds-surface-1);
+  font-size: var(--autoria-texto-14); line-height: 1.25rem; pointer-events: none;
+  .hacia { font-weight: 400; }
+}
+@keyframes globo-entra { from { opacity: 0; } }
+.minimapa { position: absolute; inset-inline-end: 0.75rem; inset-block-end: 0.75rem; z-index: var(--autoria-capa-3); }
+
+.moviendo { display: flex; flex-direction: column; gap: 0.5rem; p { margin: 0; } }
+.acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cuadrado { inline-size: 2.75rem; padding: 0; font-size: var(--autoria-texto-20); }
+
+// El menú se pinta en la capa del CDK, fuera del editor: usa solo «--ds-*», que la piel del propio menú define.
+.menu {
+  display: flex; flex-direction: column; min-inline-size: 15rem; padding: 0.375rem; border: 1px solid var(--ds-border);
+  border-radius: 1rem; background: var(--ds-surface-1); box-shadow: var(--ds-shadow-e3); color: var(--ds-text-1);
+}
+.item {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem; min-block-size: 2.75rem; padding: 0 0.75rem;
+  font: inherit; font-size: var(--autoria-texto-14); text-align: start; border: 0; background: none; border-radius: 0.625rem;
+  cursor: pointer; color: var(--ds-text-1); transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
+  kbd { color: var(--ds-text-2); }
+  &:focus, &:active { background: var(--ds-primary-subtle); outline: none; }
+  &:focus-visible { box-shadow: inset 0 0 0 2px var(--ds-focus); }
+  &.peligro { color: var(--ds-danger); }
+}
+@media (hover: hover) and (pointer: fine) { .item:hover { background: var(--ds-primary-subtle); } }
+hr { inline-size: 100%; border: 0; border-block-start: 1px solid var(--ds-border); margin: 0.25rem 0; }
+.pista { margin: 0; font-size: var(--autoria-texto-14); line-height: 1.375rem; &:empty { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .escena, .item, .flecha, .vista, .puerto { transition: none; animation: none; }
+  .plano.animando { transition: none; }
+}
+@media (forced-colors: active) {
+  .escena.elegida { outline: 3px solid Highlight; }
+  .flecha.de-elegida, .flecha.iluminada { stroke: Highlight; }
+  .punta, .punta-elegida { fill: CanvasText; }
+}
+
+// En el teléfono no hay teclado ni cursor: sin separadores ni «Teclas del mapa», las herramientas caben en una fila.
+@media (max-width: 63.999rem) {
+  .separador, .teclas-ancla { display: none; }
+}

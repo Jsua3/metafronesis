@@ -148,4 +148,13 @@ describe('RubricService: lecturas y alta sobre las rutas de metafronesis', () =>
     expect('levelDescriptors' in request.request.body.criteria[0]).toBe(false);
     request.flush({ data: FICHA });
   });
+
+  it('la rúbrica de un caso se lee de /api/rubrics/case-versions/{id} y llega sin sobre', () => {
+    let leida: unknown;
+    service.caseVersionRubric(9).subscribe(r => (leida = r));
+    const peticion = http.expectOne('/api/rubrics/case-versions/9');
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush({ data: { id: 3 } });
+    expect(leida).toEqual({ id: 3 });
+  });
 });

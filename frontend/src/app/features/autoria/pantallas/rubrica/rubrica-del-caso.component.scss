@@ -1,0 +1,77 @@
+// «Rúbrica» del caso: la misma cabecera y las mismas fichas que «Pasos profesionales»; los criterios en una rejilla que pasa
+// a dos columnas cuando caben (cuatro criterios del programa entran en una pantalla a 1440).
+// Ronda 3: la hoja de estudio de las pestañas de formulario (EDITOR-PRO.md), con su lienzo hundido y su cabecera compacta.
+@use '../datos/hoja';
+
+@include hoja.lienzo;
+
+.cabecera__titulos { flex: 1 1 24rem; }
+.cabecera h1:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 4px; border-radius: 0.25rem; }
+
+.cargando { margin: 0; color: var(--ds-text-2); }
+.error { margin: 0; color: var(--peligro); font-weight: 700; }
+.falla {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--l-radio-tarjeta);
+  background: var(--peligro-tinte); color: var(--ds-text-1);
+}
+.falla p { margin: 0; flex: 1 1 18rem; }
+.acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+
+// Vacío: la figura del supervisor clínico en pixel art a ×3, a la izquierda del texto (encima en un teléfono).
+.vacio {
+  display: flex; align-items: center; gap: 1.25rem 2rem; padding: 1.5rem 1.75rem; border-radius: var(--l-radio-tarjeta);
+  background: var(--l-superficie); box-shadow: inset 0 0 0 1px var(--l-filo), var(--l-sombra-trabajo);
+}
+.vacio__figura { flex: none; }
+.vacio__texto { display: flex; flex-direction: column; gap: 0.5rem; min-inline-size: 0; max-inline-size: var(--l-ancho-lectura); }
+.vacio__titulo { margin: 0; font-size: var(--autoria-texto-24); line-height: 2rem; }
+// En el teléfono el h1 ya mide 24 px: el título del vacío baja un escalón para no competir con él.
+@media (max-width: 40rem) { .vacio__titulo { font-size: var(--autoria-texto-20); line-height: 1.75rem; } }
+.vacio__texto p { margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-16); line-height: 1.5rem; }
+.vacio .acciones { margin-block-start: 0.5rem; }
+
+// El resumen de la rúbrica que tiene el caso, con su tipo dicho con forma y palabra.
+.resumen {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; padding: 1rem 1.25rem;
+  border-radius: var(--l-radio-tarjeta); background: var(--l-superficie); box-shadow: inset 0 0 0 1px var(--l-filo);
+}
+.resumen[data-tipo='compartida'] { box-shadow: inset 0 0 0 1px var(--ds-warning-text), inset 3px 0 0 var(--ds-warning-text); }
+.resumen__texto { flex: 1 1 26rem; min-inline-size: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.resumen__tipo {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14);
+  font-weight: 800; letter-spacing: 0.02em;
+}
+.resumen[data-tipo='compartida'] .resumen__tipo { color: var(--ds-warning-text); }
+.resumen__nombre { margin: 0; font-size: var(--autoria-texto-22); line-height: 1.75rem; overflow-wrap: anywhere; }
+.resumen__nota { margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-16); line-height: 1.5rem; }
+.resumen__acciones { flex: none; }
+
+.criterios { display: flex; flex-direction: column; gap: 0.75rem; }
+.criterios__cabeza { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; }
+.criterios__cabeza h2 { flex: 1 0 100%; margin: 0; font-size: var(--autoria-texto-20); line-height: 1.75rem; }
+.criterios__cobertura { flex: 1 1 18rem; margin: 0; font-size: var(--autoria-texto-16); line-height: 1.5rem; }
+.criterios__barra { flex: 1 1 10rem; max-inline-size: 18rem; }
+.lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 80rem) { .lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.criterio {
+  display: flex; flex-direction: column; gap: 0.5rem; min-inline-size: 0; padding: 0.75rem 1rem 0.875rem;
+  border-radius: var(--l-radio-tarjeta); background: var(--l-superficie); box-shadow: inset 0 0 0 1px var(--l-filo);
+  scroll-margin-block: 1rem;
+}
+.criterio:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.criterio__cabeza { display: flex; align-items: baseline; gap: 0.625rem; min-inline-size: 0; }
+.criterio__titulo { flex: 1 1 auto; min-inline-size: 0; margin: 0; font-size: var(--autoria-texto-18); line-height: 1.5rem; overflow-wrap: anywhere; }
+// El peso, dato secundario: texto gris y pequeño (no una ficha que compita con el nombre del criterio).
+.criterio__peso { flex: none; color: var(--ds-text-2); font-size: var(--autoria-texto-14); font-weight: 700; font-variant-numeric: tabular-nums; }
+.criterio__descripcion {
+  margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-16); line-height: 1.375rem; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+@media (max-width: 40rem) {
+  .cabecera h1 { font-size: var(--autoria-texto-24); line-height: 2rem; }
+  .vacio { flex-direction: column; align-items: flex-start; padding: 1.25rem; }
+}
+@media (forced-colors: active) {
+  .vacio, .resumen, .criterio, .falla { border: 1px solid CanvasText; }
+}

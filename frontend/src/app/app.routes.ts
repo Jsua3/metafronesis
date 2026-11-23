@@ -141,6 +141,29 @@ export const routes: Routes = [
         loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
       },
       {
+        path: 'casos',
+        title: 'Casos',
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadComponent: () => import('./features/simulator/case-authoring-hub.component').then(m => m.CaseAuthoringHubComponent)
+      },
+      {
+        // P6: crear un caso empieza por elegir el lugar y las salas; el editor nuevo pone su propio marco (sin la barra del portal).
+        path: 'casos/nuevo',
+        title: 'Nuevo caso',
+        data: { chrome: 'propio' },
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadChildren: () => import('./features/autoria/autoria.routes').then(m => m.rutasNuevoCaso)
+      },
+      // La pantalla del ensayo del borrador (`casos/:caseVersionId/ensayo`) llega en un PR siguiente.
+      {
+        // P6: el editor nuevo de casos. Un PROFESOR solo abre los suyos (lo hace cumplir el servidor).
+        path: 'casos/:caseVersionId/editor',
+        title: 'Editor de caso',
+        data: { chrome: 'propio' },
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadChildren: () => import('./features/autoria/autoria.routes').then(m => m.rutasEditorCaso)
+      },
+      {
         path: 'docente/trazabilidad',
         title: 'Revisión formativa',
         canActivate: [roleGuard(...rolesFor('trazabilidad'))],
@@ -211,6 +234,7 @@ export const routes: Routes = [
   { path: 'rubricas', redirectTo: 'portal/rubricas', pathMatch: 'full' },
   { path: 'reportes', redirectTo: 'portal/reportes', pathMatch: 'full' },
   { path: 'grupos', redirectTo: 'portal/grupos', pathMatch: 'full' },
+  { path: 'casos', redirectTo: 'portal/casos', pathMatch: 'full' },
   { path: 'usuarios', redirectTo: 'portal/admin/usuarios', pathMatch: 'full' },
   ...DEV_ONLY_ROUTES,
   // Plan visual F3-6: una dirección desconocida muestra la 404 (antes redirigía en silencio al panel).

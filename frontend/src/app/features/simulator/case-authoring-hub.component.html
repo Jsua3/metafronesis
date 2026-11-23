@@ -1,0 +1,59 @@
+<!-- Una viñeta por pantalla: si no hay casos, el arte lo lleva el vacío y la cabecera se queda solo con el texto. -->
+<ui-cabecera-ilustrada [herramienta]="true" [escena]="listState() === 'empty' ? null : 'casos-docente'" eyebrow="Autoría" title="Casos"
+  description="Crea y acompaña los casos de aprendizaje de tus estudiantes.">
+  <a ui-button uiHerramientaAcciones variant="primary" icon="add_circle" routerLink="/portal/casos/nuevo">Crear un caso</a>
+</ui-cabecera-ilustrada>
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+<ui-section class="hub-cases" title="Tus casos">
+  @switch (listState()) {
+    @case ('loading') {
+      <div class="hub-grid" aria-busy="true">
+        @for (bone of [1, 2, 3]; track bone) { <ui-skeleton shape="card" [lines]="3" /> }
+      </div>
+    }
+    @case ('error') { <ui-error-state kind="server" [message]="error()" (retry)="loadCases()" /> }
+    @case ('empty') {
+      <ui-vacio-ilustrado escena="casos-docente" titulo="Aún no tienes casos" marco="placa"
+        frase="Crea el primero con «Crear un caso»: eliges un lugar y sus salas, y lo abres en el editor." />
+    }
+    @default {
+      <ui-filtros [(busqueda)]="busqueda" etiquetaBusqueda="Buscar por título" [conBusqueda]="cases().length > 6"
+        [total]="cases().length" [visibles]="filtrados().length" [hayFiltros]="filtro() !== 'ALL'" (limpiar)="filtro.set('ALL')">
+        <ui-segmentado etiqueta="Estado del caso" [opciones]="opciones()" [(valor)]="filtro" />
+      </ui-filtros>
+      <ul class="hub-grid">
+        @for (grupo of grupos(); track grupo[0].caseVersionId) {
+          <li class="hub-grupo">
+            <ng-container [ngTemplateOutlet]="tarjeta" [ngTemplateOutletContext]="{ $implicit: grupo[0] }" />
+            @if (grupo.length > 1) {
+              <details class="hub-versiones">
+                <summary>Otras versiones ({{ grupo.length - 1 }})</summary>
+                <div class="hub-versiones__lista">
+                  @for (version of grupo.slice(1); track version.caseVersionId) {
+                    <ng-container [ngTemplateOutlet]="tarjeta" [ngTemplateOutletContext]="{ $implicit: version }" />
+                  }
+                </div>
+              </details>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</ui-section>
+<ng-template #tarjeta let-item>
+  <ui-card class="hub-card">
+    <ui-portada-caso [portada]="item.portada" [titulo]="item.title" />
+    <div class="hub-card__top"><ui-badge [tone]="statusTone(item.status)">{{ statusLabel(item.status) }}</ui-badge></div>
+    <h3 class="hub-card__title">{{ item.title }}</h3>
+    <p class="hub-card__code" [title]="item.code">{{ item.code }}</p>
+    @if (fecha(item.updatedAt); as editado) { <p class="hub-card__meta">{{ editado }}</p> }
+    @if (item.escenasConGuion != null) {
+      <p class="hub-card__meta">{{ item.escenasConGuion }} de {{ item.nodeCount }} escenas con guion</p>
+    }
+    <div class="hub-card__actions">
+      <a ui-button [routerLink]="item.status === 'IN_REVIEW' ? ['/portal/casos', item.caseVersionId, 'editor', 'revision'] : ['/portal/casos', item.caseVersionId, 'editor']">{{ accion(item.status) }}</a>
+      <!-- «Probar» (el ensayo del caso publicado) llega en un PR siguiente: su backend aún no existe. -->
+    </div>
+  </ui-card>
+</ng-template>

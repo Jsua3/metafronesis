@@ -1,0 +1,125 @@
+@if (store.caso()) {
+  <div class="lienzo">
+  <div class="hoja hoja--ancha rubrica">
+    <div class="cabecera">
+      <div class="cabecera__titulos">
+        <p class="sobretitulo">Etapa 4 · Evaluación</p>
+        <h1 id="rubrica-titulo" tabindex="-1">Rúbrica del caso</h1>
+        <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
+        <p class="bajada" data-accion="evidencia-por-respuesta">
+          Con ella se valoran los intentos. Cada criterio se evidencia en las respuestas que lo marcan en su faceta «Criterios».
+        </p>
+      </div>
+      <app-pestanas-evaluacion actual="rubrica" />
+    </div>
+
+    <p role="status" class="solo-lector">{{ anuncio() }}</p>
+    @if (errorAdopcion()) { <p class="error" role="alert">{{ errorAdopcion() }}</p> }
+
+    @switch (vista().tipo) {
+      @case ('cargando') {
+        <p class="cargando" role="status" data-accion="rubrica-del-caso">Buscando la rúbrica del caso…</p>
+      }
+      @case ('error') {
+        <div class="falla" role="alert" data-accion="rubrica-del-caso">
+          <p>{{ mensajeDeError() }}</p>
+          <button type="button" class="boton" (click)="cargar()">Volver a intentarlo</button>
+        </div>
+      }
+      @case ('sin-rubrica') {
+        <!-- El vacío con arte del simulador (§5.3): quién valora y por qué hace falta. -->
+        <section class="vacio" aria-labelledby="vacio-titulo" data-accion="rubrica-del-caso">
+          <ui-figura-pixel class="vacio__figura" personaje="supervisor-clinico" [escala]="3" />
+          <div class="vacio__texto">
+            <h2 class="vacio__titulo" id="vacio-titulo">Este caso todavía no tiene rúbrica</h2>
+            <p>Sin ella, los intentos no se pueden valorar. Lo más rápido: un criterio por cada competencia del programa, que después puedes ajustar.</p>
+            @if (!store.soloLectura() && !eligiendo()) {
+              <div class="acciones">
+                <button type="button" class="boton boton-primario" [attr.aria-disabled]="ocupado()"
+                        (click)="adoptar({ fromCompetencies: true }, 'Competencias del programa')">
+                  {{ ocupado() ? 'Guardando…' : 'Usar las competencias del programa' }}
+                </button>
+                <button type="button" class="boton" (click)="abrirElector()">Copiar una de mis rúbricas</button>
+              </div>
+            }
+          </div>
+        </section>
+      }
+      @default {
+        @if (vista(); as v) {
+          @if (v.tipo !== 'cargando' && v.tipo !== 'error' && v.tipo !== 'sin-rubrica') {
+            <section class="resumen" aria-labelledby="resumen-nombre" data-accion="rubrica-del-caso" [attr.data-tipo]="v.tipo">
+              <div class="resumen__texto">
+                <p class="resumen__tipo">
+                  @switch (v.tipo) {
+                    @case ('propia') { <span class="marca-estado" data-estado="lista" aria-hidden="true"></span> Rúbrica propia del caso }
+                    @case ('compartida') { <span aria-hidden="true">▲</span> Rúbrica compartida }
+                    @default { Rúbrica predeterminada de la institución }
+                  }
+                </p>
+                <h2 class="resumen__nombre" id="resumen-nombre">{{ v.rubrica.nombre }}</h2>
+                <p class="resumen__nota">
+                  @switch (v.tipo) {
+                    @case ('propia') { Es una copia que viaja con el caso: se sella al publicarlo y no cambia si alguien edita la rúbrica en la biblioteca. }
+                    @case ('compartida') { Este caso usa una rúbrica compartida: si alguien la cambia, cambia cómo se valora este caso. }
+                    @default { Se valorará con la rúbrica predeterminada. Mientras el caso no tenga su copia, la faceta «Criterios» de las respuestas queda vacía. }
+                  }
+                </p>
+              </div>
+              @if (!store.soloLectura() && !eligiendo()) {
+                <div class="acciones resumen__acciones">
+                  @if (v.tipo === 'propia') {
+                    @if (v.rubrica.id) {
+                      <a class="boton" [routerLink]="'/portal/rubricas'" [queryParams]="{ rubrica: v.rubrica.id }">Editar criterios y descriptores</a>
+                    }
+                    <button type="button" class="boton" (click)="abrirElector()">Cambiar por otra</button>
+                  } @else {
+                    <button type="button" class="boton boton-primario" [attr.aria-disabled]="ocupado()"
+                            (click)="adoptar({ rubricId: v.rubrica.id }, v.rubrica.nombre)">{{ ocupado() ? 'Guardando…' : 'Traer una copia al caso' }}</button>
+                    <button type="button" class="boton" (click)="abrirElector()">Elegir otra</button>
+                  }
+                </div>
+              }
+            </section>
+          }
+        }
+      }
+    }
+
+    @if (eligiendo()) {
+      <app-elector-de-rubrica [titulo]="vista().tipo === 'propia' ? 'Cambiar la rúbrica del caso' : 'Elegir la rúbrica del caso'"
+                              [opciones]="opciones()" [elegida]="elegida()" [cargando]="cargandoOpciones()" [ocupado]="ocupado()"
+                              [comprobando]="comprobando()" [errorComprobacion]="errorComprobacion()" (recomprobar)="recomprobar()"
+                              [error]="errorElector()" [perdidas]="perdidas()" [respuestasAfectadas]="respuestasAfectadas()"
+                              (elegir)="elegir($event)" (confirmar)="confirmar()" (cancelar)="cerrarElector()" />
+    }
+
+    @if (criterios().length) {
+      <section class="criterios" aria-labelledby="criterios-titulo">
+        <div class="criterios__cabeza">
+          <h2 id="criterios-titulo">Criterios y dónde se evidencian</h2>
+          <p class="criterios__cobertura">
+            <strong>{{ conEvidencia() }} de {{ criterios().length }} criterios</strong> tienen al menos una respuesta que los evidencia.
+          </p>
+          <ui-progress class="criterios__barra" label="Criterios con alguna respuesta" [value]="conEvidencia()" [max]="criterios().length" />
+        </div>
+        <ol class="lista">
+          @for (c of criterios(); track c.codigo + $index) {
+            <li class="criterio" [id]="'criterio-' + c.codigo" tabindex="-1" [attr.data-con-evidencia]="c.evidencias.length > 0">
+              <div class="criterio__cabeza">
+                <span class="marca-estado" [attr.data-estado]="c.evidencias.length ? 'lista' : 'sin-empezar'" aria-hidden="true"></span>
+                <h3 class="criterio__titulo">{{ c.titulo }}</h3>
+                @if (pesoEnPalabras(c.peso); as peso) { <span class="criterio__peso">Peso {{ peso }}</span> }
+              </div>
+              @if (c.descripcion) { <p class="criterio__descripcion">{{ c.descripcion }}</p> }
+              <app-fichas-de-respuestas [respuestas]="c.evidencias" [etiqueta]="'Respuestas que evidencian ' + c.titulo"
+                                        vacio="Ninguna respuesta lo evidencia todavía. Se marca en la faceta «Criterios» de una respuesta."
+                                        (irA)="irA($event)" />
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  </div>
+  </div>
+}

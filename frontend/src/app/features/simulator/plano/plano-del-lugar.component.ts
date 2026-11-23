@@ -91,12 +91,12 @@ const PUERTA_GROSOR = 14;
     }
     .plano__lista li[aria-current] { color: var(--ds-text-1); font-weight: 700; }
     .sala--elegible { cursor: pointer; }
-    .rota circle { fill: none; stroke: #bd2020; stroke-width: 3; stroke-dasharray: 6 4; }
-    .rota text { fill: #a50000; font-weight: 700; }
+    .rota circle { fill: none; stroke: var(--ds-danger); stroke-width: 3; stroke-dasharray: 6 4; }
+    .rota text { fill: var(--ds-danger-hover); font-weight: 700; }
     .plano__sala { display: block; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; font: inherit; color: var(--ds-text-1);
       background: var(--ds-surface-1, transparent); border: 1px solid var(--ds-border-strong, currentColor); border-radius: 8px; cursor: pointer; }
     .plano__sala:active { transform: translateY(1px); }
-    .plano__rota { display: block; color: #a50000; font-weight: 600; }
+    .plano__rota { display: block; color: var(--ds-danger-hover); font-weight: 600; }
   `],
 })
 export class PlanoDelLugarComponent {

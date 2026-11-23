@@ -1,0 +1,164 @@
+@if (store.caso(); as caso) {
+  <div class="lienzo">
+  <div class="hoja hoja--ancha finales">
+    <div class="cabecera">
+      <div class="cabecera__titulos">
+        <p class="sobretitulo">Etapa 4 · Evaluación</p>
+        <h1>Finales del caso</h1>
+        <p class="bajada">Lo que el estudiante lee al terminar. Si no haces nada, se calculan solos con los pasos que cumplió y las respuestas que eligió.</p>
+      </div>
+      <app-pestanas-evaluacion actual="finales" />
+    </div>
+
+    <!-- Los dos modos, como dos tarjetas de opción con una frase cada una (botones de opción reales). -->
+    <fieldset class="modo" data-accion="definir-finales">
+      <legend class="modo__rotulo">Cómo se deciden los finales</legend>
+      <label class="opcion">
+        <input type="radio" name="modo" value="automatico" [checked]="caso.modoFinales === 'automatico'" (change)="pedirModo('automatico', $event)" />
+        <span class="opcion__texto"><strong>Los finales se calculan solos</strong>
+          <span class="texto-secundario">Según los pasos que cumplió y cuántas respuestas con riesgo o contraindicadas eligió. No tienes que escribir nada.</span></span>
+      </label>
+      <label class="opcion">
+        <input type="radio" name="modo" value="propio" [checked]="caso.modoFinales === 'propio'" (change)="pedirModo('propio', $event)" />
+        <span class="opcion__texto"><strong>Quiero definir mis finales</strong>
+          <span class="texto-secundario">Tú decides cuántos hay, qué los provoca y qué dice cada uno.</span></span>
+      </label>
+    </fieldset>
+
+    @if (confirmandoModo()) {
+      <div class="dialogo" role="alertdialog" aria-labelledby="cmt">
+        <h2 id="cmt" tabindex="-1">{{ preguntaModo(caso.finales.length) }}</h2>
+        <p>Los finales se calcularán solos con los pasos y las respuestas. Si después quieres volver a definirlos tú, tendrás que escribirlos de nuevo.</p>
+        <div class="acciones">
+          <button type="button" class="boton boton-peligro" (click)="aceptarModo()">Sí, usar los que se calculan solos</button>
+          <button type="button" class="boton" (click)="conservarModo()">No, conservar mis finales</button>
+        </div>
+      </div>
+    }
+
+    <p role="status" class="solo-lector">{{ anuncio() }}</p>
+
+    @if (caso.modoFinales === 'propio') {
+      <section aria-labelledby="fh" class="bloque">
+        <div class="bloque__cabeza">
+          <h2 id="fh">Tus finales ({{ caso.finales.length }})</h2>
+          <p class="texto-secundario">Si el estudiante cumple las condiciones de varios, ve el que está más arriba. Si no cumple ninguna, ve uno de los cuatro que se calculan solos.</p>
+        </div>
+        <ol class="propios">
+          @for (f of caso.finales; track f.id; let i = $index; let primero = $first; let ultimo = $last) {
+            <li class="final" [class.marca-ia]="f.marcaIa" [id]="'final-' + f.id" tabindex="-1">
+              <!-- details: abrir y cerrar sigue sirviendo en solo lectura (un fieldset deshabilitado apaga los botones). -->
+              <details class="final__plegable" [open]="abiertos().has(f.id)" (toggle)="alPlegar(f.id, $event)">
+                <summary class="final__fila">
+                  <span class="final__numero">Final {{ i + 1 }}</span>
+                  <span class="final__nombre">{{ f.nombre || 'Sin nombre' }}</span>
+                  <span class="final__cuando">{{ cuandoLlega(f) }}</span>
+                  <span class="final__marcas">
+                    @if (f.marcaIa) { <span class="pildora pildora-ia">Sugerido por la IA</span> }
+                    @if (!llega(f.id)) { <span class="pildora pildora-aviso"><span aria-hidden="true">▲</span> Ningún recorrido llega aquí</span> }
+                  </span>
+                </summary>
+                <div class="final__cuerpo">
+                  <div class="final__campos">
+                    <label [for]="'fn' + i" class="etiqueta">Nombre</label>
+                    <input [id]="'fn' + i" type="text" class="campo" [value]="f.nombre" (change)="store.editarFinal(f.id, { nombre: $any($event.target).value })" />
+                    <label [for]="'ft' + i" class="etiqueta">Lo que lee el estudiante al terminar</label>
+                    <textarea autoAlto [id]="'ft' + i" class="campo" rows="3" [value]="f.texto" (change)="store.editarFinal(f.id, { texto: $any($event.target).value })"></textarea>
+                    <app-condicion-del-final [final]="f" [hitos]="caso.hitos" (cambiar)="store.editarFinal(f.id, { condicion: $event })" />
+                    <div class="acciones final__acciones">
+                      @if (f.marcaIa) {
+                        <button type="button" class="boton" (click)="aceptarFinal(f, i)">Aceptar final</button>
+                        <button type="button" class="boton boton-texto" (click)="borrarFinal(f, i, 'descartado')">Descartar final</button>
+                      }
+                      <button type="button" class="boton boton-texto peligro" [attr.aria-label]="'Borrar el final ' + f.nombre" (click)="borrarFinal(f, i)">Borrar el final</button>
+                    </div>
+                  </div>
+                  <app-vista-del-final [nombre]="f.nombre" [texto]="f.texto" [tono]="f.tono" />
+                </div>
+              </details>
+              <span class="final__orden">
+                <button type="button" class="icono-boton" [attr.aria-label]="'Subir el final ' + f.nombre" [attr.aria-disabled]="primero" (click)="!primero && store.moverFinal(f.id, -1)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7" /></svg></button>
+                <button type="button" class="icono-boton" [attr.aria-label]="'Bajar el final ' + f.nombre" [attr.aria-disabled]="ultimo" (click)="!ultimo && store.moverFinal(f.id, 1)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M4.5 9 8 12.5 11.5 9" /></svg></button>
+              </span>
+            </li>
+          }
+        </ol>
+        <button type="button" class="accion-texto agregar-final" id="agregar-final" (click)="agregarFinal()">Agregar un final</button>
+      </section>
+    } @else {
+
+      <section aria-labelledby="fa" class="bloque">
+        <div class="bloque__cabeza">
+          <h2 id="fa">Los cuatro finales que se calculan solos</h2>
+          <p class="texto-secundario">Gana el primero que se cumple. Puedes cambiar el nombre y el texto de cada uno; cuándo llega lo deciden los pasos de arriba.</p>
+        </div>
+        <ol class="plantilla">
+          @for (f of plantilla(); track f.id) {
+            <li class="tarjeta final-plantilla final" [id]="'final-' + f.id" [attr.data-tono]="f.tono">
+              <div class="fp__cabeza">
+                <strong class="fp__nombre">{{ f.nombre }}</strong>
+                <span class="pildora fp__alcance" [class.pildora-aviso]="!llega(f.id)">
+                  <span aria-hidden="true">{{ llega(f.id) ? '✓' : '▲' }}</span><span class="alcance">{{ alcance(f.id) }}</span>
+                </span>
+              </div>
+              <p class="regla" [id]="'regla-' + f.id">{{ reglas()[f.id] }}</p>
+              <app-vista-del-final [nombre]="f.nombre" [texto]="f.texto" [tono]="f.tono" />
+              <details class="fp__editar">
+                <summary>Cambiar el nombre o el texto</summary>
+                <div class="fp__campos">
+                  <label [for]="'pn-' + f.id" class="etiqueta">Nombre</label>
+                  <input [id]="'pn-' + f.id" type="text" class="campo" [value]="f.nombre" (change)="editarPlantilla(f.id, { nombre: $any($event.target).value })" />
+                  <label [for]="'pt-' + f.id" class="etiqueta">Lo que lee el estudiante al terminar</label>
+                  <textarea autoAlto [id]="'pt-' + f.id" class="campo" rows="3" [value]="f.texto" (change)="editarPlantilla(f.id, { texto: $any($event.target).value })"></textarea>
+                  @if (editado(f.id)) {
+                    <button type="button" class="boton boton-texto restaurar" [id]="'restaurar-' + f.id" (click)="restaurar(f.id)">Volver al texto original</button>
+                  }
+                </div>
+              </details>
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  </div>
+  </div>
+
+  <!-- Inspector: a qué finales llegan los recorridos de ahora y, en modo automático, los pasos que deciden el final. -->
+  <ng-template estudioRanura="inspector">
+    <app-estudio-seccion titulo="Recorridos" [resumen]="avisosDeCaminos() ? 'Con avisos' : null">
+      <!-- Con las respuestas de ahora, a qué finales llegan los recorridos; y los avisos de caminos con su enlace a Caminos. -->
+    <div class="recorridos">
+      <p class="recorridos__texto" role="status">{{ resumenRecorridos() }}</p>
+      @if (avisosDeCaminos()) {
+        <p class="recorridos__aviso"><span aria-hidden="true">▲</span> {{ estadoCaminos() }}
+          <a class="enlace" [routerLink]="rutas.a('/editor')" data-accion="revisar-caminos">Abrir Caminos</a></p>
+      }
+    </div>
+    </app-estudio-seccion>
+    @if (caso.modoFinales !== 'propio') {
+      <app-estudio-seccion titulo="Deciden el final" [resumen]="cuantosDecisivos() + ' de ' + caso.hitos.length">
+      <fieldset class="decisivos">
+        <legend class="decisivos__rotulo">Pasos que deciden el final</legend>
+        <p class="texto-secundario">El estudiante tiene que darlos sí o sí. Con ellos se arman los cuatro finales de abajo. También se eligen en <a class="enlace" [routerLink]="rutas.a('/editor/evaluacion')">Pasos profesionales</a>.</p>
+        <div class="decisivos__lista">
+          @for (h of caso.hitos; track h.clave) {
+            <label class="casilla">
+              <input type="checkbox" [checked]="h.decisivo" (change)="store.editarHito(h.clave, { decisivo: $any($event.target).checked })" />
+              {{ h.nombre }}
+            </label>
+          } @empty {
+            <p class="texto-secundario">Este caso todavía no tiene pasos profesionales.</p>
+          }
+        </div>
+        @if (!hayDecisivos()) {
+          <p class="sin-decisivos" role="note">Sin hitos decisivos, los finales no dependen de los pasos del caso. Marca al menos un hito como decisivo.</p>
+        }
+      </fieldset>
+      </app-estudio-seccion>
+    }
+  </ng-template>
+
+  <ng-template estudioRanura="estado">
+    <span class="est-dato">{{ caso.modoFinales === 'propio' ? caso.finales.length + ' finales propios' : '4 finales automáticos' }}</span>
+  </ng-template>
+}

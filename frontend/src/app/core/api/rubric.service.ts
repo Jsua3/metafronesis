@@ -190,6 +190,15 @@ export class RubricService {
   }
 
   /**
+   * La rúbrica con que se valora una versión del caso (la asignada, la propia o la predeterminada), si quien pide puede
+   * verla. 404 cuando no hay ninguna o no es visible: la pantalla «Rúbrica» del caso lo muestra como «este caso todavía
+   * no tiene rúbrica». Para que el caso tenga una propia se usa `AuthoringApi.adoptRubric`.
+   */
+  caseVersionRubric(caseVersionId: number): Observable<RubricAdmin> {
+    return this.http.get<ApiDataResponse<RubricAdmin>>(`${this.API}/case-versions/${caseVersionId}`).pipe(map(r => r.data));
+  }
+
+  /**
    * El catálogo de competencias del programa: la lista «Competencia del programa» del editor de una rúbrica y el origen
    * de «Con las competencias del programa». Trae también las inactivas; quien lo pinta ofrece solo las activas. Sin
    * datos semilla en el servidor, el catálogo sale vacío.
@@ -201,7 +210,7 @@ export class RubricService {
   /**
    * Usa la rúbrica para valorar una versión del caso (`PUT /api/rubrics/case-versions/{id}`). El servidor responde solo
    * `{ caseVersionId, rubricId }`; el cliente completa la ficha con `detail`. No hay lectura de «la rúbrica de este
-   * caso» (el servidor solo expone el `PUT`).
+   * caso» con forma propia en esta respuesta: la da `caseVersionRubric`.
    */
   assignToCaseVersion(caseVersionId: number, rubricId: number): Observable<{ caseVersionId: number; rubric: RubricAdmin }> {
     return this.http.put<ApiDataResponse<{ caseVersionId: number; rubricId: number }>>(

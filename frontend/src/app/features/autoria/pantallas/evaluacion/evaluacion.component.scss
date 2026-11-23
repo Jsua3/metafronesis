@@ -1,0 +1,41 @@
+@use '../datos/hoja';
+
+@include hoja.lienzo;
+@include hoja.campos;
+@include hoja.entra('app-fila-de-paso');
+
+.cabecera__titulos { flex: 1 1 24rem; }
+
+// Los pasos: filas de un solo panel con filo (como la jerarquía de Unity), no una rejilla de tarjetas.
+.lista {
+  display: flex; flex-direction: column; min-inline-size: 0; border: 1px solid var(--l-filo); border-radius: var(--l-radio-control);
+  background: var(--l-superficie); overflow: clip;
+}
+
+// El paso nuevo se escribe en una ficha resaltada arriba de la lista.
+.nuevo {
+  display: flex; flex-direction: column; gap: 0.375rem; padding: 0.75rem 1rem; border-radius: var(--l-radio-control);
+  background: var(--l-superficie); box-shadow: inset 0 0 0 2px var(--ds-primary);
+}
+.nuevo__titulo { margin: 0; font-weight: 800; font-size: var(--autoria-texto-16); }
+.nuevo__acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-block-start: 0.25rem; }
+textarea.campo { resize: none; }
+
+// ── Inspector ──
+.cobertura { display: flex; flex-direction: column; gap: 0.5rem; }
+.cobertura__texto { margin: 0; font-size: var(--autoria-texto-14); line-height: 1.45; }
+.saltos { list-style: none; margin: 0 -0.75rem; padding: 0; }
+.salto {
+  position: relative; display: flex; align-items: center; gap: 0.5rem; inline-size: 100%; min-block-size: 2.25rem; padding: 0.25rem 0.75rem;
+  border: 0; background: transparent; color: var(--ds-text-1); font: inherit; font-size: var(--autoria-texto-14); text-align: start; cursor: pointer;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
+}
+.salto::after { content: ''; position: absolute; inset: -0.25rem 0; }
+@media (hover: hover) and (pointer: fine) { .salto:hover { background: var(--l-fila-encima); } }
+.salto:active { background: var(--l-fila-elegida); }
+.salto:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
+.salto__marca { flex: none; inline-size: 0.5rem; block-size: 0.5rem; background: var(--ds-warning-text); rotate: 45deg; }
+.salto__marca--final { background: var(--ds-primary); rotate: 0deg; }
+.nota { margin: 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); line-height: 1.45; }
+
+@media (forced-colors: active) { .lista, .nuevo { border: 1px solid CanvasText; } }

@@ -21,7 +21,7 @@ function routesOf(file: string, prefix = ''): string[] {
   const routes: string[] = [];
   for (const match of source.matchAll(/(?:re_)?path\(\s*r?["']([^"']*)["']\s*,\s*([^\n]+)/g)) {
     const [, route, rest] = match;
-    const included = rest.match(/include\("([^"]+)"\)/);
+    const included = rest.match(/include\(["']([^"']+)["']\)/);
     if (included) routes.push(...routesOf(moduleFile(included[1]), prefix + route));
     else routes.push(prefix + route);
   }
@@ -50,15 +50,9 @@ function clientUrls(source: string): string[] {
 }
 
 const API_DIR = join(__dirname);
-/**
- * Excepción conocida (SIEP-239): el ensayo del borrador (`rehearsal.api.ts`, `/api/authoring/cases/{id}/rehearsal`) aún no
- * tiene ruta en el servidor de metafronesis. La pantalla de juego conserva el modo ensayo, pero ninguna ruta del cliente lo
- * abre hasta que el servidor lo traiga; entonces este archivo vuelve a la lista.
- */
-const SIN_RUTA_EN_EL_SERVIDOR = ['rehearsal.api.ts'];
 const CLIENT_FILES = [
   ...readdirSync(API_DIR)
-    .filter(name => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !SIN_RUTA_EN_EL_SERVIDOR.includes(name))
+    .filter(name => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
     .map(name => join(API_DIR, name)),
   join(__dirname, '..', 'auth', 'auth.service.ts'),
 ];
@@ -68,7 +62,7 @@ const CLIENT_FILES = [
  * (`GET /api/simulation/attempts/{id}/state`, SIEP-239). Mientras no estén en `develop` se exceptúan; la última prueba
  * falla cuando la ruta ya existe, para quitarla de esta lista y que el contrato la vigile.
  */
-// El estado del intento (#57) y los reportes (#60) ya están en `develop`: no queda ninguna pendiente.
+// El estado del intento (#57), los reportes (#60), el editor (#55) y el ensayo (#58) ya están en `develop`.
 const RUTAS_PENDIENTES: readonly string[] = [];
 
 describe('Rutas del cliente: cada URL existe en el servidor', () => {
