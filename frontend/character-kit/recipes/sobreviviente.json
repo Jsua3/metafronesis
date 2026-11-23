@@ -1,0 +1,25 @@
+{
+  "id": "sobreviviente",
+  "displayName": "Sobreviviente",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "largo-suelto",
+    "face": "sereno",
+    "top": "sueter",
+    "bottom": "jean",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "castano",
+    "top": "gris",
+    "inner": "blanco",
+    "bottom": "marino",
+    "shoes": "carbon",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

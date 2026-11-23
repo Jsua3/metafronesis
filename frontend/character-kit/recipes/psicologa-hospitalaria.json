@@ -1,0 +1,26 @@
+{
+  "id": "psicologa-hospitalaria",
+  "displayName": "Psicóloga hospitalaria",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "mono",
+    "face": "sereno",
+    "top": "blusa",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": [
+      "gafete"
+    ]
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "castano",
+    "top": "menta",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

@@ -1,0 +1,128 @@
+// Pistas de la escena (plan visual F10-2): una franja compacta sobre las opciones de la decisión, solo tokens --ds-*.
+// Se pinta dentro del panel de diálogo del juego (piel oscura): los tokens siguen a la piel, no hay colores propios.
+
+:host {
+  display: block;
+}
+
+.scene-hint {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin-bottom: var(--ds-space-3);
+}
+
+.scene-hint__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+.scene-hint__counter,
+.scene-hint__message {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// Tope de altura: con varias pistas la lista no empuja las opciones fuera del panel (en un celular cada renglón cuenta); si
+// crece, se recorre con el teclado (tabindex 0) y con el dedo.
+.scene-hint__list {
+  display: grid;
+  max-height: 7.5rem;
+  overflow-y: auto;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3) var(--ds-space-4) var(--ds-space-3) var(--ds-space-6);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-info-bg);
+  color: var(--ds-text-1);
+}
+
+.scene-hint__item {
+  overflow-wrap: anywhere;
+}
+
+// Variante «placa» (solo dentro del cuadro de diálogo del juego, bloque I1): «Ver pista» es una placa de pixel hermana de
+// «Volver al mapa», con la bombilla de pixel. Sin pistas (aria-disabled), la bombilla se apaga y la placa pierde la luz,
+// con el texto todavía a 4,5:1. Usa las variables de arte del cuadro (--marco-placa*, --trama-placa*, --px, --icono-*).
+.scene-hint--placa {
+  margin-bottom: 0;
+
+  .scene-hint__ask {
+    --m: var(--marco-placa);
+    --t: var(--trama-placa);
+
+    gap: calc(4 * var(--px));
+    min-block-size: var(--alto-boton, 44px);
+    padding: 0 12px 1px 8px;
+    border-style: solid;
+    border-width: calc(4 * var(--px));
+    border-image: var(--m) 4 / calc(4 * var(--px)) stretch;
+    border-radius: 0;
+    background: #1b1826 var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
+    image-rendering: pixelated;
+    color: #f2ecdf;
+    font-size: var(--tam-boton);
+    font-weight: 600;
+    scale: none;
+    transition: none;
+
+    &::before {
+      content: '';
+      flex: none;
+      width: calc(9 * var(--px));
+      height: calc(11 * var(--px));
+      background: var(--icono-bombilla) 0 0 / 100% 100% no-repeat;
+      image-rendering: pixelated;
+    }
+
+    &:active:not([aria-disabled='true']) {
+      --m: var(--marco-placa-pulsada);
+      --t: var(--trama-placa-pulsada);
+
+      background: #16141f var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
+      transform: translateY(var(--px));
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not([aria-disabled='true'], :active) {
+        --m: var(--marco-placa-sobre);
+        --t: var(--trama-placa-sobre);
+
+        background: #24203a var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
+        color: #ffcd82;
+      }
+    }
+
+    &[aria-disabled='true'] {
+      --m: var(--marco-placa-apagada);
+
+      background: #1b1826 var(--trama-placa) 0 0 / calc(8 * var(--px)) repeat padding-box;
+      color: #a9a2b8;
+
+      &::before { background-image: var(--icono-bombilla-apagada); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:active:not([aria-disabled='true']) { transform: none; }
+    }
+  }
+
+  .scene-hint__counter,
+  .scene-hint__message {
+    color: #c3bccf;
+  }
+
+  .scene-hint__list {
+    border-style: solid;
+    border-width: calc(4 * var(--px));
+    border-image: var(--marco-placa) 4 / calc(4 * var(--px)) stretch;
+    border-radius: 0;
+    background: #1b1826 var(--trama-placa) 0 0 / calc(8 * var(--px)) repeat padding-box;
+    image-rendering: pixelated;
+    color: #f2ecdf;
+  }
+}

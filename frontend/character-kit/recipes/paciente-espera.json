@@ -1,0 +1,25 @@
+{
+  "id": "paciente-espera",
+  "displayName": "Paciente en espera",
+  "kind": "figurante",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-liso",
+    "face": "sereno",
+    "top": "sueter",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "castano",
+    "top": "azul",
+    "inner": "blanco",
+    "bottom": "gris",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

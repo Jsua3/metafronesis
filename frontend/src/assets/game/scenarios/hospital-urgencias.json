@@ -1,0 +1,72 @@
+{
+  "scenarioKey": "hospital-urgencias",
+  "startRoomKey": "hospital-urgencias",
+  "rooms": [
+    {
+      "key": "hospital-urgencias",
+      "tiledMapKey": "hospital-urgencias",
+      "tiledJsonPath": "",
+      "displayName": "Hospital — Urgencias",
+      "spawnX": 480,
+      "spawnY": 430,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "enfermera-urgencias",
+          "npcType": "colleague",
+          "displayName": "Enfermera de urgencias",
+          "portrait": "👩‍⚕️",
+          "x": 560,
+          "y": 330,
+          "recipeId": "enfermera-urgencias",
+          "facing": "down",
+          "emotion": "calm",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Ingresó hace media hora: 28 heridas con arma cortopunzante. Está en cirugía, shock hipovolémico.", "emotion": "negative" },
+              { "text": "La niña… la niña de 3 años no sobrevivió. La familia todavía no lo sabe con certeza.", "emotion": "negative" },
+              { "text": "La abuela de la niña y los hermanos de la sobreviviente están muy alterados. Antes de cualquier información difícil, alguien tiene que contenerlos.", "emotion": "anxious" }
+            ]
+          }
+        },
+        {
+          "key": "medico-guardia",
+          "npcType": "colleague",
+          "displayName": "Médico de guardia",
+          "portrait": "🧑‍⚕️",
+          "x": 640,
+          "y": 290,
+          "recipeId": "medico-guardia",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "La paciente sigue en quirófano. Nadie habla con ella hasta que esté estabilizada: ni familia, ni autoridades, ni nosotros.", "emotion": "neutral" },
+              { "text": "Lo que la familia necesita ahora no es información clínica. Es contención.", "emotion": "neutral" }
+            ]
+          }
+        },
+        {
+          "key": "psicologa-orientadora",
+          "npcType": "supervisor",
+          "displayName": "Psicóloga hospitalaria",
+          "portrait": "👩‍⚕️",
+          "x": 780,
+          "y": 440,
+          "recipeId": "psicologa-hospitalaria",
+          "facing": "left",
+          "emotion": "calm",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Tu objetivo inmediato: estabilizar emocionalmente a la familia y evitar acciones prematuras que aumenten la crisis.", "emotion": "neutral" },
+              { "text": "Habla primero con la abuela de la niña. Cuando tengas claro lo que necesita, pasamos a la sala de escucha familiar — la puerta a mi lado.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

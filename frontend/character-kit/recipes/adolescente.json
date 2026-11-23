@@ -1,0 +1,24 @@
+{
+  "id": "adolescente",
+  "displayName": "Adolescente",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "media-melena",
+    "face": "sereno",
+    "top": "camiseta",
+    "bottom": "jean",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "cobrizo",
+    "top": "morado",
+    "bottom": "marino",
+    "shoes": "carbon",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

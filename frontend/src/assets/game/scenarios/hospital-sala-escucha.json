@@ -1,0 +1,35 @@
+{
+  "scenarioKey": "hospital-sala-escucha",
+  "startRoomKey": "hospital-sala-escucha",
+  "rooms": [
+    {
+      "key": "hospital-sala-escucha",
+      "tiledMapKey": "hospital-sala-escucha",
+      "tiledJsonPath": "",
+      "displayName": "Hospital — Sala de escucha familiar",
+      "spawnX": 480,
+      "spawnY": 430,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "trabajadora-social",
+          "npcType": "colleague",
+          "displayName": "Trabajadora social",
+          "portrait": "👩‍💼",
+          "x": 480,
+          "y": 380,
+          "recipeId": "trabajadora-social",
+          "facing": "down",
+          "emotion": "calm",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Ya avisé a trabajo social y al equipo interdisciplinario. Cuando definas la intervención, coordinamos juntos.", "emotion": "neutral" },
+              { "text": "Si necesitas el protocolo de noticias difíciles, está en el estante: EPICEE, por etapas. Sin protocolo no se da una noticia así.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

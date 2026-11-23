@@ -1,0 +1,25 @@
+{
+  "id": "seguridad",
+  "displayName": "Seguridad",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "rapado",
+    "face": "sereno",
+    "top": "camisa-seguridad",
+    "bottom": "pantalon-uniforme",
+    "shoes": "botines",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-6",
+    "hair": "negro",
+    "top": "gris-oscuro",
+    "accent": "marino",
+    "bottom": "gris-oscuro",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

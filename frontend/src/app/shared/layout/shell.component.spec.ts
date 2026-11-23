@@ -80,7 +80,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
   });
 
   it('el estudiante ve Inicio, Casos, Mi personaje y Grupos, sin plegables, y ningún «Continuar simulación» (T15.4)', () => {
-    expect(labels()).toEqual(['Grupos']);
+    expect(labels()).toEqual(['Inicio', 'Casos', 'Mi personaje', 'Grupos']);
     expect(folded()).toEqual([]);
     expect(host().textContent).not.toContain('Continuar simulación');
   });
@@ -100,7 +100,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     expect(folded()).toEqual([]);
     currentUser.set(user('ESTUDIANTE'));
     await fixture.whenStable();
-    expect(labels()).toEqual(['Grupos']);
+    expect(labels()).toEqual(['Inicio', 'Casos', 'Mi personaje', 'Grupos']);
     expect(folded()).toEqual([]);
   });
 
@@ -112,7 +112,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
 
   it('debajo de 64rem la navegación principal es la barra inferior (hija directa del header): los destinos que no se pliegan son pestañas', async () => {
     // «Mi personaje» usa su etiqueta corta en la pestaña: a 390 px no se parte en dos líneas.
-    expect(tabLabels()).toEqual(['Grupos']);
+    expect(tabLabels()).toEqual(['Inicio', 'Casos', 'Personaje', 'Grupos']);
     currentUser.set(user('ADMIN'));
     await fixture.whenStable();
     expect(tabLabels()).toEqual(['Usuarios']);

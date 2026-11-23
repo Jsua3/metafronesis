@@ -1,0 +1,35 @@
+{
+  "scenarioKey": "cierre-seguimiento",
+  "startRoomKey": "sala-cierre",
+  "rooms": [
+    {
+      "key": "sala-cierre",
+      "tiledMapKey": "map-cierre-sala",
+      "tiledJsonPath": "/assets/game/maps/cierre-sala.json",
+      "displayName": "Sala de Cierre y Seguimiento",
+      "spawnX": 480,
+      "spawnY": 420,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "supervisor-cierre",
+          "npcType": "supervisor",
+          "displayName": "Supervisión clínica",
+          "portrait": "👨‍💼",
+          "x": 736,
+          "y": 372,
+          "recipeId": "supervisor-clinico",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "El plan de seguimiento debe incluir: atención semanal, articulación con casa refugio si el riesgo es alto, y coordinación activa con Fiscalía.", "emotion": "neutral" },
+              { "text": "Recuerda: cerrar el caso después de activar la denuncia sería un error. La víctima necesita acompañamiento durante todo el proceso judicial.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+<!-- Cabecera ilustrada (ronda 3): la cartelera de avisos del campus, donde se anuncia lo que hay para practicar. Sin casos,
+     la escena pasa al vacío (una sola viñeta por pantalla). -->
+<ui-cabecera-ilustrada [eyebrow]="isStudent ? copy.eyebrow : 'Catálogo'" [title]="titulo"
+  [escena]="casesState() === 'empty' ? null : 'casos'" />
+
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+@if (isStudent && historyState() === 'error') {
+  <ui-error-state [kind]="historyErrorKind()" [message]="copy.errorHistorial" (retry)="loadHistory()" />
+}
+
+<section class="cs-biblioteca" [attr.aria-label]="titulo">
+  @switch (casesState()) {
+    @case ('loading') {
+      <div class="p-rejilla p-rejilla--24" aria-busy="true">
+        @for (bone of [1, 2]; track bone) {
+          <ui-skeleton shape="card" [lines]="3" />
+        }
+      </div>
+    }
+    @case ('error') {
+      <ui-error-state [kind]="casesErrorKind()" [message]="copy.errorCasos" (retry)="reintentarCasos()" />
+    }
+    @case ('empty') {
+      <ui-vacio-ilustrado escena="casos" [titulo]="emptyCases.titulo" [frase]="emptyCases.texto" />
+    }
+    @case ('ready') {
+      @if (isStudent && cards().length > 1) {
+        <!-- Con un solo caso no hay nada que filtrar: «Mostrando 1 de 1» sería ruido. Los controles se quedan a la vista aunque no haya resultados: lo que causó el vacío no se esconde. -->
+        <ui-filtros [conBusqueda]="conBusqueda()" etiquetaBusqueda="Buscar casos" [(busqueda)]="busqueda"
+          [total]="cards().length" [visibles]="filtradas().length" [hayFiltros]="hayFiltros()" (limpiar)="limpiarFiltros()">
+          <ui-segmentado [etiqueta]="copy.filtroEtiqueta" [opciones]="opciones()" [(valor)]="filtro" />
+        </ui-filtros>
+      }
+      <!-- Con un solo caso la rejilla lo dejaba solo en un tercio de la página: va a todo el ancho y la tarjeta se acuesta
+           (portada a la izquierda, texto a la derecha) cuando cabe. -->
+      <div class="p-rejilla p-rejilla--24" [class.cs-rejilla--uno]="filtradas().length === 1">
+        @for (card of filtradas(); track card.item.caseVersionId) {
+          <ui-card class="cs-tarjeta" [attr.data-case-id]="card.item.caseVersionId" [class.cs-tarjeta--resaltada]="card.resaltado">
+            <ui-portada-caso class="cs-portada" tamano="tarjeta" [umbral]="entrando() === card.item.caseVersionId" [titulo]="card.item.title" [portada]="card.portada" />
+            <div class="cs-cuerpo">
+              <p class="cs-codigo">{{ card.item.code }}</p>
+              <h3 class="cs-titulo">{{ card.item.title }}</h3>
+              <!-- El texto completo, con su lenguaje legal, vive en la ficha: aquí solo dos líneas. -->
+              <p class="cs-descripcion">{{ card.item.description }}</p>
+              <p class="cs-meta">
+                @if (isStudent) {
+                  <ui-badge [tone]="card.estado.tono">{{ card.estado.etiqueta }}</ui-badge>
+                } @else {
+                  <ui-badge tone="neutral">{{ statusLabel(card.item.status) }}</ui-badge>
+                }
+                <span>{{ plural(card.item.nodeCount, 'escena') }}</span>
+              </p>
+              @if (isStudent && card.estado.detalle) {
+                <p class="cs-detalle">{{ card.estado.detalle }}</p>
+              }
+              @if (canPlay || canEdit) {
+                <div class="cs-acciones">
+                  @if (canPlay) {
+                    @if (card.estado.abierto) {
+                      <button ui-button type="button" icon="play_arrow" (click)="openCase(card, true)">{{ copy.acciones.continuar }}</button>
+                    } @else if (card.estado.clave === 'terminado' && card.recorrido) {
+                      <button ui-button type="button" variant="secondary" icon="description" (click)="openReport(card.recorrido)">{{ copy.acciones.recorrido }}</button>
+                    } @else if (card.estado.clave === 'sin-empezar' || card.estado.clave === 'terminado') {
+                      <button ui-button type="button" [variant]="card.estado.clave === 'terminado' ? 'secondary' : 'primary'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
+                    } @else {
+                      <button ui-button type="button" variant="secondary" [disabledReason]="card.estado.detalle ?? card.estado.etiqueta">{{ copy.acciones.ficha }}</button>
+                    }
+                  }
+                  @if (canEdit) {
+                    <button ui-button type="button" variant="secondary" icon="edit_note" (click)="openEditor(card.item.caseVersionId)">{{ copy.acciones.editor }}</button>
+                  }
+                </div>
+              }
+            </div>
+            @if (isStudent && card.intentos.length) {
+              <details class="cs-intentos">
+                <summary>{{ copy.intentos.resumen(card.intentos.length) }}</summary>
+                <ui-table apilar density="compact" [label]="copy.intentos.tabla">
+                  <table ui-table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Empezó</th>
+                        <th scope="col">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (intento of card.intentos; track intento.attemptId) {
+                        <tr uiRow>
+                          <td>
+                            @if (intento.status === 'REPLACED') {
+                              <ui-badge tone="neutral" tabindex="0" [uiTooltip]="copy.intentos.reemplazadoAyuda">{{ copy.intentos.reemplazado }}</ui-badge>
+                            } @else {
+                              <ui-badge [tone]="tone(intento.status)">{{ intento.status === 'COMPLETED' ? 'Terminado' : statusLabel(intento.status) }}</ui-badge>
+                            }
+                          </td>
+                          <td class="cs-nowrap">{{ formatDate(intento.startedAt, true) }}</td>
+                          <td>
+                            @if (intento.status === 'IN_PROGRESS' || intento.status === 'PAUSED') {
+                              <button ui-button type="button" size="sm" variant="secondary" (click)="continuar(card)">{{ copy.acciones.continuar }}</button>
+                            } @else if (intento.status === 'COMPLETED' || intento.status === 'SAFE_EXITED') {
+                              <button ui-button type="button" size="sm" variant="ghost" (click)="openReport(intento)"
+                                [attr.aria-label]="copy.acciones.recorrido + ' del intento del ' + formatDate(intento.startedAt, true)">{{ copy.acciones.recorrido }}</button>
+                            } @else {
+                              <span class="cs-sin-accion">Sin acción</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </ui-table>
+              </details>
+            }
+          </ui-card>
+        }
+      </div>
+    }
+  }
+</section>
