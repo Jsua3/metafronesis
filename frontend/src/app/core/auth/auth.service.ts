@@ -44,7 +44,8 @@ export class AuthService {
       }));
   }
 
-  requestAccess(payload: { nombre: string; apellido: string; email: string; website?: string }) {
+  /** Pide una cuenta. `rol` es el rol que pide quien solicita (el ADMIN decide el definitivo al crear la cuenta). */
+  requestAccess(payload: { nombre: string; apellido: string; email: string; rol: User['role']; website?: string }) {
     return this.http.post<ApiResponse<{ status: string }>>(`${this.API}/access-request`, payload);
   }
 

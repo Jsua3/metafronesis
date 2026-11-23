@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.security.limiter import hit, key_hash
-from apps.users.models import AccessRequest, AccessRequestStatus
+from apps.users.models import AccessRequest, AccessRequestStatus, UserRole
 from apps.users.serializers import normalize_email_value
 from shared.background import run_in_background
 
@@ -19,6 +19,8 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 ASUNTO_AVISO = "[SIEP] Nueva solicitud de acceso"
+# Cómo se nombra cada rol ante el administrador (los mismos nombres que la pantalla de acceso).
+NOMBRE_DEL_ROL = {UserRole.ESTUDIANTE: "Estudiante", UserRole.PROFESOR: "Docente", UserRole.ADMIN: "Administrador"}
 
 
 def _texto_aviso(request: AccessRequest, pendientes: int) -> str:
@@ -29,6 +31,7 @@ def _texto_aviso(request: AccessRequest, pendientes: int) -> str:
         f"Solicitudes pendientes en total: {pendientes}\n"
         f'Nombre indicado (sin verificar): "{request.nombre} {request.apellido}"\n'
         f"Correo: {request.email}\n"
+        f"Rol pedido: {NOMBRE_DEL_ROL.get(request.rol, request.rol)}\n"
         f"Fecha: {request.created_at:%Y-%m-%d %H:%M}\n"
         f"ID solicitud: {request.id}\n\n"
         "Revisa el panel de administracion en Usuarios > Solicitudes pendientes."
@@ -66,9 +69,10 @@ def _programar_aviso(request: AccessRequest) -> None:
     )
 
 
-def create_access_request(*, nombre, apellido, email):
-    """Guarda la solicitud y avisa al administrador. Devuelve ``None`` sin crear nada si el correo ya tiene cuenta o
-    una solicitud pendiente: la vista responde igual en ambos casos, así no se revela qué correos existen (S1-3)."""
+def create_access_request(*, nombre, apellido, email, rol=UserRole.ESTUDIANTE):
+    """Guarda la solicitud (con el rol que pide) y avisa al administrador. Devuelve ``None`` sin crear nada si el
+    correo ya tiene cuenta o una solicitud pendiente: la vista responde igual en ambos casos, así no se revela qué
+    correos existen (S1-3)."""
     email = normalize_email_value(email)
     if User.objects.filter(email=email).exists():
         return None
@@ -79,6 +83,7 @@ def create_access_request(*, nombre, apellido, email):
         nombre=nombre.strip(),
         apellido=apellido.strip(),
         email=email,
+        rol=rol,
     )
 
     audit_events.access_request_created(request)  # S4-1 · solo si se guardó: el campo trampa y los duplicados no llegan aquí

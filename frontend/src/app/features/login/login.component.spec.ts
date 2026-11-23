@@ -276,7 +276,35 @@ describe('LoginComponent', () => {
       fixture.componentInstance.registerForm.setValue({ nombre: 'Ana', apellido: 'Ruiz', email: 'ana@cue.edu.co', website: '' });
       submit().click();
       await fixture.whenStable();
-      expect(requestAccessSpy).toHaveBeenCalledWith({ nombre: 'Ana', apellido: 'Ruiz', email: 'ana@cue.edu.co', website: '' });
+      expect(requestAccessSpy).toHaveBeenCalledWith({ nombre: 'Ana', apellido: 'Ruiz', email: 'ana@cue.edu.co', rol: 'ESTUDIANTE', website: '' });
+    });
+  });
+
+  describe('el rol se pide en la solicitud de acceso, no al iniciar sesión', () => {
+    it('iniciar sesión no ofrece botones de rol', async () => {
+      await render();
+      expect(host().querySelector('.acceso__roles')).toBeNull();
+    });
+
+    it('la solicitud ofrece Estudiante, Docente y Administrador y envía el rol elegido', async () => {
+      const requestAccessSpy = vi.fn(() => of({}));
+      requestAccess = requestAccessSpy;
+      await render();
+      button('Solicitar acceso').click();
+      await fixture.whenStable();
+      const roles = [...host().querySelectorAll<HTMLButtonElement>('.acceso__roles button')];
+      expect(roles.map(b => b.textContent!.trim())).toEqual(['Estudiante', 'Docente', 'Administrador']);
+      expect(roles[0].getAttribute('aria-pressed')).toBe('true');
+
+      roles[1].click();
+      await fixture.whenStable();
+      expect(roles[1].getAttribute('aria-pressed')).toBe('true');
+      expect(roles[0].getAttribute('aria-pressed')).toBe('false');
+
+      fixture.componentInstance.registerForm.setValue({ nombre: 'Luz', apellido: 'Mora', email: 'luz@cue.edu.co', website: '' });
+      submit().click();
+      await fixture.whenStable();
+      expect(requestAccessSpy).toHaveBeenCalledWith({ nombre: 'Luz', apellido: 'Mora', email: 'luz@cue.edu.co', rol: 'PROFESOR', website: '' });
     });
   });
 

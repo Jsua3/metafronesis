@@ -13,7 +13,7 @@
 @if (vista() === 'solicitudes') {
   <ui-section class="us-requests" title="Solicitudes de acceso pendientes">
     <div class="us-stack">
-      <p class="us-hint">Estudiantes que pidieron cuenta desde el acceso.</p>
+      <p class="us-hint">Personas que pidieron cuenta desde el acceso, con el rol que solicitan.</p>
       @if (requestsError()) {
         <ui-error-state kind="server" message="No pudimos cargar las solicitudes de acceso." (retry)="loadAccessRequests()" />
       } @else {
@@ -24,6 +24,7 @@
               <span class="us-request__text">
                 <strong>{{ request.nombre }} {{ request.apellido }}</strong>
                 <span class="us-email" [title]="request.email">{{ request.email }}</span>
+                <small>Rol solicitado: {{ roleLabel(request.rol) }}</small>
                 <small>Solicitado: {{ formatDate(request.createdAt) }}</small>
               </span>
               <span class="us-request__actions">
