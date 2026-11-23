@@ -60,3 +60,25 @@ def test_clonado_preserva_huella_y_todos_los_elementos_del_mundo(caso):
     assert diálogo.map_object.scene_map == sala
     assert diálogo.lines.get().text == "Hola"
     assert diálogo.choices.get().decision_option.case_version == copia
+
+
+def test_clonado_y_huella_incluyen_comentarios_requisitos_y_reacciones(caso):
+    version = caso["version"]
+    inicial = huella_de(version)
+    caso["inicio"].comments_json = '[{"personaje":"ana","linea":"Hola"}]'
+    caso["inicio"].save()
+    opcion = caso["opciones"][0]
+    opcion.requires_json = '{"inspected":"historia"}'
+    opcion.reaction_json = '{"linea":"Gracias"}'
+    opcion.save()
+    actual = huella_de(version)
+    assert actual != inicial
+    version.status = "PUBLISHED"
+    version.save()
+    respuesta = caso["cliente"].post(f"/api/authoring/cases/{version.pk}/clone-version", {}, format="json")
+    copia = version.simulation_case.versions.get(pk=respuesta.data["data"]["versionId"])
+    assert huella_de(copia) == actual
+    assert copia.nodes.get(node_key="inicio").comments_json == caso["inicio"].comments_json
+    opcion_copia = copia.decisions.get(option_key=opcion.option_key)
+    assert opcion_copia.requires_json == opcion.requires_json
+    assert opcion_copia.reaction_json == opcion.reaction_json

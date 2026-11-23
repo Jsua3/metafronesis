@@ -2,7 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("simulation", "0006_dialoguetree_casecharacter_clinicaltool_dialogueline_and_more")]
+    dependencies = [("simulation", "0011_attemptreport")]
 
     operations = [
         migrations.AddField(

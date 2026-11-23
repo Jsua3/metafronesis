@@ -145,3 +145,67 @@ class AttemptEvent(models.Model):
             ),
         ]
         ordering = ["occurred_at", "id"]
+
+
+class AttemptWorldState(models.Model):
+    """Estado espacial y de exploración propio de un intento.
+
+    Aquí viven el mapa, la posición, el inventario, las interacciones y las
+    banderas del mundo. ``SimulationAttempt.state_json`` conserva únicamente el
+    estado narrativo y los efectos de decisiones; no es fuente del estado espacial.
+    """
+
+    attempt = models.OneToOneField(
+        SimulationAttempt, primary_key=True, on_delete=models.CASCADE, related_name="world_state"
+    )
+    scene_map = models.ForeignKey("simulation.SceneMap", on_delete=models.PROTECT)
+    player_x = models.IntegerField(default=0)
+    player_y = models.IntegerField(default=0)
+    inventory = models.JSONField(default=list, blank=True)
+    inspected_object_keys = models.JSONField(default=list, blank=True)
+    viewed_dialogue_keys = models.JSONField(default=list, blank=True)
+    used_tool_keys = models.JSONField(default=list, blank=True)
+    flags = models.JSONField(default=dict, blank=True)
+    synced_node = models.ForeignKey(SimulationNode, on_delete=models.PROTECT)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "attempt_world_states"
+
+
+class AttemptHintView(models.Model):
+    """Pista revelada a un intento, una sola vez."""
+    attempt = models.ForeignKey(SimulationAttempt, on_delete=models.CASCADE, related_name="hint_views")
+    hint = models.ForeignKey("simulation.SceneHint", on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "attempt_hint_views"
+        constraints = [models.UniqueConstraint(fields=["attempt", "hint"], name="uq_attempt_hint_view")]
+
+
+class ReflectionJournal(models.Model):
+    """Bitácora cifrada de una escena del intento."""
+    attempt = models.ForeignKey(SimulationAttempt, on_delete=models.CASCADE, related_name="reflections")
+    node = models.ForeignKey(SimulationNode, on_delete=models.PROTECT)
+    encrypted_text = models.TextField()
+    encryption_key_ref = models.CharField(max_length=100)
+    locked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "reflection_journals"
+        constraints = [models.UniqueConstraint(fields=["attempt", "node"], name="uq_reflection_attempt_node")]
+
+
+class AttemptReport(models.Model):
+    """Informe del estudiante congelado al completar el intento."""
+    attempt = models.OneToOneField(SimulationAttempt, on_delete=models.CASCADE, related_name="reports")
+    report_json = models.JSONField()
+    report_schema_version = models.PositiveIntegerField(default=1)
+    definition_hash = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "attempt_reports"
