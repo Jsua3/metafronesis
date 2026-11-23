@@ -630,6 +630,30 @@
       "audit": "NOTIFICATION_RESENT"
     },
     {
+      "route": "api/reportes/dashboard",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ANALYTICS_VIEWED"
+    },
+    {
+      "route": "api/reportes/estudiante/<int:estudiante_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "REPORT_VIEWED"
+    },
+    {
+      "route": "api/reportes/grupo/<int:grupo_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "REPORT_VIEWED"
+    },
+    {
       "route": "api/reportes/grupo/<int:grupo_id>/export",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
