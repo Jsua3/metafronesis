@@ -372,6 +372,14 @@
       "audit": "EXENTO: catálogo de lugares, salas y objetos de la biblioteca (archivos del servidor): no son datos de personas"
     },
     {
+      "route": "api/competencies",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": null
+    },
+    {
       "route": "api/grupos",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
@@ -599,6 +607,14 @@
     },
     {
       "route": "api/rubrics",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de rúbricas sin datos de personas"
+    },
+    {
+      "route": "api/rubrics",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "json-small",
@@ -612,6 +628,46 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: consulta de criterios de una rúbrica sin datos de personas"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_UPDATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/activate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_ACTIVATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/deactivate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_ACTIVATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/default",
+      "method": "POST",
+      "exposure": "role:ADMIN",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_UPDATED"
+    },
+    {
+      "route": "api/rubrics/<int:rubric_id>/duplicate",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "RUBRIC_CREATED"
     },
     {
       "route": "api/rubrics/case-versions/<int:case_version_id>",

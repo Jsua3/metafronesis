@@ -1,4 +1,10 @@
 AUDITORIA_POR_RUTA = {
+    ("api/rubrics", "GET"): "EXENTO: consulta de rúbricas sin datos de personas",
+    ("api/rubrics/<int:rubric_id>", "PUT"): "RUBRIC_UPDATED",
+    ("api/rubrics/<int:rubric_id>/activate", "POST"): "RUBRIC_ACTIVATED",
+    ("api/rubrics/<int:rubric_id>/deactivate", "POST"): "RUBRIC_ACTIVATED",
+    ("api/rubrics/<int:rubric_id>/duplicate", "POST"): "RUBRIC_CREATED",
+    ("api/rubrics/<int:rubric_id>/default", "POST"): "RUBRIC_UPDATED",
     ("api/simulation/cases/<int:case_version_id>/brief", "GET"): "EXENTO: ficha de un caso asignado al estudiante",
     ("api/simulation/cases/<int:case_version_id>/active-attempt", "GET"): "EXENTO: el estudiante consulta su propio intento",
     ("api/simulation/attempts/history", "GET"): "EXENTO: el estudiante consulta su propio historial",
