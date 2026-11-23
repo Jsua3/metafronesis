@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from apps.simulation.services import bitacora, estado_intento
 from shared.openapi import envelope_of, error_responses
-from shared.permissions import policy_permission
+from .views_world import JUGAR_O_ENSAYAR
 from shared.response import api_ok
 
 TEXTO_MAXIMO = 5000
@@ -42,7 +42,7 @@ class RespuestaSalida(serializers.Serializer):
 
 
 class Reflexiones(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=SolicitudReflexion, responses={200: envelope_of(RespuestaReflexion), **error_responses(400, 401, 403, 404)})
     def post(self, request, pk):
@@ -52,7 +52,7 @@ class Reflexiones(APIView):
 
 
 class SalidaSegura(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(request=SolicitudSalida, responses={200: envelope_of(RespuestaSalida), **error_responses(400, 401, 403, 404)})
     def post(self, request, pk):
@@ -62,7 +62,7 @@ class SalidaSegura(APIView):
 
 
 class EstadoIntento(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(responses={200: envelope_of(RespuestaSalida), **error_responses(401, 403, 404)})
     def get(self, request, pk):

@@ -314,20 +314,43 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
     });
   });
 
-  describe('lo que aún no tiene backend', () => {
-    it('la generación se ve apagada sin pedir nada al servidor', () => {
-      let estado: { enabled?: boolean } | undefined;
-      api.generationStatus().subscribe(e => (estado = e as { enabled?: boolean }));
-      expect(estado?.enabled).toBe(false);
+  describe('la generación de casos con IA (SIEP-244)', () => {
+    it('el estado se pide al servidor y llega sin sobre', () => {
+      let estado: unknown;
+      api.generationStatus().subscribe(e => (estado = e));
+      const peticion = http.expectOne('/api/authoring/generations/status');
+      expect(peticion.request.method).toBe('GET');
+      peticion.flush({ data: { enabled: true, remainingToday: 3, inProgress: null } });
+      expect(estado).toEqual({ enabled: true, remainingToday: 3, inProgress: null });
     });
 
-    const sinBackend: Array<[string, (a: AuthoringApi) => Observable<unknown>]> = [
-      ['startGeneration', a => a.startGeneration({} as never)],
-    ];
-    it.each(sinBackend)('%s falla con un 404 explicado, sin red', (_n, llamar) => {
-      let fallo: { status?: number } | null = null;
-      llamar(api).subscribe({ error: (e: { status?: number }) => (fallo = e) });
-      expect((fallo as { status?: number } | null)?.status).toBe(404);
+    it('cada etapa usa su ruta y su método, con el id codificado', () => {
+      api.startGeneration({ lugarId: 'universidad', descripcion: 'x' }).subscribe();
+      const crear = http.expectOne('/api/authoring/generations');
+      expect([crear.request.method, crear.request.body]).toEqual(['POST', { lugarId: 'universidad', descripcion: 'x' }]);
+      crear.flush({ data: {} });
+      const id = 'a/b';
+      const etapas: Array<[() => Observable<unknown>, string, string]> = [
+        [() => api.generation(id), 'GET', '/api/authoring/generations/a%2Fb'],
+        [() => api.generationSkeleton(id), 'POST', '/api/authoring/generations/a%2Fb/skeleton'],
+        [() => api.generationScene(id, 'sala 1'), 'POST', '/api/authoring/generations/a%2Fb/scenes/sala%201'],
+        [() => api.generationAssemble(id), 'POST', '/api/authoring/generations/a%2Fb/assemble'],
+        [() => api.cancelGeneration(id), 'DELETE', '/api/authoring/generations/a%2Fb'],
+      ];
+      for (const [llamar, metodo, url] of etapas) {
+        llamar().subscribe();
+        const peticion = http.expectOne(url);
+        expect(peticion.request.method).toBe(metodo);
+        expect(peticion.request.params.has('repair')).toBe(false);
+        peticion.flush({ data: {} });
+      }
+    });
+
+    it('la reparación de una escena viaja con ?repair=1', () => {
+      api.generationScene('g1', 'sala-1', true).subscribe();
+      const peticion = http.expectOne(r => r.url === '/api/authoring/generations/g1/scenes/sala-1');
+      expect(peticion.request.params.get('repair')).toBe('1');
+      peticion.flush({ data: {} });
     });
   });
 });

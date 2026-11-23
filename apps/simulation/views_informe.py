@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from apps.simulation.services import informe_estudiante, world
 from shared.openapi import envelope_of, error_responses
-from shared.permissions import policy_permission
+from .views_world import JUGAR_O_ENSAYAR
 from shared.response import api_ok
 
 
@@ -35,7 +35,7 @@ class RespuestaInforme(serializers.Serializer):
 
 
 class InformeEstudiante(APIView):
-    permission_classes = [policy_permission("attempt", "play")]
+    permission_classes = [JUGAR_O_ENSAYAR]
 
     @extend_schema(responses={200: envelope_of(RespuestaInforme), **error_responses(401, 403, 404)})
     def get(self, request, pk):

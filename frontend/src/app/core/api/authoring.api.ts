@@ -123,6 +123,7 @@ export class AuthoringApi {
   private readonly API = '/api/authoring/cases';
   /** La biblioteca de lugares: de ahí sale lo que el editor ofrece al crear un caso y al agregar piezas. */
   private readonly API_LUGARES = '/api/biblioteca/lugares';
+  private readonly API_GENERACION = '/api/authoring/generations';
 
   caseEditor(caseVersionId: number): Observable<CaseEditorView> {
     return this.http.get<ApiResponse<CaseEditorView>>(`${this.API}/${caseVersionId}/editor`)
@@ -382,35 +383,48 @@ export class AuthoringApi {
   }
 
   // ─── Generación de casos con IA, por etapas (C1) ─────────────────────────────
-  // Su backend llega en un PR siguiente: las pantallas que la ofrecen están ocultas y estas llamadas fallan con un 404.
+  // Cada etapa devuelve la `Generation` completa. Apagada, todas menos `generationStatus` son un 404.
 
-  /** Siempre «apagada» (así «Describe tu caso» no se ofrece): no hay nada que preguntarle al servidor todavía. */
+  /** Si la generación está disponible, cuánto cupo le queda hoy a la docente y la que tiene en curso. */
   generationStatus(): Observable<GenerationStatus> {
-    return of({ enabled: false, remainingToday: 0, inProgress: null } satisfies GenerationStatus);
+    return this.http.get<ApiResponse<GenerationStatus>>(`${this.API_GENERACION}/status`)
+      .pipe(map(r => r.data));
   }
 
-  startGeneration(_body: GenerationStartRequest): Observable<Generation> {
-    return sinRuta('La generación de casos con IA');
+  /** Abre una generación (`created`); 409 `GENERATION_IN_PROGRESS` si la docente ya tiene una en curso. */
+  startGeneration(body: GenerationStartRequest): Observable<Generation> {
+    return this.http.post<ApiResponse<Generation>>(this.API_GENERACION, body)
+      .pipe(map(r => r.data));
   }
 
-  generation(_id: string): Observable<Generation> {
-    return sinRuta('La generación de casos con IA');
+  generation(id: string): Observable<Generation> {
+    return this.http.get<ApiResponse<Generation>>(`${this.API_GENERACION}/${encodeURIComponent(id)}`)
+      .pipe(map(r => r.data));
   }
 
-  generationSkeleton(_id: string): Observable<Generation> {
-    return sinRuta('La generación de casos con IA');
+  /** Pide el esqueleto (las escenas del caso). */
+  generationSkeleton(id: string): Observable<Generation> {
+    return this.http.post<ApiResponse<Generation>>(`${this.API_GENERACION}/${encodeURIComponent(id)}/skeleton`, {})
+      .pipe(map(r => r.data));
   }
 
-  generationScene(_id: string, _clave: string, _repair = false): Observable<Generation> {
-    return sinRuta('La generación de casos con IA');
+  /** Pide una escena por su clave; con `repair` la vuelve a pedir en una ronda de reparación. */
+  generationScene(id: string, clave: string, repair = false): Observable<Generation> {
+    return this.http.post<ApiResponse<Generation>>(
+      `${this.API_GENERACION}/${encodeURIComponent(id)}/scenes/${encodeURIComponent(clave)}`, {},
+      repair ? { params: { repair: '1' } } : {})
+      .pipe(map(r => r.data));
   }
 
-  generationAssemble(_id: string): Observable<Generation> {
-    return sinRuta('La generación de casos con IA');
+  /** Arma el documento con las escenas y lo importa como borrador (`imported`), pide reparar o falla. */
+  generationAssemble(id: string): Observable<Generation> {
+    return this.http.post<ApiResponse<Generation>>(`${this.API_GENERACION}/${encodeURIComponent(id)}/assemble`, {})
+      .pipe(map(r => r.data));
   }
 
-  cancelGeneration(_id: string): Observable<Generation> {
-    return sinRuta('La generación de casos con IA');
+  cancelGeneration(id: string): Observable<Generation> {
+    return this.http.delete<ApiResponse<Generation>>(`${this.API_GENERACION}/${encodeURIComponent(id)}`)
+      .pipe(map(r => r.data));
   }
 
   // ─── Biblioteca de lugares ───────────────────────────────────────────────────

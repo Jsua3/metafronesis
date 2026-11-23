@@ -61,8 +61,8 @@ def test_la_autora_abre_el_ensayo_de_su_borrador(borrador):
     respuesta = _abrir(borrador)
     assert respuesta.status_code == 201
     datos = respuesta.data["data"]
-    assert datos["status"] == AttemptStatus.IN_PROGRESS and datos["resumed"] is False
-    assert datos["caseVersionId"] == borrador["version"].pk and datos["currentNodeId"] == borrador["inicio"].pk
+    assert datos["status"] == AttemptStatus.IN_PROGRESS and "rehearsal" in datos
+    assert datos["caseVersionId"] == borrador["version"].pk and datos["currentNode"]["id"] == borrador["inicio"].pk
     intento = SimulationAttempt.all_objects.get(pk=datos["attemptId"])
     assert intento.is_rehearsal and intento.student_id == borrador["autora"].pk
 
@@ -71,7 +71,7 @@ def test_abrir_otra_vez_reanuda_el_mismo_ensayo(borrador):
     primero = _abrir(borrador).data["data"]
     segundo = _abrir(borrador)
     assert segundo.status_code == 200
-    assert segundo.data["data"]["attemptId"] == primero["attemptId"] and segundo.data["data"]["resumed"] is True
+    assert segundo.data["data"]["attemptId"] == primero["attemptId"]
     assert SimulationAttempt.all_objects.filter(is_rehearsal=True).count() == 1
 
 
@@ -106,7 +106,7 @@ def test_el_ensayo_se_lee_por_su_ruta(borrador):
     intento = _abrir(borrador).data["data"]["attemptId"]
     respuesta = _cliente(borrador["autora"]).get(f"{borrador['url']}/{intento}")
     assert respuesta.status_code == 200
-    assert respuesta.data["data"]["attemptId"] == intento and respuesta.data["data"]["status"] == AttemptStatus.IN_PROGRESS
+    assert respuesta.data["data"]["rehearsal"]["sceneId"] == borrador["inicio"].pk
 
 
 def test_otra_docente_no_lee_ni_ajusta_el_ensayo_ajeno(borrador):
@@ -122,7 +122,7 @@ def test_el_ajuste_mueve_el_ensayo_a_otra_escena_de_la_version(borrador):
     respuesta = _cliente(borrador["autora"]).patch(
         f"{borrador['url']}/{intento}", {"irA": borrador["final"].pk}, format="json"
     )
-    assert respuesta.status_code == 200 and respuesta.data["data"]["currentNodeId"] == borrador["final"].pk
+    assert respuesta.status_code == 200 and respuesta.data["data"]["rehearsal"]["sceneId"] == borrador["final"].pk
     assert SimulationAttempt.all_objects.get(pk=intento).current_node_id == borrador["final"].pk
 
 

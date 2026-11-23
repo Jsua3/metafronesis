@@ -20,15 +20,20 @@ def _opciones_ofrecidas(intento):
     return [{"id": opcion.pk, "text": opcion.text} for opcion in disponibilidad_mundo.opciones(intento)]
 
 
-def construir(intento):
-    nodo = intento.current_node
+def persona_de(intento):
+    """La persona consultante del intento como viaja al cliente: ``{bond, activation, label}``."""
     cambios = intento.state_json.get("persona", {})
     vinculo, activacion = step_persona(*INITIAL_PERSONA, cambios.get("bond", 0), cambios.get("activation", 0))
+    return {"bond": vinculo.value, "activation": activacion.value,
+            "label": f"se muestra {LABELS[vinculo]} y {LABELS[activacion]}"}
+
+
+def construir(intento):
+    nodo = intento.current_node
     return {
         "attemptId": str(intento.pk), "attemptToken": "", "caseVersionId": intento.case_version_id,
         "caseTitle": intento.case_version.simulation_case.title, "status": intento.status,
-        "persona": {"bond": vinculo.value, "activation": activacion.value,
-                    "label": f"se muestra {LABELS[vinculo]} y {LABELS[activacion]}"},
+        "persona": persona_de(intento),
         "currentNode": {"id": nodo.pk, "key": nodo.node_key, "title": nodo.title, "narrative": nodo.narrative,
                         "supportResources": read_string_list(nodo.support_resources_json),
                         "requiredTools": read_string_list(nodo.required_tools_json),
