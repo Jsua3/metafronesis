@@ -12,6 +12,7 @@ from .attempt import (
     SimulationAttempt,
     AttemptStatus,
     AttemptEvent,
+    AttemptWorldState,
     OPEN_ATTEMPT_STATUSES,
     new_attempt_id,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "SimulationAttempt",
     "AttemptStatus",
     "AttemptEvent",
+    "AttemptWorldState",
     "OPEN_ATTEMPT_STATUSES",
     "new_attempt_id",
     "AttemptEvaluation",

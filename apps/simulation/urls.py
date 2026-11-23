@@ -3,8 +3,13 @@ from . import views_s3 as views
 from .views_resultado import Resultado
 from .views_progreso import Revisit, Progress
 from .views_consultas import Ficha, IntentoActivo, Historial
+from .views_world import Mundo, MapaProgreso, PosicionMundo, EntradaSala
 
 urlpatterns = [
+    path("attempts/<uuid:pk>/world", Mundo.as_view()),
+    path("attempts/<uuid:pk>/progress-map", MapaProgreso.as_view()),
+    path("attempts/<uuid:pk>/world-state", PosicionMundo.as_view()),
+    path("attempts/<uuid:pk>/enter-room", EntradaSala.as_view()),
     path("catalog", views.Catalog.as_view()),
     path("attempts/<uuid:pk>/evaluation", views.Evaluation.as_view()),
     path("attempts/<uuid:pk>/revisit", Revisit.as_view()),

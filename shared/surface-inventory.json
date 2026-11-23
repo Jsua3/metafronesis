@@ -728,6 +728,14 @@
       "audit": null
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/enter-room",
+      "method": "POST",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el paso de sala queda registrado en el intento"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/evaluation",
       "method": "GET",
       "exposure": "authenticated",
@@ -750,6 +758,14 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: el estudiante consulta el progreso de su propio intento"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/progress-map",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio progreso"
     },
     {
       "route": "api/simulation/attempts/<uuid:pk>/replace",
@@ -782,6 +798,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": "ATTEMPT_REVISITED"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/world",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio mundo"
+    },
+    {
+      "route": "api/simulation/attempts/<uuid:pk>/world-state",
+      "method": "PATCH",
+      "exposure": "role:ESTUDIANTE",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante actualiza su propia posición"
     },
     {
       "route": "api/simulation/attempts/history",
