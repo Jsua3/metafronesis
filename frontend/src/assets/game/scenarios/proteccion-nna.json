@@ -1,0 +1,53 @@
+{
+  "scenarioKey": "proteccion-nna",
+  "startRoomKey": "sala-nna",
+  "rooms": [
+    {
+      "key": "sala-nna",
+      "tiledMapKey": "map-nna-sala",
+      "tiledJsonPath": "/assets/game/maps/nna-sala.json",
+      "displayName": "Sala de Atención — Protección NNA",
+      "spawnX": 480,
+      "spawnY": 420,
+      "exits": [],
+      "npcs": [
+        {
+          "key": "defensor-familia",
+          "npcType": "colleague",
+          "displayName": "Defensor de Familia — ICBF",
+          "portrait": "👨‍⚖️",
+          "x": 736,
+          "y": 372,
+          "recipeId": "supervisor-clinico",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Los niños que presencian violencia son víctimas directas. Ley 1098 — Art. 18.", "emotion": "neutral" },
+              { "text": "La separación de la madre no es la primera medida. El interés superior del niño indica mantener el vínculo materno cuando la madre es la víctima.", "emotion": "neutral" }
+            ]
+          }
+        },
+        {
+          "key": "adolescente-nna",
+          "npcType": "witness",
+          "displayName": "Adolescente acompañada",
+          "portrait": "🧒",
+          "x": 180,
+          "y": 440,
+          "recipeId": "adolescente",
+          "facing": "down",
+          "emotion": "closed",
+          "motion": { "behavior": "avoidant", "zone": { "x": 150, "y": 420, "width": 90, "height": 56 } },
+          "dialogue": {
+            "lines": [
+              { "text": "…", "emotion": "anxious" },
+              { "text": "(Se abraza la mochila y mira al piso. No está lista para hablar con extraños.)", "emotion": "negative" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

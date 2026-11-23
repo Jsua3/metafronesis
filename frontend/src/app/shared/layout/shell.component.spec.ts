@@ -80,27 +80,27 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
   });
 
   it('el estudiante ve Inicio, Casos, Mi personaje y Grupos, sin plegables, y ningún «Continuar simulación» (T15.4)', () => {
-    expect(labels()).toEqual(['Grupos']);
+    expect(labels()).toEqual(['Inicio', 'Casos', 'Mi personaje', 'Grupos']);
     expect(folded()).toEqual([]);
     expect(host().textContent).not.toContain('Continuar simulación');
   });
 
-  it('el docente pliega Reportes y Rúbricas; Revisión, Casos y Grupos quedan a la vista (DISENO §3.2)', async () => {
+  it('el docente pliega Rúbricas; Inicio, Revisión y Grupos quedan a la vista (DISENO §3.2)', async () => {
     currentUser.set(user('PROFESOR'));
     await fixture.whenStable();
-    expect(labels()).toEqual(['Grupos', 'Casos']);
-    expect(folded()).toEqual([]);
+    expect(labels()).toEqual(['Inicio', 'Revisión', 'Casos', 'Grupos', 'Reportes', 'Rúbricas']);
+    expect(folded()).toEqual(['Reportes', 'Rúbricas']);
   });
 
   it('cambiar de sesión sin recargar actualiza destinos y plegados (Review Focus 3)', async () => {
     currentUser.set(user('ADMIN'));
     await fixture.whenStable();
     // ED-5 (E2): el administrador no tiene «Mi personaje» (no juega). «Usuarios» ya no se pliega: es su tarea principal.
-    expect(labels()).toEqual(['Usuarios', 'Casos']);
-    expect(folded()).toEqual([]);
+    expect(labels()).toEqual(['Inicio', 'Usuarios', 'Casos', 'Revisión', 'Reportes', 'Rúbricas']);
+    expect(folded()).toEqual(['Revisión', 'Reportes', 'Rúbricas']);
     currentUser.set(user('ESTUDIANTE'));
     await fixture.whenStable();
-    expect(labels()).toEqual(['Grupos']);
+    expect(labels()).toEqual(['Inicio', 'Casos', 'Mi personaje', 'Grupos']);
     expect(folded()).toEqual([]);
   });
 
@@ -112,10 +112,10 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
 
   it('debajo de 64rem la navegación principal es la barra inferior (hija directa del header): los destinos que no se pliegan son pestañas', async () => {
     // «Mi personaje» usa su etiqueta corta en la pestaña: a 390 px no se parte en dos líneas.
-    expect(tabLabels()).toEqual(['Grupos']);
+    expect(tabLabels()).toEqual(['Inicio', 'Casos', 'Personaje', 'Grupos']);
     currentUser.set(user('ADMIN'));
     await fixture.whenStable();
-    expect(tabLabels()).toEqual(['Usuarios', 'Casos']);
+    expect(tabLabels()).toEqual(['Inicio', 'Usuarios', 'Casos', 'Más']);
   });
 
   it('la cuenta muestra nombre y rol humanizado; su menú dice quién soy, ofrece «Cambiar contraseña» y «Cerrar sesión»', async () => {

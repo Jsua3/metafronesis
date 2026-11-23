@@ -75,3 +75,5 @@ from .attempt import AttemptHintView
 from .attempt import ReflectionJournal
 
 from .attempt import AttemptReport
+
+from .generation import CaseGeneration, GenerationStatus

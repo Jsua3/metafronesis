@@ -7,7 +7,9 @@ import { Router, RouterLink } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { GrupoService, Grupo, GrupoEstudiante, GrupoImportError, GrupoImportResult, GrupoImportSpec, MembershipStatus } from '../../core/api/grupo.service';
+import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { mapAgregarEstudianteError, mapGrupoError } from '../../core/api/grupo-error.utils';
+import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { apiErrorMessage } from '../../core/api/api-error.util';
 import { focusFirstInvalid } from '../../shared/forms/focus-first-invalid.util';
@@ -31,6 +33,7 @@ import { UiEmptyState } from '../../shared/ui/state/ui-empty-state';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { UiArchivo } from '../../shared/ui/archivo/ui-archivo';
 import { UiTab, UiTabs } from '../../shared/ui/tabs/ui-tabs';
+import { GroupAssignmentsComponent } from './group-assignments.component';
 
 @Component({ selector: 'app-grupo-hoja', standalone: true, imports: [NgTemplateOutlet, UiDialogFrame],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,7 +80,7 @@ function removeLabel(student: GrupoEstudiante): string {
     ReactiveFormsModule, RouterLink, NgTemplateOutlet,
     UiBadge, UiButton, UiIconButton, UiCard, UiControl, UiField, UiMenu, UiPageHeader, UiCabeceraIlustrada, UiVacioIlustrado, UiArchivo, UiTab, UiTabs,
     UiSkeleton, UiTable, UiTableTable, UiTableRow, UiCelda, UiCeldaPrincipal, UiCeldaAcciones,
-    UiEmptyState, UiErrorState,
+    UiEmptyState, UiErrorState, GroupAssignmentsComponent,
   ],
   templateUrl: './grupo-list.component.html',
   styleUrl: './grupo-list.component.scss',
@@ -135,6 +138,7 @@ export class GrupoListComponent implements OnInit {
   archivoElegido(archivo: File | null): void { this.elegirArchivo(archivo); }
 
   private grupoService = inject(GrupoService);
+  private casosApi = inject(CaseCatalogApi);
   private fb = inject(FormBuilder);
   private readonly notify = inject(NotificationService);
   private readonly dialog = inject(UiDialog);
@@ -149,7 +153,14 @@ export class GrupoListComponent implements OnInit {
   estudiantes = signal<GrupoEstudiante[]>([]);
   busquedaGrupo = signal('');
   busquedaEstudiante = signal('');
-  // Los casos asignados regresan en la ola 2.
+  casosDisponibles = signal<SimulationCaseSummary[]>([]);
+  /** Los casos publicados ya respondieron (una cifra de 0 solo es verdad después de que respondan). */
+  casosCargados = signal(false);
+  /** Los casos publicados no se pudieron leer (la sección de asignaciones lo dice en vez de «no hay más casos»). */
+  casosFallaron = signal(false);
+  protected readonly casosEstado = computed<'loading' | 'ready' | 'failed'>(() => (this.casosFallaron() ? 'failed' : this.casosCargados() ? 'ready' : 'loading'));
+  /** Cuántos casos tiene asignados el grupo abierto: lo dice la sección de asignaciones cuando ese grupo termina de cargar. */
+  casosAsignadosTotal = signal<number | null>(null);
   mensajeEstudiante = signal('');
   importSpec = signal<GrupoImportSpec | null>(null);
   archivoImportacion = signal<File | null>(null);
@@ -178,6 +189,8 @@ export class GrupoListComponent implements OnInit {
     const invitados = cargando ? (grupo.totalInvitados ?? 0) : this.invitados().length;
     const partes = [`${miembros} ${miembros === 1 ? 'estudiante' : 'estudiantes'}`];
     if (invitados) partes.push(`${invitados} ${invitados === 1 ? 'invitación pendiente' : 'invitaciones pendientes'}`);
+    const casos = this.casosAsignadosTotal();
+    if (casos !== null) partes.push(`${casos} ${casos === 1 ? 'caso asignado' : 'casos asignados'}`);
     return partes.join(' · ');
   });
   /** «Invitaciones · 2»: el conteo va en el nombre de la pestaña para no abrirla a ciegas. */
@@ -237,6 +250,16 @@ export class GrupoListComponent implements OnInit {
 
   ngOnInit() {
     this.cargar();
+    this.casosApi.listPublished().subscribe({
+      next: cases => {
+        this.casosDisponibles.set(cases);
+        this.casosCargados.set(true);
+      },
+      error: () => {
+        this.casosDisponibles.set([]);
+        this.casosFallaron.set(true);
+      }
+    });
     this.grupoService.importSpec().subscribe({
       next: spec => this.importSpec.set(spec),
       error: () => this.importSpec.set({
@@ -467,6 +490,7 @@ export class GrupoListComponent implements OnInit {
 
   /** Abre el detalle de un grupo; el conteo de casos asignados del grupo anterior no se arrastra al nuevo. */
   private abrirGrupo(grupo: Grupo) {
+    if (this.grupoActivo()?.id !== grupo.id) this.casosAsignadosTotal.set(null);
     this.grupoActivo.set(grupo);
   }
 

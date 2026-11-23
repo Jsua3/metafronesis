@@ -1,0 +1,809 @@
+@use 'mixins' as m;
+
+// Editor de una rúbrica analítica (EDITOR.md §5.2, bloque R1). Personalidad de la portada en una herramienta densa:
+// tarjetas opacas con filo fino y esquinas continuas para el contenido, el vidrio solo en el pie de acciones, resortes
+// cortos al abrir y la firma de píxel en el número de cada criterio. Solo tokens (`--ds-*` y `--l-*`); en oscuro y en
+// claro cambian los materiales, no las reglas.
+:host {
+  display: block;
+  min-inline-size: 0;
+  color: var(--ds-text-1);
+}
+
+.re-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+}
+
+// ── Marco: desde 64rem, los datos a la izquierda (pegajosos) y la matriz a la derecha. Los datos van primero en el
+// documento: en el teléfono el nombre es lo primero que se escribe, y el foco del primer error llega a él. ─────
+.re-marco {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+  min-inline-size: 0;
+}
+
+@media (min-width: 64rem) {
+  // Datos y «Dónde se usa» a la izquierda, la matriz a la derecha ocupando las dos filas. En una columna manda el orden
+  // del documento: datos, criterios y, al final, dónde se usa (lo menos frecuente).
+  .re-marco {
+    grid-template-columns: 20rem minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'datos criterios'
+      'uso criterios';
+    gap: var(--ds-space-4) var(--ds-space-5);
+  }
+
+  .re-datos {
+    grid-area: datos;
+  }
+
+  .re-uso {
+    grid-area: uso;
+    align-self: start;
+  }
+
+  .re-marco > .re-criterios {
+    grid-area: criterios;
+  }
+
+  .re-marco--sola {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: none;
+  }
+
+  .re-marco--sola > .re-criterios {
+    grid-area: auto;
+  }
+}
+
+// Las dos superficies de contenido comparten material: opacas (P3), filo fino, sombra de trabajo.
+.re-criterios,
+.re-tarjeta {
+  min-inline-size: 0;
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: var(--l-sombra-trabajo, none);
+}
+
+@supports (corner-shape: squircle) {
+  .re-criterios,
+  .re-tarjeta,
+  .re-aviso,
+  .criterion {
+    corner-shape: squircle;
+  }
+}
+
+// ── La matriz ──────────────────────────────────────────────────────────────────────────────────────────────────
+.re-criterios {
+  // Las celdas de nivel se reparten según el ancho de la matriz, no el de la ventana: con la columna de datos al lado
+  // la matriz es más estrecha que la pantalla.
+  container: matriz / inline-size;
+  padding: var(--ds-space-2);
+}
+
+.re-criterios__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-4);
+  min-block-size: 3rem;
+  padding: var(--ds-space-2) var(--ds-space-3);
+}
+
+.re-criterios__titulo,
+.re-tarjeta__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+  font-weight: var(--ds-type-h3-weight);
+  letter-spacing: var(--ds-type-h3-track);
+}
+
+.re-cuenta {
+  min-inline-size: 1.75rem;
+  padding: 0 var(--ds-space-2);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-relleno, var(--ds-surface-2));
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: 1.5rem;
+  text-align: center;
+}
+
+// El total con palabras: «Suma 100 %» en verde con su marca; «Faltan 10 %» en ámbar. Nunca solo color.
+.re-total {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-warning-bg);
+  color: var(--ds-warning-text);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.re-total--ok {
+  background: var(--ds-success-bg);
+  color: var(--ds-success);
+}
+
+.re-total__icono {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  font-size: var(--ds-type-lead-size);
+}
+
+.re-criterios__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin-inline-start: auto;
+}
+
+.re-pista {
+  margin: 0;
+  padding: 0 var(--ds-space-3) var(--ds-space-2);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.re-lista,
+.re-lectura {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// ── Un criterio: fila de 4rem cerrada (ocho caben en 1440 × 900) y cuerpo al abrirlo ────────────────────────────
+.criterion {
+  position: relative;
+  min-inline-size: 0;
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out), box-shadow var(--ds-dur-fast) var(--ds-ease-out);
+}
+
+// Separador fino entre filas cerradas (no entre una abierta y su vecina: la abierta ya tiene su fondo).
+.criterion + .criterion:not(.criterion--abierto)::before {
+  content: '';
+  position: absolute;
+  inset: 0 var(--ds-space-3) auto;
+  block-size: 1px;
+  background: var(--l-filo, var(--ds-border));
+}
+
+.criterion--abierto {
+  background: var(--l-superficie-hundida, var(--ds-surface-2));
+}
+
+.criterion--abierto + .criterion::before {
+  display: none;
+}
+
+// Ranura de destino al arrastrar: una línea de acento arriba de la fila donde caerá.
+.criterion--destino {
+  box-shadow: inset 0 2px 0 var(--l-acento, var(--ds-primary));
+}
+
+.criterion--invalido .criterion__titulo {
+  color: var(--ds-danger);
+}
+
+.criterion__fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-block-size: 4rem;
+}
+
+.criterion__asa {
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 2.75rem;
+  color: var(--ds-text-3);
+  cursor: grab;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// Arrastrar no funciona con el dedo en todos los navegadores: en táctil el orden se cambia con «Subir» y «Bajar».
+@media (pointer: coarse) {
+  .criterion__asa {
+    inline-size: var(--ds-space-2);
+    visibility: hidden;
+  }
+}
+
+.criterion__resumen {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  min-block-size: 3.5rem;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 0;
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    background: var(--l-fila-encima, var(--ds-surface-2));
+  }
+}
+
+// La firma del simulador: el número del criterio es un bloque de píxel con su sombra escalonada.
+.criterion__numero {
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 2px;
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  box-shadow: var(--l-pixel, 2px) var(--l-pixel, 2px) 0 var(--l-tinte-filo, var(--ds-border));
+  color: var(--l-acento-tinta, var(--ds-primary));
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-caption-weight);
+}
+
+.criterion__texto {
+  display: grid;
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+
+.criterion__titulo {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-weight: var(--ds-type-h3-weight);
+  overflow-wrap: anywhere;
+}
+
+.criterion__meta {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+}
+
+.criterion__peso {
+  display: grid;
+  justify-items: end;
+  gap: var(--ds-space-1);
+  inline-size: 4.5rem;
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// Barra fina proporcional al peso. Crece con `scale` (no con el ancho) y un resorte suave.
+.criterion__barra {
+  inline-size: 100%;
+  block-size: 0.25rem;
+  overflow: hidden;
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-trama, var(--ds-surface-2));
+}
+
+.criterion__relleno {
+  display: block;
+  block-size: 100%;
+  background: var(--l-acento, var(--ds-primary));
+  transform-origin: left center;
+  scale: calc(var(--peso, 0) / 100) 1;
+  transition: scale var(--ds-dur-move) var(--ds-spring-soft);
+}
+
+.criterion__chevron {
+  color: var(--ds-text-2);
+  transition: rotate var(--ds-dur-move) var(--ds-spring-soft);
+}
+
+.criterion--abierto .criterion__chevron {
+  rotate: 180deg;
+}
+
+.criterion__menu {
+  margin-inline-end: var(--ds-space-1);
+}
+
+// Cuerpo de un criterio abierto: aparece con un fundido corto que baja 4 px (sin movimiento con «reducir movimiento»,
+// porque las duraciones valen 0,01 ms).
+.criterion__cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+  padding: var(--ds-space-2) var(--ds-space-4) var(--ds-space-4);
+  animation: re-abrir var(--ds-dur-slow) var(--ds-ease-out);
+}
+
+@keyframes re-abrir {
+  from {
+    opacity: 0;
+    translate: 0 -0.25rem;
+  }
+}
+
+.criterion__campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-3);
+}
+
+// En una matriz estrecha (teléfono) el resumen se reparte en dos renglones: número y nombre arriba, el peso debajo, y
+// el asa se oculta (el orden sigue con «Subir» y «Bajar»). Así el nombre nunca se parte en una columna de 70 px.
+@container matriz (max-width: 32rem) {
+  .criterion__asa {
+    display: none;
+  }
+
+  .criterion__fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .criterion__resumen {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'numero texto chevron'
+      'numero peso chevron';
+    row-gap: var(--ds-space-1);
+    padding-inline: var(--ds-space-2);
+  }
+
+  .criterion__numero {
+    grid-area: numero;
+    align-self: start;
+  }
+
+  .criterion__texto {
+    grid-area: texto;
+  }
+
+  .criterion__peso {
+    grid-area: peso;
+    grid-template-columns: auto minmax(0, 6rem);
+    align-items: center;
+    justify-items: start;
+    inline-size: auto;
+    column-gap: var(--ds-space-2);
+  }
+
+  .criterion__chevron {
+    grid-area: chevron;
+  }
+
+  .criterion__cuerpo {
+    padding-inline: var(--ds-space-2);
+  }
+}
+
+@container matriz (min-width: 40rem) {
+  .criterion__campos {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 7rem) minmax(0, 1.6fr);
+    align-items: start;
+  }
+}
+
+// Los campos de texto crecen con lo que se escribe (arregla el nombre recortado de 525 px en 459).
+.re-crece {
+  field-sizing: content;
+  min-block-size: 2.75rem;
+  max-block-size: 16rem;
+  resize: vertical;
+}
+
+// ── Las cuatro celdas de nivel: 1 columna, 2 × 2 o 4 en fila según el ancho de la matriz; nunca desplazamiento ──
+// La rejilla va en un envoltorio y no en el `fieldset`: la leyenda de un fieldset no es un elemento de la rejilla.
+.re-niveles {
+  display: block;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.re-niveles__celdas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  margin: var(--ds-space-2) 0 0;
+}
+
+@container matriz (min-width: 34rem) {
+  .re-niveles__celdas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container matriz (min-width: 56rem) {
+  .re-niveles__celdas {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.re-niveles__titulo {
+  float: inline-start;
+  inline-size: 100%;
+  margin-block-end: var(--ds-space-1);
+  padding: 0;
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.re-niveles__ayuda {
+  clear: both;
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// La nota de redacción usa el renglón de ayuda del campo (queda enlazada al control): aquí solo toma el tono de aviso.
+.re-nivel__campo--aviso {
+  --ds-text-2: var(--ds-warning-text);
+}
+
+// Cada nivel lleva arriba un filo de su color (de tenue a intenso): la escala se lee de un vistazo, sin números.
+.re-nivel {
+  min-inline-size: 0;
+  padding-block-start: var(--ds-space-2);
+  border-block-start: 3px solid color-mix(in oklab, var(--l-acento, var(--ds-primary)) var(--re-intensidad, 30%), transparent);
+}
+
+// El descriptor general se ve en gris dentro de la celda vacía, con contraste suficiente para leerse.
+.re-nivel textarea::placeholder {
+  color: var(--ds-text-2);
+  opacity: 1;
+}
+
+.criterion__pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+}
+
+.re-vacio {
+  display: grid;
+  justify-items: start;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4) var(--ds-space-3);
+  color: var(--ds-text-2);
+
+  p {
+    margin: 0;
+  }
+}
+
+// ── Solo lectura: la matriz entera, sin campos ─────────────────────────────────────────────────────────────────
+.re-lectura__criterio {
+  display: grid;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4) var(--ds-space-3);
+}
+
+.re-lectura__criterio + .re-lectura__criterio {
+  border-block-start: 1px solid var(--l-filo, var(--ds-border));
+}
+
+.re-lectura__cabeza {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ds-space-3);
+  align-items: start;
+}
+
+.re-lectura__texto {
+  display: grid;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+.re-lectura__titulo {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  font-weight: var(--ds-type-h3-weight);
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.re-lectura__meta,
+.re-lectura__descripcion {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.re-nivel__nombre {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.re-nivel__texto {
+  display: grid;
+  gap: var(--ds-space-1);
+  margin: var(--ds-space-1) 0 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.re-nivel__texto--general {
+  color: var(--ds-text-2);
+}
+
+.re-nivel__marca {
+  color: var(--ds-text-3);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+}
+
+// ── Solo lectura como hoja de cálculo (desde 1152 px) ─────────────────────────────────────────────────────────────────
+// Una fila por criterio y una columna por nivel, con filos de 1 px entre celdas, la cabecera de columnas fija bajo la
+// barra y cada nivel con su tinte propio (de tenue a intenso, el mismo acento: la escala se lee sin semáforo ni
+// números). Bajo ese ancho se queda la lectura apilada de arriba, que cabe en una tableta o un teléfono.
+.re-matriz__cabeza {
+  display: none;
+}
+
+.re-nivel[data-nivel='EN_INICIO'],
+.re-matriz__nivel[data-nivel='EN_INICIO'] {
+  --re-intensidad: 40%;
+  --re-tinte: 4%;
+}
+
+.re-nivel[data-nivel='EN_PROCESO'],
+.re-matriz__nivel[data-nivel='EN_PROCESO'] {
+  --re-intensidad: 60%;
+  --re-tinte: 7%;
+}
+
+.re-nivel[data-nivel='LOGRADO'],
+.re-matriz__nivel[data-nivel='LOGRADO'] {
+  --re-intensidad: 80%;
+  --re-tinte: 10%;
+}
+
+.re-nivel[data-nivel='DESTACADO'],
+.re-matriz__nivel[data-nivel='DESTACADO'] {
+  --re-intensidad: 100%;
+  --re-tinte: 14%;
+}
+
+@media (min-width: 72rem) {
+  .re-matriz__cabeza,
+  .re-lectura__criterio {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1.15fr) repeat(4, minmax(0, 1fr));
+  }
+
+  .re-matriz__cabeza {
+    position: sticky;
+    top: var(--l-alto-barra, 0);
+    z-index: var(--ds-z-pegajoso);
+    margin-block-start: var(--ds-space-3);
+    border-block-end: 1px solid var(--l-filo-fuerte, var(--ds-border));
+    background: var(--l-superficie, var(--ds-surface-1));
+  }
+
+  .re-matriz__columna {
+    padding: var(--ds-space-2) var(--ds-space-3);
+    color: var(--ds-text-2);
+    font-size: var(--ds-type-caption-size);
+    font-weight: var(--ds-type-h3-weight);
+    line-height: var(--ds-type-caption-line);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  // El filo de color del nivel baja a la cabecera de su columna: se dice una vez, no en cada fila.
+  .re-matriz__nivel {
+    border-inline-start: 1px solid var(--l-filo, var(--ds-border));
+    box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--l-acento, var(--ds-primary)) var(--re-intensidad), transparent);
+    color: var(--ds-text-1);
+  }
+
+  .re-lectura__criterio {
+    gap: 0;
+    padding: 0;
+    transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
+
+    @include m.ds-hover {
+      background: var(--l-fila-encima, var(--ds-surface-2));
+    }
+  }
+
+  .re-lectura__cabeza {
+    padding: var(--ds-space-3);
+  }
+
+  // El <dl> se disuelve para que cada celda caiga en su columna; la semántica dt/dd se conserva.
+  .re-niveles--lectura {
+    display: contents;
+  }
+
+  .re-niveles--lectura .re-nivel {
+    padding: var(--ds-space-3);
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--l-filo, var(--ds-border));
+    background: color-mix(in oklab, var(--l-acento, var(--ds-primary)) var(--re-tinte), transparent);
+  }
+
+  // El nombre del nivel ya está en la cabecera de la columna: en la celda queda solo para el lector de pantalla.
+  .re-niveles--lectura .re-nivel__nombre {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .re-niveles--lectura .re-nivel__texto {
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .re-lectura__criterio {
+    transition: none;
+  }
+}
+
+// En el editor, la celda que se está escribiendo se tiñe con su nivel: el foco se ve en la matriz, no solo en el campo.
+.re-niveles__celdas .re-nivel:focus-within {
+  background: color-mix(in oklab, var(--l-acento, var(--ds-primary)) var(--re-tinte, 8%), transparent);
+}
+
+// ── Tarjetas de datos y de uso ───────────────────────────────────────────────────────────────────────────────────────────
+.re-tarjeta {
+  display: grid;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4) var(--ds-space-5) var(--ds-space-5);
+}
+
+.re-tarjeta__cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+}
+
+.re-tarjeta__texto {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+}
+
+.re-nombre {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// ── Avisos (solo lectura, rúbrica ya usada, error al abrir) ────────────────────────────────────────────────────
+.re-aviso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--l-tinte-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-tinte, var(--ds-primary-subtle));
+}
+
+.re-aviso--uso {
+  border-color: color-mix(in oklab, var(--ds-warning-text) 35%, transparent);
+  background: var(--ds-warning-bg);
+}
+
+.re-aviso--peligro {
+  border-color: color-mix(in oklab, var(--ds-danger) 40%, transparent);
+  background: var(--ds-danger-bg);
+}
+
+.re-aviso__icono {
+  flex: none;
+  color: var(--ds-text-2);
+}
+
+.re-aviso__texto,
+.re-aviso .rb-message {
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+  margin: 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.rb-message--error {
+  color: var(--ds-danger);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// ── Pie: «Más» abre hacia arriba un panel con las acciones de estado ───────────────────────────────────────────
+.re-mas {
+  position: relative;
+}
+
+.re-mas__panel {
+  position: absolute;
+  inset-block-end: calc(100% + var(--ds-space-2));
+  inset-inline-end: 0;
+  display: grid;
+  gap: var(--ds-space-1);
+  min-inline-size: 13rem;
+  padding: var(--ds-space-2);
+  border: 1px solid var(--l-filo-fuerte, var(--ds-border-strong));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: var(--l-sombra-alta, var(--ds-shadow-e3));
+  transform-origin: bottom right;
+  animation: re-mas-aparece var(--ds-dur-base) var(--ds-spring-live);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.re-mas__accion {
+  justify-content: flex-start;
+}
+
+@keyframes re-mas-aparece {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+@media (forced-colors: active) {
+  .re-criterios,
+  .re-tarjeta,
+  .re-mas__panel,
+  .re-aviso {
+    border-color: CanvasText;
+  }
+
+  .criterion--destino {
+    outline: 2px solid Highlight;
+  }
+
+  .criterion__relleno {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+}
+
+// La matriz en lectura conserva espacio para la barra y su superficie impide leer detrás.
+.re-marco--sola { padding-block-end: 4.5rem; }
+:host ::ng-deep .re-marco--sola + ui-barra-acciones .ui-barra-acciones__bandeja { background: var(--l-superficie, var(--ds-surface-1)); }

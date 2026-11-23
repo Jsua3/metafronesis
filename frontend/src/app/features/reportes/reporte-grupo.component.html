@@ -1,0 +1,227 @@
+<!-- Sin viñeta en la cabecera: los vacíos de esta pantalla (sin grupo, sin caso, sin intentos) ya llevan la suya, y con
+     el reporte a la vista mandan los datos. -->
+<ui-cabecera-ilustrada [herramienta]="true"
+  eyebrow="Reportes académicos"
+  title="Reportes por grupo"
+  description="Cómo le fue al grupo en un caso: intentos, hitos y decisiones. Sin puntajes por persona." />
+
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+<!-- El corte es la barra de filtros del panel (como en un tablero de datos): una fila con grupo, caso y acciones. -->
+<section class="rg-corte" aria-labelledby="rg-corte-titulo">
+  <h2 class="rg-corte__titulo" id="rg-corte-titulo">Corte de consulta</h2>
+  <ui-card class="rg-filter">
+
+    @if (loadFiltersError()) {
+      <ui-error-state kind="server" [message]="loadFiltersError()" (retry)="cargarFiltros()" />
+    }
+
+    <form [formGroup]="form" class="rg-form" novalidate (ngSubmit)="generar()">
+      <ui-field label="Grupo" required hint="Elige la cohorte: el reporte se genera al elegirla.">
+        <select uiControl formControlName="grupoId">
+          <option [ngValue]="null">Selecciona un grupo</option>
+          @for (grupo of grupos(); track grupo.id) {
+            <option [ngValue]="grupo.id">{{ grupo.nombre }} · {{ grupo.codigo }}</option>
+          }
+        </select>
+      </ui-field>
+
+      <ui-field label="Caso de simulación" hint="El reporte muestra los intentos de este caso.">
+        <select uiControl formControlName="caseVersionId">
+          <option [ngValue]="null">Elige un caso</option>
+          @for (caso of casos(); track caso.caseVersionId) {
+            <option [ngValue]="caso.caseVersionId">{{ caso.title }} · v{{ caso.semanticVersion }}</option>
+          }
+        </select>
+      </ui-field>
+
+      <div class="rg-actions">
+        <button ui-button type="button" variant="secondary" icon="refresh" (click)="limpiar()"
+          [disabledReason]="selectedGrupoId() === null ? 'Aún no hay un grupo elegido.' : null">Limpiar</button>
+        @if (view() === 'ready') {
+          <button ui-button type="button" variant="secondary" icon="download" [loading]="exporting()" (click)="exportar()">
+            Exportar CSV
+          </button>
+        }
+      </div>
+    </form>
+    <p class="rg-hint">El seguimiento se lee caso por caso. Al elegir el grupo se muestra un caso con intentos, si lo hay.</p>
+  </ui-card>
+</section>
+
+@switch (view()) {
+  @case ('idle') {
+    <ui-vacio-ilustrado escena="grupos" titulo="Selecciona un grupo" disposicion="lado" marco="placa"
+      frase="Elige un grupo arriba para ver su seguimiento: intentos, hitos y decisiones." />
+  }
+  @case ('loading') {
+    <div class="rg-loading" aria-busy="true">
+      <div class="rg-stats">
+        @for (bone of [1, 2, 3, 4]; track bone) {
+          <ui-skeleton shape="stat" />
+        }
+      </div>
+      <ui-skeleton shape="row" />
+      <ui-skeleton shape="row" />
+      <ui-skeleton shape="row" />
+    </div>
+  }
+  @case ('error') {
+    <ui-error-state kind="server" message="No pudimos generar el reporte." (retry)="generar()" />
+  }
+  @case ('empty') {
+    @if (faltaCaso()) {
+      <ui-vacio-ilustrado escena="casos-docente" titulo="Elige un caso" disposicion="lado" marco="placa"
+        frase="El seguimiento del grupo se lee caso por caso. Elige uno en «Caso de simulación» para ver sus intentos, hitos y decisiones." />
+    } @else {
+      <ui-vacio-ilustrado escena="escucha" titulo="Sin intentos en este corte" disposicion="lado" marco="placa" [anunciar]="true"
+        [frase]="'Ningún estudiante de este grupo tiene intentos de «' + (selectedCase()?.title || 'este caso') + '» todavía. Prueba con otro caso.'" />
+    }
+  }
+  @case ('ready') {
+    @if (reporte()?.simulacion; as sim) {
+      <ui-section class="rg-result" [title]="selectedGroup()?.nombre || 'Grupo seleccionado'">
+        <div class="rg-stack">
+          <p class="rg-hint">
+            De {{ sim.totalIntentos }} intentos, {{ sim.intentosCompletados }} terminaron, {{ sim.intentosEnProgreso }} están en curso y {{ sim.intentosSalidaSegura }} usaron la salida segura. Hay datos de {{ sim.estudiantes.length }} estudiantes.
+          </p>
+
+          <div class="rg-panel">
+          <div class="rg-stats">
+            <ui-card>
+              <ui-stat label="Intentos" [value]="sim.totalIntentos"
+                [hint]="sim.intentosCompletados + ' completados · ' + sim.intentosEnProgreso + ' en progreso'" />
+            </ui-card>
+            <ui-card>
+              <ui-stat label="Bitácoras" [value]="sim.bitacorasRegistradas" [hint]="sim.rubricasAplicadas + ' rúbricas aplicadas'" />
+            </ui-card>
+          </div>
+
+          <div class="rg-quality">
+            <!-- La cifra grande arriba (como las otras tarjetas de la banda) y la barra la acompaña. -->
+            <ui-card>
+              <ui-stat label="Finalización" [value]="completionRate(sim) + ' %'" />
+              <ui-progress label="Finalización de intentos" [value]="completionRate(sim)" />
+              <p class="rg-hint">{{ sim.intentosCompletados }} de {{ sim.totalIntentos }} intentos completados.</p>
+            </ui-card>
+            <ui-card>
+              <ui-stat label="Salida segura" [value]="safeExitRate(sim) + ' %'" />
+              <ui-progress label="Salida segura" [value]="safeExitRate(sim)" />
+              <p class="rg-hint">{{ sim.intentosSalidaSegura }} de {{ sim.totalIntentos }} intentos usaron salida segura. Usarla es parte del cuidado.</p>
+            </ui-card>
+          </div>
+          </div>
+
+          <ui-section title="Cobertura por hito" [level]="3">
+            <p class="rg-hint">
+              Cuántos estudiantes cumplieron cada paso del caso. Es una lectura del grupo, no de cada persona; «clave» marca
+              los pasos que deciden el final.
+            </p>
+            @if (!sim.hitos.length) {
+              <p class="rg-hint">Este caso no declara hitos.</p>
+            } @else {
+              <!-- Una fila por hito: el nombre, la marca «clave», la cobertura en palabras y su barra (antes iban en
+                   una lista y, debajo, un gráfico con los mismos hitos: la misma información dos veces). -->
+              <ul class="rg-hitos">
+                @for (hito of sim.hitos; track hito.key) {
+                  <li class="rg-hito">
+                    <span class="rg-hito__top">
+                      <strong>{{ hito.label }}</strong>
+                      @if (marca(hito); as mark) { <ui-badge tone="info">{{ mark }}</ui-badge> }
+                    </span>
+                    <span class="rg-hito__words">
+                      {{ coberturaPalabras(hito) }}@if (hito.porcentaje !== undefined && hito.porcentaje !== null) { · {{ porcentaje(hito.porcentaje) }} % del grupo}
+                    </span>
+                    @if (hito.porcentaje !== undefined && hito.porcentaje !== null) {
+                      <ui-progress [label]="'Cobertura de ' + hito.label" [value]="hito.porcentaje" />
+                    }
+                  </li>
+                }
+              </ul>
+              @if (barrasHitos(sim).length) {
+                <p class="rg-hint rg-lectura">{{ descripcionHitos(sim) }}</p>
+              }
+
+              <details class="rg-hitos-tabla">
+                <summary>Ver la cobertura como tabla</summary>
+                <ui-table label="Tabla de cobertura por hito" density="compact" apilar>
+                  <table ui-table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Hito</th>
+                        <th scope="col">Cobertura</th>
+                        <th scope="col" class="rg-num">Porcentaje del grupo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (hito of sim.hitos; track hito.key) {
+                        <tr uiRow>
+                          <th scope="row" class="rg-name">
+                            {{ hito.label }} @if (marca(hito); as mark) { <ui-badge tone="info">{{ mark }}</ui-badge> }
+                          </th>
+                          <td>{{ coberturaPalabras(hito) }}</td>
+                          <td class="rg-num">{{ hito.porcentaje !== undefined && hito.porcentaje !== null ? porcentaje(hito.porcentaje) + ' %' : '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </ui-table>
+              </details>
+            }
+          </ui-section>
+
+          <ui-section title="¿Qué decisiones confunden al grupo?" [level]="3">
+            @if (totalDecisiones(sim) > 0) {
+              <ui-barras modo="apilada" [datos]="barrasDecisiones(sim)" [total]="totalDecisiones(sim)"
+                [descripcion]="descripcionDecisiones(sim)" />
+            } @else {
+              <p class="rg-hint">Aún no hay decisiones registradas en este corte.</p>
+            }
+            <p class="rg-hint">El detalle por escena aún no está disponible.</p>
+          </ui-section>
+
+          <ui-section title="Simulación por estudiante" [level]="3">
+            <p class="rg-hint">
+              Detalle operativo para seguimiento docente y administrativo. Los números por clase son conteos de
+              decisiones registradas; el orden es por nombre.
+            </p>
+            <ui-table label="Tabla de simulación por estudiante" density="compact" apilar>
+              <table ui-table>
+                <thead>
+                  <tr>
+                    <th scope="col">Estudiante</th>
+                    <th scope="col" class="rg-num">Intentos</th>
+                    <th scope="col" class="rg-num">Hitos cumplidos</th>
+                    <th scope="col" class="rg-num">Recomendadas</th>
+                    <th scope="col" class="rg-num">Aceptables</th>
+                    <th scope="col" class="rg-num">Con riesgo</th>
+                    <th scope="col" class="rg-num">Contraindicadas</th>
+                    <th scope="col" class="rg-num">Bitácoras</th>
+                    <th scope="col">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (e of sim.estudiantes; track e.id) {
+                    <tr uiRow>
+                      <th scope="row" class="rg-name">
+                        <a ui-link [routerLink]="['/portal/reportes/estudiante', e.id]" [queryParams]="studentLinkParams()">{{ e.nombre }}<span class="ds-sr-only"> — ver sus intentos</span></a>
+                      </th>
+                      <td class="rg-num">{{ e.totalIntentos }}</td>
+                      <td class="rg-num">{{ hitosCumplidosTexto(e, sim) }}</td>
+                      <td class="rg-num">{{ e.clases.recommended }}</td>
+                      <td class="rg-num">{{ e.clases.acceptable }}</td>
+                      <td class="rg-num">{{ e.clases.risky }}</td>
+                      <td class="rg-num">{{ e.clases.contraindicated }}</td>
+                      <td class="rg-num">{{ e.bitacorasRegistradas }}</td>
+                      <td class="rg-nowrap"><ui-badge [tone]="estadoTone(e.estado)">{{ estadoLabel(e.estado) }}</ui-badge></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </ui-table>
+          </ui-section>
+        </div>
+      </ui-section>
+    }
+  }
+}

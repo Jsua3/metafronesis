@@ -1,0 +1,25 @@
+{
+  "id": "estudiante-consultante",
+  "displayName": "Estudiante consultante",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "afro",
+    "face": "sereno",
+    "top": "sudadera",
+    "bottom": "jean",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-5",
+    "hair": "negro",
+    "top": "verde",
+    "accent": "gris-claro",
+    "bottom": "marino",
+    "shoes": "carbon",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

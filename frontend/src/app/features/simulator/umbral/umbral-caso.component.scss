@@ -1,0 +1,142 @@
+// El umbral (DISENO §4.4): una sola pantalla, quieta y con identidad. Todo con tokens de la piel game (el contenedor
+// del juego lleva `data-skin="game"`): los `--l-*` del portal se resuelven en `.portal` con la piel del tema y aquí
+// mentirían en claro, así que la luz se arma con `--ds-*`.
+:host {
+  position: absolute;
+  inset: 0;
+  // 360: sobre el pie que sube por encima de los velos (350) y bajo las tarjetas de entrada (380 a 400), que se posan
+  // encima como una hoja. Con tokens: ui:lint no admite literales nuevos de z-index.
+  z-index: calc(var(--ds-z-modal) * 3 + var(--ds-z-cubierta) * 0.75);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  place-items: center;
+  overflow: hidden;
+  padding: max(var(--ds-space-6), env(safe-area-inset-top, 0px)) var(--ds-space-4) max(var(--ds-space-6), env(safe-area-inset-bottom, 0px));
+  background: var(--ds-surface-page);
+  color: var(--ds-text-1);
+  text-align: center;
+  // El velo que se retira (300 ms) cuando el mundo ya está dibujado detrás: opacidad sola, sin desplazar nada.
+  transition: opacity var(--ds-dur-revelar) var(--ds-ease-out);
+}
+
+:host(.umbral-caso--saliendo) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+// La luz de la portada: violeta arriba a la izquierda, info arriba a la derecha, muy tenues; quieta (sin animar).
+.umbral-caso__luz {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 36rem at 8% -6%, color-mix(in oklab, var(--ds-primary) 22%, transparent), transparent 62%),
+    radial-gradient(48rem 32rem at 96% 4%, color-mix(in oklab, var(--ds-info) 14%, transparent), transparent 64%);
+}
+
+.umbral-caso__centro {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-3);
+  inline-size: min(100%, 36rem);
+  min-inline-size: 0;
+}
+
+// Con una tarjeta a la vista la pantalla sube y le deja la mitad de abajo (la tarjeta se posa allí como una hoja).
+:host(.umbral-caso--con-tarjeta) {
+  place-items: start center;
+  padding-block-start: clamp(var(--ds-space-5), 6vh, var(--ds-space-8, 4rem));
+}
+
+.umbral-caso__portada {
+  margin-block-end: var(--ds-space-2);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--ds-text-1) 12%, transparent),
+    0 1.5rem 4rem -1.5rem color-mix(in oklab, var(--ds-primary) 55%, transparent);
+}
+
+.umbral-caso__titulo {
+  margin: 0;
+  max-inline-size: 100%;
+  font-size: var(--ds-type-h2-size);
+  line-height: var(--ds-type-h2-line);
+  letter-spacing: var(--ds-type-h2-track);
+  font-weight: var(--ds-type-h2-weight);
+  color: var(--ds-text-1);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.umbral-caso__cuidado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+
+  mat-icon {
+    flex: none;
+    color: var(--ds-primary);
+  }
+}
+
+.umbral-caso__progreso {
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-2);
+  margin-block-start: var(--ds-space-3);
+}
+
+// El paso en texto ocupa su sitio desde el principio (no empuja nada al aparecer) y entra con un fundido.
+.umbral-caso__paso {
+  min-block-size: var(--ds-type-body-s-line);
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  opacity: 0;
+  transition: opacity var(--ds-dur-fade) var(--ds-ease-out);
+}
+
+.umbral-caso__paso--visible {
+  opacity: 1;
+}
+
+.umbral-caso__lento {
+  display: grid;
+  justify-items: center;
+  gap: var(--ds-space-3);
+  max-inline-size: 28rem;
+  margin-block-start: var(--ds-space-3);
+
+  p {
+    margin: 0;
+    color: var(--ds-text-1);
+  }
+}
+
+.umbral-caso__salida {
+  margin-block-start: var(--ds-space-4);
+}
+
+// Móvil: la portada a ×1 (240 × 132) ya la elige el componente; aquí, más aire y el título un paso más chico.
+@media (max-width: 33.999rem) {
+  .umbral-caso__titulo {
+    font-size: var(--ds-type-h3-size);
+    line-height: var(--ds-type-h3-line);
+  }
+}
+
+@media (forced-colors: active) {
+  :host {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .umbral-caso__luz {
+    display: none;
+  }
+}

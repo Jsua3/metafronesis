@@ -1,0 +1,669 @@
+@use 'mixins' as m;
+
+// Revisión del intento (DISENO §5.3, bloque B5b): bandeja, evidencia y valoración a la vez. Desde 1440 px, tres
+// columnas; de 1024 a 1439, la bandeja se abre con un selector y quedan dos; por debajo, una columna con el segmentado
+// «Evidencia | Valoración». Las columnas pegajosas con desplazamiento propio son las primitivas globales `.p-pegajosa`;
+// el formulario de la valoración vive (y se estiliza) en `revision/rubrica-intento`. Solo tokens --ds-* y --l-*.
+:host {
+  display: block;
+  color: var(--ds-text-1);
+}
+
+.tr-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+  margin-block-start: var(--ds-space-5);
+}
+
+.tr-detail,
+.tr-bandeja,
+.tr-evidencia,
+.tr-valoracion {
+  min-inline-size: 0;
+}
+
+.tr-stack,
+.tr-loading,
+.tr-empty-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+}
+
+.tr-hint,
+.tr-empty {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.tr-empty {
+  padding-block: var(--ds-space-2);
+}
+
+.tr-eyebrow {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.tr-title {
+  margin: 0;
+  font-size: var(--ds-type-h3-size);
+  line-height: var(--ds-type-h3-line);
+  font-weight: var(--ds-type-h3-weight);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+// ── Selector de la bandeja (bajo 1440 px) ────────────────────────────────────────────────────────────────────
+.tr-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  inline-size: 100%;
+  min-block-size: var(--ds-target-min);
+  padding: var(--ds-space-2) var(--ds-space-4);
+  border: 1px solid var(--l-filo-fuerte, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  color: var(--ds-text-1);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  // El chevrón dice que se despliega; gira al abrir. Decorativo: el estado lo dice `aria-expanded`.
+  &::after {
+    content: '';
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    margin-inline-start: auto;
+    border-block-end: 2px solid currentColor;
+    border-inline-end: 2px solid currentColor;
+    rotate: 45deg;
+    translate: 0 -0.125rem;
+    transition: rotate var(--ds-dur-fast) var(--ds-ease-out);
+  }
+
+  &[aria-expanded='true']::after {
+    rotate: -135deg;
+    translate: 0 0.125rem;
+  }
+
+  @include m.ds-hover {
+    border-color: var(--l-acento, var(--ds-primary));
+  }
+}
+
+.tr-selector__rotulo {
+  flex: none;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.tr-selector__valor {
+  min-inline-size: 0;
+  overflow: hidden;
+  font-weight: var(--ds-type-h3-weight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ── Bandeja ──────────────────────────────────────────────────────────────────────────────────────────────────
+.tr-bandeja {
+  display: none;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--ds-space-3);
+  padding: var(--l-relleno-tarjeta, var(--ds-space-4));
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: var(--l-sombra-trabajo, none);
+}
+
+.tr-bandeja--abierta {
+  display: grid;
+}
+
+.tr-bandeja__titulo {
+  margin: 0;
+  font-size: var(--ds-type-h3-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-h3-line);
+}
+
+// La bandeja se lee como la lista de un cliente de correo: filas pegadas con un filo entre ellas, el nombre arriba,
+// el caso en una sola línea y el estado y la fecha abajo. El intento abierto lleva la marca de 3 px del acento a la
+// izquierda (la firma pixel del portal), no un recuadro: así la lista no salta al elegir.
+.tr-attempts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin: 0 calc(-1 * var(--ds-space-2));
+  padding: 0;
+  list-style: none;
+
+  > li + li {
+    border-block-start: 1px solid var(--l-filo, var(--ds-border));
+  }
+}
+
+.tr-attempt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-1);
+  inline-size: 100%;
+  min-block-size: var(--ds-target-min);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 0;
+  border-radius: var(--ds-radius-sm);
+  background: transparent;
+  box-shadow: inset 0 0 0 transparent;
+  color: var(--ds-text-1);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    box-shadow var(--ds-dur-base) var(--ds-ease-out);
+
+  // El hover solo con puntero fino (los táctiles no tienen «pasar por encima»); el intento abierto conserva su marca.
+  @include m.ds-hover {
+    background: var(--l-fila-encima, var(--ds-surface-2));
+  }
+
+  &:active {
+    background: var(--l-superficie-hundida, var(--ds-surface-2));
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+
+  // Después del hover y con la misma especificidad: el intento abierto conserva su fondo aunque el puntero pase.
+  &[aria-current='true'] {
+    background: var(--l-fila-elegida, var(--ds-primary-subtle));
+    box-shadow: inset 3px 0 0 var(--l-acento, var(--ds-primary));
+  }
+}
+
+.tr-attempt__quien {
+  overflow: hidden;
+  font-size: var(--ds-type-body-s-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// El caso en una sola línea: el título se recorta (completo en el panel del centro al abrirlo) y el número de
+// intento nunca, porque distingue filas que si no serían iguales.
+.tr-attempt__case {
+  display: flex;
+  min-inline-size: 0;
+  white-space: nowrap;
+}
+
+.tr-attempt__titulo {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tr-attempt__numero {
+  flex: none;
+  white-space: pre;
+}
+
+.tr-attempt__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-1) var(--ds-space-2);
+}
+
+.tr-event__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+}
+
+.tr-attempt__case,
+.tr-attempt__meta {
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.tr-attempt__meta {
+  color: var(--ds-text-2);
+}
+
+// ── Revisión: evidencia y valoración ───────────────────────────────────────────────────────────────────────────
+// El segmentado del teléfono se pega bajo la barra. La franja sube 1rem para tapar el respiro que deja
+// `--l-alto-barra` bajo la banda: así el texto que pasa por detrás no asoma entre las dos.
+.tr-vistas {
+  position: sticky;
+  top: calc(var(--l-alto-barra, 1rem) - var(--ds-space-4));
+  z-index: var(--ds-z-pegajoso);
+  margin-block: calc(-1 * var(--ds-space-4)) var(--ds-space-4);
+  padding-block: var(--ds-space-4) var(--ds-space-2);
+  background: var(--ds-surface-page);
+  box-shadow: 0 1px 0 var(--l-filo, var(--ds-border));
+}
+
+.tr-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  align-items: start;
+}
+
+.tr-evidencia {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--ds-space-4);
+}
+
+.tr-valoracion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--ds-space-4);
+  padding: var(--l-relleno-tarjeta, var(--ds-space-4));
+  padding-block-end: 0;
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: var(--l-sombra-trabajo, none);
+  scrollbar-gutter: stable;
+}
+
+.tr-sin-rubrica {
+  padding-block-end: var(--l-relleno-tarjeta, var(--ds-space-4));
+}
+
+.tr-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+}
+
+.tr-overview__cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+}
+
+.tr-overview__titulos {
+  display: grid;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+.tr-facts,
+.tr-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+// Las cifras en una banda de fichas: «Recomendadas 4» en una línea cada una; la clase la marca un filo de color (el
+// texto es el que informa). Se reparten en las líneas que hagan falta sin salirse de la columna.
+.tr-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+}
+
+.tr-metric {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  min-block-size: var(--ds-target-min);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-inline-start: 3px solid var(--l-filo-fuerte, var(--ds-border-strong));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  color: var(--ds-text-1);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--ds-dur-fast) ease, translate var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    background: var(--l-fila-encima, var(--ds-surface-2));
+  }
+
+  &:active {
+    translate: 0 1px;
+  }
+
+  &[data-clase='recommended'] { border-inline-start-color: var(--ds-success); }
+  &[data-clase='acceptable'] { border-inline-start-color: var(--ds-primary); }
+  &[data-clase='risky'] { border-inline-start-color: var(--ds-warning-text); }
+  &[data-clase='contraindicated'] { border-inline-start-color: var(--ds-danger); }
+
+  // La cifra va a la derecha de su rótulo y del mismo cuerpo: una banda, no ocho tarjetas que gritan.
+  ui-stat {
+    --ds-type-h2-size: var(--ds-type-body-size);
+    --ds-type-h2-line: var(--ds-type-body-line);
+
+    display: flex;
+    align-items: baseline;
+    gap: var(--ds-space-2);
+  }
+}
+
+.tr-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-rowhead {
+  min-inline-size: 8rem;
+  font-weight: var(--ds-type-h3-weight);
+  text-align: start;
+}
+
+.tr-nowrap {
+  white-space: nowrap;
+}
+
+// ── Recorrido: hitos, persona por escena y final ───────────────────────────────────────────────────────────────
+.tr-milestone-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--ds-space-4);
+}
+
+.tr-subtitle {
+  margin: 0 0 var(--ds-space-2);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.tr-milestone-list,
+.tr-persona-list,
+.tr-reason-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.tr-milestone-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+  overflow-wrap: anywhere;
+}
+
+.tr-persona-list li,
+.tr-reason-list li {
+  overflow-wrap: anywhere;
+}
+
+.tr-reason-list,
+.tr-missing {
+  padding-inline-start: var(--ds-space-5);
+  list-style: disc;
+}
+
+.tr-ending__title {
+  margin: 0;
+}
+
+// ── Decisiones y reflexiones ───────────────────────────────────────────────────────────────────────────────────
+.tr-toolbar {
+  justify-content: space-between;
+}
+
+.tr-interruptor {
+  margin-inline-end: auto;
+}
+
+.tr-events,
+.tr-reflection-list,
+.tr-missing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tr-missing {
+  padding-inline-start: var(--ds-space-5);
+  list-style: disc;
+  font-size: var(--ds-type-body-s-size);
+}
+
+// Una fila: el minuto a la izquierda, en columna tabular; la clase y el número de decisión; el texto de la elección.
+.tr-event,
+.tr-reflection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-inline-start: 3px solid var(--l-filo-fuerte, var(--ds-border-strong));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background: var(--l-superficie, var(--ds-surface-1));
+  overflow-wrap: anywhere;
+  scroll-margin-block: var(--ds-space-6);
+}
+
+.tr-event {
+  grid-template-columns: 3rem minmax(0, 1fr);
+  column-gap: var(--ds-space-3);
+}
+
+// Un evento del sistema (puerta, recurso) es contexto, no evidencia: más quieto que una decisión.
+.tr-event--sistema {
+  background: transparent;
+  color: var(--ds-text-2);
+}
+
+.tr-event[data-accent='recommended'] { border-inline-start-color: var(--ds-success); }
+.tr-event[data-accent='acceptable'] { border-inline-start-color: var(--ds-primary); }
+.tr-event[data-accent='risky'] { border-inline-start-color: var(--ds-warning-text); }
+.tr-event[data-accent='contraindicated'] { border-inline-start-color: var(--ds-danger); }
+
+// R2: las decisiones del criterio enfocado en la valoración se tiñen del acento (se reconocen sin leer), y la decisión
+// a la que llevó una ficha lleva además un anillo. Sin movimiento: solo color, que «movimiento reducido» no toca.
+.tr-event--resaltada {
+  border-color: var(--l-tinte-filo, var(--ds-border-strong));
+  background: var(--l-tinte, var(--ds-surface-2));
+}
+
+.tr-event--destino {
+  outline: 2px solid var(--l-acento, var(--ds-primary));
+  outline-offset: 2px;
+}
+
+.tr-event:focus-visible {
+  outline: 3px solid var(--ds-focus);
+  outline-offset: 2px;
+}
+
+.tr-event__tiempo {
+  padding-block-start: var(--ds-space-1);
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-event__body {
+  display: grid;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+.tr-event__top {
+  justify-content: flex-start;
+}
+
+.tr-event__orden {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.tr-event__texto {
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.tr-reflection p {
+  margin: 0;
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// ── Al pie de la valoración: lo plegado (valoración del sistema) ──────────────────────────────────────────────
+.tr-plegable {
+  margin-block-end: var(--l-relleno-tarjeta, var(--ds-space-4));
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+
+  summary {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--ds-target-min);
+    padding-inline: var(--ds-space-3);
+    font-size: var(--ds-type-body-s-size);
+    font-weight: var(--ds-type-h3-weight);
+    cursor: pointer;
+  }
+
+  > :not(summary) {
+    padding: 0 var(--ds-space-3) var(--ds-space-3);
+  }
+}
+
+.tr-rubric__message {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.tr-rubric__message--error {
+  color: var(--ds-danger);
+  font-weight: var(--ds-type-h3-weight);
+}
+
+// ── Anchos ────────────────────────────────────────────────────────────────────────────────────────────────────
+// Bajo 1024 px: una mitad a la vez según el segmentado.
+@media (max-width: 63.999rem) {
+  .tr-review[data-vista='evidencia'] .tr-valoracion,
+  .tr-review[data-vista='valoracion'] .tr-evidencia {
+    display: none;
+  }
+
+  // En el teléfono la valoración no es una tarjeta dentro de otra: el pie de guardar flota sobre la página.
+  .tr-valoracion {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+// Desde 1024 px: evidencia y valoración lado a lado; la valoración (26rem) con su propio desplazamiento. Su alto
+// descuenta, además de la barra, la cabecera de la página: así «Guardar evaluación» se ve también sin desplazar.
+@media (min-width: 64rem) {
+  .tr-vistas {
+    display: none;
+  }
+
+  .tr-review {
+    grid-template-columns: minmax(0, 1fr) 26rem;
+  }
+
+  // El alto descuenta la cabecera de la página y el selector de la bandeja (unos 13rem bajo la barra): sin desplazar, el pie con «Guardar
+  // evaluación» queda dentro de la ventana; ya desplazada, sobra un margen abajo, que es el precio de no medir con JS.
+  .tr-valoracion.p-pegajosa--desplaza {
+    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6) - 13rem);
+  }
+}
+
+// Desde 1440 px: tres columnas; la bandeja deja de ser un selector y siempre está.
+@media (min-width: 90rem) {
+  .tr-layout {
+    // 21rem y no los 18 de DISENO §5.3: con menos, el segmentado «Por revisar · Todos · En curso» se recortaba
+    // (D-B5b-1); con el relleno lateral más justo de la bandeja (abajo) cabe entero.
+    grid-template-columns: 21rem minmax(0, 1fr);
+    gap: var(--ds-space-5);
+  }
+
+  .tr-selector {
+    display: none;
+  }
+
+  // Pegajosa solo aquí: bajo 1440 px está en el flujo de una columna y, pegada, taparía la evidencia.
+  .tr-bandeja {
+    padding-inline: var(--ds-space-3);
+    position: sticky;
+    top: calc(var(--l-alto-barra) + var(--ds-space-4));
+    display: grid;
+    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6) - 9rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .tr-review {
+    gap: var(--ds-space-5);
+  }
+
+  // Sin el selector de la bandeja encima, la valoración gana su alto.
+  .tr-valoracion.p-pegajosa--desplaza {
+    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6) - 9rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tr-selector::after,
+  .tr-attempt,
+  .tr-metric {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .tr-attempt[aria-current='true'] {
+    border: 2px solid Highlight;
+  }
+
+  .tr-metric,
+  .tr-event,
+  .tr-bandeja,
+  .tr-valoracion {
+    border-color: CanvasText;
+  }
+
+  .tr-event--resaltada {
+    border-color: Highlight;
+  }
+}

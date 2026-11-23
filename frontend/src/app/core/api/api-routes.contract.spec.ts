@@ -49,37 +49,6 @@ function clientUrls(source: string): string[] {
   return urls;
 }
 
-/**
- * Rutas del editor que llegan con el PR #55 (SIEP-238) y aún no están en develop: llegan con el PR #55 (SIEP-238).
- * Mientras falten no se exigen; la prueba de abajo FALLA cuando ya existan, para sacarlas de esta lista.
- */
-const PENDIENTES_PR55: readonly string[] = [
-  'api/authoring/cases/ID/characters',
-  'api/authoring/cases/ID/characters/ID',
-  'api/authoring/cases/ID/checklist',
-  'api/authoring/cases/ID/decisions/ID/accept-ai',
-  'api/authoring/cases/ID/dialogues/ID',
-  'api/authoring/cases/ID/dialogues/ID/accept-ai',
-  'api/authoring/cases/ID/editor',
-  'api/authoring/cases/ID/hints/ID',
-  'api/authoring/cases/ID/maps',
-  'api/authoring/cases/ID/maps/ID',
-  'api/authoring/cases/ID/maps/ID/dialogues',
-  'api/authoring/cases/ID/maps/ID/hints',
-  'api/authoring/cases/ID/maps/ID/objects',
-  'api/authoring/cases/ID/nodes/ID/accept-ai',
-  'api/authoring/cases/ID/objects/ID',
-  'api/authoring/cases/ID/objects/ID/accept-ai',
-  'api/authoring/cases/ID/plan',
-  'api/authoring/cases/ID/rubric',
-  'api/authoring/cases/ID/rules/endings',
-  'api/authoring/cases/ID/rules/milestones',
-  'api/authoring/cases/ID/rules/risk',
-  'api/authoring/cases/ID/tools',
-  'api/authoring/cases/ID/tools/ID',
-  'api/authoring/cases/ID/world',
-];
-
 const API_DIR = join(__dirname);
 const CLIENT_FILES = [
   ...readdirSync(API_DIR)
@@ -87,6 +56,14 @@ const CLIENT_FILES = [
     .map(name => join(API_DIR, name)),
   join(__dirname, '..', 'auth', 'auth.service.ts'),
 ];
+
+/**
+ * Rutas que el cliente ya pide y que llegan con otro PR del servidor: llega con el PR del estado del intento
+ * (`GET /api/simulation/attempts/{id}/state`, SIEP-239). Mientras no estén en `develop` se exceptúan; la última prueba
+ * falla cuando la ruta ya existe, para quitarla de esta lista y que el contrato la vigile.
+ */
+// El estado del intento (#57), los reportes (#60), el editor (#55) y el ensayo (#58) ya están en `develop`.
+const RUTAS_PENDIENTES: readonly string[] = [];
 
 describe('Rutas del cliente: cada URL existe en el servidor', () => {
   const routes = routesOf(join(BACKEND, 'psychosim', 'urls.py')).filter(route => route.startsWith('api/'));
@@ -101,16 +78,15 @@ describe('Rutas del cliente: cada URL existe en el servidor', () => {
     expect(used.filter(({ url }) => url.includes('desconocida'))).toEqual([]);
   });
 
-  const existe = (url: string) => routes.some(route => routePattern(route).test(url));
-
-  it.each(PENDIENTES_PR55.map(url => [url]))('«%s» llega con el PR #55 (SIEP-238): cuando ya exista, quítala de PENDIENTES_PR55', url => {
-    expect(existe(url), `${url} ya está en las rutas de Django: quítala de PENDIENTES_PR55`).toBe(false);
-  });
-
-  it.each(used.filter(({ url }) => !PENDIENTES_PR55.includes(url)).map(({ file, url }) => [file.split(/[\\/]/).pop(), url]))(
+  it.each(used.filter(({ url }) => !RUTAS_PENDIENTES.includes(url)).map(({ file, url }) => [file.split(/[\\/]/).pop(), url]))(
     '%s pide «%s», que casa con una ruta declarada (sin barra final de más ni de menos)',
     (_file, url) => {
       expect(routes.some(route => routePattern(route).test(url!)), `${url} no está en las rutas de Django`).toBe(true);
     },
   );
+
+  it('cada ruta pendiente la pide el cliente y todavía no existe en el servidor (si ya existe, quitarla de RUTAS_PENDIENTES)', () => {
+    expect(RUTAS_PENDIENTES.filter(url => !used.some(entry => entry.url === url)), 'ya no las pide el cliente').toEqual([]);
+    expect(RUTAS_PENDIENTES.filter(url => routes.some(route => routePattern(route).test(url))), 'ya existen en el servidor').toEqual([]);
+  });
 });

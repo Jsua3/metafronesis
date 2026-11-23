@@ -1,0 +1,145 @@
+{
+  "scenarioKey": "valoracion-comisaria",
+  "startRoomKey": "sala-espera",
+  "rooms": [
+    {
+      "key": "sala-espera",
+      "tiledMapKey": "map-comisaria-sala-espera",
+      "tiledJsonPath": "/assets/game/maps/comisaria-sala-espera.json",
+      "displayName": "Sala de Espera — Comisaría",
+      "spawnX": 160,
+      "spawnY": 200,
+      "exits": [
+        {
+          "objectName": "exit-to-consultorio",
+          "targetRoomKey": "consultorio",
+          "entryX": 80,
+          "entryY": 200
+        }
+      ],
+      "npcs": [
+        {
+          "key": "familiar-comisaria",
+          "npcType": "family",
+          "displayName": "Familiar de la víctima",
+          "portrait": "👩",
+          "x": 300,
+          "y": 180,
+          "recipeId": "madre-acompanante",
+          "facing": "down",
+          "emotion": "anxious",
+          "motion": {
+            "behavior": "pace",
+            "speed": 20,
+            "anchors": [
+              { "x": 286, "y": 180, "pauseMs": 1800, "face": "left" },
+              { "x": 318, "y": 188, "pauseMs": 1500, "face": "down" }
+            ]
+          },
+          "dialogue": {
+            "lines": [
+              { "text": "Señora lleva años aguantando. Tiene dos niños, de 7 y 10 años. Esta mañana llegó al hospital con hematomas en el rostro y los brazos.", "emotion": "anxious" },
+              { "text": "Ella tiene mucho miedo de hablar. Dice que si lo denuncia, él la va a matar. Por favor, ayúdela.", "emotion": "negative" }
+            ]
+          }
+        },
+        {
+          "key": "colega-comisaria",
+          "npcType": "colleague",
+          "displayName": "Colega psicóloga",
+          "portrait": "🧑‍⚕️",
+          "x": 420,
+          "y": 240,
+          "recipeId": "enfermera-urgencias",
+          "facing": "left",
+          "emotion": "receptive",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "Revisa el expediente antes de entrar al consultorio. La semana pasada él amenazó con un arma blanca — eso clasifica como riesgo alto de feminicidio.", "emotion": "neutral" },
+              { "text": "Usa el instrumento de valoración de riesgo estructurado, no solo la entrevista clínica. Y coordina con la Comisaría antes de tomar cualquier medida.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "key": "consultorio",
+      "tiledMapKey": "map-comisaria-consultorio",
+      "tiledJsonPath": "/assets/game/maps/comisaria-consultorio.json",
+      "displayName": "Consultorio — Comisaría",
+      "spawnX": 80,
+      "spawnY": 200,
+      "exits": [
+        {
+          "objectName": "exit-to-sala-espera",
+          "targetRoomKey": "sala-espera",
+          "entryX": 500,
+          "entryY": 200
+        },
+        {
+          "objectName": "exit-to-supervisor",
+          "targetRoomKey": "supervisor",
+          "entryX": 80,
+          "entryY": 160
+        }
+      ],
+      "npcs": [
+        {
+          "key": "paciente-comisaria",
+          "npcType": "witness",
+          "displayName": "Paciente",
+          "portrait": "😰",
+          "x": 280,
+          "y": 200,
+          "recipeId": "sobreviviente",
+          "facing": "down",
+          "emotion": "closed",
+          "motion": { "behavior": "avoidant", "zone": { "x": 256, "y": 184, "width": 48, "height": 32 } },
+          "dialogue": {
+            "lines": [
+              { "text": "...", "emotion": "anxious" },
+              { "text": "(La paciente mira hacia abajo, con los brazos cruzados. Respira con dificultad.)", "emotion": "negative" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "key": "supervisor",
+      "tiledMapKey": "map-comisaria-supervisor",
+      "tiledJsonPath": "/assets/game/maps/comisaria-supervisor.json",
+      "displayName": "Oficina del Supervisor — Comisaría",
+      "spawnX": 80,
+      "spawnY": 160,
+      "exits": [
+        {
+          "objectName": "exit-to-consultorio",
+          "targetRoomKey": "consultorio",
+          "entryX": 280,
+          "entryY": 40
+        }
+      ],
+      "npcs": [
+        {
+          "key": "supervisor-comisaria",
+          "npcType": "supervisor",
+          "displayName": "Supervisión clínica",
+          "portrait": "👨‍💼",
+          "x": 250,
+          "y": 160,
+          "recipeId": "supervisor-clinico",
+          "facing": "down",
+          "emotion": "neutral",
+          "motion": { "behavior": "attentive" },
+          "dialogue": {
+            "lines": [
+              { "text": "¿Ya habló con la familia en la sala de espera? Ese contexto es crítico antes de entrar con la paciente.", "emotion": "neutral" },
+              { "text": "Recuerde: en casos de riesgo alto de feminicidio, la coordinación con la Comisaría y el ICBF debe activarse antes del cierre de la jornada.", "emotion": "neutral" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

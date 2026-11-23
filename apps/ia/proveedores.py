@@ -10,6 +10,8 @@ from urllib.request import Request, urlopen
 
 from django.core.exceptions import ImproperlyConfigured
 
+from .generacion import falso
+
 TIEMPO_MAXIMO_SEGUNDOS = 20
 
 
@@ -27,6 +29,8 @@ class ProveedorFalso(ProveedorIA):
     """Determinista y sin red: es el que usan las pruebas y el desarrollo."""
 
     def responder(self, instrucciones: str, mensajes: list[dict]) -> str:
+        if instrucciones.startswith(falso.MARCA):
+            return falso.responder(mensajes)
         return "Revisa el contexto del caso y considera las alternativas disponibles."
 
 

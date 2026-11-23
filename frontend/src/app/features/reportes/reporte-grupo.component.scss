@@ -1,0 +1,207 @@
+// Pantalla Reportes (plan visual F7-3): piel portal, solo tokens --ds-*, superficies con borde y sin sombras duras ni
+// bordes punteados (VD-3). El foco lo pinta el anillo global. Reglas de F7-2: el host de `ui-section` se queda en
+// bloque y toda rejilla lleva `minmax(0, 1fr)`.
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-6);
+  color: var(--ds-text-1);
+}
+
+.rg-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+}
+
+.rg-hint {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// Grupo y caso lado a lado desde el escritorio; apilados en un teléfono.
+.rg-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+
+@media (min-width: 48rem) {
+  .rg-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rg-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+.rg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+.rg-stack,
+.rg-loading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  min-width: 0;
+}
+
+.rg-result {
+  min-width: 0;
+}
+
+// Ritmo vertical: cada sección («Cobertura por hito», «¿Qué decisiones…?», «Simulación por estudiante») se separa del
+// bloque anterior más que las tarjetas entre sí, para que su título no quede pegado a lo de arriba.
+.rg-stack > ui-section {
+  margin-block-start: var(--ds-space-4);
+}
+
+// ── Corte de consulta: barra de filtros del panel ───────────────────────────────────────────────────────────────
+// El título va en versalitas pequeñas (como la cabecera de una sección de inspector): rotula la barra sin competir
+// con el título de la pantalla ni con las cifras.
+.rg-corte {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+}
+
+.rg-corte__titulo {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  font-weight: var(--ds-type-h3-weight);
+  line-height: var(--ds-type-caption-line);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// ── Banda de cifras ────────────────────────────────────────────────────────────────────────────────────────────
+// Intentos, finalización, salida segura y bitácoras en una sola fila desde 1024 px: el panel se lee de un vistazo.
+// Las dos rejillas internas se disuelven (`display: contents`) para que sus tarjetas compartan la misma fila.
+.rg-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-4);
+}
+
+@media (min-width: 64rem) {
+  .rg-panel {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ds-space-4);
+
+    > .rg-stats,
+    > .rg-quality {
+      display: contents;
+    }
+  }
+}
+
+.rg-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--ds-space-4);
+}
+
+.rg-quality {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--ds-space-4);
+}
+
+.rg-quality ui-card {
+  display: grid;
+  gap: var(--ds-space-3);
+}
+
+.rg-name {
+  min-width: 9rem;
+  font-weight: var(--ds-type-h3-weight);
+  text-align: start;
+}
+
+.rg-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+// En un teléfono el estado no se parte letra a letra: la tabla se desplaza dentro de su marco.
+.rg-nowrap {
+  white-space: nowrap;
+}
+
+// ── Cobertura por hito ──────────────────────────────────────────────────────────────────────────────────────────
+// La palabra manda; la barra la acompaña y su valor va también en texto (WCAG 1.4.1). Sin colores de semáforo.
+.rg-hitos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Desde 1024 px los hitos van en dos columnas: once hitos no ocupan una pantalla entera de tarjetas anchas.
+@media (min-width: 64rem) {
+  .rg-hitos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.rg-hito {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  overflow-wrap: anywhere;
+}
+
+.rg-hito__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.rg-hito ui-progress { margin-block-start: var(--ds-space-1); }
+
+// La lectura del gráfico, con el mismo estilo de descripción y el aire del sistema respecto de la lista.
+.rg-lectura { margin-block-start: var(--ds-space-3); }
+
+.rg-hito__words {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.rg-hitos-tabla {
+  margin-block-start: var(--ds-space-3);
+
+  summary {
+    cursor: pointer;
+    font-weight: var(--ds-type-h3-weight);
+    font-size: var(--ds-type-body-s-size);
+  }
+}
+
+@media (max-width: 40rem) {
+  .rg-name { min-width: 0; overflow-wrap: anywhere; }
+  .rg-nowrap { white-space: normal; }
+}
+
+// En tarjeta, «Contraindicadas» y «Recomendadas» no caben en la columna fija de 6,5 rem y se partían a media palabra.
+@container (max-width: 40rem) {
+  td.rg-num.rg-num[data-etiqueta]::before {
+    flex-basis: 9.5rem;
+  }
+}

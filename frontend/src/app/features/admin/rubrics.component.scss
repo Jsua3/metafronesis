@@ -1,0 +1,209 @@
+@use 'mixins' as m;
+
+// Rúbricas (EDITOR.md §5.2, bloque R1): la biblioteca. Filas de tarjeta opaca con filo fino y esquinas continuas, como
+// la portada; el vidrio queda para la barra y el pie de acciones. Solo tokens (`--ds-*`, `--l-*`). El editor de una
+// rúbrica tiene sus propios estilos (`rubrica-editor.component.scss`).
+:host {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: var(--l-ancho-pagina, 75rem);
+  margin-inline: auto;
+  color: var(--ds-text-1);
+}
+
+// El editor necesita la matriz ancha: con la columna de datos al lado, a 1440 px los cuatro niveles caben en fila.
+:host(.rb--editor) {
+  max-inline-size: var(--l-ancho-amplio, 90rem);
+}
+
+.rb-cabecera--editor {
+  margin-block-end: var(--ds-space-4);
+}
+
+.rb-list {
+  display: block;
+  min-inline-size: 0;
+  margin-block-start: var(--ds-space-5);
+}
+
+.rb-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-5);
+  min-inline-size: 0;
+}
+
+// ── Grupos ─────────────────────────────────────────────────────────────────────────────────────────────────────
+.rb-grupo {
+  display: grid;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+}
+
+.rb-grupo__cabeza {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.rb-grupo__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+}
+
+.rb-grupo__cuenta {
+  min-inline-size: 1.75rem;
+  padding: 0 var(--ds-space-2);
+  border-radius: var(--ds-radius-pill);
+  background: var(--l-relleno, var(--ds-surface-2));
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: 1.5rem;
+  text-align: center;
+}
+
+.rb-grupo__descripcion {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+// ── Filas ──────────────────────────────────────────────────────────────────────────────────────────────────────
+.rb-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// La fila entera abre la rúbrica (el enlace se estira por debajo); la insignia y el menú quedan encima, pulsables.
+.rb-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-block-size: 4.5rem;
+  padding: var(--ds-space-3) var(--ds-space-2) var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--l-filo, var(--ds-border));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--l-superficie, var(--ds-surface-1));
+  box-shadow: var(--l-sombra-trabajo, none);
+  transition:
+    border-color var(--ds-dur-fast) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-ease-out);
+
+  @include m.ds-hover {
+    border-color: var(--l-tinte-filo, var(--ds-border-strong));
+    background: color-mix(in oklab, var(--l-superficie, var(--ds-surface-1)) 92%, var(--l-acento, var(--ds-primary)));
+  }
+
+  &:has(.rb-row__abrir:active) {
+    scale: 0.995;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .rb-row {
+    corner-shape: squircle;
+  }
+}
+
+.rb-row__abrir {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-inline-size: 0;
+  color: inherit;
+  text-decoration: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  // El anillo de foco rodea la fila entera, no solo el texto.
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::after {
+    @include m.ds-focus-ring;
+  }
+}
+
+// La firma del simulador: un bloque de píxel con su sombra escalonada.
+.rb-row__marca {
+  display: grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 3px;
+  background: var(--l-tinte, var(--ds-primary-subtle));
+  box-shadow: var(--l-pixel, 2px) var(--l-pixel, 2px) 0 var(--l-tinte-filo, var(--ds-border));
+  color: var(--l-acento-tinta, var(--ds-primary));
+}
+
+.rb-row__text {
+  display: grid;
+  gap: 0.125rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.rb-row__nombre {
+  font-weight: var(--ds-type-h3-weight);
+}
+
+.rb-row__text small {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+}
+
+.rb-row__estado,
+.rb-row__menu {
+  position: relative;
+}
+
+// En el teléfono la insignia baja bajo el nombre y el menú se queda a la derecha: el nombre nunca se parte por letras.
+@media (max-width: 39.999rem) {
+  .rb-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'abrir menu'
+      'estado menu';
+    row-gap: var(--ds-space-2);
+    padding-inline-start: var(--ds-space-3);
+  }
+
+  .rb-row__abrir {
+    grid-area: abrir;
+  }
+
+  .rb-row__estado {
+    grid-area: estado;
+    justify-self: start;
+    margin-inline-start: calc(2.5rem + var(--ds-space-3));
+  }
+
+  .rb-row__menu {
+    grid-area: menu;
+  }
+}
+
+@media (forced-colors: active) {
+  .rb-row {
+    border-color: CanvasText;
+  }
+}

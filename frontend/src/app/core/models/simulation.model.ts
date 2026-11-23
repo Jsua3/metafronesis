@@ -117,7 +117,6 @@ export interface ProgressMapState {
 
 export interface SimulationAttemptState {
   attemptId: string;
-  attemptToken: string;
   caseVersionId: number;
   caseTitle: string;
   /**

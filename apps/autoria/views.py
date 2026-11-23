@@ -1,9 +1,12 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
-from . import decisiones, escenas, servicios
-from .serializers import (CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
-                          DecisionSerializer, EscenaSerializer, FichaSerializer, RevisionSerializer)
+from shared.openapi import envelope_of, error_responses
+from . import decisiones, editor, ensayo, escenas, plano, servicios
+from .serializers import (AjusteEnsayoSerializer, CrearDecisionSerializer, CrearEscenaSerializer, CrearFichaSerializer,
+                          ChecklistSerializer, DecisionSerializer, EscenaSerializer, FichaSerializer, PlanoSerializer,
+                          RevisionSerializer, VistaEditorSerializer)
 
 
 class CasosView(APIView):
@@ -29,14 +32,19 @@ class FichaView(APIView):
     permission_classes = [policy_permission("case", "author")]
 
     def put(self, request, case_version_id):
-        serializer = FichaSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        datos = serializer.validated_data
+        datos = _datos(FichaSerializer, request)
         return api_ok(servicios.actualizar_ficha(request.user, case_version_id, datos, datos.get("revision")))
 
 
+CABECERA_REVISION = "X-Case-Revision"
+
+
 def _datos(serializer, request):
-    instancia = serializer(data=request.data)
+    """El cuerpo validado. La revisión del caso puede ir en el cuerpo o, como la manda el editor, en ``X-Case-Revision``."""
+    cuerpo = dict(request.data) if hasattr(request.data, "keys") else {}
+    if cuerpo.get("revision") in (None, "") and request.headers.get(CABECERA_REVISION) is not None:
+        cuerpo["revision"] = request.headers[CABECERA_REVISION]
+    instancia = serializer(data=cuerpo)
     instancia.is_valid(raise_exception=True)
     return instancia.validated_data
 
@@ -99,3 +107,55 @@ class ImportarCasoView(APIView):
         from apps.users.permisos import exigir_autoria
         exigir_autoria(request.user)
         return api_created(servicios.resumen(intercambio.importar(request.user, request.data)))
+
+class EditorView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    @extend_schema(responses={200: envelope_of(VistaEditorSerializer), **error_responses(401, 403, 404)})
+    def get(self, request, case_version_id):
+        return api_ok(editor.editor(request.user, case_version_id))
+
+
+class ChecklistView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    @extend_schema(request=ChecklistSerializer, parameters=[OpenApiParameter("X-Case-Revision", int, OpenApiParameter.HEADER)], responses={200: envelope_of(VistaEditorSerializer), **error_responses(400, 401, 403, 404, 409)})
+    def put(self, request, case_version_id):
+        datos = dict(request.data)
+        if datos.get("revision") in (None, ""):
+            revision = request.query_params.get("revision") or request.headers.get("X-Case-Revision")
+            if revision is not None:
+                datos["revision"] = revision
+        serializer = ChecklistSerializer(data=datos)
+        serializer.is_valid(raise_exception=True)
+        return api_ok(editor.actualizar_checklist(request.user, case_version_id, serializer.validated_data))
+
+
+class PlanoView(APIView):
+    permission_classes = [policy_permission("case", "author")]
+
+    @extend_schema(responses={200: envelope_of(PlanoSerializer), **error_responses(401, 403, 404)})
+    def get(self, request, case_version_id):
+        version = editor.version_visible(request.user, case_version_id)
+        return api_ok({"plan": plano.plano(version)})
+
+
+class EnsayoView(APIView):
+    """``POST …/rehearsal``: abre el ensayo del borrador (201) o reanuda el que ya está abierto (200)."""
+    permission_classes = [policy_permission("attempt", "rehearse")]
+
+    def post(self, request, case_version_id):
+        datos, creado = ensayo.abrir(request.user, case_version_id)
+        return api_created(datos) if creado else api_ok(datos)
+
+
+class EnsayoDetalleView(APIView):
+    """``GET/PATCH …/rehearsal/{attemptId}``: lee el ensayo o lo mueve a otra escena (``irA``)."""
+    permission_classes = [policy_permission("attempt", "rehearse")]
+
+    def get(self, request, case_version_id, attempt_id):
+        return api_ok(ensayo.leer(request.user, case_version_id, attempt_id))
+
+    def patch(self, request, case_version_id, attempt_id):
+        datos = _datos(AjusteEnsayoSerializer, request)
+        return api_ok(ensayo.ajustar(request.user, case_version_id, attempt_id, datos))

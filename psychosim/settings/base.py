@@ -691,3 +691,11 @@ SPA_DIST_DIR = BASE_DIR / "frontend_dist"
 if SPA_DIST_DIR.exists():
     WHITENOISE_ROOT = str(SPA_DIST_DIR)
 WHITENOISE_INDEX_FILE = False
+# Generación de casos con IA (SIEP-244): apagada por defecto (sin la variable, todo es un 404 salvo el estado). El proveedor es
+# una estrategia de ``apps/ia/proveedores.py`` (``falso`` es determinista y sin red); la clave y el modelo son los del asistente
+# de autoría. Topes: casos por docente y por día, casos de toda la plataforma por día y llamadas al proveedor por generación.
+AI_AUTHORING_GENERATIONS_ENABLED = _env_flag("AI_AUTHORING_GENERATIONS_ENABLED")
+AI_AUTHORING_GENERATIONS_PROVIDER = os.environ.get("AI_AUTHORING_GENERATIONS_PROVIDER", "falso")
+AI_AUTHORING_GENERATIONS_PER_DAY = int(os.environ.get("AI_AUTHORING_GENERATIONS_PER_DAY", "5"))
+AI_AUTHORING_GENERATIONS_GLOBAL_PER_DAY = int(os.environ.get("AI_AUTHORING_GENERATIONS_GLOBAL_PER_DAY", "30"))
+AI_AUTHORING_GENERATION_MAX_CALLS = int(os.environ.get("AI_AUTHORING_GENERATION_MAX_CALLS", "20"))

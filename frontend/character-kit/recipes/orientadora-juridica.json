@@ -1,0 +1,27 @@
+{
+  "id": "orientadora-juridica",
+  "displayName": "Orientadora jurídica",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "mono",
+    "face": "sereno",
+    "top": "blazer",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": [
+      "gafas"
+    ]
+  },
+  "colors": {
+    "skin": "piel-5",
+    "hair": "negro",
+    "top": "gris",
+    "inner": "blanco",
+    "bottom": "gris-oscuro",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

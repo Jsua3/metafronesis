@@ -271,6 +271,10 @@ PERSON_SCOPE: dict[str, tuple[Pertenencia, ...]] = {
     "student_case_completion": (Pertenencia(TITULAR, lambda p: Q(student_id=p.pk)),),
     # ── Uso del asistente de IA de autoría (P5): los contadores diarios del docente ──
     "authoring_assistant_usage": (Pertenencia(TITULAR, lambda p: Q(user_id=p.pk)),),
+    # ── La generación de casos con IA: lo que escribió la docente y lo que escribió el modelo con su texto ──
+    "authoring_generations": (
+        Pertenencia(TITULAR, lambda p: Q(owner_id=p.pk), solo=("lugar_id", "description", "status", "created_at")),
+    ),
     "rubric_evaluations": (
         Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk), excluir=("instructor_id",)),
         Pertenencia(
@@ -433,6 +437,16 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
             CONSERVAR,
             "contador diario de uso del asistente, sin el texto de las peticiones, enlazado a una cuenta ya seudonimizada; "
             "el tope mensual suma estas filas de todos los docentes, así que borrarlas lo alteraría (SD-9)",
+        ),
+    ),
+    # ── La generación de casos con IA: texto libre de la docente y texto del modelo derivado de él; se borra la fila entera ──
+    **_columnas(
+        "authoring_generations",
+        ("owner_id", "description", "skeleton_json", "scenes_json", "report_json", "repair_json", "document_json"),
+        Regla(
+            BORRAR_FILA,
+            "texto libre de la docente y lo que el modelo escribió a partir de él: la generación se borra entera; el caso "
+            "importado, si lo hubo, es contenido del programa y queda",
         ),
     ),
     # ── Evaluaciones docentes: la institución decide (SD-9); hoy se conservan ──

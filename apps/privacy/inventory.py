@@ -295,6 +295,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "status": TECHNICAL,
             "narrative_context": PUBLIC,
             "learning_objectives": PUBLIC,
+            "content_warnings": PUBLIC,
             "estimated_minutes": PUBLIC,
             "cloned_from_id": TECHNICAL,
             "published_at": TECHNICAL,
@@ -376,6 +377,47 @@ DATA_INVENTORY: dict[str, dict] = {
             "count": (PERSONAL, "cuántas veces lo usó ese día el docente"),
         },
         "exits": {"user_id": [], "day": [], "count": ["api"]},
+    },
+    "authoring_generations": {
+        "purpose": (
+            "La generación de un caso con IA por etapas (C1): la descripción que escribió la docente, el esqueleto y las escenas "
+            "que escribió el modelo, el informe de faltas y, solo si falla, el documento para diagnóstico. Una sola docente la ve."
+        ),
+        "retention": (
+            "Sin plazo definido (SD-9, pendiente de la institución). Se borra con la cuenta; la descripción puede traer lo que la "
+            "docente decidió contar, aunque el servidor rechaza correos, teléfonos y documentos de identidad."
+        ),
+        "default": None,
+        "columns": {
+            "id": TECHNICAL,
+            "owner_id": (PERSONAL, "docente que generó el caso"),
+            "lugar_id": TECHNICAL,
+            "description": (SENSITIVE, "texto libre de la docente sobre la situación que quiere simular"),
+            "status": TECHNICAL,
+            "skeleton_json": (SENSITIVE, "esqueleto que el modelo escribió a partir de la descripción de la docente"),
+            "scenes_json": (SENSITIVE, "escenas que el modelo escribió a partir de la descripción de la docente, y la respuesta cruda rechazada con sus motivos"),
+            "skeleton_started_at": TECHNICAL,
+            "repair_rounds": TECHNICAL,
+            "repair_json": (SENSITIVE, "faltas por escena de la ronda de reparación, con su ruta dentro del documento que escribió el modelo"),
+            "report_json": (SENSITIVE, "faltas del caso generado, con su ruta dentro del documento que escribió el modelo"),
+            "document_json": (SENSITIVE, "documento completo del caso que no pasó las comprobaciones, guardado para diagnóstico"),
+            "last_error_json": TECHNICAL,
+            "calls": TECHNICAL,
+            "tokens_in": TECHNICAL,
+            "tokens_out": TECHNICAL,
+            "case_version_id": TECHNICAL,
+            "created_at": TECHNICAL,
+            "updated_at": TECHNICAL,
+        },
+        "exits": {
+            "owner_id": ["api"],
+            "description": ["api"],
+            "skeleton_json": ["api"],
+            "scenes_json": [],
+            "report_json": ["api"],
+            "repair_json": ["api"],
+            "document_json": [],
+        },
     },
     "rubrics": {
         "purpose": "Rúbricas de evaluación: nombre, versión y docente que las creó.",
@@ -545,6 +587,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "active_seconds": (SENSITIVE, "tiempo activo del estudiante en el intento"),
             "last_activity_at": (SENSITIVE, "última actividad del estudiante (sirve al cronómetro)"),
             "state_json": (SENSITIVE, "estado del intento derivado de las decisiones del estudiante"),
+            "is_rehearsal": (TECHNICAL, "marca de ensayo del borrador de una docente; no identifica a la persona"),
         },
         "exits": {
             "id": ["api"],
@@ -559,6 +602,7 @@ DATA_INVENTORY: dict[str, dict] = {
             "replace_reason": [],
             "last_activity_at": [],
             "state_json": ["api"],
+            "is_rehearsal": [],
         },
         "forbidden_exits": {"attempt_token_hash": ["api", "csv", "reporte", "correo", "registro"]},
     },

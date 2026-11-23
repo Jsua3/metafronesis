@@ -1,0 +1,417 @@
+<ui-cabecera-ilustrada [herramienta]="true" escena="revision" [escala]="1"
+  eyebrow="Panel docente"
+  title="Revisión formativa del intento"
+  description="Lo que hizo el estudiante y tu valoración, en la misma pantalla." />
+
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+<div class="tr-layout p-densidad-compacta">
+  <!-- Bajo 1440 px la bandeja no cabe como columna: este selector la abre y dice qué intento está abierto. -->
+  <button type="button" class="tr-selector" aria-controls="tr-bandeja" [attr.aria-expanded]="bandejaVisible()"
+    (click)="bandejaAbierta.set(!bandejaAbierta())">
+    <span class="tr-selector__rotulo">Intento</span>
+    <span class="tr-selector__valor">{{ elegido() }}</span>
+  </button>
+
+  <section id="tr-bandeja" class="tr-list tr-bandeja"
+    [class.tr-bandeja--abierta]="bandejaVisible()" aria-labelledby="tr-bandeja-titulo">
+    <h2 class="tr-bandeja__titulo" id="tr-bandeja-titulo">Intentos</h2>
+    <ui-segmentado etiqueta="Qué intentos ver" [opciones]="segmentos()" [valor]="filtro()" (valorChange)="elegirFiltro($event)" />
+    <ui-field label="Buscar por caso o estudiante">
+      <input uiControl type="search" autocomplete="off" [value]="busqueda()" (input)="buscar($event)" />
+    </ui-field>
+    @if (filtro() === 'por-revisar' && !conEstadoDeValoracion() && attempts().length) {
+      <p class="tr-hint">{{ copy.sinEstadoDeValoracion }}</p>
+    }
+
+    @switch (listState()) {
+      @case ('loading') {
+        <div class="tr-loading" aria-busy="true">
+          @for (bone of [1, 2, 3, 4]; track bone) {
+            <ui-skeleton shape="row" />
+          }
+        </div>
+      }
+      @case ('error') {
+        <ui-error-state kind="server" message="No pudimos cargar los intentos recientes." (retry)="loadAttempts()" />
+      }
+      @case ('empty') {
+        <ui-empty-state kind="first-use" title="No hay intentos recientes para tus grupos"
+          description="Cuando tus estudiantes completen simulaciones, aparecerán aquí para revisión." />
+      }
+      @default {
+        @if (!bandeja().length) {
+          <p class="tr-empty">Ningún intento coincide con esta vista.</p>
+        }
+        <ul class="tr-attempts">
+          @for (attempt of bandeja(); track attempt.attemptId) {
+            <li>
+              <button type="button" class="tr-attempt"
+                [attr.aria-current]="selectedAttemptId() === attempt.attemptId ? 'true' : null" (click)="elegir(attempt)"
+                (keydown)="recorrerBandeja($event)">
+                <!-- Como en un cliente de correo: quién arriba, el caso (recortado, con su número de intento siempre a la
+                     vista) en medio, y abajo cuándo y el estado. El estado va abajo para que no le quite ancho al nombre. -->
+                <strong class="tr-attempt__quien">{{ clean(attempt.studentAlias, 'Estudiante') }}</strong>
+                <span class="tr-attempt__case"><span class="tr-attempt__titulo">{{ clean(attempt.caseTitle, 'Caso sin título') }}</span>@if (numeroIntento()[attempt.attemptId]; as numero) {<span class="tr-attempt__numero"> · {{ numero }}</span>}</span>
+                <span class="tr-attempt__pie">
+                  <span class="tr-attempt__meta">{{ cuando(attempt) }}</span>
+                  <ui-badge [tone]="statusTone(attempt.status)">{{ statusLabel(attempt.status) }}</ui-badge>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </section>
+
+  <div class="tr-detail">
+    @switch (detailState()) {
+      @case ('loading') {
+        <div class="tr-stack" aria-busy="true">
+          <ui-skeleton shape="card" [lines]="3" />
+          <div class="tr-summary">
+            @for (bone of [1, 2, 3, 4]; track bone) {
+              <ui-skeleton shape="stat" />
+            }
+          </div>
+          <ui-skeleton shape="row" />
+          <ui-skeleton shape="row" />
+        </div>
+      }
+      @case ('error') {
+        <ui-error-state [kind]="traceErrorKind()" [status]="traceError()?.status"
+          message="No pudimos cargar la trazabilidad de este intento." (retry)="reopen()" />
+      }
+      @case ('empty') {
+        @if (attempts().length) {
+          <ui-empty-state kind="first-use" title="Selecciona un intento"
+            description="Aquí verás su recorrido, sus decisiones y reflexiones, y a la derecha su valoración." />
+        }
+      }
+      @default {
+        @if (trace(); as item) {
+          <!-- En el teléfono y la tableta, una mitad a la vez; desde 1024 px las dos van lado a lado. -->
+          <div class="tr-vistas">
+            <ui-segmentado etiqueta="Qué ver" [opciones]="vistas" [valor]="vista()" (valorChange)="elegirVista($event)" />
+          </div>
+
+          <div class="tr-review" [attr.data-vista]="vista()">
+            <section class="tr-evidencia" aria-labelledby="tr-intento-titulo">
+              <ui-card class="tr-overview">
+                <div class="tr-overview__cabeza">
+                  <div class="tr-overview__titulos">
+                    <p class="tr-eyebrow">{{ clean(item.studentAlias, 'Estudiante') }}</p>
+                    <h2 class="tr-title" id="tr-intento-titulo">{{ clean(item.caseTitle, 'Caso sin título') }}</h2>
+                  </div>
+                  @if (canReplace(item)) {
+                    <!-- E1-2 (RN-07): solo el docente reemplaza un intento abierto, con motivo; es una acción de peso,
+                         por eso va en el menú y en rojo, no junto al título. -->
+                    <ui-menu class="tr-mas" label="Más acciones" iconOnly [items]="menuIntento"
+                      (itemSelected)="accionIntento($event, item)" />
+                  }
+                </div>
+                <div class="tr-facts">
+                  <ui-badge [tone]="statusTone(item.status)">{{ statusLabel(item.status) }}</ui-badge>
+                  @if (item.ending; as ending) {
+                    <ui-badge>{{ ending.title }}</ui-badge>
+                  }
+                  <ui-badge class="tr-estado-valoracion" [tone]="evaluationApplied(item) ? 'success' : 'neutral'">
+                    Valoración {{ evaluationApplied(item) ? 'aplicada' : 'pendiente' }}
+                  </ui-badge>
+                </div>
+                <p class="tr-hint">
+                  Inicio {{ formatDate(item.startedAt) }}
+                  @if (item.endedAt) { · Cierre {{ formatDate(item.endedAt) }} }
+                  · Tiempo activo: {{ tiempoActivo(item.activeSeconds) }}
+                </p>
+              </ui-card>
+
+              <!-- Una banda de cifras: cada una abre las decisiones de su clase (la retroalimentación sugerida). -->
+              <div class="tr-summary" role="group" aria-label="Decisiones por clase">
+                <button type="button" class="tr-metric" aria-haspopup="dialog" (click)="openFeedback('TOTAL', item)">
+                  <ui-stat label="Decisiones" [value]="totalDecisions(item)" />
+                </button>
+                <button type="button" class="tr-metric" data-clase="recommended" aria-haspopup="dialog" (click)="openFeedback('RECOMMENDED', item)">
+                  <ui-stat label="Recomendadas" [value]="item.counts.recommended" />
+                </button>
+                <button type="button" class="tr-metric" data-clase="acceptable" aria-haspopup="dialog" (click)="openFeedback('ACCEPTABLE', item)">
+                  <ui-stat label="Aceptables" [value]="item.counts.acceptable" />
+                </button>
+                <button type="button" class="tr-metric" data-clase="risky" aria-haspopup="dialog" (click)="openFeedback('RISKY', item)">
+                  <ui-stat label="Con riesgo" [value]="item.counts.risky" />
+                </button>
+                <button type="button" class="tr-metric" data-clase="contraindicated" aria-haspopup="dialog" (click)="openFeedback('CONTRAINDICATED', item)">
+                  <ui-stat label="Contraindicadas" [value]="item.counts.contraindicated" />
+                </button>
+                <button type="button" class="tr-metric" aria-haspopup="dialog" (click)="openFeedback('REFLECTIONS', item)">
+                  <ui-stat label="Reflexiones" [value]="item.reflections.length" />
+                </button>
+              </div>
+
+              <ui-tabs class="tr-pestanas" label="Evidencia del intento" [selected]="pestana()" (selectedChange)="elegirPestana($event)">
+                <ng-template uiTab="recorrido" label="Recorrido">
+                  <div class="tr-stack">
+                    <ui-section class="tr-milestones" title="Hitos" [level]="3">
+                      <div class="tr-stack">
+                        <p class="tr-hint">Lo que la persona hizo en el caso. «clave» marca los hitos que deciden el final.</p>
+                        @if (!item.milestones.done.length && !item.milestones.missing.length) {
+                          <p class="tr-empty">Este caso no declara hitos.</p>
+                        } @else {
+                          <div class="tr-milestone-groups">
+                            <div>
+                              <h4 class="tr-subtitle">Cumplidos</h4>
+                              @if (item.milestones.done.length) {
+                                <ul class="tr-milestone-list">
+                                  @for (milestone of item.milestones.done; track milestone.key) {
+                                    <li>
+                                      <span>{{ milestone.label }}</span>
+                                      @if (milestoneMark(milestone); as mark) { <ui-badge tone="info">{{ mark }}</ui-badge> }
+                                    </li>
+                                  }
+                                </ul>
+                              } @else {
+                                <p class="tr-empty">Ninguno todavía.</p>
+                              }
+                            </div>
+                            <div>
+                              <h4 class="tr-subtitle">Faltaron</h4>
+                              @if (item.milestones.missing.length) {
+                                <ul class="tr-milestone-list">
+                                  @for (milestone of item.milestones.missing; track milestone.key) {
+                                    <li>
+                                      <span>{{ milestone.label }}</span>
+                                      @if (milestoneMark(milestone); as mark) { <ui-badge tone="warning">{{ mark }}</ui-badge> }
+                                    </li>
+                                  }
+                                </ul>
+                              } @else {
+                                <p class="tr-empty">Ninguno.</p>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </ui-section>
+
+                    <ui-section class="tr-persona" title="La persona por escena" [level]="3">
+                      @if (item.personaPorEscena.length) {
+                        <ul class="tr-persona-list">
+                          @for (scene of item.personaPorEscena; track scene.nodeId) {
+                            <li><strong>{{ clean(scene.nodeTitle, 'Escena') }}</strong> → {{ scene.label }}</li>
+                          }
+                        </ul>
+                      } @else {
+                        <p class="tr-empty">Aún no hay escenas con una decisión registrada.</p>
+                      }
+                    </ui-section>
+
+                    @if (item.ending; as ending) {
+                      <ui-section class="tr-ending" title="Final del intento" [level]="3">
+                        <div class="tr-stack">
+                          <p class="tr-ending__title"><strong>{{ ending.title }}</strong></p>
+                          <p class="tr-hint">{{ ending.message }}</p>
+                          @if (ending.reason.length) {
+                            <ul class="tr-reason-list" aria-label="Por qué se llegó a este final">
+                              @for (reason of ending.reason; track $index) {
+                                <li>{{ reason }}</li>
+                              }
+                            </ul>
+                          }
+                        </div>
+                      </ui-section>
+                    }
+
+                    @if (item.phaseDurations?.length) {
+                      <ui-section class="tr-phases" title="Duración por escenario" [level]="3">
+                        <ui-table label="Tiempo por escenario" density="compact">
+                          <table ui-table>
+                            <thead>
+                              <tr>
+                                <th scope="col">Escenario</th>
+                                <th scope="col">Inicio</th>
+                                <th scope="col">Fin</th>
+                                <th scope="col" class="tr-num">Duración</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (phase of item.phaseDurations; track phase.nodeId + '-' + $index) {
+                                <tr uiRow>
+                                  <th scope="row" class="tr-rowhead">{{ clean(phase.nodeTitle, 'Escenario') }}</th>
+                                  <td class="tr-nowrap">{{ formatDate(phase.startedAt) }}</td>
+                                  <td class="tr-nowrap">{{ phase.endedAt ? formatDate(phase.endedAt) : '—' }}</td>
+                                  <td class="tr-num">{{ formatDuration(phase.durationSeconds) }}</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </ui-table>
+                      </ui-section>
+                    }
+                  </div>
+                </ng-template>
+
+                <ng-template uiTab="decisiones" label="Decisiones">
+                  <div class="tr-stack tr-events-section">
+                    <div class="tr-toolbar">
+                      <label ui-check class="tr-interruptor">
+                        <input type="checkbox" uiSwitch [checked]="mostrarEventos()" (change)="mostrarEventos.set(!mostrarEventos())" />
+                        Mostrar eventos del sistema
+                      </label>
+                      @if (item.retries) {
+                        <ui-badge>Reconsideradas: {{ item.retries }}</ui-badge>
+                      }
+                      <!-- Acción de consulta, no principal: botón fantasma para que no compita con «Guardar evaluación». -->
+                      <button ui-button type="button" variant="ghost" size="sm" (click)="openFeedback('RECORRIDO', item)">
+                        Ver retroalimentación
+                      </button>
+                    </div>
+
+                    @if (!filasLinea().length) {
+                      <p class="tr-empty">
+                        {{ mostrarEventos() ? 'No hay eventos registrados para este intento.' : 'Este intento aún no tiene decisiones registradas.' }}
+                      </p>
+                    } @else {
+                      <!-- Cada decisión registrada lleva su número de orden como id estable («decision-3»): la valoración
+                           (R2) la resalta o se desplaza hasta ella, con o sin los eventos del sistema a la vista. -->
+                      <ol class="tr-events">
+                        @for (fila of filasLinea(); track fila.orden ?? 's' + $index) {
+                          @let entry = fila.entry;
+                          <li class="tr-event" [class.tr-event--sistema]="!fila.decision" [attr.data-accent]="timelineEntryAccent(entry)"
+                            [attr.id]="fila.orden ? 'decision-' + fila.orden : null" [attr.data-decision]="fila.orden"
+                            [attr.tabindex]="fila.orden ? -1 : null"
+                            [class.tr-event--resaltada]="!!fila.orden && decisionesResaltadas().has(fila.orden)"
+                            [class.tr-event--destino]="!!fila.orden && fila.orden === decisionDestino()">
+                            <small class="tr-event__tiempo">{{ entry.time }}</small>
+                            <span class="tr-event__body">
+                              <span class="tr-event__top">
+                                <ui-badge [tone]="timelineEntryTone(entry)">{{ timelineEntryLabel(entry) }}</ui-badge>
+                                @if (fila.orden) {
+                                  <span class="tr-event__orden">Decisión {{ fila.orden }}</span>
+                                }
+                              </span>
+                              <span class="tr-event__texto">{{ fila.texto }}</span>
+                            </span>
+                          </li>
+                        }
+                      </ol>
+                    }
+                  </div>
+                </ng-template>
+
+                <ng-template uiTab="reflexiones" label="Reflexiones">
+                  <div class="tr-stack tr-reflections">
+                    <div class="tr-toolbar">
+                      <ui-badge>{{ item.reflections.length }} registradas</ui-badge>
+                      <button ui-button type="button" variant="ghost" size="sm" (click)="openFeedback('REFLECTIONS', item)">
+                        Ver retroalimentación
+                      </button>
+                    </div>
+
+                    @if (!item.reflections.length) {
+                      <div class="tr-empty-block">
+                        <p class="tr-empty">El estudiante aún no registró reflexiones en este intento.</p>
+                        <p class="tr-hint">
+                          La bitácora es opcional por escenario. Puedes evaluar con la trazabilidad de decisiones y la rúbrica
+                          del caso.
+                        </p>
+                        @if (nodesWithoutReflection(item).length) {
+                          <p class="tr-hint">Escenarios visitados sin bitácora:</p>
+                          <ul class="tr-missing">
+                            @for (nodeTitle of nodesWithoutReflection(item); track nodeTitle) {
+                              <li>{{ nodeTitle }}</li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    } @else {
+                      <ul class="tr-reflection-list">
+                        @for (reflection of item.reflections; track reflection.nodeId) {
+                          <li class="tr-reflection">
+                            <span class="tr-event__top">
+                              <strong>{{ clean(reflection.nodeTitle, 'Escenario') }}</strong>
+                              @if (reflection.locked) {
+                                <ui-badge>Bloqueada</ui-badge>
+                              }
+                            </span>
+                            <p>{{ clean(reflection.text, 'Sin texto registrado.') }}</p>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </ng-template>
+              </ui-tabs>
+            </section>
+
+            <!-- La valoración: su propia columna pegajosa con desplazamiento propio; «Guardar» queda al pie, a la vista. -->
+            <aside class="tr-valoracion p-pegajosa p-pegajosa--desplaza" aria-label="Valoración del intento">
+              @if (rubric(); as rub) {
+                <app-rubrica-intento [attemptId]="item.attemptId" [evaluacion]="rub"
+                  [evidencia]="item.evidenceByCompetency" [sistema]="item.systemEvaluation?.competencyLevels"
+                  [haySiguiente]="haySiguientePendiente()" (guardada)="onValoracionGuardada($event)"
+                  (criterioEnfocado)="competenciaResaltada.set($event)" (irADecision)="irADecision($event)"
+                  (siguiente)="abrirSiguientePendiente()" />
+              } @else {
+                <div class="tr-stack tr-sin-rubrica">
+                  <p class="tr-empty">No hay rúbrica disponible para este caso.</p>
+                  @if (rubricMessage()) {
+                    <p class="tr-rubric__message" [class.tr-rubric__message--error]="rubricMessageIsError()">{{ rubricMessage() }}</p>
+                  }
+                </div>
+              }
+
+              <!-- La valoración automática queda plegada hasta que el docente guarda la suya: así no la copia sin mirar. -->
+              @if (item.competenciesDeclared === false) {
+                <!-- V5: sin competencias declaradas en el caso no hay perfil que mostrar; se dice por qué, en vez de filas vacías. -->
+                <details class="tr-system tr-plegable">
+                  <summary>Valoración del sistema</summary>
+                  <div class="tr-stack">
+                    <p class="tr-hint tr-system__no-declarado">{{ copy.notDeclared }}</p>
+                    @if (item.caseVersionId) {
+                      <a ui-button variant="secondary" [attr.href]="'/portal/casos/' + item.caseVersionId + '/editor'">{{ copy.openEditor }}</a>
+                    }
+                  </div>
+                </details>
+              } @else if (item.systemEvaluation; as system) {
+                <details class="tr-system tr-plegable">
+                  <summary>Valoración del sistema</summary>
+                  <div class="tr-stack">
+                    <p class="tr-hint">El perfil automático por competencia, junto a tu valoración. Es una referencia: la valoración que cuenta es la tuya.</p>
+                    <ui-table label="Valoración del sistema y tu valoración por competencia" density="compact">
+                      <table ui-table>
+                        <thead>
+                          <tr>
+                            <th scope="col">Competencia</th>
+                            <th scope="col">Tu valoración</th>
+                            <th scope="col">Valoración del sistema</th>
+                            <th scope="col">Con qué se calculó</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (row of systemRows(item); track row.entry.code) {
+                            <tr uiRow>
+                              <th scope="row" class="tr-rowhead">{{ row.name }}</th>
+                              <td>{{ row.teacher }}</td>
+                              <td><ui-badge [tone]="levelTone(row.entry.level)">{{ row.entry.level ? levelLabel(row.entry.level) : 'Sin evidencia' }}</ui-badge></td>
+                              <td>{{ row.entry.basis ?? '—' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </ui-table>
+                  </div>
+                </details>
+              } @else if (systemEvaluationFolded(item)) {
+                <details class="tr-system tr-plegable">
+                  <summary>Valoración del sistema</summary>
+                  <p class="tr-hint tr-system__folded">{{ copy.systemFolded }}</p>
+                </details>
+              }
+            </aside>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,25 @@
+{
+  "id": "jorge",
+  "displayName": "Jorge",
+  "kind": "jugable",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-liso",
+    "face": "maduro",
+    "top": "uniforme-psicologia",
+    "bottom": "jogger",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-4",
+    "hair": "canoso",
+    "top": "azul-humboldt",
+    "accent": "blanco",
+    "bottom": "azul-humboldt",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

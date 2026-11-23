@@ -50,7 +50,7 @@ describe('NavBadgesService', () => {
   // D-22: el destino «Grupos» del estudiante tiene el id `invitaciones`; una insignia con un id que no es un destino
   // del menú no se pintaría nunca.
   it('cada destino que admite insignia es un destino real del menú, del rol que hace ese trabajo', () => {
-    const destinos: Record<DestinoConInsignia, UserRole> = { invitaciones: 'ESTUDIANTE', usuarios: 'ADMIN' };
+    const destinos: Record<DestinoConInsignia, UserRole> = { invitaciones: 'ESTUDIANTE', trazabilidad: 'PROFESOR', usuarios: 'ADMIN' };
     for (const [id, rol] of Object.entries(destinos)) {
       expect(navItemsFor(rol).some(item => item.id === id), `${rol} → ${id}`).toBe(true);
     }
