@@ -85,7 +85,7 @@ function crearJuegoDeSala(op: OpcionesDeJuego): JuegoDeSala {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[attr.data-lienzo]': 'estado()', '[attr.data-version]': 'version()' },
   template: `
-    <div #contenedor></div>
+    <div #contenedor style="position: relative"></div>
     @if (estado() === 'fallo') {
       <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
       <p role="status">No se pudo dibujar la sala. Puedes seguir moviendo las piezas.</p>
@@ -102,7 +102,13 @@ export class LienzoDeSalaComponent {
   private readonly contenedor = viewChild<ElementRef<HTMLElement>>('contenedor');
   private readonly catalogo = inject(CatalogoDePiezas);
   private readonly crear = inject(FABRICA_DE_JUEGO_DE_SALA);
-  private juego?: JuegoDeSala;
+  /**
+   * Doble búfer: `juego` es la sala que se ve y `pendiente` la que se arma detrás (invisible) tras un cambio. Armar una sala
+   * (WebGL, texturas, luz) tarda; si se destruyera la vieja antes, el lienzo quedaría en negro ese rato. La vieja se quita
+   * solo cuando la nueva avisa `listo`. Cada una vive en su propia capa dentro de `contenedor`.
+   */
+  private juego?: { juego: JuegoDeSala; capa: HTMLElement };
+  private pendiente?: { juego: JuegoDeSala; capa: HTMLElement };
   private temporizador?: ReturnType<typeof setTimeout>;
   private ultimoArmado = -Infinity;
   private generacion = 0;
@@ -116,33 +122,77 @@ export class LienzoDeSalaComponent {
       clearTimeout(this.temporizador);
       const generacion = ++this.generacion;
       if (error || !manifiesto) {
-        this.juego?.destruir();
-        this.juego = undefined;
+        this.quitarTodo();
         this.estado.set(error ? 'fallo' : 'cargando');
         return;
       }
       this.estado.set('cargando');
       this.temporizador = setTimeout(() => {
-        this.juego?.destruir();
-        this.juego = undefined;
+        // Una carga que aún no terminó ya no sirve: la reemplaza esta. La sala que se ve se queda hasta que esta esté lista.
+        this.quitar(this.pendiente);
+        this.pendiente = undefined;
         this.ultimoArmado = Date.now();
         this.version.update((n) => n + 1);
+        const capa = document.createElement('div');
+        // Con una sala a la vista, la nueva se arma encima pero invisible y sin recibir el puntero.
+        if (this.juego) Object.assign(capa.style, { position: 'absolute', inset: '0', opacity: '0', pointerEvents: 'none' });
+        contenedor.appendChild(capa);
+        // `crear` puede avisar `listo` o `fallo` antes de devolver el juego: `entrada` se completa al volver de `crear`.
+        const entrada: { juego?: JuegoDeSala; capa: HTMLElement } = { capa };
+        let temprano: { plan: PlanDeSala } | 'fallo' | null = null;
+        const alListo = (plan: PlanDeSala) => {
+          if (generacion !== this.generacion) return;
+          if (!entrada.juego) { temprano = { plan }; return; }
+          this.mostrar(entrada as { juego: JuegoDeSala; capa: HTMLElement });
+          this.estado.set('listo');
+          this.listo.emit({ plan });
+        };
+        const alFallo = () => {
+          if (generacion !== this.generacion) return;
+          if (!entrada.juego) { temprano = 'fallo'; return; }
+          this.quitarTodo();
+          this.estado.set('fallo');
+        };
         try {
-          this.juego = this.crear({ contenedor, sala, actores, escala, manifiesto,
-            listo: (plan) => {
-              if (generacion !== this.generacion) return;
-              this.estado.set('listo');
-              this.listo.emit({ plan });
-            },
-            fallo: () => { if (generacion === this.generacion) this.estado.set('fallo'); },
-          });
-        } catch { this.estado.set('fallo'); }
+          entrada.juego = this.crear({ contenedor: capa, sala, actores, escala, manifiesto, listo: alListo, fallo: alFallo });
+        } catch {
+          capa.remove();
+          this.quitarTodo();
+          this.estado.set('fallo');
+          return;
+        }
+        this.pendiente = entrada as { juego: JuegoDeSala; capa: HTMLElement };
+        const aviso = temprano as { plan: PlanDeSala } | 'fallo' | null;
+        if (aviso === 'fallo') alFallo();
+        else if (aviso) alListo(aviso.plan);
       }, Math.max(0, 200 - (Date.now() - this.ultimoArmado)));
     });
     inject(DestroyRef).onDestroy(() => {
       ++this.generacion;
       clearTimeout(this.temporizador);
-      this.juego?.destruir();
+      this.quitarTodo();
     });
+  }
+
+  /** La sala pendiente ya está dibujada: pasa a verse y la que se veía se quita. */
+  private mostrar(nueva: { juego: JuegoDeSala; capa: HTMLElement }): void {
+    if (this.pendiente !== nueva) return;
+    this.quitar(this.juego);
+    this.juego = nueva;
+    this.pendiente = undefined;
+    nueva.capa.removeAttribute('style');
+  }
+
+  private quitar(cual?: { juego: JuegoDeSala; capa: HTMLElement }): void {
+    if (!cual) return;
+    cual.juego.destruir();
+    cual.capa.remove();
+  }
+
+  private quitarTodo(): void {
+    this.quitar(this.pendiente);
+    this.quitar(this.juego);
+    this.pendiente = undefined;
+    this.juego = undefined;
   }
 }
