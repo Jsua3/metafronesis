@@ -50,9 +50,15 @@ function clientUrls(source: string): string[] {
 }
 
 const API_DIR = join(__dirname);
+/**
+ * Excepción conocida (SIEP-239): el ensayo del borrador (`rehearsal.api.ts`, `/api/authoring/cases/{id}/rehearsal`) aún no
+ * tiene ruta en el servidor de metafronesis. La pantalla de juego conserva el modo ensayo, pero ninguna ruta del cliente lo
+ * abre hasta que el servidor lo traiga; entonces este archivo vuelve a la lista.
+ */
+const SIN_RUTA_EN_EL_SERVIDOR = ['rehearsal.api.ts'];
 const CLIENT_FILES = [
   ...readdirSync(API_DIR)
-    .filter(name => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
+    .filter(name => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !SIN_RUTA_EN_EL_SERVIDOR.includes(name))
     .map(name => join(API_DIR, name)),
   join(__dirname, '..', 'auth', 'auth.service.ts'),
 ];
