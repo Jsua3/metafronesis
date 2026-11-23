@@ -56,7 +56,7 @@ class ZonaSerializer(serializers.Serializer):
 
 
 class GuardarMundoSerializer(RevisionMundoSerializer):
-    dialogues = serializers.JSONField(required=False)
+    dialogues = serializers.JSONField(required=False, allow_null=True)
     map = serializers.DictField(required=False)
     objects = serializers.ListField(child=serializers.DictField(), required=False)
     collisionZones = ZonaSerializer(many=True, required=False)

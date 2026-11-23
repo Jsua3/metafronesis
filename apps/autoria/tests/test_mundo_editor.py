@@ -217,13 +217,13 @@ def test_validacion_del_mundo_incluye_grafo_y_salida_segura(cliente):
     assert {"NO_TERMINAL_NODE", "NODE_WITHOUT_OPTIONS", "NO_SAFE_EXIT"} <= codigos
 
 
-def test_mundo_rechaza_dialogos_que_aun_no_puede_guardar(cliente):
+def test_mundo_acepta_lista_vacia_de_dialogos(cliente):
     version_id = crear(cliente).data["data"]["versionId"]
     nodo = SimulationNode.objects.get(case_version_id=version_id)
     SceneMap.objects.create(case_version_id=version_id, node=nodo, map_key="sala", title="Sala")
     respuesta = cliente.put(f"/api/authoring/cases/{version_id}/world", {"dialogues": []}, format="json")
-    assert respuesta.status_code == 400
-    assert respuesta.data["success"] is False
+    assert respuesta.status_code == 200
+    assert respuesta.data["data"]["dialogues"] == []
 
 
 def test_sala_por_piezas_recalcula_dimensiones_y_paredes(cliente):

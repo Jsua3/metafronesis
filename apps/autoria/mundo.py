@@ -21,7 +21,7 @@ from shared.exceptions import ApiError
 from shared.jsonutils import INT4_MAX, INT4_MIN, read_map, write_map
 from .activos_mundo import recurso_permitido
 from .mundo_serializers import ObjetoSerializer
-from . import editor, geometria_salas, guardas, validacion_mundo
+from . import dialogos, editor, geometria_salas, guardas, validacion_mundo
 
 TAMANO_OBJETO = 48
 CONTROL_TEXTO = re.compile(r"[\x00-\x1f\x7f]|<[^>]*>")
@@ -246,8 +246,6 @@ def _guardar_zonas(mapa, zonas):
 @transaction.atomic
 def guardar_mundo(usuario, version_id, datos, nodo_id):
     version = _revision(usuario, version_id, datos)
-    if "dialogues" in datos:
-        _error("El guardado de di?logos todav?a no est? disponible.")
     mapa = _buscar_mapa(version, nodo_id)
     definicion = datos.get("map")
     if definicion is not None:
@@ -281,6 +279,8 @@ def guardar_mundo(usuario, version_id, datos, nodo_id):
         _guardar_zonas(mapa, datos["collisionZones"])
     if "objects" in datos:
         _guardar_objetos_mundo(version, mapa, datos["objects"])
+    if datos.get("dialogues") is not None:
+        dialogos.guardar_dialogos(version, mapa, datos["dialogues"])
     geometria_salas.recalcular(version)
     mapa.refresh_from_db()
     guardas.tocar(version, usuario)

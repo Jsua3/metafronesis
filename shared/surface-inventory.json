@@ -252,6 +252,30 @@
       "audit": "CASE_BRIEF_UPDATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/characters",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CREATE_CHARACTER"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/characters/<int:character_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ADMIN_DELETE_CHARACTER"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/characters/<int:character_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_UPDATE_CHARACTER"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/checklist",
       "method": "PUT",
       "exposure": "role:ADMIN,PROFESOR",
@@ -298,6 +322,22 @@
       "body": "none",
       "throttle": null,
       "audit": null
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/dialogues/<int:tree_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ADMIN_DELETE_DIALOGUE"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/dialogues/<int:tree_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_UPDATE_DIALOGUE"
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/editor",
@@ -364,6 +404,14 @@
       "audit": "ADMIN_UPDATE_MAP"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/maps/<int:map_id>/dialogues",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CREATE_DIALOGUE"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/maps/<int:map_id>/hints",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -404,6 +452,14 @@
       "audit": "NODE_UPDATED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/nodes/reorder",
+      "method": "PATCH",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_REORDER_NODES"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/objects/<int:object_id>",
       "method": "DELETE",
       "exposure": "role:ADMIN,PROFESOR",
@@ -434,6 +490,30 @@
       "body": "json-small",
       "throttle": null,
       "audit": "CASE_PUBLISHED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/tools",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_CREATE_TOOL"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/tools/<int:tool_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "ADMIN_DELETE_TOOL"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/tools/<int:tool_id>",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "ADMIN_UPDATE_TOOL"
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/validate",
