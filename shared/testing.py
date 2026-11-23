@@ -88,7 +88,8 @@ def fetch_mode_raise():
 def assert_queries_at_most(limit):
     """Falla si el bloque ejecuta más de ``limit`` consultas de datos."""
     with CaptureQueriesContext(connection) as captured:
-        yield captured
+        # El conteo solo tiene sentido si el bloque terminó: si lanzó, su error sale tal cual y no se cuenta nada.
+        yield captured  # NOSONAR
     used = sum(
         1
         for q in captured.captured_queries

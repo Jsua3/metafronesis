@@ -2,7 +2,7 @@
 
 API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-**Versión actual:** [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) · **Alcance:** backend y, desde esta versión, frontend de la primera ola: acceso, cuenta, administración de usuarios, grupos e invitaciones · Última revisión de este archivo: 10 de noviembre de 2026.
+**Versión actual:** [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) · **Alcance:** backend y, desde esta versión, frontend de la primera ola: acceso, cuenta, administración de usuarios, grupos e invitaciones · Última revisión de este archivo: 22 de noviembre de 2026.
 
 > **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
@@ -49,6 +49,7 @@ Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` 
 | [`v0.2.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.2.0) | Sprint 4: auditoría y contratos |
 | [`v0.3.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.3.0) | Ola 1 de la migración: borrador del caso, escenas y decisiones, validar y publicar, reporte de participación, rúbrica, calificación y resultado |
 | [`v0.4.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.4.0) | Ola 2: revisión docente, notificaciones, IA y auditoría, incompletos y tiempo máximo, permiso de autoría, exportar e importar, sesiones y convocatorias, repetición, reporte completo e ingreso con código |
+| [`v0.5.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.5.0) | Frontend de la primera ola (acceso, cuenta, usuarios, grupos e invitaciones) y licencia MIT |
 
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 
@@ -91,6 +92,8 @@ Comprobado el 10 de noviembre de 2026 sobre `main` con PostgreSQL 17: `manage.py
 
 En producción se usa `psychosim.settings.production`, que exige secretos y hosts propios; los nombres de las variables están en `.env.example`.
 
+Para producción hay una imagen única (`Dockerfile`: build de Angular + Django con gunicorn). Cómo desplegarla en Google Cloud Run con Cloud SQL (PostgreSQL), cuánto cuesta y cómo apagarla: [`docs/despliegue-gcp.md`](docs/despliegue-gcp.md).
+
 ## Pruebas
 
 `pytest` usa `psychosim.settings.test`, que exige una base de datos desechable y su propio nonce:
@@ -117,6 +120,7 @@ Las rutas están en `psychosim/urls.py` y en el `urls.py` de cada app; el invent
 | Rutas, arquitectura y ejecución | `docs/api.md`, `docs/arquitectura.md`, `docs/ejecucion.md`: borradores del corte de los sprints 1 a 4; no incluyen las apps de las olas 1 y 2 y `ejecucion.md` trae pasos sin verificar, así que usa los de este archivo |
 | Documentación por app | `docs/apps/`: solo `grupos`, `privacy`, `psychosim`, `security`, `shared` y `users`; faltan las demás |
 | Fichas de sprint y diagramas | `docs/sprints/` y `docs/diagramas/` |
+| Despliegue | `docs/despliegue-gcp.md`: Google Cloud Run + Cloud SQL (PostgreSQL), con el workflow `.github/workflows/despliegue-gcp.yml` |
 
 ## Flujo de trabajo
 
@@ -133,4 +137,4 @@ Git Flow: `main` lleva las versiones etiquetadas, `develop` integra, y el trabaj
 
 ## Licencia
 
-Pendiente de definir por el equipo.
+Código abierto bajo la [licencia MIT](LICENSE). Los titulares son los cuatro integrantes del equipo.

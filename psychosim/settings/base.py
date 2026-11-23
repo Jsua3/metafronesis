@@ -259,6 +259,9 @@ AUTH_PASSWORD_VALIDATORS = [
     # BCrypt solo admite 72 bytes: más largo es un 400 con su campo, no un 500.
     {"NAME": "apps.users.password_validators.MaximumLengthBytesValidator"},
 ]
+#: Costo de bcrypt para las contraseñas NUEVAS y para el hash ficticio del inicio de sesión (S1-3). 12 es el mínimo que
+#: recomienda OWASP; los hashes existentes de 10 rondas se siguen verificando, porque bcrypt lee el costo del propio hash.
+SIEP_BCRYPT_ROUNDS = 12
 
 # E2-9 · Límites de la importación de estudiantes (.xlsx): se comprueban ANTES de leer el
 # libro (tamaño, firma ZIP, tamaño descomprimido, filas y tiempo).
