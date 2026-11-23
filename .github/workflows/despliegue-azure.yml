@@ -1,0 +1,195 @@
+name: Imagen y despliegue en Azure
+# SIEP-237 · Construye la imagen única (Angular + Django), la arranca contra PostgreSQL con los settings de producción y
+# comprueba lo básico (salud, SPA con nonce, usuario no root, filtro de hosts). En main (o a mano) la publica en GHCR y
+# actualiza la Container App de Azure con OIDC, sin credenciales guardadas. Guía: docs/despliegue-azure.md
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - requirements.txt
+      - frontend/package.json
+      - frontend/package-lock.json
+      - frontend/angular.json
+      - psychosim/settings/**
+      - shared/spa.py
+      - shared/static_files.py
+      - .github/workflows/despliegue-azure.yml
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      desplegar:
+        description: Actualizar también la Container App de Azure
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: despliegue-azure-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  imagen:
+    name: Construir y probar la imagen
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      imagen: ${{ steps.nombre.outputs.imagen }}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: metafronesis_humo
+          POSTGRES_USER: humo
+          POSTGRES_PASSWORD: humo_solo_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U humo -d metafronesis_humo"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nombre de la imagen
+        id: nombre
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          echo "imagen=ghcr.io/${repo}:sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "ultima=ghcr.io/${repo}:latest" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construir
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: metafronesis:ci
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prueba de humo con los settings de producción
+        run: |
+          gen() { python3 -c "import secrets; print(secrets.token_urlsafe(48))"; }
+          for nombre in SECRET JWT REFLEXION LLAVE; do
+            valor="$(gen)"; echo "::add-mask::$valor"; printf -v "$nombre" '%s' "$valor"
+          done
+          docker run -d --name humo --network host \
+            -e DATABASE_URL="postgres://humo:humo_solo_ci@127.0.0.1:5432/metafronesis_humo?sslmode=disable" \
+            -e CONTAINER_APP_NAME=metafronesis -e CONTAINER_APP_ENV_DNS_SUFFIX=humo.azurecontainerapps.io \
+            -e SIEP_TRUSTED_PROXIES=1 \
+            -e DJANGO_SECRET_KEY="$SECRET" -e JWT_SIGNING_KEY="$JWT" -e REFLECTION_ENCRYPTION_KEY="$REFLEXION" \
+            -e REFLECTION_ACTIVE_KEY=k1 -e REFLECTION_KEYS="k1=$LLAVE" \
+            -e SIEP_ALLOW_CONSOLE_EMAIL=true -e ACCESS_REQUEST_NOTIFY_DISABLED=true \
+            metafronesis:ci
+          host="metafronesis.humo.azurecontainerapps.io"
+          codigo=000
+          for _ in $(seq 1 45); do
+            codigo="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $host" http://127.0.0.1:8000/api/health || true)"
+            [ "$codigo" = 200 ] && break
+            sleep 2
+          done
+          docker logs humo 2>&1 | tail -n 30
+          echo "/api/health -> $codigo"; test "$codigo" = 200
+          # El SPA sale de la vista con nonce (nunca el marcador crudo) y sin caché.
+          curl -sf -D cabeceras.txt -H "Host: $host" -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/ -o index.html
+          grep -qi 'ngcspnonce="[A-Za-z0-9_-]\{16,\}"' index.html
+          # (con set -e una línea «! grep …» no hace fallar el paso: se comprueba con if)
+          if grep -q '__SIEP_CSP_NONCE__' index.html; then echo "::error::index.html con el marcador del nonce sin sustituir"; exit 1; fi
+          grep -qi '^cache-control: no-store' cabeceras.txt
+          # Sin la cabecera del ingreso, Django redirige a https; /api/health queda exento (ya probado arriba).
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $host" http://127.0.0.1:8000/)" = 301
+          # Un Host que no es el de la app se rechaza.
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: otro.example' http://127.0.0.1:8000/api/health)" = 400
+          # El proceso corre como el usuario fijo no root de la imagen.
+          test "$(docker exec humo id -u)" = 10001
+
+      - name: Publicar en GHCR
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGEN: ${{ steps.nombre.outputs.imagen }}
+          ULTIMA: ${{ steps.nombre.outputs.ultima }}
+          ACTOR: ${{ github.actor }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker tag metafronesis:ci "$IMAGEN"
+          docker tag metafronesis:ci "$ULTIMA"
+          docker push "$IMAGEN"
+          docker push "$ULTIMA"
+          echo "Imagen publicada: \`$IMAGEN\`" >> "$GITHUB_STEP_SUMMARY"
+
+  desplegar:
+    name: Actualizar la Container App
+    needs: imagen
+    # Solo cuando el repositorio ya tiene la configuración de Azure (docs/despliegue-azure.md, paso 6).
+    if: >-
+      vars.AZURE_CONTAINER_APP != '' &&
+      (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.desplegar))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: azure
+      url: ${{ steps.actualizar.outputs.url }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Iniciar sesión en Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Usar la imagen nueva
+        id: actualizar
+        env:
+          IMAGEN: ${{ needs.imagen.outputs.imagen }}
+          APP: ${{ vars.AZURE_CONTAINER_APP }}
+          GRUPO: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt --only-show-errors
+          revision="$(az containerapp update --name "$APP" --resource-group "$GRUPO" --image "$IMAGEN" \
+            --query properties.latestRevisionName -o tsv --only-show-errors)"
+          fqdn="$(az containerapp show --name "$APP" --resource-group "$GRUPO" \
+            --query properties.configuration.ingress.fqdn -o tsv --only-show-errors)"
+          echo "url=https://$fqdn" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "Revisión \`$revision\` con \`$IMAGEN\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Esperar la revisión nueva y comprobar /api/health
+        env:
+          URL: ${{ steps.actualizar.outputs.url }}
+          REVISION: ${{ steps.actualizar.outputs.revision }}
+          APP: ${{ vars.AZURE_CONTAINER_APP }}
+          GRUPO: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          # Con una sola revisión activa, si la nueva no arranca el tráfico se queda en la anterior: /api/health seguiría
+          # en 200 y la comprobación mentiría. Primero la revisión nueva debe quedar sana.
+          salud=""
+          for _ in $(seq 1 36); do
+            salud="$(az containerapp revision show --name "$APP" --resource-group "$GRUPO" --revision "$REVISION" \
+              --query properties.healthState -o tsv --only-show-errors || true)"
+            [ "$salud" = Healthy ] && break
+            [ "$salud" = Unhealthy ] && break
+            sleep 5
+          done
+          if [ "$salud" != Healthy ]; then
+            echo "::error::La revisión $REVISION no quedó sana (estado: ${salud:-desconocido}). Logs: az containerapp logs show -n $APP -g $GRUPO --type system"
+            exit 1
+          fi
+          for _ in $(seq 1 36); do
+            codigo="$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/health" || true)"
+            [ "$codigo" = 200 ] && { echo "$URL/api/health -> 200"; exit 0; }
+            sleep 5
+          done
+          echo "::error::$URL/api/health no respondió 200 en 3 minutos (último código: $codigo)"
+          exit 1
