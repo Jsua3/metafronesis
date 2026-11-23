@@ -60,13 +60,18 @@
                     <li>
                       <strong>{{ nombreCaso(asignacion.caseVersionId) }}</strong>
                       <span>{{ cierre(asignacion.closesAt) }}</span>
+                      <span>{{ avanceTexto(vista.avances[asignacion.id], vista.grupo.totalEstudiantes) }}</span>
+                      @if (vista.avances[asignacion.id] !== null && vista.grupo.totalEstudiantes) {
+                        <ui-progress [label]="'Avance en ' + nombreCaso(asignacion.caseVersionId)" [value]="vista.avances[asignacion.id]" [max]="vista.grupo.totalEstudiantes" />
+                      }
                     </li>
                   }
                 </ul>
               }
               <div class="acciones">
                 <a ui-button variant="secondary" [routerLink]="['/portal/grupos', vista.grupo.id]">Ver grupo</a>
-                <!-- «Ver reporte» vuelve con el backend de reportes (`/portal/reportes`): hoy no hay a dónde llevar. -->
+                <!-- El reporte se lee caso por caso: se abre en el primer caso asignado (sin asignaciones, pide elegirlo). -->
+                <a ui-button variant="ghost" routerLink="/portal/reportes" [queryParams]="{ grupo: vista.grupo.id, caseVersionId: vista.asignaciones?.[0]?.caseVersionId }">Ver reporte</a>
               </div>
             </article>
           }

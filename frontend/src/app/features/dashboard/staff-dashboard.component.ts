@@ -7,6 +7,7 @@ import { AssignmentService } from '../../core/api/assignment.service';
 import { AdminAuditService, AuditLogItem } from '../../core/api/admin-audit.service';
 import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { Grupo, GrupoService } from '../../core/api/grupo.service';
+import { ReporteService } from '../../core/api/reporte.service';
 import { InstructorApi } from '../../core/api/instructor.api';
 import { AdminUser, UserAdminService } from '../../core/api/user-admin.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -17,17 +18,18 @@ import { NavBadgesService } from '../../shared/layout/nav-badges.service';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiCabeceraIlustrada } from '../../shared/ui/cabecera-ilustrada/ui-cabecera-ilustrada';
+import { UiProgress } from '../../shared/ui/progress/ui-progress';
 import { UiSkeleton } from '../../shared/ui/skeleton/ui-skeleton';
 import { uiDataState } from '../../shared/ui/state/ui-data-state';
 import { UiEmptyState } from '../../shared/ui/state/ui-empty-state';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 
 type Source = 'revision' | 'grupos' | 'casos' | 'solicitudes' | 'usuarios' | 'auditoria';
-interface GrupoVista { grupo: Grupo; asignaciones: Assignment[] | null; }
+interface GrupoVista { grupo: Grupo; asignaciones: Assignment[] | null; avances: Record<number, number | null>; }
 
 @Component({
   selector: 'app-staff-dashboard',
-  imports: [RouterLink, UiButton, UiCabeceraIlustrada, UiSkeleton, UiEmptyState, UiErrorState],
+  imports: [RouterLink, UiButton, UiCabeceraIlustrada, UiProgress, UiSkeleton, UiEmptyState, UiErrorState],
   templateUrl: './staff-dashboard.component.html', styleUrl: './staff-dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -40,6 +42,7 @@ export class StaffDashboardComponent implements OnInit {
   private readonly instructor = inject(InstructorApi);
   private readonly gruposApi = inject(GrupoService);
   private readonly asignacionesApi = inject(AssignmentService);
+  private readonly reportes = inject(ReporteService);
   /** Los casos que ve quien autora: nombran cada asignación de un grupo y alimentan «en edición» y «por aprobar». */
   private readonly casosApi = inject(CaseCatalogApi);
   private readonly auditoriaApi = inject(AdminAuditService);
@@ -93,14 +96,22 @@ export class StaffDashboardComponent implements OnInit {
         this.loading.set(false);
       });
     } else {
-      // El avance de cada caso por grupo llega con el backend de reportes (`/portal/reportes`); mientras tanto el inicio
-      // solo dice qué casos tiene asignados cada grupo.
       const grupos = this.gruposApi.listar().pipe(switchMap(items => {
         const primeros = items.slice(0, 4);
         if (!primeros.length) return of([] as GrupoVista[]);
         return forkJoin(primeros.map(grupo => this.asignacionesApi.list(grupo.id).pipe(
-          switchMap(asignaciones => of({ grupo, asignaciones: asignaciones.filter(a => a.active) } as GrupoVista)),
-          catchError(() => this.fallar('grupos', { grupo, asignaciones: null } as GrupoVista)),
+          switchMap(asignaciones => {
+            const activas = asignaciones.filter(a => a.active);
+            if (!activas.length) return of({ grupo, asignaciones: activas, avances: {} } as GrupoVista);
+            return forkJoin(activas.map(a => this.reportes.getReporteGrupo(grupo.id, a.caseVersionId).pipe(
+              catchError(() => this.fallar('grupos', null)),
+            ))).pipe(map(reportes => ({
+              grupo, asignaciones: activas,
+              // Se cuentan estudiantes, no intentos: una persona puede tener varios recorridos.
+              avances: Object.fromEntries(activas.map((a, i) => [a.id, reportes[i]?.simulacion ? reportes[i]!.simulacion!.estudiantes.filter(e => e.intentosCompletados > 0).length : null])),
+            } as GrupoVista)));
+          }),
+          catchError(() => this.fallar('grupos', { grupo, asignaciones: null, avances: {} } as GrupoVista)),
         )));
       }), catchError(() => this.fallar('grupos', [] as GrupoVista[])));
       forkJoin({ casos, grupos, revision: this.instructor.listAttempts({ evaluacion: 'pendiente', pageSize: 5 }).pipe(catchError(() => this.fallar('revision', null as InstructorAttemptsPage | null))) }).subscribe(({ casos, grupos, revision }) => {
@@ -139,6 +150,12 @@ export class StaffDashboardComponent implements OnInit {
   }
   /** «terminó hace 2 días»; vacío si la fecha no llegó, para no escribir «fecha no disponible» en cada fila. */
   hace(valor: string | null | undefined): string { return haceCuanto(valor); }
+  /** El avance del grupo en palabras («4 de 12 terminaron»), sin porcentajes que parezcan una nota. */
+  avanceTexto(terminaron: number | null | undefined, total: number): string {
+    if (terminaron === null || terminaron === undefined) return 'Avance no disponible';
+    if (!total) return 'Aún sin estudiantes en el grupo';
+    return `${terminaron} de ${total} ${terminaron === 1 ? 'terminó' : 'terminaron'}`;
+  }
   /** La ventana de la asignación en palabras: abierta, ya cerrada o sin fecha. */
   cierre(valor: string | null | undefined): string {
     if (!valor) return 'Sin fecha de cierre';

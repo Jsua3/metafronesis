@@ -9,6 +9,7 @@ import { AdminAuditService } from '../../core/api/admin-audit.service';
 import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { GrupoService } from '../../core/api/grupo.service';
 import { InstructorApi } from '../../core/api/instructor.api';
+import { ReporteService } from '../../core/api/reporte.service';
 import { UserAdminService } from '../../core/api/user-admin.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -43,6 +44,7 @@ describe('Inicio docente y administración', () => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), provideRouter([]),
       { provide: AuthService, useValue: { currentUser: signal({ nombre: 'María' }), hasRole: (r: string) => role === r } },
       { provide: InstructorApi, useValue: instructor }, { provide: GrupoService, useValue: groups },
+      { provide: ReporteService, useValue: { getReporteGrupo: () => of({ simulacion: { estudiantes: [{ intentosCompletados: 2 }, { intentosCompletados: 0 }] } }) } },
       { provide: CaseCatalogApi, useValue: casos }, { provide: AdminAuditService, useValue: audit }, { provide: UserAdminService, useValue: users },
       { provide: AccessRequestAdminService, useValue: requests }, { provide: NotificationService, useValue: notify }, { provide: NavBadgesService, useValue: badges },
       { provide: AssignmentService, useValue: { list: () => of([{ id: 2, active: true, caseVersionId: 7 }, { id: 3, active: true, caseVersionId: 9 }]) } },
@@ -53,6 +55,7 @@ describe('Inicio docente y administración', () => {
     expect(instructor.listAttempts).toHaveBeenCalledWith({ evaluacion: 'pendiente', pageSize: 5 });
     expect(badges.fijar).toHaveBeenCalledWith('trazabilidad', 12);
     expect(fixture.componentInstance.grupos()[0].asignaciones).toHaveLength(2);
+    expect(fixture.componentInstance.grupos()[0].avances[2]).toBe(1);
     expect(fixture.componentInstance.totalRevision()).toBe(12);
   });
   it('conserva errores parciales y los limpia al reintentar', () => {
@@ -104,6 +107,13 @@ describe('Inicio docente y administración', () => {
     const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();
     expect(fixture.componentInstance.descripcion()).toBe('Tienes 1 recorrido por revisar.');
   });
+  it('dice el avance del grupo en palabras y sin plural equivocado', () => {
+    const c = TestBed.createComponent(StaffDashboardComponent).componentInstance;
+    expect(c.avanceTexto(1, 1)).toBe('1 de 1 terminó');
+    expect(c.avanceTexto(4, 12)).toBe('4 de 12 terminaron');
+    expect(c.avanceTexto(0, 0)).toBe('Aún sin estudiantes en el grupo');
+    expect(c.avanceTexto(null, 3)).toBe('Avance no disponible');
+  });
   it('dice las cantidades con singular y plural', () => {
     const c = TestBed.createComponent(StaffDashboardComponent).componentInstance;
     expect(c.cantidad(1, 'estudiante', 'estudiantes')).toBe('1 estudiante');
@@ -119,10 +129,10 @@ describe('Inicio docente y administración', () => {
     expect(fixture.componentInstance.fallo('auditoria')).toBe(true);
     expect(fixture.componentInstance.totalAdmin()).toBe(3);
   });
-  it('el docente no pide el registro de auditoría ni muestra enlaces al reporte', () => {
+  it('el docente no pide el registro de auditoría y enlaza al reporte de cada grupo', () => {
     const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();
     expect(audit.list).not.toHaveBeenCalled();
-    expect((fixture.nativeElement as HTMLElement).querySelector('a[href*="reportes"]')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('a[href*="reportes"]')).not.toBeNull();
   });
   it('admin descarta una solicitud desde el inicio y la insignia baja', () => {
     role = 'ADMIN'; const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();
