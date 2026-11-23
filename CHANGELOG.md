@@ -16,6 +16,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - Probar en el navegador, con el servidor real, el ensayo, el asistente de autoría, la generación con IA y el caso insignia.
 - El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
 - Que mover una pieza en el editor se vea al instante: hoy la sala se rearma entera (ya sin parpadeo, desde el #75).
+- En el editor, la pantalla «Rúbrica» del caso pide `GET /api/rubrics/case-versions/{id}`, que el servidor no tiene (solo `PUT`): responde «Método no permitido», no se puede poner la rúbrica desde el editor y el caso queda sin poder enviarse a revisión. Lo encontró la prueba de uso con personas simuladas. Los casos de la siembra ya traen su rúbrica.
+
+## [0.6.2] - 2026-11-23
+
+Entorno de demostración con el caso insignia jugable, y el rol se elige al solicitar acceso.
+
+### Añadido
+- **`sembrar_demostracion`:** deja un entorno, producción incluida, listo para mostrar el simulador. Siembra 3 docentes y 12 estudiantes ficticios (`@demo.metafronesis.test`), 3 grupos con sus miembros, la rúbrica de primeros auxilios psicológicos para violencia basada en género y el caso insignia SIM-VBG-002 publicado con esa rúbrica y asignado a los grupos. La contraseña temporal común llega por `SIEP_SEMILLA_CLAVE`, nunca se imprime y se cambia al primer ingreso; es idempotente (#81).
+
+### Cambiado
+- **El rol se elige al solicitar acceso, no al iniciar sesión.** La solicitud guarda el rol pedido (migración `users/0006`) y el ADMIN lo ve al crear la cuenta; el rol definitivo lo decide el ADMIN (#78).
 
 ## [0.6.1] - 2026-11-23
 
