@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from shared.exceptions import ApiError
 from shared.idempotency import DUPLICATE_WINDOW_SECONDS, normalize_request_id
 from apps.simulation.models import AttemptEvent, AttemptHintView, ClinicalTool, MapObject, SceneHint
+from apps.simulation.models.world import DEFAULT_MAP_HEIGHT, DEFAULT_MAP_WIDTH
 from . import attempt_duration, world
 
 
@@ -51,10 +52,57 @@ def siguiente(usuario, identificador, datos):
     return world._ejecutar(usuario, identificador, ejecutar)
 
 
+def _numero_movimiento(valor):
+    return (not isinstance(valor, bool) and isinstance(valor, (int, float))
+            and abs(valor) <= 1_000_000 and math.isfinite(valor))
+
+
+def _distancia_rectangulo(posicion_x, posicion_y, rectangulo):
+    origen_x, origen_y, ancho, alto = rectangulo
+    distancia_x = max(origen_x - posicion_x, 0, posicion_x - origen_x - ancho)
+    distancia_y = max(origen_y - posicion_y, 0, posicion_y - origen_y - alto)
+    return math.hypot(distancia_x, distancia_y)
+
+
 def _cerca(estado, objeto):
-    distancia_x = max(objeto.position_x - estado.player_x, 0, estado.player_x - objeto.position_x - objeto.width)
-    distancia_y = max(objeto.position_y - estado.player_y, 0, estado.player_y - objeto.position_y - objeto.height)
-    if math.hypot(distancia_x, distancia_y) > 120:
+    origen_x, origen_y = objeto.position_x, objeto.position_y
+    ancho, alto = objeto.width or 0, objeto.height or 0
+    movimiento = world._mapa_json(objeto.metadata_json).get("movimiento") if objeto.object_type == "PERSON" else None
+    rectangulo = (origen_x, origen_y, ancho, alto)
+    if movimiento == "deambula" or (isinstance(movimiento, dict) and movimiento.get("tipo") == "deambula"):
+        rectangulo = (origen_x - 160, origen_y - 160, ancho + 320, alto + 320)
+    elif isinstance(movimiento, dict):
+        limite_x, limite_y = objeto.scene_map.width or DEFAULT_MAP_WIDTH, objeto.scene_map.height or DEFAULT_MAP_HEIGHT
+        def acotar(punto):
+            return (max(0, min(punto["x"], limite_x)), max(0, min(punto["y"], limite_y)))
+        def punto_valido(punto):
+            return isinstance(punto, dict) and _numero_movimiento(punto.get("x")) and _numero_movimiento(punto.get("y"))
+        if movimiento.get("tipo") == "va-y-viene" and punto_valido(movimiento.get("hasta")):
+            destino_x, destino_y = acotar(movimiento["hasta"])
+            rectangulo = (min(origen_x, destino_x), min(origen_y, destino_y),
+                          abs(origen_x - destino_x) + ancho, abs(origen_y - destino_y) + alto)
+        elif movimiento.get("tipo") == "ruta":
+            puntos, modo = movimiento.get("puntos"), movimiento.get("modo")
+            pausa = movimiento.get("pausaMs")
+            if (isinstance(puntos, list) and 2 <= len(puntos) <= 8 and modo in ("circuito", "ida-y-vuelta")
+                    and all(punto_valido(punto) for punto in puntos)
+                    and ("pausaMs" not in movimiento or (_numero_movimiento(pausa) and 0 <= pausa <= 10000))):
+                paradas = [(origen_x, origen_y)] + [acotar(punto) for punto in puntos]
+                tramos = list(zip(paradas, paradas[1:]))
+                if modo == "circuito":
+                    tramos.append((paradas[-1], paradas[0]))
+                distancia = math.inf
+                for inicio, fin in tramos:
+                    pasos = max(1, math.ceil(math.hypot(fin[0] - inicio[0], fin[1] - inicio[1]) / 2))
+                    for paso in range(pasos + 1):
+                        posicion_x = inicio[0] + (fin[0] - inicio[0]) * paso / pasos
+                        posicion_y = inicio[1] + (fin[1] - inicio[1]) * paso / pasos
+                        distancia = min(distancia, _distancia_rectangulo(estado.player_x, estado.player_y,
+                                                                        (posicion_x, posicion_y, ancho, alto)))
+                if distancia > 120:
+                    raise ValidationError("Estás demasiado lejos para interactuar.")
+                return
+    if _distancia_rectangulo(estado.player_x, estado.player_y, rectangulo) > 120:
         raise ValidationError("Estás demasiado lejos para interactuar.")
 
 
@@ -69,9 +117,7 @@ def interactuar(usuario, identificador, clave):
         estado = world._estado(intento)
         objeto = get_object_or_404(MapObject, scene_map=estado.scene_map, object_key=clave, visible=True)
         _cerca(estado, objeto)
-        # La semántica de las condiciones autoradas se incorporará en la ronda 2.
-        if objeto.unlock_condition_json.strip() not in ("", "{}"):
-            raise ValidationError("La condición de desbloqueo aún no está disponible.")
+        # Como en v3, autoría conserva la condición; el juego no la evalúa al interactuar.
         if clave not in estado.inspected_object_keys:
             estado.inspected_object_keys = [*estado.inspected_object_keys, clave]
         dialogo = world._dialogo(objeto)

@@ -16,6 +16,7 @@ from . import limites, reglas_de_inicio
 from .cierre import cerrar_como_incompleto
 from .calificacion import calificar_y_guardar
 from .attempt_duration import touch, reset_clock
+from .attempt_lock import lock_attempt_row
 from .case_rules import rules_of, effects_of
 from .response_effects import apply as apply_effects
 from apps.simulation.assessment.evaluation import freeze
@@ -25,15 +26,25 @@ from shared.exceptions import ApiError
 
 
 @transaction.atomic
-def start(user, version_id):
+def start(user, version_id, expected_attempt_id=None):
     # Serializa inicios incluso cuando aún no existe una fila de intento.
-    get_user_model().objects.select_for_update().get(pk=user.pk)
+    get_user_model().objects.select_for_update(no_key=True).get(pk=user.pk)
     version = get_object_or_404(available_versions(user), pk=version_id)
     reglas_de_inicio.verificar(user, version)
-    existing = SimulationAttempt.objects.filter(
+    abiertos = SimulationAttempt.objects.filter(
         student=user, case_version=version, status__in=lifecycle.OPEN_STATUSES
-    ).first()
+    )
+    existing = abiertos.first()
     if existing:
+        # Primero el cerrojo de esa fila y después una sentencia NUEVA: si otro pedido la completó o la reemplazó
+        # mientras esperábamos, READ COMMITTED toma otra instantánea y ve el intento vigente. Una sola lectura con
+        # FOR UPDATE no vería la fila nueva y dejaría crear un segundo intento abierto.
+        lock_attempt_row(existing.pk)
+        existing = abiertos.select_for_update().first()
+    if existing:
+        if expected_attempt_id is not None and existing.pk != expected_attempt_id:
+            raise ApiError("ATTEMPT_CHANGED", "Tu intento abierto cambió desde que lo viste. Vuelve a elegir.", 409,
+                           currentAttemptId=str(existing.pk))
         return existing, False
     from apps.progression.access import can_start
 
@@ -237,7 +248,7 @@ def _decide(attempt, option_id, request_id):
     vigentes = decisiones_vigentes(attempt)
     cambiada = any(evento.node_id == option.source_node_id for evento in vigentes)
     if cambiada:
-        # La opci?n cambiada conserva su posici?n original en la secuencia.
+        # La opción cambiada conserva su posición original en la secuencia.
         estado = {}
         for evento in vigentes:
             estado = apply_effects(estado, option if evento.node_id == option.source_node_id else evento.decision_option)
