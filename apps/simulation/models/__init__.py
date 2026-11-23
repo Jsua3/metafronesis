@@ -73,3 +73,5 @@ __all__ += ["SceneMap", "SceneHint", "CaseCharacter", "MapObject", "CollisionZon
 from .attempt import AttemptHintView
 
 from .attempt import ReflectionJournal
+
+from .attempt import AttemptReport

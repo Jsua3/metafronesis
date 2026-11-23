@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 from apps.privacy.consent_service import require_consent
 from apps.simulation.models import AttemptEvent, ReflectionJournal, SimulationAttempt, SimulationNode
 from apps.simulation.casedef.vocabulary import INITIAL_PERSONA, LABELS, step_persona
-from apps.simulation.services import attempt_duration, attempt_lifecycle, crypto_service, world
+from apps.simulation.services import attempt_duration, attempt_lifecycle, crypto_service, informe_estudiante, world
 from apps.simulation.services.attempt_lock import lock_attempt_row
 from apps.simulation.services.audit_service import auditable
 from shared.idempotency import normalize_request_id
@@ -74,7 +74,7 @@ def _estado(intento):
                         "warningMessage": nodo.warning_message, "intensity": nodo.intensity,
                         "terminal": nodo.terminal_node, "decisionPrompt": nodo.decision_prompt,
                         "goal": "", "displayOrder": nodo.display_order, "options": []},
-        "completionReport": None, "supportResources": RECURSOS if intento.status == "PAUSED" else [],
+        "completionReport": informe_estudiante.congelado(intento), "supportResources": RECURSOS if intento.status == "PAUSED" else [],
     }
 
 

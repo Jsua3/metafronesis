@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views_s3 as views
+from .views_informe import InformeEstudiante
 from .views_bitacora import Reflexiones, SalidaSegura
 from .views_resultado import Resultado
 from .views_progreso import Revisit, Progress
@@ -7,6 +8,7 @@ from .views_consultas import Ficha, IntentoActivo, Historial
 from .views_world import Mundo, MapaProgreso, PosicionMundo, EntradaSala, Pistas, SiguientePista, Interaccion, UsoHerramienta, Personaje
 
 urlpatterns = [
+    path("attempts/<uuid:pk>/student-report", InformeEstudiante.as_view()),
     path("attempts/<uuid:pk>/reflections", Reflexiones.as_view()),
     path("attempts/<uuid:pk>/safe-exit", SalidaSegura.as_view()),
     path("attempts/<uuid:pk>/hints", Pistas.as_view()),

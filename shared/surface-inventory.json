@@ -848,6 +848,14 @@
       "audit": "SAFE_EXIT_REQUESTED"
     },
     {
+      "route": "api/simulation/attempts/<uuid:pk>/student-report",
+      "method": "GET",
+      "exposure": "role:ESTUDIANTE",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: el estudiante consulta su propio informe"
+    },
+    {
       "route": "api/simulation/attempts/<uuid:pk>/tools/use",
       "method": "POST",
       "exposure": "role:ESTUDIANTE",

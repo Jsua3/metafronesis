@@ -620,21 +620,14 @@ DATA_INVENTORY: dict[str, dict] = {
         "columns": {
             "id": TECHNICAL,
             "attempt_id": (SENSITIVE, "intento al que pertenece el informe"),
-            "report_json": (
-                SENSITIVE,
-                "informe congelado del intento (v3): decisiones y su clase, hitos cumplidos y faltantes, estado de la persona usuaria, "
-                "motivo del final, evidencia por nivel de competencia y tiempos; su línea de tiempo copia el motivo "
-                "escrito de una salida segura (texto libre de la persona)",
-            ),
+            "report_json": (SENSITIVE, "Informe congelado del intento sin texto libre del estudiante"),
             "report_schema_version": TECHNICAL,
             "definition_hash": TECHNICAL,
-            "attempt_ordinal": (SENSITIVE, "número de intento del estudiante en ese caso"),
             "created_at": TECHNICAL,
         },
         "exits": {
             "attempt_id": ["api", "reporte"],
             "report_json": ["api", "reporte"],
-            "attempt_ordinal": ["reporte"],
         },
     },
     "attempt_feedback": {

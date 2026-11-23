@@ -4,7 +4,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.progression.models import StudentCaseCompletion
-from apps.simulation.models import AuditLog, ReflectionJournal, SimulationAttempt
+from apps.simulation.models import AttemptReport, AuditLog, ReflectionJournal, SimulationAttempt
 from apps.simulation.services.audit_service import audit_purge_window
 from shared.testing import run_concurrently
 from .conftest import scene
@@ -59,3 +59,19 @@ def test_cierre_concurrente_con_reflexion_no_deja_bitacora_abierta(intento_concu
     assert cierre.value.status_code == 200
     assert reflexion.value.status_code in (200, 400)
     assert not ReflectionJournal.objects.filter(attempt=datos["intento"], locked=False).exists()
+    informe = AttemptReport.objects.get(attempt=datos["intento"]).report_json
+    assert informe["reflectionsCount"] == ReflectionJournal.objects.filter(attempt=datos["intento"]).count()
+
+
+@pytest.mark.req("RF-22", "RF-23", "CU-12")
+def test_cierres_simultaneos_congelan_un_solo_informe(intento_concurrencia):
+    datos = intento_concurrencia
+    cuerpo = {"decision_option_id": datos["option"].pk, "request_id": "cierre-unico"}
+    primero, segundo = run_concurrently(
+        lambda: _enviar(datos, "/decisions", cuerpo),
+        lambda: _enviar(datos, "/decisions", cuerpo),
+    )
+    assert primero.error is None and segundo.error is None
+    assert primero.value.status_code == segundo.value.status_code == 200
+    assert primero.value.data == segundo.value.data
+    assert AttemptReport.objects.filter(attempt=datos["intento"]).count() == 1

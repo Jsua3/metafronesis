@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from apps.simulation.models import SimulationAttempt, AttemptEvent, DecisionOption, ReflectionJournal
 from .access import available_versions
 from . import attempt_lifecycle as lifecycle
-from . import limites, reglas_de_inicio
+from . import informe_estudiante, limites, reglas_de_inicio
 from .cierre import cerrar_como_incompleto
 from .calificacion import calificar_y_guardar
 from .attempt_duration import touch, reset_clock
@@ -239,6 +239,7 @@ def _close_if_completed(attempt, result, event):
     detail["evaluation"] = result["evaluation"]
     event.detail = json.dumps(detail)
     event.save(update_fields=["detail"])
+    informe_estudiante.congelar(attempt)
     attempt_completed.send(sender=SimulationAttempt, attempt=attempt)
 
 

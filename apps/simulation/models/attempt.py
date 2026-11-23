@@ -197,3 +197,15 @@ class ReflectionJournal(models.Model):
     class Meta:
         db_table = "reflection_journals"
         constraints = [models.UniqueConstraint(fields=["attempt", "node"], name="uq_reflection_attempt_node")]
+
+
+class AttemptReport(models.Model):
+    """Informe del estudiante congelado al completar el intento."""
+    attempt = models.OneToOneField(SimulationAttempt, on_delete=models.CASCADE, related_name="reports")
+    report_json = models.JSONField()
+    report_schema_version = models.PositiveIntegerField(default=1)
+    definition_hash = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "attempt_reports"
