@@ -84,6 +84,26 @@ def _en_railway():
     return any(os.environ.get(name, "").strip() for name in RAILWAY_VARIABLES)
 
 
+#: SIEP-237 · variables que Azure Container Apps inyecta en cada réplica: el nombre de la app y el sufijo DNS de su
+#: entorno. Juntas forman el dominio público (``<app>.<sufijo>``); con una sola no se sabe el dominio.
+CONTAINER_APPS_VARIABLES = ("CONTAINER_APP_NAME", "CONTAINER_APP_ENV_DNS_SUFFIX")
+
+
+def _dominio_container_apps():
+    """El dominio público de la app en Azure Container Apps, o ``""`` fuera de Container Apps."""
+    nombre, sufijo = (os.environ.get(name, "").strip().lower() for name in CONTAINER_APPS_VARIABLES)
+    return f"{nombre}.{sufijo}" if nombre and sufijo else ""
+
+
+def _plataforma_con_proxy():
+    """La plataforma que siempre pone un proxy delante de Django, o ``""`` si no se reconoce ninguna."""
+    if _en_railway():
+        return "Railway"
+    if _dominio_container_apps():
+        return "Azure Container Apps"
+    return ""
+
+
 # S1-1 · base.py convierte SIEP_TRUSTED_PROXIES con int() al importarse: un valor que no sea un entero ≥ 0 se
 # rechaza AQUÍ, antes del ``from .base import *``, para que la causa salga como ImproperlyConfigured.
 def _validate_trusted_proxies():
@@ -98,14 +118,16 @@ def _validate_trusted_proxies():
             "SIEP_TRUSTED_PROXIES debe ser un entero ≥ 0: número de proxies de confianza delante de Django "
             "(0 = ninguno)."
         )
-    # R1b · en Railway siempre hay un proxy delante de Django. Con 0, Django toma la IP del borde como la de todos los
-    # clientes y los límites por IP se vuelven un cierre global. El mensaje explica la causa y no muestra el valor.
-    if int(value) == 0 and _en_railway():
+    # R1b · en Railway (y en Azure Container Apps, SIEP-237) siempre hay un proxy delante de Django. Con 0, Django toma la
+    # IP del borde como la de todos los clientes y los límites por IP se vuelven un cierre global. El mensaje explica la
+    # causa y no muestra el valor.
+    plataforma = _plataforma_con_proxy()
+    if int(value) == 0 and plataforma:
         raise ImproperlyConfigured(
             # BORRADOR
-            "SIEP_TRUSTED_PROXIES no puede ser 0 en Railway: hay un proxy delante de Django. Con 0, todos los clientes "
-            "comparten una sola IP y los límites por IP se vuelven un cierre global. Mide el número de proxies en el "
-            "primer despliegue (en Railway suele ser 1)."
+            f"SIEP_TRUSTED_PROXIES no puede ser 0 en {plataforma}: hay un proxy delante de Django. Con 0, todos los "
+            "clientes comparten una sola IP y los límites por IP se vuelven un cierre global. Mide el número de proxies "
+            "en el primer despliegue (en Railway y en Container Apps suele ser 1)."
         )
 
 
@@ -127,10 +149,14 @@ _railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip()
 ALLOWED_HOSTS = _split_csv(os.environ.get("DJANGO_ALLOWED_HOSTS"))
 if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_railway_domain)
+# SIEP-237 · lo mismo en Azure Container Apps: su dominio público sale de CONTAINER_APP_NAME + CONTAINER_APP_ENV_DNS_SUFFIX.
+_container_apps_domain = _dominio_container_apps()
+if _container_apps_domain and _container_apps_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_container_apps_domain)
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured(
-        "Define DJANGO_ALLOWED_HOSTS (o despliega en Railway, que provee "
-        "RAILWAY_PUBLIC_DOMAIN) para psychosim.settings.production"
+        "Define DJANGO_ALLOWED_HOSTS (o despliega en Railway o en Azure Container Apps, que proveen "
+        "su dominio público) para psychosim.settings.production"
     )
 if "*" in ALLOWED_HOSTS:
     # R1b · un comodín deja pasar cualquier cabecera Host: se listan los dominios exactos. El valor no entra en el mensaje.

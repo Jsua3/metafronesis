@@ -47,6 +47,7 @@ def _production(monkeypatch, *, recargar_base=True, **overrides):
     env = {**BASE_ENV, **overrides}
     for name in (
         "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID", "RAILWAY_PUBLIC_DOMAIN",
+        "CONTAINER_APP_NAME", "CONTAINER_APP_ENV_DNS_SUFFIX",
         "DJANGO_ALLOWED_HOSTS", "DATABASE_URL", "EMAIL_BACKEND",
         "ACCESS_REQUEST_NOTIFY_EMAILS", "ACCESS_REQUEST_NOTIFY_DISABLED", "SIEP_ALLOW_CONSOLE_EMAIL",
         "SIEP_TRUSTED_PROXIES", "DJANGO_SECURE_SSL_REDIRECT", "SIEP_HSTS_SECONDS",
@@ -603,3 +604,58 @@ def test_fuera_de_railway_cero_proxies_sigue_arrancando(monkeypatch):
     settings = _production(monkeypatch, SIEP_TRUSTED_PROXIES="0")
 
     assert settings["SIEP_TRUSTED_PROXIES"] == 0
+
+
+# ── SIEP-237 · Azure Container Apps: dominio público y proxy de su ingreso ────────────────────────────────────────────
+# Container Apps inyecta en cada réplica CONTAINER_APP_NAME y CONTAINER_APP_ENV_DNS_SUFFIX: juntos forman el dominio
+# público con el que llega la cabecera Host (``<app>.<sufijo>``). Su ingreso (Envoy) termina TLS delante de Django.
+
+CONTAINER_APPS = {
+    "CONTAINER_APP_NAME": "metafronesis",
+    "CONTAINER_APP_ENV_DNS_SUFFIX": "verde-1a2b3c4d.eastus2.azurecontainerapps.io",
+}
+DOMINIO_CONTAINER_APPS = "metafronesis.verde-1a2b3c4d.eastus2.azurecontainerapps.io"
+
+
+def test_en_container_apps_el_dominio_publico_entra_a_hosts_y_csrf(monkeypatch):
+    settings = _production(monkeypatch, **CONTAINER_APPS)
+
+    assert DOMINIO_CONTAINER_APPS in settings["ALLOWED_HOSTS"]
+    assert f"https://{DOMINIO_CONTAINER_APPS}" in settings["CSRF_TRUSTED_ORIGINS"]
+    assert "siep.example.edu.co" in settings["ALLOWED_HOSTS"]
+
+
+def test_en_container_apps_basta_el_dominio_de_la_plataforma(monkeypatch):
+    settings = _production(monkeypatch, DJANGO_ALLOWED_HOSTS=None, **CONTAINER_APPS)
+
+    assert DOMINIO_CONTAINER_APPS in settings["ALLOWED_HOSTS"]
+
+
+def test_el_dominio_de_container_apps_no_se_repite(monkeypatch):
+    settings = _production(monkeypatch, DJANGO_ALLOWED_HOSTS=DOMINIO_CONTAINER_APPS, **CONTAINER_APPS)
+
+    assert settings["ALLOWED_HOSTS"].count(DOMINIO_CONTAINER_APPS) == 1
+
+
+@pytest.mark.parametrize("variable", sorted(CONTAINER_APPS))
+def test_con_una_sola_variable_de_container_apps_no_se_inventa_un_dominio(monkeypatch, variable):
+    settings = _production(monkeypatch, **{variable: CONTAINER_APPS[variable]})
+
+    assert not any("azurecontainerapps.io" in host for host in settings["ALLOWED_HOSTS"])
+    assert not any(host.startswith("metafronesis") for host in settings["ALLOWED_HOSTS"])
+
+
+@pytest.mark.req("SIEP-RNF-02")
+@pytest.mark.security
+def test_en_container_apps_con_cero_proxies_de_confianza_no_arranca(monkeypatch):
+    # El ingreso de Container Apps va siempre delante: con 0, todos los clientes comparten la IP del borde.
+    with pytest.raises(ImproperlyConfigured, match="SIEP_TRUSTED_PROXIES no puede ser 0 en Azure Container Apps"):
+        _production(monkeypatch, SIEP_TRUSTED_PROXIES="0", **CONTAINER_APPS)
+
+
+@pytest.mark.req("SIEP-RNF-02")
+@pytest.mark.security
+def test_en_container_apps_con_un_proxy_arranca(monkeypatch):
+    settings = _production(monkeypatch, SIEP_TRUSTED_PROXIES="1", **CONTAINER_APPS)
+
+    assert settings["SIEP_TRUSTED_PROXIES"] == 1
