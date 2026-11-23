@@ -1,6 +1,7 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Howl } from 'howler';
 import { FADE_TICK_MS, fadeStep } from './audio-fade.util';
+import { MUSIC_CUES } from './music-cues.config';
 import type { Activation, Intensity } from '../../core/models/simulation.model';
 
 export type MusicLayer = 'ambient' | 'tension' | 'resolution' | 'crisis';
@@ -20,11 +21,13 @@ interface StemTrack {
   howl: Howl;
   volume: number;
   targetVolume: number;
+  /** La ambiental acaba de pasar a la pieza siguiente y aún no suena: `setScene` no pide otro `play()` (sonarían dos). */
+  advancing?: boolean;
 }
 
 /**
- * Con una sola capa de música cargada (hoy solo `ambient`), bajarla o apagarla por la escena deja el
- * caso sin música justo en los momentos más tensos: las otras capas no existen para tomar el relevo.
+ * Con una sola capa de música cargada (`ambient`; la de cierre solo se suma al final del caso), bajarla o apagarla por la
+ * escena deja el caso sin música justo en los momentos más tensos: las otras capas no existen para tomar el relevo.
  * Mientras sea la única, no baja de esta fracción de su volumen.
  */
 const SINGLE_STEM_AMBIENT_FLOOR = 0.6;
@@ -56,6 +59,9 @@ export class AudioDirectorService {
   private readonly zone = inject(NgZone);
   private sfx = new Map<SoundEffect, Howl>();
   private introLament?: Howl;
+  /** Pieza de la lista ambiental que suena (índice en `MUSIC_CUES.ambient`) y fallos de carga seguidos (para no girar en vacío). */
+  private ambientIndex = 0;
+  private ambientFailures = 0;
   private musicVolume = 0.42;
   private musicMuted = false;
   private sfxMuted = false;
@@ -71,7 +77,7 @@ export class AudioDirectorService {
   private readonly html5Works = detectHtml5VolumeWorks(window.Audio);
 
   /**
-   * La música pesa unos 2,4 MB por pista. Con audio HTML5 basta con leer su cabecera al crearla: el navegador la transmite al
+   * La música pesa unos 2,5 MB por pista. Con audio HTML5 basta con leer su cabecera al crearla: el navegador la transmite al
    * sonar y no la descarga entera antes de que la estudiante pueda caminar (en el aula, 30 equipos por el mismo Wi-Fi). Con
    * Web Audio (iOS) hace falta el archivo entero para decodificarlo, como antes.
    */
@@ -83,40 +89,27 @@ export class AudioDirectorService {
     if (this.initialized) return;
     this.initialized = true;
 
-    // Música adaptativa: el proyecto aún NO tiene stems propios (siep_*.ogg).
-    // No se hace ninguna request hasta que existan los assets — los métodos de
-    // música degradan a no-op cuando `stems` está vacío (sin 404 en consola).
-    const stemFiles: Partial<Record<MusicLayer, string>> = {
-      ambient: 'assets/game/audio/Musica_PsicoGame.mp3',
-    };
+    // Música (ver music-cues.config.ts): la capa `ambient` es una LISTA de piezas de ~3 min que se encadenan; cada
+    // pieza se crea cuando le toca (al empezar, la primera). La de cierre (`resolution`) se crea al final del caso. No
+    // hay pistas «de tensión» ni de crisis: esas capas siguen sin existir y sus métodos quedan en no-op.
+    this.ambientIndex = 0;
+    this.ambientFailures = 0;
+    this.stems.set('ambient', { howl: this.ambientHowl(MUSIC_CUES.ambient[this.ambientIndex], 0), volume: 0, targetVolume: 0 });
 
-    for (const [layer, src] of Object.entries(stemFiles) as [MusicLayer, string][]) {
-      const howl = new Howl({
-        src: [src],
-        loop: true,
-        volume: 0,
-        preload: this.musicPreload(),
-        // Pista de ~150 s. Con HTML5 se transmite; Web Audio la decodificaría entera (~50 MB de PCM).
-        // Solo donde el navegador respeta el volumen del elemento; en iOS/iPadOS se queda en Web Audio.
-        html5: this.html5Works,
-        onloaderror: (_: number, err: unknown) => console.warn(`[AudioDirector] No se pudo cargar ${src}:`, err),
-      });
-      this.stems.set(layer, { howl, volume: 0, targetVolume: 0 });
-    }
-
-    // SFX mapeados a assets reales del pack Kenney UI Audio (CC0) ya presente.
-    const base = 'assets/game/kenney/ui-audio/Audio';
+    // SFX de la biblioteca de sonidos propia (assets/game/audio/sfx; WAV mono sintetizado, sin material de terceros).
+    // `crisis_start` está declarado, pero el producto no lo dispara a propósito (ver el spec): vive en `inactivos/`.
+    const base = 'assets/game/audio/sfx';
     const sfxFiles: Record<SoundEffect, string> = {
-      footstep_tile:    'assets/game/audio/footstep_concrete_000.ogg',
-      footstep_wood:    'assets/game/audio/footstep_concrete_001.ogg',
-      door_open:        `${base}/switch3.ogg`,
-      item_pickup:      `${base}/rollover5.ogg`,
-      ui_select:        `${base}/rollover1.ogg`,
-      ui_confirm:       `${base}/click1.ogg`,
-      ui_cancel:        `${base}/mouserelease1.ogg`,
-      dialogue_advance: `${base}/click2.ogg`,
-      crisis_start:     `${base}/switch13.ogg`,
-      session_complete: `${base}/click5.ogg`,
+      footstep_tile:    `${base}/pasos/footstep_tile_1.wav`,
+      footstep_wood:    `${base}/pasos/footstep_wood_1.wav`,
+      door_open:        `${base}/puertas/door_open.wav`,
+      item_pickup:      `${base}/objetos/item_pickup.wav`,
+      ui_select:        `${base}/interfaz/ui_select.wav`,
+      ui_confirm:       `${base}/interfaz/ui_confirm.wav`,
+      ui_cancel:        `${base}/interfaz/ui_cancel.wav`,
+      dialogue_advance: `${base}/interfaz/dialogue_advance.wav`,
+      crisis_start:     `${base}/inactivos/crisis_start.wav`,
+      session_complete: `${base}/sesion/session_complete.wav`,
     };
 
     for (const [key, src] of Object.entries(sfxFiles) as [SoundEffect, string][]) {
@@ -140,12 +133,12 @@ export class AudioDirectorService {
     });
     if (!this.introLament) {
       this.introLament = new Howl({
-        src: ['assets/game/audio/PsicoLament.mp3'],
+        src: [MUSIC_CUES.intro],
         loop: true,
         volume: this.musicVolume,
         preload: this.musicPreload(),
         html5: this.html5Works,
-        onloaderror: (_: number, err: unknown) => console.warn('[AudioDirector] No se pudo cargar PsicoLament:', err),
+        onloaderror: (_: number, err: unknown) => console.warn(`[AudioDirector] No se pudo cargar ${MUSIC_CUES.intro}:`, err),
       });
     }
     this.introLament.volume(this.musicMuted ? 0 : this.musicVolume);
@@ -187,19 +180,25 @@ export class AudioDirectorService {
     }
 
     this.stems.forEach(stem => {
-      if (!stem.howl.playing()) stem.howl.play();
+      if (!stem.howl.playing() && !stem.advancing) stem.howl.play();
     });
   }
 
+  /**
+   * Al abrirse el resultado del caso, la pieza de cierre toma el relevo de la ambiental. No suenan a la vez (son piezas
+   * independientes, de tonalidades distintas): la ambiental se retira con su fundido de siempre y el cierre entra con el
+   * suyo. Si el cierre no carga, la ambiental vuelve al piso: el caso no se queda sin música.
+   */
   playResolution(): void {
     if (!this.initialized || this.stems.size === 0) return;
     const res = this.stems.get('resolution');
     if (res?.howl.playing()) return; // evita restart en llamadas múltiples
-    this.setAmbientTarget(0.3);
+    const closing = res ?? this.createResolutionStem();
+    this.setAmbientTarget(0);
     this.setTargetVolume('tension', 0);
     this.setTargetVolume('resolution', 1.0);
     this.setTargetVolume('crisis', 0);
-    this.stems.get('resolution')?.howl.play();
+    closing.howl.play();
   }
 
   playSfx(effect: SoundEffect): void {
@@ -271,7 +270,77 @@ export class AudioDirectorService {
     this.sfx.forEach(h => h.unload());
     this.stems.clear();
     this.sfx.clear();
+    this.ambientIndex = 0;
+    this.ambientFailures = 0;
     this.initialized = false;
+  }
+
+  /**
+   * Una pieza de la lista ambiental. Con varias piezas no se repite en bucle: al terminar (`onend`) pasa a la siguiente y,
+   * tras la última, a la primera. Con una sola, bucle. `volume` es el actual de la capa, para que el relevo no dé un salto.
+   */
+  private ambientHowl(src: string, volume: number): Howl {
+    const single = MUSIC_CUES.ambient.length === 1;
+    const howl: Howl = new Howl({
+      src: [src],
+      loop: single,
+      volume,
+      mute: this.musicMuted,
+      preload: this.musicPreload(),
+      // Pieza de ~180 s. Con HTML5 se transmite; Web Audio la decodificaría entera (~64 MB de PCM).
+      // Solo donde el navegador respeta el volumen del elemento; en iOS/iPadOS se queda en Web Audio.
+      html5: this.html5Works,
+      onplay: () => {
+        this.ambientFailures = 0;
+        const stem = this.stems.get('ambient');
+        if (stem?.howl === howl) stem.advancing = false;
+      },
+      onend: () => {
+        if (this.stems.get('ambient')?.howl === howl) this.advanceAmbient();
+      },
+      onloaderror: (_: number, err: unknown) => {
+        console.warn(`[AudioDirector] No se pudo cargar ${src}:`, err);
+        // Una pieza que no carga no deja el caso en silencio: se salta a la siguiente (y, si fallan todas, se deja de insistir).
+        if (this.stems.get('ambient')?.howl === howl && ++this.ambientFailures < MUSIC_CUES.ambient.length) this.advanceAmbient();
+      },
+    });
+    return howl;
+  }
+
+  private advanceAmbient(): void {
+    const stem = this.stems.get('ambient');
+    if (!this.initialized || !stem || MUSIC_CUES.ambient.length < 2) return;
+    // Con el cierre ya sonando, la ambiental está retirada (en silencio): que termine sin pedir otra pieza que nadie oirá.
+    if (this.stems.has('resolution')) return;
+    this.ambientIndex = (this.ambientIndex + 1) % MUSIC_CUES.ambient.length;
+    const previous = stem.howl;
+    stem.howl = this.ambientHowl(MUSIC_CUES.ambient[this.ambientIndex], stem.volume);
+    stem.advancing = true;
+    stem.howl.play();
+    previous.unload();
+  }
+
+  /** La pieza de cierre se une a las capas solo cuando hace falta; un fallo de carga la retira y devuelve la ambiental al piso. */
+  private createResolutionStem(): StemTrack {
+    const src = MUSIC_CUES.resolution;
+    const howl: Howl = new Howl({
+      src: [src],
+      loop: true,
+      volume: 0,
+      mute: this.musicMuted,
+      preload: this.musicPreload(),
+      html5: this.html5Works,
+      onloaderror: (_: number, err: unknown) => {
+        console.warn(`[AudioDirector] No se pudo cargar ${src}:`, err);
+        if (this.stems.get('resolution')?.howl !== howl) return;
+        this.stems.delete('resolution');
+        howl.unload();
+        this.setAmbientTarget(0.3);
+      },
+    });
+    const stem: StemTrack = { howl, volume: 0, targetVolume: 0 };
+    this.stems.set('resolution', stem);
+    return stem;
   }
 
   /** Volumen pedido a `ambient`, con el piso de {@link SINGLE_STEM_AMBIENT_FLOOR} mientras sea la única capa. */
