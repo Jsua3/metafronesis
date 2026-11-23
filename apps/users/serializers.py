@@ -225,6 +225,8 @@ class AccessRequestCreateSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=100)
     apellido = serializers.CharField(max_length=100)
     email = serializers.EmailField()
+    # El rol que pide: Estudiante, Docente o Administrador. Sin él (un cliente anterior), la solicitud es de estudiante.
+    rol = serializers.ChoiceField(choices=UserRole.choices, required=False, default=UserRole.ESTUDIANTE)
     # S1-3 · campo trampa: una persona no lo ve. Si llega con texto, lo rellenó un bot (la vista lo descarta).
     website = serializers.CharField(required=False, allow_blank=True, max_length=200, write_only=True)
 
@@ -241,7 +243,7 @@ class AccessRequestCreateSerializer(serializers.Serializer):
 class AccessRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccessRequest
-        fields = ["id", "nombre", "apellido", "email", "status", "created_at", "reviewed_at"]
+        fields = ["id", "nombre", "apellido", "email", "rol", "status", "created_at", "reviewed_at"]
 
 
 class AccessRequestStatusSerializer(serializers.Serializer):

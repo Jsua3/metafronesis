@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 
+import type { User } from '../models/user.model';
+
 export type AccessRequestStatus = 'PENDING' | 'REVIEWED' | 'DISMISSED';
 
 export interface AccessRequest {
@@ -9,6 +11,8 @@ export interface AccessRequest {
   nombre: string;
   apellido: string;
   email: string;
+  /** El rol que pidió quien solicita (Estudiante, Docente o Administrador). */
+  rol: User['role'];
   status: AccessRequestStatus;
   createdAt: string;
   reviewedAt: string | null;
@@ -19,6 +23,8 @@ interface ApiAccessRequest {
   nombre: string;
   apellido: string;
   email: string;
+  /** Ausente en una solicitud de un servidor anterior: se toma como de estudiante. */
+  rol?: User['role'];
   status: AccessRequestStatus;
   created_at: string;
   reviewed_at: string | null;
@@ -52,6 +58,7 @@ export class AccessRequestAdminService {
       nombre: item.nombre,
       apellido: item.apellido,
       email: item.email,
+      rol: item.rol ?? 'ESTUDIANTE',
       status: item.status,
       createdAt: item.created_at,
       reviewedAt: item.reviewed_at,

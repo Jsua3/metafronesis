@@ -149,14 +149,10 @@ export class LoginComponent implements AfterViewInit {
     return null;
   }
 
+  /** El rol que pide la solicitud de acceso (el inicio de sesión no lo pide: el rol lo trae la cuenta). */
   selectRole(role: LoginRole): void {
     this.selectedRole.set(role);
-    this.error.set('');
-    const demo = this.demo();
-    if (!demo) return;
-    const currentEmail = this.form.controls.email.value.trim().toLowerCase();
-    const knownDemoEmails = new Set(Object.values(demo).map(credentials => credentials.email));
-    if (!currentEmail || knownDemoEmails.has(currentEmail)) this.form.controls.email.setValue(demo[role].email);
+    this.registerError.set('');
   }
 
   openSignIn(): void {
@@ -179,8 +175,9 @@ export class LoginComponent implements AfterViewInit {
     this.focusHeading();
   }
 
-  fillDemoCredentials(): void {
-    const credentials = this.demo()?.[this.selectedRole()];
+  /** «Usar demo» (solo desarrollo): llena el correo y la contraseña de la cuenta demo de ese rol. */
+  fillDemoCredentials(role: LoginRole): void {
+    const credentials = this.demo()?.[role];
     if (!credentials) return;
     this.form.patchValue({ email: credentials.email, password: credentials.password });
   }
@@ -238,7 +235,9 @@ export class LoginComponent implements AfterViewInit {
     this.registerNotice.set('');
     this.registerError.set('');
     this.announcement.set('Enviando solicitud…');
-    this.auth.requestAccess({ nombre: nombre.trim(), apellido: apellido.trim(), email: email.trim().toLowerCase(), website }).subscribe({
+    this.auth.requestAccess({
+      nombre: nombre.trim(), apellido: apellido.trim(), email: email.trim().toLowerCase(), rol: this.selectedRole(), website,
+    }).subscribe({
       next: response => {
         const notice = response.message ?? 'Solicitud enviada. El equipo académico revisará tu acceso y te contactará por correo.';
         this.registerNotice.set(notice);

@@ -23,6 +23,7 @@ const solicitud = {
   nombre: 'Rosa',
   apellido: 'Vega',
   email: 'rosa@siep.test',
+  rol: 'ESTUDIANTE',
   status: 'PENDING',
   createdAt: '2026-09-01T10:00:00Z',
   reviewedAt: null,

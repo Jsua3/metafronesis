@@ -23,7 +23,7 @@ import { UsersComponent } from './users.component';
 const ana = { id: 5, email: 'ana@siep.test', nombre: 'Ana', apellido: 'Pérez', role: 'ESTUDIANTE', activo: true } as AdminUser;
 const beto = { id: 6, email: 'beto@siep.test', nombre: 'Beto', apellido: 'Ríos', role: 'PROFESOR', activo: false } as AdminUser;
 const solicitud = {
-  id: 21, nombre: 'Rosa', apellido: 'Vega', email: 'rosa@siep.test', status: 'PENDING', createdAt: '2026-09-01T10:00:00Z', reviewedAt: null,
+  id: 21, nombre: 'Rosa', apellido: 'Vega', email: 'rosa@siep.test', rol: 'PROFESOR', status: 'PENDING', createdAt: '2026-09-01T10:00:00Z', reviewedAt: null,
 } as AccessRequest;
 
 interface Api {
@@ -379,10 +379,13 @@ describe('pantalla Usuarios (F7-6)', () => {
       const section = host().querySelector('.us-requests')!;
       expect(text(section)).toContain('Rosa Vega');
       expect(text(section)).toContain('rosa@siep.test');
+      expect(text(section)).toContain('Rol solicitado: Docente');
       const create = [...section.querySelectorAll('button')].find(button => text(button.querySelector('.ui-button__label')) === 'Crear usuario')!;
       create.click();
       expect(dialog.sheet).toHaveBeenCalledTimes(1);
       expect(component().form.getRawValue().email).toBe('rosa@siep.test');
+      // El formulario empieza con el rol que pidió la persona; el ADMIN puede cambiarlo antes de crear la cuenta.
+      expect(component().form.getRawValue().role).toBe('PROFESOR');
     });
 
     it('sin solicitudes y sin error no hay sección', async () => {
