@@ -120,13 +120,29 @@ def transition(user, pk, action):
     return attempt
 
 
+def _reglas_al_reanudar(user, pk):
+    """Reanudar es volver a entrar: las reglas de inicio (p. ej. una sesión en pausa) también deciden aquí.
+
+    Corren ANTES del cerrojo del intento porque toman el de la sesión: el orden queda sesión → intento, igual que en
+    los efectos de la sesión, y así no hay abrazo mortal con una pausa o un cierre del docente. El error no se lanza
+    aún: quien llama primero comprueba la propiedad (404) y el tiempo vencido, como antes."""
+    previo = SimulationAttempt.all_objects.select_related("case_version").filter(pk=pk, student=user).first()
+    if previo is None or previo.is_rehearsal:
+        return None
+    try:
+        reglas_de_inicio.verificar(user, previo.case_version)
+    except ApiError as error:
+        return error
+    return None
+
+
 def _transition(user, pk, action):
+    error_de_reglas = _reglas_al_reanudar(user, pk) if action == lifecycle.RESUME else None
     attempt = owned(user, pk, lock=True)
     if attempt._time_expired:
         return attempt
-    if action == lifecycle.RESUME and not attempt.is_rehearsal:
-        # Reanudar es volver a entrar: las reglas de inicio (p. ej. una sesión en pausa) también deciden aquí.
-        reglas_de_inicio.verificar(user, attempt.case_version)
+    if error_de_reglas is not None:
+        raise error_de_reglas
     now = timezone.now()
     previous = attempt.status
     if action == lifecycle.REPLACE:

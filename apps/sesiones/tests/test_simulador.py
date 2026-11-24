@@ -106,3 +106,58 @@ def test_limite_de_tiempo_de_la_sesion(crear_sesion, estudiantes, version):
     iniciada(crear_sesion, tiempo_maximo_min=25)
     intento, _ = start(estudiantes[0], version.pk)
     assert limites.minutos_para(intento) == 25
+
+
+def _orden_de_cerrojos(consultas):
+    """Posición de la primera consulta que bloquea la sesión y de la primera que bloquea un intento."""
+    from apps.sesiones.models import Sesion
+    from apps.simulation.models import SimulationAttempt
+
+    sesiones, intentos = Sesion._meta.db_table, SimulationAttempt._meta.db_table
+    sql = [consulta["sql"] for consulta in consultas]
+    sesion = next(i for i, s in enumerate(sql) if f'"{sesiones}"' in s and "FOR SHARE" in s)
+    intento = next(i for i, s in enumerate(sql) if f'"{intentos}"' in s and "FOR UPDATE" in s)
+    return sesion, intento
+
+
+def test_reanudar_bloquea_la_sesion_antes_que_el_intento(crear_sesion, estudiantes, version):
+    """Mismo orden que ``efectos.pausar_intentos`` (sesión → intento): sin abrazo mortal con el docente."""
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    iniciada(crear_sesion)
+    intento, _ = start(estudiantes[0], version.pk)
+    transition(estudiantes[0], intento.pk, "pause")
+    with CaptureQueriesContext(connection) as capturadas:
+        transition(estudiantes[0], intento.pk, "resume")
+    sesion, intento_bloqueado = _orden_de_cerrojos(capturadas.captured_queries)
+    assert sesion < intento_bloqueado
+
+
+def test_empezar_bloquea_la_sesion_antes_que_el_intento(crear_sesion, estudiantes, version):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    iniciada(crear_sesion)
+    start(estudiantes[0], version.pk)
+    with CaptureQueriesContext(connection) as capturadas:
+        start(estudiantes[0], version.pk)
+    sesion, intento_bloqueado = _orden_de_cerrojos(capturadas.captured_queries)
+    assert sesion < intento_bloqueado
+
+
+def test_la_regla_lee_el_estado_despues_de_bloquear_la_sesion(crear_sesion, estudiantes, version, monkeypatch):
+    """Si el docente pausa mientras el estudiante espera el cerrojo, el estudiante ve PAUSADA y no entra."""
+    from apps.sesiones import reglas
+
+    sesion = iniciada(crear_sesion)
+    bloqueo_real = reglas._bloquear_sesion
+
+    def el_docente_pausa_mientras_esperamos(sesion_id):
+        type(sesion).objects.filter(pk=sesion_id).update(estado=EstadoSesion.PAUSADA)
+        bloqueo_real(sesion_id)
+
+    monkeypatch.setattr(reglas, "_bloquear_sesion", el_docente_pausa_mientras_esperamos)
+    with pytest.raises(ApiError) as error:
+        start(estudiantes[0], version.pk)
+    assert error.value.api_code == "SESSION_PAUSED"
