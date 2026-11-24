@@ -6,7 +6,7 @@
 //  4. semillas y datos del backend ("icon": "x" en Python; "icono": "x" en los documentos del caso);
 //  5. scripts/ui/icons-extra.json: iconos curados para lo que escriben los autores en «Icono Material».
 // Uso: node scripts/ui/icon-names.mjs > nombres.json   (lo consume scripts/ui/subset-icons.py)
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -145,7 +145,7 @@ export function projectIconNames() {
   const files = [
     ...walk(join(FRONTEND, 'src'), name => /\.(ts|html)$/.test(name)).map(read),
     // Las pruebas del backend no son semillas: E2-6 valida los iconos mandando nombres falsos a propósito.
-    ...walk(join(REPO, 'backend_django', 'apps'), name => /\.(py|json)$/.test(name))
+    ...walk(join(REPO, existsSync(join(REPO, 'backend_django')) ? 'backend_django' : '.', 'apps'), name => /\.(py|json)$/.test(name))
       .filter(full => !full.split(sep).includes('tests'))
       .map(read),
   ];
