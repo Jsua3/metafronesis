@@ -71,6 +71,8 @@ DATA_INVENTORY: dict[str, dict] = {
             "tiempo_maximo_min": TECHNICAL, "lugar": PUBLIC,
             "mensaje": (PERSONAL, "texto libre del docente que puede nombrar personas"),
             "estado": TECHNICAL, "creada_por_id": (PERSONAL, "docente que programó la sesión"),
+            "grupo_id": (TECHNICAL, "grupo al que se dirige la sesión; sola no identifica a la persona"),
+            "iniciada_en": TECHNICAL, "finalizada_en": TECHNICAL, "cancelada_en": TECHNICAL,
         },
         "exits": {"mensaje": ["api", "correo"], "creada_por_id": ["api"]},
     },
