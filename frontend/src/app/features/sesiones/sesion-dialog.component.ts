@@ -7,6 +7,7 @@ import { catchError, of } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error.util';
 import { GrupoService } from '../../core/api/grupo.service';
 import { SesionesApi } from '../../core/api/sesiones.api';
+import { NotificationService } from '../../core/notifications/notification.service';
 import { SesionDatos, SesionDetalle } from '../../core/models/sesion.model';
 import { uniqueUiId } from '../../shared/ui/button/click-guard';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -30,18 +31,18 @@ type Campo = keyof SesionDatos;
     <ui-dialog-frame [title]="titulo" description="Los estudiantes activos del grupo quedan convocados.">
       <form class="sd-form" novalidate [id]="formId" (submit)="enviar($event)">
         <ui-field label="Grupo" required [error]="errores().grupoId">
-          <select uiControl name="grupoId" [value]="grupoId()" (change)="grupoId.set(leer($event))">
+          <select uiControl name="grupoId" (change)="grupoId.set(leer($event))">
             <option value="">Elige un grupo</option>
             @for (g of grupos(); track g.id) {
-              <option [value]="g.id">{{ g.nombre }} · {{ g.totalEstudiantes }} estudiantes</option>
+              <option [value]="g.id" [selected]="'' + g.id === grupoId()">{{ g.nombre }} · {{ g.totalEstudiantes }} estudiantes</option>
             }
           </select>
         </ui-field>
         <ui-field label="Caso" required [error]="errores().caseVersionId" hint="Cualquier caso publicado de la biblioteca.">
-          <select uiControl name="caseVersionId" [value]="caseVersionId()" (change)="caseVersionId.set(leer($event))">
+          <select uiControl name="caseVersionId" (change)="caseVersionId.set(leer($event))">
             <option value="">Elige un caso</option>
             @for (c of casos(); track c.caseVersionId) {
-              <option [value]="c.caseVersionId">{{ c.titulo }} · v{{ c.version }} · {{ c.autor }}</option>
+              <option [value]="c.caseVersionId" [selected]="'' + c.caseVersionId === caseVersionId()">{{ c.titulo }} · v{{ c.version }} · {{ c.autor }}</option>
             }
           </select>
         </ui-field>
@@ -82,6 +83,7 @@ export class SesionDialogComponent {
   private readonly api = inject(SesionesApi);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
+  private readonly notify = inject(NotificationService);
   private readonly actual = this.data.modo === 'editar' ? this.data.sesion : null;
 
   protected readonly formId = uniqueUiId('sd-form');
@@ -89,8 +91,16 @@ export class SesionDialogComponent {
   protected readonly titulo = this.actual ? 'Editar sesión' : 'Nueva sesión';
   protected readonly confirmar = this.actual ? 'Guardar cambios' : 'Crear sesión';
 
-  protected readonly grupos = toSignal(inject(GrupoService).listar().pipe(catchError(() => of([]))), { initialValue: [] });
-  protected readonly casos = toSignal(this.api.casos().pipe(catchError(() => of([]))), { initialValue: [] });
+  protected readonly grupos = toSignal(inject(GrupoService).listar().pipe(catchError(() => {
+    // BORRADOR: texto pendiente de Psicología (VD-23).
+    this.notify.error('No pudimos cargar los grupos.');
+    return of([]);
+  })), { initialValue: [] });
+  protected readonly casos = toSignal(this.api.casos().pipe(catchError(() => {
+    // BORRADOR: texto pendiente de Psicología (VD-23).
+    this.notify.error('No pudimos cargar los casos de la biblioteca.');
+    return of([]);
+  })), { initialValue: [] });
 
   protected readonly grupoId = signal(this.actual?.grupo ? String(this.actual.grupo.id) : '');
   protected readonly caseVersionId = signal(this.actual ? String(this.actual.caso.caseVersionId) : '');
@@ -138,6 +148,7 @@ export class SesionDialogComponent {
 
   protected enviar(event: Event): void {
     event.preventDefault();
+    if (this.guardando()) return;
     const errores = this.validar();
     if (Object.keys(errores).length) return this.mostrar(errores);
     const datos: SesionDatos = {

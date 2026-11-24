@@ -1,10 +1,12 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { GrupoService } from '../../core/api/grupo.service';
+import { NotificationService } from '../../core/notifications/notification.service';
 import { SesionesApi } from '../../core/api/sesiones.api';
+import { SesionDetalle } from '../../core/models/sesion.model';
 import { SesionDialogComponent, SesionDialogData } from './sesion-dialog.component';
 
 const casos = [{ caseVersionId: 9, titulo: 'La casa de Sofía', version: '1.0.0', autor: 'Ana', tiempoEstimadoMin: 40, descripcion: '' }];
@@ -22,7 +24,12 @@ describe('SesionDialogComponent', () => {
     control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input'));
   };
 
-  async function montar(data: SesionDialogData, respuestaCrear = of({ id: 5 })) {
+  let editar: ReturnType<typeof vi.fn>;
+  let error: ReturnType<typeof vi.fn>;
+
+  async function montar(data: SesionDialogData, respuestaCrear = of({ id: 5 }), fuentes: { grupos?: unknown; casos?: unknown } = {}) {
+    editar = vi.fn(() => of({ id: 5 }));
+    error = vi.fn();
     close = vi.fn();
     crear = vi.fn(() => respuestaCrear);
     await TestBed.configureTestingModule({
@@ -30,8 +37,9 @@ describe('SesionDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: data },
         { provide: DialogRef, useValue: { close } },
-        { provide: SesionesApi, useValue: { casos: () => of(casos), crear, editar: vi.fn(() => of({ id: 5 })) } },
-        { provide: GrupoService, useValue: { listar: () => of(grupos) } },
+        { provide: SesionesApi, useValue: { casos: () => fuentes.casos ?? of(casos), crear, editar } },
+        { provide: GrupoService, useValue: { listar: () => fuentes.grupos ?? of(grupos) } },
+        { provide: NotificationService, useValue: { error } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(SesionDialogComponent);
@@ -90,5 +98,63 @@ describe('SesionDialogComponent', () => {
     fixture.detectChanges();
     expect(el().textContent).toContain('El grupo no tiene estudiantes activos.');
     expect(close).not.toHaveBeenCalled();
+  });
+
+  const sesion = {
+    id: 7, estado: 'PROGRAMADA', acciones: ['editar'], grupo: { id: 2, nombre: 'Psicología 1' },
+    caso: { caseVersionId: 9, titulo: 'La casa de Sofía' }, espacioAcademico: 'Clínica',
+    inicio: '2026-11-25T13:00:00Z', fin: '2026-11-25T15:00:00Z', tiempoMaximoMin: 30, lugar: 'Aula 3', mensaje: 'Hola',
+    totalConvocados: 12, iniciadaEn: null, finalizadaEn: null, canceladaEn: null, convocados: [],
+  } as unknown as SesionDetalle;
+
+  it('en edición precarga los campos, aunque los grupos y casos lleguen después', async () => {
+    const g = new Subject<unknown[]>();
+    const c = new Subject<unknown[]>();
+    await montar({ modo: 'editar', sesion }, of({ id: 5 }), { grupos: g, casos: c });
+    g.next(grupos);
+    c.next(casos);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(input('[name=grupoId]').selectedOptions[0].textContent).toContain('Psicología 1');
+    expect(input('[name=caseVersionId]').selectedOptions[0].textContent).toContain('La casa de Sofía');
+    expect(input('[name=espacioAcademico]').value).toBe('Clínica');
+    expect(input('[name=lugar]').value).toBe('Aula 3');
+    expect(input('[name=tiempoMaximoMin]').value).toBe('30');
+    expect(el().textContent).toContain('Editar sesión');
+    expect(el().textContent).toContain('Guardar cambios');
+  });
+
+  it('en edición guarda con editar y devuelve el resultado', async () => {
+    await montar({ modo: 'editar', sesion });
+    el().querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+    expect(editar).toHaveBeenCalledWith(7, expect.objectContaining({ grupoId: 2, caseVersionId: 9, tiempoMaximoMin: 30 }));
+    expect(crear).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledWith({ id: 5 });
+  });
+
+  it('el fin debe ser posterior al inicio', async () => {
+    await montar({ modo: 'crear' });
+    llenar();
+    escribir('[name=fin]', '2026-11-25T07:00');
+    el().querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(crear).not.toHaveBeenCalled();
+    expect(el().textContent).toContain('El fin debe ser posterior al inicio.');
+  });
+
+  it('avisa si no cargan los grupos o los casos', async () => {
+    await montar({ modo: 'crear' }, of({ id: 5 }), { grupos: throwError(() => new Error('x')), casos: throwError(() => new Error('x')) });
+    expect(error).toHaveBeenCalledWith('No pudimos cargar los grupos.');
+    expect(error).toHaveBeenCalledWith('No pudimos cargar los casos de la biblioteca.');
+  });
+
+  it('no envía dos veces mientras guarda', async () => {
+    await montar({ modo: 'crear' }, new Subject<never>() as never);
+    llenar();
+    const form = el().querySelector<HTMLFormElement>('form')!;
+    form.dispatchEvent(new Event('submit'));
+    form.dispatchEvent(new Event('submit'));
+    expect(crear).toHaveBeenCalledTimes(1);
   });
 });
