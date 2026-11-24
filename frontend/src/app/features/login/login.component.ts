@@ -1,11 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-  AfterViewInit, CSP_NONCE, ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect,
-  inject, signal, untracked, viewChild,
+  AfterViewInit, CSP_NONCE, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, NgZone,
+  afterNextRender, computed, effect, inject, signal, untracked, viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
+import { map, merge, startWith } from 'rxjs';
 
 import { EXPIRED_SESSION_REASON } from '../../core/auth/auth.guard';
 import { AuthService } from '../../core/auth/auth.service';
@@ -15,15 +17,20 @@ import { APP_BRAND } from '../../core/config/brand.config';
 import { TemaService } from '../../core/tema/tema.service';
 import { PublicBarComponent } from '../../shared/layout/public-bar.component';
 import { UiButton } from '../../shared/ui/button/ui-button';
+import { DoodlesComponent } from '../../shared/ui/doodles/doodles.component';
 import { UiCheck } from '../../shared/ui/field/ui-check';
 import { UiControl, UiField } from '../../shared/ui/field/ui-field';
 import { UiScopeNotice } from '../../shared/ui/scope-notice/ui-scope-notice';
 import type { DemoCredentials } from './login-demo.dev';
 import { LOGIN_ASSETS, LOGIN_PEDAGOGY_PILLARS, LOGIN_REMEMBER_EMAIL_KEY } from './login-assets.config';
+import { AccesoEscenaComponent } from './acceso-escena.component';
 import { findLoginRole, LOGIN_ROLES, LoginRole } from './login-role.config';
+import { PASO_DE_PERFIL, indiceDePaso, pasoSiguiente } from './recorrido.util';
 
 // Google Identity Services (cargado dinámicamente desde accounts.google.com/gsi/client)
 declare const google: any;
+
+const CAPS_LOCK_MESSAGE = 'Bloq Mayús está activado.';
 
 /** Campos de cada formulario en el orden de la pantalla: al enviar con errores, el foco va al primero inválido. */
 const SIGN_IN_FIELDS = [['email', 'login-email'], ['password', 'login-password']] as const;
@@ -37,13 +44,21 @@ const REQUEST_FIELDS = [['nombre', 'registro-nombre'], ['apellido', 'registro-ap
  * y borde de control (H-28); un campo dice su error al salir de él solo si ya se escribió algo, y al enviar se muestran
  * todos y el foco va al primero; el botón dice que trabaja (ui-button [loading]) y no envía dos veces; al alternar
  * formularios el foco va al encabezado del nuevo (nunca a body). Al lado, desde 64rem, una ventana del simulador con UNA
- * imagen fija de la escena real: nada se mueve solo en el acceso (sin partículas ni video que pausar).
+ * imagen fija de la escena real.
+ *
+ * Interacción (rediseño del acceso, 2026-11-22): todo responde a la persona y nada corre solo (sin partículas, video,
+ * canvas ni bucles; la guía §2 pide calma antes de entrar a un caso sensible y WCAG 2.2.2 no deja nada que pausar).
+ * Con un ratón fino y sin «movimiento reducido», el puntero enciende una luz suave en el fondo y en el filo de la
+ * tarjeta y desplaza la escena unos píxeles (paralaje); en cualquier dispositivo, elegir el perfil mueve la cámara de
+ * la escena hacia lo que le toca y posa su rótulo, y los tres píxeles de la marca se encienden a medida que el
+ * formulario se completa. Bloq Mayús se avisa en el campo de la contraseña.
  */
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
     ReactiveFormsModule, MatIconModule, PublicBarComponent, UiButton, UiCheck, UiControl, UiField, UiScopeNotice,
+    DoodlesComponent, AccesoEscenaComponent,
   ],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -55,6 +70,20 @@ export class LoginComponent implements AfterViewInit {
   readonly pedagogyPillars = LOGIN_PEDAGOGY_PILLARS;
   readonly loginHeroImage = LOGIN_ASSETS.images.hero;
 
+  /**
+   * Recorrido de la ventana (explica cómo funciona el simulador): la cámara de la escena pasa por los cuatro pilares y cada
+   * uno enseña lo suyo. Avanza solo, pero se puede pausar (WCAG 2.2.2), se calla mientras se escribe en un formulario y,
+   * con «movimiento reducido», no corre. El avance lo marca el fin de la barra de progreso del paso activo (una animación
+   * CSS), no un temporizador: pausar la barra pausa el recorrido y las dos cosas no pueden desfasarse.
+   */
+  readonly paso = signal(0);
+  /** El botón «Pausar recorrido», o haber elegido un paso a mano: quien elige lleva el control. */
+  readonly recorridoPausado = signal(false);
+  /** Se escribe en un formulario: el recorrido espera sin cambiar de paso (la ventana no compite con quien llena el acceso). */
+  readonly formularioActivo = signal(false);
+  /** Con «movimiento reducido» nada avanza solo, y tampoco hay una pausa que ofrecer. */
+  readonly recorridoAutomatico = !(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
   /** Tema de las pantallas públicas: claro (piel portal) u oscuro (piel juego), en el contenedor de la página. */
   protected readonly tema = inject(TemaService);
 
@@ -62,6 +91,9 @@ export class LoginComponent implements AfterViewInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
+  private readonly zone = inject(NgZone);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly pageRef = inject<ElementRef<HTMLElement>>(ElementRef);
   /** El nonce de la CSP de esta página (S2-4): Angular lo lee de ngCspNonce; sin política, nulo. */
   private readonly cspNonce = inject(CSP_NONCE, { optional: true });
   private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
@@ -119,10 +151,15 @@ export class LoginComponent implements AfterViewInit {
   /** Encabezado del formulario visible: recibe el foco al alternar. */
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
+  /** El correo que una visita anterior pidió recordar (vacío si nadie lo pidió). */
+  private readonly correoRecordado = this.loadRememberedEmail();
+
   readonly form = this.fb.nonNullable.group({
-    email: [this.loadRememberedEmail(), [Validators.required, Validators.email]],
+    email: [this.correoRecordado, [Validators.required, Validators.email]],
     password: ['', Validators.required],
-    remember: [true],
+    // Parte desmarcado: en un aula con equipos compartidos, guardar el correo en el navegador lo decide quien lo usa, no un
+    // valor por defecto. Si ya había uno guardado (lo pidió esa persona), la casilla sigue marcada.
+    remember: [this.correoRecordado !== ''],
   });
 
   readonly forgotForm = this.fb.nonNullable.group({
@@ -137,7 +174,30 @@ export class LoginComponent implements AfterViewInit {
     website: [''],
   });
 
+  /**
+   * Cuánto lleva escrito el formulario de entrada (solo para el acabado): un correo con forma de correo y una
+   * contraseña con algo. No valida ni bloquea nada; lo usan los tres píxeles de la marca y el brillo del botón.
+   */
+  private readonly progress = toSignal(
+    merge(this.form.valueChanges, this.form.statusChanges).pipe(
+      startWith(null),
+      map(() => ({ email: this.form.controls.email.valid, password: this.form.controls.password.value.length > 0 })),
+    ),
+    { requireSync: true },
+  );
+  readonly emailReady = computed(() => this.progress().email);
+  readonly passwordReady = computed(() => this.progress().password);
+  readonly ready = computed(() => this.emailReady() && this.passwordReady());
+
+  /** Bloq Mayús activo mientras se escribe la contraseña: se dice en el campo, antes de que falle el ingreso. */
+  readonly capsLock = signal(false);
+
+  /** Ya se alternó entre «entrar» y «solicitar acceso»: solo entonces el formulario nuevo entra con su fundido. */
+  readonly switched = signal(false);
+
   constructor() {
+    afterNextRender(() => this.trackPointer());
+
     // El build de producción pliega ngDevMode a false y descarta la rama: el import() y su chunk no existen.
     if (typeof ngDevMode === 'undefined' || ngDevMode) {
       void import('./login-demo.dev').then(module => this.demo.set(module.LOGIN_DEMO_CREDENTIALS));
@@ -161,13 +221,64 @@ export class LoginComponent implements AfterViewInit {
     return null;
   }
 
+  elegirPaso(indice: number): void {
+    this.paso.set(indice);
+    this.recorridoPausado.set(true);
+  }
+
+  alternarRecorrido(): void {
+    this.recorridoPausado.update(pausado => !pausado);
+  }
+
+  /** Fin de la barra de progreso del paso activo: pasa al siguiente. Angular antepone su prefijo al nombre de la animación. */
+  alTerminarPaso(event: AnimationEvent, indice: number): void {
+    if (!event.animationName.endsWith('acceso-avance') || indice !== this.paso()) return;
+    if (!this.recorridoAutomatico || this.recorridoPausado() || this.formularioActivo()) return;
+    this.paso.set(pasoSiguiente(indice));
+  }
+
+  @HostListener('focusin', ['$event'])
+  alEntrarFoco(event: FocusEvent): void {
+    this.formularioActivo.set((event.target as Element | null)?.closest('form') != null);
+  }
+
+  @HostListener('focusout', ['$event'])
+  alSalirFoco(event: FocusEvent): void {
+    // Pasar de un campo a otro del formulario no reanuda el recorrido entre medias.
+    if ((event.relatedTarget as Element | null)?.closest?.('form')) return;
+    this.formularioActivo.set(false);
+  }
+
   /** El rol que pide la solicitud de acceso (el inicio de sesión no lo pide: el rol lo trae la cuenta). */
   selectRole(role: LoginRole): void {
+    if (role !== this.selectedRole()) this.paso.set(indiceDePaso(PASO_DE_PERFIL[role]));
     this.selectedRole.set(role);
     this.registerError.set('');
   }
 
+  /** Bloq Mayús, leído de la tecla (keydown/keyup) y olvidado al salir del campo. */
+  onPasswordKey(event: KeyboardEvent): void {
+    const on = event.getModifierState?.('CapsLock') ?? false;
+    if (on === this.capsLock()) return;
+    this.capsLock.set(on);
+    this.announceCapsLock(on);
+  }
+
+  clearCapsLock(): void {
+    if (!this.capsLock()) return;
+    this.capsLock.set(false);
+    this.announceCapsLock(false);
+  }
+
+  private announceCapsLock(on: boolean): void {
+    // La región de estado es una sola: el aviso no pisa «Ingresando…» ni un resultado, y se retira si sigue siendo suyo.
+    if (on && !this.announcement()) this.announcement.set(CAPS_LOCK_MESSAGE);
+    else if (!on && this.announcement() === CAPS_LOCK_MESSAGE) this.announcement.set('');
+  }
+
   openSignIn(): void {
+    this.switched.set(true);
+    this.capsLock.set(false);
     this.showRegister.set(false);
     this.showForgot.set(false);
     this.forgotNotice.set('');
@@ -182,6 +293,8 @@ export class LoginComponent implements AfterViewInit {
 
   /** «¿Olvidaste tu contraseña?»: pide el correo y manda el enlace para restablecerla. */
   openForgot(): void {
+    this.switched.set(true);
+    this.capsLock.set(false);
     this.forgotForm.controls.email.setValue(this.form.controls.email.value.trim() || this.forgotForm.controls.email.value);
     this.showForgot.set(true);
     this.showRegister.set(false);
@@ -223,6 +336,8 @@ export class LoginComponent implements AfterViewInit {
   }
 
   openSignUp(): void {
+    this.switched.set(true);
+    this.capsLock.set(false);
     this.showRegister.set(true);
     this.showForgot.set(false);
     this.error.set('');
@@ -309,6 +424,66 @@ export class LoginComponent implements AfterViewInit {
         this.announcement.set('');
         this.registerLoading.set(false);
       },
+    });
+  }
+
+  /**
+   * La luz del puntero (solo con ratón y sin «movimiento reducido»). El filtro se aplica a CADA evento y no al
+   * engancharse: un `pointermove` táctil o de lápiz se ignora (`pointerType`), y la preferencia de movimiento se lee viva
+   * (`MediaQueryList.matches`), así que cambiarla con la página abierta surte efecto sin recargar. Escribe variables CSS
+   * en tres sitios con `style.setProperty` (no toca Angular ni atributos `style`, así que la CSP de estilos no se ve
+   * afectada): `--mx/--my/--luz` en la página (la luz del fondo), `--gx/--gy` en la tarjeta (el filo que sigue al
+   * cursor) y `--gx/--gy/--nx/--ny` en la escena (el brillo y el paralaje). Un cuadro de animación por lote de eventos.
+   */
+  private trackPointer(): void {
+    if (typeof matchMedia !== 'function' || typeof requestAnimationFrame !== 'function') return;
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const page = this.pageRef.nativeElement.querySelector<HTMLElement>('.acceso');
+    if (!page) return;
+    let last: PointerEvent | null = null;
+    let frame = 0;
+
+    const paint = () => {
+      frame = 0;
+      if (!last) return;
+      const { clientX: x, clientY: y } = last;
+      page.style.setProperty('--mx', `${Math.round(x)}px`);
+      page.style.setProperty('--my', `${Math.round(y)}px`);
+      page.style.setProperty('--luz', '1');
+      const card = page.querySelector<HTMLElement>('.acceso__card');
+      if (card) {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--gx', `${Math.round(x - r.left)}px`);
+        card.style.setProperty('--gy', `${Math.round(y - r.top)}px`);
+      }
+      const scene = page.querySelector<HTMLElement>('.acceso__scene');
+      if (scene) {
+        const r = scene.getBoundingClientRect();
+        const clamp = (value: number) => Math.max(-1, Math.min(1, value));
+        scene.style.setProperty('--gx', `${Math.round(x - r.left)}px`);
+        scene.style.setProperty('--gy', `${Math.round(y - r.top)}px`);
+        scene.style.setProperty('--nx', clamp((x - (r.left + r.width / 2)) / (window.innerWidth / 2)).toFixed(3));
+        scene.style.setProperty('--ny', clamp((y - (r.top + r.height / 2)) / (window.innerHeight / 2)).toFixed(3));
+      }
+    };
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || motion.matches) return;
+      last = event;
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    const onLeave = () => {
+      last = null;
+      page.style.setProperty('--luz', '0');
+    };
+
+    this.zone.runOutsideAngular(() => {
+      page.addEventListener('pointermove', onMove, { passive: true });
+      page.addEventListener('pointerleave', onLeave);
+    });
+    this.destroyRef.onDestroy(() => {
+      page.removeEventListener('pointermove', onMove);
+      page.removeEventListener('pointerleave', onLeave);
+      if (frame) cancelAnimationFrame(frame);
     });
   }
 

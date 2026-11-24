@@ -5,6 +5,11 @@
 // formulario), campos con relleno tenue y el borde fuerte de la piel (≥ 3:1, H-28), un control segmentado para el
 // perfil y, al lado desde 64rem, una ventana del simulador como la vista previa de la portada. Enlaces en línea ≥ 24 px
 // y ≥ 44 px con dedo (H-21); sin `transition: all` ni `!important`; texto ≥ 12 px.
+//
+// Interacción (2026-11-22): todo responde a la persona y nada corre solo. Las entradas son de UNA vez (≤ 0,76 s); la luz
+// del puntero, el paralaje y el brillo solo existen con ratón fino y sin «movimiento reducido» (el componente escribe
+// --mx/--my/--luz, --gx/--gy y --nx/--ny; sin ellas, todo queda quieto y legible); elegir el perfil acerca la cámara de la
+// escena y posa su rótulo; y los tres píxeles de la marca se encienden con el formulario.
 
 :host {
   display: block;
@@ -17,6 +22,8 @@
   --acceso-campo: color-mix(in oklab, var(--ds-text-1) 4%, var(--ds-surface-1));
   --acceso-pulgar: color-mix(in oklab, var(--ds-text-1) 15%, var(--ds-surface-1));
   --acceso-pulgar-filo: var(--ds-text-2);
+  // La ventana del simulador, casi opaca: con los objetos del fondo detrás, un vidrio claro dejaría pasar sus trazos.
+  --acceso-panel: color-mix(in oklab, var(--ds-surface-2) 93%, transparent);
 
   min-height: 100svh;
 }
@@ -25,9 +32,26 @@
   --acceso-campo: color-mix(in oklab, var(--ds-text-1) 3%, var(--ds-surface-1));
   --acceso-pulgar: var(--ds-surface-1);
   --acceso-pulgar-filo: var(--ds-border-strong);
+  --acceso-panel: color-mix(in oklab, var(--ds-surface-1) 95%, transparent);
+}
+
+// La luz del puntero sobre toda la página: un resplandor del violeta de marca que sigue al cursor, por encima de los
+// objetos del fondo (que así se encienden un poco) y por debajo de las tarjetas. Sin ratón, `--luz` no existe: invisible.
+.acceso::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(32rem circle at var(--mx, 50%) var(--my, 40%), color-mix(in oklab, var(--l-acento) 14%, transparent), transparent 70%);
+  opacity: var(--luz, 0);
+  pointer-events: none;
+  transition: opacity var(--ds-dur-slow) var(--ds-ease-out);
 }
 
 .acceso__main {
+  // Por encima del fondo de objetos (fijo, z 0) y de la luz del puntero.
+  position: relative;
+  z-index: var(--ds-z-base, 1);
   display: grid;
   align-content: center;
   min-height: 100svh;
@@ -44,6 +68,7 @@
 
 // ── Tarjeta del formulario ──────────────────────────────────────────────────────────────────────────────────────
 .acceso__card {
+  position: relative;
   padding: clamp(1.25rem, 5vw, 2rem);
   border-radius: 1.75rem;
   background:
@@ -53,6 +78,35 @@
     inset 0 0 0 1px var(--l-filo),
     inset 0 1px 0 var(--l-brillo),
     var(--l-sombra-alta);
+  animation: acceso-aparece-tarjeta var(--l-entrada) var(--l-curva) backwards;
+}
+
+// El filo vivo: un anillo de 1 px del violeta de marca que sigue al cursor sobre el borde de la tarjeta (la misma
+// idea del brillo de arriba de los materiales, pero con la persona). Se ve con el cursor encima y mientras se escribe
+// dentro (también con teclado); sin ratón queda arriba al centro, quieto.
+.acceso__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  background: radial-gradient(18rem circle at var(--gx, 50%) var(--gy, 0%), color-mix(in oklab, var(--l-acento) 85%, transparent), transparent 70%) border-box;
+  -webkit-mask: linear-gradient(black 0 0) padding-box, linear-gradient(black 0 0) border-box;
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(black 0 0) padding-box exclude, linear-gradient(black 0 0) border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ds-dur-slow) var(--ds-ease-out);
+}
+
+.acceso__card:focus-within::before {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .acceso__card:hover::before {
+    opacity: 1;
+  }
 }
 
 // El producto, en la etiqueta de la portada: la marca Metafrónesis ya está en la barra.
@@ -60,9 +114,46 @@
   margin-bottom: var(--ds-space-4);
 }
 
+// Los tres píxeles de la marca como avance del formulario: apagados al 26 % y encendidos con el color del isotipo,
+// cada uno con lo suyo (correo con forma de correo, contraseña con algo, formulario completo). Solo acabado: el
+// estado real lo dicen los errores de cada campo, nunca estos píxeles.
+.acceso .acceso__producto--avance {
+  --px-1: color-mix(in oklab, var(--marca-cian) 26%, transparent);
+  --px-2: color-mix(in oklab, var(--marca-azul) 26%, transparent);
+  --px-3: color-mix(in oklab, var(--l-acento) 26%, transparent);
+}
+
+.acceso .acceso__producto--correo {
+  --px-1: var(--marca-cian);
+}
+
+.acceso .acceso__producto--clave {
+  --px-2: var(--marca-azul);
+}
+
+.acceso .acceso__producto--lista {
+  --px-3: var(--l-acento);
+}
+
+.acceso .acceso__producto--avance::before {
+  background: var(--px-1);
+  box-shadow:
+    0.4375rem 0 0 var(--px-2),
+    0.875rem 0 0 var(--px-3);
+  transition:
+    background-color var(--ds-dur-base) var(--ds-ease-out),
+    box-shadow var(--ds-dur-base) var(--ds-ease-out);
+}
+
 .acceso__form {
   display: grid;
   gap: 1.25rem;
+}
+
+// Al alternar entre entrar y solicitar acceso, el formulario nuevo llega con un fundido corto (la carga inicial la
+// anima la tarjeta entera).
+.acceso__form--cambia {
+  animation: acceso-aparece-form var(--ds-dur-slow) var(--ds-ease-out) backwards;
 }
 
 .acceso__titulos {
@@ -78,6 +169,11 @@
   line-height: 1.1;
   letter-spacing: -0.025em;
   word-spacing: 0.04em;
+}
+
+// La palabra clave del título en la tinta de marca, como «psicosociales» en el héroe de la portada.
+.acceso__acento {
+  color: var(--l-acento-tinta);
 }
 
 .acceso__subtitle {
@@ -103,6 +199,7 @@
   color: var(--ds-text-1);
   font-size: var(--ds-type-body-s-size);
   line-height: var(--ds-type-body-s-line);
+  animation: acceso-aparece var(--ds-dur-slow) var(--ds-ease-out) backwards;
 }
 
 .acceso__notice mat-icon,
@@ -250,6 +347,18 @@
   }
 }
 
+// El retrato del perfil junto a lo que puede hacer: el mismo del kit que lleva su tarjeta en la portada.
+.acceso__perfil-detalle {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+// Entra por pasos al cambiar de perfil (el retrato se crea de nuevo): el ritmo de los sprites del simulador.
+.acceso__avatar {
+  animation: acceso-retrato var(--ds-dur-slow) steps(3) backwards;
+}
+
 .acceso__role-hint {
   margin: 0;
   padding-inline: var(--ds-space-1);
@@ -369,6 +478,16 @@
     0 10px 28px -12px color-mix(in oklab, var(--ds-primary) 75%, transparent);
 }
 
+// Con correo y contraseña escritos, el botón gana luz: un halo del color y más sombra. Nunca se deshabilita por lo
+// contrario (H-21: un botón apagado no dice qué falta); solo invita.
+.acceso .acceso__submit--lista[variant='primary']:not(:focus-visible) {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 45%, transparent),
+    0 1px 2px color-mix(in oklab, black 25%, transparent),
+    0 0 0 4px color-mix(in oklab, var(--ds-primary) 24%, transparent),
+    0 16px 36px -10px color-mix(in oklab, var(--ds-primary) 90%, transparent);
+}
+
 .acceso__divider {
   display: flex;
   align-items: center;
@@ -421,12 +540,14 @@
   border-radius: 1.75rem;
   background:
     radial-gradient(140% 50% at 50% 0%, color-mix(in oklab, var(--ds-text-1) 7%, transparent), transparent 70%),
-    var(--l-vidrio-alto);
+    var(--acceso-panel);
   box-shadow:
     inset 0 0 0 1px var(--l-filo-fuerte),
     inset 0 1px 0 color-mix(in oklab, var(--ds-text-1) 14%, transparent),
     var(--l-sombra-alta),
     0 0 120px -40px color-mix(in oklab, var(--l-acento) 55%, transparent);
+  // La ventana llega un instante después de la tarjeta, desde un poco más atrás (como la vista previa de la portada).
+  animation: acceso-aparece-ventana calc(var(--l-entrada) + 120ms) var(--l-curva) 140ms backwards;
 }
 
 // Tres puntos de ventana: se lee como una pantalla del simulador, no como otra tarjeta.
@@ -480,14 +601,6 @@
   pointer-events: none;
 }
 
-.acceso__scene img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 581 / 415;
-  object-fit: cover;
-}
-
 .acceso__panel-texto {
   display: grid;
   gap: var(--ds-space-2);
@@ -521,14 +634,100 @@
 }
 
 .acceso__pillars li {
-  display: grid;
-  align-content: start;
-  gap: 0.125rem;
-  padding: var(--ds-space-3);
+  position: relative;
+  overflow: hidden;
   border-radius: var(--l-radio-chico);
   background: var(--l-relleno);
   box-shadow: inset 0 0 0 1px var(--l-filo);
+  animation: acceso-aparece var(--ds-dur-slow) var(--ds-ease-out) backwards;
 }
+
+// Cada pilar es un paso del recorrido de la ventana: un botón que ocupa toda la ficha y lleva la escena a ese paso.
+.acceso__paso {
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  width: 100%;
+  height: 100%;
+  padding: var(--ds-space-3);
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--ds-dur-base) ease;
+}
+
+.acceso__paso--activo {
+  background: color-mix(in oklab, var(--l-acento) 14%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .acceso__paso:not(.acceso__paso--activo):hover {
+    background: color-mix(in oklab, var(--ds-text-1) 6%, transparent);
+  }
+}
+
+.acceso__paso:focus-visible {
+  outline: 2px solid var(--l-acento);
+  outline-offset: -2px;
+}
+
+// La barra de progreso del paso activo. Cuando termina, el recorrido pasa al siguiente (login.component.ts): el tiempo del
+// paso es esta animación, así que pausarla pausa el recorrido. Constante y sin curva (progreso): linear.
+.acceso__pillars {
+  --recorrido-paso: 6500ms;
+}
+
+.acceso__paso--activo::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 0.1875rem;
+  background: var(--l-acento);
+  transform-origin: left;
+  animation: acceso-avance var(--recorrido-paso) linear forwards;
+}
+
+// El recorrido espera: el botón de pausa, escribir en el formulario o tener el cursor sobre las fichas detienen la barra.
+.acceso__pillars[data-pausa='true'] .acceso__paso--activo::after {
+  animation-play-state: paused;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .acceso__pillars:hover .acceso__paso--activo::after {
+    animation-play-state: paused;
+  }
+}
+
+// La pausa del recorrido vive en la barra de la ventana. En un teléfono angosto queda solo el icono; el texto sigue en el
+// nombre accesible.
+.acceso__pausa {
+  flex: none;
+  margin-left: auto;
+}
+
+@media (max-width: 30rem) {
+  .acceso__pausa-texto {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+// Los cuatro pilares llegan en cascada corta, después de la ventana.
+.acceso__pillars li:nth-child(1) { animation-delay: 380ms; }
+.acceso__pillars li:nth-child(2) { animation-delay: 430ms; }
+.acceso__pillars li:nth-child(3) { animation-delay: 480ms; }
+.acceso__pillars li:nth-child(4) { animation-delay: 530ms; }
 
 .acceso__pillars strong {
   color: var(--l-acento-tinta);
@@ -548,6 +747,7 @@
 // ── Esquinas continuas donde el navegador las dibuja (la curvatura de iOS en lugar del arco circular) ───────────────
 @supports (corner-shape: squircle) {
   .acceso__card,
+  .acceso__card::before,
   .acceso__panel,
   .acceso__scene,
   .acceso .ui-control,
@@ -570,8 +770,83 @@
   .acceso__pillars li { border-radius: 1.25rem; }
 }
 
+// ── Entradas de una sola vez ───────────────────────────────────────────────────────────────────────────────────
+// La curva y la duración son las de la portada (--l-curva, --l-entrada). `backwards`: antes de empezar se ve el primer
+// cuadro y al terminar el elemento vuelve a su estilo natural (sin `filter` ni `transform` residuales).
+@keyframes acceso-aparece-tarjeta {
+  from {
+    opacity: 0;
+    transform: translateY(0.875rem);
+  }
+}
+
+@keyframes acceso-aparece-ventana {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(1.5rem) scale(0.96);
+  }
+}
+
+@keyframes acceso-aparece-form {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes acceso-aparece {
+  from {
+    opacity: 0;
+    transform: translateY(0.375rem);
+  }
+}
+
+// El retrato del perfil entra con el mismo escalón del sprite: tres pasos, sin deslizar.
+@keyframes acceso-retrato {
+  from {
+    opacity: 0;
+    transform: translateY(0.375rem);
+  }
+}
+
+@keyframes acceso-avance {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+// Movimiento reducido: el estado final aparece de una vez. Sin luz del puntero (el componente ni la engancha), sin
+// destello sobre la escena y con la cámara en su sitio al instante.
+@media (prefers-reduced-motion: reduce) {
+  .acceso__card,
+  .acceso__panel,
+  .acceso__form--cambia,
+  .acceso__notice,
+  .acceso__aviso-error,
+  .acceso__avatar,
+  .acceso__pillars li {
+    animation: none;
+  }
+
+  // Sin recorrido: nada avanza solo, y la barra del paso activo queda llena como marca de cuál es.
+  .acceso__paso--activo::after {
+    animation: none;
+  }
+}
+
 // Colores forzados: las superficies conservan su contorno y el perfil elegido se marca con el color del sistema.
 @media (forced-colors: active) {
+  .acceso::after,
+  .acceso__card::before {
+    display: none;
+  }
+
+  .acceso__paso--activo {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
   .acceso__card,
   .acceso__panel,
   .acceso__notice,
@@ -602,6 +877,13 @@
     gap: clamp(var(--ds-space-6), 3vw, var(--ds-space-7));
     align-items: start;
     width: min(70rem, 100%);
+  }
+
+  // La ventana acompaña al formulario si la tarjeta es más alta que la pantalla (con las credenciales demo y el aviso de
+  // alcance suele serlo en portátiles).
+  .acceso__panel {
+    position: sticky;
+    top: calc(var(--l-alto-barra) + var(--ds-space-3));
   }
 }
 
