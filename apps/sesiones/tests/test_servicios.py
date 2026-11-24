@@ -176,3 +176,27 @@ def test_cierre_automatico(crear_sesion, estado, esperado):
     cierre.cerrar(sesion.pk)
     sesion.refresh_from_db()
     assert sesion.estado == esperado
+
+
+def test_finalizar_cierra_el_intento_de_un_convocado_retirado(docente, estudiantes, datos, version):
+    sesion = servicios.crear(docente, datos)
+    servicios.iniciar(docente, sesion.pk)
+    intento, _ = start(estudiantes[0], version.pk)
+    convocatorias.retirar(docente, sesion.pk, estudiantes[0].pk)
+    servicios.finalizar(docente, sesion.pk)
+    intento.refresh_from_db()
+    assert intento.status == "INCOMPLETE"
+
+
+def test_finalizar_no_cierra_el_intento_de_un_retirado_que_juega_en_otra_sesion(docente, estudiantes, datos, version, grupo):
+    sesion = servicios.crear(docente, datos)
+    servicios.iniciar(docente, sesion.pk)
+    convocatorias.retirar(docente, sesion.pk, estudiantes[0].pk)
+    otro = Grupo.objects.create(nombre="Psicología 2", codigo="SES-G2", profesor=docente)
+    GrupoEstudiante.objects.create(grupo_id=otro.id, estudiante_id=estudiantes[0].id, status="ACTIVE")
+    otra = servicios.crear(docente, {**datos, "grupoId": otro.pk})
+    servicios.iniciar(docente, otra.pk)
+    intento, _ = start(estudiantes[0], version.pk)
+    servicios.finalizar(docente, sesion.pk)
+    intento.refresh_from_db()
+    assert intento.status == "IN_PROGRESS"

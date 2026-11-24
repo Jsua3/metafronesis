@@ -2,6 +2,7 @@
 
 Corren dentro de la transacción de la transición, con la fila de la sesión bloqueada: si uno falla, la sesión no
 cambia de estado."""
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.grupos.models import CaseAssignment
@@ -17,6 +18,7 @@ from shared.exceptions import ApiError
 from .models import ACTIVAS, Convocatoria, EstadoConvocatoria, Sesion
 from .nombres import nombre_de
 
+# BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
 PAUSA_POR_SESION = "Sesión pausada por el docente"
 
 
@@ -65,19 +67,39 @@ def deshabilitar_caso(sesion, estudiantes_ids=None):
     ).update(active=False)
 
 
+def _estudiantes_de_la_sesion(sesion):
+    """Todos los convocados, también los retirados: el intento que alguien empezó en la sesión sigue siendo de la
+    sesión aunque el docente lo retire después (si no, nadie lo pausaría ni lo cerraría). Se excluye a quien ya está
+    convocado (ACTIVA) en otra sesión activa del mismo caso: sus intentos abiertos son de esa otra sesión."""
+    en_otra = Convocatoria.objects.filter(
+        estado=EstadoConvocatoria.ACTIVA, sesion__case_version=sesion.case_version, sesion__estado__in=ACTIVAS,
+    ).exclude(sesion=sesion).values_list("estudiante_id", flat=True)
+    return (
+        Convocatoria.objects.filter(sesion=sesion)
+        .exclude(Q(estado=EstadoConvocatoria.RETIRADA) & Q(estudiante_id__in=en_otra))
+        .values_list("estudiante_id", flat=True)
+    )
+
+
 def _intentos(sesion, estados):
     if sesion.iniciada_en is None:
         return SimulationAttempt.objects.none()
     return SimulationAttempt.objects.filter(
-        student_id__in=_ids(sesion, None), case_version=sesion.case_version, is_rehearsal=False,
+        student_id__in=list(_estudiantes_de_la_sesion(sesion)), case_version=sesion.case_version, is_rehearsal=False,
         started_at__gte=sesion.iniciada_en, status__in=estados,
     )
+
+
+def _ids_de_intentos(sesion, estados):
+    """Solo los ids: cada efecto toma el cerrojo de cada intento y lo vuelve a leer, porque entre esta lectura y el
+    cerrojo un estudiante pudo pausarlo, terminarlo o cerrarlo (la sesión bloqueada no bloquea sus intentos)."""
+    return list(_intentos(sesion, estados).order_by("pk").values_list("pk", flat=True))
 
 
 def pausar_intentos(sesion):
     """Como la salida segura: registra el tiempo activo, pausa y deja el evento."""
     ahora = timezone.now()
-    for intento_id in list(_intentos(sesion, (AttemptStatus.IN_PROGRESS,)).values_list("pk", flat=True)):
+    for intento_id in _ids_de_intentos(sesion, (AttemptStatus.IN_PROGRESS,)):
         lock_attempt_row(intento_id)
         intento = SimulationAttempt.objects.select_related("current_node").get(pk=intento_id)
         if not attempt_lifecycle.state_of(intento).can(attempt_lifecycle.PAUSE):
@@ -89,7 +111,11 @@ def pausar_intentos(sesion):
 
 
 def cerrar_intentos(sesion):
-    for intento in list(_intentos(sesion, OPEN_ATTEMPT_STATUSES)):
+    for intento_id in _ids_de_intentos(sesion, OPEN_ATTEMPT_STATUSES):
+        lock_attempt_row(intento_id)
+        intento = SimulationAttempt.objects.filter(pk=intento_id).first()
+        if intento is None or intento.status not in OPEN_ATTEMPT_STATUSES:
+            continue  # el estudiante lo terminó mientras tanto: ya no hay nada que cerrar
         cerrar_como_incompleto(intento, "CIERRE_DE_SESION")
 
 
