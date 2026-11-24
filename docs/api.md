@@ -14,6 +14,9 @@ En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por d
 | POST | /api/auth/google | GoogleLoginView | Público; throttle Google | GoogleLoginSerializer; UserSummarySerializer | users; S1; apps/users/urls.py:14; apps/users/views.py:197 |
 | GET | /api/auth/google/config | GoogleConfigView | Público | — | users; S1; apps/users/urls.py:15; apps/users/views.py:187 |
 | POST | /api/auth/access-request | AccessRequestCreateView | Público; throttle | AccessRequestCreateSerializer | users; S1; apps/users/urls.py:16; apps/users/views.py:263 |
+| POST | /api/auth/password-reset | PasswordResetRequestView | Público; throttle por IP y por correo | PasswordResetRequestSerializer | users; apps/users/urls.py; apps/users/services/password_reset_service.py |
+| POST | /api/auth/password-reset/check | PasswordResetCheckView | Público; throttle | PasswordResetCheckSerializer | users; apps/users/urls.py |
+| POST | /api/auth/password-reset/confirm | PasswordResetConfirmView | Público; throttle | PasswordResetConfirmSerializer | users; apps/users/urls.py; audita PASSWORD_CHANGED |
 | GET | /api/auth/me | MeView | JWT; account/self | UserSummarySerializer | users; S1; apps/users/urls.py:17; apps/users/views.py:358 |
 | POST | /api/auth/change-password | ChangePasswordView | JWT; account/self | ChangePasswordSerializer | users; S1; apps/users/urls.py:18; apps/users/views.py:318 |
 | POST | /api/auth/logout | LogoutView | JWT; account/self | — | users; S1; psychosim/urls.py:72; apps/users/views.py:334 |

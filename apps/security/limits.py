@@ -23,6 +23,11 @@ LIMITS: dict[str, Limit] = {
     # Informes de violaciones de la CSP (S2-3a): los cuenta ``CspReportIpThrottle`` en ``apps/security/csp_report.py``.
     "csp_report_ip": Limit(60, 60),
     "password_change_user": Limit(10, 3600),
+    # Recuperar la contraseña olvidada: pedidos del enlace por IP y por correo (el correo cuenta después de validar, como
+    # la solicitud de acceso), y confirmaciones por IP (adivinar tokens es inútil, pero no se deja martillar).
+    "password_reset_ip": Limit(10, 3600),
+    "password_reset_email": Limit(3, 3600),
+    "password_reset_confirm_ip": Limit(20, 3600),
     # Aceptaciones NUEVAS del aviso de consentimiento por persona (S3-2a2): el reenvío idempotente y el retiro no cuentan
     # (``apps/privacy/consent_service.py``, ``_contar_aceptacion``).
     "consent_user": Limit(30, 3600),

@@ -568,6 +568,8 @@ MAILERS = {
 }
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "siep@psychosim.edu.co")
 SIEP_PUBLIC_URL = os.environ.get("SIEP_PUBLIC_URL", "")
+# Vida del enlace para restablecer la contraseña olvidada (segundos). 30 minutos por defecto.
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", "1800"))
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "PsychoSim / SIEP API",
