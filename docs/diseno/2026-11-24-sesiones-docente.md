@@ -29,11 +29,11 @@ Se extiende la app existente `apps/sesiones` (SIEP-35, SIEP-37, SIEP-42): se con
 
 ### Estructura
 
-- `apps/sesiones/estados.py`: clase base abstracta `EstadoSesion` y una subclase por estado (`Programada`, `EnCurso`, `Pausada`, `Finalizada`, `Cancelada`). Registro `ESTADOS: dict[str, EstadoSesion]`.
+- `apps/sesiones/estados.py`: clase base `Estado` (no `EstadoSesion`, que es el nombre de los valores en el modelo) y una subclase por estado (`Programada`, `EnCurso`, `Pausada`, `Finalizada`, `Cancelada`). Registro `ESTADOS: dict[str, EstadoSesion]`.
 - **Contexto**: el modelo `Sesion`. Expone `estado_actual()` (devuelve el objeto de estado según `sesion.estado`). Los servicios nunca comparan `sesion.estado == "..."` para decidir comportamiento: delegan en el objeto de estado.
 - Cada operación de la base lanza `ApiError("INVALID_TRANSITION", "La transición no está permitida.", 409)`; cada subclase sobrescribe solo lo que permite.
 
-### Interfaz de `EstadoSesion`
+### Interfaz de `Estado`
 
 | Método | Qué hace |
 |---|---|
@@ -44,7 +44,8 @@ Se extiende la app existente `apps/sesiones` (SIEP-35, SIEP-37, SIEP-42): se con
 | `puede_editar()` | Si se pueden cambiar datos, grupo y caso. |
 | `puede_gestionar_convocados()` | Si se puede sincronizar, retirar convocados y autorizar repeticiones. |
 | `verificar_ingreso()` | No devuelve nada si el estudiante puede entrar; si no, lanza el `ApiError` propio del estado. |
-| `acciones()` | Lista de acciones permitidas para el frontend, p. ej. `["pausar", "finalizar"]`. Se calcula a partir de qué transiciones sobrescribe la subclase y de `puede_editar` / `puede_gestionar_convocados`. |
+| `al_sumar_convocados(sesion, ids)` | Lo que reciben los convocados que se suman en este estado (en curso o pausada: se les habilita el caso). |
+| `acciones()` | Lista de acciones permitidas para el frontend, p. ej. `["pausar", "finalizar", "gestionarConvocados"]`. Se calcula a partir de qué transiciones sobrescribe la subclase y de `puede_editar` / `puede_gestionar_convocados`. |
 
 Un único punto de aplicación, `servicios.transicionar(usuario, pk, accion)`:
 
@@ -90,15 +91,15 @@ Permiso de todas: `policy_permission("assignment", "manage")` (PROFESOR sobre lo
 
 | Método y ruta | Cuerpo / respuesta | Auditoría |
 |---|---|---|
-| `GET /api/sesiones?estado=` | Lista propia: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo, portada}, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar, convocados (n)`. `estado` admite varios valores separados por coma. | EXENTO (lectura propia) |
+| `GET /api/sesiones?estado=` | Lista propia: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn`. `estado` admite varios valores separados por coma. | EXENTO (lectura propia) |
 | `POST /api/sesiones` | `{grupoId, caseVersionId, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` → la sesión con su detalle. | `SESION_CREADA` |
-| `GET /api/sesiones/<id>` | Lista + `mensaje`, `iniciadaEn`, `finalizadaEn`, `canceladaEn` y `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento: SIN_EMPEZAR|JUGANDO|EN_PAUSA|TERMINADO|INCOMPLETO, puedeRepetir}]`. | EXENTO (lectura propia) |
+| `GET /api/sesiones/<id>` | Lo de la lista + `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento: SIN_EMPEZAR|JUGANDO|EN_PAUSA|TERMINADO|INCOMPLETO, puedeRepetir}]`. | EXENTO (lectura propia) |
 | `PATCH /api/sesiones/<id>` | Los mismos campos de crear, todos opcionales. Solo si `puede_editar()`. Si cambia `grupoId`, se rehace la lista de convocados con los miembros activos del grupo nuevo. | `SESION_EDITADA` |
 | `POST /api/sesiones/<id>/iniciar` · `pausar` · `reanudar` · `finalizar` · `cancelar` | Sin cuerpo → la sesión. 409 `INVALID_TRANSITION` si el estado no lo permite. | `SESION_INICIADA`, `SESION_PAUSADA`, `SESION_REANUDADA`, `SESION_FINALIZADA`, `SESION_CANCELADA` |
 | `POST /api/sesiones/<id>/sincronizar` | → `{agregados: n}`. Solo si `puede_gestionar_convocados()`. | `CONVOCADOS_SINCRONIZADOS` |
 | `DELETE /api/sesiones/<id>/convocados/<estudianteId>` | Existente. Ahora exige `puede_gestionar_convocados()`. | `CONVOCADO_RETIRADO` |
 | `POST /api/sesiones/<id>/convocados/<estudianteId>/repeticion` | Existente. Ahora exige que la sesión sea del docente (no ser autor del caso) y `puede_gestionar_convocados()`. | `REPETICION_AUTORIZADA` |
-| `GET /api/sesiones/casos` | Biblioteca: versiones `PUBLISHED`, caso activo, `validated_at` y `definition_hash` no nulos, de cualquier autor: `caseVersionId, titulo, version, autor, tiempoEstimadoMin, portada, descripcion`. Sin contenido del caso. | EXENTO (catálogo) |
+| `GET /api/sesiones/casos` | Biblioteca: versiones `PUBLISHED`, caso activo, `validated_at` y `definition_hash` no nulos, de cualquier autor: `caseVersionId, titulo, version, autor, tiempoEstimadoMin, descripcion` (el servidor no tiene portada por caso). Sin contenido del caso. | EXENTO (catálogo) |
 
 Se **elimina** `POST /api/sesiones/<id>/convocados` (convocar por correos), reemplazada por `sincronizar`. Si un estado no admite editar o gestionar convocados, la respuesta es 409 `INVALID_TRANSITION`.
 
@@ -125,19 +126,19 @@ Se **elimina** `POST /api/sesiones/<id>/convocados` (convocar por correos), reem
 
 ## 4. Integración con el simulador
 
-Ganchos existentes: `apps/simulation/services/reglas_de_inicio` (se consulta en `attempt_api.start`, que sirve para empezar **y** reanudar) y `apps/simulation/services/limites` (tiempo máximo). `SesionesConfig.ready()` ya los registra.
+Ganchos existentes: `apps/simulation/services/reglas_de_inicio` (se consulta en `attempt_api.start`; **se agrega** su consulta en la transición `resume` de `attempt_api._transition`, porque el estudiante también reanuda por esa ruta) y `apps/simulation/services/limites` (tiempo máximo). `SesionesConfig.ready()` ya los registra.
 
 ### 4.1 Habilitar el caso — `EnCurso.al_entrar`
 
 Para cada convocado activo: `CaseAssignment` individual (`estudiante`, `case_version`) creada o actualizada con `opens_at = iniciada_en` (la hora real), `closes_at = sesion.fin`, `active = True`, `assigned_by = docente`. Con eso `available_versions` le muestra el caso en «Casos».
 
-Al reanudar no se cambia la ventana. Antes de habilitar, si algún convocado ya tiene una asignación individual de esa versión que pertenece a **otra sesión en curso o pausada**, la transición falla con 409 `CONVOCADO_EN_OTRA_SESION` y la lista de nombres (`estudiantes`). Una asignación individual inactiva o de una sesión terminada se reutiliza.
+Al reanudar no se cambia la ventana. Si la hora de fin ya pasó, iniciar falla con 409 `SESSION_EXPIRED` («edita la sesión antes de iniciarla»). Antes de habilitar, si algún convocado ya tiene una asignación individual de esa versión que pertenece a **otra sesión en curso o pausada**, la transición falla con 409 `CONVOCADO_EN_OTRA_SESION` y la lista de nombres (`estudiantes`). Una asignación individual inactiva o de una sesión terminada se reutiliza.
 
 ### 4.2 Ingreso — `reglas.verificar(estudiante, version)`
 
-1. Busca las convocatorias `ACTIVA` del estudiante para esa versión **en sesiones no terminadas** (`PROGRAMADA`, `EN_CURSO`, `PAUSADA`). Si no hay, no aplica ninguna regla de sesión (las sesiones finalizadas o canceladas ya no atan al estudiante y puede usar la asignación de su grupo).
+1. Busca las convocatorias `ACTIVA` del estudiante para esa versión **en sesiones no terminadas**: primero una en curso o pausada; si no hay, la próxima programada. Si no hay, no aplica ninguna regla de sesión (las sesiones finalizadas o canceladas ya no atan al estudiante y puede usar la asignación de su grupo).
 2. Toma la más próxima y llama `sesion.estado_actual().verificar_ingreso()`.
-3. En curso, se mantienen las reglas existentes:
+3. En curso, si el estudiante ya tiene un intento abierto de la sesión, entra sin más (vuelve a su intento aunque sea tarde). Si no, se mantienen las reglas existentes:
    - ingreso tardío: rechazado con `LATE_ENTRY` si `ahora > iniciada_en + (fin − iniciada_en) × SIEP_INGRESO_TARDIO_FRACCION`;
    - una sola participación (intentos iniciados desde `iniciada_en`), salvo `AutorizacionRepeticion` sin usar, que se consume.
 
@@ -145,7 +146,7 @@ Al reanudar no se cambia la ventana. Antes de habilitar, si algún convocado ya 
 
 ### 4.3 Pausar — `Pausada.al_entrar`
 
-Para cada intento abierto en juego (`IN_PROGRESS`) de los convocados, de esa versión, iniciado desde `iniciada_en`: tomar su cerrojo (`lock_attempt_row`), `attempt_duration.touch(intento, ahora)`, `attempt_lifecycle.apply(intento, PAUSE)`, guardar y registrar `AttemptEvent` `SESSION_PAUSED`. Desde ahí el juego rechaza acciones porque el intento no está en juego.
+Para cada intento abierto en juego (`IN_PROGRESS`) de los convocados, de esa versión, iniciado desde `iniciada_en`: tomar su cerrojo (`lock_attempt_row`), `attempt_duration.touch(intento, ahora)`, `attempt_lifecycle.apply(intento, PAUSE)`, guardar y registrar `AttemptEvent` `PAUSE` con detalle «Sesión pausada por el docente» (el mismo tipo que la pausa normal, para que los cálculos de duración no cambien). Desde ahí el juego rechaza acciones porque el intento no está en juego.
 
 **Reanudar no reanuda intentos**: solo vuelve a permitir el ingreso; cada estudiante pulsa «Continuar» y `attempt_api.start` le devuelve su intento abierto.
 
@@ -175,11 +176,11 @@ Para cada intento abierto en juego (`IN_PROGRESS`) de los convocados, de esa ver
 
 ### Lista
 
-Filtro segmentado: Próximas (`PROGRAMADA`), En curso (`EN_CURSO,PAUSADA`), Terminadas (`FINALIZADA,CANCELADA`), Todas. Filas con portada y título del caso, grupo, fecha y hora, distintivo de estado y número de convocados. Botón «Nueva sesión». Estado vacío ilustrado que invita a crear la primera. Se usan los componentes de `shared/ui` (tabla, segmentado, badge, vacío ilustrado, page-header).
+Filtro segmentado: Próximas (`PROGRAMADA`), En curso (`EN_CURSO,PAUSADA`), Terminadas (`FINALIZADA,CANCELADA`), Todas. Filas con título del caso y espacio académico, grupo, fecha y hora, distintivo de estado y número de convocados. Botón «Nueva sesión». Estado vacío ilustrado que invita a crear la primera. Se usan los componentes de `shared/ui` (tabla, segmentado, badge, vacío ilustrado, page-header).
 
 ### Diálogo crear y editar
 
-Grupo (grupos activos con su número de miembros activos), caso (buscador sobre `GET /api/sesiones/casos` con portada, autor y tiempo estimado), espacio académico, fecha, hora de inicio y de fin, tiempo máximo (tope = tiempo estimado del caso elegido), lugar y mensaje. Los errores del servidor se muestran en su campo. «Editar» solo aparece si `acciones` incluye `editar`.
+Grupo (grupos activos con su número de miembros activos), caso (selector sobre `GET /api/sesiones/casos` con título, versión y autor; el tope del tiempo máximo sale de su tiempo estimado), espacio académico, fecha, hora de inicio y de fin, tiempo máximo (tope = tiempo estimado del caso elegido), lugar y mensaje. Los errores del servidor se muestran en su campo. «Editar» solo aparece si `acciones` incluye `editar`.
 
 ### Detalle
 
