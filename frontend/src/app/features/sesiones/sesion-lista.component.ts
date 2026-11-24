@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
+import { catchError, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error.util';
 import { SesionesApi } from '../../core/api/sesiones.api';
@@ -77,20 +78,24 @@ export class SesionListaComponent {
   protected readonly estado = signal<UiDataStateValue>('loading');
 
   constructor() {
-    effect(() => this.cargar(this.filtro()));
-  }
-
-  private cargar(valor: string): void {
-    const filtro = FILTROS.find(f => f.valor === valor) ?? FILTROS[0];
-    this.estado.set('loading');
-    this.api.listar(filtro.estados).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: filas => { this.sesiones.set(filas); this.estado.set('ready'); },
-      error: err => {
-        this.estado.set('error');
-        // BORRADOR: texto pendiente de Psicología (VD-23).
-        const texto = apiErrorMessage(err, 'No pudimos cargar las sesiones.');
-        if (texto) this.notify.error(texto);
-      },
+    // switchMap cancela la carga anterior: una respuesta tardía de otro filtro no pisa la lista actual.
+    toObservable(this.filtro).pipe(
+      tap(() => this.estado.set('loading')),
+      switchMap(valor => {
+        const filtro = FILTROS.find(f => f.valor === valor) ?? FILTROS[0];
+        return this.api.listar(filtro.estados).pipe(
+          catchError(err => {
+            this.estado.set('error');
+            // BORRADOR: texto pendiente de Psicología (VD-23).
+            const texto = apiErrorMessage(err, 'No pudimos cargar las sesiones.');
+            if (texto) this.notify.error(texto);
+            return of(null);
+          }),
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(filas => {
+      if (filas) { this.sesiones.set(filas); this.estado.set('ready'); }
     });
   }
 

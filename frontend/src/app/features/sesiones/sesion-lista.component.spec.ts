@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { SesionesApi } from '../../core/api/sesiones.api';
 import { SesionResumen } from '../../core/models/sesion.model';
@@ -42,5 +42,29 @@ describe('SesionListaComponent', () => {
   it('sin sesiones muestra el estado vacío', async () => {
     await montar([]);
     expect(el().querySelector('ui-empty-state')).not.toBeNull();
+  });
+
+  it('al cambiar de filtro pide los nuevos estados y una respuesta tardía del anterior no pisa la lista', async () => {
+    const pendientes: Subject<SesionResumen[]>[] = [];
+    listar = vi.fn(() => { const s = new Subject<SesionResumen[]>(); pendientes.push(s); return s; });
+    await TestBed.configureTestingModule({
+      imports: [SesionListaComponent],
+      providers: [provideRouter([]), { provide: SesionesApi, useValue: { listar, casos: () => of([]) } }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(SesionListaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(listar).toHaveBeenLastCalledWith(['PROGRAMADA']);
+
+    (fixture.componentInstance as unknown as { filtro: { set(v: string): void } }).filtro.set('en-curso');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(listar).toHaveBeenLastCalledWith(['EN_CURSO', 'PAUSADA']);
+
+    pendientes[1].next([fila]);
+    pendientes[0].next([{ ...fila, id: 99, caso: { caseVersionId: 1, titulo: 'Caso viejo' } }]);
+    fixture.detectChanges();
+    expect(el().textContent).toContain('La casa de Sofía');
+    expect(el().textContent).not.toContain('Caso viejo');
   });
 });
