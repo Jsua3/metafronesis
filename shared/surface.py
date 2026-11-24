@@ -48,6 +48,9 @@ PUBLIC_ROUTE_REASONS: dict[str, str] = {
     "api/auth/google": "entrar con una cuenta de Google",
     "api/auth/google/config": "configuración pública del acceso con Google",
     "api/auth/access-request": "pedir una cuenta, que aprueba el ADMIN",
+    "api/auth/password-reset": "pedir por correo el enlace para restablecer la contraseña olvidada",
+    "api/auth/password-reset/check": "comprobar si el enlace para restablecer la contraseña sigue sirviendo",
+    "api/auth/password-reset/confirm": "fijar la contraseña nueva con el enlace de un solo uso del correo",
     "api/security/csp-report": "informe anónimo y limitado de violaciones de la política de contenido (CSP)",
     "^(?!api/|schema/|swagger-ui|django-static/).*$": "comodín que sirve la SPA de Angular",
 }
@@ -84,6 +87,11 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     ("api/auth/logout", "POST"): "LOGOUT,SESSIONS_REVOKED",
     ("api/auth/change-password", "POST"): "PASSWORD_CHANGED",
     ("api/auth/access-request", "POST"): "ACCESS_REQUEST_CREATED",
+    ("api/auth/password-reset", "POST"): _exento(
+        "pide el enlace por correo: no cambia la cuenta y responde igual exista o no, para no revelar correos"
+    ),
+    ("api/auth/password-reset/check", "POST"): _exento("solo consulta si el enlace sigue sirviendo: no cambia datos"),
+    ("api/auth/password-reset/confirm", "POST"): "PASSWORD_CHANGED",
     ("api/auth/me", "GET"): _exento(_PROPIO),
     ("api/security/csp-report", "POST"): _exento(
         "informe anónimo del navegador sobre la política de contenido: no cambia datos de personas; "

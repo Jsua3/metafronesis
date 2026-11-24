@@ -20,6 +20,8 @@ from apps.security.throttling import (
     GoogleIpThrottle,
     LoginIpThrottle,
     PasswordChangeUserThrottle,
+    PasswordResetConfirmIpThrottle,
+    PasswordResetIpThrottle,
 )
 from shared.client_ip import rate_limit_ip
 from shared.exceptions import ApiError
@@ -43,11 +45,14 @@ from .serializers import (
     CodeLoginSerializer,
     GoogleLoginSerializer,
     LoginSerializer,
+    PasswordResetCheckSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     UserSummarySerializer,
     generate_access_token,
     normalize_email_value,
 )
-from .services import access_request_service, account_service, audit_events
+from .services import access_request_service, account_service, audit_events, password_reset_service
 
 User = get_user_model()
 
@@ -358,6 +363,63 @@ class ChangePasswordView(APIView):
         )
         # S1-4 · cambiar la contraseña cierra las demás sesiones; la actual sigue con un token nuevo.
         return api_ok({"token": generate_access_token(user)}, message="Contraseña actualizada")
+
+
+# BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
+_MENSAJE_ENLACE_ENVIADO = (
+    "Si el correo tiene una cuenta activa, te enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de "
+    "entrada y la carpeta de spam."
+)
+
+
+class PasswordResetRequestView(APIView):
+    """POST /api/auth/password-reset — pedir el enlace para restablecer la contraseña olvidada (público).
+
+    Responde lo mismo exista o no la cuenta: no revela qué correos tienen cuenta. El correo cuenta para el límite después
+    de validar, como la solicitud de acceso."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetIpThrottle]
+
+    @extend_schema(request=PasswordResetRequestSerializer, responses={200: ApiEnvelopeSerializer})
+    def post(self, request):
+        ser = PasswordResetRequestSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        correo = ser.validated_data["email"]
+        if hit("password_reset_email", key_hash(correo)) > LIMITS["password_reset_email"].limit:
+            raise Throttled(wait=retry_after("password_reset_email"))
+        password_reset_service.request_password_reset(correo)
+        return api_ok(None, message=_MENSAJE_ENLACE_ENVIADO)
+
+
+class PasswordResetCheckView(APIView):
+    """POST /api/auth/password-reset/check — ¿el enlace sigue sirviendo? (la pantalla lo pregunta al abrirse)."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetConfirmIpThrottle]
+
+    @extend_schema(request=PasswordResetCheckSerializer, responses={200: ApiEnvelopeSerializer})
+    def post(self, request):
+        ser = PasswordResetCheckSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        valido = password_reset_service.check_reset_link(ser.validated_data["uid"], ser.validated_data["token"])
+        return api_ok({"valid": valido})
+
+
+class PasswordResetConfirmView(APIView):
+    """POST /api/auth/password-reset/confirm — fijar la contraseña nueva con el enlace del correo (público)."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetConfirmIpThrottle]
+
+    @extend_schema(request=PasswordResetConfirmSerializer, responses={200: ApiEnvelopeSerializer})
+    def post(self, request):
+        ser = PasswordResetConfirmSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        datos = ser.validated_data
+        password_reset_service.confirm_password_reset(datos["uid"], datos["token"], datos["password"])
+        # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
+        return api_ok(None, message="Contraseña actualizada. Ya puedes iniciar sesión con la nueva.")
 
 
 class LogoutView(APIView):

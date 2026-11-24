@@ -212,6 +212,24 @@ class ChangePasswordSerializer(serializers.Serializer):
     newPassword = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email_value(value)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
+    password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=256)
+
+
+class PasswordResetCheckSerializer(serializers.Serializer):
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
+
+
 def _nombre_de_persona(value):
     """S1-3 · nombre y apellido: texto plano de una línea, sin etiquetas ni enlaces (regla de casedef). R1b: además, sin
     invisibles ni dominios, y solo con letras y signos de nombre (``shared.plain_text.person_text_problem``)."""

@@ -8,6 +8,9 @@ from .views import (
     GoogleLoginView,
     LoginView,
     MeView,
+    PasswordResetCheckView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
 )
 
 urlpatterns = [
@@ -18,4 +21,7 @@ urlpatterns = [
     path("access-request", AccessRequestCreateView.as_view()),
     path("me", MeView.as_view()),
     path("change-password", ChangePasswordView.as_view()),
+    path("password-reset", PasswordResetRequestView.as_view()),
+    path("password-reset/check", PasswordResetCheckView.as_view()),
+    path("password-reset/confirm", PasswordResetConfirmView.as_view()),
 ]

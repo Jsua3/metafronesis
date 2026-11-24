@@ -12,7 +12,42 @@
         <p class="acceso__estado sr-only" role="status" aria-live="polite">{{ announcement() }}</p>
 
         <!-- Un formulario a la vista: al alternar, el foco va al encabezado del nuevo (nunca a body). -->
-        @if (!showRegister()) {
+        @if (showForgot()) {
+          <!-- BORRADOR: textos nuevos, pendientes de la aprobación de Psicología -->
+          <form class="acceso__form" [formGroup]="forgotForm" (ngSubmit)="onForgotSubmit()" novalidate>
+            <div class="acceso__titulos">
+              <h1 #heading id="acceso-titulo" tabindex="-1">Recuperar contraseña</h1>
+              <p class="acceso__subtitle">Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva. El enlace vence en 30 minutos.</p>
+            </div>
+
+            <div class="acceso__campos">
+              <ui-field label="Correo institucional" required
+                [error]="fieldError(forgotForm.controls.email, { required: 'Escribe el correo de tu cuenta.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, forgotTried())">
+                <input uiControl id="olvido-email" type="email" formControlName="email" autocomplete="email" placeholder="nombre@institucion.edu.co" />
+              </ui-field>
+            </div>
+
+            @if (forgotNotice()) {
+              <p class="acceso__notice acceso__notice--exito">
+                <mat-icon aria-hidden="true">mark_email_read</mat-icon>
+                <span>{{ forgotNotice() }}</span>
+              </p>
+            }
+            @if (forgotError()) {
+              <div class="acceso__aviso-error">
+                <mat-icon aria-hidden="true">error</mat-icon>
+                <p class="acceso__error" role="alert">{{ forgotError() }}</p>
+              </div>
+            }
+
+            <button ui-button type="submit" variant="primary" size="lg" class="acceso__submit" [loading]="forgotLoading()">Enviar enlace</button>
+
+            <p class="acceso__switch">
+              ¿La recordaste?
+              <button type="button" class="acceso__link" (click)="openSignIn()">Volver a iniciar sesión</button>
+            </p>
+          </form>
+        } @else if (!showRegister()) {
           <form class="acceso__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
             <div class="acceso__titulos">
               <h1 #heading id="acceso-titulo" tabindex="-1">Iniciar sesión</h1>
@@ -49,7 +84,7 @@
 
             <div class="acceso__row">
               <label ui-check><input type="checkbox" formControlName="remember" /> Recordar mi correo</label>
-              <a class="acceso__link" href="mailto:secretariapsicologia@cue.edu.co">¿Olvidaste tu contraseña?</a>
+              <button type="button" class="acceso__link" (click)="openForgot()">¿Olvidaste tu contraseña?</button>
             </div>
 
             @if (error()) {

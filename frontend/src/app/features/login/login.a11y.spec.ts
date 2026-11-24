@@ -10,13 +10,14 @@ const scss = readFileSync(join(__dirname, 'login.component.scss'), 'utf-8');
 describe('login: accesibilidad de los paneles', () => {
   it('nunca hay dos formularios ni contenido oculto con inert: uno a la vista según el modo', () => {
     expect(html).not.toContain('[attr.inert]');
-    expect(html).toContain('@if (!showRegister()) {');
-    expect((html.match(/<form\b/g) ?? []).length).toBe(2); // uno por rama del @if
+    expect(html).toContain('@if (showForgot()) {');
+    expect(html).toContain('} @else if (!showRegister()) {');
+    expect((html.match(/<form\b/g) ?? []).length).toBe(3); // uno por rama del @if: entrar, recuperar y solicitar
   });
 
   it('solo los formularios tienen h1 (uno por rama, que recibe el foco al alternar); el panel usa h2', () => {
-    expect((html.match(/<h1\b/g) ?? []).length).toBe(2);
-    expect((html.match(/<h1 #heading id="acceso-titulo" tabindex="-1">/g) ?? []).length).toBe(2);
+    expect((html.match(/<h1\b/g) ?? []).length).toBe(3);
+    expect((html.match(/<h1 #heading id="acceso-titulo" tabindex="-1">/g) ?? []).length).toBe(3);
     // Rediseño Metafrónesis 2026-11-20: los encabezados del panel no marcan género («Te damos la bienvenida»).
     expect(html).toContain('<h2>Te damos la bienvenida</h2>');
     expect(html).toContain('<h2>¿Primera vez en {{ brand.shortName }}?</h2>');

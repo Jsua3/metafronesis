@@ -204,6 +204,36 @@
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
     },
     {
+      "route": "api/auth/password-reset",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "password_reset_ip"
+      ],
+      "audit": "EXENTO: pide el enlace por correo: no cambia la cuenta y responde igual exista o no, para no revelar correos"
+    },
+    {
+      "route": "api/auth/password-reset/check",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "password_reset_confirm_ip"
+      ],
+      "audit": "EXENTO: solo consulta si el enlace sigue sirviendo: no cambia datos"
+    },
+    {
+      "route": "api/auth/password-reset/confirm",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "password_reset_confirm_ip"
+      ],
+      "audit": "PASSWORD_CHANGED"
+    },
+    {
       "route": "api/authoring/cases",
       "method": "GET",
       "exposure": "role:ADMIN,PROFESOR",
