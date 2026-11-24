@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, of, throwError } from 'rxjs';
 
 import { SesionesApi } from '../../core/api/sesiones.api';
 import { SesionDetalle } from '../../core/models/sesion.model';
+import { NotificationService } from '../../core/notifications/notification.service';
 import { UiDialog } from '../../shared/ui';
 import { SesionDetalleComponent } from './sesion-detalle.component';
 
@@ -98,5 +100,32 @@ describe('SesionDetalleComponent', () => {
     fixture.detectChanges();
     expect(el().textContent).toContain('Pausada');
     expect(el().textContent).not.toContain('En curso');
+  });
+
+  it('el aviso de CONVOCADO_EN_OTRA_SESION nombra a los estudiantes que bloquean', async () => {
+    const conflicto = new HttpErrorResponse({
+      status: 409,
+      error: {
+        code: 'CONVOCADO_EN_OTRA_SESION', message: 'Algunos convocados están en otra sesión activa con este caso.',
+        estudiantes: ['Ana Pérez', 'Luis Gómez'],
+      },
+    });
+    await montar(
+      { ...base, estado: 'PAUSADA', acciones: ['reanudar', 'finalizar', 'gestionarConvocados'] }, true,
+      { transicionar: vi.fn(() => throwError(() => conflicto)) },
+    );
+    const error = vi.spyOn(TestBed.inject(NotificationService), 'error');
+    el().querySelector<HTMLButtonElement>('[data-accion=reanudar]')!.click();
+    await fixture.whenStable();
+    expect(error).toHaveBeenCalledWith('Algunos convocados están en otra sesión activa con este caso. Estudiantes: Ana Pérez, Luis Gómez.');
+  });
+
+  it('otros errores muestran solo el mensaje del servidor', async () => {
+    const otro = new HttpErrorResponse({ status: 409, error: { code: 'SESSION_EXPIRED', message: 'La hora de fin ya pasó.', estudiantes: ['X'] } });
+    await montar(base, true, { transicionar: vi.fn(() => throwError(() => otro)) });
+    const error = vi.spyOn(TestBed.inject(NotificationService), 'error');
+    el().querySelector<HTMLButtonElement>('[data-accion=pausar]')!.click();
+    await fixture.whenStable();
+    expect(error).toHaveBeenCalledWith('La hora de fin ya pasó.');
   });
 });

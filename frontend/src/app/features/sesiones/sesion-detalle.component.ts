@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -12,6 +13,20 @@ import {
 } from '../../shared/ui';
 import { SesionDialogComponent, SesionDialogData, SesionDialogResult } from './sesion-dialog.component';
 import { ESTADOS, INTENTOS, REFRESCO_MS, TRANSICIONES, horario, seRefresca, transicionesDe } from './sesion-presentacion';
+
+/**
+ * Con el 409 `CONVOCADO_EN_OTRA_SESION` el servidor manda en `estudiantes` a quienes siguen en otra sesión activa
+ * del mismo caso: el docente necesita sus nombres para retirarlos o finalizar esa otra sesión. Se decide por el
+ * `code`, nunca por el texto del mensaje.
+ */
+function quienesBloquean(err: unknown): string {
+  if (!(err instanceof HttpErrorResponse)) return '';
+  const body = err.error as { code?: unknown; estudiantes?: unknown } | null;
+  if (body?.code !== 'CONVOCADO_EN_OTRA_SESION' || !Array.isArray(body.estudiantes)) return '';
+  const nombres = body.estudiantes.filter((n): n is string => typeof n === 'string' && n.trim() !== '');
+  // BORRADOR: texto pendiente de Psicología (VD-23).
+  return nombres.length ? ` Estudiantes: ${nombres.join(', ')}.` : '';
+}
 
 /** Una sesión: su estado, los botones que el estado permite (los manda el servidor) y sus convocados en vivo. */
 @Component({
@@ -150,7 +165,7 @@ export class SesionDetalleComponent {
         this.ocupado.set(null);
         // BORRADOR: texto pendiente de Psicología (VD-23).
         const texto = apiErrorMessage(err, 'No pudimos completar la acción.');
-        if (texto) this.notify.error(texto);
+        if (texto) this.notify.error(texto + quienesBloquean(err));
       },
     });
   }
