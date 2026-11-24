@@ -87,3 +87,26 @@ def test_permisos(cuerpo, cliente_docente):
 def test_ya_no_se_convoca_por_correos(cliente_docente, cuerpo):
     pk = crear(cliente_docente, cuerpo)["id"]
     assert cliente_docente.post(f"/api/sesiones/{pk}/convocados", {"emails": ["x@example.test"]}, format="json").status_code in (404, 405)
+
+
+def test_fechas_con_desfase_se_guardan_en_hora_de_bogota(cliente_docente, cuerpo):
+    from datetime import datetime
+    from apps.sesiones.models import Sesion
+    cuerpo = {**cuerpo, "inicio": "2026-11-24T14:00:00-05:00", "fin": "2026-11-24T17:00:00-05:00"}
+    sesion = crear(cliente_docente, cuerpo)
+    fila = Sesion.objects.get(pk=sesion["id"])
+    assert fila.inicio == datetime(2026, 11, 24, 14, 0) and fila.fin == datetime(2026, 11, 24, 17, 0)
+    assert sesion["inicio"] == "2026-11-24T14:00:00-05:00" and sesion["fin"] == "2026-11-24T17:00:00-05:00"
+    detalle = cliente_docente.get(f"/api/sesiones/{sesion['id']}").data["data"]
+    assert detalle["inicio"] == "2026-11-24T14:00:00-05:00"
+
+
+def test_un_instante_en_z_se_convierte_a_bogota(cliente_docente, cuerpo):
+    cuerpo = {**cuerpo, "inicio": "2026-11-24T19:00:00Z", "fin": "2026-11-24T22:00:00.000Z"}
+    sesion = crear(cliente_docente, cuerpo)
+    assert sesion["inicio"] == "2026-11-24T14:00:00-05:00" and sesion["fin"] == "2026-11-24T17:00:00-05:00"
+
+
+def test_fecha_invalida_senala_el_campo(cliente_docente, cuerpo):
+    respuesta = cliente_docente.post("/api/sesiones", {**cuerpo, "inicio": "mañana"}, format="json")
+    assert respuesta.status_code == 400 and respuesta.data["field"] == "inicio"

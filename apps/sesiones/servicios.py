@@ -4,6 +4,7 @@ from django.http import Http404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.grupos.assignments import format_window_value
 from apps.grupos.models import Grupo
 from apps.simulation.models import AttemptStatus, CaseVersion, CaseVersionStatus, SimulationAttempt
 from apps.simulation.services.audit_service import auditable
@@ -47,7 +48,7 @@ def caso_dto(version):
 
 # ─── DTO ─────────────────────────────────────────────────────────────────────────────────────────
 def _iso(fecha):
-    return fecha.isoformat() if fecha else None
+    return format_window_value(fecha)
 
 
 def dto(sesion):
