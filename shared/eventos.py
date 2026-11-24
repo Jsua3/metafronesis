@@ -6,12 +6,8 @@ Cada señal se envía con ``send(sender=<clase del emisor>, ...)`` y los argumen
 
 from django.dispatch import Signal
 
-#: ``sesiones`` al convocar estudiantes. Argumentos: ``sesion``, ``convocatorias`` (lista) y ``codigos``
-#: (dict id de estudiante → código en claro, que solo viaja en este aviso).
-convocatoria_emitida = Signal()
-
 #: ``sesiones`` al agregar o retirar convocados. Argumentos: ``sesion``, ``agregados`` y ``retirados`` (listas de
-#: estudiantes) y ``codigos`` de los agregados.
+#: estudiantes).
 convocados_cambiaron = Signal()
 
 #: ``simulation`` cuando el sistema califica un intento. Argumentos: ``intento`` y ``evaluacion``.
