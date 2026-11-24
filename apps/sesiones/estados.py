@@ -1,31 +1,28 @@
-from shared.exceptions import ApiError
 from .models import EstadoSesion
 
 
 class Estado:
-    def iniciar(self):
-        raise ApiError("INVALID_TRANSITION", "La transición no está permitida.", 409)
-
-    def finalizar(self):
-        raise ApiError("INVALID_TRANSITION", "La transición no está permitida.", 409)
-
-    def cerrar_automatico(self):
-        return EstadoSesion.FINALIZADA
+    valor = None
 
 
-class SinIniciar(Estado):
-    def iniciar(self):
-        return EstadoSesion.EN_CURSO
+class Programada(Estado):
+    valor = EstadoSesion.PROGRAMADA
 
 
 class EnCurso(Estado):
-    def finalizar(self):
-        return EstadoSesion.FINALIZADA
+    valor = EstadoSesion.EN_CURSO
+
+
+class Pausada(Estado):
+    valor = EstadoSesion.PAUSADA
 
 
 class Finalizada(Estado):
-    def cerrar_automatico(self):
-        return EstadoSesion.FINALIZADA
+    valor = EstadoSesion.FINALIZADA
 
 
-ESTADOS = {EstadoSesion.SIN_INICIAR: SinIniciar(), EstadoSesion.EN_CURSO: EnCurso(), EstadoSesion.FINALIZADA: Finalizada()}
+class Cancelada(Estado):
+    valor = EstadoSesion.CANCELADA
+
+
+ESTADOS = {clase.valor: clase() for clase in (Programada, EnCurso, Pausada, Finalizada, Cancelada)}
