@@ -27,6 +27,7 @@ describe('LoginComponent', () => {
   let login: ReturnType<typeof vi.fn>;
   let googleConfig: () => Observable<{ enabled: boolean; clientId?: string }>;
   let requestAccess: (payload?: unknown) => Observable<unknown>;
+  let requestPasswordReset: ReturnType<typeof vi.fn>;
   const host = () => fixture.nativeElement as HTMLElement;
   const text = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
   /** Texto que se lee de una etiqueta (sin el «*» decorativo de obligatorio, que es aria-hidden). */
@@ -43,7 +44,8 @@ describe('LoginComponent', () => {
         ...extraProviders,
         provideZonelessChangeDetection(),
         provideRouter([{ path: '**', component: Screen }]),
-        { provide: AuthService, useValue: { login, googleConfig: () => googleConfig(), requestAccess: (payload: unknown) => requestAccess(payload) } },
+        { provide: AuthService, useValue: { login, googleConfig: () => googleConfig(), requestAccess: (payload: unknown) => requestAccess(payload),
+          requestPasswordReset: (email: string) => (requestPasswordReset as unknown as (e: string) => Observable<unknown>)(email) } },
         { provide: UiDialog, useValue: { sheet: vi.fn() } },
       ],
     });
@@ -58,6 +60,7 @@ describe('LoginComponent', () => {
   beforeEach(() => {
     login = vi.fn(() => of({}));
     requestAccess = () => of({});
+    requestPasswordReset = vi.fn(() => of({ message: 'Si el correo tiene una cuenta activa, te enviamos un enlace.' }));
     googleConfig = () => of({ enabled: false });
     window.matchMedia = ((query: string) => ({
       matches: query.includes('min-width'), media: query, addEventListener: () => undefined, removeEventListener: () => undefined,
@@ -305,6 +308,49 @@ describe('LoginComponent', () => {
       submit().click();
       await fixture.whenStable();
       expect(requestAccessSpy).toHaveBeenCalledWith({ nombre: 'Luz', apellido: 'Mora', email: 'luz@cue.edu.co', rol: 'PROFESOR', website: '' });
+    });
+  });
+
+  describe('¿Olvidaste tu contraseña?', () => {
+    it('abre el formulario de recuperación en la tarjeta (no un mailto) con el correo ya escrito', async () => {
+      await render();
+      expect(host().querySelector('a[href^="mailto:"]')).toBeNull();
+      fixture.componentInstance.form.controls.email.setValue('ana@cue.edu.co');
+      button('¿Olvidaste tu contraseña?').click();
+      await fixture.whenStable();
+      expect(text(host().querySelector('h1'))).toBe('Recuperar contraseña');
+      expect(host().querySelector<HTMLInputElement>('#olvido-email')!.value).toBe('ana@cue.edu.co');
+    });
+
+    it('envía el correo y muestra el aviso que no revela si la cuenta existe', async () => {
+      await render();
+      button('¿Olvidaste tu contraseña?').click();
+      await fixture.whenStable();
+      fixture.componentInstance.forgotForm.setValue({ email: 'Ana@CUE.edu.co' });
+      submit().click();
+      await fixture.whenStable();
+      expect(requestPasswordReset).toHaveBeenCalledWith('ana@cue.edu.co');
+      expect(text(host())).toContain('Si el correo tiene una cuenta activa, te enviamos un enlace.');
+    });
+
+    it('sin correo no envía y dice qué falta', async () => {
+      await render();
+      button('¿Olvidaste tu contraseña?').click();
+      await fixture.whenStable();
+      fixture.componentInstance.forgotForm.setValue({ email: '' });
+      submit().click();
+      await fixture.whenStable();
+      expect(requestPasswordReset).not.toHaveBeenCalled();
+      expect(text(host())).toContain('Escribe el correo de tu cuenta.');
+    });
+
+    it('«Volver a iniciar sesión» regresa al formulario de entrada', async () => {
+      await render();
+      button('¿Olvidaste tu contraseña?').click();
+      await fixture.whenStable();
+      button('Volver a iniciar sesión').click();
+      await fixture.whenStable();
+      expect(text(host().querySelector('h1'))).toBe('Iniciar sesión');
     });
   });
 

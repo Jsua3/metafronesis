@@ -27,6 +27,7 @@ declare const google: any;
 
 /** Campos de cada formulario en el orden de la pantalla: al enviar con errores, el foco va al primero inválido. */
 const SIGN_IN_FIELDS = [['email', 'login-email'], ['password', 'login-password']] as const;
+const FORGOT_FIELDS = [['email', 'olvido-email']] as const;
 const REQUEST_FIELDS = [['nombre', 'registro-nombre'], ['apellido', 'registro-apellido'], ['email', 'registro-email']] as const;
 
 /**
@@ -104,6 +105,13 @@ export class LoginComponent implements AfterViewInit {
    */
   readonly announcement = signal('');
 
+  /** «¿Olvidaste tu contraseña?»: el tercer formulario de la tarjeta (también se abre con `?olvido=1`). */
+  readonly showForgot = signal(this.query.get('olvido') === '1');
+  readonly forgotTried = signal(false);
+  readonly forgotLoading = signal(false);
+  readonly forgotNotice = signal('');
+  readonly forgotError = signal('');
+
   readonly registerNotice = signal('');
   readonly registerLoading = signal(false);
   readonly registerError = signal('');
@@ -115,6 +123,10 @@ export class LoginComponent implements AfterViewInit {
     email: [this.loadRememberedEmail(), [Validators.required, Validators.email]],
     password: ['', Validators.required],
     remember: [true],
+  });
+
+  readonly forgotForm = this.fb.nonNullable.group({
+    email: [this.loadRememberedEmail(), [Validators.required, Validators.email]],
   });
 
   readonly registerForm = this.fb.nonNullable.group({
@@ -157,6 +169,9 @@ export class LoginComponent implements AfterViewInit {
 
   openSignIn(): void {
     this.showRegister.set(false);
+    this.showForgot.set(false);
+    this.forgotNotice.set('');
+    this.forgotError.set('');
     this.registerNotice.set('');
     this.registerError.set('');
     this.announcement.set('');
@@ -165,8 +180,51 @@ export class LoginComponent implements AfterViewInit {
     if (this.googleEnabled()) afterNextRender(() => this.renderGoogleButton(), { injector: this.injector });
   }
 
+  /** «¿Olvidaste tu contraseña?»: pide el correo y manda el enlace para restablecerla. */
+  openForgot(): void {
+    this.forgotForm.controls.email.setValue(this.form.controls.email.value.trim() || this.forgotForm.controls.email.value);
+    this.showForgot.set(true);
+    this.showRegister.set(false);
+    this.error.set('');
+    this.forgotNotice.set('');
+    this.forgotError.set('');
+    this.announcement.set('');
+    this.focusHeading();
+  }
+
+  onForgotSubmit(): void {
+    if (this.forgotLoading()) return;
+    this.forgotTried.set(true);
+    if (this.forgotForm.invalid) {
+      this.forgotForm.markAllAsTouched();
+      this.focusFirstInvalid(this.forgotForm.controls, FORGOT_FIELDS);
+      return;
+    }
+    this.forgotLoading.set(true);
+    this.forgotNotice.set('');
+    this.forgotError.set('');
+    this.announcement.set('Enviando el enlace…');
+    this.auth.requestPasswordReset(this.forgotForm.controls.email.value.trim().toLowerCase()).subscribe({
+      next: response => {
+        // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
+        const notice = response.message
+          ?? 'Si el correo tiene una cuenta activa, te enviamos un enlace para restablecer la contraseña. Revisa también la carpeta de spam.';
+        this.forgotNotice.set(notice);
+        this.announcement.set(notice);
+        this.forgotLoading.set(false);
+        this.forgotTried.set(false);
+      },
+      error: (error: unknown) => {
+        this.forgotError.set(this.forgotErrorMessage(error));
+        this.announcement.set('');
+        this.forgotLoading.set(false);
+      },
+    });
+  }
+
   openSignUp(): void {
     this.showRegister.set(true);
+    this.showForgot.set(false);
     this.error.set('');
     this.registerNotice.set('');
     this.registerError.set('');
@@ -362,6 +420,12 @@ export class LoginComponent implements AfterViewInit {
       return 'No pudimos entrar con esa cuenta de Google. Usa tu correo y contraseña, o solicita acceso.';
     }
     return error.error?.message || 'No pudimos iniciar sesión con Google. Inténtalo de nuevo en un momento.';
+  }
+
+  private forgotErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) return 'No pudimos enviar el enlace. Inténtalo de nuevo en unos minutos.';
+    if (error.status === 429) return throttledMessage(error);
+    return error.error?.message || 'No pudimos enviar el enlace. Inténtalo de nuevo en unos minutos.';
   }
 
   private registerErrorMessage(error: unknown): string {

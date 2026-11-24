@@ -47,6 +47,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent)
   },
   {
+    // El enlace del correo de «¿Olvidaste tu contraseña?»: público, fuera del portal.
+    path: 'restablecer-contrasena',
+    title: 'Restablece tu contraseña',
+    loadComponent: () => import('./features/account/reset-password.component').then(m => m.ResetPasswordComponent)
+  },
+  {
     // E2-9 (RN-10): fuera del portal (sin barra ni destinos que el servidor negaría con la contraseña temporal).
     path: 'cambiar-contrasena',
     title: 'Cambia tu contraseña',
