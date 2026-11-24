@@ -124,6 +124,9 @@ def _transition(user, pk, action):
     attempt = owned(user, pk, lock=True)
     if attempt._time_expired:
         return attempt
+    if action == lifecycle.RESUME and not attempt.is_rehearsal:
+        # Reanudar es volver a entrar: las reglas de inicio (p. ej. una sesión en pausa) también deciden aquí.
+        reglas_de_inicio.verificar(user, attempt.case_version)
     now = timezone.now()
     previous = attempt.status
     if action == lifecycle.REPLACE:
