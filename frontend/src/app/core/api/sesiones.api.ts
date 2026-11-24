@@ -7,6 +7,15 @@ import {
 } from '../models/sesion.model';
 import { ApiDataResponse } from './api-response';
 
+/** Una URL literal por transición: el contrato de rutas del cliente las lee tal cual contra Django. */
+const RUTA_TRANSICION: Record<TransicionSesion, (id: number) => string> = {
+  iniciar: id => `/api/sesiones/${id}/iniciar`,
+  pausar: id => `/api/sesiones/${id}/pausar`,
+  reanudar: id => `/api/sesiones/${id}/reanudar`,
+  finalizar: id => `/api/sesiones/${id}/finalizar`,
+  cancelar: id => `/api/sesiones/${id}/cancelar`,
+};
+
 /** Sesiones de clase del docente: programarlas, guiarlas en vivo y gestionar sus convocados. */
 @Injectable({ providedIn: 'root' })
 export class SesionesApi {
@@ -31,7 +40,7 @@ export class SesionesApi {
   }
 
   transicionar(id: number, accion: TransicionSesion) {
-    return this.http.post<ApiDataResponse<SesionDetalle>>(`${this.API}/${id}/${accion}`, {}).pipe(map(r => r.data));
+    return this.http.post<ApiDataResponse<SesionDetalle>>(RUTA_TRANSICION[accion](id), {}).pipe(map(r => r.data));
   }
 
   sincronizar(id: number) {
