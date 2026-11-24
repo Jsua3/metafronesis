@@ -9,7 +9,7 @@ from .models import AutorizacionRepeticion, Convocatoria, EstadoConvocatoria
 
 
 class MotivoSerializer(serializers.Serializer):
-    motivo = serializers.CharField(trim_whitespace=True, allow_blank=False)
+    motivo = serializers.CharField(trim_whitespace=True, allow_blank=False, max_length=1000)
 
 
 @auditable("REPETICION_AUTORIZADA", "SESION", resource_id_param_index=1)

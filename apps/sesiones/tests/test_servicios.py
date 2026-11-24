@@ -8,11 +8,10 @@ from rest_framework.exceptions import ValidationError
 from apps.grupos.models import CaseAssignment, Grupo, GrupoEstudiante
 from apps.sesiones import cierre, convocatorias, repeticion, servicios
 from apps.sesiones.models import Convocatoria, EstadoConvocatoria, EstadoSesion
-from apps.simulation.models import SimulationAttempt
 from apps.simulation.services.attempt_api import start
 from apps.users.models import CustomUser
 from shared.exceptions import ApiError
-from shared.policies import ESTUDIANTE, PROFESOR
+from shared.policies import PROFESOR
 
 pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-35", "SIEP-37", "SIEP-42")]
 

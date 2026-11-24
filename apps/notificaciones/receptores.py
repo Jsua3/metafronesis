@@ -10,7 +10,7 @@ def _fecha(sesion):
     return sesion.inicio.strftime("%d/%m/%Y %H:%M")
 
 
-# BORRADOR: textos nuevos del servidor, pendientes de la aprobación de Psicología (VD-23).
+# BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
 def _convocar(sesion, estudiante):
     lineas = [
         f"Caso: {sesion.case_version.simulation_case.title}",
@@ -35,6 +35,7 @@ def al_cambiar_convocados(sender, sesion, agregados, retirados, **kwargs):
 
 @receiver(sesion_cancelada, dispatch_uid="notificaciones.sesion_cancelada")
 def al_cancelar(sender, sesion, estudiantes, **kwargs):
+    # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
     cuerpo = f"La sesión de «{sesion.case_version.simulation_case.title}» del {_fecha(sesion)} fue cancelada."
     for estudiante in estudiantes:
         crear(estudiante, sesion.creada_por, "CANCELACION", "Sesión cancelada", cuerpo)

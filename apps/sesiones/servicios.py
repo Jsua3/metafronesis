@@ -104,6 +104,7 @@ def _version_de_biblioteca(version_id):
         raise Http404
     version = biblioteca().filter(pk=version_id).first()
     if version is None:
+        # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
         raise ApiError("CASE_NOT_PUBLISHED", "La versión debe estar publicada y activa.", 400, field="caseVersionId")
     return version
 
@@ -148,6 +149,7 @@ def editar(usuario, pk, cambios):
         if clave in cambios:
             setattr(sesion, campo, cambios[clave])
     if sesion.fin <= sesion.inicio:
+        # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
         raise ValidationError({"fin": "Debe ser posterior al inicio."})
     _validar_tiempo(sesion.case_version, sesion.tiempo_maximo_min)
     cambia_grupo = "grupoId" in cambios and cambios["grupoId"] != sesion.grupo_id
