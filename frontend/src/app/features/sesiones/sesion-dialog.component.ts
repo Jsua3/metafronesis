@@ -72,7 +72,9 @@ type Campo = keyof SesionDatos;
     </ui-dialog-frame>
   `,
   styles: [`
-    :host { display: block; }
+    /* El panel limita su alto a 100dvh - 2 * space-4 (_overlays.scss) pero su alto es auto, así que el marco no hereda un máximo
+       resoluble; se lo damos al host (descontando el borde de 1px del contenedor) para que el cuerpo haga scroll y el pie quede a la vista. */
+    :host { display: block; max-block-size: calc(100dvh - 2 * var(--ds-space-4) - 2px); }
     .sd-form { display: grid; gap: var(--ds-space-4); }
     .sd-par { display: grid; gap: var(--ds-space-4); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
   `],
