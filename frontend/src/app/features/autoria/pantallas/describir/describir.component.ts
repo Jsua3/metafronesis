@@ -4,21 +4,27 @@ import {
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import type { Acuerdo } from '../../../../core/api/coautoria.api';
 import type { GenerationStatus } from '../../../../core/models/generacion.model';
 import { AutoriaApiService } from '../../api/autoria-api.service';
 import { ErrorDeInicio, GeneracionService } from '../../generacion/generacion.service';
+import { ConversacionCoautoraComponent, MINIMO_IDEA } from '../../ia/coautora/conversacion-coautora.component';
 import { rutaDelEditor } from '../../rutas';
 
 export const MINIMO_DESCRIPCION = 40;
 export const MAXIMO_DESCRIPCION = 2000;
 
 /**
- * «Describe tu caso» (paso 2 de crear un caso): un párrafo y la IA arma el borrador por etapas. Revisa si la generación
- * está disponible, si la docente ya tiene una a medio hacer (se retoma o se cancela) y, si no, pide la descripción y
- * navega a la pantalla de avance. Cada error de inicio (P10) tiene su rama: campo, ya en curso, límite del día, apagada.
+ * «Describe tu caso» (paso 2 de crear un caso). Revisa si la generación está disponible y si la docente ya tiene una a medio
+ * hacer (se retoma o se cancela). Si no, pide la idea y ofrece dos caminos:
+ * - «Conversar con la IA» (SIEP-269, el principal): la IA coautora hace preguntas, acuerda la ficha y, al aceptarla, arranca
+ *   la generación con ella y se navega a la pantalla de avance.
+ * - «Generar sin preguntas»: la descripción va directo a la generación por etapas, como antes.
+ * Cada error de inicio (P10) tiene su rama: campo, ya en curso, límite del día, apagada.
  */
 @Component({
   selector: 'app-describir',
+  imports: [ConversacionCoautoraComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="describir" aria-label="Describe tu caso" data-accion="describir-caso">
@@ -46,15 +52,23 @@ export const MAXIMO_DESCRIPCION = 2000;
         </div>
       } @else if (!habilitada()) {
         <p class="tarjeta" role="status">{{ textoApagada() }}</p>
+      } @else if (conversando()) {
+        <div class="conversando">
+          <app-conversacion-coautora [destino]="{ lugarId: lugarId() }" [ideaInicial]="descripcion()" [autoEmpezar]="true"
+                                     etiquetaIdea="Cuéntale tu idea a la IA" (ideaCambiada)="descripcion.set($event)"
+                                     (aceptado)="alAceptar($event)" />
+          <button type="button" class="boton boton-texto volver" (click)="conversando.set(false)">Volver a escribir la idea</button>
+        </div>
       } @else {
         <form class="formulario" novalidate (submit)="$event.preventDefault(); generar()">
           @if (errorLugar()) {
             <p id="lugar-error" class="error-campo" role="alert"><span aria-hidden="true">! </span>{{ errorLugar() }}</p>
           }
           <div class="campo">
-            <label for="descripcion">Describe la situación y lo que debe aprender el estudiante</label>
+            <label for="descripcion">Cuéntale tu idea a la IA</label>
             <p id="descripcion-ayuda" class="texto-secundario">
-              Por ejemplo: quién consulta, qué le pasó, dónde ocurre y qué esperas que el estudiante practique. Entre 40 y 2000 caracteres.
+              Por ejemplo: quién consulta, qué le pasó, dónde ocurre y qué esperas que el estudiante practique. Con poco o mucho
+              detalle: la IA te hará unas preguntas antes de construir.
             </p>
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
             <p id="descripcion-datos" class="aviso-datos"><span aria-hidden="true">▲ </span>No escribas datos reales de personas: ni nombres, ni correos, ni teléfonos, ni números de documento.</p>
@@ -72,12 +86,18 @@ export const MAXIMO_DESCRIPCION = 2000;
             <p id="descripcion-general" class="aviso-error tarjeta" role="alert">{{ errorGeneral() }}</p>
           }
           <div class="acciones">
-            <button type="submit" class="boton boton-primario" [attr.aria-disabled]="!puedeGenerar()"
-                    [attr.aria-describedby]="botonDescribedby()">
-              {{ enviando() ? 'Empezando…' : 'Generar el caso con IA' }}
+            <button type="button" class="boton boton-primario" [attr.aria-disabled]="!puedeConversar()"
+                    [attr.aria-describedby]="!ideaSuficiente() ? 'idea-falta' : null" (click)="conversar()">
+              Conversar con la IA
             </button>
-            @if (!largoSuficiente()) {
-              <span id="descripcion-falta" class="texto-secundario">Escribe al menos 40 caracteres.</span>
+            <button type="submit" class="boton" [attr.aria-disabled]="!puedeGenerar()"
+                    [attr.aria-describedby]="botonDescribedby()">
+              {{ enviando() ? 'Empezando…' : 'Generar sin preguntas' }}
+            </button>
+            @if (!ideaSuficiente()) {
+              <span id="idea-falta" class="texto-secundario">Escribe al menos {{ minimoIdea }} caracteres.</span>
+            } @else if (!largoSuficiente()) {
+              <span id="descripcion-falta" class="texto-secundario">Para generar sin preguntas, escribe al menos 40 caracteres.</span>
             }
           </div>
         </form>
@@ -102,6 +122,8 @@ export const MAXIMO_DESCRIPCION = 2000;
     .retomar { display: flex; flex-direction: column; gap: 0.75rem; }
     .aviso-error { margin: 0; border-color: var(--peligro); background: var(--peligro-tinte); }
     .acciones { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+    .conversando { display: flex; flex-direction: column; gap: 0.75rem; max-inline-size: 48rem; }
+    .volver { align-self: flex-start; }
     @media (max-width: 40rem) { .acciones .boton { flex: 1 1 100%; } }
   `,
 })
@@ -150,6 +172,11 @@ export class DescribirComponent {
   });
   protected readonly largo = computed(() => this.descripcion().length);
   protected readonly largoSuficiente = computed(() => this.descripcion().trim().length >= MINIMO_DESCRIPCION);
+  protected readonly minimoIdea = MINIMO_IDEA;
+  /** La conversación con la IA coautora está abierta. */
+  protected readonly conversando = signal(false);
+  protected readonly ideaSuficiente = computed(() => this.descripcion().trim().length >= MINIMO_IDEA);
+  protected readonly puedeConversar = computed(() => this.ideaSuficiente() && !this.enviando() && !this.limiteAlcanzado());
   protected readonly puedeGenerar = computed(() => this.largoSuficiente() && !this.enviando() && !this.limiteAlcanzado());
   protected readonly textoRestantes = computed(() => {
     const n = this.estado()?.remainingToday ?? 0;
@@ -168,6 +195,7 @@ export class DescribirComponent {
     return ids.join(' ');
   });
   protected readonly botonDescribedby = computed(() => {
+    if (!this.ideaSuficiente()) return 'idea-falta';
     if (!this.largoSuficiente()) return 'descripcion-falta';
     return this.errorGeneral() && this.limiteAlcanzado() ? 'descripcion-general' : null;
   });
@@ -202,6 +230,17 @@ export class DescribirComponent {
   protected escribir(evento: Event): void {
     this.descripcion.set((evento.target as HTMLTextAreaElement).value);
     this.errorCampo.set(null);
+  }
+
+  protected conversar(): void {
+    if (this.puedeConversar()) this.conversando.set(true);
+  }
+
+  /** La ficha quedó acordada y la generación arrancó en el servidor: se va a la pantalla de avance. */
+  protected alAceptar(acuerdo: Acuerdo): void {
+    if (acuerdo.generationId) {
+      void this.router.navigateByUrl(rutaDelEditor(`/generando/${encodeURIComponent(acuerdo.generationId)}`, null));
+    }
   }
 
   protected async generar(): Promise<void> {
