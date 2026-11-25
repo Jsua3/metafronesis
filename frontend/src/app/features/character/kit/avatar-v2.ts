@@ -11,7 +11,7 @@
  * exige que coincidan.
  */
 
-export const PLAYABLE_IDS = ['valentina', 'andres', 'camila', 'daniela', 'david', 'felipe', 'jorge', 'luisa', 'mariana', 'mateo', 'paula', 'samuel', 'karen'] as const;
+export const PLAYABLE_IDS = ['valentina', 'andres', 'camila', 'daniela', 'david', 'felipe', 'jorge', 'luisa', 'mariana', 'mateo', 'paula', 'samuel', 'karen', 'sara'] as const;
 export const COMPLEXIONS = ['a', 'b', 'c'] as const;
 export const SKINS = ['piel-1', 'piel-2', 'piel-3', 'piel-4', 'piel-5', 'piel-6'] as const;
 export const HAIRS = ['rapado', 'corto-liso', 'corto-rizado', 'bob-flequillo', 'media-melena', 'largo-suelto', 'largo-raya-medio', 'cola-caballo', 'mono', 'trenza', 'afro'] as const;

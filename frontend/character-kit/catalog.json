@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "defaultRecipe": "valentina",
-  "playables": ["valentina", "andres", "camila", "daniela", "david", "felipe", "jorge", "luisa", "mariana", "mateo", "paula", "samuel", "karen"],
+  "playables": ["valentina", "andres", "camila", "daniela", "david", "felipe", "jorge", "luisa", "mariana", "mateo", "paula", "samuel", "karen", "sara"],
   "actors": {
     "apoyo-psicosocial": "profesional-psicosocial",
     "enfermera-urgencias": "enfermera-urgencias",

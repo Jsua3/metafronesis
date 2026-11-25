@@ -73,6 +73,13 @@ describe('avatar v2', () => {
       .toEqual({ schemaVersion: 2, mode: 'elenco', recipeId: 'karen', bata: true });
   });
 
+  it('acepta a Sara como avatar del elenco, con y sin bata', () => {
+    for (const bata of [false, true]) {
+      expect(coerceAvatarV2({ schemaVersion: 2, mode: 'elenco', recipeId: 'sara', bata }))
+        .toEqual({ schemaVersion: 2, mode: 'elenco', recipeId: 'sara', bata });
+    }
+  });
+
   it('conserva la complexión c y el peinado largo con raya al medio de un avatar personalizado', () => {
     expect(coerceAvatarV2({ ...BASE, complexion: 'c', hair: 'largo-raya-medio' }))
       .toEqual({ ...BASE, complexion: 'c', hair: 'largo-raya-medio' });

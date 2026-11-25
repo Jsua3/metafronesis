@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "kitSha256": "e8ce62e376dd1207223edce361e0a2193709df52546dc292225c46376988cda3",
+  "kitSha256": "18bcc368e11be9ffabaff3c0844d554af8468c141251f77386cd86696ca3a41a",
   "characters": {
     "abuela-familia": {
       "displayName": "Abuela de la niña",
@@ -4018,6 +4018,206 @@
               "width": 32,
               "height": 32,
               "pixelSha256": "a6177a2f562efed7113b46690212084798ac87c2279bafa51b0c0c71b9b0036a"
+            }
+          }
+        }
+      }
+    },
+    "sara": {
+      "displayName": "Sara",
+      "kind": "jugable",
+      "complexion": "c",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL",
+        "nota": "Avatar hecho con permiso escrito de la persona representada (2026-11)"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "torsoDepth": 19
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "torsoDepth": 19
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "sara/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "25d347d5fe97bbdaa2fe35d7ba8c78922739edb146b662f72aeddac6671e7fed"
+        },
+        "walk": {
+          "path": "sara/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "172fd66d54a5448ab0ff0708b284f7c1b2195d0ed6bdfa08d0cc33e6c5e65672"
+        },
+        "portrait-neutral": {
+          "path": "sara/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "0ab5caf9dceefd8821edfdb813d4944e97c4fef37a3a12fa4c19b45e02e60c8a"
+        },
+        "portrait-preocupada": {
+          "path": "sara/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "32b14ce51bddfc8776c9656a92fcb193dc5c52baa90c4225ccb3e3fa88aadaf6"
+        },
+        "portrait-triste": {
+          "path": "sara/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "d37312acf66d2f6803374f8a72905658f5e55b89a6bbafbed8ef8a9e45d52311"
+        },
+        "portrait-alegre": {
+          "path": "sara/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "ac98b5742aa83854bab0033ea54cc4bcb991bed7b57cce743b2921c9e05d8674"
+        },
+        "portrait-cautelosa": {
+          "path": "sara/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "34e9a4cb7311e8d03e079d58b7b797603601533fdb65c1083bf33beb17bf0a5e"
+        },
+        "portrait-en-crisis": {
+          "path": "sara/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "239b4cf2437d481748a85e70d74f4865766aeb673e209b16f850925479f0e16f"
+        }
+      },
+      "variants": {
+        "bata": {
+          "geometry": {
+            "down": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 25
+            },
+            "down-left": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "left": {
+              "opaqueHeight": 64,
+              "headWidth": 20,
+              "torsoDepth": 19
+            },
+            "up-left": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "up": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 25
+            },
+            "up-right": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "right": {
+              "opaqueHeight": 64,
+              "headWidth": 20,
+              "torsoDepth": 19
+            },
+            "down-right": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            }
+          },
+          "retouched": [],
+          "files": {
+            "idle": {
+              "path": "sara/bata/idle.png",
+              "width": 192,
+              "height": 576,
+              "pixelSha256": "eeb0e12be1d24657a8ba9923cdc7b2bd0ea907548094db9856722f54c8911736"
+            },
+            "walk": {
+              "path": "sara/bata/walk.png",
+              "width": 288,
+              "height": 576,
+              "pixelSha256": "97f6eacbe5e3601fe620dda1de15741e3f64b93d68130db4bfc94b6f74c1fe88"
+            },
+            "portrait-neutral": {
+              "path": "sara/bata/portrait-neutral.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "40bdd867cf0e6509c750fb638cab045228e66450fdca15adc0ef5dc6605ce428"
+            },
+            "portrait-preocupada": {
+              "path": "sara/bata/portrait-preocupada.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "a5ad169bc36fcb4dd19b757f2a94926e77e741b5be7bf94337b21baf1fbd7bd6"
+            },
+            "portrait-triste": {
+              "path": "sara/bata/portrait-triste.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "78cfa41317334d729f91ab5da30cbaba9c8d07e4003da6867420119a33830406"
+            },
+            "portrait-alegre": {
+              "path": "sara/bata/portrait-alegre.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "04b2f8adfc7152454f5564b238ec588ac9644f19558536538eb314be98cd916e"
+            },
+            "portrait-cautelosa": {
+              "path": "sara/bata/portrait-cautelosa.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "ee07270d60b191f6ee320154c168e6b0a03824495a4c91f8106b82a40fc6d2c1"
+            },
+            "portrait-en-crisis": {
+              "path": "sara/bata/portrait-en-crisis.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "c5da3bdd7d25526f5eed7fac6085ce0bb97412b4a9b35c6d2fa543286babbd56"
             }
           }
         }
