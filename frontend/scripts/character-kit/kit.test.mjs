@@ -409,3 +409,14 @@ test('emotionToPortrait cubre guarded y crisis', () => {
   assert.equal(bundle.catalog.emotionToPortrait.guarded, 'cautelosa');
   assert.equal(bundle.catalog.emotionToPortrait.crisis, 'en-crisis');
 });
+
+test('complexión c: mismo cuadro y misma cabeza que a', async () => {
+  const { COMPLEXIONS } = await import('../../character-kit/mannequins/index.mjs');
+  const { BUSTS } = await import('../../character-kit/busts/index.mjs');
+  assert.equal(COMPLEXIONS.c.id, 'c');
+  assert.deepEqual(COMPLEXIONS.c.frame, COMPLEXIONS.a.frame);
+  for (const view of Object.keys(COMPLEXIONS.a.views)) {
+    assert.deepEqual(COMPLEXIONS.c.views[view].head, COMPLEXIONS.a.views[view].head, view);
+  }
+  assert.ok(BUSTS.c, 'la complexión c necesita su busto de retrato');
+});
