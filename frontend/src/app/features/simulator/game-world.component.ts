@@ -257,6 +257,10 @@ const NEAR_RING_COLOR = 0xffffff;
 const STEP_MARK_GLYPH = '▶';
 const STEP_MARK_SIDE_PX = 22;
 const STEP_MARK_LIFT: Readonly<{ person: number; door: number; object: number }> = { person: 46, door: 52, object: 26 };
+/** Margen (px del mundo) que un rótulo deja al borde de la vista y del indicador de destino fuera de cuadro (P9). */
+const VIEW_EDGE_MARGIN_PX = 6;
+/** Largo máximo del nombre en el indicador del borde: «◀ Vigilante». */
+const EDGE_NAME_MAX = 14;
 /** Margen extra de puntería con el dedo (px del mundo): un toque es menos preciso que un clic. */
 const TAP_SLOP_PX = 14;
 
@@ -366,6 +370,16 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private nearRing?: { halo: Phaser.GameObjects.Ellipse; ring: Phaser.GameObjects.Ellipse };
   /** «E · Revisar …» junto a un marcador cercano (P9); las personas usan su propia pista y las puertas su rótulo. */
   private markerPrompt?: Phaser.GameObjects.Text;
+  /** Indicador de borde (P9): hacia dónde queda el siguiente paso cuando está fuera de la vista. Una sola pieza, reposicionada. */
+  private edgeArrow?: Phaser.GameObjects.Text;
+  /** La frase de un marcador cercano está en uso (el rótulo de su dueño puede ocultarla si queda fuera de la vista). */
+  private markerPromptOn = false;
+  /** Qué dice y hacia dónde apunta ahora (clave|lado): el texto y el ancla solo se reescriben cuando cambia. */
+  private edgeState = '';
+  /** Posición de trabajo del destino (sin asignar por cuadro) y los bordes de la vista con los que se recortaron los rótulos. */
+  private readonly edgeXY = { x: 0, y: 0 };
+  private labelViewLeft = NaN;
+  private labelViewRight = NaN;
   /** Clic o toque sobre una persona u objeto (P9): al llegar, interactúa con él. Lo reemplaza cualquier otra caminata pedida. */
   private walkInteractKey: string | null = null;
   /** Escala de los rótulos para medir ≥ 12 px de pantalla; se recalcula al cambiar el tamaño del canvas. */
@@ -1363,6 +1377,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     cam.centerOn(next.centro.x, next.centro.y);
     this.applyCanvasScale(escala);
     this.scaleLabelsForZoom(next.zoom);
+    this.syncEdgeArrow();
+    this.refitLabelsToView();
     if (escala === 1 && base !== this.camSettledZoom) {
       this.camSettledZoom = base;
       this.onCameraZoomSettled();
@@ -2478,8 +2494,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const hint = bag['__hintSprite'] as Phaser.GameObjects.Text | undefined;
       const offsetY = (bag['__labelOffsetY'] as number | undefined) ?? 0;
       if (!label) return;
-      if (label.x !== container.x || label.y !== container.y + offsetY) label.setPosition(container.x, container.y + offsetY);
-      hint?.setPosition(container.x, label.y - label.displayHeight - 2);
+      const lx = this.fitLabelX(label, container.x);
+      if (label.x !== lx || label.y !== container.y + offsetY) label.setPosition(lx, container.y + offsetY);
+      hint?.setPosition(label.x, label.y - label.displayHeight - 2).setVisible(label.visible);
       return;
     }
     const marker = this.markers.get(key);
@@ -2492,8 +2509,110 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const pies = (moving ? marker.y : obj.y) + markerFeetOffsetY(obj);
     const y = yDelRotulo(x, pies, label.displayWidth, label.displayHeight,
       obj.type === 'PERSON' ? ALTO_DE_PERSONA_PX : 0, this.cajasOcupadas(key));
-    if (label.x !== x || label.y !== y) label.setPosition(x, y);
+    const lx = this.fitLabelX(label, x);
+    if (label.x !== lx || label.y !== y) label.setPosition(lx, y);
     if (key === this.nearestKey) this.placeMarkerPrompt(key);
+  }
+
+  /**
+   * Un rótulo centrado sobre su dueño no se sale de la vista (P9: «Vigilante» salía cortado en el borde izquierdo): la
+   * posición se recorta al rectángulo visible con un margen y, si su dueño ya está FUERA de la vista, el rótulo se oculta
+   * (el indicador del borde dice hacia dónde queda). Devuelve la x a usar. Sin cámara (escena sin arrancar) no toca nada.
+   */
+  private fitLabelX(label: Phaser.GameObjects.Text, ownerX: number): number {
+    const view = this.cameras?.main?.worldView;
+    if (!view || !(view.width > 0)) return ownerX;
+    const inside = ownerX >= view.x && ownerX <= view.right;
+    label.setVisible(inside);
+    if (!inside) return ownerX;
+    const half = label.displayWidth / 2 + VIEW_EDGE_MARGIN_PX;
+    const min = view.x + half;
+    const max = view.right - half;
+    return min > max ? (view.x + view.right) / 2 : Math.min(max, Math.max(min, ownerX));
+  }
+
+  /**
+   * La cámara se movió: los rótulos visibles se vuelven a recortar a la nueva vista. Solo cuando cambian los bordes de la
+   * vista y solo con rótulos a la vista (a lo sumo tres): `placeLabel` ya sabe dónde va cada uno.
+   */
+  private refitLabelsToView(): void {
+    const view = this.cameras?.main?.worldView;
+    if (!view || (view.x === this.labelViewLeft && view.right === this.labelViewRight)) return;
+    this.labelViewLeft = view.x;
+    this.labelViewRight = view.right;
+    for (let i = 0; i < this.revealed.length; i++) this.placeLabel(this.revealed[i]);
+    const near = this.nearestKey;
+    if (near !== null && !this.revealed.includes(near)) this.placeLabel(near);
+  }
+
+  /** Pone (x, y) del destino en `edgeXY` sin asignar nada; false si no está en la sala. */
+  private targetPointInto(key: string): boolean {
+    if (key.startsWith(NPC_KEY_PREFIX)) {
+      const npc = this.npcMarkers.get(key.slice(NPC_KEY_PREFIX.length));
+      if (!npc) return false;
+      this.edgeXY.x = npc.x; this.edgeXY.y = npc.y;
+      return true;
+    }
+    const obj = this.markerData.get(key);
+    if (!obj || !this.markers.has(key)) return false;
+    this.edgeXY.x = obj.x; this.edgeXY.y = obj.y + markerFeetOffsetY(obj);
+    return true;
+  }
+
+  /**
+   * Indicador de borde (P9): cuando el siguiente paso queda fuera de la vista de la cámara, una flecha con su nombre corto
+   * («◀ Vigilante») en el borde por donde hay que ir; al entrar en cuadro se oculta. Es UNA pieza creada la primera vez que
+   * hace falta; por cuadro solo se hacen cuentas y, si cambió, se reposiciona. El texto y el ancla se reescriben solo cuando
+   * cambia el destino o el lado. Es de lienzo: el lector de pantalla no lo recibe (lo que dice y a dónde ir está en la ficha
+   * y en el plano), así que no se repite en cada movimiento.
+   */
+  private syncEdgeArrow(): void {
+    const key = this.nextTargetKey;
+    const view = this.cameras?.main?.worldView;
+    if (key === null || this.dimmedKeys.has(key) || !view || !(view.width > 0) || !this.targetPointInto(key)) {
+      this.edgeArrow?.setVisible(false);
+      return;
+    }
+    const tx = this.edgeXY.x, ty = this.edgeXY.y - 30;   // hacia el cuerpo, no hacia los pies
+    if (tx >= view.x && tx <= view.right && ty >= view.y && ty <= view.bottom) {
+      this.edgeArrow?.setVisible(false);
+      return;
+    }
+    const cx = view.x + view.width / 2, cy = view.y + view.height / 2;
+    const horizontal = Math.abs(tx - cx) * view.height >= Math.abs(ty - cy) * view.width;
+    const side = horizontal ? (tx < cx ? 'L' : 'R') : (ty < cy ? 'U' : 'D');
+    if (!this.edgeArrow || !this.edgeArrow.scene) {
+      this.edgeArrow = this.add.text(0, 0, '', {
+        fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: `${LABEL_BASE_FONT_PX}px`, color: '#cdbcff', fontStyle: 'bold',
+        backgroundColor: WORLD_LABEL_PLATE, padding: { x: 5, y: 3 }, align: 'center',
+      }).setDepth(LABEL_DEPTH);
+      this.edgeState = '';
+    }
+    const arrow = this.edgeArrow;
+    const estado = `${key}|${side}`;
+    if (estado !== this.edgeState) {
+      this.edgeState = estado;
+      const name = this.edgeName(key);
+      arrow.setText(side === 'L' ? `◀ ${name}` : side === 'R' ? `${name} ▶` : side === 'U' ? `▲ ${name}` : `▼ ${name}`);
+      arrow.setOrigin(side === 'L' ? 0 : side === 'R' ? 1 : 0.5, side === 'U' ? 0 : side === 'D' ? 1 : 0.5);
+    }
+    arrow.setScale(this.labelScale);
+    const m = VIEW_EDGE_MARGIN_PX;
+    const w = arrow.displayWidth, h = arrow.displayHeight;
+    const x = side === 'L' ? view.x + m : side === 'R' ? view.right - m
+      : Math.min(view.right - w / 2 - m, Math.max(view.x + w / 2 + m, tx));
+    const y = side === 'U' ? view.y + m : side === 'D' ? view.bottom - m
+      : Math.min(view.bottom - h / 2 - m, Math.max(view.y + h / 2 + m, ty));
+    if (arrow.x !== x || arrow.y !== y) arrow.setPosition(x, y);
+    arrow.setVisible(true);
+  }
+
+  /** El nombre corto del destino para el borde: el de su rótulo, recortado. Solo al cambiar de destino o de lado. */
+  private edgeName(key: string): string {
+    const full = key.startsWith(NPC_KEY_PREFIX)
+      ? this.npcConfigFor(key)?.displayName ?? ''
+      : getSceneDisplayLabel(this.markerData.get(key) ?? ({} as MapObjectState), this.world?.map.key);
+    return full.length > EDGE_NAME_MAX ? `${full.slice(0, EDGE_NAME_MAX - 1)}…` : full;
   }
 
   /** P2: los cuerpos de las demás personas y los rótulos visibles de los demás, para que un rótulo no los pise. */
@@ -3196,6 +3315,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const key = this.nearestKey;
     const type = key === null ? undefined : this.markerData.get(key)?.type;
     const text = key !== null && type !== undefined && type !== 'EXIT' && this.markerLabels.has(key) ? this.proximityPromptText(key) : null;
+    this.markerPromptOn = text !== null;
     if (text === null) {
       this.markerPrompt?.setVisible(false);
       return;
@@ -3217,6 +3337,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (!prompt || !label || key !== this.nearestKey) return;
     const y = label.y + label.displayHeight + 2;
     if (prompt.x !== label.x || prompt.y !== y) prompt.setPosition(label.x, y);
+    prompt.setVisible(this.markerPromptOn && label.visible !== false);
   }
 
   /** Reinicia lo que `children.removeAll` destruye al reconstruir la sala. */
@@ -3225,6 +3346,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.stepMark = undefined;
     this.nearRing = undefined;
     this.markerPrompt = undefined;
+    this.edgeArrow = undefined;
+    this.edgeState = '';
+    this.labelViewLeft = this.labelViewRight = NaN;
     this.walkInteractKey = null;
     this.revealed.length = 0;
     // El contorno y el verbo del puntero también los destruye `children.removeAll`: se vuelven a crear al usarlos.

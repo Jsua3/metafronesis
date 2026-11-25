@@ -440,8 +440,8 @@ describe('DataDrivenWorldScene: los rótulos se dibujan sobre los actores y sigu
     expect(source).toMatch(/const marker = this\.add\.container\(object\.x, object\.y, \[markerShadow, pulse, main\]\);/);
     expect(source).not.toMatch(/this\.add\.container\([^)]*\[[^\]]*\blabel\b[^\]]*\]\)/);
     // Tres de rótulos (marcador, nombre y pista de una persona), dos del ratón (F6-7: contorno y verbo al pasar) y el
-    // chevrón con el nombre de la persona clave (P6), la flecha del siguiente paso y la frase «E · …» de un marcador cercano (P9).
-    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(8);
+    // chevrón con el nombre de la persona clave (P6), la flecha del siguiente paso y la frase «E · …» de un marcador cercano y el indicador de borde del destino fuera de cuadro (P9).
+    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(9);
   });
 });
 
@@ -722,5 +722,111 @@ describe('DataDrivenWorldScene: clic o toque para ir (P9)', () => {
     probe(h).finishWalkInteract(true);
     expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
     expect(h.callbacks.onInteract).not.toHaveBeenCalled();
+  });
+});
+
+describe('DataDrivenWorldScene: nada se sale de la vista (P9)', () => {
+  interface VistaProbe extends SceneProbe {
+    cameras: unknown;
+    edgeArrow?: FakeNode;
+    nextTargetKey: string | null;
+    syncEdgeArrow(): void;
+    refitLabelsToView(): void;
+    labelScale: number;
+  }
+  const vista = (x: number, w: number, y = 0, hgt = 528) =>
+    ({ x, right: x + w, y, bottom: y + hgt, width: w, height: hgt });
+  const conVista = (v: ReturnType<typeof vista>, player = { x: 480, y: 430 }) => {
+    const h = crearEscena(player);
+    const p = h.scene as unknown as VistaProbe;
+    p.cameras = { main: { worldView: v } };
+    p.labelScale = 1;
+    (h.scene.add as unknown as { text: Mock }).text = vi.fn(() => Object.assign(node(), { displayWidth: 60, displayHeight: 14 }));
+    return { h, p };
+  };
+  const etiqueta = (h: Harness) => h.nodes['npc:enfermera-urgencias']['__labelSprite'] as FakeNode;
+
+  it('un rótulo junto al borde se recorta a la vista con margen, en vez de salir cortado', () => {
+    const { h } = conVista(vista(540, 400), { x: 570, y: 372 });   // la enfermera (x=560) queda a 20 px del borde izquierdo
+    etiqueta(h)['displayWidth'] = 80;
+    move(h, 570, 372);
+    expect(etiqueta(h).x).toBe(540 + 40 + 6);
+    expect(etiqueta(h).visible).toBe(true);
+    // la pista apilada y encima del nombre sigue al rótulo, no a la persona
+    expect((h.nodes['npc:enfermera-urgencias']['__hintSprite'] as FakeNode).x).toBe(540 + 40 + 6);
+  });
+
+  it('un rótulo cuyo dueño está fuera de la vista se oculta; al volver a entrar se muestra', () => {
+    const { h, p } = conVista(vista(700, 260), { x: 570, y: 372 });
+    etiqueta(h)['displayWidth'] = 80;
+    move(h, 570, 372);
+    expect(etiqueta(h).visible).toBe(false);
+    (p.cameras as { main: { worldView: unknown } }).main.worldView = vista(300, 400);
+    p.refitLabelsToView();
+    expect(etiqueta(h).visible).toBe(true);
+    expect(etiqueta(h).x).toBe(560);
+  });
+
+  it('con la cámara quieta no se recoloca nada por cuadro', () => {
+    const { h, p } = conVista(vista(300, 400), { x: 570, y: 372 });
+    etiqueta(h)['displayWidth'] = 80;
+    move(h, 570, 372);
+    p.refitLabelsToView();
+    const llamadas = etiqueta(h).setPosition.mock.calls.length;
+    for (let i = 0; i < 10; i++) p.refitLabelsToView();
+    expect(etiqueta(h).setPosition.mock.calls.length).toBe(llamadas);
+  });
+
+  it('el siguiente paso fuera de cuadro lleva una flecha al borde por donde hay que ir, con su nombre corto', () => {
+    const { h, p } = conVista(vista(700, 260));
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const flecha = p.edgeArrow!;
+    expect(flecha.visible).toBe(true);
+    expect(flecha.setText).toHaveBeenLastCalledWith('◀ Enfermera de …');
+    expect(flecha.x).toBe(700 + 6);
+    expect(flecha.setOrigin).toHaveBeenLastCalledWith(0, 0.5);
+  });
+
+  it('a la derecha, arriba y abajo cambia el lado; al entrar en cuadro se oculta; es una sola pieza', () => {
+    const { h, p } = conVista(vista(0, 300));
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const flecha = p.edgeArrow!;
+    expect(flecha.setText).toHaveBeenLastCalledWith('Enfermera de … ▶');
+    (p.cameras as { main: { worldView: unknown } }).main.worldView = vista(300, 600, 400, 100);
+    p.syncEdgeArrow();
+    expect(flecha.setText).toHaveBeenLastCalledWith('▲ Enfermera de …');
+    (p.cameras as { main: { worldView: unknown } }).main.worldView = vista(300, 600, 0, 528);
+    p.syncEdgeArrow();
+    expect(flecha.visible).toBe(false);
+    expect(h.scene.add.text.mock.calls.filter((c: unknown[]) => c[2] === '')).toHaveLength(1);
+  });
+
+  it('por cuadro no reescribe ni reposiciona si nada cambió, y sin destino no existe', () => {
+    const { h, p } = conVista(vista(700, 260));
+    p.syncEdgeArrow();
+    expect(p.edgeArrow).toBeUndefined();
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const flecha = p.edgeArrow!;
+    const textos = flecha.setText.mock.calls.length, posiciones = flecha.setPosition.mock.calls.length;
+    for (let i = 0; i < 10; i++) p.syncEdgeArrow();
+    expect(flecha.setText.mock.calls.length).toBe(textos);
+    expect(flecha.setPosition.mock.calls.length).toBe(posiciones);
+    h.scene.setOrientation({ nextTargetKey: null, doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    expect(flecha.visible).toBe(false);
+  });
+
+  it('una persona que camina fuera de cuadro actualiza el borde sin crear nada nuevo', () => {
+    const { h, p } = conVista(vista(0, 300));
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const creadas = h.scene.add.text.mock.calls.length;
+    h.nodes['npc:enfermera-urgencias'].y = 100;
+    p.syncEdgeArrow();
+    expect(h.scene.add.text.mock.calls.length).toBe(creadas);
+    expect(p.edgeArrow!.y).toBeGreaterThanOrEqual(0);
   });
 });
