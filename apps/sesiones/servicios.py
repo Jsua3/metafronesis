@@ -157,6 +157,8 @@ def editar(usuario, pk, cambios):
     if cambia_grupo:
         sesion.grupo = _grupo_propio(usuario, cambios["grupoId"])
         _exigir_miembros(sesion.grupo)
+    if {"inicio", "fin"} & cambios.keys():
+        sesion.recordatorio_enviado_en = None  # con otro horario, el recordatorio vuelve a salir a su hora
     sesion.save()
     if cambia_grupo:
         convocatorias.rehacer(sesion)
