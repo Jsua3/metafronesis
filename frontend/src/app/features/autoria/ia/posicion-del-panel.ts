@@ -90,6 +90,7 @@ export class PosicionDelPanel {
     if (!this.movible() || evento.button !== 0) return;
     const objetivo = evento.target as HTMLElement | null;
     if (objetivo?.closest('button, a, input, select, textarea, [role="menu"]')) return;
+    evento.preventDefault(); // sin esto, arrastrar la cabeza selecciona texto en vez de mover el panel
     const caja = this.host.getBoundingClientRect();
     const area = this.area();
     const inicio = { x: evento.clientX, y: evento.clientY };

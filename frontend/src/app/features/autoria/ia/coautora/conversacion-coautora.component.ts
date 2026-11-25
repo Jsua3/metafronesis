@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, effect, inject, input, output, signal, untracked, viewChild,
+  ChangeDetectionStrategy, Component, ElementRef, Injector, OnInit, afterNextRender, computed, effect, inject, input, output, signal,
+  untracked, viewChild,
 } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 
@@ -153,8 +154,11 @@ interface ErrorVisible {
       max-inline-size: 92%; padding: 8px 12px; border-radius: 12px; font-size: var(--autoria-texto-16); line-height: 1.5;
       overflow-wrap: anywhere;
     }
-    .burbuja.ia { align-self: flex-start; background: var(--fondo); border-end-start-radius: 4px; }
-    .burbuja.tu { align-self: flex-end; background: var(--primario-tinte); border-end-end-radius: 4px; }
+    .burbuja.ia {
+      align-self: flex-start; border: 1px solid var(--linea); border-end-start-radius: 4px;
+      background: color-mix(in srgb, var(--primario) 6%, var(--superficie));
+    }
+    .burbuja.tu { align-self: flex-end; border-end-end-radius: 4px; background: color-mix(in srgb, var(--primario) 22%, var(--superficie)); }
     .quien { display: block; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.02em; opacity: 0.8; }
     .cambiar { display: block; margin-block-start: 2px; padding: 0; min-block-size: 0; }
     .pensando { margin: 0; display: flex; align-items: center; gap: 8px; font-size: var(--autoria-texto-16); }
@@ -168,7 +172,7 @@ interface ErrorVisible {
       border: 1px solid var(--peligro); border-radius: var(--radio-control); background: var(--peligro-tinte);
     }
     .aviso-error p { margin: 0; font-size: var(--autoria-texto-16); }
-    .acordado { padding: 12px 14px; border-radius: var(--radio-control); background: var(--primario-tinte); }
+    .acordado { padding: 12px 14px; border-radius: var(--radio-control); background: color-mix(in srgb, var(--primario) 18%, var(--superficie)); }
     .acordado p { margin: 0; font-size: var(--autoria-texto-16); line-height: 1.5; }
     .destacado { font-weight: 700; }
     .pie { display: flex; justify-content: flex-end; }
@@ -187,6 +191,7 @@ export class ConversacionCoautoraComponent implements OnInit {
 
   private readonly api = inject(CoautoriaApi);
   private readonly campoIdea = viewChild<ElementRef<HTMLTextAreaElement>>('campoIdea');
+  private readonly injector = inject(Injector);
 
   protected readonly minimo = MINIMO_IDEA;
   protected readonly maximo = MAXIMO_IDEA;
@@ -312,7 +317,7 @@ export class ConversacionCoautoraComponent implements OnInit {
     this.acuerdo.set(null);
     this.error.set(null);
     this.reabierta.set(null);
-    queueMicrotask(() => this.campoIdea()?.nativeElement.focus());
+    afterNextRender(() => this.campoIdea()?.nativeElement.focus(), { injector: this.injector });
   }
 
   /**
@@ -350,7 +355,7 @@ export class ConversacionCoautoraComponent implements OnInit {
     this.anuncio.set('');
     if (trabajo === 'empezar' && estado === 400 && cuerpo?.field === 'idea') {
       this.errorIdea.set(mensaje);
-      queueMicrotask(() => this.campoIdea()?.nativeElement.focus());
+      afterNextRender(() => this.campoIdea()?.nativeElement.focus(), { injector: this.injector });
       return;
     }
     if (estado === 404) {

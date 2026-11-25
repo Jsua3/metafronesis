@@ -1,5 +1,6 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, effect, input, output, signal, untracked, viewChild,
+  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, effect, inject, input, output, signal, untracked,
+  viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 
@@ -235,12 +236,10 @@ export const NOMBRE_MOMENTO: Record<FichaAcordada['momento'], string> = { dia: '
       border: 2px solid var(--borde-control); border-radius: var(--radio-control); background: var(--superficie); resize: vertical;
     }
     .acciones-seccion, .acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .pie {
-      position: sticky; inset-block-end: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 0 4px;
-      background: linear-gradient(to bottom, transparent, var(--superficie) 16px);
-    }
+    .pie { display: flex; flex-direction: column; gap: 8px; padding-block-start: 4px; }
     .estimacion { margin: 0; font-size: var(--autoria-texto-16); }
     .cambio { display: flex; flex-direction: column; gap: 6px; }
+    .cambio .campo { min-block-size: 6rem; }
     .etiqueta { font-weight: 700; font-size: var(--autoria-texto-16); }
     .aceptar { min-inline-size: 8rem; }
   `,
@@ -261,6 +260,7 @@ export class ResumenAcordadoComponent {
   protected borrador: FichaAcordada | null = null;
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
   private readonly campoCambio = viewChild<ElementRef<HTMLTextAreaElement>>('campoCambio');
+  private readonly injector = inject(Injector);
 
   constructor() {
     // Una ficha nueva (de la IA o corregida) cierra lo que estuviera abierto y lleva el foco al título.
@@ -271,7 +271,7 @@ export class ResumenAcordadoComponent {
         this.borrador = null;
         this.pidiendoCambio.set(false);
         this.cambio.set('');
-        queueMicrotask(() => this.titulo()?.nativeElement.focus());
+        afterNextRender(() => this.titulo()?.nativeElement.focus(), { injector: this.injector });
       });
     });
   }
@@ -307,7 +307,7 @@ export class ResumenAcordadoComponent {
   protected abrirCambio(): void {
     if (this.ocupado()) return;
     this.pidiendoCambio.set(true);
-    queueMicrotask(() => this.campoCambio()?.nativeElement.focus());
+    afterNextRender(() => this.campoCambio()?.nativeElement.focus(), { injector: this.injector });
   }
 
   protected enviarCambio(): void {

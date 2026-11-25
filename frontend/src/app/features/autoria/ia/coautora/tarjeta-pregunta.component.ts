@@ -1,5 +1,6 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, computed, effect, input, output, signal, untracked, viewChild,
+  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, untracked,
+  viewChild,
 } from '@angular/core';
 
 import type { AmbitoPregunta, Eleccion } from '../../../../core/api/coautoria.api';
@@ -75,11 +76,11 @@ const PROPIA = 3;
         </button>
         <button type="button" class="boton" [attr.aria-disabled]="ocupado()" (click)="decide()">Decide tú</button>
         @if (!p.previa) {
-          <button type="button" class="boton boton-texto saltar" [attr.aria-disabled]="ocupado()" (click)="pedirSaltar()">
+          <button type="button" class="boton boton-texto a-un-lado" [attr.aria-disabled]="ocupado()" (click)="pedirSaltar()">
             Saltar las preguntas
           </button>
         } @else {
-          <button type="button" class="boton boton-texto saltar" (click)="cancelar.emit()">Dejarla como estaba</button>
+          <button type="button" class="boton boton-texto a-un-lado" (click)="cancelar.emit()">Dejarla como estaba</button>
         }
       </div>
     </form>
@@ -108,7 +109,10 @@ const PROPIA = 3;
       transition: border-color 120ms ease, background-color 120ms ease;
     }
     .opcion:hover { border-color: var(--primario); }
-    .opcion.elegida { border-color: var(--primario); background: var(--primario-tinte); box-shadow: inset 0 0 0 1px var(--primario); }
+    .opcion.elegida {
+      border-color: var(--primario); box-shadow: inset 0 0 0 1px var(--primario);
+      background: color-mix(in srgb, var(--primario) 14%, var(--superficie));
+    }
     .opcion input { inline-size: 20px; block-size: 20px; flex: none; margin: 0; accent-color: var(--primario); }
     .opcion-texto { flex: 1; min-inline-size: 0; }
     .recomendada { flex: none; }
@@ -119,7 +123,8 @@ const PROPIA = 3;
       border: 2px solid var(--borde-control); border-radius: var(--radio-control);
     }
     .acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .saltar { margin-inline-start: auto; }
+    /* No se llama «saltar»: esa clase global es el enlace «saltar al contenido», escondido fuera de la pantalla. */
+    .a-un-lado { margin-inline-start: auto; }
     .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     @media (prefers-reduced-motion: reduce) { .opcion { transition: none; } }
   `,
@@ -139,6 +144,7 @@ export class TarjetaPreguntaComponent {
   protected readonly propiaTexto = signal('');
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
   private readonly campoPropio = viewChild<ElementRef<HTMLInputElement>>('campoPropio');
+  private readonly injector = inject(Injector);
 
   protected readonly nombreAmbito = computed(() => NOMBRE_AMBITO[this.pregunta().ambito]);
   protected readonly pasos = computed(() => Array.from({ length: this.tope() }, (_, i) => i + 1));
@@ -157,14 +163,15 @@ export class TarjetaPreguntaComponent {
         const previa = p.previa;
         this.elegida.set(previa?.tipo === 'opcion' ? previa.indice : previa?.tipo === 'propia' ? PROPIA : null);
         this.propiaTexto.set(previa?.tipo === 'propia' ? previa.texto : '');
-        queueMicrotask(() => this.titulo()?.nativeElement.focus());
+        afterNextRender(() => this.titulo()?.nativeElement.focus(), { injector: this.injector });
       });
     });
   }
 
   protected elegir(i: number): void {
     this.elegida.set(i);
-    if (i === PROPIA) queueMicrotask(() => this.campoPropio()?.nativeElement.focus());
+    // El campo aparece al elegir la opción: el foco espera a que se dibuje.
+    if (i === PROPIA) afterNextRender(() => this.campoPropio()?.nativeElement.focus(), { injector: this.injector });
   }
 
   protected responderElegida(): void {

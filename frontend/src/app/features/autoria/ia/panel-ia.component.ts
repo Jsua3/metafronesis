@@ -161,28 +161,31 @@ export function contextoDeRuta(url: string): ContextoIa {
     :host(:not([hidden])) { display: block; }
     .panel { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--superficie); border-left: 1px solid var(--linea); min-height: 100%; box-sizing: border-box; }
     .cabeza { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .cabeza.arrastrable { cursor: grab; touch-action: none; }
+    .cabeza.arrastrable { cursor: grab; touch-action: none; user-select: none; }
     .cabeza.arrastrable:active { cursor: grabbing; }
     .controles { display: flex; gap: 6px; align-items: center; }
     .mover { position: relative; }
     .menu {
       position: absolute; z-index: 2; inset-block-start: calc(100% + 4px); inset-inline-end: 0; display: flex; flex-direction: column;
-      min-inline-size: 14rem; padding: 4px; border: 1px solid var(--linea); border-radius: var(--radio-control);
+      min-inline-size: max-content; padding: 4px; border: 1px solid var(--linea); border-radius: var(--radio-control);
       background: var(--superficie); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
     }
     .menu-opcion {
       padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit;
-      font-size: var(--autoria-texto-16); text-align: start; cursor: pointer;
+      font-size: var(--autoria-texto-16); text-align: start; cursor: pointer; white-space: nowrap;
     }
-    .menu-opcion:hover, .menu-opcion:focus-visible { background: var(--fondo); }
+    .menu-opcion:hover, .menu-opcion:focus-visible { background: color-mix(in srgb, var(--primario) 12%, var(--superficie)); }
     .menu-opcion[aria-checked='true'] { font-weight: 700; }
     .menu-opcion[aria-checked='true']::before { content: '✓ '; }
-    .pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radio-control); background: var(--fondo); }
+    .pestanas {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radio-control);
+      background: color-mix(in srgb, var(--primario) 8%, var(--superficie)); border: 1px solid var(--linea);
+    }
     .pestana {
       padding: 8px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; font-weight: 700;
       font-size: var(--autoria-texto-16); cursor: pointer;
     }
-    .pestana[aria-selected='true'] { background: var(--superficie); box-shadow: 0 1px 3px rgb(0 0 0 / 0.15); color: var(--primario); }
+    .pestana[aria-selected='true'] { background: var(--superficie); box-shadow: 0 1px 3px rgb(0 0 0 / 0.25); color: var(--primario); }
     .contenido { display: flex; flex-direction: column; gap: 12px; }
     h2 { margin: 0; font-size: var(--autoria-texto-22); line-height: 30px; }
     h3 { margin: 0 0 8px; font-size: var(--autoria-texto-18); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
