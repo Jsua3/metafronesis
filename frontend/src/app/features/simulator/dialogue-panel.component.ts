@@ -37,8 +37,6 @@ const CHOICE_ACTIVATION_GUARD_MS = 500;
 const medirVentana = () => typeof window === 'undefined'
   ? { ancho: 1366, alto: 768 }
   : { ancho: window.innerWidth, alto: window.innerHeight };
-/** Texto de la línea informativa de una conversación que pertenece a otra etapa. */
-const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
 
 @Component({
   selector: 'app-dialogue-panel',
@@ -326,11 +324,6 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       /* El cursor de la ficha enfocada asoma a la izquierda y la ficha pulsada baja un punto: caben sin recortarse. */
       padding-top: var(--px);
       padding-bottom: calc(2 * var(--px));
-    }
-    /* Con poco alto (1366 x 768, teléfono), la pista de teclado le cede su renglón a las fichas: la letra va en cada ficha
-       y «Esc» en «Volver al mapa». */
-    @media (max-height: 900px), (max-width: 560px) {
-      .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body > .keyboard-hint:last-child { display: none; }
     }
     /* Si la lista se acota, bajo ella se dice qué fichas quedan abajo (el panel pone data-mas al acotarla). */
     .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body[data-mas]::after {
@@ -775,7 +768,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       line-height: 1.45;
     }
     /* La pista de teclado solo existe donde hay teclado y puntero fino. */
-    .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: .78em; color: #c3bccf; }
+    .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: max(14px, .9em); color: #f2ecdf; }
     @media (hover: hover) and (pointer: fine) {
       .keyboard-hint { display: block; }
     }
@@ -868,6 +861,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   readonly mode        = input<'cinematic' | 'side'>('cinematic');
   /** El aviso breve de la pantalla (VD-29) mientras el cuadro está sobre el mundo: el cuadro le da su sitio. */
   readonly avisoBreve  = input<string>('');
+  readonly nextStep = input<string | null>(null);
   /** Movimiento reducido del juego (interruptor del HUD o preferencia del sistema): la línea aparece completa, sin máquina de escribir. */
   readonly reduceMotion = input(false);
   /**
@@ -1173,10 +1167,10 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     return d.notice || d.choices.find(choice => choice.evidenceWarning)?.evidenceWarning || null;
   }
 
-  /** Línea informativa de «otro momento»; no se repite si la conversación ya la trae como línea. */
+  /** BORRADOR: texto pendiente de Psicología. No presume que ya se habló con la persona. */
   staleNote(d: DialogueState): string | null {
     if (!d.stale) return null;
-    return d.lines.some(line => line.text.includes(STALE_NOTE)) ? null : STALE_NOTE;
+    return `${DRAFT_COPY.noStepNow.text}${this.nextStep() ? ` Ahora te toca: ${this.nextStep()}.` : ''}`;
   }
 
   /** Etiqueta de la ficha de herramienta, solo cuando conviven herramientas y decisiones (sin reordenar). Las decisiones

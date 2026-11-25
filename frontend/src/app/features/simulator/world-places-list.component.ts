@@ -3,9 +3,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, HostListener, Injector,
 
 import { DRAFT_COPY } from './draft-copy';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
-import { PlaceCandidate, PlaceKind } from './world-places.util';
-
-const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puerta', object: 'Objeto' };
+import { actionForPlace, PlaceCandidate } from './world-places.util';
 
 /**
  * «Ir a…» (plan visual F6-11; VD-19, borrador de Psicología): la lista de personas y puertas de la sala y de lo ya
@@ -31,8 +29,11 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
           @for (place of places(); track place.key) {
             <li>
               <button type="button" class="places__item u-ficha" (click)="choose.emit(place)">
-                <span class="places__kind">{{ kindLabel(place.kind) }}</span>{{ ' ' }}<span class="places__name">{{ place.label }}</span>@if (place.siguiente) {
+                <!-- BORRADOR: texto pendiente de Psicología. -->
+                <span class="places__name">{{ actionForPlace(place.kind, place.label) }}</span>@if (place.siguiente) {
                   {{ ' ' }}<span class="places__next" data-places-next>{{ nextLabel }}</span>
+                }@else {
+                  {{ ' ' }}<span class="places__note">Opcional: puede servirte más adelante</span>
                 }@if (place.note) {
                   {{ ' ' }}<span class="places__note">{{ place.note }}</span>
                 }
@@ -86,7 +87,7 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
     }
     .places__item {
       display: grid;
-      grid-template-columns: 7em minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: calc(4 * var(--pixel-px));
       width: 100%;
@@ -98,12 +99,6 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
     /* «Ir ▶» al final de cada ficha (P8): la acción que hace tocarla, a la vista y sin ambigüedad. Va como contenido CSS: el
        nombre de la ficha sigue siendo «Persona Ana» (el lector la anuncia como botón dentro del diálogo «Ir a…»), y fuera de
        la rejilla para valer en todos los tramos. */
-    .places__item::after {
-      content: 'Ir ▶';
-      position: absolute; right: calc(5 * var(--pixel-px)); top: 50%; transform: translateY(-50%);
-      font-family: var(--pixel-f-nombre); font-weight: 700; font-size: var(--pixel-letra-media);
-      letter-spacing: .06em; text-transform: uppercase; color: var(--luz);
-    }
     .places__kind {
       font-family: var(--pixel-f-nombre);
       font-weight: 700;
@@ -121,15 +116,15 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
     @media (max-width: 560px) {
       /* Teléfono (V7): la lista entra sin desplazarse; las fichas bajan al piso del dedo (44 px) y los huecos se acortan. */
       .places { gap: calc(3 * var(--pixel-px)); padding: calc(5 * var(--pixel-px)) calc(5 * var(--pixel-px)) calc(6 * var(--pixel-px)); }
-      .places__item { grid-template-columns: 5.6em minmax(0, 1fr); min-height: 44px; }
-      .places__note { grid-column: 2; }
+      .places__item { grid-template-columns: minmax(0, 1fr); min-height: 44px; }
+      .places__note { grid-column: 1; }
     }
     /* Poco alto (V6): la lista no se desplaza; las fichas van en dos columnas y, con ratón, más bajas (piso de 24 px;
        con dedo siguen en 48). */
     @media (max-height: 760px) and (min-width: 561px) {
       .places__list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; }
-      .places__item { grid-template-columns: 5.6em minmax(0, 1fr); }
-      .places__note { grid-column: 2; }
+      .places__item { grid-template-columns: minmax(0, 1fr); }
+      .places__note { grid-column: 1; }
     }
     @media (max-height: 560px) and (pointer: fine) {
       .places__item { min-height: 36px; }
@@ -137,6 +132,7 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
   `],
 })
 export class WorldPlacesListComponent {
+  protected readonly actionForPlace = actionForPlace;
   /** Lo que se ofrece (ya filtrado por `selectPlaces`: personas, puertas y objetos examinados). */
   readonly places = input<readonly PlaceCandidate[]>([]);
   /** Hay una salida segura pedida que espera: el botón «Salida segura» dice «Pausando…». */
@@ -158,10 +154,6 @@ export class WorldPlacesListComponent {
       const first = this.host.nativeElement.querySelector<HTMLElement>('.places__item, .places__close');
       first?.focus();
     }, { injector: inject(Injector) });
-  }
-
-  protected kindLabel(kind: PlaceKind): string {
-    return KIND_LABELS[kind];
   }
 
   /**

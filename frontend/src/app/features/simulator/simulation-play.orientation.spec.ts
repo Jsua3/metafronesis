@@ -148,6 +148,39 @@ describe('SimulationPlayComponent: orientación integrada', () => {
 
   const tick = (ms = 0) => { vi.advanceTimersByTime(ms); TestBed.tick(); };
 
+  it('la lista y la ficha caminan y abren la conversación de una persona', () => {
+    startInUrgencias();
+    (component as any).gameWorld = { walkToKey: vi.fn(() => true) };
+    const open = vi.spyOn(component, 'openInteraction').mockImplementation(() => {});
+    component.choosePlace({ key: 'familia-crisis', label: 'Familia en crisis', kind: 'person' });
+    component.onWalkEnded({ key: 'familia-crisis', label: 'Familia en crisis', outcome: 'arrived' });
+    expect(open).toHaveBeenCalledWith(expect.objectContaining({ key: 'familia-crisis', type: 'PERSON' }));
+    component.guide.set({ objetivo: '', enEstaSala: [], quedaPorConocer: true, siguiente: 'Habla con Familia', hechos: 0, total: 1, siguienteLugar: { key: 'familia-crisis', label: 'Familia en crisis', tipo: 'persona' } });
+    component.goToStep('familia-crisis');
+    component.onWalkEnded({ key: 'familia-crisis', label: 'Familia en crisis', outcome: 'arrived' });
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
+  it('distingue el siguiente paso de las acciones opcionales por clave', () => {
+    startInUrgencias();
+    component.guide.set({ objetivo: '', enEstaSala: [], quedaPorConocer: true, siguiente: 'Habla con Familia', hechos: 0, total: 1, siguienteLugar: { key: 'familia-crisis', label: 'Familia', tipo: 'persona' } });
+    expect((component as any).actionStepLabel('familia-crisis')).toBe('Siguiente paso');
+    expect((component as any).actionStepLabel('tool-pap')).toBe('Opcional: puede servirte más adelante');
+  });
+
+  it('una persona del escenario se abre al llegar y no si el recorrido se bloquea', () => {
+    startInUrgencias();
+    (component as any).gameWorld = { walkToKey: vi.fn(() => true) };
+    const open = vi.spyOn(component, 'openInteraction').mockImplementation(() => {});
+    const place = { key: 'npc:abuela', label: 'Abuela', kind: 'person' as const };
+    component.choosePlace(place);
+    component.onWalkEnded({ key: place.key, label: place.label, outcome: 'blocked' });
+    expect(open).not.toHaveBeenCalled();
+    component.choosePlace(place);
+    component.onWalkEnded({ key: place.key, label: place.label, outcome: 'arrived' });
+    expect(open).toHaveBeenCalledWith(expect.objectContaining({ key: place.key, label: place.label, type: 'PERSON' }));
+  });
+
   it('explica visiblemente cuando el destino no está disponible en la sala', () => {
     startInUrgencias();
     component.choosePlace({ key: 'ausente', label: 'Abuela', kind: 'person' });

@@ -241,7 +241,7 @@ describe('barra contextual (T9.3, T9.5)', () => {
   });
 
   it('el secundario conserva «También:» en su nombre accesible aunque el modo compacto lo oculte a la vista', () => {
-    expect(source).toContain(`[attr.aria-label]="'También: ' + also.verb.text"`);
+    expect(source).toContain(`[attr.aria-label]="'También: ' + also.verb.text + (actionStepLabel(also.obj.key)`);
   });
 
   it('en reposo la barra solo trae la nota «No hay nada a tu alcance» (clase propia); ni línea «Ahora:» ni leyenda de teclas', () => {

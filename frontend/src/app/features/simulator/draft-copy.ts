@@ -98,7 +98,8 @@ export const DRAFT_COPY = {
     owner: 'Psicología',
     where: 'Lista «Ir a…»: título y ayuda',
     title: 'Ir a…',
-    text: 'Elige a dónde quieres ir: tu personaje caminará solo hasta ahí y se te avisará al llegar.',
+    // BORRADOR: texto pendiente de Psicología.
+    text: 'Elige una persona para caminar y hablar, o un lugar para caminar hasta allí.',
   },
   /** Cuando la sala no ofrece nada a lo que ir todavía (F6-11, VD-19): dice por qué en vez de quedar vacía. */
   placesEmpty: {
@@ -699,7 +700,8 @@ export const DRAFT_COPY = {
     owner: 'Psicología',
     review: 'validar',
     where: 'Conversación sin opciones de decisión en esta escena: línea final',
-    text: 'Por ahora no hay nada que decidir en esta conversación.',
+    // BORRADOR: texto pendiente de Psicología.
+    text: 'Esta conversación no tiene una decisión para el paso actual. Vuelve al mapa para continuar.',
   },
   unknownPerson: {
     decision: 'DSL-8',

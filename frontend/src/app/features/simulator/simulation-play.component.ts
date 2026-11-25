@@ -395,7 +395,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               @if (softNotice() && viewMode() !== 'dialogue-cinematic') {
                 <!-- Aviso breve (4,2 s): lo que dice ya se anunció; nunca es la única
                      fuente. Sin role: una región que nace con su texto no se anuncia de forma fiable. -->
-                <div class="soft-notice u-placa u-sombra"><app-pixel-icono nombre="hecho" /><span>{{ softNotice() }}</span></div>
+                <div class="soft-notice u-placa u-sombra"><app-pixel-icono nombre="hecho" /><span>{{ softNotice() }} <span>{{ decisionSelection() }}</span></span></div>
               }
               @if (stepsNotice() && viewMode() !== 'dialogue-cinematic') {
                 <!-- «Da unos pasos…» (P8): aviso NO modal. Dice cuánto falta y hacia dónde, se actualiza al caminar y se va solo
@@ -505,7 +505,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 }
               </header>
               <app-dialogue-panel class="dialogue-side" mode="side" [reduceMotion]="reduceMotion()"
-                [dialogue]="dialogue()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()"
+                [dialogue]="dialogue()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
                 [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
                 (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
                 (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -557,6 +557,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 @if (action.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                 <span class="context-bar__copy">
                   <span class="ds-sr-only">Interactuar: </span><strong>{{ action.verb.text }}</strong>
+                  <!-- BORRADOR: texto pendiente de Psicología. -->
+                  <span class="context-bar__step">{{ actionStepLabel(action.obj.key) }}</span>
                   @if (action.verb.locked && action.verb.reason) {
                     <span class="ds-sr-only">, bloqueada: </span><span class="context-bar__reason">{{ action.verb.reason }}</span>
                   }
@@ -565,10 +567,10 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               @if (contextAlso(); as also) {
                 <button type="button" class="context-bar__interaction context-bar__interaction--secondary u-ficha u-sombra"
                   [class.context-bar__interaction--locked]="also.verb.locked"
-                  (click)="requestInteraction(also.obj)" [attr.title]="also.title" [attr.aria-label]="'También: ' + also.verb.text">
+                  (click)="requestInteraction(also.obj)" [attr.title]="also.title" [attr.aria-label]="'También: ' + also.verb.text + (actionStepLabel(also.obj.key) ? '. ' + actionStepLabel(also.obj.key) : '')">
                   @if (also.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                   <span class="context-bar__also">También:</span>
-                  <strong>{{ also.verb.text }}</strong>
+                  <strong>{{ also.verb.text }}</strong><span class="context-bar__step">{{ actionStepLabel(also.obj.key) }}</span>
                 </button>
               }
             } @else {
@@ -583,7 +585,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         </div>
 
         @if (viewMode() === 'dialogue-cinematic') {
-          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogue()" [world]="world()" [avisoBreve]="softNotice()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()"
+          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogue()" [world]="world()" [avisoBreve]="softNotice() + (decisionSelection() ? ' ' + decisionSelection() : '')" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
             [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
             (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
             (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -910,6 +912,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     }
     .context-bar__lock { flex: none; color: var(--pixel-ambar); }
     .context-bar__copy { display: grid; gap: var(--pixel-px); justify-items: start; min-width: 0; }
+    .context-bar__step { font-size: 12px; line-height: 1.25; color: var(--pixel-tinta); white-space: normal; }
     .context-bar__copy strong {
       min-width: 0;
       max-width: 100%;
@@ -937,6 +940,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     .context-bar__interaction--secondary {
       flex: 0 1 40%; min-width: 96px; gap: calc(3 * var(--pixel-px));
       padding: var(--pixel-px) calc(4 * var(--pixel-px)) calc(2 * var(--pixel-px));
+      flex-wrap: wrap;
     }
     .context-bar__interaction--secondary strong {
       min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--pixel-letra-chica); font-weight: 600;
@@ -1763,6 +1767,13 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Botón principal de la barra: verbo por tipo, candado y motivo en puertas bloqueadas (F§4.3). */
   readonly contextAction = computed(() => this.interactionAction(this.attempt()?.status === 'IN_PROGRESS' ? this.nearbyInteraction() : null));
   readonly contextAlso = computed(() => this.contextAction() ? this.interactionAction(this.nearbyAlso()) : null);
+  // BORRADOR: texto pendiente de Psicología. Si no hay destino conocido, no se inventa un objetivo.
+  protected actionStepLabel(key: string): string {
+    const next = this.guide().siguienteLugar?.key;
+    return !next ? '' : key === next ? 'Siguiente paso' : 'Opcional: puede servirte más adelante';
+  }
+
+  readonly decisionSelection = signal('');
   /** Lo único que la barra de contexto anuncia (H-10): la interacción cercana. Comparado por valor: no repite. */
   private readonly contextLabel = computed(() => this.contextAction()?.ariaLabel ?? null);
 
@@ -2959,7 +2970,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
    * La intención de decidir en curso: si la misma opción falla en la red y se reenvía, viaja con el mismo `requestId`
    * (el servidor responde la repetición sin decidir dos veces). Se libera al recibir respuesta.
    */
-  private pendingDecisionRequest: { decisionOptionId: number; requestId: string; nodeId?: number; dialogueKey?: string } | null = null;
+  private pendingDecisionRequest: { decisionOptionId: number; requestId: string; nodeId?: number; dialogueKey?: string; choiceText?: string } | null = null;
   /** Dónde arranca la conversación que se reabre al recargar (R1): su clave y la línea en que iba. */
   readonly dialogueStart = signal<{ key: string; line: number } | null>(null);
   /** Almacenamiento de la sesión sin que un bloqueo (modo privado, cuota) rompa el juego. */
@@ -3164,6 +3175,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.softNoticeTimer = window.setTimeout(() => {
       this.softNoticeTimer = null;
       this.softNotice.set('');
+      this.decisionSelection.set('');
     }, NOTICE_MS);
   }
 
@@ -3220,6 +3232,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.journalMessage.set('');
     this.audioDirector.playSfx('dialogue_advance');   // el aviso de que la elección salió; ya no hay fundido aquí
     const request = this.decisionRequestFor(decisionOptionId);
+    request.choiceText = previousDialogue?.choices.find(choice => choice.decisionOptionId === decisionOptionId)?.text ?? request.choiceText;
     this.decisionInFlight = true;
     this.simulationService.chooseDecision(
       game.attemptId, decisionOptionId, request.requestId,
@@ -3244,9 +3257,15 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Llegó la respuesta de la decisión: con la pausa local puesta (Esc con ella en vuelo) se adopta sin reproducirla; si no, sigue su camino. */
   private onDecisionResult(game: SimulationAttemptState, updated: SimulationDecisionResult): void {
     this.decisionInFlight = false;
+    // BORRADOR: texto pendiente de Psicología. La opción procede del nodo que se envió, también en reintentos de red.
+    const selected = this.pendingDecisionRequest?.choiceText
+      ?? game.currentNode.options?.find(option => option.id === this.pendingDecisionRequest?.decisionOptionId)?.text;
     this.clearPendingDecision(game.attemptId);
     if (this.attempt()?.status === 'PAUSED') this.adoptDecisionUnderPause(updated);
-    else this.applyDecisionResult(game, updated);
+    else {
+      this.decisionSelection.set(!updated.retry && selected ? `Elegiste: “${selected}”` : '');
+      this.applyDecisionResult(game, updated);
+    }
   }
 
   /** La decisión en vuelo llegó con la pausa local puesta: se adopta su estado SIN dejar la pausa, sin reproducir la reacción; la consecuencia se lee al reanudar. */
@@ -3784,7 +3803,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   }
 
   /** Reutiliza el `requestId` de la misma opción si el envío anterior falló; si no, abre una intención nueva (y la guarda). */
-  private decisionRequestFor(decisionOptionId: number): { decisionOptionId: number; requestId: string } {
+  private decisionRequestFor(decisionOptionId: number): { decisionOptionId: number; requestId: string; choiceText?: string } {
     const pending = this.pendingDecisionRequest;
     if (pending && pending.decisionOptionId === decisionOptionId) return pending;
     const requestId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -4269,6 +4288,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   choosePlace(place: PlaceCandidate): void {
     this.cancelPendingInteraction();
     this.closePlaces();
+    if (place.kind === 'person') { this.requestInteraction(this.personForPlace(place)); return; }
     if (!this.gameWorld?.walkToKey(place.key)) {
       this.showWalkBlocked(place.label);
     }
@@ -4294,8 +4314,21 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   goToStep(key: string): void {
     if (this.inputBlocked()) return;
     this.cancelPendingInteraction();
-    const label = this.guide().siguienteLugar?.label ?? '';
+    const target = this.guide().siguienteLugar;
+    const label = target?.label ?? '';
+    if (target?.key === key && target.tipo === 'persona') {
+      this.requestInteraction(this.personForPlace({ key, label, kind: 'person' }));
+      return;
+    }
     if (!this.gameWorld?.walkToKey(key)) this.showWalkBlocked(label);
+  }
+
+  private personForPlace(place: PlaceCandidate): MapObjectState {
+    return this.world()?.objects.find(obj => obj.key === place.key && obj.type === 'PERSON') ?? {
+      key: place.key, label: place.label, type: 'PERSON', x: 0, y: 0, width: 0, height: 0,
+      color: '', icon: '', shortCode: '', collision: false, interactionPrompt: '', interactionText: '',
+      decisionOptionId: null, toolCode: null, dialogue: null,
+    };
   }
 
   /** Terminó la caminata de «Ir a…»: «Llegaste a …» o que no se pudo llegar (VD-19, borrador). */
@@ -4451,6 +4484,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (this.softNoticeTimer !== null) window.clearTimeout(this.softNoticeTimer);
     this.softNoticeTimer = null;
     this.softNotice.set('');
+    this.decisionSelection.set('');
     // Banner de sala o de etapa, aviso de puerta y nota de transición (z 320-340): sin esto quedaban pintados encima de
     // la pantalla de pausa (F7). Eran de lo que se estaba haciendo. (El aviso de puerta ya no se apaga solo: se retira
     // aquí, al cerrarse o al cambiar de sala.)

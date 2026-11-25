@@ -385,6 +385,33 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
       expect(component.softNotice()).toBe('');
     });
 
+    it('tras confirmar muestra la opción elegida junto al aviso de guardado', () => {
+      startInUrgencias();
+      const game = component.attempt()!;
+      const option = game.currentNode.options![0];
+      (component as any).pendingDecisionRequest = { decisionOptionId: option.id, requestId: 'r' };
+      (component as any).onDecisionResult(game, makeAttempt('hospital-sala-escucha', { reaction: null }));
+      expect(component.softNotice()).toContain('Tu decisión se guardó.');
+      expect(component.decisionSelection()).toBe(`Elegiste: “${option.text}”`);
+      tick(4300);
+      expect(component.decisionSelection()).toBe('');
+    });
+
+    it('confirma el texto que se mostró en la ficha elegida, aunque el nodo use otra redacción', () => {
+      startInUrgencias();
+      component.dialogue.set({ key: 'd', speakerName: 'A', portraitKey: null, emotion: 'neutral', lines: [],
+        choices: [{ key: 'c', text: 'Escuchar con calma', decisionOptionId: 101, requiredToolCode: null, effect: {} }] } as DialogueState);
+      sim['chooseDecision'].mockReturnValue(of(makeAttempt('hospital-sala-escucha', { reaction: null })));
+      component.executeDecision(101);
+      expect(component.decisionSelection()).toBe('Elegiste: “Escuchar con calma”');
+    });
+
+    it('al limpiar los avisos también descarta la elección visible anterior', () => {
+      component.decisionSelection.set('Elegiste: “Anterior”');
+      (component as any).resetNotices();
+      expect(component.decisionSelection()).toBe('');
+    });
+
     it('el acuse acompaña al aviso de reenvío tras volver la red', () => {
       startInUrgencias();
       const game = component.attempt()!;

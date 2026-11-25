@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, output, si
 import type { ElementoSala, GuiaEscena } from './caso/guia';
 import { DRAFT_COPY } from './draft-copy';
 import { type HintAttemptRef, SceneHintComponent } from './scene-hint.component';
+import { actionForPlace } from './world-places.util';
 
 let nextGoalCardId = 0;
 
@@ -45,8 +46,9 @@ let nextGoalCardId = 0;
             </p>
             <!-- «Siguiente paso» conectado con «Ir a…» (P9): el mismo camino automático, sin abrir la lista. -->
             @if (guia().siguienteLugar; as lugar) {
-              <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)"
-                [attr.aria-label]="goToStepLabel + ': ' + lugar.label">{{ goToStepLabel }} ▶</button>
+              <!-- BORRADOR: texto pendiente de Psicología. -->
+              <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)">
+                {{ actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
             }
           }
           @if (guia().enEstaSala.length) {
@@ -124,6 +126,7 @@ let nextGoalCardId = 0;
   `],
 })
 export class SceneGoalCardComponent {
+  protected readonly actionForPlace = actionForPlace;
   protected readonly copy = DRAFT_COPY;
   /** Id propio de cada ficha: `aria-controls` apunta a un cuerpo que existe y que no choca con el de otra instancia. */
   protected readonly bodyId = `goal-card-body-${nextGoalCardId++}`;
@@ -140,7 +143,6 @@ export class SceneGoalCardComponent {
   readonly consentRequired = output<void>();
   /** Pidió ir al siguiente paso (P9): quien aloja la ficha camina hasta esa clave como con «Ir a…». */
   readonly goToStep = output<string>();
-  protected readonly goToStepLabel = DRAFT_COPY.goToStepLabel.text;
 
   protected readonly open = signal(false);
   protected readonly everOpened = signal(false);

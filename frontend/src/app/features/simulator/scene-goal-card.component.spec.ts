@@ -60,6 +60,16 @@ describe('SceneGoalCardComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
+  it('nombra la acción de persona y conserva el botón al cambiar el destino', () => {
+    const { fixture, host } = montar({ guia: GUIA, compact: false });
+    const button = host.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
+    expect(button.textContent).toContain('Hablar con Familia');
+    fixture.componentRef.setInput('guia', { ...GUIA, siguienteLugar: { key: 'puerta', label: 'Sala', tipo: 'puerta' } });
+    fixture.detectChanges();
+    expect(host.querySelector('[data-guia-ir]')).toBe(button);
+    expect(button.textContent).toContain('Ir a Sala');
+  });
+
   it('conserva Ir allí al actualizar la misma guía', () => {
     const { fixture, host } = montar({ guia: GUIA, compact: false });
     const button = host.querySelector('[data-guia-ir]');
@@ -144,7 +154,7 @@ describe('SceneGoalCardComponent', () => {
       fixture.componentInstance.goToStep.subscribe(k => pedidas.push(k));
       abrir();
       const ir = el.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
-      expect(ir.getAttribute('aria-label')).toBe('Ir allí: Familia');
+      expect(ir.textContent).toContain('Hablar con Familia');
       ir.click();
       expect(pedidas).toEqual(['familia']);
     });

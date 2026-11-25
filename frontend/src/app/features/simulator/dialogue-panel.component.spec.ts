@@ -798,7 +798,7 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     render(dialogueWith([decision(1, 'Escuchar'), tool('PAP', 'Aplicar material')], { stale: true }));
     expect(host().querySelector('.choices')).toBeNull();
     expect(host().querySelector('.choice-btn')).toBeNull();
-    expect(text(host().querySelector('.stale-note'))).toBe('Esta conversación corresponde a otro momento del caso.');
+    expect(text(host().querySelector('.stale-note'))).toContain('Vuelve al mapa');
     const advance = Array.from(host().querySelectorAll('button.close-btn')).map(b => text(b));
     expect(advance).toEqual(['Continuar ▶']);
     // Enter cierra (no hay nada que elegir) y los dígitos no eligen.
@@ -810,7 +810,8 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  it('si la conversación stale ya trae la frase como línea, no se repite como nota', () => {
+  it('una conversación antigua ofrece la indicación actual incluso con un texto heredado', () => {
+    writeInputSignal(component.nextStep, 'Habla con Vigilante');
     render(dialogueWith([], {
       stale: true,
       lines: [
@@ -818,7 +819,8 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
         { order: 2, speakerName: 'Sistema', text: 'Esta conversación corresponde a otro momento del caso.', emotion: 'neutral' },
       ],
     }));
-    expect(host().querySelector('.stale-note')).toBeNull();
+    expect(text(host().querySelector('.stale-note'))).toContain('Vuelve al mapa');
+    expect(text(host().querySelector('.stale-note'))).toContain('Ahora te toca: Habla con Vigilante');
   });
 
   it('la cabecera anuncia «Decisión» solo si alguna opción registra una decisión', () => {
@@ -837,7 +839,8 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     render(dialogueWith([]));
     expect(text(host().querySelector('.keyboard-hint'))).toBe('Enter: continuar · Esc: volver al mapa');
     expect(source).toMatch(/\.keyboard-hint \{ display: none;/);
-    expect(source).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.keyboard-hint \{ display: block; \}/);
+    expect(source).not.toMatch(/\.strip-body > \.keyboard-hint:last-child \{ display: none; \}/);
+    expect(source).toContain('font-size: max(14px, .9em)');
   });
 });
 
@@ -1674,7 +1677,7 @@ describe('DialoguePanelComponent - el aviso breve va dentro del cuadro', () => {
   it('la pantalla no pinta el aviso suelto mientras hay un diálogo sobre el mundo: se lo pasa al cuadro', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
     expect(pantalla).toContain("@if (softNotice() && viewMode() !== 'dialogue-cinematic') {");
-    expect(pantalla).toMatch(/<app-dialogue-panel class="dialogue-cinematic"[^>]*\[avisoBreve\]="softNotice\(\)"/);
+    expect(pantalla).toMatch(/<app-dialogue-panel class="dialogue-cinematic"[^>]*\[avisoBreve\]="softNotice\(\) \+/);
   });
 });
 

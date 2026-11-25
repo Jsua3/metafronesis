@@ -6,6 +6,12 @@
 
 export type PlaceKind = 'person' | 'door' | 'object';
 
+/** BORRADOR: texto pendiente de Psicología. La etiqueta de una puerta puede venir como «Pasar a…». */
+export function actionForPlace(kind: PlaceKind, label: string): string {
+  if (kind === 'person') return `Hablar con ${label}`;
+  return /^pasar a(?:\s|l\b)/i.test(label) ? label.replace(/^pasar a/i, 'Ir a') : `Ir a ${label}`;
+}
+
 export interface PlaceCandidate {
   /** Clave del marcador o `npc:{clave}` (la misma con la que la escena la reconoce). */
   readonly key: string;

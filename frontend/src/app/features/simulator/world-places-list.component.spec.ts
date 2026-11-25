@@ -60,11 +60,17 @@ describe('WorldPlacesListComponent', () => {
   it('lista cada lugar con su tipo y en el orden recibido', () => {
     mount();
     expect(items().map(item => text(item))).toEqual([
-      'Persona Enfermera de urgencias',
-      'Persona Familia en crisis',
-      'Puerta Sala de escucha familiar',
-      'Objeto Historia clínica',
+      'Hablar con Enfermera de urgencias Opcional: puede servirte más adelante',
+      'Hablar con Familia en crisis Opcional: puede servirte más adelante',
+      'Ir a Sala de escucha familiar Opcional: puede servirte más adelante',
+      'Ir a Historia clínica Opcional: puede servirte más adelante',
     ]);
+  });
+
+  it('nombra la caminata a una puerta sin duplicar el verbo de la etiqueta', () => {
+    mount([{ key: 'puerta', label: 'Pasar a la sala de espera', kind: 'door' }]);
+    expect(text(items()[0])).toContain('Ir a la sala de espera');
+    expect(text(items()[0])).not.toContain('Ir a Pasar');
   });
 
   it('conserva los botones al recibir listas equivalentes', () => {
