@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "defaultRecipe": "valentina",
-  "playables": ["valentina", "andres", "camila", "daniela", "david", "felipe", "jorge", "luisa", "mariana", "mateo", "paula", "samuel"],
+  "playables": ["valentina", "andres", "camila", "daniela", "david", "felipe", "jorge", "luisa", "mariana", "mateo", "paula", "samuel", "karen"],
   "actors": {
     "apoyo-psicosocial": "profesional-psicosocial",
     "enfermera-urgencias": "enfermera-urgencias",
@@ -57,7 +57,7 @@
     "crisis": "en-crisis"
   },
   "editor": {
-    "complexions": ["a", "b"],
+    "complexions": ["a", "b", "c"],
     "skins": ["piel-1", "piel-2", "piel-3", "piel-4", "piel-5", "piel-6"],
     "hair": ["rapado", "corto-liso", "corto-rizado", "bob-flequillo", "media-melena", "largo-suelto", "largo-raya-medio", "cola-caballo", "mono", "trenza", "afro"],
     "hairColors": ["negro", "castano-oscuro", "castano", "cobrizo", "rubio", "canoso"],

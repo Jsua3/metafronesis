@@ -61,11 +61,21 @@ describe('avatar v2', () => {
   it('coerceAvatarV2 valida campo por campo', () => {
     expect(coerceAvatarV2({ schemaVersion: 2, mode: 'elenco', recipeId: 'abuela-familia', bata: 'si' })).toEqual(defaultAvatarV2());
     expect(coerceAvatarV2({
-      schemaVersion: 2, mode: 'personalizado', complexion: 'c', skin: 'piel-4', hair: 'afro', hairColor: 'verde',
+      schemaVersion: 2, mode: 'personalizado', complexion: 'z', skin: 'piel-4', hair: 'afro', hairColor: 'verde',
       accessories: ['gafete', 'gafas', 'gafas', 'sombrero'], bata: true,
     })).toEqual({ ...P, complexion: 'a', skin: 'piel-4', hair: 'afro', hairColor: 'negro', accessories: ['gafas', 'gafete'], bata: true });
     expect(coerceAvatarV2({ schemaVersion: 2, mode: 'otro' })).toEqual(defaultAvatarV2());
     expect(coerceAvatarV2('texto')).toEqual(defaultAvatarV2());
+  });
+
+  it('acepta a Karen como avatar del elenco, con bata', () => {
+    expect(coerceAvatarV2({ schemaVersion: 2, mode: 'elenco', recipeId: 'karen', bata: true }))
+      .toEqual({ schemaVersion: 2, mode: 'elenco', recipeId: 'karen', bata: true });
+  });
+
+  it('conserva la complexión c y el peinado largo con raya al medio de un avatar personalizado', () => {
+    expect(coerceAvatarV2({ ...BASE, complexion: 'c', hair: 'largo-raya-medio' }))
+      .toEqual({ ...BASE, complexion: 'c', hair: 'largo-raya-medio' });
   });
 
   it('toAvatarV2 acepta v1 o v2, descarta versiones desconocidas y es idempotente', () => {

@@ -54,9 +54,9 @@ test('la vuelta tiene 8 pasos entre vecinas y 4 cuartos con su diagonal en medio
   }
 });
 
-test('las 33 recetas y sus variantes giran de forma gradual y sin mover el punto de apoyo', () => {
+test('las 34 recetas y sus variantes giran de forma gradual y sin mover el punto de apoyo', () => {
   const recipes = Object.values(bundle.recipes);
-  assert.equal(recipes.length, 33);
+  assert.equal(recipes.length, 34);
   const todos = recipes.flatMap(r => [[r.id, r], ...recipeVariants(bundle, r).map(([v, vr]) => [`${r.id}/${v}`, vr])]);
   for (const [id, recipe] of todos) {
     const composed = compose(recipe);

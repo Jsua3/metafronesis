@@ -11,10 +11,10 @@
  * exige que coincidan.
  */
 
-export const PLAYABLE_IDS = ['valentina', 'andres', 'camila', 'daniela', 'david', 'felipe', 'jorge', 'luisa', 'mariana', 'mateo', 'paula', 'samuel'] as const;
-export const COMPLEXIONS = ['a', 'b'] as const;
+export const PLAYABLE_IDS = ['valentina', 'andres', 'camila', 'daniela', 'david', 'felipe', 'jorge', 'luisa', 'mariana', 'mateo', 'paula', 'samuel', 'karen'] as const;
+export const COMPLEXIONS = ['a', 'b', 'c'] as const;
 export const SKINS = ['piel-1', 'piel-2', 'piel-3', 'piel-4', 'piel-5', 'piel-6'] as const;
-export const HAIRS = ['rapado', 'corto-liso', 'corto-rizado', 'bob-flequillo', 'media-melena', 'largo-suelto', 'cola-caballo', 'mono', 'trenza', 'afro'] as const;
+export const HAIRS = ['rapado', 'corto-liso', 'corto-rizado', 'bob-flequillo', 'media-melena', 'largo-suelto', 'largo-raya-medio', 'cola-caballo', 'mono', 'trenza', 'afro'] as const;
 export const HAIR_COLORS = ['negro', 'castano-oscuro', 'castano', 'cobrizo', 'rubio', 'canoso'] as const;
 export const ACCESSORIES = ['gafas', 'gafete'] as const;
 /** Conjunto del editor según la bata (decisión 18). */
@@ -49,10 +49,10 @@ export type AvatarV2 = AvatarElenco | AvatarPersonalizado;
 
 /** Etiquetas del editor, en el orden de las listas. */
 export const AVATAR_LABELS = Object.freeze({
-  complexion: { a: 'Complexión A', b: 'Complexión B' } as Record<Complexion, string>,
+  complexion: { a: 'Complexión A', b: 'Complexión B', c: 'Complexión C' } as Record<Complexion, string>,
   hair: {
     rapado: 'Rapado', 'corto-liso': 'Corto liso', 'corto-rizado': 'Corto rizado', 'bob-flequillo': 'Bob con flequillo',
-    'media-melena': 'Media melena', 'largo-suelto': 'Largo suelto', 'cola-caballo': 'Cola de caballo', mono: 'Moño',
+    'media-melena': 'Media melena', 'largo-suelto': 'Largo suelto', 'largo-raya-medio': 'Largo con raya al medio', 'cola-caballo': 'Cola de caballo', mono: 'Moño',
     trenza: 'Trenza', afro: 'Afro',
   } as Record<HairId, string>,
   hairColor: {
