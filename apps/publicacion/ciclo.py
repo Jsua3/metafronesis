@@ -7,19 +7,21 @@ from django.utils import timezone
 
 from apps.simulation.models import CaseReview, CaseVersion, ReviewDecision, ReviewReason
 from apps.simulation.services.audit_service import auditable
+from apps.autoria import autoria
 from shared.exceptions import ApiError
-from shared.policies import can
 from .arbol import arbol_de
 from .huella import huella_de
 from apps.simulation.models import CaseVersionStatus
 
 
 def version_accesible(usuario, case_version_id, accion='author', lock=False):
+    """La versión si ``usuario`` puede aplicarle ``accion`` (``case.<accion>``) según la autoría compartida: leerla
+    (``author``) si la ve; enviarla (``submit``) si creó el borrador; archivarla si es el autor del caso. Si no, 404."""
     consulta = CaseVersion.objects.select_related('simulation_case')
     if lock:
         consulta = consulta.select_for_update(of=('self',))
     version = consulta.filter(pk=case_version_id).first()
-    if version is None or not can(usuario, 'case', accion, owner_id=version.simulation_case.created_by_id):
+    if version is None or not autoria.permitido(usuario, version, accion):
         raise Http404
     return version
 
@@ -69,7 +71,9 @@ def publicar(admin, case_version_id):
 @auditable('CASE_REJECTED', 'CASE_VERSION', resource_id_param_index=1)
 @transaction.atomic
 def devolver_a_borrador(admin, case_version_id, motivo, nota):
-    """El administrador devuelve una versión en revisión a borrador, con un motivo (FORMA o CONTENIDO) y una nota para quien la autora."""
+    """El administrador devuelve una versión en revisión a borrador, con un motivo (FORMA o CONTENIDO) y una nota para quien la autora.
+
+    La revisión la pidió quien creó la versión (el dueño del borrador), que puede no ser el autor del caso."""
     version = version_accesible(admin, case_version_id, 'publish', lock=True)
     _exigir_estado(version, (CaseVersionStatus.IN_REVIEW,))
     nota = (nota or '').strip()
@@ -77,7 +81,7 @@ def devolver_a_borrador(admin, case_version_id, motivo, nota):
         raise ApiError('VALIDATION_ERROR', 'El motivo debe ser FORMA o CONTENIDO.', 400, field='reason')
     if not nota:
         raise ApiError('VALIDATION_ERROR', 'Devolver un caso a borrador exige una nota para quien lo autora.', 400, field='note')
-    CaseReview.objects.create(case_version=version, requested_by=version.simulation_case.created_by, decided_by=admin,
+    CaseReview.objects.create(case_version=version, requested_by=version.created_by, decided_by=admin,
                               decided_at=timezone.now(), decision=ReviewDecision.REJECTED, reason=motivo, note=nota)
     version.status = CaseVersionStatus.DRAFT
     version.validated_at = None

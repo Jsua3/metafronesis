@@ -28,7 +28,7 @@ class CasosView(APIView):
     permission_classes = PERMISO
 
     def get(self, request):
-        return api_ok([servicios.caso_dto(version) for version in servicios.biblioteca()])
+        return api_ok(servicios.casos_dto(servicios.biblioteca()))
 
 
 class SesionView(APIView):

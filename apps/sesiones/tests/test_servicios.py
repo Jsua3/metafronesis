@@ -64,7 +64,7 @@ def test_biblioteca_incluye_casos_publicados_de_otros_autores(version):
     assert version in servicios.biblioteca()
     assert servicios.caso_dto(version) == {
         "caseVersionId": version.pk, "titulo": "Caso de la biblioteca", "version": "1.0.0",
-        "autor": "Ana Autora", "tiempoEstimadoMin": 45, "descripcion": "",
+        "autor": "Ana Autora", "editadoPor": [], "tiempoEstimadoMin": 45, "descripcion": "",
     }
 
 
