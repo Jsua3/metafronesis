@@ -83,7 +83,7 @@ describe('RielDeEscenasComponent', () => {
     expect(marcas(filas[0])).toMatch(/Completa|Le falta/);
     expect(marcas(filas[1])).toContain('Final');
     expect(marcas(filas[1])).toContain('IA');
-    expect(marcas(filas[1])).toContain('Sin escribir');
+    expect(marcas(filas[1])).toContain('Por escribir');
     expect(filas[1].querySelector('.solo-lector')!.textContent).toContain('es un final');
     for (const img of raiz.querySelectorAll<HTMLImageElement>('app-riel-de-escenas img')) expect(img.getAttribute('src')).toBeTruthy();
   });

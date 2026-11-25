@@ -133,6 +133,7 @@ def _con_nombres_canonicos(datos, alias):
 
 
 class EscenaSerializer(RevisionSerializer):
+    aiSuggested = serializers.BooleanField(required=False)
     key = serializers.CharField(max_length=120, required=False)
     title = serializers.CharField(max_length=255, required=False)
     narrative = serializers.CharField(required=False, allow_blank=True)
@@ -163,6 +164,7 @@ class CrearEscenaSerializer(EscenaSerializer):
 
 
 class DecisionSerializer(RevisionSerializer):
+    aiSuggested = serializers.BooleanField(required=False)
     sourceNodeId = serializers.IntegerField(min_value=1, required=False)
     targetNodeId = serializers.IntegerField(min_value=1, required=False)
     text = serializers.CharField(required=False)

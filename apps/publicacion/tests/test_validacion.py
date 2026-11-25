@@ -42,6 +42,15 @@ def test_rubric_weights(caso):
     assert 'RUBRIC_WEIGHTS' in codigos(caso)
 
 
+def test_rubrica_solo_suma_criterios_activos(caso):
+    from apps.simulation.models import RubricCriterion
+    RubricCriterion.objects.create(rubric=caso['rubrica'], competency='I', title='Inactivo', weight=50, active=False)
+    assert 'RUBRIC_WEIGHTS' not in codigos(caso)
+    caso['criterio'].active = False
+    caso['criterio'].save(update_fields=['active'])
+    assert 'RUBRIC_WEIGHTS' in codigos(caso)
+
+
 def test_case_no_time(caso):
     caso['version'].estimated_minutes = 0
     caso['version'].save()

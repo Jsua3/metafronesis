@@ -19,7 +19,7 @@ describe('PanelPendientesComponent', () => {
     await listo();
 
     const boton = raiz.querySelector<HTMLButtonElement>('header button[data-accion="ver-pendientes"]')!;
-    expect(boton.querySelector('.solo-lector')!.textContent).toMatch(/^Pendientes: \d+ por corregir$/);
+    expect(boton.querySelector('.solo-lector')!.textContent).toMatch(/^Pendientes: \d+ por resolver antes de enviar/);
     boton.click();
     await listo();
 

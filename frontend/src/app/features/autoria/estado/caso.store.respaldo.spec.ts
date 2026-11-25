@@ -67,7 +67,7 @@ describe('S2 · no se pierde lo escrito', () => {
   it('un cambio que el sistema rechaza (no es conflicto) muestra el texto que se descartó', async () => {
     const { servidor, store } = await abrir();
     const origen = escenaDe(store, 'consultorio');
-    servidor.fallar('updateNode', 500);
+    servidor.fallar('updateNode', 400);
     store.editarEscena(origen.id, { titulo: 'Un título que no se guardó' });
     await store.sincronizado();
     expect(store.error()).toMatch(/no se pudo guardar/i);

@@ -26,6 +26,8 @@ import { claveLibre, cuerpoCrearCaso } from '../modelo/hacia-api';
 import { hexAleatorio, nuevoId } from '../modelo/ids';
 import { revisarPuntoDeIda } from '../modelo/movimiento';
 import { posicionLibre, trazarEscenas } from '../modelo/trazado';
+import { puedeEnviar, faltasDelServidor } from '../modelo/revision';
+import { clasificarPendientes } from '../modelo/pendientes';
 import { Historial } from './historial';
 import * as persistir from './persistir';
 import { casoLeidoDelServidor, firmaDelCaso } from './releer';
@@ -190,6 +192,63 @@ export class CasoStore {
   private readonly enLinea = signal(false);
 
   readonly caso = this.estado.asReadonly();
+  private readonly hallazgosRevision = signal<ValidationIssue[]>([]);
+  readonly revisionPendiente = signal(true);
+  readonly faltasLocales = computed(() => this.caso() ? puedeEnviar(this.caso()!).faltas : []);
+  /** Única lista de bloqueos: incluye lo que falta escribir y lo que exige el servidor. */
+  readonly faltas = computed(() => {
+    const caso = this.caso();
+    if (!caso) return [];
+    const locales = this.faltasLocales();
+    const unicos = new Map(this.hallazgosRevision().map(h => [JSON.stringify([h.code, h.nodeId, h.optionKey, h.path, h.message]), h]));
+    return [...locales, ...faltasDelServidor([...unicos.values()], caso, {
+      faltasLocales: locales, escenaDeNodo: id => this.sesion?.idLocalDeNodo(id) ?? String(id), respuestaDeOpcion: clave => this.respuestaDeOpcion(clave),
+      respuestasGuardadas: id => this.respuestasGuardadasDe(id),
+    })];
+  });
+  readonly pendientes = computed(() => this.caso() ? clasificarPendientes(this.caso()!, this.faltas()) : []);
+  readonly totalPendientes = computed(() => this.faltas().length);
+  registrarRevision(hallazgos: ValidationIssue[], ciclo?: CaseLifecycle): void {
+    hallazgos = hallazgos.map(h => {
+      const id = /^options\/(\d+)/.exec(h.path ?? '')?.[1];
+      const opcion = id ? this.sesion?.vista.decisions.find(d => d.id === Number(id)) : undefined;
+      return opcion ? { ...h, nodeId: opcion.sourceNodeId, optionKey: opcion.optionKey } : h;
+    });
+    const motivo = ciclo?.blockedReason;
+    this.hallazgosRevision.set([...hallazgos, ...(motivo && motivo.code !== 'VALIDATION_ERRORS' && !hallazgos.some(h => h.code === motivo.code && h.message === motivo.message)
+      ? [{ code: motivo.code, severity: 'error' as const, message: motivo.message }] : [])]);
+    this.revisionPendiente.set(false);
+  }
+  agregarBloqueos(hallazgos: ValidationIssue[]): void {
+    this.hallazgosRevision.update(actual => [...actual, ...hallazgos]);
+  }
+  readonly avisoEnsayo = signal<string | null>(null);
+  readonly ultimoGuardado = signal<Date | null>(null);
+  readonly guardadoDetenido = signal<'conexion' | 'error' | null>(null);
+  readonly textoGuardado = computed(() => {
+    if (this.guardando()) return 'Guardando…';
+    if (this.guardadoDetenido() === 'conexion') return 'Sin conexión: tus cambios esperan';
+    if (this.guardadoDetenido()) return 'No se pudo guardar: reintentar';
+    if (this.error()) return 'No se pudo guardar: revisa el aviso';
+    if (this.conflicto()) return 'Hay cambios sin guardar: revisa el conflicto';
+    const pendientes = this.sinGuardar();
+    if (pendientes.length) {
+      const n = pendientes.length;
+      const respuestas = n === 1 ? '1 respuesta' : `${n} respuestas`;
+      return pendientes.every(p => p.mensaje === persistir.FALTA_CLASE)
+        ? `Sin guardar: falta elegir la clase de ${respuestas}`
+        : `Sin guardar: falta completar ${respuestas}`;
+    }
+    if ([...this.puertasSinGuardar().values()].some(p => p.length)) return 'Sin guardar: faltan puertas por completar';
+    const hora = this.ultimoGuardado();
+    return hora ? `Todo guardado · ${hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })}` : this.enLinea() ? 'Todo guardado' : 'Sin guardar';
+  });
+  reintentarGuardado(): void {
+    if (!this.guardadoDetenido()) return;
+    this.guardadoDetenido.set(null);
+    this.errorAhora.set(null);
+    void this.procesar();
+  }
   /** El caso ya no es un borrador (está en revisión o publicado): se puede ver, pero no cambiar. */
   readonly soloLectura = computed(() => {
     const estado = this.estado()?.estado;
@@ -238,7 +297,7 @@ export class CasoStore {
    * Hay algo que no está a salvo en el sistema: cambios viajando, un conflicto sin resolver o respuestas que solo están en
    * pantalla porque les falta la clase, la razón o a dónde llevan. Salir ahora lo perdería.
    */
-  readonly haySinGuardar = computed(() => this.guardandoAhora() || this.conflictoAhora() !== null || this.sinGuardar().length > 0);
+  readonly haySinGuardar = computed(() => this.guardandoAhora() || this.guardadoDetenido() !== null || this.conflictoAhora() !== null || this.sinGuardar().length > 0 || [...this.puertasSinGuardar().values()].some(p => p.length));
 
   /**
    * Relee del servidor si el ensayo de esta versión llegó a un final (`rehearsedToEnd`) y lo pone en `probadoHastaElFinal`, sin
@@ -347,6 +406,11 @@ export class CasoStore {
   }
 
   private empezarCon(caso: CasoBorrador | null, sesion: SesionServidor | null): void {
+    this.avisoEnsayo.set(null);
+    this.hallazgosRevision.set([]);
+    this.revisionPendiente.set(true);
+    this.ultimoGuardado.set(null);
+    this.guardadoDetenido.set(null);
     this.puertasPendientes.set(new Map());
     this.sesion = sesion;
     this.cola = [];
@@ -366,7 +430,7 @@ export class CasoStore {
 
   /** Espera a que todo lo que se cambió haya llegado al servidor (o a que algo lo detenga). */
   sincronizado(): Promise<void> {
-    if (!this.procesando && (this.cola.length === 0 || this.conflictoAhora())) return Promise.resolve();
+    if (!this.procesando && (this.cola.length === 0 || this.conflictoAhora() || this.guardadoDetenido())) return Promise.resolve();
     return new Promise((resolver) => this.esperas.push(resolver));
   }
 
@@ -383,6 +447,7 @@ export class CasoStore {
     op.aplicar(nuevo); // si lanza, nada cambió
     if (!opciones.propuesta) this.propuestaAplicada.set(null); // lo aplicado por el asistente solo se deshace de un paso si nada más cambió
     if (opciones.sala) this.historial?.hacer(structuredClone(nuevo.salas));
+    this.revisionPendiente.set(true);
     this.estado.set(nuevo);
     this.version.update((v) => v + 1);
 
@@ -424,7 +489,7 @@ export class CasoStore {
   }
 
   private async procesar(): Promise<void> {
-    if (this.procesando) return;
+    if (this.procesando || this.guardadoDetenido()) return;
     this.procesando = true;
     this.guardandoAhora.set(true);
     try {
@@ -439,11 +504,18 @@ export class CasoStore {
           if (this.sesion !== sesion) return; // mientras tanto se abrió otro caso
           despues.revision = sesion.revision;
           this.base = despues;
+          this.ultimoGuardado.set(new Date());
           this.cola.shift();
         } catch (error) {
           if (this.sesion !== sesion) return;
           if (revisionConflictOf(error) || this.esCasoVencido(error)) {
             this.avisarConflicto([...new Set([...this.cola.flatMap((o) => o.resumen ?? []), ...this.resumenDePendientes()])]);
+            break;
+          }
+          // Sin confirmación no se pierde el cambio ni se repite autom?ticamente una escritura.
+          if (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)
+              && sesion.revision === revisionAntes) {
+            this.guardadoDetenido.set(error.status === 0 ? 'conexion' : 'error');
             break;
           }
           this.cola.shift(); // se revierte solo este cambio
@@ -573,6 +645,7 @@ export class CasoStore {
     const cambiadas = salas.filter((s) => JSON.stringify(s) !== JSON.stringify(actual.salas.find((x) => x.id === s.id))).map((s) => s.id);
     const nuevo = structuredClone(actual);
     nuevo.salas = structuredClone(salas);
+    this.revisionPendiente.set(true);
     this.estado.set(nuevo);
     this.version.update((v) => v + 1);
     if (!this.sesion) {
@@ -1022,7 +1095,7 @@ export class CasoStore {
     });
   }
 
-  editarEscena(id: string, cambios: Partial<Pick<Escena, 'titulo' | 'intensidad' | 'advertencia' | 'recursosApoyo'>>): void {
+  editarEscena(id: string, cambios: Partial<Pick<Escena, 'titulo' | 'narracion' | 'intensidad' | 'advertencia' | 'recursosApoyo'>>): void {
     const escena = this.tituloEscena(id);
     this.ejecutar({
       nombre: 'la escena',
@@ -1031,6 +1104,7 @@ export class CasoStore {
       fusion: `escena:${id}`,
       resumen: [
         ...textoCompleto('Título de una escena', cambios.titulo),
+        ...textoCompleto('Narración de una escena', cambios.narracion),
         ...(cambios.intensidad ? [`Cambiaste la intensidad de la escena «${escena}»`] : []),
         ...textoCompleto(`Aviso para el estudiante de la escena «${escena}»`, cambios.advertencia ?? undefined),
         ...(cambios.recursosApoyo ? [`Cambiaste los recursos de apoyo de la escena «${escena}»${cambios.recursosApoyo.length ? `: ${cambios.recursosApoyo.map((r) => `«${r}»`).join(', ')}` : ''}`] : []),
@@ -1250,9 +1324,11 @@ export class CasoStore {
    * acepta la escena misma (la que creó la IA).
    */
   aceptarIa(ruta: { escenaId: string; lineaId?: string; respuestaId?: string } | { finalId: string } | { salaId: string; tipo: TipoElemento; indice: number }): void {
+    const antes = this.estado() ? structuredClone(this.estado()!) : null;
     const pieza = 'tipo' in ruta ? lista(this.sala(this.estado()!, ruta.salaId), ruta.tipo)[ruta.indice] : undefined;
     this.ejecutar({
       nombre: 'la revisión',
+      alFallar: () => this.propuestaAplicada.set(null),
       resumen: ['Aceptaste una parte sugerida por el asistente'],
       aplicar: (caso) => {
         if ('tipo' in ruta) {
@@ -1287,7 +1363,16 @@ export class CasoStore {
         const nodo = sesion.nodoDe(ruta.escenaId);
         if (nodo !== undefined) await sesion.aceptarNodo(nodo);
       },
-    });
+    }, { propuesta: true });
+    if (antes) {
+      const tocados: Tocados = { escenasNuevas: [], escenas: [], guiones: [], respuestas: [], salas: [], finales: false };
+      if ('tipo' in ruta) tocados.salas.push(ruta.salaId);
+      else if ('finalId' in ruta) tocados.finales = true;
+      else if (ruta.lineaId) tocados.guiones.push(ruta.escenaId);
+      else if (ruta.respuestaId) tocados.respuestas.push(ruta.respuestaId);
+      else tocados.escenas.push(ruta.escenaId);
+      this.propuestaAplicada.set({ antes, tocados });
+    }
   }
 
   /** Cuántas partes sugeridas por la IA quedan por aceptar en la escena: ella, sus líneas, sus respuestas y las personas marcadas de su sala. */
@@ -1303,8 +1388,10 @@ export class CasoStore {
   aceptarEscenaIa(escenaId: string): void {
     const plan = persistir.planDeAceptacion(this.estado(), escenaId);
     if (!plan || persistir.partesPorAceptar(plan) === 0) return;
+    const antes = structuredClone(this.estado()!);
     this.ejecutar({
       nombre: 'la revisión',
+      alFallar: () => this.propuestaAplicada.set(null),
       resumen: ['Aceptaste todo lo sugerido por el asistente en una escena'],
       aplicar: (caso) => {
         const escena = this.escena(caso, escenaId);
@@ -1322,7 +1409,11 @@ export class CasoStore {
           throw error;
         }
       },
-    });
+    }, { propuesta: true });
+    this.propuestaAplicada.set({ antes, tocados: {
+      escenasNuevas: [], escenas: [escenaId], guiones: [escenaId], respuestas: plan.respuestas,
+      salas: plan.salaId ? [plan.salaId] : [], finales: false,
+    } });
   }
 
   /** Las respuestas de la escena que ya están en el servidor, en el orden de su número (el orden en que este exporta las opciones). */
@@ -1444,8 +1535,12 @@ export class CasoStore {
     await this.sincronizado();
     const sesion = this.sesion;
     if (!sesion) throw new Error('Este caso todavía no se guardó.');
+    if (this.haySinGuardar()) throw new Error('Todavía hay cambios sin guardar.');
+    const version = this.version();
     const validacion = await firstValueFrom(sesion.api.validateCase(sesion.caseVersionId));
     const ciclo = await firstValueFrom(sesion.api.lifecycle(sesion.caseVersionId));
+    if (this.sesion !== sesion || this.version() !== version) throw new Error('El caso cambió durante la revisión.');
+    this.registrarRevision(validacion.issues, ciclo);
     return { hallazgos: validacion.issues, ciclo };
   }
 

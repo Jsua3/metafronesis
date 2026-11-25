@@ -22,10 +22,8 @@ export class ProgresoDelCaso {
     { initialValue: this.router.url },
   );
 
-  readonly pendientes = computed<Pendiente[]>(() => {
-    const caso = this.store.caso();
-    return caso ? clasificarPendientes(caso) : [];
-  });
+  readonly pendientes = this.store.pendientes;
+  readonly totalPendientes = this.store.totalPendientes;
 
   readonly porCorregir = computed(() => porCorregir(this.pendientes()));
 

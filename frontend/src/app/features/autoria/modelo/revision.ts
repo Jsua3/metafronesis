@@ -1,3 +1,4 @@
+import { esRelleno } from './relleno';
 import type { ValidationIssue } from '../../../core/models/simulation.model';
 import { revisarCaminos, type TipoAviso } from './caminos';
 import type { CasoBorrador, Escena, Respuesta, SalaCaso } from './caso';
@@ -177,6 +178,20 @@ export function puedeEnviar(caso: CasoBorrador): { ok: boolean; faltas: Falta[] 
 
   faltas.push(...faltasDeSalasSinPersonas(caso));
   faltas.push(...faltasDelModelo(caso));
+  for (const e of caso.escenas) {
+    const agregar = (texto: string, ancla: string, campo: string) => {
+      if (esRelleno(texto)) faltas.push({
+        codigo: 'CONTENT_PLACEHOLDER', mensaje: `Escribe ${campo} de «${e.titulo}»: todavía tiene texto de relleno.`,
+        ir: { ruta: rutaDeEscena(e.id), ancla },
+      });
+    };
+    agregar(e.narracion, 'narracion-escena', 'la narración');
+    for (const l of e.lineas) agregar(l.texto, `linea-${l.id}`, 'el diálogo');
+    for (const r of e.respuestas) {
+      agregar(r.texto, `respuesta-${r.id}`, 'la respuesta');
+      agregar(r.retroalimentacion, `respuesta-${r.id}`, 'la retroalimentación de la respuesta');
+    }
+  }
 
   // La lista de verificación ética: todos los ítems obligatorios marcados (lo mismo que exige la compuerta).
   if (caso.lista?.items.some((i) => i.obligatorio && !i.cumplido)) {
@@ -265,6 +280,7 @@ export function faltasDelServidor(
   caso: CasoBorrador,
   opciones: {
     respuestaDeOpcion: (optionKey: string) => string | undefined;
+    escenaDeNodo?: (nodeId: number) => string;
     faltasLocales: Falta[];
     /**
      * Las respuestas de la escena que ya están en el servidor, en el orden en que este las exporta (por su número). Quien llama
@@ -280,15 +296,21 @@ export function faltasDelServidor(
 
   for (const h of hallazgos) {
     if (h.severity !== 'error' || yaListados.has(h.code)) continue;
-    const escena = h.nodeId !== undefined ? rutaDeEscena(h.nodeId) : null;
+    const escena = h.nodeId !== undefined ? rutaDeEscena(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : null;
     const falta = (ir: Falta['ir']): Falta => ({ codigo: h.code, mensaje: h.message, ir });
     switch (h.code) {
+      case 'CASE_NO_RUBRIC':
+      case 'RUBRIC_WEIGHTS':
+        faltas.push(falta({ ruta: '/editor/rubrica' }));
+        break;
       case 'CASE_NO_TIME':
         faltas.push({ codigo: h.code, mensaje: 'Falta el tiempo estimado del caso', ir: { ruta: '/editor/datos', ancla: 'd-tiempo' } });
         break;
       case 'scene-without-recommended':
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'respuestas-escena' } : {}) }));
         break;
+      case 'CONTENT_PLACEHOLDER':
+      case 'OPTION_NO_JUSTIFICATION':
       case 'contraindicated-without-reason': {
         const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: respuesta ? `respuesta-${respuesta}` : 'respuestas-escena' } : {}) }));

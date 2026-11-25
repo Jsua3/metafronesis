@@ -207,7 +207,7 @@ describe('AutoriaShellComponent · como ruta del programa', () => {
 
   it('un cambio que el servidor rechaza se dice con palabras llanas y se puede cerrar', async () => {
     const { raiz, listo, servidor, store } = await irA('/portal/casos/41/editor');
-    servidor.fallar('updateNode', 500);
+    servidor.fallar('updateNode', 400);
     store.moverEscena(store.caso()!.escenas[0].id, 50, 50);
     await store.sincronizado();
     await listo();
@@ -244,31 +244,31 @@ describe('AutoriaShellComponent · como ruta del programa', () => {
     const { raiz, listo, store } = await irA('/portal/casos/41/editor');
     // E0: el indicador vive en la barra de estado; a la vista va la forma corta y la frase entera es la que se anuncia (y la del globo).
     const indicador = () => raiz.querySelector('app-estudio-barra-estado [data-estado-guardado] .solo-lector')!.textContent!.trim();
-    expect(indicador()).toBe('Todo guardado');
+    expect(indicador()).toContain('Todo guardado');
 
     const origen = store.caso()!.escenas[0];
     const r = store.agregarRespuesta(origen.id);
     store.editarRespuesta(origen.id, r, { texto: 'A medias' });
     await store.sincronizado();
     await listo();
-    expect(indicador()).toBe('Falta elegir la clase de 1 respuesta: solo está en esta pantalla');
+    expect(indicador()).toBe('Sin guardar: falta elegir la clase de 1 respuesta');
 
     store.editarRespuesta(origen.id, r, { clase: 'ACCEPTABLE' }); // ya tiene clase, falta a dónde lleva
     await store.sincronizado();
     await listo();
-    expect(indicador()).toBe('Falta completar 1 respuesta: solo está en esta pantalla');
+    expect(indicador()).toBe('Sin guardar: falta completar 1 respuesta');
 
     store.editarRespuesta(origen.id, r, { destinoId: store.caso()!.escenas[1].id });
     await store.sincronizado();
     await listo();
-    expect(indicador()).toBe('Todo guardado');
+    expect(indicador()).toMatch(/^Todo guardado · \d{2}:\d{2}$/);
   });
 
   it('S7 · el aviso de conflicto y el de error se traen a la vista con el foco al aparecer, sin robarlo en cada guardado', async () => {
     const { raiz, listo, servidor, store } = await irA('/portal/casos/41/editor');
     const origen = store.caso()!.escenas[0];
 
-    servidor.fallar('updateNode', 500);
+    servidor.fallar('updateNode', 400);
     store.moverEscena(origen.id, 5, 5);
     await store.sincronizado();
     await listo();

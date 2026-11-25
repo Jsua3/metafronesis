@@ -279,7 +279,7 @@ export async function actualizarEscena(s: SesionServidor, caso: CasoBorrador, es
   if (!escena || nodoId === undefined) return;
   const previo = s.vista.nodes.find((n) => n.id === nodoId);
   const cuerpo = cuerpoNodo(escena, { esInicio: caso.inicioId === escena.id, previo });
-  if (previo && !cuerpo.aiSuggested
+  if (previo && cuerpo.aiSuggested === undefined
     && previo.title === cuerpo.title && previo.narrative === cuerpo.narrative && previo.terminal === cuerpo.terminal && previo.startNode === cuerpo.startNode
     && previo.positionX === cuerpo.positionX && previo.positionY === cuerpo.positionY && previo.intensity === cuerpo.intensity
     && (previo.warningMessage ?? null) === (cuerpo.warningMessage ?? null)

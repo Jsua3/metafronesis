@@ -91,22 +91,22 @@ describe('RevisionComponent · la compuerta de publicación en lenguaje del doce
         issue('high-intensity-without-warning', 'La escena «Pasillo» es de intensidad alta y no tiene mensaje de advertencia: escríbelo antes de publicar.', { sceneKey: 'pasillo', nodeId: 2 }),
       ],
     });
-    const filas = [...raiz.querySelectorAll<HTMLElement>('section.por-resolver li.falta')];
+    const filas = [...raiz.querySelectorAll<HTMLElement>('section.por-resolver li.problema')];
     expect(filas).toHaveLength(6);
     expect(raiz.querySelector('section.por-resolver h2')!.textContent).toContain('Por resolver (6)');
     for (const fila of filas) {
       const boton = fila.querySelector('button')!;
-      expect(boton.textContent!.trim()).toBe('Llévame ahí');
+      expect(boton.textContent!.trim()).toContain('Llévame ahí');
       expect(boton.getAttribute('aria-label')).toMatch(/^Llévame ahí: /);
     }
-    expect(filas.map((f) => f.querySelector('p')!.textContent)).toEqual([
+    expect(filas.map((f) => f.querySelector('.problema__texto')!.textContent)).toEqual(expect.arrayContaining([
       expect.stringContaining('no tiene ninguna respuesta recomendada'),
       expect.stringContaining('es contraindicada y no explica por qué'),
       expect.stringContaining('no se puede cumplir'),
       expect.stringContaining('no se puede alcanzar'),
       expect.stringContaining('no tiene evidencia'),
       expect.stringContaining('intensidad alta'),
-    ]);
+    ]));
     // ni códigos ni jerga en pantalla
     expect(raiz.textContent).not.toMatch(/scene-without|contraindicated-without|milestone-unreachable|WORLD\.|DSL\.|nodeId/);
   });
@@ -121,7 +121,7 @@ describe('RevisionComponent · la compuerta de publicación en lenguaje del doce
     const destino = document.createElement('li');
     destino.id = 'hito-informar_derechos';
     document.body.appendChild(destino);
-    raiz.querySelector<HTMLButtonElement>('section.por-resolver li.falta button')!.click();
+    raiz.querySelector<HTMLButtonElement>('section.por-resolver li.problema button')!.click();
     await new Promise((r) => setTimeout(r, 120));
     await listo();
     expect(navegar).toHaveBeenCalledWith(`/portal/casos/${store.caso()!.id}/editor/evaluacion`); // los hitos viven en Evaluación (E5)
@@ -137,7 +137,7 @@ describe('RevisionComponent · la compuerta de publicación en lenguaje del doce
     store.fijar(caso);
     await listo();
     // Lo que el editor ve por su cuenta no se lista aquí (vive en la hoja «Pendientes»): se resume por etapa y bloquea el envío.
-    expect(raiz.querySelectorAll('section.por-resolver li.falta')).toHaveLength(0);
+    expect(raiz.querySelectorAll('section.por-resolver li.problema')).toHaveLength(1);
     expect(raiz.querySelector('[data-etapa="lugar"] .etapa__estado')!.textContent!.trim()).toBe('1 por corregir');
     expect(raiz.querySelector('[data-etapa="datos"] .etapa__estado')!.textContent!.trim()).toBe('Listo');
     expect(raiz.querySelector('section.por-resolver h2')!.textContent).toContain('Por resolver (1)');
@@ -480,16 +480,21 @@ describe('RevisionComponent · el ensayo en otra pestaña', () => {
     expect(raiz.textContent).toContain('Ya lo probaste como estudiante.');
   });
 
-  it('«Probar» con clic normal va al ensayo en esta pestaña; con Ctrl deja que el navegador abra otra', async () => {
+  it('«Probar» con clic normal y con Ctrl conserva el editor y abre otra pestaña', async () => {
     const { raiz, listo } = await montar();
     const navegar = vi.spyOn(TestBed.inject(CasoStore), 'navegar').mockResolvedValue(true);
+    const pestana = { opener: {}, closed: false, location: { href: '' } };
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(pestana as unknown as Window);
     const enlace = probado(raiz).querySelector<HTMLAnchorElement>('a')!;
     enlace.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
     await listo();
     expect(navegar).not.toHaveBeenCalled();
     enlace.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     await new Promise((r) => setTimeout(r, 20));
-    expect(navegar).toHaveBeenCalledWith('/portal/casos/41/ensayo', { umbral: { titulo: expect.any(String) } });
+    expect(navegar).not.toHaveBeenCalled();
+    expect(pestana.location.href).toBe('/portal/casos/41/ensayo');
+    expect(abrir).toHaveBeenCalledTimes(2);
+    abrir.mockRestore();
   });
 
   it('cuando la pestaña vuelve a estar visible, vuelve a preguntar', async () => {

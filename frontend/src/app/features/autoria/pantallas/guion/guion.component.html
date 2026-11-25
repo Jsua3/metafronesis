@@ -17,6 +17,11 @@
                    (itemSelected)="alElegirEnEscena($event, e, cabecera)" />
         </div>
       </header>
+      <section class="bloque">
+        <label for="narracion-escena">Narración de la escena</label>
+        <textarea id="narracion-escena" class="campo" rows="2" [value]="e.narracion"
+                  [readOnly]="store.soloLectura()" (change)="store.editarEscena(e.id, { narracion: $any($event.target).value })"></textarea>
+      </section>
 
       <!-- La cámara: el cuarto con su elenco y un globo sobre quien dice la línea que se escribe (EDITOR-PRO.md §3). -->
       <app-camara-escena [caso]="store.caso()!" [escena]="e" [miniatura]="miniaturaDe(e)" [lineaEnfocada]="lineaVista()" />
@@ -32,7 +37,7 @@
         @if (e.lineas.length) {
           <ol class="lista lineas">
             @for (l of e.lineas; track l.id; let i = $index) {
-              <li class="linea" [class.marca-ia]="l.marcaIa" (focusin)="lineaVista.set(l.id)">
+              <li class="linea" [id]="'linea-' + l.id" tabindex="-1" [class.marca-ia]="l.marcaIa" (focusin)="lineaVista.set(l.id)">
                 <app-linea [linea]="l" [indice]="i" [total]="e.lineas.length" [personajes]="personajes()"
                            (editar)="editarLinea(e, l, $event)" (mover)="moverLinea(e, l, i, $event)" (duplicar)="duplicarLinea(e, l, i)"
                            (borrar)="borrarLinea(e, l, i)" (aceptar)="aceptarLinea(e, l, i)" (descartar)="borrarLinea(e, l, i, 'descartada')"

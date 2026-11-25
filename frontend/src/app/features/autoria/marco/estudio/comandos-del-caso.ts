@@ -57,7 +57,7 @@ export function injectComandosDelCaso(marco: AccionesDelMarco): void {
     ];
     const caso_: Comando[] = [
       { id: 'caso:probar', grupo: 'Caso', titulo: 'Probar el caso en el juego', palabras: 'ensayo jugar', ejecutar: marco.probar },
-      { id: 'caso:pendientes', grupo: 'Caso', titulo: 'Ver lo que falta (pendientes)', detalle: `${progreso.porCorregir().length} por corregir`,
+      { id: 'caso:pendientes', grupo: 'Caso', titulo: 'Ver lo que falta (pendientes)', detalle: `${progreso.totalPendientes()} por resolver antes de enviar`,
         palabras: 'avisos errores', ejecutar: marco.verPendientes },
       { id: 'ayuda:buscar', grupo: 'Ayuda', titulo: 'Buscar en la ayuda', palabras: 'guia', ejecutar: marco.buscarEnLaAyuda },
       { id: 'ayuda:preguntar', grupo: 'Ayuda', titulo: 'Preguntarle a la guía', palabras: 'ia asistente', ejecutar: marco.preguntarALaGuia },

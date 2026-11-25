@@ -97,14 +97,14 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
             <a class="boton-barra enlace-probar" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar"
-               aria-label="Probar el caso en el juego (con Ctrl o clic central se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
+               aria-label="Probar el caso en el juego (se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
             <button type="button" class="boton-barra boton-pendientes" data-accion="ver-pendientes" aria-haspopup="dialog"
                     [attr.title]="textoPendientes()" (click)="abrirPendientes($event)">
               <!-- El nombre es el texto para lectores («Pendientes: …», empieza por la palabra visible), no un aria-label:
                    Axe pegaba la palabra con la cifra de la insignia y lo daba por distinto. -->
               <span class="solo-lector">{{ textoPendientes() }}</span>
               <span aria-hidden="true">Pendientes</span>
-              <span class="insignia" [class.insignia--cero]="!progreso.porCorregir().length" aria-hidden="true">{{ progreso.porCorregir().length }}</span>
+              <span class="insignia" [class.insignia--cero]="!progreso.totalPendientes()" aria-hidden="true">{{ progreso.totalPendientes() }}</span>
             </button>
           }
           <div role="group" aria-label="Ayuda" class="barra-ayuda">
@@ -186,9 +186,9 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
         <app-avisos-guardado estudioEstadoInicio class="est-dato guardado-estado" parte="estado" />
       }
       @if (store.caso()) {
-        <button estudioEstadoInicio type="button" class="est-dato-boton" [class.estado-pendientes]="progreso.porCorregir().length"
+        <button estudioEstadoInicio type="button" class="est-dato-boton" [class.estado-pendientes]="progreso.totalPendientes()"
                 aria-haspopup="dialog" (click)="abrirPendientes($event)">
-          <span class="marca-estado" aria-hidden="true" [attr.data-estado]="progreso.porCorregir().length ? 'con-pendientes' : 'lista'"></span>
+          <span class="marca-estado" aria-hidden="true" [attr.data-estado]="progreso.totalPendientes() ? 'con-pendientes' : 'lista'"></span>
           {{ textoPendientes() }}
         </button>
       }
@@ -218,7 +218,14 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     </ng-template>
 
     <!-- «Deshacer» de los borrados del guion (EDITOR.md §4.6). El contenedor está siempre para que el lector anuncie el aviso. -->
-    <div class="deshacer-zona" role="status">
+    <div class="deshacer-zona" role="status" aria-live="polite">
+      @if (store.avisoEnsayo(); as aviso) { <p class="deshacer">{{ aviso }}</p> }
+      @if (store.puedeDeshacerPropuesta()) {
+        <div class="deshacer" data-deshacer-ia>
+          <span>Cambio del asistente aplicado.</span>
+          <button type="button" class="deshacer__accion" (click)="store.deshacerPropuesta()">Deshacer</button>
+        </div>
+      }
       @if (deshacer.aviso(); as aviso) {
         <div class="deshacer">
           <span class="deshacer__texto">{{ aviso.texto }}</span>
@@ -242,14 +249,14 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
       margin: 0; padding: 0 0.625rem 0 0.25rem; max-inline-size: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       border-inline-end: 1px solid var(--l-filo-fuerte); font-weight: 700; color: var(--asb-cromo-tinta);
       /* Un nombre largo cede con puntos suspensivos antes de que el hilo se monte sobre las herramientas. */
-      flex: 0 1 auto; min-inline-size: 3rem;
+      flex: 1 0 12rem; min-inline-size: 12rem;
     }
     @media (min-width: 64rem) { app-hilo-del-caso { flex: none; } }
     .contexto-editor { padding: 0 0.75rem; font-weight: 700; color: var(--asb-cromo-tinta); white-space: nowrap; }
     /* A 390 px el rótulo no cabe junto a «‹ Casos» y la cuenta (se pisaba con el menú): el título de la página ya lo dice. */
     @media (max-width: 29.999rem) { .contexto-editor { display: none; } }
     .barra-ayuda { display: flex; flex-wrap: nowrap; gap: 0.125rem; }
-    @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { display: none; } }
+    @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { max-inline-size: 16rem; } }
 
     /* «Probar» es la acción de la barra: lleva el tinte de marca sobre el vidrio (sin filo), como la acción de una barra
        de iOS; el botón sólido de cada pantalla sigue siendo uno solo. */
@@ -409,8 +416,8 @@ export class AutoriaShellComponent implements CanLeave {
   protected readonly iaDisponible = computed(() => this.ia.estado() !== 'apagado');
   /** «Pendientes: 2 por corregir», lo que oye el lector y dice el globo del botón. */
   protected readonly textoPendientes = computed(() => {
-    const n = this.progreso.porCorregir().length;
-    return n === 0 ? 'Pendientes: nada por corregir' : n === 1 ? 'Pendientes: 1 por corregir' : `Pendientes: ${n} por corregir`;
+    const n = this.progreso.totalPendientes();
+    return `Pendientes: ${n} por resolver antes de enviar${this.store.revisionPendiente() ? ' · falta completar la revisión' : ''}`;
   });
   /**
    * Las pantallas no se pueden cambiar si el caso ya no es un borrador. Siguen vivos los
@@ -495,6 +502,11 @@ export class AutoriaShellComponent implements CanLeave {
   private readonly injector = inject(Injector);
 
   constructor() {
+    effect(() => {
+      const caso = this.store.caso();
+      if (!caso || this.store.guardando() || this.store.haySinGuardar()) return;
+      untracked(() => { void this.store.revisarConServidor().catch(() => {}); });
+    });
     injectComandosDelCaso({
       buscarEnLaAyuda: () => this.abrirBuscador('buscar'),
       preguntarALaGuia: () => this.abrirBuscador('preguntar'),

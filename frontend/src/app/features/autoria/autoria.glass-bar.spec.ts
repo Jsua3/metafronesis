@@ -198,23 +198,26 @@ describe('AutoriaShellComponent · el botón «Probar» de la barra', () => {
     expect(enlace.getAttribute('href')).toBe('/portal/casos/41/ensayo');
     expect(enlace.target).toBe('_blank');
     expect(enlace.rel).toContain('noopener');
-    expect(enlace.getAttribute('aria-label')).toBe('Probar el caso en el juego (con Ctrl o clic central se abre en otra pestaña)');
+    expect(enlace.getAttribute('aria-label')).toBe('Probar el caso en el juego (se abre en otra pestaña)');
     expect(enlace.textContent?.replace(/\s+/g, ' ').trim()).toBe('Probar ↗');
     expect(enlace.getAttribute('data-accion')).toBe('probar');
   });
 
-  it('el clic va al ensayo en esta pestaña cuando lo pendiente se guardó, con el título para el umbral', async () => {
+  it('el clic abre el ensayo en otra pestaña cuando lo pendiente se guardó', async () => {
     const { raiz } = await irA('/portal/casos/41/editor');
     const store = TestBed.inject(CasoStore);
-    const abrir = vi.spyOn(window, 'open');
+    const pestana = { opener: {}, closed: false, location: { href: '' } };
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(pestana as unknown as Window);
     const sincronizado = vi.spyOn(store, 'sincronizado').mockResolvedValue();
     const navegar = vi.spyOn(store, 'navegar').mockResolvedValue(true);
     const evento = new MouseEvent('click', { bubbles: true, cancelable: true });
     raiz.querySelector<HTMLAnchorElement>('a.enlace-probar')!.dispatchEvent(evento);
     expect(evento.defaultPrevented).toBe(true);
-    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/portal/casos/41/ensayo', { umbral: { titulo: expect.any(String) } }));
+    await vi.waitFor(() => expect(pestana.location.href).toBe('/portal/casos/41/ensayo'));
+    expect(navegar).not.toHaveBeenCalled();
     expect(sincronizado).toHaveBeenCalled();
-    expect(abrir).not.toHaveBeenCalled();
+    expect(abrir).toHaveBeenCalledOnce();
+    abrir.mockRestore();
   });
 });
 
@@ -225,7 +228,7 @@ describe('AutoriaShellComponent · «Probar» ya no es una pantalla del editor',
     const { raiz } = await irA('/portal/casos/41/editor');
     const nombres = [...raiz.querySelectorAll('header a')].map((a) => a.getAttribute('aria-label'));
     expect(nombres).not.toContain('Probar como estudiante');
-    expect(nombres).toContain('Probar el caso en el juego (con Ctrl o clic central se abre en otra pestaña)');
+    expect(nombres).toContain('Probar el caso en el juego (se abre en otra pestaña)');
   });
 
   it('/probar redirige a El caso', async () => {

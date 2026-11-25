@@ -126,7 +126,7 @@ export class PanelPendientesComponent {
     const escribir = this.progreso.pendientes().filter((p) => p.tipo === 'por-escribir').length;
     const partes = [corregir === 1 ? '1 por corregir' : `${corregir} por corregir`];
     if (escribir) partes.push(escribir === 1 ? '1 por escribir' : `${escribir} por escribir`);
-    return `${partes.join(' · ')}. Lo que está por corregir impide enviar el caso; lo demás es avance.`;
+    return `${partes.join(' · ')}. Tanto lo que falta escribir como lo que falta corregir impiden enviar el caso.`;
   });
 
   /** Cierra la hoja y lleva al sitio: con la hoja abierta el foco no podría llegar al campo. */

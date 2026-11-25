@@ -3,7 +3,6 @@ import {
 } from '@angular/core';
 
 import { CasoStore } from './estado/caso.store';
-import { FALTA_CLASE } from './estado/persistir';
 
 /** Cómo va el guardado, por la forma de su marca, y en dos largos de texto. */
 type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
@@ -28,11 +27,14 @@ type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
   host: { '[class.en-barra]': "parte() === 'estado'" },
   template: `
     @if (parte() === 'estado') {
-      <p class="estado-guardado" role="status" data-estado-guardado [attr.data-forma]="forma()" [attr.title]="estado()">
+      <p class="estado-guardado" role="status" aria-live="polite" aria-atomic="true" data-estado-guardado [attr.data-forma]="forma()" [attr.title]="store.textoGuardado()">
         <span class="estado-guardado__marca" aria-hidden="true"></span>
-        <span class="estado-guardado__corto" aria-hidden="true">{{ corto() }}</span>
-        <span class="solo-lector">{{ estado() }}</span>
+        <span class="estado-guardado__corto" aria-hidden="true">{{ store.textoGuardado() }}</span>
+        <span class="solo-lector">{{ store.textoGuardado() }}</span>
       </p>
+      @if (store.guardadoDetenido()) {
+        <button type="button" class="estado-guardado__ver" (click)="store.reintentarGuardado()">Reintentar</button>
+      }
       @if (hayAviso()) {
         <button type="button" class="estado-guardado__ver" (click)="verAviso()">Ver el aviso</button>
       }
@@ -84,7 +86,7 @@ type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
     :host(.en-barra) { display: inline-flex; align-items: center; gap: 0.375rem; min-inline-size: 0; }
     .estado-guardado {
       display: inline-flex; align-items: center; gap: 0.375rem; margin: 0; min-block-size: 2.75rem;
-      color: var(--asb-cromo-tinta-tenue); font-size: var(--autoria-texto-14); font-weight: 600; line-height: 1.25rem; white-space: nowrap;
+      color: var(--asb-cromo-tinta-tenue); font-size: var(--autoria-texto-14); font-weight: 600; line-height: 1.25rem; white-space: normal;
     }
     /* La marca dice el estado con forma: punto lleno (guardado), anillo vacío (guardando), triángulo (falta algo). */
     .estado-guardado__marca { inline-size: 0.625rem; block-size: 0.625rem; border-radius: 50%; background: var(--ds-success); flex: none; }
@@ -131,33 +133,8 @@ export class AvisosGuardadoComponent {
 
   protected readonly forma = computed<FormaGuardado>(() => {
     if (this.store.guardando()) return 'guardando';
-    if (this.hayAviso()) return 'aviso';
+    if (this.hayAviso() || this.store.guardadoDetenido()) return 'aviso';
     return this.store.sinGuardar().length ? 'sin-guardar' : 'guardado';
-  });
-
-  /** Cómo va el guardado, contando las respuestas que solo están en esta pantalla (la frase entera, para el lector). */
-  protected readonly estado = computed(() => {
-    if (this.store.guardando()) return 'Guardando tus cambios…';
-    if (this.store.conflicto()) return 'Hay cambios sin guardar';
-    if (this.store.error()) return 'Un cambio no se guardó';
-    const pendientes = this.store.sinGuardar();
-    const n = pendientes.length;
-    if (n === 0) return 'Todo guardado';
-    const respuestas = n === 1 ? '1 respuesta' : `${n} respuestas`;
-    const donde = n === 1 ? 'solo está' : 'solo están';
-    return pendientes.every((p) => p.mensaje === FALTA_CLASE)
-      ? `Falta elegir la clase de ${respuestas}: ${donde} en esta pantalla`
-      : `Falta completar ${respuestas}: ${donde} en esta pantalla`;
-  });
-
-  /** Lo que cabe en la barra (la frase entera queda en el globo y para el lector de pantalla). */
-  protected readonly corto = computed(() => {
-    switch (this.forma()) {
-      case 'guardando': return 'Guardando…';
-      case 'guardado': return 'Guardado';
-      case 'aviso': return this.store.conflicto() ? 'Sin guardar' : 'No se guardó';
-      default: return `${this.store.sinGuardar().length} sin guardar`;
-    }
   });
 
   constructor() {

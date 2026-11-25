@@ -293,7 +293,7 @@ describe('GuionComponent · Probar desde aquí', () => {
     expect(id).toBeTruthy();
   });
 
-  it('el clic primario guarda lo pendiente y va al ensayo en esta pestaña; Ctrl+clic abre otra pestaña ya sincronizada', async () => {
+  it('el clic primario guarda lo pendiente y abre otra pestaña; Ctrl+clic también espera el guardado', async () => {
     const { store, raiz, listo } = await montar();
     vi.spyOn(store, 'nodoDeEscena').mockReturnValue(12);
     store.fijar({ ...store.caso()!, id: '41' });
@@ -314,9 +314,10 @@ describe('GuionComponent · Probar desde aquí', () => {
     const primario = new MouseEvent('click', { bubbles: true, cancelable: true });
     enlace.dispatchEvent(primario);
     expect(primario.defaultPrevented).toBe(true);
-    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/portal/casos/41/ensayo?desde=12', { umbral: { titulo: expect.any(String) } }));
+    await vi.waitFor(() => expect(pestana.location.href).toBe('/portal/casos/41/ensayo?desde=12'));
+    expect(navegar).not.toHaveBeenCalled();
     expect(sincronizado).toHaveBeenCalled();
-    expect(abrir).not.toHaveBeenCalled();
+    expect(abrir).toHaveBeenCalledOnce();
     abrir.mockRestore();
   });
 

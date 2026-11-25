@@ -26,9 +26,9 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     :host {
       display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-block-size: 1.875rem; padding-inline: 0.5rem;
       border-block-start: 1px solid var(--l-filo); background: var(--l-superficie); color: var(--ds-text-2);
-      font-size: var(--autoria-texto-14); line-height: 1.25rem; font-variant-numeric: tabular-nums; overflow: hidden;
+      font-size: var(--autoria-texto-14); line-height: 1.25rem; font-variant-numeric: tabular-nums; flex-wrap: wrap;
     }
-    .lado { display: flex; align-items: center; gap: 0.125rem; min-inline-size: 0; white-space: nowrap; }
+    .lado { display: flex; align-items: center; gap: 0.125rem; min-inline-size: 0; flex-wrap: wrap; }
     .lado--fin { flex: none; }
     :host ::ng-deep .est-dato { display: inline-flex; align-items: center; gap: 0.375rem; padding-inline: 0.5rem; }
     :host ::ng-deep .est-dato + .est-dato, :host ::ng-deep .est-dato + .est-dato-boton, :host ::ng-deep .est-dato-boton + .est-dato {

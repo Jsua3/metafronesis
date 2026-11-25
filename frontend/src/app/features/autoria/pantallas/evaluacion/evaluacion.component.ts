@@ -68,7 +68,8 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
               <h1>Pasos profesionales</h1>
               <p class="bajada">Lo que el estudiante tiene que hacer en el caso. Marca qué respuestas cumplen cada paso: es lo mismo que marcarlo en la ficha de la respuesta.</p>
             </div>
-            <app-pestanas-evaluacion actual="pasos" />
+            <p role="status">{{ store.totalPendientes() }} por resolver antes de enviar el caso. @if (store.revisionPendiente()) { Falta completar la revisión. }</p>
+      <app-pestanas-evaluacion actual="pasos" />
           </div>
 
           @if (agregando()) {
