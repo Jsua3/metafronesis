@@ -120,6 +120,7 @@ describe('AutoriaShellComponent (marco)', () => {
 });
 
 describe('AutoriaShellComponent · como ruta del programa', () => {
+  beforeEach(() => localStorage.clear());
   async function irA(
     url: string,
     servidor = new ServidorFalso(casoCopiadoDeLugar(universidad, ['consultorio', 'pasillo'], { caseVersionId: 41, revision: 3 }), universidad),

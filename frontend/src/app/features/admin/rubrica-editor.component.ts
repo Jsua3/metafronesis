@@ -24,6 +24,8 @@ import { UiMenu, UiMenuItem } from '../../shared/ui/menu/ui-menu';
 import { UiSkeleton } from '../../shared/ui/skeleton/ui-skeleton';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { AvisoDescriptor, TEXTO_AVISO_DESCRIPTOR, avisosDeDescriptor } from './descriptor-avisos.util';
+import { UiAyudaBreve } from '../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../autoria/modelo/glosario';
 
 /** E2-2: una rúbrica ajena (la global o la de otra persona) es de solo lectura para el docente. */
 export const RUBRIC_READ_ONLY_MESSAGE = 'Esta rúbrica es de solo lectura: no la creaste tú. Duplícala para personalizarla.';
@@ -87,7 +89,7 @@ type CriterioLeido = RubricCriterionAdmin & { competencyId?: number | null };
   selector: 'app-rubrica-editor',
   imports: [
     ReactiveFormsModule, MatIconModule,
-    UiBadge, UiBarraAcciones, UiButton, UiControl, UiErrorState, UiField, UiMenu, UiSkeleton,
+    UiAyudaBreve, UiBadge, UiBarraAcciones, UiButton, UiControl, UiErrorState, UiField, UiMenu, UiSkeleton,
   ],
   templateUrl: './rubrica-editor.component.html',
   styleUrl: './rubrica-editor.component.scss',
@@ -99,6 +101,7 @@ type CriterioLeido = RubricCriterionAdmin & { competencyId?: number | null };
   },
 })
 export class RubricaEditorComponent implements OnChanges, OnInit {
+  protected readonly glosario = GLOSARIO;
   private readonly rubricService = inject(RubricService);
   private readonly casosApi = inject(CaseCatalogApi);
   private readonly fb = inject(FormBuilder);
@@ -219,10 +222,8 @@ export class RubricaEditorComponent implements OnChanges, OnInit {
 
   /** El total en palabras, como en la cabecera de la matriz: «Suma 100 %», «Faltan 10 %» o «Sobran 5 %». */
   resumenPeso(): string {
-    const total = this.totalWeight();
-    if (total === 100) return 'Suma 100 %';
-    const diferencia = Math.round(Math.abs(100 - total) * 100) / 100;
-    return `${total < 100 ? 'Faltan' : 'Sobran'} ${this.numero(diferencia)} %`;
+    // BORRADOR: pendiente de aprobación de Psicología.
+    return `Suman ${this.numero(this.totalWeight())} % de 100 %`;
   }
 
   /** Un número con coma decimal y sin ceros sobrantes (33,33; 25; 12,5). */

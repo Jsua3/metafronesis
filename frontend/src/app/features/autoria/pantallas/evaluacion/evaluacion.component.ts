@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 
 import { UiProgress } from '../../../../shared/ui/progress/ui-progress';
@@ -54,7 +56,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
 @Component({
   selector: 'app-evaluacion',
   imports: [
-    UiProgress, AutoAltoDirective, PestanasEvaluacionComponent, FilaDePasoComponent, EstudioRanuraDirective, EstudioSeccionComponent,
+    UiAyudaBreve, UiProgress, AutoAltoDirective, PestanasEvaluacionComponent, FilaDePasoComponent, EstudioRanuraDirective, EstudioSeccionComponent,
     EstudioHerramientaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,7 +67,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
           <div class="cabecera">
             <div class="cabecera__titulos">
               <p class="sobretitulo">Etapa 4 · Evaluación</p>
-              <h1>Pasos profesionales</h1>
+              <h1>Pasos profesionales <ui-ayuda-breve termino="Pasos profesionales" [explicacion]="glosario['Pasos profesionales']" /></h1>
               <p class="bajada">Lo que el estudiante tiene que hacer en el caso. Marca qué respuestas cumplen cada paso: es lo mismo que marcarlo en la ficha de la respuesta.</p>
             </div>
             <p role="status">@if (store.revisionPendiente()) { Falta completar la revisión. } @else { {{ store.totalPendientes() }} por resolver antes de enviar el caso. }</p>
@@ -151,6 +153,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
   styleUrl: './evaluacion.component.scss',
 })
 export class EvaluacionComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly store = inject(CasoStore);
   private readonly progreso = inject(ProgresoDelCaso);
   private readonly rutas = inject(RutasAutoria);

@@ -1,7 +1,9 @@
 <!-- Una viñeta por pantalla: si no hay casos, el arte lo lleva el vacío y la cabecera se queda solo con el texto. -->
 <ui-cabecera-ilustrada [herramienta]="true" [escena]="listState() === 'empty' ? null : 'casos-docente'" eyebrow="Autoría" title="Casos"
   description="Crea y acompaña los casos de aprendizaje de tus estudiantes.">
-  <a ui-button uiHerramientaAcciones variant="primary" icon="add_circle" routerLink="/portal/casos/nuevo">Crear un caso</a>
+  @if (listState() !== 'empty') {
+    <a ui-button uiHerramientaAcciones variant="primary" icon="add_circle" routerLink="/portal/casos/nuevo">Crear un caso</a>
+  }
 </ui-cabecera-ilustrada>
 <p class="ds-sr-only" role="status">{{ statusText() }}</p>
 <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
@@ -14,6 +16,10 @@
     <progress [value]="tutorial().completados.length" [max]="totalCapitulos" aria-label="Capítulos del tutorial terminados"></progress>
     @if (tutorialError()) { <p class="hub-tutorial__error" role="alert">{{ tutorialError() }}</p> }
   </div>
+  @if (listState() === 'empty') {
+    <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+    <a ui-button variant="secondary" routerLink="/portal/casos/nuevo">Crear mi primer caso</a>
+  }
   <button ui-button type="button" variant="primary" class="hub-tutorial__accion" [disabled]="tutorialAbriendo() || loading()" (click)="abrirTutorial()">
     {{ tutorialAbriendo() ? 'Preparando…' : tutorialAccion() }}
   </button>
@@ -28,7 +34,7 @@
     @case ('error') { <ui-error-state kind="server" [message]="error()" (retry)="loadCases()" /> }
     @case ('empty') {
       <ui-vacio-ilustrado escena="casos-docente" titulo="Aún no tienes casos" marco="placa"
-        frase="Crea el primero con «Crear un caso»: eliges un lugar y sus salas, y lo abres en el editor." />
+        frase="Crea el primero con «Crear mi primer caso»: eliges un lugar y sus salas, y lo abres en el editor." />
     }
     @default {
       <ui-filtros [(busqueda)]="busqueda" etiquetaBusqueda="Buscar por título" [conBusqueda]="cases().length > 6"

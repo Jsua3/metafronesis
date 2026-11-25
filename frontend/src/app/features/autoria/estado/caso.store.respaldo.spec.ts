@@ -14,6 +14,7 @@ import { CasoStore, mensajeDeFallo } from './caso.store';
  * con la verdad (S3), deshacer lo aplicado por el asistente (S9) y mensajes en palabras del docente (S10).
  */
 const CASO = 41;
+beforeEach(() => localStorage.clear());
 
 async function abrir() {
   TestBed.resetTestingModule();
@@ -78,6 +79,39 @@ describe('S2 · no se pierde lo escrito', () => {
 });
 
 describe('S1 · salir sin perder nada', () => {
+  it('recupera la respuesta sin destino al volver y limpia la copia al guardarla', async () => {
+    localStorage.clear();
+    const { store, servidor } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const r = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, r, { texto: 'Escucho', clase: 'ACCEPTABLE', retroalimentacion: 'Seguimos.' });
+    await store.sincronizado();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthoringApi, useValue: servidor.autoria }] });
+    const nuevo = TestBed.inject(CasoStore);
+    await nuevo.cargar(CASO);
+    const recuperada = escenaDe(nuevo, 'consultorio').respuestas.find(x => x.id === r)!;
+    expect(recuperada.texto).toBe('Escucho');
+    expect(nuevo.respuestasRecuperadas().has(r)).toBe(true);
+    nuevo.conectar(r, escenaDe(nuevo, 'pasillo').id);
+    await nuevo.sincronizado();
+    expect(localStorage.getItem(`autoria-respuestas:${CASO}`)).toBeNull();
+    localStorage.clear();
+  });
+
+  it('elimina la copia local al descartar una respuesta', async () => {
+    localStorage.clear();
+    const { store } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const r = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, r, { texto: 'Sin destino' });
+    expect(localStorage.getItem(`autoria-respuestas:${CASO}`)).toContain('Sin destino');
+    store.borrarRespuesta(origen.id, r);
+    expect(localStorage.getItem(`autoria-respuestas:${CASO}`)).toBeNull();
+    await store.sincronizado();
+    localStorage.clear();
+  });
+
   it('hay algo sin guardar con cambios viajando, con un conflicto o con respuestas que solo están en pantalla', async () => {
     const { servidor, store } = await abrir();
     expect(store.haySinGuardar()).toBe(false);

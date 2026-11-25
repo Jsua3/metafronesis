@@ -86,7 +86,7 @@ describe('puedeEnviar', () => {
     caso.escenas[0].respuestas[1].clase = null;
     const r = puedeEnviar(caso);
     expect(r.ok).toBe(false);
-    expect(r.faltas).toEqual([{ mensaje: 'Hay 1 respuesta sin clasificar.', ir: { ruta: '/editor/escena/a' } }]);
+    expect(r.faltas).toEqual([{ mensaje: 'Hay 1 respuesta sin clasificar.', ir: { ruta: '/editor/escena/a', ancla: 'clase-2' } }]);
     caso.escenas[0].respuestas[0].clase = null;
     expect(puedeEnviar(caso).faltas[0].mensaje).toBe('Hay 2 respuestas sin clasificar.');
   });

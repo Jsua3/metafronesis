@@ -40,7 +40,7 @@ describe('puedeEnviar con las reglas del modelo de métricas', () => {
     expect(faltasDe(caso)).toEqual([{
       codigo: 'contraindicated-without-reason',
       mensaje: 'La respuesta «Respuesta 2» de la escena «Escena a» es contraindicada y no explica por qué: escribe el motivo de la prohibición.',
-      ir: { ruta: '/editor/escena/a', ancla: 'respuesta-2' },
+      ir: { ruta: '/editor/escena/a', ancla: 'razon-2' },
     }]);
     caso.escenas[0].respuestas[1].razon = 'Puede hacer daño.';
     expect(faltasDe(caso)).toEqual([]);

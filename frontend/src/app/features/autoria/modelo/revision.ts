@@ -96,7 +96,7 @@ function faltasDelModelo(caso: CasoBorrador): Falta[] {
         faltas.push({
           codigo: 'contraindicated-without-reason',
           mensaje: `La respuesta «${recorte(r.texto)}» de la escena «${e.titulo}» es contraindicada y no explica por qué: escribe el motivo de la prohibición.`,
-          ir: { ruta: rutaDeEscena(e.id), ancla: `respuesta-${r.id}` },
+        ir: { ruta: rutaDeEscena(e.id), ancla: `razon-${r.id}` },
         });
       }
     }
@@ -161,18 +161,18 @@ export function puedeEnviar(caso: CasoBorrador): { ok: boolean; faltas: Falta[] 
   const faltas: Falta[] = revisarCaminos(caso).map((a) => ({
     mensaje: a.mensaje,
     ir: a.tipo === 'respuesta-sin-destino' && a.escenaId
-      ? { ruta: `/editor/escena/${a.escenaId}`, accionId: 'respuesta-a-escena-nueva' }
+      ? { ruta: `/editor/escena/${a.escenaId}`, ...(a.respuestaId ? { ancla: `destino-${a.respuestaId}` } : { ancla: 'respuestas-escena' }) }
       : a.tipo === 'final-sin-hito'
         ? { ruta: '/editor/finales', accionId: 'definir-finales' }
         : { ruta: '/editor', accionId: 'revisar-caminos' },
   }));
 
-  const sinClasificar = caso.escenas.flatMap((e) => e.respuestas.filter((r) => !r.clase).map(() => e.id));
+  const sinClasificar = caso.escenas.flatMap((e) => e.respuestas.filter((r) => !r.clase).map((r) => ({ escenaId: e.id, respuestaId: r.id })));
   if (sinClasificar.length) {
     const n = sinClasificar.length;
     faltas.push({
       mensaje: n === 1 ? 'Hay 1 respuesta sin clasificar.' : `Hay ${n} respuestas sin clasificar.`,
-      ir: { ruta: `/editor/escena/${sinClasificar[0]}` },
+      ir: { ruta: `/editor/escena/${sinClasificar[0].escenaId}`, ancla: `clase-${sinClasificar[0].respuestaId}` },
     });
   }
 
@@ -439,8 +439,12 @@ export function sugerencias(caso: CasoBorrador): Falta[] {
   caso.escenas.forEach((e) => {
     const vaciasL = e.lineas.filter((l) => !l.texto.trim()).length;
     const vaciasR = e.respuestas.filter((r) => !r.texto.trim() || !r.retroalimentacion.trim()).length;
-    if (vaciasL) lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasL === 1 ? 'una línea vacía' : `${vaciasL} líneas vacías`}.`, ir: { ruta: `/editor/escena/${e.id}` } });
-    if (vaciasR) lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasR === 1 ? 'una respuesta' : `${vaciasR} respuestas`} sin texto o sin lo que lee el estudiante después.`, ir: { ruta: `/editor/escena/${e.id}` } });
+    if (vaciasL) lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasL === 1 ? 'una línea vacía' : `${vaciasL} líneas vacías`}.`, ir: { ruta: `/editor/escena/${e.id}`, ancla: `lt${e.lineas.findIndex((l) => !l.texto.trim())}` } });
+    if (vaciasR) {
+      const i = e.respuestas.findIndex((r) => !r.texto.trim() || !r.retroalimentacion.trim());
+      const campo = e.respuestas[i].texto.trim() ? 'rf' : 'rt';
+      lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasR === 1 ? 'una respuesta' : `${vaciasR} respuestas`} sin texto o sin lo que lee el estudiante después.`, ir: { ruta: `/editor/escena/${e.id}`, ancla: `${campo}${i}` } });
+    }
   });
   if (caso.modoFinales === 'propio' && caso.finales.some((f) => !f.texto.trim())) {
     lista.push({ mensaje: 'Hay finales sin el texto que lee el estudiante al terminar.', ir: { ruta: '/editor/finales' } });

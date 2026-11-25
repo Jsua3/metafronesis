@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -34,12 +36,13 @@ import { type CriterioVista, type VistaRubrica, criteriosDe, pesoEnPalabras, tip
  */
 @Component({
   selector: 'app-rubrica-del-caso',
-  imports: [RouterLink, UiFiguraPixel, UiProgress, PestanasEvaluacionComponent, FichasDeRespuestasComponent, ElectorDeRubricaComponent],
+  imports: [UiAyudaBreve, RouterLink, UiFiguraPixel, UiProgress, PestanasEvaluacionComponent, FichasDeRespuestasComponent, ElectorDeRubricaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './rubrica-del-caso.component.html',
   styleUrl: './rubrica-del-caso.component.scss',
 })
 export class RubricaDelCasoComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly store = inject(CasoStore);
   private readonly rutas = inject(RutasAutoria);
   private readonly rubricas = inject(RubricService);

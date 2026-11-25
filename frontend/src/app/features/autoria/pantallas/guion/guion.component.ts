@@ -83,7 +83,7 @@ export class GuionComponent {
   protected readonly personajes = computed(() => this.store.caso()?.personajes ?? []);
   protected readonly hitos = computed(() => this.store.caso()?.hitos ?? []);
   protected readonly competencias = computed(() => this.store.caso()?.competencias ?? []);
-  protected readonly destinos = computed(() => this.orden().map((d, j) => ({ id: d.id, etiqueta: `${j + 1} · ${d.titulo}` })));
+  protected readonly destinos = computed(() => this.orden().map((d, j) => ({ id: d.id, etiqueta: `${j + 1} · ${d.titulo}`, esFinal: d.esFinal })));
   protected readonly posicion = computed(() => this.orden().findIndex((e) => e.id === this.escenaId()));
   protected readonly anterior = computed(() => this.orden()[this.posicion() - 1] ?? null);
   protected readonly siguiente = computed(() => (this.posicion() < 0 ? null : this.orden()[this.posicion() + 1] ?? null));
@@ -324,6 +324,12 @@ export class GuionComponent {
     this.pendiente.set(null);
     this.creada.set({ respuestaId: r.id, escenaId: id, titulo: `${this.numero(nueva)} · ${nueva.titulo}` });
     this.anuncio.set(`Se creó «${nueva.titulo}», conectada a la respuesta ${i + 1}.`);
+  }
+
+  protected crearEscenaFinal(e: Escena, r: Respuesta, i: number): void {
+    this.crearEscenaNueva(e, r, i);
+    const id = this.creada()?.escenaId;
+    if (id) this.store.marcarFinal(id, true);
   }
 
   protected aceptarRespuesta(e: Escena, r: Respuesta, i: number): void {

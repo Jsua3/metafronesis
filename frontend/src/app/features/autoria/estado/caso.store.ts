@@ -32,6 +32,7 @@ import { Historial } from './historial';
 import * as persistir from './persistir';
 import { casoLeidoDelServidor, firmaDelCaso } from './releer';
 import { SesionServidor } from './sesion-servidor';
+import { escribirBorradores, leerBorradores } from './borradores-respuesta';
 
 export type TipoElemento = 'mueble' | 'objeto' | 'personaje';
 
@@ -162,6 +163,26 @@ export function mensajeDeCarga(error: unknown): string {
  */
 @Injectable({ providedIn: 'root' })
 export class CasoStore {
+  readonly respuestasRecuperadas = signal<ReadonlySet<string>>(new Set());
+  readonly respaldoLocalDisponible = signal(true);
+
+  private respaldarRespuestas(caso: CasoBorrador): void {
+    if (!this.sesion) return;
+    const anteriores = leerBorradores(caso.id);
+    for (const escena of caso.escenas) for (const respuesta of escena.respuestas) {
+      if (respuesta.destinoId) continue;
+      const indice = anteriores.findIndex(b => b.escenaId === escena.id && b.respuesta.id === respuesta.id);
+      const borrador = { escenaId: escena.id, respuesta: structuredClone(respuesta) };
+      if (indice < 0) anteriores.push(borrador); else anteriores[indice] = borrador;
+    }
+    this.respaldoLocalDisponible.set(escribirBorradores(caso.id, anteriores));
+  }
+
+  private limpiarBorrador(caso: CasoBorrador, escenaId: string, respuestaId: string): void {
+    const anteriores = leerBorradores(caso.id);
+    this.respaldoLocalDisponible.set(escribirBorradores(caso.id, anteriores.filter(b => b.escenaId !== escenaId || b.respuesta.id !== respuestaId)));
+    this.respuestasRecuperadas.update(ids => { const nuevos = new Set(ids); nuevos.delete(respuestaId); return nuevos; });
+  }
   private readonly injector = inject(Injector);
   /**
    * Va a una dirección del portal en esta misma pestaña (`state` viaja con la navegación). Lo usa el ensayo («Probar»), que
@@ -419,6 +440,20 @@ export class CasoStore {
   }
 
   private empezarCon(caso: CasoBorrador | null, sesion: SesionServidor | null): void {
+    const recuperadas = new Set<string>();
+    if (caso && sesion) {
+      caso = structuredClone(caso);
+      for (const borrador of leerBorradores(caso.id)) {
+        const escena = caso.escenas.find(e => e.id === borrador.escenaId);
+        if (!escena) continue;
+        const indice = escena.respuestas.findIndex(r => r.id === borrador.respuesta.id);
+        if (indice >= 0 && escena.respuestas[indice].destinoId) continue;
+        if (indice < 0) escena.respuestas.push(borrador.respuesta);
+        else escena.respuestas[indice] = borrador.respuesta;
+        recuperadas.add(borrador.respuesta.id);
+      }
+    }
+    this.respuestasRecuperadas.set(recuperadas);
     this.avisoEnsayo.set(null);
     this.hallazgosRevision.set([]);
     this.revisionPendiente.set(true);
@@ -462,6 +497,7 @@ export class CasoStore {
     if (opciones.sala) this.historial?.hacer(structuredClone(nuevo.salas));
     this.revisionPendiente.set(true);
     this.estado.set(nuevo);
+    this.respaldarRespuestas(nuevo);
     this.version.update((v) => v + 1);
 
     if (!this.sesion) {
@@ -517,6 +553,12 @@ export class CasoStore {
           if (this.sesion !== sesion) return; // mientras tanto se abrió otro caso
           despues.revision = sesion.revision;
           this.base = despues;
+          // Solo se elimina el respaldo tras la confirmación del servidor.
+          for (const escena of despues.escenas) for (const respuesta of escena.respuestas) {
+            if (respuesta.destinoId && !persistir.motivoSinGuardar(respuesta) && sesion.decisionDe(respuesta.id) !== undefined) {
+              this.limpiarBorrador(despues, escena.id, respuesta.id);
+            }
+          }
           this.ultimoGuardado.set(new Date());
           this.cola.shift();
         } catch (error) {
@@ -1310,6 +1352,10 @@ export class CasoStore {
       },
       enviar: (despues, sesion) => persistir.sincronizarRespuesta(sesion, despues, respuestaId),
     });
+    const caso = this.estado();
+    if (caso && !caso.escenas.find(e => e.id === escenaId)?.respuestas.some(r => r.id === respuestaId)) {
+      this.limpiarBorrador(caso, escenaId, respuestaId);
+    }
   }
 
   /** Crea una escena en la misma sala, la conecta a la respuesta y devuelve su id. */

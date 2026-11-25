@@ -1,3 +1,4 @@
+import { GLOSARIO } from '../modelo/glosario';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
 
 import { IaService } from '../ia/ia.service';
@@ -47,6 +48,15 @@ import { GuiaService } from './guia.service';
         }
       </ul>
       </div>
+      <!-- BORRADOR: definiciones pendientes de aprobación de Psicología. -->
+      <details class="glosario">
+        <summary>Glosario del editor</summary>
+        <dl>
+          @for (entrada of glosario; track entrada[0]) {
+            <dt>{{ entrada[0] }}</dt><dd>{{ entrada[1] }}</dd>
+          }
+        </dl>
+      </details>
       <div class="acciones pie">
         <span class="texto-secundario"><kbd>↑</kbd> <kbd>↓</kbd> para moverte, <kbd>Enter</kbd> para ir, <kbd>Esc</kbd> para cerrar.</span>
         <button type="button" class="boton" (click)="cerrar.emit()">Cerrar</button>
@@ -87,6 +97,7 @@ import { GuiaService } from './guia.service';
   `,
 })
 export class BuscadorComponent {
+  protected readonly glosario = Object.entries(GLOSARIO);
   readonly modo = input<'buscar' | 'preguntar'>('buscar');
   /** La pestaña elegida: empieza en la que pidió quien abrió la ayuda y se cambia dentro del diálogo. */
   protected readonly modoActual = linkedSignal(() => this.modo());
@@ -132,7 +143,7 @@ export class BuscadorComponent {
     if (e.key === 'Tab') {
       const dialogo = e.currentTarget as HTMLElement;
       // La pestaña no elegida (tabindex -1) no está en el orden del tabulador: se llega a ella con las flechas.
-      const foco = [...dialogo.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"]), input:not([disabled]), [tabindex="0"]')];
+      const foco = [...dialogo.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"]), input:not([disabled]), summary, [tabindex="0"]')];
       const primero = foco[0];
       const ultimo = foco[foco.length - 1];
       if (primero && ultimo) {

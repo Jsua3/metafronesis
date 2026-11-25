@@ -36,9 +36,19 @@ async function enfocar(id: string): Promise<void> {
   for (let intento = 0; intento < 60; intento++) {
     const el = document.getElementById(id);
     if (el) {
-      if (!el.matches('a[href], button, input, select, textarea, [tabindex]')) el.setAttribute('tabindex', '-1');
-      el.scrollIntoView?.({ block: 'center' });
-      el.focus();
+      // Abrir cualquier <details> nativo que oculte el destino.
+      for (let padre = el.parentElement; padre; padre = padre.parentElement) {
+        if (padre instanceof HTMLDetailsElement) padre.open = true;
+      }
+      const control = el.matches('a[href], button, input, select, textarea, [tabindex]')
+        ? el : el.querySelector<HTMLElement>('textarea:not([disabled]), input:not([disabled]), select:not([disabled]), button:not([disabled])') ?? el;
+      if (!control.matches('a[href], button, input, select, textarea, [tabindex]')) control.setAttribute('tabindex', '-1');
+      control.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+      control.focus();
+      // Resalte sin animación: también respeta la preferencia de reducir movimiento.
+      const anterior = control.style.outline;
+      control.style.outline = '3px solid var(--guia, #7654a3)';
+      setTimeout(() => { control.style.outline = anterior; }, 2000);
       return;
     }
     await new Promise((r) => setTimeout(r, 25));

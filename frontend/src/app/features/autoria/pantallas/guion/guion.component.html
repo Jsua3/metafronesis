@@ -86,11 +86,12 @@
           @for (r of e.respuestas; track r.id; let i = $index) {
             <li class="respuesta" [id]="'respuesta-' + r.id" tabindex="-1">
               <app-respuesta [respuesta]="r" [indice]="i" [escena]="e" [destinos]="destinos()" [hitos]="hitos()" [competencias]="competencias()"
+                             [recuperada]="store.respuestasRecuperadas().has(r.id)" [respaldoDisponible]="store.respaldoLocalDisponible()"
                              [pendiente]="pendiente() === r.id" [creada]="creada()?.respuestaId === r.id ? creada() : null"
                              [todoAbierto]="verTodo()" [puedeDuplicar]="!enElTopeDeRespuestas(e)"
                              (editar)="editarRespuesta(e, r, $event)" (efectos)="cambiarEfectos(e, r, $event)"
                              (requisito)="store.editarRequisito(e.id, r.id, $event)" (reaccion)="cambiarReaccion(e, r, $event)"
-                             (destino)="elegirDestino(r, $event)" (crearEscena)="crearEscenaNueva(e, r, i)"
+                             (destino)="elegirDestino(r, $event)" (crearEscena)="crearEscenaNueva(e, r, i)" (crearFinal)="crearEscenaFinal(e, r, i)"
                              (aceptar)="aceptarRespuesta(e, r, i)" (descartar)="borrarRespuesta(e, r, i, 'descartada')"
                              (duplicar)="duplicarRespuesta(e, r, i)" (borrar)="borrarRespuesta(e, r, i)" />
             </li>

@@ -59,6 +59,22 @@ describe('RespuestaComponent', () => {
     expect(raiz.querySelector('.sin-guardar')!.textContent).toContain('Elige a qué escena lleva para guardarla.');
   });
 
+  it('ofrece crear una escena siguiente o conectar con un final sin borrar el texto', async () => {
+    const { fixture, raiz } = await montar({ destinoId: null });
+    fixture.componentRef.setInput('destinos', [{ id: 'e2', etiqueta: '2 · Final', esFinal: true }]);
+    fixture.detectChanges();
+    const destino = vi.fn();
+    const crear = vi.fn();
+    fixture.componentInstance.destino.subscribe(destino);
+    fixture.componentInstance.crearFinal.subscribe(crear);
+    const botones = [...raiz.querySelectorAll('button')];
+    botones.find((b) => b.textContent?.includes('Usar 2 · Final'))!.click();
+    botones.find((b) => b.textContent?.includes('Crear escena final'))!.click();
+    expect(destino).toHaveBeenCalledWith('e2');
+    expect(crear).toHaveBeenCalled();
+    expect(raiz.querySelector<HTMLTextAreaElement>('#rt1')!.value).toBe('Validar su miedo');
+  });
+
   it('al enfocar una clase, una línea explica su consecuencia', async () => {
     const { fixture, raiz } = await montar();
     raiz.querySelector<HTMLInputElement>('input[value="RISKY"]')!.dispatchEvent(new FocusEvent('focus'));
