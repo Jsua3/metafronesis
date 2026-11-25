@@ -68,14 +68,16 @@ def start(user, version_id, expected_attempt_id=None):
     return attempt, True
 
 
-def _owned(user, pk):
+def _owned(user, pk, solo_lectura=False):
     qs = SimulationAttempt.all_objects.select_for_update()
     attempt = get_object_or_404(qs, pk=pk, student=user)
     if attempt.is_rehearsal:
         # Un ensayo es de su autora (o de administración) y no pasa por la asignación ni la publicación.
         if not policies.can(user, "attempt", "rehearse", owner_id=attempt.student_id):
             raise Http404
-    else:
+    elif not solo_lectura:
+        # Leer el propio resultado no depende de la asignación (el enlace del correo se abre cuando la sesión ya
+        # terminó); jugar, reanudar o decidir sí.
         get_object_or_404(available_versions(user), pk=attempt.case_version_id)
     attempt._time_expired = _cerrar_si_vencido(attempt)
     return attempt
@@ -104,11 +106,11 @@ def _error_si_vencido(attempt):
         raise ApiError("ATTEMPT_TIME_EXPIRED", "El tiempo del intento ha vencido.", 409)
 
 
-def owned(user, pk, lock=False):
+def owned(user, pk, lock=False, solo_lectura=False):
     if lock:
-        return _owned(user, pk)
+        return _owned(user, pk, solo_lectura)
     with transaction.atomic():
-        attempt = _owned(user, pk)
+        attempt = _owned(user, pk, solo_lectura)
     _error_si_vencido(attempt)
     return attempt
 

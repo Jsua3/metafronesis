@@ -139,10 +139,10 @@ def _activo(intento):
         raise ValidationError("El intento ya no acepta interacciones en el mundo.")
 
 
-def _ejecutar(usuario, identificador, operacion):
+def _ejecutar(usuario, identificador, operacion, solo_lectura=False):
     with transaction.atomic():
         lock_attempt_row(identificador)
-        intento = attempt_api.owned(usuario, identificador, lock=True)
+        intento = attempt_api.owned(usuario, identificador, lock=True, solo_lectura=solo_lectura)
         resultado = None if intento._time_expired else operacion(intento)
     attempt_api._error_si_vencido(intento)
     return resultado
