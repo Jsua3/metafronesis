@@ -233,6 +233,7 @@ export class UiConsequenceDialog {
 export class UiDialog {
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly tema = inject(TemaService);
 
   open<R = unknown, D = unknown, C = unknown>(component: ComponentType<C>, options: UiDialogOptions<D> = {}): DialogRef<R, C> {
@@ -323,6 +324,8 @@ export class UiDialog {
    */
   private garantizarFocoAlCerrar<R, C>(ref: DialogRef<R, C>, disparador: HTMLElement | null): void {
     ref.closed.subscribe(() => {
+      // Al destruirse la aplicación el CDK cierra los diálogos abiertos: ya no hay pantalla a la que devolver el foco.
+      if (this.destroyRef.destroyed) return;
       afterNextRender(() => {
         if (!focoPerdido()) return;
         if (disparador?.isConnected && !disparador.closest('[inert], [hidden]') && enfocarPorPrograma(disparador)) return;

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, config as rxjsConfig } from 'rxjs';
 
 import { UiButton } from '../button/ui-button';
 import { UiDialog, UiDialogActions, UiDialogFrame } from './ui-dialog';
@@ -68,5 +68,22 @@ describe('UiDialog: el foco no se pierde al cerrar', () => {
     await cerrado;
     await settle();
     expect(document.activeElement).not.toBe(document.getElementById('titulo'));
+  });
+
+  it('si la aplicación se destruye con el diálogo abierto, cerrar no lanza NG0205', async () => {
+    const errores: unknown[] = [];
+    const anterior = rxjsConfig.onUnhandledError;
+    rxjsConfig.onUnhandledError = error => errores.push(error);
+    try {
+      TestBed.inject(UiDialog).open(QuitarDialog, {});
+      await settle();
+      // El CDK cierra los diálogos abiertos al destruirse el inyector raíz; el retorno de foco no debe pedir un
+      // render a un inyector ya destruido.
+      TestBed.resetTestingModule();
+      await new Promise(resolve => setTimeout(resolve, 400));
+    } finally {
+      rxjsConfig.onUnhandledError = anterior;
+    }
+    expect(errores).toEqual([]);
   });
 });
