@@ -51,7 +51,6 @@ describe('SesionDialogComponent', () => {
   function llenar() {
     escribir('[name=grupoId]', '2');
     escribir('[name=caseVersionId]', '9');
-    escribir('[name=espacioAcademico]', 'Clínica');
     escribir('[name=inicio]', '2026-11-25T08:00');
     escribir('[name=fin]', '2026-11-25T10:00');
     escribir('[name=tiempoMaximoMin]', '30');
@@ -111,7 +110,7 @@ describe('SesionDialogComponent', () => {
 
   const sesion = {
     id: 7, estado: 'PROGRAMADA', acciones: ['editar'], grupo: { id: 2, nombre: 'Psicología 1' },
-    caso: { caseVersionId: 9, titulo: 'La casa de Sofía' }, espacioAcademico: 'Clínica',
+    caso: { caseVersionId: 9, titulo: 'La casa de Sofía' },
     inicio: '2026-11-25T13:00:00Z', fin: '2026-11-25T15:00:00Z', tiempoMaximoMin: 30, lugar: 'Aula 3', mensaje: 'Hola',
     totalConvocados: 12, iniciadaEn: null, finalizadaEn: null, canceladaEn: null, convocados: [],
   } as unknown as SesionDetalle;
@@ -127,7 +126,6 @@ describe('SesionDialogComponent', () => {
     fixture.detectChanges();
     expect(input('[name=grupoId]').selectedOptions[0].textContent).toContain('Psicología 1');
     expect(input('[name=caseVersionId]').selectedOptions[0].textContent).toContain('La casa de Sofía');
-    expect(input('[name=espacioAcademico]').value).toBe('Clínica');
     expect(input('[name=lugar]').value).toBe('Aula 3');
     expect(input('[name=tiempoMaximoMin]').value).toBe('30');
     expect(el().textContent).toContain('Editar sesión');

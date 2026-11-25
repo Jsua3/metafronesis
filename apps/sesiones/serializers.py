@@ -24,7 +24,6 @@ class FechaBogotaField(serializers.Field):
 class SesionSerializer(serializers.Serializer):
     grupoId = serializers.IntegerField(min_value=1)
     caseVersionId = serializers.IntegerField(min_value=1)
-    espacioAcademico = serializers.CharField(max_length=255)
     inicio = FechaBogotaField()
     fin = FechaBogotaField()
     tiempoMaximoMin = serializers.IntegerField(min_value=1)

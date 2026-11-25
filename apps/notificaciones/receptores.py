@@ -14,7 +14,6 @@ def _fecha(sesion):
 def _convocar(sesion, estudiante):
     lineas = [
         f"Caso: {sesion.case_version.simulation_case.title}",
-        f"Espacio académico: {sesion.espacio_academico}",
         f"Fecha: {_fecha(sesion)}",
     ]
     if sesion.lugar:
