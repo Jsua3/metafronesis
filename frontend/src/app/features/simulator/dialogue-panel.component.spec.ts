@@ -160,7 +160,7 @@ describe('DialoguePanelComponent - integración renderizada', () => {
 
       // DOM renderizado: no hay nada que saltar y el control de avance ya está disponible.
       expect(dialog.querySelector('[aria-label="Saltar animación de texto"]')).toBeNull();
-      expect(dialog.querySelector('[aria-label="Mostrar siguiente intervención"]')).not.toBeNull();
+      expect(dialog.querySelector('button.close-btn')?.textContent).toContain('Continuar');
       // La máquina de escribir no dejó ningún temporizador programado.
       expect(vi.getTimerCount()).toBe(0);
 
@@ -940,12 +940,12 @@ describe('DialoguePanelComponent - «Continuar» y sonido de opciones (T4.7)', (
     // Línea 1 de 2, todavía escribiéndose: «Saltar».
     render({ ...MULTI_LINE_DIALOGUE, choices: [] });
     expectPrimary();
-    expect(advanceButtons()[0].getAttribute('aria-label')).toBe('Saltar animación de texto');
+    expect(advanceButtons()[0].textContent).toContain('Continuar');
     // Línea 1 completa: «Siguiente».
     component.skipTypewriter();
     fixture.detectChanges();
     expectPrimary();
-    expect(advanceButtons()[0].getAttribute('aria-label')).toBe('Mostrar siguiente intervención');
+    expect(advanceButtons()[0].textContent).toContain('Continuar');
     // Última línea completa y sin opciones: «Continuar».
     component.advanceLine();
     component.skipTypewriter();

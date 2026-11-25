@@ -77,6 +77,31 @@ describe('DialoguePanelComponent: a tu ritmo (P8)', () => {
   describe('clic sobre el texto', () => {
     beforeEach(async () => { await setup(); });
 
+    it('conserva el botón durante la escritura y completa un clic iniciado antes de terminar', async () => {
+      render(TRES_LINEAS);
+      const boton = speech().querySelector<HTMLButtonElement>('button.close-btn')!;
+      let quitados = 0;
+      let insertados = 0;
+      const contar = (n: Node) => n instanceof Element ? Number(n.matches('button')) + n.querySelectorAll('button').length : 0;
+      const observer = new MutationObserver(records => records.forEach(r => {
+        r.removedNodes.forEach(n => quitados += contar(n));
+        r.addedNodes.forEach(n => insertados += contar(n));
+      }));
+      observer.observe(speech(), { childList: true, subtree: true });
+      boton.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+      component.skipTypewriter();
+      fixture.detectChanges();
+      await Promise.resolve();
+      observer.disconnect();
+      console.log(`G1 escritura: ${quitados} botones retirados, ${insertados} insertados`);
+      expect(speech().querySelector('button.close-btn')).toBe(boton);
+      expect(quitados).toBe(0);
+      expect(insertados).toBe(0);
+      boton.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+      boton.click();
+      expect(component.lineIndex()).toBe(1);
+    });
+
     it('mientras se escribe, muestra la línea entera de una vez', () => {
       render(TRES_LINEAS);
       expect(component.isTypingComplete()).toBe(false);
@@ -116,7 +141,7 @@ describe('DialoguePanelComponent: a tu ritmo (P8)', () => {
     it('un clic sobre un botón del cuadro no se cuenta dos veces', () => {
       render(TRES_LINEAS);
       const saltar = speech().querySelector<HTMLButtonElement>('button.close-btn')!;
-      expect(saltar.getAttribute('aria-label')).toBe('Saltar animación de texto');
+      expect(saltar.textContent).toContain('Continuar');
 
       saltar.click();   // «Saltar»: muestra todo, no además avanza
       fixture.detectChanges();
@@ -171,13 +196,14 @@ describe('DialoguePanelComponent: a tu ritmo (P8)', () => {
       expect(component.displayedText().length).toBeLessThan(TRES_LINEAS.lines[1].text.length);
     });
 
-    it('«Saltar» aparece solo mientras se escribe y siempre tiene nombre accesible', () => {
+    it('el control conserva su nombre al completar la escritura', () => {
       render(TRES_LINEAS);
-      expect(fixture.nativeElement.querySelector('[aria-label="Saltar animación de texto"]')).not.toBeNull();
+      const boton = fixture.nativeElement.querySelector('button.close-btn') as HTMLButtonElement;
+      expect(boton.textContent).toContain('Continuar');
       component.skipTypewriter();
       fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('[aria-label="Saltar animación de texto"]')).toBeNull();
-      expect(fixture.nativeElement.querySelector('[aria-label="Mostrar siguiente intervención"]')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('button.close-btn')).toBe(boton);
+      expect(boton.textContent).toContain('Continuar');
     });
   });
 

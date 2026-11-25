@@ -60,6 +60,21 @@ describe('SceneGoalCardComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
+  it('conserva Ir allí al actualizar la misma guía', () => {
+    const { fixture, host } = montar({ guia: GUIA, compact: false });
+    const button = host.querySelector('[data-guia-ir]');
+    expect(button).not.toBeNull();
+    const observer = new MutationObserver(() => {});
+    observer.observe(host, { childList: true, subtree: true });
+    for (let i = 0; i < 10; i++) {
+      fixture.componentRef.setInput('guia', { ...GUIA, siguienteLugar: { ...GUIA.siguienteLugar! } });
+      fixture.detectChanges();
+    }
+    expect(host.querySelector('[data-guia-ir]')).toBe(button);
+    expect(observer.takeRecords().flatMap(r => Array.from(r.removedNodes)).filter(n => n === button || (n instanceof Element && !!n.querySelector('[data-guia-ir]')))).toHaveLength(0);
+    observer.disconnect();
+  });
+
   describe('guía para las primeras testers (V7)', () => {
     it('fuera de compacto arranca abierta, con el siguiente paso y la cuenta de la sala', () => {
       const { host, toggle } = montar({ guia: GUIA, compact: false });

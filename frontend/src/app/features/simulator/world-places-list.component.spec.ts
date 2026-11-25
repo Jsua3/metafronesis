@@ -67,6 +67,20 @@ describe('WorldPlacesListComponent', () => {
     ]);
   });
 
+  it('conserva los botones al recibir listas equivalentes', () => {
+    mount();
+    const initial = items();
+    const observer = new MutationObserver(() => {});
+    observer.observe(host().querySelector('.places__list')!, { childList: true, subtree: true });
+    for (let i = 0; i < 10; i++) {
+      writeInputSignal(component.places, PLACES.map(p => ({ ...p })));
+      fixture.detectChanges();
+    }
+    expect(items().every((button, i) => button === initial[i])).toBe(true);
+    expect(observer.takeRecords().flatMap(r => Array.from(r.removedNodes)).filter(n => n instanceof Element && (n.matches('button') || n.querySelector('button')))).toHaveLength(0);
+    observer.disconnect();
+  });
+
   it('elegir un lugar lo emite', () => {
     mount();
     const chosen = vi.fn();

@@ -136,26 +136,10 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                          de «Saltar» quedaba tapado; V6). El lector tiene el texto entero arriba. -->
                     <span class="placa-pagina" aria-hidden="true">{{ cuentaDePaginas() }}</span>
                   }
-                  @if (!isTypingComplete()) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="skipTypewriter()"
-                      aria-label="Saltar animación de texto">
-                      Saltar <span aria-hidden="true">▶</span>
-                    </button>
-                  }
-                  @if (isTypingComplete() && !esFinal()) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="advanceLine()"
-                      aria-label="Mostrar siguiente intervención">
-                      Siguiente <span aria-hidden="true">▶</span>
-                    </button>
-                  }
-                  @if (isTypingComplete() && esFinal() && !hasChoices(d)) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="close.emit()">
-                      Continuar <span aria-hidden="true">▶</span>
-                    </button>
-                  }
+                  <button type="button" class="close-btn" ui-button variant="primary" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
+                    (click)="continuarDialogo()">
+                    Continuar <span aria-hidden="true">▶</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1453,6 +1437,13 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.failedPortrait.set(null);
     this.audio.playSfx('ui_select');
     this.startTypewriter(d.lines[nextIndex]?.text ?? '');
+  }
+
+  continuarDialogo(): void {
+    if (!this.isTypingComplete()) this.skipTypewriter();
+    else if (!this.esFinal()) this.advanceLine();
+    else if (!this.hasChoices(this.dialogue()!)) this.close.emit();
+    else this.requestDialogueFocus();
   }
 
   /**

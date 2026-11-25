@@ -175,6 +175,7 @@ interface WorldCallbacks {
   onCamera?: (camera: CameraReport) => void;
   /** Terminó una caminata pedida con «Ir a…» (F6-11): llegó, o no pudo (muro, mueble, servidor). */
   onWalkEnded?:  (key: string, label: string, outcome: 'arrived' | 'blocked') => void;
+  onWalkCancelled?: () => void;
   /** Progreso de la precarga, 0-100 (solo la carga inicial). */
   onLoadProgress: (percent: number) => void;
   /**
@@ -674,6 +675,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
             this.finishWalkInteract(tick.arrived);
           }
         } else {
+          if (this.walkGoal) this.callbacks.onWalkCancelled?.();
           this.walkGoal = null; // lo soltaron las teclas o una capa: nadie espera un aviso de llegada
           this.walkInteractKey = null;
         }
@@ -814,7 +816,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     // pierde la entrada (entryX/entryY) que enter_room persistió en world.player.
     // La primera hidratación también nace desarmada: una recarga puede restaurar
     // al jugador junto a la puerta de regreso antes de resolver ScenarioConfig.
-    if (!this.world || this.world.map.key !== world.map.key) {
+    const roomChanged = !this.world || this.world.map.key !== world.map.key;
+    const previousPrimary = !roomChanged && this.nearestKey ? this.proximityObjectFor(this.nearestKey) : null;
+    const previousSecondary = !roomChanged && this.alsoKey ? this.proximityObjectFor(this.alsoKey) : null;
+    if (roomChanged) {
+      if (this.walkGoal) this.callbacks.onWalkCancelled?.();
       this.currentRoomKey = '';
       // La caminata del ratón y el destino de «Ir a…» eran de la sala anterior: en el render heredado (casos del
       // editor, sin ScenarioConfig) nada más los suelta y el jugador caminaría solo hacia coordenadas ajenas.
@@ -825,11 +831,21 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.dbDoorArmed = false;
     }
     this.world = world;
-    this.nearestKey = null;
-    this.alsoKey = null;
-    this.callbacks.onProximity(null);
-    this.callbacks.onProximityAlso(null);
-    if (this.ready) this.renderWorld();
+    if (roomChanged) {
+      this.nearestKey = null;
+      this.alsoKey = null;
+      this.callbacks.onProximity(null);
+      this.callbacks.onProximityAlso(null);
+    }
+    if (this.ready) {
+      this.renderWorld();
+      if (!roomChanged) {
+        const primary = this.nearestKey ? this.proximityObjectFor(this.nearestKey) : null;
+        const secondary = this.alsoKey ? this.proximityObjectFor(this.alsoKey) : null;
+        if (JSON.stringify(previousPrimary) !== JSON.stringify(primary)) this.callbacks.onProximity(primary);
+        if (JSON.stringify(previousSecondary) !== JSON.stringify(secondary)) this.callbacks.onProximityAlso(secondary);
+      }
+    }
   }
 
   setScenarioConfig(config: ScenarioConfig | null) {
@@ -916,6 +932,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   nudge(direction: 'up' | 'down' | 'left' | 'right') {
     if (!this.player) return;
+    if (this.walkGoal) this.callbacks.onWalkCancelled?.();
     this.walk = NO_WALK; // un paso de la cruceta manda sobre el destino del ratón
     this.walkGoal = null;
     // Mismo contrato que WASD (player-motion.util): sub-pasos con colisión y
@@ -1139,6 +1156,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private finishWalkGoal(outcome: 'arrived' | 'blocked'): void {
     const goal = this.walkGoal;
     this.walkGoal = null;
+    if (goal && outcome === 'arrived') {
+      const obj = this.proximityObjectFor(goal.key);
+      if (obj) {
+        this.nearestKey = goal.key;
+        this.callbacks.onProximity(obj);
+        this.refreshMarkerStates();
+      }
+    }
     if (goal) this.callbacks.onWalkEnded?.(goal.key, goal.label, outcome);
   }
 
@@ -1156,6 +1181,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const key = pointer.wasTouch ? this.tapTargetAt(pointer) : this.hoverTargetAt(pointer);
     if (!pointer.wasTouch) this.setHover(key);
     const aimed = key === null ? null : this.hoverAnchor(key);
+    if (this.walkGoal) this.callbacks.onWalkCancelled?.();
     this.walkGoal = null;
     this.walkWaitsForResume = false;
     this.walkInteractKey = aimed ? key : null;
@@ -4230,6 +4256,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
   }
   /** Terminó la caminata pedida con «Ir a…» (F6-11): llegó o no pudo. */
   readonly walkEnded = output<{ key: string; label: string; outcome: 'arrived' | 'blocked' }>();
+  readonly walkCancelled = output<void>();
   readonly renderReady = signal(false);
   readonly renderedMapKey = signal<string | null>(null);
   readonly renderedScenarioKey = signal<string | null>(null);
@@ -4570,6 +4597,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         onKeyPersonPosition: position => this.writeKeyPersonPosition(position),
         onCamera: camera => this.writeCamera(camera),
         onWalkEnded:   (key, label, outcome) => this.zone.run(() => this.walkEnded.emit({ key, label, outcome })),
+        onWalkCancelled: () => this.zone.run(() => this.walkCancelled.emit()),
         onLoadProgress: percent => this.zone.run(() => {
           this.loadPercent.set(percent);
           // Una carga que avanza no está colgada: el plazo cuenta desde el último avance, no desde el arranque.

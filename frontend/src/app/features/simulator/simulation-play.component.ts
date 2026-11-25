@@ -470,7 +470,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 [showLoader]="false" (worldReady)="onWorldReady()" (patientVisual)="patientVisual.set($event)"
                 (proximity)="nearbyInteraction.set($event); reactions?.onProximity($event?.key ?? null)" (proximityAlso)="nearbyAlso.set($event)"
                 (nothingNearby)="showNothingNearby()" (interact)="openInteraction($event)"
-                (npcInteract)="openNpcDialogue($event)" (walkEnded)="onWalkEnded($event)"
+                (npcInteract)="openNpcDialogue($event)" (walkEnded)="onWalkEnded($event)" (walkCancelled)="cancelPendingInteraction()"
                 (bootFailed)="onWorldBootFailed()"
                 (roomExit)="onRoomExit($event)"
                 (enterRoom)="onDoorTrigger($event)"
@@ -550,7 +550,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <button type="button" class="context-bar__interaction u-ficha u-sombra"
                 [class.context-bar__interaction--exit]="action.obj.type === 'EXIT'"
                 [class.context-bar__interaction--locked]="action.verb.locked"
-                (click)="openInteraction(action.obj)" [attr.aria-label]="action.ariaLabel" [attr.title]="action.title">
+                (click)="requestInteraction(action.obj)" [attr.aria-label]="action.ariaLabel" [attr.title]="action.title">
                 @if (!compactMode()) { <kbd class="u-tecla u-tecla--letra" aria-hidden="true">{{ shortcuts.enabled() ? 'E' : 'Enter' }}</kbd> }
                 @if (action.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                 <span class="context-bar__copy">
@@ -563,7 +563,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               @if (contextAlso(); as also) {
                 <button type="button" class="context-bar__interaction context-bar__interaction--secondary u-ficha u-sombra"
                   [class.context-bar__interaction--locked]="also.verb.locked"
-                  (click)="openInteraction(also.obj)" [attr.title]="also.title" [attr.aria-label]="'También: ' + also.verb.text">
+                  (click)="requestInteraction(also.obj)" [attr.title]="also.title" [attr.aria-label]="'También: ' + also.verb.text">
                   @if (also.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                   <span class="context-bar__also">También:</span>
                   <strong>{{ also.verb.text }}</strong>
@@ -1759,8 +1759,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   readonly nothingNearbyNote = signal('');
 
   /** Botón principal de la barra: verbo por tipo, candado y motivo en puertas bloqueadas (F§4.3). */
-  readonly contextAction = computed(() => this.interactionAction(this.contextualInteraction()));
-  readonly contextAlso = computed(() => this.contextualInteraction() ? this.interactionAction(this.nearbyAlso()) : null);
+  readonly contextAction = computed(() => this.interactionAction(this.attempt()?.status === 'IN_PROGRESS' ? this.nearbyInteraction() : null));
+  readonly contextAlso = computed(() => this.contextAction() ? this.interactionAction(this.nearbyAlso()) : null);
   /** Lo único que la barra de contexto anuncia (H-10): la interacción cercana. Comparado por valor: no repite. */
   private readonly contextLabel = computed(() => this.contextAction()?.ariaLabel ?? null);
 
@@ -4252,9 +4252,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** Elegir un lugar: cierra la lista y camina hasta su alcance de interacción; la llegada se anuncia. */
   choosePlace(place: PlaceCandidate): void {
+    this.cancelPendingInteraction();
     this.closePlaces();
     if (!this.gameWorld?.walkToKey(place.key)) {
-      this.announce(`${DRAFT_COPY.placesBlocked.text} ${place.label}`);
+      this.showWalkBlocked(place.label);
     }
   }
 
@@ -4277,14 +4278,51 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** «Ir allí» de la ficha del objetivo (P9): el mismo camino automático que «Ir a…», sin abrir la lista. */
   goToStep(key: string): void {
     if (this.inputBlocked()) return;
+    this.cancelPendingInteraction();
     const label = this.guide().siguienteLugar?.label ?? '';
-    if (!this.gameWorld?.walkToKey(key)) this.announce(`${DRAFT_COPY.placesBlocked.text} ${label}`.trim());
+    if (!this.gameWorld?.walkToKey(key)) this.showWalkBlocked(label);
   }
 
   /** Terminó la caminata de «Ir a…»: «Llegaste a …» o que no se pudo llegar (VD-19, borrador). */
+  private pendingWalkInteraction: MapObjectState | null = null;
+
+  requestInteraction(obj: MapObjectState): void {
+    if (this.inputBlocked() || this.busy()) return;
+    if (obj.type !== 'PERSON') { this.openInteraction(obj); return; }
+    this.pendingWalkInteraction = obj;
+    if (!this.gameWorld?.walkToKey(obj.key)) {
+      this.pendingWalkInteraction = null;
+      const npcKey = obj.key.startsWith('npc:') ? obj.key.slice(4) : obj.key;
+      const room = this.scenarioConfig()?.rooms.find(r => r.npcs.some(npc => npc.key === npcKey));
+      if (room && room.key !== this.world()?.map.key) {
+        this.showSoftNotice(`${obj.label} está en ${room.displayName}. Usa “Ir a…” para buscar una puerta.`);
+      } else {
+        this.showWalkBlocked(obj.label);
+      }
+    }
+  }
+
+  cancelPendingInteraction(): void { this.pendingWalkInteraction = null; }
+
   onWalkEnded(event: { key: string; label: string; outcome: 'arrived' | 'blocked' }): void {
-    const copy = event.outcome === 'arrived' ? DRAFT_COPY.placesArrived : DRAFT_COPY.placesBlocked;
-    this.announce(`${copy.text} ${event.label}`);
+    const pending = this.pendingWalkInteraction;
+    this.pendingWalkInteraction = null;
+    if (event.outcome === 'blocked') {
+      this.showWalkBlocked(event.label);
+      return;
+    }
+    if (pending?.key === event.key) { this.openInteraction(pending); return; }
+    this.showSoftNotice(`${DRAFT_COPY.placesArrived.text} ${event.label}`);
+    afterNextRender(() => {
+      if (this.contextualInteraction()?.key === event.key && !this.inputBlocked()) {
+        document.querySelector<HTMLElement>('.bottom-zone .context-bar__interaction')?.focus();
+      }
+    }, { injector: this.injector });
+  }
+
+  private showWalkBlocked(label: string): void {
+    const message = `${DRAFT_COPY.placesBlocked.text} ${label}. Camina con las flechas o busca el lugar en esta sala.`;
+    this.showSoftNotice(message);
   }
 
   declineContentWarning(): void {

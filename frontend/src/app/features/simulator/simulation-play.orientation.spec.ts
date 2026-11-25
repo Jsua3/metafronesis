@@ -148,6 +148,13 @@ describe('SimulationPlayComponent: orientación integrada', () => {
 
   const tick = (ms = 0) => { vi.advanceTimersByTime(ms); TestBed.tick(); };
 
+  it('explica visiblemente cuando el destino no está disponible en la sala', () => {
+    startInUrgencias();
+    component.choosePlace({ key: 'ausente', label: 'Abuela', kind: 'person' });
+    expect(component.softNotice()).toContain('No se pudo llegar a Abuela');
+    expect(component.softNotice()).toContain('Camina con las flechas');
+  });
+
   describe('T9.4: puertas con una sola fuente', () => {
     const exit = () => urgenciasObjects().find(o => o.key === 'puerta-sala-escucha')!;
 
@@ -399,16 +406,16 @@ describe('SimulationPlayComponent: orientación integrada', () => {
       expect(component.contextAction()?.verb.text).toBe('Hablar con Familia en crisis');
     });
 
-    it('con una petición en curso o un diálogo abierto la barra vuelve a «Ahora: …»', () => {
+    it('conserva la barra durante una petición o un diálogo', () => {
       startInUrgencias();
       component.nearbyInteraction.set(urgenciasObjects().find(o => o.key === 'familia-crisis')!);
       expect(component.contextAction()).not.toBeNull();
 
       component.busy.set(true);
-      expect(component.contextAction()).toBeNull();
+      expect(component.contextAction()).not.toBeNull();
       component.busy.set(false);
       component.dialogue.set({ key: 'd', speakerName: 'A', portraitKey: null, emotion: 'neutral', lines: [], choices: [] } as unknown as DialogueState);
-      expect(component.contextAction()).toBeNull();
+      expect(component.contextAction()).not.toBeNull();
     });
 
     it('URGENTE: pulsar el botón junto a una persona abre su diálogo y no pide `npc:…` al servidor', () => {
