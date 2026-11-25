@@ -91,7 +91,7 @@ describe('Lista de casos de autoría', () => {
   // F2 · tras asignar, la tarjeta no decía a qué grupo había ido: la docente no sabía si ya estaba asignado.
   describe('a qué grupos está asignado cada caso', () => {
     const asignacion = (id: number, versionId: number, groupId: number, active = true): Assignment =>
-      ({ id, caseVersionId: versionId, target: { type: 'GROUP', groupId }, state: 'OPEN', active, sortOrder: id });
+      ({ id, caseId: versionId, caseVersionId: versionId, target: { type: 'GROUP', groupId }, state: 'OPEN', active, sortOrder: id });
     const grupo = (id: number, nombre: string) => ({ id, nombre, codigo: `G${id}`, totalEstudiantes: 10 });
     const asignado = (version: number) => {
       const tarjeta = Array.from(host().querySelectorAll('ui-card')).find(t => (t.textContent ?? '').includes(`Caso ${version}`));

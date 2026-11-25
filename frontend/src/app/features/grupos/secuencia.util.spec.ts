@@ -2,12 +2,16 @@ import { Assignment } from '../../core/models/assignment.model';
 import { enSecuencia, fraseDeSecuencia, haceEsperar, lineaDeSecuencia, previaDelUltimo, tituloDe } from './secuencia.util';
 
 const a = (id: number, partial: Partial<Assignment> = {}): Assignment => ({
-  id, caseVersionId: id + 100, caseTitle: `Caso ${id}`, target: { type: 'GROUP', groupId: 1 }, state: 'OPEN', active: true, sortOrder: id, ...partial,
+  id, caseId: id, caseVersionId: id + 100, caseTitle: `Caso ${id}`, target: { type: 'GROUP', groupId: 1 }, state: 'OPEN', active: true, sortOrder: id, ...partial,
 });
 
 /** La secuencia que ve el docente dice lo mismo que aplica el servidor (`apps/progression/access.py`, RN-04). */
 // req: RN-04, RF-15
 describe('secuencia de casos del grupo', () => {
+  it('desempata versiones clonadas por el id del caso', () => {
+    const lista = [a(2, { sortOrder: 0, caseId: 2, caseVersionId: 2 }), a(1, { sortOrder: 0, caseId: 1, caseVersionId: 100 })];
+    expect(enSecuencia(lista).map(item => item.id)).toEqual([1, 2]);
+  });
   it('ordena por el orden y, a igual orden, por el caso (como el servidor)', () => {
     const lista = [a(3, { sortOrder: 0 }), a(2, { sortOrder: 0 }), a(1, { sortOrder: 5 })];
     expect(enSecuencia(lista).map(item => item.id)).toEqual([2, 3, 1]);

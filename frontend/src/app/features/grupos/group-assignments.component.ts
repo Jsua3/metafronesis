@@ -261,7 +261,7 @@ export class GroupAssignmentsComponent {
     const groupId = this.grupoId();
     this.assignments.set(next.map((item, index) => ({ ...item, sortOrder: index + 1 })));
     this.busy.set(true);
-    this.service.reorder(groupId, next.map(item => item.id)).subscribe({
+    this.service.reorder(groupId, next.map(item => item.id), ordered.map(item => item.id)).subscribe({
       next: saved => {
         if (this.grupoId() === groupId) {
           this.assignments.set(enSecuencia(saved));
@@ -272,7 +272,9 @@ export class GroupAssignmentsComponent {
       },
       error: (error: unknown) => {
         if (this.grupoId() === groupId) this.assignments.set(before);
-        const text = mensajeDeError(error, 'No fue posible cambiar el orden de los casos.');
+        const conflict = (error as { error?: { code?: string } })?.error?.code === 'ASSIGNMENT_ORDER_STALE';
+        if (conflict && this.grupoId() === groupId) this.load(groupId);
+        const text = conflict ? 'Otra persona cambió el orden; esta es la lista actual.' : mensajeDeError(error, 'No fue posible cambiar el orden de los casos.');
         if (text) this.notify.error(text);
         this.busy.set(false);
       },

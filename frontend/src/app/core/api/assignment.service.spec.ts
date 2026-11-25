@@ -6,7 +6,7 @@ import { Assignment } from '../models/assignment.model';
 import { AssignmentService } from './assignment.service';
 
 const row: Assignment = {
-  id: 5, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'SCHEDULED', active: true, sortOrder: 0,
+  id: 5, caseId: 12, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'SCHEDULED', active: true, sortOrder: 0,
   opensAt: '2026-10-20T08:00:00-05:00',
 };
 
@@ -68,10 +68,10 @@ describe('AssignmentService', () => {
 
   it('reorder manda el orden completo del grupo con PUT y devuelve la lista ya numerada', () => {
     let result: Assignment[] | undefined;
-    service.reorder(3, [6, 5]).subscribe(value => (result = value));
+    service.reorder(3, [6, 5], [5, 6]).subscribe(value => (result = value));
     const request = http.expectOne('/api/grupos/3/casos/orden');
     expect(request.request.method).toBe('PUT');
-    expect(request.request.body).toEqual({ assignmentIds: [6, 5] });
+    expect(request.request.body).toEqual({ assignmentIds: [6, 5], previousAssignmentIds: [5, 6] });
     request.flush({ data: [{ ...row, id: 6, sortOrder: 1 }, { ...row, id: 5, sortOrder: 2 }] });
     expect(result?.map(item => item.sortOrder)).toEqual([1, 2]);
   });

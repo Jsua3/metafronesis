@@ -16,7 +16,7 @@ const caso12 = { caseVersionId: 12, code: 'CASO-12', title: 'Caso doce', semanti
 const caso13 = { caseVersionId: 13, code: 'CASO-13', title: 'Caso trece', semanticVersion: '2.0.0' } as SimulationCaseSummary;
 
 const row = (partial: Partial<Assignment> = {}): Assignment => ({
-  id: 5, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: 0, ...partial,
+  id: 5, caseId: 12, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: 0, ...partial,
 });
 
 const backendError = (status: number, message: string) => throwError(() => new HttpErrorResponse({ status, error: { message } }));
@@ -495,7 +495,7 @@ describe('GroupAssignmentsComponent', () => {
       await render({ api: { list: tres } });
       buttonIn(items()[1], 'Subir «Caso trece» en el orden')!.click();
       await fixture.whenStable();
-      expect(api.reorder).toHaveBeenCalledWith(3, [6, 5, 7]);
+      expect(api.reorder).toHaveBeenCalledWith(3, [6, 5, 7], [5, 6, 7]);
       expect(lugares()).toEqual(['1', '2', '3']);
       expect(titulos()).toEqual(['Caso trece', 'Caso doce', 'Caso catorce']);
     });
@@ -504,7 +504,7 @@ describe('GroupAssignmentsComponent', () => {
       await render({ api: { list: tres } });
       buttonIn(items()[0], 'Bajar «Caso doce» en el orden')!.click();
       await fixture.whenStable();
-      expect(api.reorder).toHaveBeenCalledWith(3, [6, 5, 7]);
+      expect(api.reorder).toHaveBeenCalledWith(3, [6, 5, 7], [5, 6, 7]);
     });
 
     it('el primero no sube y el último no baja: lo dicen y no llaman al servidor', async () => {
@@ -529,6 +529,21 @@ describe('GroupAssignmentsComponent', () => {
       await fixture.whenStable();
       expect(titulos()).toEqual(['Caso doce', 'Caso trece', 'Caso catorce']);
       expect(notify.error).toHaveBeenCalledWith('La lista de casos cambió mientras la ordenabas.');
+    });
+
+    it('recarga el orden vigente cuando otra persona cambió la secuencia', async () => {
+      const list = vi.fn().mockImplementationOnce(tres).mockImplementationOnce(() => of([
+        row({ id: 7, caseVersionId: 14, sortOrder: 1, caseTitle: 'Caso catorce' }),
+        row({ id: 5, caseVersionId: 12, sortOrder: 2, caseTitle: 'Caso doce' }),
+        row({ id: 6, caseVersionId: 13, sortOrder: 3, caseTitle: 'Caso trece' }),
+      ]));
+      const reorder = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 409, error: { code: 'ASSIGNMENT_ORDER_STALE' } })));
+      await render({ api: { list, reorder } });
+      buttonIn(items()[1], 'Subir «Caso trece» en el orden')!.click();
+      await fixture.whenStable();
+      expect(list).toHaveBeenCalledTimes(2);
+      expect(titulos()).toEqual(['Caso catorce', 'Caso doce', 'Caso trece']);
+      expect(notify.error).toHaveBeenCalledWith('Otra persona cambió el orden; esta es la lista actual.');
     });
 
     it('al asignar desde la ficha, el diálogo recibe las asignaciones de hoy con su nombre para decir tras qué caso irá', async () => {

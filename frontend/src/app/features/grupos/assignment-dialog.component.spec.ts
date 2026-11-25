@@ -14,7 +14,7 @@ const cases = [
 ] as SimulationCaseSummary[];
 
 const existing: Assignment = {
-  id: 5, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'SCHEDULED', active: true, sortOrder: 0,
+  id: 5, caseId: 12, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'SCHEDULED', active: true, sortOrder: 0,
   opensAt: new Date(2026, 9, 20, 8, 0).toISOString(), closesAt: new Date(2026, 10, 5, 23, 59).toISOString(),
 };
 
@@ -206,7 +206,7 @@ describe('AssignmentDialogComponent', () => {
   // F2 · la docente se enteraba por el estudiante de que el caso nuevo le salía «Bloqueado» (RN-04).
   describe('cuándo lo podrán empezar los estudiantes', () => {
     const previa = (id: number, titulo: string, partial: Partial<Assignment> = {}): Assignment => ({
-      id, caseVersionId: id + 100, caseTitle: titulo, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: id, ...partial,
+      id, caseId: id, caseVersionId: id + 100, caseTitle: titulo, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: id, ...partial,
     });
     const secuencia = () => (el().querySelector('.ad-secuencia')?.textContent ?? '').replace(/\s+/g, ' ').trim();
 

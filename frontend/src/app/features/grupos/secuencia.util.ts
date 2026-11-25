@@ -9,7 +9,7 @@ import { Assignment } from '../../core/models/assignment.model';
 
 /** Las asignaciones en el orden de la secuencia (el orden y, a igual orden, el caso: igual que el servidor). */
 export function enSecuencia(asignaciones: readonly Assignment[]): Assignment[] {
-  return [...asignaciones].sort((a, b) => a.sortOrder - b.sortOrder || a.caseVersionId - b.caseVersionId || a.id - b.id);
+  return [...asignaciones].sort((a, b) => a.sortOrder - b.sortOrder || a.caseId - b.caseId || a.caseVersionId - b.caseVersionId);
 }
 
 /** ¿Esta asignación hace esperar a las que le siguen? Activa y con la ventana sin cerrar. */

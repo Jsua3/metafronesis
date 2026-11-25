@@ -86,8 +86,9 @@ def listar_activos():
     return _grupo_dtos(Grupo.objects.filter(activo=True).order_by("nombre", "codigo"))
 
 
-def _require_grupo(grupo_id, profesor):
-    grupo = Grupo.objects.filter(pk=grupo_id).first()
+def _require_grupo(grupo_id, profesor, *, lock=False):
+    queryset = Grupo.objects.select_for_update() if lock else Grupo.objects
+    grupo = queryset.filter(pk=grupo_id).first()
     if not grupo:
         raise NotFound(f"Grupo no encontrado: {grupo_id}")
     if grupo.profesor_id != profesor.id:
@@ -387,7 +388,7 @@ def actualizar(grupo_id, nombre, codigo, profesor):
 @auditable("GROUP_DELETED", "GRUPO", 0, context=lambda args, kwargs, result: {"groupId": result["id"]})
 @transaction.atomic
 def eliminar(grupo_id, profesor):
-    grupo = _require_grupo(grupo_id, profesor)
+    grupo = _require_grupo(grupo_id, profesor, lock=True)
     # Las uniones se borran por el ORM antes que el grupo: en una base restaurada de un volcado
     # anterior a E0-8 sus FK son NO ACTION y no existe el ON DELETE CASCADE de la BD nueva.
     CaseAssignment.objects.filter(grupo_id=grupo.id).delete()
@@ -441,7 +442,7 @@ def _contexto_de_la_asignacion(args, kwargs, result):
 @auditable("asignacion.crear", "ASSIGNMENT", -1, context=_contexto_de_la_asignacion)
 @transaction.atomic
 def asignar_caso(grupo_id, case_version_id, profesor):
-    grupo = _require_grupo(grupo_id, profesor)
+    grupo = _require_grupo(grupo_id, profesor, lock=True)
     version = (
         CaseVersion.objects.filter(pk=case_version_id)
         .select_related("simulation_case")
@@ -465,6 +466,6 @@ def asignar_caso(grupo_id, case_version_id, profesor):
 @auditable("asignacion.eliminar", "ASSIGNMENT", -1, context=_contexto_de_la_asignacion)
 @transaction.atomic
 def quitar_caso(grupo_id, case_version_id, profesor):
-    grupo = _require_grupo(grupo_id, profesor)
+    grupo = _require_grupo(grupo_id, profesor, lock=True)
     CaseAssignment.objects.filter(grupo_id=grupo.id, case_version_id=case_version_id).delete()
     return listar_casos_asignados(grupo.id, profesor)

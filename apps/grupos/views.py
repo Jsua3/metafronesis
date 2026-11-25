@@ -180,7 +180,7 @@ class GrupoCasosOrdenView(APIView):
     def put(self, request, pk):
         ser = AssignmentOrderSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        rows = assignment_service.reorder_group_assignments(request.user, pk, ser.validated_data["assignmentIds"])
+        rows = assignment_service.reorder_group_assignments(request.user, pk, ser.validated_data["assignmentIds"], ser.validated_data["previousAssignmentIds"])
         now = timezone.now()
         return api_ok([assignment_service.assignment_dto(row, now) for row in rows], message="Orden actualizado")
 

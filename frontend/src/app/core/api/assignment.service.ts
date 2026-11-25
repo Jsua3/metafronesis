@@ -41,8 +41,8 @@ export class AssignmentService {
    * a la última. El servidor las numera de una vez y devuelve la lista ya ordenada; si la lista cambió mientras tanto
    * responde 409 y no toca nada.
    */
-  reorder(groupId: number, assignmentIds: number[]) {
-    return this.http.put<ApiDataResponse<Assignment[]>>(`/api/grupos/${groupId}/casos/orden`, { assignmentIds })
+  reorder(groupId: number, assignmentIds: number[], previousAssignmentIds: number[]) {
+    return this.http.put<ApiDataResponse<Assignment[]>>(`/api/grupos/${groupId}/casos/orden`, { assignmentIds, previousAssignmentIds })
       .pipe(map(response => response.data));
   }
 

@@ -140,6 +140,7 @@ export interface ApiEnvelope {
 export interface Assignment {
   /** Una asignación en pausa no habilita nada. */
   readonly active: boolean;
+  readonly caseId: number;
   readonly caseTitle: string | null;
   readonly caseVersionId: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */

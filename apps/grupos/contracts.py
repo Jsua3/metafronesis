@@ -39,6 +39,7 @@ class AssignmentSerializer(serializers.Serializer):
 
     id = serializers.IntegerField()
     caseVersionId = serializers.IntegerField()
+    caseId = serializers.IntegerField()
     target = AssignmentTargetSerializer()
     state = serializers.ChoiceField(choices=ASSIGNMENT_STATES, help_text="Dónde está la ventana hoy.")
     active = serializers.BooleanField(help_text="Una asignación en pausa no habilita nada.")

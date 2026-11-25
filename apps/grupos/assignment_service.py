@@ -19,6 +19,7 @@ from shared.exceptions import ApiError
 
 from .assignments import assignment_state, format_window_value, parse_window_value
 from .models import CaseAssignment, Grupo
+from .secuencia import clave_secuencia
 from apps.simulation.services.audit_service import auditable
 from shared.policies import ADMIN
 
@@ -40,6 +41,7 @@ def assignment_dto(assignment, now=None):
     data = {
         "id": assignment.id,
         "caseVersionId": assignment.case_version_id,
+        "caseId": assignment.case_version.simulation_case_id,
         "target": target,
         "state": assignment_state(assignment, now),
         "active": assignment.active,
@@ -92,7 +94,8 @@ def _check_window(opens_at, closes_at):
 def next_sort_order(grupo_id):
     """El lugar al final de la secuencia del grupo (1 si aún no tiene casos). Si ya no cabe por debajo del tope, se
     renumera la secuencia existente (1…N, en su orden actual) para que el caso nuevo quede al final."""
-    filas = list(CaseAssignment.objects.filter(grupo_id=grupo_id).order_by("sort_order", "case_version_id", "id"))
+    filas = list(CaseAssignment.objects.filter(grupo_id=grupo_id).select_related("case_version"))
+    filas.sort(key=lambda fila: clave_secuencia([fila]))
     if not filas:
         return 1
     ultimo = max(fila.sort_order for fila in filas)
@@ -105,8 +108,9 @@ def next_sort_order(grupo_id):
 
 
 # ─── Carga con propiedad ──────────────────────────────────────────────────────────────────
-def _group_to_manage(group_id, actor):
-    grupo = Grupo.objects.filter(pk=group_id).first()
+def _group_to_manage(group_id, actor, *, lock=False):
+    queryset = Grupo.objects.select_for_update() if lock else Grupo.objects
+    grupo = queryset.filter(pk=group_id).first()
     if grupo is None:
         raise NotFound(f"Grupo no encontrado: {group_id}")
     if not policies.can(actor, "assignment", "manage", owner_id=grupo.profesor_id):
@@ -169,7 +173,7 @@ def create_assignment(actor, payload):
             status.HTTP_400_BAD_REQUEST,
             field="target",
         )
-    grupo = _group_to_manage(target["groupId"], actor)
+    grupo = _group_to_manage(target["groupId"], actor, lock=True)
     version = _assignable_version(payload["caseVersionId"])
     opens_at = _parse_date(payload.get("opensAt"), "opensAt")
     closes_at = _parse_date(payload.get("closesAt"), "closesAt")
@@ -210,13 +214,15 @@ def list_assignments(actor, group_id=None, case_version_id=None):
         queryset = queryset.filter(grupo__profesor_id=actor.id)
     if case_version_id is not None:
         queryset = queryset.filter(case_version_id=case_version_id)
-    return list(queryset.order_by("sort_order", "id"))
+    return sorted(queryset, key=lambda fila: clave_secuencia([fila]))
 
 
 @auditable("asignacion.actualizar", "ASSIGNMENT", 1)
 @transaction.atomic
 def update_assignment(actor, assignment_id, changes):
     """Aplica solo lo que viene en ``changes`` («ausente = no tocar»; ``None`` borra una fecha)."""
+    row = _load_to_manage(assignment_id, actor)
+    _group_to_manage(row.grupo_id, actor, lock=True)
     row = _load_to_manage(assignment_id, actor, lock=True)
     if "opensAt" in changes:
         row.opens_at = _parse_date(changes["opensAt"], "opensAt")
@@ -236,6 +242,8 @@ def update_assignment(actor, assignment_id, changes):
 @auditable("asignacion.eliminar", "ASSIGNMENT", 1)
 @transaction.atomic
 def remove_assignment(actor, assignment_id):
+    row = _load_to_manage(assignment_id, actor)
+    _group_to_manage(row.grupo_id, actor, lock=True)
     row = _load_to_manage(assignment_id, actor, lock=True)
     row.delete()
     return {"id": assignment_id}
@@ -247,17 +255,25 @@ def _contexto_del_orden(args, kwargs, result):
 
 @auditable("asignacion.reordenar", "ASSIGNMENT", -1, context=_contexto_del_orden)
 @transaction.atomic
-def reorder_group_assignments(actor, group_id, ordered_ids):
+def reorder_group_assignments(actor, group_id, ordered_ids, previous_ids):
     """Fija el orden de la secuencia del grupo: ``ordered_ids`` son TODAS sus asignaciones (activas o en pausa), de la
     primera a la última, y quedan numeradas 1…N de una vez. Un grupo ajeno no se toca (403, como crear); una lista que no
     es exactamente la del grupo (faltan, sobran o se repiten) no cambia nada (409) y el docente recarga la lista."""
-    grupo = _group_to_manage(group_id, actor)
+    grupo = _group_to_manage(group_id, actor, lock=True)
     filas = list(
         CaseAssignment.objects.select_for_update(of=("self",))
         .filter(grupo_id=grupo.id)
         .select_related("case_version__simulation_case")
     )
     por_id = {fila.id: fila for fila in filas}
+    actual = [fila.id for fila in sorted(filas, key=lambda fila: clave_secuencia([fila]))]
+    if previous_ids != actual:
+        raise ApiError(
+            "ASSIGNMENT_ORDER_STALE",
+            "Otra persona cambió el orden; esta es la lista actual.",
+            status.HTTP_409_CONFLICT,
+            currentAssignmentIds=actual,
+        )
     if len(ordered_ids) != len(set(ordered_ids)) or set(ordered_ids) != set(por_id):
         raise ApiError(
             "ASSIGNMENT_ORDER_MISMATCH",
