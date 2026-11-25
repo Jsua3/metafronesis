@@ -35,7 +35,7 @@ const PASOS_VINCULO = [{ valor: -1, nombre: 'Se cierra' }, { valor: 0, nombre: '
 const PASOS_ACTIVACION = [{ valor: -1, nombre: 'Se calma' }, { valor: 0, nombre: 'Sin cambio' }, { valor: 1, nombre: 'Se tensa' }];
 
 /** Una escena a la que puede llevar la respuesta, como se lee en «Lleva a…»: «N · Título». */
-export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolean }
+export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolean; convertible?: boolean }
 
 /**
  * La ficha de una respuesta (EDITOR.md §3.4.1). Arriba, lo que el servidor exige para guardarla (texto, clase, destino; razón
@@ -100,33 +100,32 @@ export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolea
     <div class="ficha__destino" [id]="'destino-' + r.id">
       <label [for]="'rl' + i" class="ficha__destino-rotulo">Lleva a…</label>
       <!-- BORRADOR: pendiente de aprobación de Psicología. -->
-      <p class="nota">El destino indica qué sucede después de esta respuesta. Para terminar el caso, elige una escena final. Mientras falte el destino, la respuesta no se guarda en el caso.</p>
+      <p class="nota">Elige la escena que sigue. Para terminar el caso, crea o elige una escena final abajo. Sin destino, esta respuesta queda solo en esta pantalla.</p>
       @if (recuperada()) { <p class="nota" role="status">Recuperamos lo que escribiste en esta respuesta.</p> }
       @if (!respaldoDisponible()) { <p class="nota" role="alert">No pudimos guardar una copia en este dispositivo. Mantén abierta esta pantalla hasta completar y guardar la respuesta.</p> }
       <select [id]="'rl' + i" [attr.data-respuesta-destino]="r.id" class="campo" (change)="destino.emit($any($event.target).value)">
-        <option value="" [selected]="!r.destinoId && !pendiente()">Ninguna escena todavía</option>
+        <option value="" [selected]="!r.destinoId">Ninguna escena todavía</option>
         @for (d of destinos(); track d.id) { <option [value]="d.id" [selected]="d.id === r.destinoId">{{ d.etiqueta }}</option> }
-        <option value="nueva" [selected]="pendiente()">Una escena nueva</option>
+        <option value="nueva">Crear una escena nueva ahora</option>
       </select>
     </div>
-    @if (!r.destinoId && !pendiente()) {
+    @if (!r.destinoId) {
       <!-- BORRADOR: pendiente de aprobación de Psicología. -->
       <button type="button" class="boton boton-secundario" (click)="crearEscena.emit()">Crear la escena siguiente</button>
-      <details>
-        <summary>Esta respuesta termina el caso</summary>
-        <p class="nota">Conecta la respuesta con una escena final existente o crea una nueva.</p>
+    }
+      <!-- Abierto solo mientras falta el destino: con destino elegido queda a mano, plegado, sin llenar cada ficha. -->
+      <details [open]="!r.destinoId">
+        <summary>Terminar el caso con esta respuesta</summary>
+        <p class="nota">El estudiante llegará a una escena final y el caso terminará. Crea una o usa una existente; después revisa su contenido y los demás pendientes para enviar el caso.</p>
         @for (d of destinosFinales(); track d.id) {
           <button type="button" class="boton boton-secundario" (click)="destino.emit(d.id)">Usar {{ d.etiqueta }}</button>
         }
-        <button type="button" class="boton boton-secundario" (click)="crearFinal.emit()">Crear escena final</button>
+        @for (d of destinosConvertibles(); track d.id) {
+          <button type="button" class="boton boton-secundario" (click)="convertirFinal.emit(d.id)">Convertir {{ d.etiqueta }} en final y usarla</button>
+        }
+        <button type="button" class="boton boton-secundario" data-accion="terminar-respuesta" (click)="crearFinal.emit()">Crear escena final</button>
+        <p class="nota">Solo se pueden convertir escenas sin respuestas: al llegar a una escena final el estudiante ya no toma decisiones.</p>
       </details>
-    }
-    @if (pendiente()) {
-      <div class="acciones">
-        <button type="button" class="boton boton-secundario crear-escena-nueva" (click)="crearEscena.emit()">Crear la escena nueva</button>
-        <span class="nota">Elegir en la lista no crea nada; el botón sí.</span>
-      </div>
-    }
     @if (creada(); as c) {
       <div role="group" aria-label="Escena creada" class="creada">
         <p>Se creó «{{ c.titulo }}», conectada a la respuesta {{ i + 1 }}. Usa la misma sala que esta escena; puedes cambiarla después.</p>
@@ -241,8 +240,6 @@ export class RespuestaComponent {
   readonly destinos = input.required<readonly DestinoPosible[]>();
   readonly hitos = input.required<readonly Hito[]>();
   readonly competencias = input.required<readonly CompetenciaCaso[]>();
-  /** La docente eligió «Una escena nueva» y falta pulsar «Crear la escena nueva». */
-  readonly pendiente = input(false);
   readonly creada = input<{ escenaId: string; titulo: string } | null>(null);
   /** «Ver todo abierto» del guion: abre las cinco facetas a la vez. */
   readonly todoAbierto = input(false);
@@ -257,6 +254,7 @@ export class RespuestaComponent {
   readonly destino = output<string>();
   readonly crearEscena = output<void>();
   readonly crearFinal = output<void>();
+  readonly convertirFinal = output<string>();
   readonly aceptar = output<void>();
   readonly descartar = output<void>();
   readonly duplicar = output<void>();
@@ -267,6 +265,7 @@ export class RespuestaComponent {
   private readonly injector = inject(Injector);
   protected readonly clases = CLASES;
   protected readonly destinosFinales = computed(() => this.destinos().filter((d) => d.esFinal && d.id !== this.escena().id));
+  protected readonly destinosConvertibles = computed(() => this.destinos().filter((d) => d.convertible && d.id !== this.escena().id));
   protected readonly nombreClase = NOMBRE_CLASE;
   protected readonly facetas = FACETAS;
   protected readonly pasosVinculo = PASOS_VINCULO;

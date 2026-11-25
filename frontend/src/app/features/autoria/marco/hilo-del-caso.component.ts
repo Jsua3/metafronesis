@@ -69,7 +69,7 @@ export function cifraDeEtapa(a: AvanceEtapa): string {
       box-shadow: inset 0 0 0 1px var(--asb-canto);
     }
     .hilo__etapa {
-      position: relative; display: inline-flex; align-items: center; gap: 0.375rem; min-block-size: 2.5rem;
+      position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; min-block-size: 2.75rem; min-inline-size: 2.75rem;
       padding-inline: 0.75rem; border-radius: 999px; color: var(--asb-cromo-tinta); font-size: var(--autoria-texto-16);
       font-weight: 600; white-space: nowrap; text-decoration: none;
       box-shadow: inset 0 1px 0 transparent, inset 0 0 0 1px transparent;

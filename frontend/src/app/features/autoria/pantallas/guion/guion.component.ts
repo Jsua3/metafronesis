@@ -75,7 +75,6 @@ export class GuionComponent {
   protected miniaturaDe(e: { salaId: string | null }): string | null {
     return e.salaId ? this.miniaturas().get(e.salaId) ?? null : null;
   }
-  protected readonly pendiente = signal<string | null>(null);
   protected readonly creada = signal<{ respuestaId: string; escenaId: string; titulo: string } | null>(null);
   protected readonly verTodo = signal(false);
 
@@ -88,7 +87,7 @@ export class GuionComponent {
   protected readonly personajes = computed(() => this.store.caso()?.personajes ?? []);
   protected readonly hitos = computed(() => this.store.caso()?.hitos ?? []);
   protected readonly competencias = computed(() => this.store.caso()?.competencias ?? []);
-  protected readonly destinos = computed(() => this.orden().map((d, j) => ({ id: d.id, etiqueta: `${j + 1} · ${d.titulo}`, esFinal: d.esFinal })));
+  protected readonly destinos = computed(() => this.orden().map((d, j) => ({ id: d.id, etiqueta: `${j + 1} · ${d.titulo}`, esFinal: d.esFinal, convertible: !d.esFinal && !d.respuestas.length && d.id !== this.store.caso()?.inicioId })));
   protected readonly posicion = computed(() => this.orden().findIndex((e) => e.id === this.escenaId()));
   protected readonly anterior = computed(() => this.orden()[this.posicion() - 1] ?? null);
   protected readonly siguiente = computed(() => (this.posicion() < 0 ? null : this.orden()[this.posicion() + 1] ?? null));
@@ -131,6 +130,7 @@ export class GuionComponent {
 
   protected readonly accionesEscena = computed<UiMenuItem[]>(() => [
     // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
+    { value: 'final', label: this.escena()?.esFinal ? 'Quitar la marca de final' : 'Convertir en escena final', icon: 'flag', disabled: !this.escena()?.esFinal && (!!this.escena()?.respuestas.length || this.escena()?.id === this.store.caso()?.inicioId) },
     { value: 'borrar', label: 'Borrar la escena', icon: 'delete', tone: 'danger', disabled: this.orden().length <= 1 },
   ]);
 
@@ -226,6 +226,12 @@ export class GuionComponent {
   }
 
   protected async alElegirEnEscena(valor: string | undefined, e: Escena, origen: HTMLElement): Promise<void> {
+    if (valor === 'final') {
+      if (!e.esFinal && (e.respuestas.length || e.id === this.store.caso()?.inicioId)) return;
+      this.store.marcarFinal(e.id, !e.esFinal);
+      this.anuncio.set(e.esFinal ? 'La escena ya no está marcada como final.' : 'La escena quedó marcada como final. El caso terminará al llegar aquí.');
+      return;
+    }
     if (valor !== 'borrar') return;
     const caso = this.store.caso();
     if (!caso) return;
@@ -321,20 +327,18 @@ export class GuionComponent {
     this.store.editarReaccion(e.id, r.id, reaccion);
   }
 
-  protected elegirDestino(r: Respuesta, valor: string): void {
+  protected elegirDestino(e: Escena, r: Respuesta, i: number, valor: string): void {
     this.creada.set(null);
     if (valor === 'nueva') {
-      this.pendiente.set(r.id);
+      this.crearEscenaNueva(e, r, i);
       return;
     }
-    this.pendiente.set(null);
     this.store.conectar(r.id, valor || null);
   }
 
   protected crearEscenaNueva(e: Escena, r: Respuesta, i: number): void {
     const id = this.store.respuestaAEscenaNueva(e.id, r.id);
     const nueva = this.store.caso()!.escenas.find((x) => x.id === id)!;
-    this.pendiente.set(null);
     this.creada.set({ respuestaId: r.id, escenaId: id, titulo: `${this.numero(nueva)} · ${nueva.titulo}` });
     this.anuncio.set(`Se creó «${nueva.titulo}», conectada a la respuesta ${i + 1}.`);
   }
@@ -343,6 +347,14 @@ export class GuionComponent {
     this.crearEscenaNueva(e, r, i);
     const id = this.creada()?.escenaId;
     if (id) this.store.marcarFinal(id, true);
+  }
+
+  protected usarEscenaComoFinal(e: Escena, r: Respuesta, id: string): void {
+    const destino = this.store.caso()?.escenas.find(x => x.id === id);
+    if (!destino || destino.id === e.id || destino.id === this.store.caso()?.inicioId || destino.respuestas.length) return;
+    this.store.marcarFinal(id, true);
+    this.store.conectar(r.id, id);
+    this.anuncio.set(`«${destino.titulo}» es ahora una escena final y quedó conectada a la respuesta.`);
   }
 
   protected aceptarRespuesta(e: Escena, r: Respuesta, i: number): void {

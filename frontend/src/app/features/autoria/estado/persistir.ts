@@ -426,7 +426,7 @@ export const FALTA_CLASE = 'Elige cómo es esta respuesta para guardarla.';
 export function motivoSinGuardar(respuesta: Respuesta): string | null {
   if (!respuesta.clase) return FALTA_CLASE;
   if (respuesta.clase === 'CONTRAINDICATED' && !respuesta.razon.trim()) return 'Escribe por qué es contraindicada para guardarla.';
-  if (respuesta.destinoId === null) return 'Elige a qué escena lleva para guardarla.';
+  if (respuesta.destinoId === null) return 'Elige una escena en «Lleva a…» o crea una escena final para guardar esta respuesta.';
   return null;
 }
 

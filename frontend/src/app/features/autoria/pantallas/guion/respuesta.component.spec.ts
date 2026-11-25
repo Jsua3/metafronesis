@@ -69,7 +69,7 @@ describe('RespuestaComponent', () => {
   it('completa, no muestra el aviso de «Solo en esta pantalla»; sin destino, lo muestra con su motivo', async () => {
     expect((await montar()).raiz.querySelector('.sin-guardar')).toBeNull();
     const { raiz } = await montar({ destinoId: null });
-    expect(raiz.querySelector('.sin-guardar')!.textContent).toContain('Elige a qué escena lleva para guardarla.');
+    expect(raiz.querySelector('.sin-guardar')!.textContent).toContain('Elige una escena en «Lleva a…» o crea una escena final');
   });
 
   it('ofrece crear una escena siguiente o conectar con un final sin borrar el texto', async () => {

@@ -269,6 +269,7 @@ import { RutasAutoria } from '../../rutas';
     .dialogo {
       display: flex; flex-direction: column; gap: 0.75rem; border: 2px solid var(--ds-primary); border-radius: var(--l-radio-tarjeta);
       background: color-mix(in oklab, var(--l-superficie) 97%, transparent); box-shadow: var(--l-sombra-alta);
+      max-block-size: min(80vh, 42rem); overflow: auto;
     }
     .dialogo.peligro { border-color: var(--ds-danger); }
     .dialogo h2, .dialogo p { margin: 0; }
@@ -282,7 +283,7 @@ import { RutasAutoria } from '../../rutas';
     @media (min-width: 64rem) {
       .dialogo {
         position: absolute; z-index: var(--autoria-capa-5); inset-block-start: 3.5rem; inset-inline-end: 1rem;
-        inline-size: min(30rem, calc(100% - 2rem)); max-block-size: calc(100% - 4.5rem); overflow: auto;
+        inline-size: min(38rem, calc(100% - 2rem)); max-block-size: min(80vh, calc(100% - 4.5rem)); overflow: auto;
       }
     }
     @media (max-width: 63.999rem) {

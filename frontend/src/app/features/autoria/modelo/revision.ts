@@ -304,6 +304,11 @@ export function faltasDelServidor(
     const escena = h.nodeId !== undefined ? rutaDeEscena(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : null;
     const falta = (ir: Falta['ir']): Falta => ({ codigo: h.code, mensaje: h.message, ir });
     switch (h.code) {
+      case 'CASE_NO_TERMINAL': {
+        const primera = primeraRespuesta(caso);
+        faltas.push(falta(primera ? { ruta: rutaDeEscena(primera.escena.id), ancla: `destino-${primera.respuestaId}` } : { ruta: '/editor' }));
+        break;
+      }
       case 'CASE_NO_RUBRIC':
       case 'RUBRIC_WEIGHTS':
         faltas.push(falta({ ruta: '/editor/rubrica', ancla: h.code === 'CASE_NO_RUBRIC' ? 'rubrica-titulo' : 'rubrica-pesos' }));

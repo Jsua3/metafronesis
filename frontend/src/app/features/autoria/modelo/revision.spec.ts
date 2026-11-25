@@ -17,6 +17,14 @@ function completo(): CasoBorrador {
   };
 }
 
+it('la falta de escena final del servidor lleva al destino de una respuesta', () => {
+  const faltas = faltasDelServidor(
+    [{ code: 'CASE_NO_TERMINAL', severity: 'error', message: 'El caso necesita una escena terminal.' }],
+    completo(), { respuestaDeOpcion: () => undefined, faltasLocales: [] },
+  );
+  expect(faltas[0].ir).toEqual({ ruta: '/editor/escena/a', ancla: 'destino-1' });
+});
+
 describe('puedeEnviar', () => {
   it('un caso completo puede enviarse', () => {
     expect(puedeEnviar(completo())).toEqual({ ok: true, faltas: [] });

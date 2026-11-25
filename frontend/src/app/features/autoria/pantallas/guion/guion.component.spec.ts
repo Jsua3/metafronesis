@@ -85,7 +85,7 @@ describe('GuionComponent', () => {
     expect(raiz.querySelector('img.retrato')!.getAttribute('src')).toContain('psicologa-hospitalaria/portrait-alegre.png');
   });
 
-  it('elegir «Una escena nueva» no crea nada hasta pulsar «Crear la escena nueva»', async () => {
+  it('elegir una escena nueva la crea y conecta en una sola acción', async () => {
     const { store, id, raiz, listo } = await montar();
     boton(raiz, 'Agregar una respuesta').click();
     await listo();
@@ -93,13 +93,39 @@ describe('GuionComponent', () => {
     llevaA.value = 'nueva';
     llevaA.dispatchEvent(new Event('change'));
     await listo();
-    expect(store.caso()!.escenas).toHaveLength(2);
-    boton(raiz, 'Crear la escena nueva').click();
-    await listo();
     const caso = store.caso()!;
     expect(caso.escenas).toHaveLength(3);
     expect(caso.escenas.find((e) => e.id === id)!.respuestas[0].destinoId).toBe(caso.escenas[2].id);
     expect(raiz.textContent).toContain('conectada a la respuesta 1');
+  });
+
+  it('desde la respuesta convierte una escena existente vacía en final y la conecta', async () => {
+    const { store, id, raiz, listo } = await montar();
+    const caso = structuredClone(store.caso()!);
+    caso.escenas.push({ ...structuredClone(caso.escenas[0]), id: 'cierre-existente', titulo: 'Cierre existente', respuestas: [], esFinal: false });
+    store.fijar(caso);
+    boton(raiz, 'Agregar una respuesta').click();
+    await listo();
+    const accion = [...raiz.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.includes('Convertir') && b.textContent?.includes('Cierre existente'));
+    expect(accion).toBeTruthy();
+    accion!.click();
+    await listo();
+    expect(store.caso()!.escenas.find(e => e.id === 'cierre-existente')!.esFinal).toBe(true);
+    expect(store.caso()!.escenas.find(e => e.id === id)!.respuestas[0].destinoId).toBe('cierre-existente');
+  });
+
+  it('crea un final conectado desde la respuesta sin convertir su escena de decisiones', async () => {
+    const { store, id, raiz, listo } = await montar();
+    boton(raiz, 'Agregar una respuesta').click();
+    await listo();
+    boton(raiz, 'Crear escena final').click();
+    await listo();
+    const caso = store.caso()!;
+    const origen = caso.escenas.find(e => e.id === id)!;
+    const destino = caso.escenas.find(e => e.id === origen.respuestas[0].destinoId)!;
+    expect(origen.esFinal).toBe(false);
+    expect(destino.esFinal).toBe(true);
+    expect(destino.respuestas).toHaveLength(0);
   });
 
   it('lo sugerido por la IA se acepta elemento por elemento', async () => {
@@ -235,7 +261,7 @@ describe('GuionComponent', () => {
     await listo();
     raiz.querySelectorAll<HTMLInputElement>('li.respuesta input[type="radio"]')[0].click();
     await listo();
-    expect(raiz.querySelector('li.respuesta .sin-guardar')!.textContent).toContain('Elige a qué escena lleva para guardarla.');
+    expect(raiz.querySelector('li.respuesta .sin-guardar')!.textContent).toContain('Elige una escena en «Lleva a…» o crea una escena final');
   });
 
   it('ofrece las cuatro clases de respuesta y guarda la que se elige', async () => {

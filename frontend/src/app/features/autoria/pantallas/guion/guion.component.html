@@ -73,7 +73,7 @@
       </section>
 
       <!-- 5 · Lo que puede responder el estudiante: fichas A a D con facetas. -->
-      <section aria-labelledby="rh" class="bloque" id="respuestas-escena" tabindex="-1" data-accion="respuesta-a-escena-nueva">
+      <section aria-labelledby="rh" class="bloque" id="respuestas-escena" tabindex="-1" data-accion="respuesta-a-escena-nueva terminar-respuesta">
         <h2 id="rh">Lo que puede responder el estudiante</h2>
         <div class="bloque__herramientas">
           <app-guia-de-redaccion />
@@ -99,11 +99,11 @@
             <li class="respuesta" [id]="'respuesta-' + r.id" tabindex="-1">
               <app-respuesta [respuesta]="r" [indice]="i" [escena]="e" [destinos]="destinos()" [hitos]="hitos()" [competencias]="competencias()"
                              [recuperada]="store.respuestasRecuperadas().has(r.id)" [respaldoDisponible]="store.respaldoLocalDisponible()"
-                             [pendiente]="pendiente() === r.id" [creada]="creada()?.respuestaId === r.id ? creada() : null"
+                             [creada]="creada()?.respuestaId === r.id ? creada() : null"
                              [todoAbierto]="verTodo()" [puedeDuplicar]="!enElTopeDeRespuestas(e)"
                              (editar)="editarRespuesta(e, r, $event)" (efectos)="cambiarEfectos(e, r, $event)"
                              (requisito)="store.editarRequisito(e.id, r.id, $event)" (reaccion)="cambiarReaccion(e, r, $event)"
-                             (destino)="elegirDestino(r, $event)" (crearEscena)="crearEscenaNueva(e, r, i)" (crearFinal)="crearEscenaFinal(e, r, i)"
+                             (destino)="elegirDestino(e, r, i, $event)" (crearEscena)="crearEscenaNueva(e, r, i)" (crearFinal)="crearEscenaFinal(e, r, i)" (convertirFinal)="usarEscenaComoFinal(e, r, $event)"
                              (aceptar)="aceptarRespuesta(e, r, i)" (descartar)="borrarRespuesta(e, r, i, 'descartada')"
                              (duplicar)="duplicarRespuesta(e, r, i)" (borrar)="borrarRespuesta(e, r, i)" />
             </li>

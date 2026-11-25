@@ -65,6 +65,8 @@
   <ui-card class="hub-card">
     <ui-portada-caso [portada]="item.portada" [titulo]="item.title" />
     <div class="hub-card__top"><ui-badge [tone]="statusTone(item.status)">{{ statusLabel(item.status) }}</ui-badge></div>
+    <!-- BORRADOR: texto pendiente de Psicología. «Borrador» se leía como «sin guardar» (medición 2, UA-DOC1, UA-DOC2). -->
+    @if (item.status === 'DRAFT') { <p class="hub-card__meta">Guardado. Aún no se envía a revisión de Psicología.</p> }
     <h3 class="hub-card__title">{{ item.title }}</h3>
     <p class="hub-card__code" [title]="item.code">{{ item.code }}</p>
     @if (fecha(item.updatedAt); as editado) { <p class="hub-card__meta">{{ editado }}</p> }

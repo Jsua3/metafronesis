@@ -44,6 +44,13 @@ describe('Lista de casos de autoría', () => {
     expect(texto).toContain('3 de 5 escenas con guion');
     expect(texto).not.toContain('nodos'); expect(texto).not.toContain('v0.1.0');
   });
+  it('un borrador dice que ya está guardado y que falta enviarlo (medición 2: «borrador» parecía «sin guardar»)', async () => {
+    api.listAuthoringCases.mockReturnValue(of([caso(1, 'DRAFT'), caso(2, 'PUBLISHED')])); await render();
+    const tarjetas = [...host().querySelectorAll('.hub-card')];
+    expect(tarjetas[0].textContent).toContain('Guardado. Aún no se envía a revisión de Psicología.');
+    expect(tarjetas[1].textContent).not.toContain('Aún no se envía');
+  });
+
   it('agrupa para administración, prioriza la publicada y conserva versiones sin caseId', async () => {
     usuario.set({ role: 'ADMIN' });
     const sinId = { ...caso(3, 'DRAFT'), caseId: undefined };
