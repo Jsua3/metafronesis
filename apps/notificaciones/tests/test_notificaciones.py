@@ -1,3 +1,4 @@
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -21,27 +22,28 @@ def datos(settings):
     otro = CustomUser.objects.create_user(email="otro@example.test", password="test", role=ESTUDIANTE)
     caso = SimpleNamespace(title="Caso de prueba", created_by=docente)
     version = SimpleNamespace(simulation_case=caso)
-    sesion = SimpleNamespace(case_version=version, mensaje="Mensaje de prueba", creada_por=docente)
+    sesion = SimpleNamespace(case_version=version, mensaje="Mensaje de prueba", creada_por=docente,
+                             espacio_academico="Psicología", lugar="Aula 1", inicio=datetime(2026, 5, 4, 8, 0))
     convocatoria = SimpleNamespace(estudiante=estudiante)
     intento = SimpleNamespace(student=estudiante, case_version=version)
     return SimpleNamespace(**locals())
 
 
 def emitir(datos):
-    eventos.convocatoria_emitida.send(sender=object, sesion=datos.sesion,
-        convocatorias=[datos.convocatoria], codigos={datos.estudiante.pk: "ABCDEFGH"})
+    eventos.convocados_cambiaron.send(sender=object, sesion=datos.sesion, agregados=[datos.estudiante], retirados=[])
 
 
-def test_convocatoria_avisa_con_codigo(datos):
+def test_convocatoria_avisa_sin_codigo(datos):
     from apps.notificaciones.models import Notificacion
     emitir(datos)
     aviso = Notificacion.objects.get(destinatario=datos.estudiante)
+    assert aviso.tipo == "CONVOCATORIA" and "Código" not in aviso.cuerpo and "Entra con tu cuenta" in aviso.cuerpo
     assert aviso.correo_enviado
-    assert all(texto in mail.outbox[0].body for texto in ("ABCDEFGH", "Caso de prueba", "Mensaje de prueba", "https://ejemplo.test"))
+    assert all(texto in mail.outbox[0].body for texto in ("Caso de prueba", "Mensaje de prueba", "https://ejemplo.test"))
 
 
 def test_retirado_recibe_aviso(datos):
-    eventos.convocados_cambiaron.send(sender=object, sesion=datos.sesion, agregados=[], retirados=[datos.estudiante], codigos={})
+    eventos.convocados_cambiaron.send(sender=object, sesion=datos.sesion, agregados=[], retirados=[datos.estudiante])
     assert len(mail.outbox) == 1
     assert "retir" in mail.outbox[0].body.lower()
 

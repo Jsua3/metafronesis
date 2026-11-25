@@ -44,6 +44,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   // E2-4 y P6: el profesor y el administrador entran a sus casos (lista, crear desde un lugar y el editor); el profesor
   // solo ve y edita lo suyo (lo hace cumplir el servidor).
   { id: 'casos', label: 'Casos', route: '/portal/casos', icon: 'edit_square', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 30 },
+  // Sesiones de clase: un grupo, un caso de la biblioteca y un horario que el docente guía en vivo.
+  { id: 'sesiones', label: 'Sesiones', route: '/portal/sesiones', icon: 'event', roles: ['PROFESOR'], fold: [], order: 35 },
   { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
   // E2-10 (C5): la bandeja del estudiante. Se llama «Grupos» porque muestra sus invitaciones Y sus membresías.
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 40 },
