@@ -4,6 +4,7 @@ from django.http import Http404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.autoria import autoria
 from apps.grupos.assignments import format_window_value
 from apps.grupos.models import Grupo
 from apps.simulation.models import AttemptStatus, CaseVersion, CaseVersionStatus, SimulationAttempt
@@ -38,11 +39,23 @@ def biblioteca():
     )
 
 
-def caso_dto(version):
+def casos_dto(versiones):
+    """La biblioteca para elegir el caso de una sesión, con «editado por» de cada caso en una sola consulta."""
+    versiones = list(versiones)
+    editores = autoria.editores_por_caso(v.simulation_case_id for v in versiones)
+    return [caso_dto(version, editores.get(version.simulation_case_id, [])) for version in versiones]
+
+
+def caso_dto(version, editores=None):
+    """Un caso de la biblioteca. ``autor`` es quien creó el caso; ``editadoPor``, quienes, sin ser el autor, crearon alguna
+    versión suya (en el orden de su primera versión): ver ``apps/autoria/autoria.py``."""
     caso = version.simulation_case
+    if editores is None:
+        editores = autoria.editores(caso)
     return {
         "caseVersionId": version.pk, "titulo": caso.title, "version": version.semantic_version,
-        "autor": nombre_de(caso.created_by), "tiempoEstimadoMin": version.estimated_minutes, "descripcion": caso.description or "",
+        "autor": nombre_de(caso.created_by), "editadoPor": [persona["nombre"] for persona in editores],
+        "tiempoEstimadoMin": version.estimated_minutes, "descripcion": caso.description or "",
     }
 
 

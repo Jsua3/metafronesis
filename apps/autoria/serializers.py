@@ -197,10 +197,18 @@ class ChecklistSerializer(RevisionSerializer):
     scopeEducational = serializers.BooleanField(required=False)
 
 
+class PersonaCasoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+
+
 class VistaEditorSerializer(serializers.Serializer):
     caseVersionId = serializers.IntegerField()
     revision = serializers.IntegerField()
     title = serializers.CharField()
+    #: Quien creó el caso (no cambia) y quienes, sin ser el autor, crearon alguna versión, en orden de su primera versión.
+    autor = PersonaCasoSerializer()
+    editadoPor = PersonaCasoSerializer(many=True)
     semanticVersion = serializers.CharField()
     status = serializers.CharField()
     context = serializers.CharField(allow_blank=True)

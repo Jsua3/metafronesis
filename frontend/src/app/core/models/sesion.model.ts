@@ -40,6 +40,8 @@ export interface CasoBiblioteca {
   titulo: string;
   version: string;
   autor: string;
+  /** Quienes, sin ser el autor, crearon alguna versión del caso (autoría compartida); vacío o ausente si nadie más. */
+  editadoPor?: string[];
   tiempoEstimadoMin: number | null;
   descripcion: string;
 }

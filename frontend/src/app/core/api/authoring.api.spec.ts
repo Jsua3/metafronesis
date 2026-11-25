@@ -171,6 +171,22 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       expect(lista).toEqual([{ caseVersionId: 5, code: 'A', title: 'Título', description: '', semanticVersion: '', nodeCount: 0, status: 'DRAFT' }]);
     });
 
+    it('la lista trae el caso, la versión y la autoría compartida que manda el servidor', () => {
+      let lista: unknown;
+      api.listAuthoringCases().subscribe(l => (lista = l));
+      http.expectOne('/api/authoring/cases').flush({
+        data: [{
+          versionId: 7, status: 'PUBLISHED', revision: 4, brief: { code: 'B', title: 'Ajeno', description: 'Uno' },
+          caseId: 3, semanticVersion: '1.0.0', autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }],
+          puedeEditar: false, puedeCrearVersion: true,
+        }],
+      });
+      expect(lista).toEqual([{
+        caseVersionId: 7, code: 'B', title: 'Ajeno', description: 'Uno', semanticVersion: '1.0.0', nodeCount: 0, status: 'PUBLISHED',
+        caseId: 3, autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }], puedeEditar: false, puedeCrearVersion: true,
+      }]);
+    });
+
     it('clonar devuelve el editor de la copia', () => {
       let recibida: unknown;
       api.cloneCaseVersion(9).subscribe(v => (recibida = v));
