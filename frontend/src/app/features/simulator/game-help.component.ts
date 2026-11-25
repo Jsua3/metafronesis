@@ -4,8 +4,9 @@ import {
   signal, untracked, viewChild,
 } from '@angular/core';
 
+import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import { DRAFT_COPY } from './draft-copy';
-import { HELP_TEXT, HelpModality, firstTimeHelpLines, helpSections } from './game-help.content';
+import { HELP_TEXT, HelpModality, controlsReopenLine, controlsWelcomeRows, firstTimeHelpLines, helpSections } from './game-help.content';
 
 let nextHelpId = 0;
 
@@ -13,7 +14,11 @@ let nextHelpId = 0;
  * Ayuda «Cómo se juega» (F§5.8, F§6.4). Presentacional: no lee ni escribe la memoria de ayuda
  * (`siep.ayuda.v1`); quien la aloja decide cuándo mostrarla y registra que se vio.
  *
- * Dos vistas del mismo componente:
+ * Tres vistas del mismo componente:
+ * - `welcome` (P8): la tarjeta de controles de primera vez. A diferencia de `card`, SÍ es modal: el foco entra y queda
+ *   dentro (`cdkTrapFocus`) y tiene nombre y descripción para el lector de pantalla. Cuatro líneas: moverse, interactuar,
+ *   ir directo y el plano. Se reabre con «Controles» o «?». Esc tampoco lo escucha ella: la pantalla de juego lo pone
+ *   primero en su cadena (controles → «Ir a…» → ayuda → …), lo consume y NO pausa; el segundo Esc, ya sin tarjeta, sí.
  * - `card`: tarjeta de primera vez. NO modal: sin trampa de foco ni foco inicial, sin temporizador,
  *   sin manejo de teclado. No consume Esc, así que Esc sigue llegando a la cadena de la pantalla
  *   de juego (ayuda -> bitácora -> diálogo -> pausa).
@@ -32,7 +37,28 @@ let nextHelpId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [A11yModule],
   template: `
-    @if (view() === 'card') {
+    @if (view() === 'welcome') {
+      <section class="help-card help-welcome" role="dialog" aria-modal="true" data-help-view="welcome"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+        [attr.aria-labelledby]="titleId" [attr.aria-describedby]="descId">
+        <h2 class="help-card__title" [attr.id]="titleId">{{ text.controlsTitle }}</h2>
+        <ul class="help-welcome__rows" [attr.id]="descId">
+          @for (row of welcomeRows(); track row.id) {
+            <li class="help-welcome__row" [attr.data-help-row]="row.id">
+              <kbd class="help-welcome__keys">{{ row.keys }}</kbd>
+              <span class="help-welcome__text"><strong>{{ row.title }}.</strong> {{ row.text }}</span>
+            </li>
+          }
+        </ul>
+        <p class="help-welcome__again">{{ reopenLine() }}</p>
+        <div class="help-card__actions">
+          <button type="button" class="help-btn help-btn--primary" data-help-action="dismiss" cdkFocusInitial
+            (click)="dismissed.emit()">{{ text.understood }}</button>
+          <button type="button" class="help-btn" data-help-action="more"
+            (click)="openFull.emit()">{{ text.moreHelp }}</button>
+        </div>
+      </section>
+    } @else if (view() === 'card') {
       <section class="help-card" data-help-view="card" [class.help-card--compact]="compact()"
         [attr.aria-labelledby]="titleId">
         <h2 class="help-card__title" [attr.id]="titleId">{{ text.title }}</h2>
@@ -113,6 +139,22 @@ let nextHelpId = 0;
     .help-card__lines { display: grid; gap: 6px; }
     .help-card__lines p { margin: 0; font-size: .82rem; line-height: 1.45; }
     .help-card__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    /* Tarjeta de controles (P8): cuatro filas «tecla — qué hace». */
+    .help-welcome { gap: 10px; max-height: 100%; overflow-y: auto; }
+    .help-welcome__rows { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .help-welcome__row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 10px; align-items: start; }
+    .help-welcome__keys {
+      justify-self: start; box-sizing: border-box; padding: 3px 8px; border: 1px solid rgba(182,156,255,.55); border-radius: 6px;
+      font: inherit; font-size: .78rem; font-weight: 800; line-height: 1.2; white-space: nowrap; color: #e8f0f4;
+    }
+    .help-welcome__text { font-size: .82rem; line-height: 1.45; }
+    .help-welcome__again { margin: 0; font-size: .78rem; line-height: 1.4; opacity: .85; }
+    :host-context(.pixel-juego) .help-welcome__keys {
+      border: var(--pixel-px) solid var(--pixel-contorno); border-radius: 0; background: var(--pixel-tecla);
+      color: var(--pixel-tinta); font-family: var(--pixel-f-nombre); font-weight: 700;
+    }
+    @media (max-width: 480px) { .help-welcome__row { grid-template-columns: minmax(0, 1fr); gap: 3px; } }
+    @media (max-height: 520px) { .help-welcome { gap: 6px; } .help-welcome__again { display: none; } }
     .help-card--compact { gap: 6px; padding: 8px 10px; }
     .help-card--compact .help-card__title { font-size: .75rem; }
     .help-card--compact .help-card__lines p { font-size: .78rem; line-height: 1.4; }
@@ -231,7 +273,7 @@ let nextHelpId = 0;
 })
 export class GameHelpComponent {
   /** `card`: tarjeta de primera vez (no modal). `screen`: pantalla permanente «Cómo se juega». */
-  readonly view = input<'card' | 'screen'>('card');
+  readonly view = input<'card' | 'screen' | 'welcome'>('card');
   /** Teclado y ratón, o pantalla táctil (decide las teclas y los gestos que se explican). */
   readonly modality = input<HelpModality>('keyboard');
   /** Pantalla baja: la tarjeta se reduce a una frase y se compacta. */
@@ -251,6 +293,7 @@ export class GameHelpComponent {
   protected readonly text = HELP_TEXT;
   protected readonly shortcutsNote = DRAFT_COPY.shortcutsHelpNote.text;
   protected readonly titleId = `game-help-title-${nextHelpId++}`;
+  protected readonly descId = `${this.titleId}-desc`;
 
   protected readonly cardLines = computed(() =>
     firstTimeHelpLines({
@@ -260,6 +303,10 @@ export class GameHelpComponent {
       singleKeyShortcuts: this.shortcuts(),
     }),
   );
+  protected readonly welcomeRows = computed(() =>
+    controlsWelcomeRows({ modality: this.modality(), singleKeyShortcuts: this.shortcuts() }));
+  protected readonly reopenLine = computed(() =>
+    controlsReopenLine({ modality: this.modality(), singleKeyShortcuts: this.shortcuts() }));
   protected readonly sections = computed(() =>
     helpSections({
       modality: this.modality(),
@@ -269,6 +316,7 @@ export class GameHelpComponent {
   );
 
   private readonly injector = inject(Injector);
+  private readonly liveAnnouncer = inject(LiveRegionAnnouncer);
   private readonly cuerpo = viewChild<ElementRef<HTMLElement>>('cuerpo');
   /**
    * Páginas de la hoja (V6, «ningún menú pide desplazar»): qué piezas del cuerpo (las secciones y, al final, la nota en
@@ -280,6 +328,13 @@ export class GameHelpComponent {
   protected readonly ultima = computed(() => this.pagina() >= this.paginas().length - 1);
 
   constructor() {
+    // La tarjeta de controles se anuncia al aparecer (además de su rol de diálogo y del foco que recibe): una vez por apertura.
+    // Va por la región viva de la app, como el resto de avisos del juego.
+    effect(() => {
+      if (this.view() === 'welcome') {
+        untracked(() => this.liveAnnouncer.announce(`${HELP_TEXT.controlsTitle}. Pulsa Esc o «Entendido» para cerrar.`, 'polite'));
+      }
+    });
     // Se vuelve a medir al abrir la hoja y cuando cambia su texto (modalidad, atajos).
     effect(() => {
       this.sections();

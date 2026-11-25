@@ -23,6 +23,8 @@ export const HELP_TEXT = {
   understood: 'Entendido',
   moreHelp: 'Más ayuda',
   closeHelp: 'Cerrar ayuda',
+  /** Tarjeta de controles que sale al entrar a un caso por primera vez (P8). */
+  controlsTitle: 'Controles del juego',
 } as const;
 
 export interface HelpCardOptions {
@@ -178,4 +180,71 @@ export function helpSections(options: HelpScreenOptions): readonly HelpSection[]
     sections.push({ id: 'teclas', title: 'Teclas', text: keys.join(' · ') });
   }
   return sections;
+}
+
+/** Una línea de la tarjeta de controles: la tecla o el gesto y lo que hace. */
+export interface ControlsRow {
+  id: 'moverte' | 'interactuar' | 'ir-a' | 'plano';
+  /** Lo que se pulsa (o toca), corto: va en una placa de tecla. */
+  keys: string;
+  /** El nombre de la acción, en negritas. */
+  title: string;
+  /** Cómo se hace, en una frase. */
+  text: string;
+}
+
+export interface ControlsWelcomeOptions {
+  modality: HelpModality;
+  /** Ajuste «Atajos de una tecla» (F6-10, WCAG 2.1.4). Apagado: ninguna línea promete una letra (WASD, E, I, M, Z). */
+  singleKeyShortcuts?: boolean;
+}
+
+/** Tecla del atajo de «Ir a…»; `SimulationPlayComponent` la atiende y la tarjeta la dice desde aquí (una sola fuente). */
+export const PLACES_SHORTCUT_KEY = 'I';
+/** Tecla que abre esta tarjeta en cualquier momento. */
+export const CONTROLS_SHORTCUT_KEY = '?';
+
+/**
+ * Las cuatro líneas de la tarjeta de controles (P8): moverse, interactuar, ir directo y el plano. Es lo primero que se ve
+ * al entrar a un caso y se reabre con «Controles» o «?». Funciones puras, sin Angular. Nada nombra una técnica clínica.
+ */
+export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly ControlsRow[] {
+  const touch = options.modality === 'touch';
+  const letters = options.singleKeyShortcuts !== false;
+  if (touch) {
+    return [
+      { id: 'moverte', keys: 'Cruz', title: 'Moverte', text: 'Mantén pulsada una flecha de la cruz de abajo a la izquierda.' },
+      { id: 'interactuar', keys: 'Interactuar', title: 'Interactuar', text: 'Acércate a algo y toca «Interactuar»: el botón dice con qué vas a interactuar.' },
+      { id: 'ir-a', keys: 'Ir a…', title: 'Ir directo', text: 'Toca «Ir a…» arriba, elige una persona o una puerta y tu personaje camina solo hasta ahí.' },
+      { id: 'plano', keys: 'Mapa', title: 'Plano', text: 'Toca el mapa pequeño de arriba para ver el plano del lugar.' },
+    ];
+  }
+  return [
+    {
+      id: 'moverte', keys: letters ? 'Flechas · WASD' : 'Flechas', title: 'Moverte',
+      text: letters ? 'Camina con las flechas o con WASD.' : 'Camina con las flechas.',
+    },
+    {
+      id: 'interactuar', keys: letters ? 'E · Enter' : 'Enter', title: 'Interactuar',
+      text: 'Acércate a una persona u objeto: el botón de abajo dice con qué vas a interactuar. Púlsalo o usa la tecla.',
+    },
+    {
+      id: 'ir-a', keys: letters ? PLACES_SHORTCUT_KEY : 'Ir a…', title: 'Ir directo',
+      text: letters
+        ? 'Con «Ir a…» (botón de arriba o tecla I) eliges una persona o una puerta y tu personaje camina solo hasta ahí.'
+        : 'Con el botón «Ir a…» de arriba eliges una persona o una puerta y tu personaje camina solo hasta ahí.',
+    },
+    {
+      id: 'plano', keys: letters ? 'M' : 'Mapa', title: 'Plano',
+      text: letters
+        ? 'M abre el plano del lugar (también el mapa pequeño de arriba) y Z acerca o aleja la vista.'
+        : 'El mapa pequeño de arriba abre el plano del lugar.',
+    },
+  ];
+}
+
+/** Cómo volver a abrir la tarjeta; se escribe una vez aquí para la tarjeta y su prueba. */
+export function controlsReopenLine(options: ControlsWelcomeOptions): string {
+  const key = options.modality !== 'touch' && options.singleKeyShortcuts !== false ? ` o con la tecla ${CONTROLS_SHORTCUT_KEY}` : '';
+  return `Para verla otra vez, usa el botón «Controles» de la cabecera${key}.`;
 }

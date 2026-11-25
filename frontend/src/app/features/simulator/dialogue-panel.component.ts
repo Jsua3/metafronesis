@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { AfterRenderRef, AfterViewChecked, Component, DestroyRef, ElementRef, HostListener, Injector, OnDestroy, afterNextRender, computed, effect, inject, input, output, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
+import { InstantTextSettings } from '../../core/a11y/instant-text-settings.service';
 import { ShortcutSettings } from '../../core/a11y/shortcut-settings.service';
 import { DialogueChoiceState, DialogueState, MapObjectState, Persona } from '../../core/models/simulation.model';
 import { KitService } from '../character/kit/kit.service';
@@ -112,7 +113,9 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                 }
               </div>
 
-              <div class="placa-habla">
+              <!-- Clic sobre el texto: muestra la línea entera si aún se escribe y, si ya está completa, avanza (como Enter y
+                   Espacio). Quien usa teclado ya tiene esas teclas; este clic es para ratón y toque, y no sustituye a los botones. -->
+              <div class="placa-habla" (click)="onTextClick($event)">
                 @if (estadoPersona(d); as e) {
                   <!-- El pulso nace de nuevo con cada estado y late unos 4 s (U1: nada se mueve sin fin). -->
                   <p class="persona-state">@for (activacion of [e.activation]; track activacion) {<i class="pulso" [attr.data-activation]="activacion" aria-hidden="true"></i>}{{ e.texto }}</p>
@@ -918,6 +921,8 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   /** Vocabulario educativo en borrador (VD-24): el chip de la cabecera sale del registro de borradores. */
   protected readonly decisionLabel = DRAFT_COPY.decisionLabel.text;
   private readonly shortcuts = inject(ShortcutSettings);
+  /** «Texto instantáneo» (ajustes del juego, P8): sin máquina de escribir, además de con «reducir movimiento». */
+  private readonly instantText = inject(InstantTextSettings);
   /** Pausa reanudable pedida desde el panel (REGLA-004): el anfitrión llama a la salida segura real. */
   readonly safeExit = output<void>();
   readonly execute = output<number>();
@@ -972,6 +977,12 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   private readonly failedPortrait = signal<string | null>(null);
 
   private typewriterHandle: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * La persona ya saltó la animación de ESTA línea (Saltar, Enter, Espacio o clic): el resto de sus páginas aparece de
+   * golpe. Sin esto, el reparto en páginas (que llega un cuadro después de abrir la línea) volvía a empezar la máquina de
+   * escribir sobre un texto ya mostrado y «Saltar» parecía no responder.
+   */
+  private saltada = false;
   private confirmHandle: ReturnType<typeof setTimeout> | null = null;
   /** Instante en que aparecieron las opciones: base de la guarda contra la decisión accidental. */
   private choicesShownAt = 0;
@@ -1444,9 +1455,22 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.startTypewriter(d.lines[nextIndex]?.text ?? '');
   }
 
+  /**
+   * Clic o toque sobre el texto de la línea: muestra todo al instante si aún se escribe y, si ya está completo, pasa a la
+   * página o línea siguiente. No hace nada sobre botones ni enlaces (tienen su propia acción), mientras se selecciona texto
+   * para copiarlo, ni en la última página (cerrar o elegir se hace con su botón o su tecla, no por un clic de más).
+   */
+  protected onTextClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement | null)?.closest?.('button, a, app-scene-hint')) return;
+    if (typeof window.getSelection === 'function' && window.getSelection()?.toString()) return;
+    if (!this.isTypingComplete()) this.skipTypewriter();
+    else if (!this.esFinal()) this.advanceLine();
+  }
+
   /** Skip typewriter animation — shows the active intervention immediately. */
   skipTypewriter(): void {
     if (this.isTypingComplete()) return;
+    this.saltada = true;
     this.stopTypewriter();
     this.displayedText.set(this.textoPagina());
     this.isTypingComplete.set(true);
@@ -1459,6 +1483,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /** Empieza una línea: una sola página con todo el texto y, ya maquetada, se parte si no cabe en la placa (V5). */
   private startTypewriter(text: string) {
+    this.saltada = false;
     this.paginas.set([text]);
     this.pagina.set(0);
     this.escribir(text);
@@ -1532,7 +1557,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   private escribir(text: string) {
     this.settled = false;
     // `untracked`: el efecto del constructor llama aquí y no debe reiniciar el diálogo cuando cambia el interruptor.
-    if (untracked(() => this.reduceMotion())) {
+    if (this.saltada || untracked(() => this.reduceMotion() || this.instantText.enabled())) {
       this.displayedText.set(text);
       this.isTypingComplete.set(true);
       this.requestDialogueFocus();

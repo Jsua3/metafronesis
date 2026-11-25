@@ -7,6 +7,7 @@ import { Observable, catchError, defaultIfEmpty, of, retry, switchMap, tap, thro
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { InstantTextSettings } from '../../core/a11y/instant-text-settings.service';
 import { ShortcutSettings } from '../../core/a11y/shortcut-settings.service';
 import { AnnouncePoliteness, LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import { apiErrorMessage, isConsentRequiredError } from '../../core/api/api-error.util';
@@ -28,6 +29,7 @@ import { type InteractionVerb, interactionVerb, readsLocally } from './interacti
 import { ORIENTATION_COPY, SAFE_EXIT_ALWAYS_REACHABLE } from './orientation.config';
 import { GameHelpComponent } from './game-help.component';
 import { HELP_FIRST_CARD, markHelpSeen, readHelpSeen, resetHelpSeen } from './help-memory.util';
+import { doorRearmMessage } from './door-rearm.util';
 import { SceneGoalCardComponent } from './scene-goal-card.component';
 import { partirNotaDeTransicion } from './nota-transicion';
 import { SensitiveNoticeComponent } from './sensitive-notice.component';
@@ -133,8 +135,8 @@ export function mismoLugar(antes: { key: string; title?: string | null }, despue
 const RETRY_NOTICE = DRAFT_COPY.retryNotice.text;
 /** Sin movimientos nuevos durante este tiempo, la posición del jugador se guarda en el servidor. */
 const POSITION_SAVE_DEBOUNCE_MS = 550;
-/** Línea «no hay nada cerca» tras pedir interactuar sin nada al alcance. */
-const NOTHING_NEARBY_MS = 2500;
+/** Línea «no hay nada cerca» tras pedir interactuar sin nada al alcance (la frase es larga: tiempo para leerla sin prisa). */
+const NOTHING_NEARBY_MS = 4500;
 /** Nombre de la sala al cambiar de sala. */
 const ROOM_BANNER_MS = 2200;
 /** Banner «Nueva etapa: …». */
@@ -150,7 +152,7 @@ const PLACAS_SOBRE_EL_MUNDO = [
   '.objective-card', '.carril .sensitive-strip', '.carril .soft-notice', '.carril .room-banner',
   'app-simulation-hud .hud-case', 'app-simulation-hud .hud-strip',
   'app-minimapa .minimapa__lugar', 'app-minimapa .minimapa__abrir', 'app-minimapa .minimapa__alternar',
-  '.help-slot .help-card', '.bottom-zone .safe-exit-btn', '.bottom-zone .tool-dock-wrap', '.bottom-zone .notice-pie .sensitive-strip',
+  '.bottom-zone .safe-exit-btn', '.bottom-zone .tool-dock-wrap', '.bottom-zone .notice-pie .sensitive-strip',
   '.bottom-zone .context-bar__interaction', '.bottom-zone .context-bar__now',
 ].join(', ');
 /** Modo compacto (F§7.9): la misma condición que el CSS compacto y que el HUD. */
@@ -395,6 +397,11 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                      fuente. Sin role: una región que nace con su texto no se anuncia de forma fiable. -->
                 <div class="soft-notice u-placa u-sombra"><app-pixel-icono nombre="hecho" /><span>{{ softNotice() }}</span></div>
               }
+              @if (stepsNotice() && viewMode() !== 'dialogue-cinematic') {
+                <!-- «Da unos pasos…» (P8): aviso NO modal. Dice cuánto falta y hacia dónde, se actualiza al caminar y se va solo
+                     cuando la puerta ya puede cruzarse. Se anuncia por las regiones vivas de la app (no tiene región propia). -->
+                <div class="soft-notice steps-notice u-placa u-sombra" data-steps-notice><app-pixel-icono nombre="ir-a" /><span>{{ stepsNotice() }}</span></div>
+              }
               <!-- El título de una escena nueva ya está en la pestaña de la ficha del objetivo: el aviso del carril no lo
                    repite (B, V4); se anuncia igual por la región. -->
               @if (roomBanner() && !fadeActive() && !(bannerDeEtapa() && roomBanner() === stageLabel())) {
@@ -417,7 +424,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               (toggleMusic)="toggleMusicMute()"
               (toggleSfx)="toggleSfxMute()"
               (toggleReduceMotion)="toggleReduceMotion()"
-              (openHelp)="openHelp()" (helpReset)="resetHelpCard()" />
+              [instantText]="instantText.enabled()" (toggleInstantText)="toggleInstantText()"
+              (openControls)="openControls()" (openHelp)="openHelp()" (helpReset)="resetHelpCard()" />
             @if (world() && !cinemaBars()) {
               <!-- Minimapa (bloque M1, §5.3): abre el plano completo (también con M). Con las franjas de cine se va. -->
               <app-minimapa [plano]="placePlan()" [actual]="placeRoom()" [cercana]="cameraSettings.cercana()"
@@ -483,15 +491,6 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
             <!-- Lo que dice un personaje al acercarse (4.6): sobre su cabeza, sin foco ni teclas; se anuncia por el anunciador de la app. -->
             <app-comment-bubble [comment]="bubble()?.comment ?? null" [speaker]="bubbleSpeaker()" [anchor]="bubbleAnchor()"
               [persona]="attempt()?.persona ?? null" [reduceMotion]="reduceMotion()" />
-
-            @if (showHelpCard()) {
-              <!-- Tarjeta de primera vez: no modal, sin temporizador, no roba el foco ni consume Esc. -->
-              <div class="help-slot">
-                <app-game-help view="card" [modality]="helpModality()" [compact]="compactMode()"
-                  [safeExitPromise]="safeExitPromise" [shortcuts]="shortcuts.enabled()"
-                  (dismissed)="markHelpCardSeen()" (openFull)="openHelp()" />
-              </div>
-            }
 
           </section>
 
@@ -586,6 +585,15 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
             (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
             (execute)="executeDecision($event)" (useTool)="useTool($event)"
             (frontendChoice)="handleFrontendChoice($event)" (consentRequired)="requireConsentAgain()" />
+        }
+
+        @if (controlsVisible()) {
+          <!-- Controles (P8): al entrar al caso por primera vez y cuando se pide con «Controles» o «?». Modal (foco atrapado), Esc
+               la cierra sin pausar el caso, y deja libres la cabecera y el pie («Salida segura» sigue operable, REGLA-004). -->
+          <div class="help-layer help-layer--controles">
+            <app-game-help view="welcome" [modality]="helpModality()" [safeExitPromise]="safeExitPromise"
+              [shortcuts]="shortcuts.enabled()" (dismissed)="closeControls()" (openFull)="openHelpFromControls()" />
+          </div>
         }
 
         @if (helpOpen()) {
@@ -796,31 +804,6 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     .game-container--cine .top-bar__derecha ::ng-deep .hud-case { display: none; }
     .objective-card__scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 
-    /* Tarjeta de primera vez: sobre las cruces táctiles (48) para que sus botones siempre se puedan tocar, y bajo las
-       tarjetas de introducción (380) y la pausa. El jugador empieza abajo al centro:
-       con sitio de sobra la tarjeta va arriba a la derecha, junto a la ficha del objetivo, para no taparlo. */
-    .help-slot {
-      position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 60;
-      width: min(560px, calc(100% - 24px));
-    }
-    @media (min-width: 1100px) {
-      /* Arriba al centro, bajo el carril: a la derecha están ahora el HUD y el plano. 380 px como máximo: más ancha tapaba
-         la puerta del quirófano (acceso restringido) en el arranque de Urgencias. */
-      /* U1, crítica r2: arriba al centro tapaba el aviso de contenido sensible desplegado (ETH-01) en los mismos 8 s del
-         arranque. Va bajo la ficha del objetivo, en su columna y de su ancho (la ayuda habla de esa ficha). */
-      .help-slot {
-        top: calc(2 * var(--pixel-borde) + var(--alto-objetivo, 130px) + var(--alto-franja-ensayo, 0px)); bottom: auto;
-        left: var(--pixel-borde); transform: none; width: min(440px, 33%);
-      }
-    }
-    /* Móvil vertical: las cruces táctiles ocupan abajo; la tarjeta va arriba, bajo el HUD y la ficha del objetivo. */
-    @media (max-width: 760px) {
-      .help-slot { top: calc(3 * var(--pixel-borde) + var(--alto-hud, 0px) + var(--alto-objetivo, 0px)); bottom: auto; }
-    }
-    @media (max-height: 520px), (pointer: coarse) and (orientation: landscape) {
-      /* Entre las bandas de las cruces táctiles (≈ 150 px a cada lado): sus botones quedan a la vista y se pueden tocar. */
-      .help-slot { top: 8px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: min(460px, calc(100% - 300px)); }
-    }
     /* Ayuda: capa que deja libres la tira del HUD y el pie (--alto-pie); la fila mide la capa (sin ella crecía con la hoja
        y la hoja salía por abajo), la hoja se encoge a ella y, si no le cabe, va en páginas (V6). */
     .help-layer {
@@ -1395,6 +1378,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef, { optional: true });
   /** «Atajos de una tecla» (F6-10, WCAG 2.1.4): J, E, WASD, números del diálogo y A/D/E del lobby; apagables. */
   readonly shortcuts = inject(ShortcutSettings);
+  /** «Texto instantáneo» (P8): lo guarda el navegador; el panel de diálogo lo lee por su cuenta. */
+  readonly instantText = inject(InstantTextSettings);
   /** Vista cercana (Z) y acercamiento automático (bloque M1). */
   readonly cameraSettings = inject(CameraSettings);
   /**
@@ -1644,7 +1629,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     || (!this.reactingToLast() && (this.attempt()?.status ?? 'IN_PROGRESS') !== 'IN_PROGRESS'));
 
   /** Con la pantalla de ayuda abierta el personaje no camina mientras se lee. */
-  readonly worldMotionPaused = computed(() => this.inputBlocked() || this.helpOpen() || this.reacting() || this.rehearsalGone());
+  readonly worldMotionPaused = computed(() => this.inputBlocked() || this.helpOpen() || this.controlsVisible() || this.reacting() || this.rehearsalGone());
 
   /**
    * Última decisión: el intento ya figura COMPLETED mientras el personaje reacciona, pero el resultado espera a la
@@ -1779,6 +1764,13 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
    * Tarjeta de primera vez: tras el aviso de contenido, la introducción y el contexto; nunca con un
    * diálogo, la bitácora o la ayuda completa abiertos, ni con un intento que no está en curso.
    */
+  /** Tarjeta de controles pedida con «Controles» o «?» (la de primera vez es `showHelpCard`). */
+  readonly controlsOpen = signal(false);
+  /** La tarjeta de controles está a la vista, sea la de primera vez o la pedida. Mientras dura, el personaje no camina. */
+  readonly controlsVisible = computed(() => this.showHelpCard() || this.controlsOpen());
+  /** «Da unos pasos…»: aviso no modal que dice cuánto falta para volver a cruzar la puerta; '' cuando no hay. */
+  readonly stepsNotice = signal('');
+
   readonly showHelpCard = computed(() =>
     !this.helpCardSeen() && this.worldStarted() && this.world() !== null && !this.loading()
     && (this.attempt()?.status ?? null) === 'IN_PROGRESS'
@@ -1807,7 +1799,6 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private doorInteractionArmed = false;
   /** Nodo de la última lectura de las opciones ofrecidas: el aviso de respuesta nueva no sale si el nodo cambió. */
   private optionsNodeId: number | null = null;
-  private readonly doorInteractionRearmDistance = 72;
 
   private softNoticeTimer: number | null = null;
   private nothingNearbyTimer: number | null = null;
@@ -2583,7 +2574,9 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     }
 
     if (event.key === 'Escape') {
-      // Cadena: «Ir a…» → ayuda → bitácora → diálogo → pausa. La pausa sale en el acto, aunque haya una petición en curso.
+      // Cadena: controles → «Ir a…» → ayuda → bitácora → diálogo → pausa. La pausa sale en el acto, aunque haya una petición en curso.
+      // Cerrar la tarjeta de controles no pausa: la pulsación se consume (P8).
+      if (this.controlsVisible()) { event.preventDefault(); this.closeControls(); return; }
       if (this.placesOpen())  { event.preventDefault(); this.closePlaces(); return; }
       if (this.helpOpen())    { event.preventDefault(); this.helpOpen.set(false); return; }
       if (this.journalOpen()) { event.preventDefault(); this.journalOpen.set(false); return; }
@@ -2604,13 +2597,14 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     }
 
     // Con la pantalla de ayuda abierta E, J, Espacio y Enter no actúan sobre el mundo de debajo (Espacio sigue desplazando el texto).
-    if (this.helpOpen() && ['e', 'E', 'j', 'J', ' ', 'Enter'].includes(event.key)) return;
+    if ((this.helpOpen() || this.controlsVisible()) && ['e', 'E', 'j', 'J', ' ', 'Enter'].includes(event.key)) return;
 
     // Atajos de una letra (F6-10; WCAG 2.1.4): apagables, y solo actúan con el foco en el juego, en el cuerpo o en un
     // botón de la interfaz (nunca en un campo, una región con scroll ni un diálogo). Enter y Espacio no dependen del
     // ajuste. El destino de un keydown sintético puede ser el documento, que no es un elemento.
     const isLetterShortcut = event.key === 'j' || event.key === 'J' || event.key === 'e' || event.key === 'E'
-      || event.key === 'z' || event.key === 'Z' || event.key === 'm' || event.key === 'M';
+      || event.key === 'z' || event.key === 'Z' || event.key === 'm' || event.key === 'M'
+      || event.key === 'i' || event.key === 'I' || event.key === '?';
     const focusTarget = event.target instanceof Element ? event.target : null;
     if (isLetterShortcut && (!this.shortcuts.enabled() || !isShortcutContext(focusTarget))) return;
 
@@ -2632,6 +2626,21 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (event.key === 'j' || event.key === 'J') {
       event.preventDefault();
       this.journalOpen.set(!this.journalOpen());
+      return;
+    }
+
+    // «Ir a…» (P8): I abre la lista de personas y puertas, igual que su botón de la cabecera. Con una capa abierta no actúa.
+    if ((event.key === 'i' || event.key === 'I') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (this.helpOpen() || this.controlsVisible() || this.attempt()?.status !== 'IN_PROGRESS') return;
+      event.preventDefault();
+      if (!event.repeat) this.openPlaces();
+      return;
+    }
+
+    // Controles (P8): «?» abre la tarjeta y, con ella abierta, la cierra.
+    if (event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      if (!event.repeat) { if (this.controlsVisible()) this.closeControls(); else this.openControls(); }
       return;
     }
 
@@ -2739,7 +2748,34 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Abre «Cómo se juega» (botón «?» del HUD, fila de Ajustes o «Más ayuda»). Quien la abre ya vio la tarjeta de primera vez. */
   openHelp(): void {
     this.markHelpCardSeen();
+    this.controlsOpen.set(false);
     this.helpOpen.set(true);
+  }
+
+  /** «Controles» (cabecera) o «?»: abre la tarjeta de controles. Quien la abre ya no necesita la de primera vez. */
+  openControls(): void {
+    this.markHelpCardSeen();
+    this.helpOpen.set(false);
+    this.controlsOpen.set(true);
+  }
+
+  /** «Entendido» o Esc en la tarjeta de controles: se da por vista y, si la pidió la persona, el foco vuelve a su botón. */
+  closeControls(): void {
+    const pedida = this.controlsOpen();
+    this.markHelpCardSeen();
+    this.controlsOpen.set(false);
+    if (pedida) afterNextRender(() => document.querySelector<HTMLElement>('[data-hud-controls]')?.focus(), { injector: this.injector });
+  }
+
+  /** «Más ayuda» en la tarjeta de controles: cambia a la pantalla «Cómo se juega». */
+  openHelpFromControls(): void {
+    this.openHelp();
+  }
+
+  /** «Texto instantáneo» de Ajustes: se recuerda y se anuncia (el panel de diálogo lo aplica en la línea siguiente). */
+  toggleInstantText(): void {
+    this.instantText.toggle();
+    this.announce(this.instantText.enabled() ? 'Texto instantáneo activado.' : 'Texto instantáneo desactivado.');
   }
 
   markHelpCardSeen(): void {
@@ -2861,9 +2897,17 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.doorInteractionArmed) {
-      this.audioDirector.playSfx('ui_cancel');
-      this.showDoorNotice('Da unos pasos dentro de la sala antes de volver a cruzar la puerta.');
-      return;
+      // La regla (alejarse de las puertas) se rearma al llegar una posición; si ya se está lejos y esa posición aún no llegó,
+      // se rearma aquí mismo y la puerta se cruza (no se le pide dar pasos a quien ya los dio).
+      const here = this.gameWorld?.playerPosition() ?? this.lastPosition ?? this.world()?.player ?? null;
+      const message = here ? doorRearmMessage(here, this.doorPoints()) : null;
+      if (here && message === null) {
+        this.doorInteractionArmed = true;
+      } else {
+        this.audioDirector.playSfx('ui_cancel');
+        this.showStepsNotice(message ?? ORIENTATION_COPY.door.awayFromDoorGeneric);
+        return;
+      }
     }
     this.busy.set(true);
     this.withSyncedPosition(() => this.triggerFade(() => {
@@ -3222,6 +3266,9 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** El camino normal de la respuesta de una decisión: reacción del personaje y, tras ella, consecuencia y sala nueva. */
   private applyDecisionResult(game: SimulationAttemptState, updated: SimulationDecisionResult): void {
+    // El servidor ya la guardó: acuse corto, anunciado y sin bloquear nada (P8). Va antes de la reacción y de lo que sigue.
+    // Si ya hay un aviso más específico (p. ej. «Volvió la conexión: enviamos tu elección.»), ese manda.
+    if (!this.softNotice()) this.showSoftNotice(ORIENTATION_COPY.notices.decisionRegistered);
     this.trackStageChange(game, updated);
     this.attempt.set(updated);
     // La etiqueta nueva la dice la reacción en su paso (`afterReaction` la deja si no hubo): aquí solo el icono.
@@ -3624,16 +3671,32 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.positionSaveHandle = window.setTimeout(() => this.persistPosition(), POSITION_SAVE_DEBOUNCE_MS);
   }
 
-  private rearmDoorInteractionWhenAway(x: number, y: number): void {
-    if (this.doorInteractionArmed) return;
-    const doors = (this.world()?.objects ?? []).filter(object =>
+  /** Las puertas que cruzan de sala (EXIT con destino): las que piden alejarse antes de volver a cruzarlas. */
+  private doorPoints(): { x: number; y: number }[] {
+    return (this.world()?.objects ?? []).filter(object =>
       (object.type || '').toUpperCase() === 'EXIT' && this.doorTargetNodeKey(object),
     );
-    if (doors.length === 0 || doors.every(door =>
-      Math.hypot(x - door.x, y - door.y) >= this.doorInteractionRearmDistance,
-    )) {
+  }
+
+  private rearmDoorInteractionWhenAway(x: number, y: number): void {
+    if (this.doorInteractionArmed) return;
+    // La misma cuenta dice si ya se puede (null) y, si no, cuánto falta: aviso y regla no pueden desacordarse.
+    const message = doorRearmMessage({ x, y }, this.doorPoints());
+    if (message === null) {
       this.doorInteractionArmed = true;
+      if (this.stepsNotice()) {
+        this.stepsNotice.set('');
+        this.announce(ORIENTATION_COPY.door.rearmed);
+      }
+    } else if (this.stepsNotice()) {
+      this.stepsNotice.set(message);   // el texto sigue a quien camina; no se vuelve a anunciar (una vez basta)
     }
+  }
+
+  /** «Aléjate de la puerta…»: aviso no modal; se dice una vez por pulsación y desaparece solo al cumplirse la regla. */
+  private showStepsNotice(message: string): void {
+    this.stepsNotice.set(message);
+    this.announce(message);
   }
 
   visitedStageLabels(): string[] {
@@ -3996,6 +4059,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     const mapChanged = previousMapKey !== world.map.key;
     if (mapChanged) {
       this.doorInteractionArmed = false;
+      this.stepsNotice.set('');
       // El aviso de una puerta de la sala anterior ya no dice nada de esta (permanece hasta cerrarse o cambiar de sala).
       this.dismissDoorNotice();
     }
@@ -4327,6 +4391,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.roomBannerTimer = null;
     this.roomBanner.set('');
     this.dismissDoorNotice();
+    this.stepsNotice.set('');
     if (this.transitionNoteTimer !== null) window.clearTimeout(this.transitionNoteTimer);
     this.transitionNoteTimer = null;
     this.transitionNote.set('');

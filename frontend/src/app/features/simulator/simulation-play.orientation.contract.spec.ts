@@ -346,13 +346,14 @@ describe('enlaces con el mundo (T9.5, T9.9)', () => {
 
 describe('ayuda (T9.8)', () => {
   it('la tarjeta de primera vez y la pantalla de ayuda están enlazadas, con la promesa de salida segura condicionada', () => {
-    expect(source).toMatch(/<app-game-help view="card"[^>]*\[safeExitPromise\]="safeExitPromise"[\s\S]*?\(dismissed\)="markHelpCardSeen\(\)" \(openFull\)="openHelp\(\)"/);
+    // P8: la tarjeta de primera vez es la de controles (modal, view="welcome"); se cierra con closeControls (marca vista) y «Más ayuda» abre la pantalla.
+    expect(source).toMatch(/<app-game-help view="welcome"[^>]*\[safeExitPromise\]="safeExitPromise"[\s\S]*?\(dismissed\)="closeControls\(\)" \(openFull\)="openHelpFromControls\(\)"/);
     expect(source).toMatch(/<app-game-help view="screen"[^>]*\[safeExitPromise\]="safeExitPromise"[\s\S]*?\(closed\)="helpOpen\.set\(false\)"/);
     expect(source).toContain('readonly safeExitPromise = SAFE_EXIT_ALWAYS_REACHABLE;');
   });
 
   it('el HUD abre la ayuda y reactiva la tarjeta', () => {
-    expect(source).toMatch(/\(openHelp\)="openHelp\(\)" \(helpReset\)="resetHelpCard\(\)"/);
+    expect(source).toMatch(/\(openControls\)="openControls\(\)" \(openHelp\)="openHelp\(\)" \(helpReset\)="resetHelpCard\(\)"/);
   });
 
   it('la pantalla de ayuda deja libres la cabecera y el pie (no se pone inert)', () => {

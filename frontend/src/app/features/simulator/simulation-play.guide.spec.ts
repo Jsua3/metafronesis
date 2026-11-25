@@ -147,6 +147,8 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     } as unknown as SimulationAttemptState);
     component.world.set(mundo());
     if (o.vistos) (component as any).viewedNpcKeys.set(new Set(o.vistos));
+    // La tarjeta de controles de primera vez se anuncia al aparecer (P8); aquí se prueban los avisos de la guía, no ella.
+    component.helpCardSeen.set(true);
     component.worldStarted.set(true);
     component.loading.set(false);
     fixture.detectChanges();

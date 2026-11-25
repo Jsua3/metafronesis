@@ -7,6 +7,7 @@ import { CharacterVisual } from '../character/kit/character-visual.resolver';
 import { KitFigureComponent } from '../character/kit/kit-figure.component';
 import type { PortraitState } from '../character/kit/kit-engine';
 import { DRAFT_COPY } from './draft-copy';
+import { ORIENTATION_COPY } from './orientation.config';
 import { PixelIconoComponent } from './pixel/pixel-icono.component';
 import { CONSULTA_COMPACTO } from './pixel/tramos';
 import { COARSE_POINTER_QUERY, matchesMedia, watchMedia } from './pointer-modality.util';
@@ -64,13 +65,17 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
             }
 
             <div class="hud-actions">
-              <button type="button" class="hud-action u-tecla u-tecla--icono" data-hud-places (click)="openPlaces.emit()"
+              <!-- «Ir a…» y «Controles» llevan su texto a la vista (P8): como iconos sueltos casi nadie los encontraba. En el
+                   tramo compacto el texto sale (queda el icono, con su nombre accesible y su título). -->
+              <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-places (click)="openPlaces.emit()"
                 [attr.aria-label]="placesLabel" [attr.title]="placesTitle">
                 <app-pixel-icono nombre="ir-a" />
+                <span class="hud-action__texto">{{ placesVisible }}</span>
               </button>
-              <button type="button" class="hud-action u-tecla u-tecla--icono" (click)="openHelp.emit()"
-                aria-label="Abrir cómo se juega" title="Cómo se juega">
+              <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-controls (click)="openControls.emit()"
+                [attr.aria-label]="controlsAriaLabel" [attr.title]="controlsTitle">
                 <app-pixel-icono nombre="ayuda" />
+                <span class="hud-action__texto">{{ controlsVisible }}</span>
               </button>
               <button type="button" class="hud-action u-tecla u-tecla--icono" [class.hud-action--active]="journalOpen()"
                 (click)="toggleJournal.emit()"
@@ -115,6 +120,12 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                     <mat-icon aria-hidden="true">accessibility</mat-icon>
                     <span>{{ shortcutsLabel }}</span>
                     <strong aria-hidden="true">{{ shortcuts() ? 'Sí' : 'No' }}</strong>
+                  </button>
+                  <!-- P8: las líneas de los diálogos aparecen completas, sin máquina de escribir (se recuerda). -->
+                  <button type="button" [attr.aria-pressed]="instantText()" (click)="toggleInstantText.emit()">
+                    <mat-icon aria-hidden="true">text_fields</mat-icon>
+                    <span>{{ instantTextLabel }}</span>
+                    <strong aria-hidden="true">{{ instantText() ? 'Sí' : 'No' }}</strong>
                   </button>
                   <button type="button" (click)="toggleJournal.emit(); settingsOpen.set(false)">
                     <mat-icon aria-hidden="true">menu_book</mat-icon>
@@ -199,6 +210,9 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
     /* La tecla de la hoja común sigue la escala única (U1, V7): tres veces la letra, entre 44 y 48 px con cualquier
        puntero (--tecla-hud en las fichas; la guarda de 44 px de RNF-04 y BLOQUE-H no se afloja). */
     .hud-action { width: var(--tecla-hud, 44px); height: var(--tecla-hud, 44px); text-decoration: none; }
+    /* «Ir a…» y «Controles»: icono y texto en una sola tecla, tan alta como las demás. */
+    .hud-action.hud-action--texto { width: auto; min-width: var(--tecla-hud, 44px); padding: 0 calc(4 * var(--pixel-px)) var(--pixel-px); grid-auto-flow: column; gap: calc(3 * var(--pixel-px)); }
+    .hud-action__texto { font-size: var(--pixel-letra-chica); white-space: nowrap; }
     /* Bitácora abierta y Ajustes abiertos: la tecla queda encendida, como al enfocarla. */
     .hud-action--active { --m: var(--marco-tecla-encendida); background-color: var(--luz); color: var(--pixel-tinta-oscura); }
 
@@ -287,6 +301,8 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
     /* Tramo compacto (U1, V7): la frase sale de la barra y queda la cara con su pulso; al pasar el cursor o al enfocar
        el grupo con teclado, la frase aparece en una placa debajo. Sigue en el nombre accesible del grupo. */
     @media (max-height: 700px), (max-width: 1100px) {
+      .hud-action__texto { display: none; }
+      .hud-action.hud-action--texto { width: var(--tecla-hud, 44px); padding: 0; }
       .hud-persona { position: relative; }
       .hud-persona:focus-visible { outline: var(--pixel-px) solid var(--luz); outline-offset: calc(2 * var(--pixel-px)); }
       .hud-persona-label {
@@ -342,9 +358,16 @@ export class SimulationHudComponent {
   readonly musicMuted = input(false);
   readonly sfxMuted = input(false);
   readonly reduceMotion = input(false);
+  /** «Texto instantáneo» (P8): las líneas de los diálogos aparecen completas. Lo guarda quien integra el HUD. */
+  readonly instantText = input(false);
   /** Textos nuevos de F6 que viven en el registro de borradores (una sola fuente para Psicología). */
   protected readonly placesLabel = DRAFT_COPY.placesButtonLabel.text;
   protected readonly placesTitle = DRAFT_COPY.placesDialog.title;
+  protected readonly placesVisible = ORIENTATION_COPY.ui.placesVisibleLabel;
+  protected readonly controlsVisible = ORIENTATION_COPY.ui.controlsLabel;
+  protected readonly controlsAriaLabel = ORIENTATION_COPY.ui.controlsAriaLabel;
+  protected readonly controlsTitle = ORIENTATION_COPY.ui.controlsTitle;
+  protected readonly instantTextLabel = ORIENTATION_COPY.ui.instantTextLabel;
   protected readonly shortcutsLabel = DRAFT_COPY.shortcutsSettingLabel.text;
   /** «Atajos de una tecla» activos (F6-10, WCAG 2.1.4): con ellos apagados ningún texto promete la J. */
   readonly shortcuts = input(true);
@@ -360,13 +383,16 @@ export class SimulationHudComponent {
   readonly toggleJournal = output<void>();
   /** Botón «Ir a…» de la cabecera (F6-11): pide la lista de personas y puertas de la sala. */
   readonly openPlaces = output<void>();
-  /** Botón «?» de la cabecera y fila «Cómo se juega» de Ajustes: piden abrir la pantalla de ayuda. */
+  /** Botón «Controles» de la cabecera (P8): pide la tarjeta de controles (moverse, interactuar, «Ir a…», plano). */
+  readonly openControls = output<void>();
+  /** Fila «Cómo se juega» de Ajustes (y «Más ayuda» de la tarjeta de controles): piden abrir la pantalla de ayuda. */
   readonly openHelp = output<void>();
   /** «Ver la ayuda otra vez» ya borró la marca de ayuda vista: quien integra puede volver a mostrar la tarjeta de primera vez. */
   readonly helpReset = output<void>();
   readonly toggleMusic = output<void>();
   readonly toggleSfx = output<void>();
   readonly toggleReduceMotion = output<void>();
+  readonly toggleInstantText = output<void>();
   readonly toggleShortcuts = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

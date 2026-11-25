@@ -457,15 +457,15 @@ describe('SimulationPlayComponent: orientación integrada', () => {
       expect(sim['openInteraction']).not.toHaveBeenCalled();
     });
 
-    it('E sin nada cerca: el mundo avisa y la barra dice, 2,5 s y sin sonido, que no hay nada al alcance', () => {
+    it('E sin nada cerca: el mundo avisa y la barra dice, 4,5 s y sin sonido, qué hacer (acercarse o usar «Ir a…»)', () => {
       startInUrgencias();
 
       component.showNothingNearby();
 
-      expect(component.nothingNearbyNote()).toBe('No hay nada a tu alcance. Acércate a una persona o un objeto.');
+      expect(component.nothingNearbyNote()).toBe('No hay nada cerca: acércate a una persona o un objeto, o usa «Ir a…».');
       expect(audio['playSfx']).not.toHaveBeenCalled();
-      vi.advanceTimersByTime(2400);
-      expect(component.nothingNearbyNote()).toBe('No hay nada a tu alcance. Acércate a una persona o un objeto.');
+      vi.advanceTimersByTime(4400);
+      expect(component.nothingNearbyNote()).toBe('No hay nada cerca: acércate a una persona o un objeto, o usa «Ir a…».');
       vi.advanceTimersByTime(200);
       expect(component.nothingNearbyNote()).toBe('');
     });
@@ -578,6 +578,7 @@ describe('SimulationPlayComponent: orientación integrada', () => {
 
     it('Esc cierra primero la ayuda y no pausa; el siguiente Esc sí pausa', () => {
       playing();
+      component.markHelpCardSeen();   // quien abre la ayuda ya vio la tarjeta de controles (openHelp la da por vista)
       component.helpOpen.set(true);
 
       const first = esc();
@@ -589,11 +590,17 @@ describe('SimulationPlayComponent: orientación integrada', () => {
       expect(sim['safeExit']).toHaveBeenCalledTimes(1);
     });
 
-    it('con la tarjeta visible (no modal) Esc pausa directamente: la tarjeta no consume Esc', () => {
+    it('con la tarjeta de controles visible Esc la cierra y NO pausa; el siguiente Esc sí pausa (P8)', () => {
       playing();
+      expect(component.controlsVisible()).toBe(true);
+
+      const first = esc();
+      expect(first.defaultPrevented).toBe(true);
+      expect(component.controlsVisible()).toBe(false);
+      expect(component.helpCardSeen()).toBe(true);
+      expect(sim['safeExit']).not.toHaveBeenCalled();
 
       esc();
-
       expect(sim['safeExit']).toHaveBeenCalledTimes(1);
     });
 

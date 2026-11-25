@@ -89,8 +89,18 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
       gap: calc(4 * var(--pixel-px));
       width: 100%;
       min-height: 48px;
-      padding: 0 calc(5 * var(--pixel-px)) calc(2 * var(--pixel-px)) calc(4 * var(--pixel-px));
+      padding: 0 calc(20 * var(--pixel-px)) calc(2 * var(--pixel-px)) calc(4 * var(--pixel-px));
+      position: relative;
       text-align: left;
+    }
+    /* «Ir ▶» al final de cada ficha (P8): la acción que hace tocarla, a la vista y sin ambigüedad. Va como contenido CSS: el
+       nombre de la ficha sigue siendo «Persona Ana» (el lector la anuncia como botón dentro del diálogo «Ir a…»), y fuera de
+       la rejilla para valer en todos los tramos. */
+    .places__item::after {
+      content: 'Ir ▶';
+      position: absolute; right: calc(5 * var(--pixel-px)); top: 50%; transform: translateY(-50%);
+      font-family: var(--pixel-f-nombre); font-weight: 700; font-size: var(--pixel-letra-media);
+      letter-spacing: .06em; text-transform: uppercase; color: var(--luz);
     }
     .places__kind {
       font-family: var(--pixel-f-nombre);

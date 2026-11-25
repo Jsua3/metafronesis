@@ -98,7 +98,7 @@ export const DRAFT_COPY = {
     owner: 'Psicología',
     where: 'Lista «Ir a…»: título y ayuda',
     title: 'Ir a…',
-    text: 'Elige a dónde quieres ir: caminarás hasta ahí y se te avisará al llegar.',
+    text: 'Elige a dónde quieres ir: tu personaje caminará solo hasta ahí y se te avisará al llegar.',
   },
   /** Cuando la sala no ofrece nada a lo que ir todavía (F6-11, VD-19): dice por qué en vez de quedar vacía. */
   placesEmpty: {
