@@ -94,7 +94,7 @@ La etapa de esqueleto que ya existe, ahora alimentada por la ficha acordada en v
 Para cada escena:
 
 1. **La IA piensa.** El modelo genera la escena completa (sala, personajes, diálogo, respuestas A, B, C y D, efectos) y el servidor la valida. Mientras tanto el chat muestra qué está preparando, no una ruleta muda. Con los proveedores lentos esto puede tardar hasta un minuto y medio: la espera es honesta y no se disfraza de animación.
-2. **El cursor «Escenario»** reproduce los cambios de la sala: lleva el cursor a cada lugar, coloca muebles, objetos y personajes, y en el chat narra qué hace y por qué, ligado a lo acordado («Pongo a Laura cerca de la puerta porque acordamos que quiere irse»).
+2. **El cursor «Escenario»** reproduce los cambios de la sala: fija si la escena ocurre de día, al atardecer o de noche, lleva el cursor a cada lugar, coloca muebles, objetos y personajes, y en el chat narra qué hace y por qué, ligado a lo acordado («Pongo a Laura cerca de la puerta porque acordamos que quiere irse»).
 3. **El cursor «Diálogo»** pasa al guion: escribe las líneas del personaje y las respuestas A, B, C y D con su clase (recomendada, aceptable, contraindicada) y su retroalimentación.
 4. **Revisión de la escena.** Un panel muestra la escena terminada con lo delicado resaltado: respuestas contraindicadas y su razón, intensidad alta y su aviso, temas sensibles. Tres caminos:
    - **Aprobar escena** → pasa a la siguiente.
@@ -181,7 +181,8 @@ Los casos son clínicos y Psicología aprueba sus textos (VD-23). La marca «un 
 - **Etapa nueva «resumir»**: devuelve la ficha (§7) desde la idea y las respuestas; acepta un texto de cambio y devuelve la ficha corregida.
 - **Modelo nuevo** para la ficha, versionado, ligado a la generación.
 - **Ciclo de generación** (`ciclo.py`): de «escenas de dos en dos» a **una escena por vez con parada** `esperando_aprobacion`; transiciones nuevas `aprobar_escena`, `rehacer_escena` y `evaluar_edicion`. Se respeta el patrón actual: estado, transiciones permitidas y motivos fijos.
-- **Vocabulario de operaciones ampliado**: hoy son 10 y no cubren muebles, objetos, piezas del muro (puertas y ventanas) ni editar o borrar líneas y respuestas. Se agregan con el mismo rigor (validación atómica, motivos fijos). Las luces no existen hoy en el editor: quedan fuera hasta que existan.
+- **Vocabulario de operaciones ampliado**: hoy son 10 y no cubren muebles, objetos, piezas del muro (puertas y ventanas) ni editar o borrar líneas y respuestas. Se agregan con el mismo rigor (validación atómica, motivos fijos).
+- **Momento del día de cada escena** (día, atardecer, noche): hoy no existe ni en el editor ni en el juego. Se propone como funcionalidad nueva y pequeña: un campo `momento` dentro del `ambient` que ya guarda cada mapa de escena (junto a `backgroundImage`, `encuadre`, `salaId`), que la sala pinta como un tono de luz sobre el fondo, igual en el editor y en el juego. El docente lo cambia a mano desde la sala, la IA lo elige con una operación `set-momento` (vocabulario cerrado) y la ficha acordada lo puede fijar («la crisis ocurre de noche, en la guardia»). Es contexto narrativo, no decoración: una consulta nocturna en urgencias cambia el tono del caso.
 - **Ubicación por palabras**: la IA dice *qué* y *dónde* en términos de la sala («junto a la ventana», «al fondo», «cerca de la puerta») y un **trazador determinista** calcula las coordenadas con `posicionLibre`, `zonaCaminable` y los choques de muebles. Los modelos de lenguaje son malos con coordenadas.
 - **Esquemas más pequeños, uno por etapa**: NVIDIA ya respondió «The compiled grammar is too large» con el esquema actual (ver el comentario en `esquema.py`). Ampliar el vocabulario en un solo esquema no es viable.
 - **Registro de aprobación** por escena (§8) y su lugar en el inventario de privacidad y de superficie.
@@ -205,7 +206,8 @@ La validación del servidor sobre todo lo que propone el modelo, los proveedores
 | 2 | Escena por escena con parada de aprobación; aprobar = revisar; «Probar esta escena»; contador por escenas | Medio-alto | 1 |
 | 3 | Cursor coreografiado con narración, pausa, velocidad, saltar, tomar el control y movimiento reducido | Alto (trabajo visual fino) | 2 |
 | 4 | Edición a mano con detección de choques e informe de impacto (reglas fijas + coherencia con la ficha) | Alto | 2 |
-| 5 | Vocabulario ampliado (muebles, objetos, muro, editar y borrar) y ubicación por palabras | Alto | 2; mejora 3 |
+| 5 | Vocabulario ampliado (muebles, objetos, muro, editar y borrar, momento del día) y ubicación por palabras | Alto | 2; mejora 3 |
+| 5a | Momento del día por escena (día, atardecer, noche) en el editor y en el juego, sin IA | Bajo-medio | — (puede ir antes, por su cuenta) |
 
 Cada fase se puede entregar y probar por sí sola. Las fases 3, 4 y 5 pueden ir en paralelo una vez cerrada la 2.
 
@@ -235,6 +237,6 @@ Cada fase se puede entregar y probar por sí sola. Las fases 3, 4 y 5 pueden ir 
 
 - Varios cursores trabajando a la vez.
 - Que la IA maneje la interfaz con clics reales.
-- Luces y efectos de iluminación (el editor no los tiene).
+- Lámparas e iluminación por objeto (más allá del momento del día de la escena).
 - Voz o dictado en el chat.
 - Colaboración de varios docentes en el mismo caso en vivo.
