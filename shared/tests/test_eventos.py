@@ -8,7 +8,7 @@ from shared import eventos
 @pytest.mark.parametrize(
     "senal",
     [eventos.convocados_cambiaron, eventos.sesion_cancelada, eventos.intento_calificado,
-     eventos.retroalimentacion_registrada],
+     eventos.retroalimentacion_registrada, eventos.sesion_por_comenzar],
 )
 def test_las_senales_llegan_a_un_receptor(senal, monkeypatch):
     recibidos = []
@@ -19,10 +19,11 @@ def test_las_senales_llegan_a_un_receptor(senal, monkeypatch):
     version = SimpleNamespace(simulation_case=caso)
     sesion = SimpleNamespace(case_version=version, mensaje="Mensaje", creada_por=docente,
                               inicio=datetime(2026, 1, 1, 8, 0), lugar="")
-    intento = SimpleNamespace(student=estudiante, case_version=version)
+    intento = SimpleNamespace(student=estudiante, case_version=version, case_version_id=1, pk=1)
     argumentos = {
         eventos.convocados_cambiaron: {"sesion": sesion, "agregados": [], "retirados": [estudiante]},
         eventos.sesion_cancelada: {"sesion": sesion, "estudiantes": [estudiante]},
+        eventos.sesion_por_comenzar: {"sesion": sesion, "estudiantes": [estudiante]},
         eventos.intento_calificado: {"intento": intento, "evaluacion": object()},
         eventos.retroalimentacion_registrada: {"intento": intento, "docente": docente},
     }[senal]

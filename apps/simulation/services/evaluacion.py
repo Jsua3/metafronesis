@@ -6,6 +6,7 @@ from apps.simulation.models import RubricEvaluation, SimulationAttempt
 from apps.simulation.models.rubric import EvaluationOrigin
 from apps.simulation.services.audit_service import auditable
 from apps.simulation.services.rubricas import rubrica_activa_de
+from shared.eventos import retroalimentacion_registrada
 from shared.exceptions import ApiError
 
 
@@ -20,12 +21,15 @@ def registrar_retroalimentacion_docente(intento, docente, texto: str) -> RubricE
     if rubrica is None:
         raise ApiError("RUBRIC_MISSING", "El intento no tiene una rúbrica activa.", 409)
     evaluacion = RubricEvaluation.objects.filter(attempt=intento, instructor=docente, origin=EvaluationOrigin.DOCENTE).first()
-    if evaluacion is None:
+    es_nueva = evaluacion is None
+    if es_nueva:
         evaluacion = RubricEvaluation(attempt=intento, instructor=docente, origin=EvaluationOrigin.DOCENTE, created_at=timezone.now())
     evaluacion.rubric = rubrica
     evaluacion.comment = texto
     evaluacion.updated_at = timezone.now()
     evaluacion.save()
+    if es_nueva:  # corregir el texto después no vuelve a avisar al estudiante
+        transaction.on_commit(lambda: retroalimentacion_registrada.send(sender=SimulationAttempt, intento=intento, docente=docente))
     return evaluacion
 
 
