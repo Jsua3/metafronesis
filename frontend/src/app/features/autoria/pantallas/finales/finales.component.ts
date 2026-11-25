@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -32,7 +34,7 @@ import { VistaDelFinalComponent } from './vista-del-final.component';
  */
 @Component({
   selector: 'app-finales',
-  imports: [
+  imports: [UiAyudaBreve, 
     RouterLink, AutoAltoDirective, PestanasEvaluacionComponent, CondicionDelFinalComponent, VistaDelFinalComponent, EstudioRanuraDirective,
     EstudioSeccionComponent,
   ],
@@ -41,6 +43,7 @@ import { VistaDelFinalComponent } from './vista-del-final.component';
   styleUrl: './finales.component.scss',
 })
 export class FinalesComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly rutas = inject(RutasAutoria);
   protected readonly store = inject(CasoStore);
   private readonly injector = inject(Injector);

@@ -365,9 +365,14 @@ export class AvanceComponent implements OnInit, OnDestroy {
     return `Usaste ${g.callsUsed} de ${g.callsLimit} intentos con la IA.`;
   });
   protected readonly textoPorResolver = computed(() => {
+    const id = this.g()?.caseVersionId;
+    if (this.g()?.status === 'imported') {
+      if (this.store.caso()?.id !== String(id)) return 'Abre el editor para revisar los pendientes antes de enviar.';
+      return this.store.revisionPendiente() ? 'Falta completar la revisión.' : `${this.store.totalPendientes()} por resolver antes de enviar el caso.`;
+    }
     const n = this.g()?.issues.length ?? 0;
     // BORRADOR: textos nuevos, pendientes de la aprobación de Psicología
-    if (!n) return 'Sin faltas: no quedó nada por resolver.';
+    if (!n) return 'Generación terminada. Abre el editor para revisar los pendientes antes de enviar.';
     return n === 1 ? 'Queda 1 cosa por resolver en el editor.' : `Quedan ${n} cosas por resolver en el editor.`;
   });
 
@@ -401,6 +406,11 @@ export class AvanceComponent implements OnInit, OnDestroy {
   private readonly ahora = signal(Date.now());
 
   constructor() {
+    effect(() => {
+      const g = this.g();
+      if (g?.status !== 'imported' || !g.caseVersionId) return;
+      untracked(() => { void this.store.cargar(g.caseVersionId!).then(() => this.store.revisarConServidor()).catch(() => {}); });
+    });
     // En cuanto la generación dice su lugar, se leen sus salas para la maqueta (una vez; las imágenes llegan solas).
     effect(() => {
       const lugarId = this.g()?.lugarId;

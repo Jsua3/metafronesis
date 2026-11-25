@@ -42,6 +42,15 @@ def test_rubric_weights(caso):
     assert 'RUBRIC_WEIGHTS' in codigos(caso)
 
 
+def test_rubrica_solo_suma_criterios_activos(caso):
+    from apps.simulation.models import RubricCriterion
+    RubricCriterion.objects.create(rubric=caso['rubrica'], competency='I', title='Inactivo', weight=50, active=False)
+    assert 'RUBRIC_WEIGHTS' not in codigos(caso)
+    caso['criterio'].active = False
+    caso['criterio'].save(update_fields=['active'])
+    assert 'RUBRIC_WEIGHTS' in codigos(caso)
+
+
 def test_case_no_time(caso):
     caso['version'].estimated_minutes = 0
     caso['version'].save()
@@ -144,3 +153,32 @@ def test_nodo_no_alcanzable_con_una_opcion_bloquea(caso):
     DecisionOption.objects.create(case_version=caso['version'], source_node=nodo, target_node=caso['fin'],
                                   option_key='aislada', text='Opción', response_class='ACCEPTABLE', feedback_text='Justificación')
     assert {'NODE_NO_QUESTION', 'NODE_FEW_OPTIONS', 'NODE_NO_RECOMMENDED'} <= codigos(caso)
+
+
+def test_relleno_identifica_narracion_y_cada_linea(caso):
+    from apps.publicacion.arbol import arbol_de
+    from apps.simulation.models.world import SceneMap, DialogueTree, DialogueLine
+    nodo = caso['inicio']
+    nodo.narrative = 'Lorem ipsum'
+    nodo.save(update_fields=['narrative'])
+    mapa = SceneMap.objects.create(case_version=caso['version'], node=nodo, map_key='inicio', title='Inicio')
+    arbol = DialogueTree.objects.create(scene_map=mapa, tree_key='guion-inicio', speaker_name='A')
+    for orden in (1, 2):
+        DialogueLine.objects.create(dialogue_tree=arbol, display_order=orden, speaker_name='A', text='Lorem ipsum')
+    rutas = {p.where for p in arbol_de(caso['version']).problemas() if p.code == 'CONTENT_PLACEHOLDER'}
+    assert {f'nodes/{nodo.pk}/narrative', f'nodes/{nodo.pk}/dialogue/{arbol.pk}/1', f'nodes/{nodo.pk}/dialogue/{arbol.pk}/2'} <= rutas
+
+
+def test_relleno_en_dos_arboles_tiene_rutas_distintas(caso, django_assert_max_num_queries):
+    from apps.publicacion.arbol import arbol_de
+    from apps.simulation.models.world import SceneMap, DialogueTree, DialogueLine
+    nodo = caso['inicio']
+    mapa = SceneMap.objects.create(case_version=caso['version'], node=nodo, map_key='inicio', title='Inicio')
+    arboles = [DialogueTree.objects.create(scene_map=mapa, tree_key=clave, speaker_name='A') for clave in ('guion-inicio', 'secundaria')]
+    for arbol in arboles:
+        DialogueLine.objects.create(dialogue_tree=arbol, display_order=1, speaker_name='A', text='Lorem ipsum')
+    with django_assert_max_num_queries(4):
+        problemas = arbol_de(caso['version']).problemas()
+    rellenos = [p for p in problemas if p.code == 'CONTENT_PLACEHOLDER']
+    assert {p.where for p in rellenos} == {f'nodes/{nodo.pk}/dialogue/{a.pk}/1' for a in arboles}
+    assert any('secundaria' in p.message for p in rellenos)

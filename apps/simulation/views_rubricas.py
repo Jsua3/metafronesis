@@ -131,6 +131,26 @@ class RubricaDetailView(APIView):
 class RubricaVersionView(APIView):
     permission_classes = [policy_permission("rubric", "edit")]
 
+    @extend_schema(responses={200: envelope_of(RubricaGestionSerializer), **error_responses(401, 403, 404)})
+    def get(self, request, case_version_id):
+        from apps.revision.valoracion import rubrica_para_revision
+        from apps.simulation.models import CaseVersion
+        from apps.simulation.services import gestion_rubricas
+        from shared import policies
+
+        version = get_object_or_404(CaseVersion.objects.select_related("simulation_case"), pk=case_version_id)
+        if not policies.can(request.user, "case", "author", owner_id=version.simulation_case.created_by_id):
+            from django.http import Http404
+            raise Http404
+        rubrica = rubrica_para_revision(version.pk)
+        if rubrica is None:
+            from shared.exceptions import ApiError
+            raise ApiError("RUBRIC_NOT_ASSIGNED", "El caso no tiene rúbrica asignada.", 404)
+        if not gestion_rubricas.visibles(request.user).filter(pk=rubrica.pk).exists():
+            from django.http import Http404
+            raise Http404
+        return api_ok(gestion_rubricas.resumen(rubrica, request.user, True))
+
     def put(self, request, case_version_id):
         serializer = AsociacionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

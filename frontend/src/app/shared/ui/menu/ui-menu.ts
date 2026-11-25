@@ -40,7 +40,7 @@ export interface UiMenuItem {
         [style.anchor-name]="anchorName" [icon]="icon() ?? 'more_vert'" [label]="label()" [variant]="variant()"></button>
     } @else {
       <button #trigger ui-button type="button" class="ui-menu__trigger" ngMenuTrigger [menu]="menu" [id]="triggerId"
-        [style.anchor-name]="anchorName" [variant]="variant()" [icon]="icon()" iconEnd="expand_more">{{ label() }}</button>
+        [style.anchor-name]="anchorName" [attr.aria-label]="label()" [attr.title]="label()" [variant]="variant()" [icon]="icon()" iconEnd="expand_more">{{ label() }}</button>
     }
     <div ngMenu #menu="ngMenu" #panel class="ui-menu__panel ds-motion" [style.position-anchor]="anchorName"
       [attr.aria-labelledby]="triggerId"

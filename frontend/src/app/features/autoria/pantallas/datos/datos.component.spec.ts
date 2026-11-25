@@ -269,13 +269,14 @@ describe('DatosComponent · los datos del caso se guardan solos', () => {
     expect(contexto().value).toBe('Mi versión del contexto.');
   });
 
-  it('un caso en revisión se lee pero no se cambia: campos de solo lectura, sin botones de cambio y una nota que lo explica', async () => {
+  it('un caso en revisión se lee pero no se cambia: campos de solo lectura, sin botones de cambio ni un segundo aviso', async () => {
     const { raiz, servidor, nombre, contexto, objetivo, escribir } = await montar({ estado: 'IN_REVIEW' });
     expect(nombre().readOnly).toBe(true);
     expect(contexto().readOnly).toBe(true);
     expect(objetivo(0)!.readOnly).toBe(true);
     expect(contexto().value).toBe('Una estudiante llega a Bienestar.');
-    expect(raiz.textContent).toContain('El caso ya no es un borrador: se puede leer, pero no cambiar.');
+    // La franja del editor ya dice que el caso se puede ver pero no editar: la pantalla no lo repite.
+    expect(raiz.textContent).not.toContain('se puede leer, pero no cambiar');
     for (const texto of ['Agregar objetivo', 'Quitar el objetivo 1', 'Agregar tema', 'Quitar el tema Violencia de pareja']) {
       expect([...raiz.querySelectorAll('button')].some((b) => b.textContent?.trim() === texto || b.getAttribute('aria-label') === texto), texto).toBe(false);
     }
@@ -355,5 +356,21 @@ describe('DatosComponent · temas sensibles (RK-7)', () => {
     expect([...vista.querySelectorAll('.vista__lista li')].map((li) => li.textContent)).toEqual(['Valorar el riesgo.', 'Validar sin juzgar.']);
     expect(vista.textContent).toContain('En este caso aparecen');
     expect(vista.textContent).toContain('Violencia de pareja');
+  });
+});
+
+
+describe('Tiempo estimado', () => {
+  afterEach(() => document.querySelectorAll('body > app-datos, body > [ng-version]').forEach((n) => n.remove()));
+  it('guarda minutos válidos y conserva en pantalla los valores fuera del rango', async () => {
+    const { raiz, escribir, servidor, store } = await montar();
+    const campo = raiz.querySelector<HTMLInputElement>('#d-tiempo')!;
+    expect(raiz.querySelector('label[for="d-tiempo"]')!.textContent).toContain('Tiempo estimado (minutos)');
+    await escribir(campo, '60', true);
+    await store.sincronizado();
+    expect(servidor.llamadasA('updateBrief')[0].args[0]).toEqual({ estimatedMinutes: 60 });
+    await escribir(campo, '241', true);
+    expect(servidor.llamadasA('updateBrief')).toHaveLength(1);
+    expect(raiz.querySelector('#d-tiempo-error')!.textContent).toContain('entre 5 y 240');
   });
 });

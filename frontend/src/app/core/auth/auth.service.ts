@@ -1,3 +1,4 @@
+import { limpiarTodosLosBorradores } from '../../features/autoria/estado/borradores-respuesta';
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -85,6 +86,7 @@ export class AuthService {
   }
 
   clearSession(): void {
+    limpiarTodosLosBorradores();
     localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
   }

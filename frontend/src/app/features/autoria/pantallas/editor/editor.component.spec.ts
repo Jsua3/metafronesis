@@ -131,7 +131,11 @@ describe('EditorComponent · diálogos', () => {
   });
 
   it('E1 · un caso recién creado no muestra ningún aviso: lo que falta escribir no es un error', async () => {
-    const { raiz } = await montar();
+    const { raiz, store, listo } = await montar();
+    const caso = structuredClone(store.caso()!);
+    caso.escenas.forEach(e => e.narracion = '');
+    store.fijar(caso);
+    await listo();
     expect(raiz.querySelector('.pildora.aviso, .aviso-hito, .elegida__avisos, .boton-aviso')).toBeNull();
     expect(raiz.querySelector('[data-accion="revisar-caminos"]')!.textContent).toContain('Faltan caminos por escribir');
   });

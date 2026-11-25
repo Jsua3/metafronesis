@@ -41,6 +41,16 @@ describe('AuthService: cambio de contraseña obligatorio (E2-9)', () => {
   const summary = (mustChangePassword: boolean) =>
     ({ id: 7, nombre: 'Ana', apellido: 'Ríos', email: 'ana@cue.edu.co', role: 'ESTUDIANTE', mustChangePassword });
 
+  it('al cerrar sesión elimina todos los respaldos del editor', () => {
+    sessionStorage.setItem('autoria-respuestas:7:41:escena', 'privado');
+    sessionStorage.setItem('otra-clave', 'conservar');
+    vi.spyOn(service, 'redirectToLogin').mockImplementation(() => {});
+    service.logout();
+    expect(sessionStorage.getItem('autoria-respuestas:7:41:escena')).toBeNull();
+    expect(sessionStorage.getItem('otra-clave')).toBe('conservar');
+    sessionStorage.removeItem('otra-clave');
+  });
+
   it('consulta disponibilidad de demo sin enviar ni recibir credenciales', async () => {
     const done = firstValueFrom(service.demoConfig());
     const request = http.expectOne('/api/auth/demo/config');

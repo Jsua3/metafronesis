@@ -100,7 +100,7 @@ describe('RubricService: lecturas y alta sobre las rutas de metafronesis', () =>
   afterEach(() => http.verify());
 
   it('la rúbrica con ficha y criterios junta GET /api/rubrics/{id} y el listado', () => {
-    let leida: RubricAdmin | undefined;
+    let leida: RubricAdmin | null | undefined;
     service.detail(4).subscribe(r => (leida = r));
     http.expectOne('/api/rubrics/4').flush({ data: MINIMA });
     http.expectOne('/api/rubrics').flush({ data: [{ ...FICHA, id: 99 }, FICHA] });
@@ -147,6 +147,21 @@ describe('RubricService: lecturas y alta sobre las rutas de metafronesis', () =>
     const request = http.expectOne('/api/rubrics/4');
     expect('levelDescriptors' in request.request.body.criteria[0]).toBe(false);
     request.flush({ data: FICHA });
+  });
+
+  it('trata una rubrica ausente como estado vacio y conserva otros errores', () => {
+    let valor: RubricAdmin | null | undefined;
+    service.caseVersionRubric(9).subscribe(r => valor = r);
+    http.expectOne('/api/rubrics/case-versions/9').flush({ code: 'RUBRIC_NOT_ASSIGNED' }, { status: 404, statusText: 'Not Found' });
+    expect(valor).toBeNull();
+    let codigo = '';
+    service.caseVersionRubric(9).subscribe({ error: e => codigo = e.error.code });
+    http.expectOne('/api/rubrics/case-versions/9').flush({ code: 'NOT_FOUND' }, { status: 404, statusText: 'Not Found' });
+    expect(codigo).toBe('NOT_FOUND');
+    let estado = 0;
+    service.caseVersionRubric(9).subscribe({ error: e => estado = e.status });
+    http.expectOne('/api/rubrics/case-versions/9').flush({}, { status: 500, statusText: 'Error' });
+    expect(estado).toBe(500);
   });
 
   it('la rúbrica de un caso se lee de /api/rubrics/case-versions/{id} y llega sin sobre', () => {

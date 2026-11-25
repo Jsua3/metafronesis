@@ -20,7 +20,7 @@ import { pesoEnPalabras, tipoDeRubrica } from './rubrica-del-caso.modelo';
  */
 
 const CASO = 41;
-const no404 = () => throwError(() => new HttpErrorResponse({ status: 404, error: { message: 'Rubrica no encontrada' } }));
+const no404 = () => of(null);
 
 function rubrica(parcial: Partial<RubricAdmin> = {}): RubricAdmin {
   return {
@@ -243,6 +243,12 @@ describe('RubricaDelCasoComponent (E5)', () => {
     expect(raiz.querySelectorAll('section.vacio button')).toHaveLength(0);
   });
 
+  it('un 404 diferente de ausencia muestra el mensaje de error', async () => {
+    const { raiz } = await montar({ rubricas: { caseVersionRubric: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 404, error: { code: 'NOT_FOUND', message: 'No disponible.' } }))) } });
+    expect(raiz.querySelector('section.vacio')).toBeNull();
+    expect(raiz.textContent).toContain('No disponible.');
+  });
+
   it('un error al leer la rúbrica se dice y se puede reintentar', async () => {
     const { raiz, rubricas, listo } = await montar({
       rubricas: { caseVersionRubric: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500, error: { message: 'Algo falló.' } }))) },
@@ -293,4 +299,10 @@ describe('Rúbrica del caso · funciones puras', () => {
     expect(pesoEnPalabras(33.33)).toBe('33,33 %');
     expect(pesoEnPalabras(null)).toBe('');
   });
+});
+
+it('las anclas de rúbrica y pesos existen también cuando aún no hay rúbrica', async () => {
+  const { raiz } = await montar();
+  expect(raiz.querySelector('#rubrica-titulo')).toBeTruthy();
+  expect(raiz.querySelector('#rubrica-pesos')).toBeTruthy();
 });

@@ -1,3 +1,4 @@
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -154,39 +155,13 @@ export class RevisionComponent {
   protected readonly nombreEstado = computed(() => NOMBRE_ESTADO[this.store.caso()?.estado ?? this.ciclo()?.state ?? 'DRAFT'] ?? 'Borrador');
 
   /** Lo que el editor ve por su cuenta en el borrador (lo mismo que cuenta la hoja «Pendientes»). */
-  private readonly faltasLocales = computed<Falta[]>(() => {
-    const caso = this.store.caso();
-    return caso ? puedeEnviar(caso).faltas : [];
-  });
-
-  /** Lo que falta, de dos fuentes: lo que el editor ve en el borrador y lo que dice la compuerta del servidor (sin repetir). */
-  protected readonly faltas = computed<Falta[]>(() => {
-    const caso = this.store.caso();
-    if (!caso) return [];
-    const locales = this.faltasLocales();
-    const delServidor: ValidationIssue[] = [...this.hallazgos(), ...this.bloqueosDelEnvio()];
-    // El motivo que el servidor da para no dejar enviar, si no es uno de los hallazgos de arriba (por ejemplo, la lista de verificación).
-    const motivo = this.ciclo()?.blockedReason;
-    if (motivo && motivo.code !== 'VALIDATION_ERRORS') delServidor.push({ code: motivo.code, severity: 'error', message: motivo.message });
-    const unicos = new Map(delServidor.map((h) => [`${h.code}|${h.message}`, h]));
-    return [
-      ...locales,
-      ...faltasDelServidor([...unicos.values()], caso, {
-        respuestaDeOpcion: (clave) => this.store.respuestaDeOpcion(clave),
-        respuestasGuardadas: (escenaId) => this.store.respuestasGuardadasDe(escenaId),
-        faltasLocales: locales,
-      }),
-    ];
-  });
+  private readonly faltasLocales = this.store.faltasLocales;
+  protected readonly faltas = this.store.faltas;
 
   /** Lo de la lista de verificación que impide enviar (viene del editor o del servidor): se muestra junto a la lista. */
   protected readonly faltasDeLista = computed(() => this.faltas().filter((f) => f.codigo === 'CHECKLIST_INCOMPLETE'));
 
   /** Lo que solo dice el servidor (no está en la hoja «Pendientes», que se arma con lo que ve el editor): se lista aquí. */
-  protected readonly faltasDelServidor = computed(() => {
-    const locales = new Set(this.faltasLocales());
-    return this.faltas().filter((f) => !locales.has(f) && f.codigo !== 'CHECKLIST_INCOMPLETE');
-  });
 
   /**
    * Un resumen por etapa de lo que el editor ve (por corregir y por escribir): la lista completa vive una sola vez, en la
@@ -248,7 +223,7 @@ export class RevisionComponent {
   });
 
   protected readonly puedeEnviarAhora = computed(
-    () => this.faltas().length === 0 && !this.consultando() && !this.enviando() && !this.store.soloLectura()
+    () => this.faltas().length === 0 && !this.store.haySinGuardar() && !this.store.revisionPendiente() && !this.consultando() && !this.enviando() && !this.store.soloLectura()
       && (this.ciclo()?.allowedTransitions ?? ['submit']).includes('submit'),
   );
 
@@ -259,7 +234,7 @@ export class RevisionComponent {
     const codigosEnFaltas = new Set(this.faltas().map((f) => f.codigo).filter(Boolean));
     // Los textos largos los avisa el servidor (también en un caso escrito a mano): se suman como sugerencias, con su escena.
     // «Probar» no es una sugerencia suelta: tiene su fila, con su botón, junto a lo que falta (`data-probado`).
-    return [...sugerencias(caso).filter((s) => s.ir.accionId !== 'probar' && (!s.codigo || !codigosEnFaltas.has(s.codigo))), ...avisosDeLectura(this.hallazgos())];
+    return [...sugerencias(caso).filter((s) => s.ir.accionId !== 'probar' && (!s.codigo || !codigosEnFaltas.has(s.codigo))), ...avisosDeLectura(this.hallazgos(), caso)];
   });
   protected readonly cuantasRespuestas = computed(() => (this.store.caso()?.escenas ?? []).reduce((n, e) => n + e.respuestas.length, 0));
   /** Los finales que el caso puede dar: los cuatro del modelo, o los que escribió la docente. */
@@ -348,6 +323,7 @@ export class RevisionComponent {
     this.bloqueosDelEnvio.set([]);
     try {
       const { hallazgos, ciclo } = await this.store.revisarConServidor();
+      this.store.registrarRevision(hallazgos, ciclo);
       this.hallazgos.set(hallazgos);
       this.ciclo.set(ciclo);
     } catch {
@@ -359,6 +335,8 @@ export class RevisionComponent {
   }
 
   /** «Llévame ahí»: abre la pantalla de lo que falta y, si es algo concreto (una respuesta, un hito, un final…), le da el foco. */
+  private readonly avisosNavegacion = inject(NotificationService);
+
   protected async llevar(f: Falta): Promise<void> {
     if (f.ir.accionId) await this.guia.mostrar(f.ir.accionId, 'foco');
     const destino = this.rutas.a(f.ir.ruta);
@@ -366,6 +344,7 @@ export class RevisionComponent {
     // La lista de verificación vive en el Inspector: si estaba oculto, se muestra para poder llegar a ella.
     if (f.ir.ancla === 'lista-verificacion') this.estudio?.alternar('inspector', true);
     if (f.ir.ancla) await this.enfocar(f.ir.ancla);
+    if (f.ir.aviso) this.avisosNavegacion.info(f.ir.aviso);
   }
 
   /** ↑/↓ entre las filas de problemas (como en el panel de un IDE); Inicio/Fin a la primera y a la última. */
@@ -407,6 +386,7 @@ export class RevisionComponent {
       const bloqueos = error instanceof HttpErrorResponse ? this.bloqueosDe(error) : null;
       if (bloqueos) {
         this.bloqueosDelEnvio.set(bloqueos);
+        this.store.agregarBloqueos(bloqueos);
         this.falloEnvio.set('Psicología no puede recibir el caso todavía: resuelve lo de arriba.');
       } else {
         this.falloEnvio.set(this.store.conflicto() ? OTRA_PERSONA_CAMBIO_EL_CASO : NO_SE_PUDO_ENVIAR);

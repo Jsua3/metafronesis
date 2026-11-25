@@ -135,7 +135,7 @@ export function partesDeLaGeneracion({ g, error, etapa, trabajando, reintentando
   partes.push(nueva({
     clave: 'reglas', tipo: 'reglas', nombre: 'Revisión de las reglas del caso', estado: reglas,
     faltas: terminada ? faltasEnPalabras(g.issues) : [],
-    detalle: g?.status === 'imported' ? (n ? `${plural(n, 'cosa', 'cosas')} por resolver en el editor:` : 'Sin faltas.')
+    detalle: g?.status === 'imported' ? (n ? 'Observaciones de la generación (el total antes de enviar está en el editor):' : 'Generación terminada; falta revisar el borrador en el editor.')
       : g?.status === 'failed' ? (n ? 'Estas faltas impidieron abrir el caso:' : 'El caso no pasó la revisión de las reglas.')
       : null,
   }));

@@ -270,12 +270,12 @@ describe('CasoStore con la API · conflicto de revisión', () => {
 });
 
 describe('CasoStore con la API · si el servidor rechaza un cambio', () => {
-  it('una mutación que falla con 500 se revierte sola, sin tocar las demás', async () => {
+  it('una mutación que es rechazada con 400 se revierte sola, sin tocar las demás', async () => {
     const { servidor, store } = await abrir();
     const a = escenaDe(store, 'consultorio').id;
     const b = escenaDe(store, 'pasillo').id;
     const tituloB = caso(store).escenas.find((e) => e.id === b)!.titulo;
-    servidor.fallar('updateNode', 500);
+    servidor.fallar('updateNode', 400);
 
     store.editarEscena(a, { titulo: 'Esto no se guarda' });
     store.moverEscena(b, 333, 111);

@@ -232,13 +232,13 @@ describe('editor de una rúbrica (R1)', () => {
         expect(buttonLabelled(label)!.getAttribute('aria-disabled'), label).toBeNull();
       }
       expect(host().querySelector('#rubric-weight-hint')).toBeNull();
-      expect(text(host().querySelector('.rb-weight'))).toContain('Suma 100 %');
+      expect(text(host().querySelector('.rb-weight'))).toContain('Suman 100 % de 100 %');
     });
 
     it('con la ponderación distinta de 100: la pista se ve, el total dice cuánto falta y los botones dicen POR QUÉ', async () => {
       await render({ detail: () => of(incompleta) }, { rubricId: 7 });
       expect(text(host().querySelector('#rubric-weight-hint'))).toBe('Para activarla o hacerla predeterminada, la ponderación debe sumar 100 %.');
-      expect(text(host().querySelector('.rb-weight'))).toContain('Faltan 10 %');
+      expect(text(host().querySelector('.rb-weight'))).toContain('Suman 90 % de 100 %');
       for (const label of ['Activar', 'Predeterminada']) {
         const button = buttonLabelled(label)!;
         expect(button.getAttribute('aria-disabled'), label).toBe('true');

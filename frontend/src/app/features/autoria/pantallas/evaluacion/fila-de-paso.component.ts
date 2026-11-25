@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
@@ -39,7 +41,7 @@ const LARGO_DESCRIPCION = 110;
  */
 @Component({
   selector: 'app-fila-de-paso',
-  imports: [NgTemplateOutlet, UiMenu, AutoAltoDirective, FichasDeRespuestasComponent, SelectorDeRespuestasComponent],
+  imports: [UiAyudaBreve, NgTemplateOutlet, UiMenu, AutoAltoDirective, FichasDeRespuestasComponent, SelectorDeRespuestasComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let p = paso();
@@ -54,6 +56,7 @@ const LARGO_DESCRIPCION = 110;
                  (change)="cambiar.emit({ decisivo: $any($event.target).checked })" />
           Decide el final
         </label>
+        @if (conAyuda()) { <ui-ayuda-breve termino="Decide el final" [explicacion]="glosario['Decide el final']" /> }
         @if (!soloLectura()) {
           <ui-menu class="paso__mas" iconOnly [label]="'Más acciones del paso ' + p.hito.nombre" [items]="menu()" (itemSelected)="elegir($event)" />
         }
@@ -121,9 +124,12 @@ const LARGO_DESCRIPCION = 110;
   styleUrl: './fila-de-paso.component.scss',
 })
 export class FilaDePasoComponent {
+  protected readonly glosario = GLOSARIO;
   readonly paso = input.required<PasoVista>();
   readonly escenas = input.required<readonly EscenaElegible[]>();
   readonly soloLectura = input(false);
+  /** La explicación de «Decide el final» va solo en la primera fila: repetida en cada paso recargaba la lista. */
+  readonly conAyuda = input(false);
   readonly abierto = input(false);
   readonly editando = input(false);
   readonly borrando = input(false);
