@@ -11,7 +11,7 @@
     </div>
 
     <!-- Los dos modos, como dos tarjetas de opción con una frase cada una (botones de opción reales). -->
-    <fieldset class="modo" data-accion="definir-finales">
+    <fieldset class="modo" id="final-por-defecto" tabindex="-1" data-accion="definir-finales">
       <legend class="modo__rotulo">Cómo se deciden los finales</legend>
       <label class="opcion">
         <input type="radio" name="modo" value="automatico" [checked]="caso.modoFinales === 'automatico'" (change)="pedirModo('automatico', $event)" />
@@ -62,8 +62,8 @@
                   <div class="final__campos">
                     <label [for]="'fn' + i" class="etiqueta">Nombre</label>
                     <input [id]="'fn' + i" type="text" class="campo" [value]="f.nombre" (change)="store.editarFinal(f.id, { nombre: $any($event.target).value })" />
-                    <label [for]="'ft' + i" class="etiqueta">Lo que lee el estudiante al terminar</label>
-                    <textarea autoAlto [id]="'ft' + i" class="campo" rows="3" [value]="f.texto" (change)="store.editarFinal(f.id, { texto: $any($event.target).value })"></textarea>
+                    <label [for]="'texto-final-' + f.id" class="etiqueta">Lo que lee el estudiante al terminar</label>
+                    <textarea autoAlto [id]="'texto-final-' + f.id" class="campo" rows="3" [value]="f.texto" (change)="store.editarFinal(f.id, { texto: $any($event.target).value })"></textarea>
                     <app-condicion-del-final [final]="f" [hitos]="caso.hitos" (cambiar)="store.editarFinal(f.id, { condicion: $event })" />
                     <div class="acciones final__acciones">
                       @if (f.marcaIa) {

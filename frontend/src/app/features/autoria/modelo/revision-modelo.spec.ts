@@ -173,7 +173,7 @@ describe('faltasDelServidor: lo que dice la compuerta, en lenguaje del docente y
       issue({ code: 'ending-reachability-skipped', severity: 'warning', message: 'Demasiados recorridos.' }),
     ], caso, opciones(caso));
     expect(faltas.map((f) => f.mensaje)).toEqual(['Ningún final aplica a todos.']);
-    expect(faltas[0].ir).toEqual({ ruta: '/editor/finales', accionId: 'definir-finales' });
+    expect(faltas[0].ir).toEqual({ ruta: '/editor/finales', ancla: 'final-por-defecto' });
   });
 
   it('un hallazgo que el editor ya listó por su cuenta no se repite', () => {

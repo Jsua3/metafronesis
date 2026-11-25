@@ -146,7 +146,7 @@ function faltasDeFinales(caso: CasoBorrador): Falta[] {
     faltas.push({
       codigo: 'ending-without-default',
       mensaje: 'Ningún final del caso aplica a todos los recorridos: agrega un final sin condición para el resto.',
-      ir: { ruta: '/editor/finales', accionId: 'definir-finales' },
+      ir: { ruta: '/editor/finales', ancla: 'final-por-defecto' },
     });
   }
   return faltas;
@@ -218,7 +218,11 @@ function partesDeIa(caso: CasoBorrador): { cuantas: number; primera: Falta['ir']
   let primera: Falta['ir'] | null = null;
   for (const e of caso.escenas) {
     const partes = (e.marcaIa ? 1 : 0) + e.lineas.filter((l) => l.marcaIa).length + e.respuestas.filter((r) => r.marcaIa).length;
-    if (partes && !primera) primera = e.marcaIa ? { ruta: '/editor', accionId: 'aceptar-ia' } : { ruta: `/editor/escena/${e.id}`, accionId: 'aceptar-ia' };
+    if (partes && !primera) {
+      const linea = e.lineas.find((l) => l.marcaIa);
+      const respuesta = e.respuestas.find((r) => r.marcaIa);
+      primera = { ruta: rutaDeEscena(e.id), accionId: 'aceptar-ia', ancla: e.marcaIa ? 'narracion-escena' : linea ? `linea-${linea.id}` : `respuesta-${respuesta!.id}` };
+    }
     cuantas += partes;
   }
   // lo que la IA puso o movió en las salas
@@ -229,7 +233,7 @@ function partesDeIa(caso: CasoBorrador): { cuantas: number; primera: Falta['ir']
     piezasIa += marcadas;
   }
   const finalesIa = caso.finales.filter((f) => f.marcaIa).length;
-  if (finalesIa && !primera) primera = { ruta: '/editor/finales', accionId: 'aceptar-ia' };
+  if (finalesIa && !primera) primera = { ruta: '/editor/finales', ancla: `final-${caso.finales.find((f) => f.marcaIa)!.id}` };
   return { cuantas: cuantas + piezasIa + finalesIa, primera };
 }
 
@@ -302,7 +306,7 @@ export function faltasDelServidor(
     switch (h.code) {
       case 'CASE_NO_RUBRIC':
       case 'RUBRIC_WEIGHTS':
-        faltas.push(falta({ ruta: '/editor/rubrica' }));
+        faltas.push(falta({ ruta: '/editor/rubrica', ancla: h.code === 'CASE_NO_RUBRIC' ? 'rubrica-titulo' : 'rubrica-pesos' }));
         break;
       case 'CASE_NO_TIME':
         faltas.push(falta({ ruta: '/editor/datos', ancla: 'd-tiempo' }));
@@ -325,7 +329,7 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: '/editor/finales', ...(h.endingKey ? { ancla: `final-${h.endingKey}` } : {}) }));
         break;
       case 'ending-without-default':
-        faltas.push(falta({ ruta: '/editor/finales', accionId: 'definir-finales' }));
+        faltas.push(falta({ ruta: '/editor/finales', ancla: 'final-por-defecto' }));
         break;
       case 'competency-without-evidence': {
         const primera = primeraRespuesta(caso);
@@ -348,7 +352,7 @@ export function faltasDelServidor(
         const salaId = escenaDelCaso?.salaId;
         const ruta = h.path?.replace(/^x-siep\.escenas\[\d+\]\.mapa(?=\.|$)/, 'x-siep.escenas[0].mapa');
         if (!salaId || !caso.salas.some((s) => s.id === salaId) || !ruta || !/^x-siep\.escenas\[\d+\]\.mapa(?:\.|$)/.test(h.path ?? '')) {
-          faltas.push(falta({ ruta: escena ?? '/editor' }));
+          faltas.push(falta(salaId && caso.salas.some((s) => s.id === salaId) ? { ruta: `/editor/sala/${salaId}` } : { ruta: '/editor/plano' }));
           break;
         }
         const destinoSala = { ruta: `/editor/sala/${salaId}` };
@@ -360,7 +364,7 @@ export function faltasDelServidor(
         const destino = elementoDeRuta(ruta, { ...caso, escenas: [escenaDelCaso] });
         faltas.push(falta(destino
           ? { ...destinoSala, ancla: anclaDeElemento(salaId, destino.elemento) }
-          : { ruta: escena ?? '/editor' }));
+          : destinoSala));
         break;
       }
       case 'DSL.OCL-19': {
@@ -368,7 +372,7 @@ export function faltasDelServidor(
         const escenaDelCaso = caso.escenas.find((e) => e.id === String(h.nodeId));
         const salaId = escenaDelCaso?.salaId;
         if (!escenaDelCaso || !salaId || !caso.salas.some((s) => s.id === salaId)) {
-          faltas.push(falta({ ruta: escena ?? '/editor' }));
+          faltas.push(falta({ ruta: '/editor/plano' }));
           break;
         }
         const clave = personaDeTrayecto(caso, escenaDelCaso.id, h.message, h.path);
@@ -389,7 +393,11 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: '/revision', ancla: 'lista-verificacion' }));
         break;
       case 'AI_SUGGESTED_UNREVIEWED':
-        if (opciones.soloServidor || !hayIa) faltas.push(falta({ ruta: '/editor', accionId: 'aceptar-ia' }));
+        if (opciones.soloServidor || !hayIa) {
+          const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;
+          faltas.push(falta(escena ? { ruta: escena, ancla: respuesta ? `respuesta-${respuesta}` : 'narracion-escena' }
+            : partesDeIa(caso).primera ?? { ruta: '/editor', accionId: 'aceptar-ia' }));
+        }
         break;
       default: {
         const cubierto = AVISO_QUE_CUBRE[h.code];
@@ -425,10 +433,17 @@ export const CODIGO_LARGO_DE_LECTURA = 'DSL.READING_LENGTH';
  * Los avisos de largo de lectura que da el servidor, como sugerencias: no impiden enviar, citan el texto que se pasa y llevan a
  * su escena. Valen igual para un caso generado con la IA que para uno escrito a mano.
  */
-export function avisosDeLectura(hallazgos: ValidationIssue[]): Falta[] {
+export function avisosDeLectura(hallazgos: ValidationIssue[], caso?: Pick<CasoBorrador, 'escenas'>): Falta[] {
   return hallazgos
     .filter((h) => h.code === CODIGO_LARGO_DE_LECTURA && h.severity === 'warning')
-    .map((h) => ({ codigo: h.code, mensaje: h.message, ir: { ruta: h.nodeId !== undefined ? rutaDeEscena(h.nodeId) : '/editor' } }));
+    .map((h) => {
+      const escena = caso?.escenas.find((e) => e.id === String(h.nodeId));
+      const indice = /\.lineas\[(\d+)\]/.exec(h.path ?? '');
+      const linea = indice && escena?.lineas[Number(indice[1])];
+      return { codigo: h.code, mensaje: h.message, ir: h.nodeId !== undefined
+        ? { ruta: rutaDeEscena(h.nodeId), ancla: linea ? `linea-${linea.id}` : 'narracion-escena' }
+        : { ruta: '/editor' } };
+    });
 }
 
 /** Cosas que conviene mirar pero no impiden enviar. */
@@ -447,7 +462,7 @@ export function sugerencias(caso: CasoBorrador): Falta[] {
     }
   });
   if (caso.modoFinales === 'propio' && caso.finales.some((f) => !f.texto.trim())) {
-    lista.push({ mensaje: 'Hay finales sin el texto que lee el estudiante al terminar.', ir: { ruta: '/editor/finales' } });
+    lista.push({ mensaje: 'Hay finales sin el texto que lee el estudiante al terminar.', ir: { ruta: '/editor/finales', ancla: `texto-final-${caso.finales.find((f) => !f.texto.trim())!.id}` } });
   }
   return lista;
 }

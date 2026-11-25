@@ -294,3 +294,9 @@ describe('Rúbrica del caso · funciones puras', () => {
     expect(pesoEnPalabras(null)).toBe('');
   });
 });
+
+it('las anclas de rúbrica y pesos existen también cuando aún no hay rúbrica', async () => {
+  const { raiz } = await montar();
+  expect(raiz.querySelector('#rubrica-titulo')).toBeTruthy();
+  expect(raiz.querySelector('#rubrica-pesos')).toBeTruthy();
+});

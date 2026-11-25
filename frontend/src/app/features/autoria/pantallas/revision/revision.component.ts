@@ -233,7 +233,7 @@ export class RevisionComponent {
     const codigosEnFaltas = new Set(this.faltas().map((f) => f.codigo).filter(Boolean));
     // Los textos largos los avisa el servidor (también en un caso escrito a mano): se suman como sugerencias, con su escena.
     // «Probar» no es una sugerencia suelta: tiene su fila, con su botón, junto a lo que falta (`data-probado`).
-    return [...sugerencias(caso).filter((s) => s.ir.accionId !== 'probar' && (!s.codigo || !codigosEnFaltas.has(s.codigo))), ...avisosDeLectura(this.hallazgos())];
+    return [...sugerencias(caso).filter((s) => s.ir.accionId !== 'probar' && (!s.codigo || !codigosEnFaltas.has(s.codigo))), ...avisosDeLectura(this.hallazgos(), caso)];
   });
   protected readonly cuantasRespuestas = computed(() => (this.store.caso()?.escenas ?? []).reduce((n, e) => n + e.respuestas.length, 0));
   /** Los finales que el caso puede dar: los cuatro del modelo, o los que escribió la docente. */

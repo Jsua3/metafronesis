@@ -27,7 +27,7 @@ describe('puedeEnviar', () => {
     caso.escenas[0].lineas = [{ id: 'l1', personajeId: 'p', texto: 'Hola', expresion: 'neutral', marcaIa: true }];
     const r = puedeEnviar(caso);
     expect(r.ok).toBe(false);
-    expect(r.faltas).toEqual([{ mensaje: '1 parte generada por IA sin revisar.', ir: { ruta: '/editor/escena/a', accionId: 'aceptar-ia' } }]);
+    expect(r.faltas).toEqual([{ mensaje: '1 parte generada por IA sin revisar.', ir: { ruta: '/editor/escena/a', accionId: 'aceptar-ia', ancla: 'linea-l1' } }]);
   });
 
   it('varias partes de IA se cuentan juntas, incluidos finales y escenas', () => {
@@ -289,9 +289,9 @@ describe('faltas del servidor de salas por piezas', () => {
   it('una pieza inexistente o una escena desconocida conserva el destino predeterminado', () => {
     const borrador = caso();
     expect(llevar(borrador, 'DSL.OCL-13', 'x-siep.escenas[9].mapa.estructura.piezas[999]').ir)
-      .toEqual({ ruta: '/editor/escena/7' });
+      .toEqual({ ruta: '/editor/sala/sala-espera' });
     expect(llevar(borrador, 'DSL.OCL-16', 'x-siep.escenas[0].mapa.aparicion', 999).ir)
-      .toEqual({ ruta: '/editor/escena/999' });
+      .toEqual({ ruta: '/editor/plano' });
   });
 });
 
@@ -327,6 +327,50 @@ describe('faltas del servidor del trayecto de una persona (OCL-19)', () => {
 
   it('una escena desconocida conserva el destino predeterminado', () => {
     const { borrador } = conTrayecto([{ x: 10, y: 10 }, { x: 20, y: 20 }]);
-    expect(llevar(borrador, MENSAJE, 999).ir).toEqual({ ruta: '/editor/escena/999' });
+    expect(llevar(borrador, MENSAJE, 999).ir).toEqual({ ruta: '/editor/plano' });
   });
+});
+
+describe('tabla de destinos de la compuerta', () => {
+  const casos: Array<[string, string, string | undefined]> = [
+    ['CASE_NO_RUBRIC', '/editor/rubrica', 'rubrica-titulo'], ['RUBRIC_WEIGHTS', '/editor/rubrica', 'rubrica-pesos'],
+    ['CASE_NO_TIME', '/editor/datos', 'd-tiempo'], ['scene-without-recommended', '/editor', undefined],
+    ['CONTENT_PLACEHOLDER', '/editor', undefined], ['OPTION_NO_JUSTIFICATION', '/editor', undefined],
+    ['contraindicated-without-reason', '/editor', undefined], ['milestone-unreachable', '/editor/evaluacion', undefined],
+    ['ending-unreachable', '/editor/finales', undefined], ['ending-without-default', '/editor/finales', 'final-por-defecto'],
+    ['competency-without-evidence', '/editor/escena/a', 'competencias-1'], ['high-intensity-without-warning', '/editor', undefined],
+    ['ETHICS.NO_SUPPORT_RESOURCES', '/editor/escena/a', 'recursos-escena'], ['CHECKLIST_INCOMPLETE', '/revision', 'lista-verificacion'],
+    ['AI_SUGGESTED_UNREVIEWED', '/editor', undefined],
+    ...[9, 10, 11, 12].map((n): [string, string, undefined] => [`DSL.OCL-${String(n).padStart(2, '0')}`, '/editor', undefined]),
+    ...[13, 14, 15, 16, 17, 18, 19].map((n): [string, string, undefined] => [`DSL.OCL-${n}`, '/editor/plano', undefined]),
+    ...['WORLD.NO_START_NODE', 'WORLD.NO_TERMINAL_NODE', 'WORLD.UNREACHABLE_NODE', 'WORLD.NODE_WITHOUT_OPTIONS']
+      .map((codigo): [string, string, undefined] => [codigo, '/editor', undefined]),
+  ];
+  it.each(casos)('%s lleva a su pantalla y sección disponible', (code, ruta, ancla) => {
+    const caso = completo();
+    const [falta] = faltasDelServidor([{ code, severity: 'error', message: 'Aviso' }], caso,
+      { respuestaDeOpcion: () => undefined, faltasLocales: [], soloServidor: true });
+    expect(falta.ir.ruta).toBe(ruta);
+    expect(falta.ir.ancla).toBe(ancla);
+  });
+
+  it('lleva la sugerencia al texto del primer final vacío', () => {
+    const caso = completo();
+    caso.modoFinales = 'propio';
+    caso.finales = [{ id: 'f1', nombre: 'Final', texto: '', tono: 'neutral', condicion: null, marcaIa: false }];
+    expect(sugerencias(caso).find((f) => f.mensaje.startsWith('Hay finales'))?.ir)
+      .toEqual({ ruta: '/editor/finales', ancla: 'texto-final-f1' });
+  });
+});
+
+it('ubica la marca de IA y el texto largo cuando llegan sus identificadores', async () => {
+  const { avisosDeLectura } = await import('./revision');
+  const caso = completo();
+  caso.escenas[0].lineas = [{ id: 'l1', personajeId: 'p', texto: 'Largo', expresion: 'neutral', marcaIa: true }];
+  const [lectura] = avisosDeLectura([{ code: 'DSL.READING_LENGTH', severity: 'warning', message: 'Largo', nodeId: 1,
+    path: 'x-siep.escenas[0].mapa.dialogos[0].lineas[0].texto' }], { escenas: [{ ...caso.escenas[0], id: '1' }] });
+  expect(lectura.ir).toEqual({ ruta: '/editor/escena/1', ancla: 'linea-l1' });
+  const [ia] = faltasDelServidor([{ code: 'AI_SUGGESTED_UNREVIEWED', severity: 'error', message: 'IA' }], caso,
+    { respuestaDeOpcion: () => undefined, faltasLocales: [], soloServidor: true });
+  expect(ia.ir.ancla).toBe('linea-l1');
 });

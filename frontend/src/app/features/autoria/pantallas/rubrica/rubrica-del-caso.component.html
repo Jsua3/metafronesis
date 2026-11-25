@@ -1,7 +1,7 @@
 @if (store.caso()) {
   <div class="lienzo">
   <div class="hoja hoja--ancha rubrica">
-    <div class="cabecera">
+    <div class="cabecera" [attr.id]="criterios().length ? null : 'rubrica-pesos'" tabindex="-1">
       <div class="cabecera__titulos">
         <p class="sobretitulo">Etapa 4 · Evaluación</p>
         <h1 id="rubrica-titulo" tabindex="-1">Rúbrica del caso</h1> <ui-ayuda-breve termino="Criterio y peso" [explicacion]="glosario['Criterio y peso']" />
@@ -95,7 +95,7 @@
     }
 
     @if (criterios().length) {
-      <section class="criterios" aria-labelledby="criterios-titulo">
+      <section class="criterios" id="rubrica-pesos" tabindex="-1" aria-labelledby="criterios-titulo">
         <div class="criterios__cabeza">
           <h2 id="criterios-titulo">Criterios y dónde se evidencian</h2>
           <p class="criterios__cobertura">
