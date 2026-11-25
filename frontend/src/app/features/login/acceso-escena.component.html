@@ -1,0 +1,19 @@
+<!-- BORRADOR: textos nuevos (el rótulo de cada paso y las opciones de ejemplo de «Decide»), pendientes de la aprobación de Psicología -->
+<!-- La cámara recorre la imagen; el resalte de la rúbrica va DENTRO del mundo para seguir al cartel de ética cuando se acerca. -->
+<div class="camara">
+  <div class="mundo">
+    <img [src]="imagen()" decoding="async" [alt]="alt()" width="581" height="415" />
+    <span class="resalte" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  </div>
+</div>
+<span class="brillo" aria-hidden="true"></span>
+<!-- El rótulo se crea de nuevo con cada paso (se rastrea por el paso, no por su texto) y se posa con un resorte corto. -->
+@for (texto of [rotulo()]; track clave()) {
+  <span class="rotulo" aria-hidden="true">{{ texto }}</span>
+}
+<ul class="opciones" aria-hidden="true">
+  @for (opcion of opciones; track opcion; let i = $index) {
+    <li [class.elegida]="i === elegida">{{ opcion }}</li>
+  }
+</ul>
+<div class="nota" aria-hidden="true"><b>Mi bitácora</b><i></i><i></i><i></i></div>
