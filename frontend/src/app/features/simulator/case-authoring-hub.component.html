@@ -77,6 +77,10 @@
     @if (item.escenasConGuion != null) {
       <p class="hub-card__meta">{{ item.escenasConGuion }} de {{ item.nodeCount }} escenas con guion</p>
     }
+    @if (item.status === 'PUBLISHED' && asignadoA(item.caseVersionId); as quien) {
+      <p class="hub-card__meta hub-card__asignado" data-hub-asignado>{{ quien }}</p>
+    }
+    <app-asignar-desde-caso [caseId]="item.caseVersionId" [publicado]="item.status === 'PUBLISHED'" [titulo]="item.title" (asignado)="loadAsignaciones()" />
     <div class="hub-card__actions">
       @if (creaVersion(item)) {
         <!-- BORRADOR: texto pendiente de Psicología (VD-23). -->

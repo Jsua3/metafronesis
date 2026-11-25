@@ -5,6 +5,8 @@ import { of, Subject } from 'rxjs';
 import { SesionesApi } from '../../core/api/sesiones.api';
 import { SesionResumen } from '../../core/models/sesion.model';
 import { SesionListaComponent } from './sesion-lista.component';
+import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
+import { NotificationService } from '../../core/notifications/notification.service';
 
 const fila: SesionResumen = {
   id: 4, estado: 'EN_CURSO', acciones: ['pausar', 'finalizar', 'gestionarConvocados'], grupo: { id: 2, nombre: 'Psicología 1' },
@@ -42,6 +44,25 @@ describe('SesionListaComponent', () => {
   it('sin sesiones muestra el estado vacío', async () => {
     await montar([]);
     expect(el().querySelector('ui-empty-state')).not.toBeNull();
+  });
+
+  it('al crear confirma y añade la sesión sin recargar la página', async () => {
+    const cerrada = new Subject<SesionResumen>();
+    const success = vi.fn();
+    listar = vi.fn(() => of([]));
+    await TestBed.configureTestingModule({ imports: [SesionListaComponent], providers: [
+      provideRouter([]), { provide: SesionesApi, useValue: { listar } },
+      { provide: UiDialog, useValue: { open: () => ({ closed: cerrada }) } },
+      { provide: NotificationService, useValue: { success, error: vi.fn() } },
+    ] }).compileComponents();
+    fixture = TestBed.createComponent(SesionListaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (el().querySelector('button') as HTMLButtonElement).click();
+    cerrada.next({ ...fila, estado: 'PROGRAMADA' });
+    fixture.detectChanges();
+    expect(success).toHaveBeenCalledWith('Sesión creada.');
+    expect(el().textContent).toContain('La casa de Sofía');
   });
 
   it('al cambiar de filtro pide los nuevos estados y una respuesta tardía del anterior no pisa la lista', async () => {

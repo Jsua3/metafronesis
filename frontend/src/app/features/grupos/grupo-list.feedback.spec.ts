@@ -108,7 +108,7 @@ describe('grupos: feedback de acciones (comportamiento)', () => {
 
       component.crear();
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible crear el grupo.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible crear el grupo. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
 
     it('actualizar avisa el éxito y cierra la edición', () => {
@@ -212,7 +212,7 @@ describe('grupos: feedback de acciones (comportamiento)', () => {
 
       await component.eliminarGrupo(grupoA);
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible borrar el grupo.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible borrar el grupo. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
 
     it('sin conexión (status 0) no duplica el aviso del interceptor', async () => {
@@ -273,7 +273,7 @@ describe('grupos: feedback de acciones (comportamiento)', () => {
 
       await component.quitarEstudiante(grupoA, marta);
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible quitar al estudiante.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible quitar al estudiante. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
   });
 
@@ -316,7 +316,7 @@ describe('grupos: feedback de acciones (comportamiento)', () => {
   });
 
   describe('lo que sigue junto a su formulario', () => {
-    it('invitar a un estudiante deja su resultado en línea y no crea un aviso', () => {
+    it('invitar a un estudiante deja su resultado en línea y lo confirma con un aviso', () => {
       grupos.agregarEstudiante.mockReturnValue(of({ grupo: grupoA, message: 'Mensaje del servidor.' }));
       component.grupoSeleccionado.set(1);
       component.estudianteForm.setValue({ email: 'nuevo@siep.test' });
@@ -326,7 +326,7 @@ describe('grupos: feedback de acciones (comportamiento)', () => {
       // E2-10: el docente invita; la persona entra al grupo cuando acepta.
       expect(component.mensajeEstudiante()).toBe('Mensaje del servidor.');
       expect(component.mensajeEsError()).toBe(false);
-      expect(notify.success).not.toHaveBeenCalled();
+      expect(notify.success).toHaveBeenCalledWith('Mensaje del servidor.');
       expect(notify.error).not.toHaveBeenCalled();
     });
 

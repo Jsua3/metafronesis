@@ -205,8 +205,11 @@ export class SalasComponent {
       const idea = e.recorridosSugeridos.find((r) => r.id === this.ideaElegida());
       const id = await this.store.crearCaso(titulo, e.id, this.elegidas(), idea?.descripcion || e.descripcion);
       await abrirElCasoNuevo(this.store, this.router, id);
-    } catch {
-      this.errorAlCrear.set('No se pudo crear el caso. Vuelve a intentarlo en un momento.');
+    } catch (error: unknown) {
+      const fallo = error as { status?: number; error?: { code?: string } };
+      this.errorAlCrear.set(fallo?.status === 403 && fallo.error?.code === 'AUTHORING_NOT_ALLOWED'
+        ? 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.'
+        : 'No se pudo crear el caso. Vuelve a intentarlo en un momento.');
     } finally {
       this.creando.set(false);
     }

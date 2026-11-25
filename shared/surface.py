@@ -120,6 +120,7 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     ("api/grupos/<int:pk>", "DELETE"): "GROUP_DELETED",
     ("api/grupos/<int:pk>/casos", "GET"): _exento(_GRUPOS),
     ("api/grupos/<int:pk>/casos", "POST"): "asignacion.crear",
+    ("api/grupos/<int:pk>/casos/orden", "PUT"): "asignacion.reordenar",
     ("api/grupos/<int:pk>/casos/<int:case_version_id>", "DELETE"): "asignacion.eliminar",
     ("api/grupos/<int:pk>/estudiantes", "GET"): "GROUP_STUDENTS_VIEWED",
     ("api/grupos/<int:pk>/estudiantes", "POST"): "MEMBERSHIP_INVITED",

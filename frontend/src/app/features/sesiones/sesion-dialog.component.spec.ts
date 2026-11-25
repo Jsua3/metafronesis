@@ -5,6 +5,7 @@ import { Subject, of, throwError } from 'rxjs';
 
 import { GrupoService } from '../../core/api/grupo.service';
 import { NotificationService } from '../../core/notifications/notification.service';
+import { provideRouter } from '@angular/router';
 import { SesionesApi } from '../../core/api/sesiones.api';
 import { SesionDetalle } from '../../core/models/sesion.model';
 import { SesionDialogComponent, SesionDialogData } from './sesion-dialog.component';
@@ -34,7 +35,7 @@ describe('SesionDialogComponent', () => {
     crear = vi.fn(() => respuestaCrear);
     await TestBed.configureTestingModule({
       imports: [SesionDialogComponent],
-      providers: [
+      providers: [provideRouter([]),
         { provide: DIALOG_DATA, useValue: data },
         { provide: DialogRef, useValue: { close } },
         { provide: SesionesApi, useValue: { casos: () => fuentes.casos ?? of(casos), crear, editar } },
@@ -61,6 +62,27 @@ describe('SesionDialogComponent', () => {
     await montar({ modo: 'crear' });
     expect(input('[name=grupoId]').textContent).toContain('Psicología 1 · 12 estudiantes');
     expect(input('[name=caseVersionId]').textContent).toContain('La casa de Sofía');
+  });
+
+  it('al crear propone la próxima hora en punto y una hora de duración, y el fin sigue al inicio', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 26, 9, 20));
+    try {
+      await montar({ modo: 'crear' });
+      expect(input('[name=inicio]').value).toBe('2026-11-26T10:00');
+      expect(input('[name=fin]').value).toBe('2026-11-26T11:00');
+      expect(el().textContent).toContain('Ejemplo:');
+      // Mover el inicio arrastra el fin propuesto; un fin escrito a mano ya no se toca.
+      escribir('[name=inicio]', '2026-11-27T14:00');
+      fixture.detectChanges();
+      expect(input('[name=fin]').value).toBe('2026-11-27T15:00');
+      escribir('[name=fin]', '2026-11-27T16:30');
+      escribir('[name=inicio]', '2026-11-27T13:00');
+      fixture.detectChanges();
+      expect(input('[name=fin]').value).toBe('2026-11-27T16:30');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('la opción del caso nombra a quienes lo editaron, si los hay', async () => {

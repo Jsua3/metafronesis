@@ -268,3 +268,69 @@
 .us-request__text {
   max-width: 100%;
 }
+
+// Resumen de pendientes (P6): la misma cifra del menú lateral, con lo que falta y un salto a cada lista.
+.us-pendientes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  min-width: 0;
+  margin-block: var(--ds-space-3) 0;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  color: var(--ds-text-1);
+
+  &--atencion {
+    border-color: var(--ds-primary);
+    background: var(--ds-primary-subtle);
+  }
+
+  &--aviso {
+    border-color: var(--ds-border-strong);
+  }
+}
+
+.us-pendientes__texto {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-weight: var(--ds-type-h3-weight);
+  overflow-wrap: anywhere;
+}
+
+// Cuentas por aprobar: cada una con su «Aprobar» a la vista; el lote queda debajo con el motivo si aún no se puede.
+.us-pending-list {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.us-pending-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  min-width: 0;
+}
+
+.us-pending-row .us-check {
+  flex: 1 1 16rem;
+  flex-wrap: wrap;
+}
+
+.us-pending-lote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+}
+
+.us-pending-lote__motivo {
+  flex: 1 1 14rem;
+  margin: 0;
+}

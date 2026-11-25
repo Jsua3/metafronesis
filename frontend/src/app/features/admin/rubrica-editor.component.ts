@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Observable } from 'rxjs';
 
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { CompetencyCatalogItem, RubricAdmin, RubricCriterionAdmin, RubricService } from '../../core/api/rubric.service';
 import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { AuthService } from '../../core/auth/auth.service';
@@ -693,7 +693,7 @@ export class RubricaEditorComponent implements OnChanges, OnInit {
         // E2-2: solo quien autora el caso (o el administrador) le asigna rúbrica.
         const text = err instanceof HttpErrorResponse && err.status === 403
           ? RUBRIC_CASE_NOT_OWNED_MESSAGE
-          : apiErrorMessage(err, 'No fue posible asignar la rúbrica.');
+          : mensajeDeError(err, 'No fue posible asignar la rúbrica.');
         if (text) this.notify.error(text);
       },
     });
@@ -808,7 +808,7 @@ export class RubricaEditorComponent implements OnChanges, OnInit {
       this.perdida.emit();
       return;
     }
-    const text = apiErrorMessage(err, fallback);
+    const text = mensajeDeError(err, fallback);
     if (text) this.notify.error(text);
   }
 }

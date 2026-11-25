@@ -12,6 +12,17 @@ export interface AccessDecision {
   readonly reason?: AccessReasonEnum;
 }
 
+export interface AssignmentProgress {
+  readonly students: number;
+  readonly completed: number;
+  readonly inProgress: number;
+}
+
+/** Resumen del listado de grupos: pares de estudiante activo y caso asignado. */
+export interface GrupoResumenCasos { readonly asignados: number; readonly terminados: number; readonly oportunidades: number; }
+export interface GrupoListado { readonly id: number; readonly nombre: string; readonly codigo: string; readonly totalEstudiantes: number; readonly totalInvitados: number; readonly resumenCasos: GrupoResumenCasos; }
+export interface GrupoListadoListEnvelope { readonly success: boolean; readonly message?: string; readonly data: ReadonlyArray<GrupoListado>; }
+
 export type AccessReasonEnum = 'NOT_ASSIGNED' | 'NOT_YET_OPEN' | 'CLOSED' | 'LOCKED_BY_SEQUENCE';
 
 export type ActivationEnum = 'CALM' | 'TENSE' | 'CRISIS';
@@ -140,6 +151,7 @@ export interface ApiEnvelope {
 export interface Assignment {
   /** Una asignación en pausa no habilita nada. */
   readonly active: boolean;
+  readonly caseId: number;
   readonly caseTitle: string | null;
   readonly caseVersionId: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
@@ -147,6 +159,8 @@ export interface Assignment {
   readonly id: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
   readonly opensAt?: string;
+  /** Avance de miembros activos; disponible en el listado de asignaciones del grupo. */
+  readonly progress?: AssignmentProgress;
   /** Su lugar en la secuencia de casos. */
   readonly sortOrder: number;
   /** Dónde está la ventana hoy. */

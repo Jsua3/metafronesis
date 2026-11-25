@@ -828,6 +828,14 @@
       "audit": "asignacion.eliminar"
     },
     {
+      "route": "api/grupos/<int:pk>/casos/orden",
+      "method": "PUT",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "asignacion.reordenar"
+    },
+    {
       "route": "api/grupos/<int:pk>/estudiantes",
       "method": "GET",
       "exposure": "role:PROFESOR",

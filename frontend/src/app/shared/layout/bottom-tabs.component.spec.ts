@@ -142,6 +142,15 @@ describe('app-bottom-tabs', () => {
     }));
   });
 
+  it('en docencia la hoja también explica los destinos visibles de la barra', async () => {
+    fixture.componentInstance.tabs.set([{ id: 'sesiones', label: 'Sesiones', icon: 'event', route: '/portal/sesiones', descripcion: 'Clases en vivo.' }]);
+    fixture.componentInstance.more.set([{ id: 'reportes', label: 'Reportes', icon: 'analytics', route: '/portal/reportes', descripcion: 'Resultados del grupo.' }]);
+    await fixture.whenStable();
+    nav().querySelector<HTMLButtonElement>('button.pestana')!.click();
+    expect(sheet.mock.calls[0][1].data.map((tab: BottomTab) => tab.id)).toEqual(['sesiones', 'reportes']);
+    expect(tabs()[0].getAttribute('aria-description')).toBe('Clases en vivo.');
+  });
+
   it('si la página actual está en «Más», «Más» lo dice (aria-current); si no, no (revisión de F3, M-4)', async () => {
     fixture.componentInstance.more.set([{ id: 'rubricas', label: 'Rúbricas', icon: 'grading', route: '/portal/rubricas' }]);
     await fixture.whenStable();

@@ -172,7 +172,10 @@ export class ForbiddenHandler extends HttpErrorHandler {
     return statusOf(ctx) === 403 && !ctx.screenHandlesForbidden;
   }
   protected apply(ctx: HttpErrorContext): void {
-    ctx.notifications.warning(PERMISSION_MESSAGE);
+    const code = ctx.error instanceof HttpErrorResponse ? ctx.error.error?.code : null;
+    ctx.notifications.warning(code === 'AUTHORING_NOT_ALLOWED'
+      ? 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.'
+      : PERMISSION_MESSAGE);
   }
 }
 

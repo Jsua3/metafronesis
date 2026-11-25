@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Observable, Subscription, firstValueFrom } from 'rxjs';
 
+import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import { AssignmentService } from '../../core/api/assignment.service';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeCarga, mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -16,12 +18,17 @@ import { errorKindFromStatus, uiDataState } from '../../shared/ui/state/ui-data-
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { AssignmentDialogComponent, AssignmentDialogData, AssignmentDialogResult } from './assignment-dialog.component';
 import { windowText } from './assignment-window.util';
+import { enSecuencia, fraseDeSecuencia, lineaDeSecuencia, tituloDe } from './secuencia.util';
 
 type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 type HttpLikeError = { status?: number };
 
 interface AssignmentRow {
   assignment: Assignment;
+  /** Su lugar en la secuencia (1, 2, 3…): el estudiante hace los casos en este orden. */
+  position: number;
+  /** Cuándo se abre respecto de los anteriores: «Se abre al terminar «X»», «Primer caso…». */
+  sequence: string;
   title: string;
   detail: string;
   label: string;
@@ -44,10 +51,14 @@ function statusOf(assignment: Assignment): { label: string; tone: Tone } {
  * pausar y retirar piden confirmar lo que le pasa al grupo (sin acceso no se inicia ni se sigue el caso). Cada acción avisa
  * su resultado y un error del servidor se dice con su mensaje, sin cambiar la lista. El destino de hoy es el grupo: el de un
  * estudiante concreto lo habilitará el servidor después (decisión 5).
+ *
+ * Los casos van numerados en el orden en que el grupo los hace (RN-04: cada uno se abre al terminar el anterior) y la
+ * docente lo cambia con «Subir» y «Bajar» (el teclado llega igual que el ratón): el servidor recibe la lista completa y
+ * la numera de una vez; si falla, la lista vuelve a como estaba y se dice por qué.
  */
 @Component({
   selector: 'app-group-assignments',
-  imports: [UiBadge, UiButton, UiErrorState, UiIconButton, UiSection, UiSkeleton],
+  imports: [RouterLink, UiBadge, UiButton, UiErrorState, UiIconButton, UiSection, UiSkeleton],
   templateUrl: './group-assignments.component.html',
   styleUrl: './group-assignments.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,6 +69,7 @@ export class GroupAssignmentsComponent {
   private readonly notify = inject(NotificationService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
+  private readonly announcer = inject(LiveRegionAnnouncer);
   private loadSubscription: Subscription | null = null;
 
   readonly grupoId = input.required<number>();
@@ -65,8 +77,13 @@ export class GroupAssignmentsComponent {
   readonly cases = input<SimulationCaseSummary[]>([]);
   /** Si los casos publicados ya llegaron: «sin casos que asignar» solo es verdad cuando se pudieron leer. */
   readonly casesStatus = input<'loading' | 'ready' | 'failed'>('ready');
+  readonly solicitudAsignar = input(0);
+  readonly solicitudAtendida = output<void>();
+  private ultimaSolicitud = 0;
   /** Cuántos casos tiene asignados el grupo, cuando termina de cargar y cada vez que cambian: el detalle del grupo los cuenta. */
   readonly assignedChange = output<number>();
+  /** «Reintentar» tras fallar la carga de los casos publicados: esa lista la trae quien contiene este componente. */
+  readonly retryCases = output<void>();
 
   protected readonly assignments = signal<Assignment[]>([]);
   private readonly loading = signal(true);
@@ -80,20 +97,30 @@ export class GroupAssignmentsComponent {
   });
   protected readonly errorKind = computed(() => errorKindFromStatus(this.error()?.status));
 
-  protected readonly rows = computed<AssignmentRow[]>(() => this.assignments()
-    .filter(assignment => assignment.target.type === 'GROUP')
-    .map(assignment => {
+  /** El nombre de cada caso asignado: el del catálogo de la docente y, si no está, el que trae la propia asignación. */
+  private readonly titles = computed(() => new Map(this.assignments().map(assignment => [
+    assignment.caseVersionId,
+    this.cases().find(item => item.caseVersionId === assignment.caseVersionId)?.title ?? assignment.caseTitle ?? `Caso ${assignment.caseVersionId}`,
+  ] as const)));
+
+  protected readonly rows = computed<AssignmentRow[]>(() => {
+    const ordered = enSecuencia(this.assignments().filter(assignment => assignment.target.type === 'GROUP'));
+    const sequence = lineaDeSecuencia(ordered, this.titles());
+    return ordered.map((assignment, index) => {
       const found = this.cases().find(item => item.caseVersionId === assignment.caseVersionId);
       const status = statusOf(assignment);
       return {
         assignment,
-        title: found?.title ?? assignment.caseTitle ?? `Caso ${assignment.caseVersionId}`,
+        position: index + 1,
+        sequence: sequence[index],
+        title: this.titles().get(assignment.caseVersionId) ?? tituloDe(assignment),
         detail: found ? `${found.code} · v${found.semanticVersion}` : '',
         label: status.label,
         tone: status.tone,
         window: windowText(assignment.opensAt, assignment.closesAt),
       };
-    }));
+    });
+  });
 
   /** Los casos publicados que el grupo todavía no tiene asignados. */
   protected readonly assignable = computed(() => {
@@ -105,10 +132,21 @@ export class GroupAssignmentsComponent {
     if (this.loading()) return 'Cargando los casos del grupo…';
     if (this.error()) return 'Primero reintenta cargar los casos asignados.';
     if (this.casesStatus() === 'loading') return 'Cargando los casos publicados…';
-    if (this.casesStatus() === 'failed') return 'No pudimos cargar los casos publicados.';
-    return this.assignable().length ? null : 'No hay más casos publicados para asignar.';
+    if (this.casesStatus() === 'failed') return 'No pudimos cargar tus casos publicados. Reintenta para poder asignar.';
+    if (!this.cases().length) return 'Aún no tienes casos publicados. Publica uno en «Casos» y vuelve aquí para asignarlo.';
+    return this.assignable().length ? null : 'Ya asignaste a este grupo todos tus casos publicados. Para ofrecer otro, publícalo en «Casos».';
   });
   protected readonly busyReason = computed(() => (this.busy() ? 'Hay un cambio en curso: espera un momento.' : null));
+  /** El motivo que se ve junto al botón y, cuando hay una salida (publicar un caso, reintentar), el camino para tomarla. */
+  protected readonly motivoVisible = computed<{ texto: string; salida: 'casos' | 'reintentar-casos' | null } | null>(() => {
+    const texto = this.assignReason() ?? this.busyReason();
+    if (!texto) return null;
+    const cargado = !this.loading() && !this.error();
+    if (cargado && this.casesStatus() === 'failed') return { texto, salida: 'reintentar-casos' };
+    if (cargado && this.casesStatus() === 'ready' && !this.assignable().length) return { texto, salida: 'casos' };
+    return { texto, salida: null };
+  });
+  protected readonly errorTexto = computed(() => mensajeDeCarga(this.error()?.status, 'No pudimos cargar los casos asignados.'));
 
   constructor() {
     effect(() => {
@@ -119,6 +157,19 @@ export class GroupAssignmentsComponent {
       const count = this.assignments().length;
       // Solo un grupo que terminó de cargar tiene un conteo que decir (ni el del anterior ni el de una carga fallida).
       if (!this.loading() && !this.error()) untracked(() => this.assignedChange.emit(count));
+    });
+    effect(() => {
+      const solicitud = this.solicitudAsignar();
+      const loading = this.loading();
+      const status = this.casesStatus();
+      const error = this.error();
+      if (!solicitud) { this.ultimaSolicitud = 0; return; }
+      if (solicitud === this.ultimaSolicitud || loading || status === 'loading') return;
+      this.ultimaSolicitud = solicitud;
+      untracked(() => {
+        this.solicitudAtendida.emit();
+        if (!error && status === 'ready') void this.assign();
+      });
     });
     inject(DestroyRef).onDestroy(() => this.loadSubscription?.unsubscribe());
   }
@@ -131,7 +182,7 @@ export class GroupAssignmentsComponent {
     this.loading.set(true);
     this.loadSubscription = this.service.list(groupId).subscribe({
       next: rows => {
-        this.assignments.set(rows);
+        this.assignments.set(enSecuencia(rows));
         this.error.set(null);
         this.loading.set(false);
       },
@@ -145,15 +196,24 @@ export class GroupAssignmentsComponent {
   protected async assign(): Promise<void> {
     const options = this.assignable();
     if (!options.length || this.busy()) return;
+    const groupId = this.grupoId();
     const ref = this.dialog.open<AssignmentDialogResult | undefined, AssignmentDialogData>(AssignmentDialogComponent, {
-      data: { mode: 'create', cases: options },
+      // Las asignaciones de hoy, con su nombre: el diálogo dice tras qué caso lo harán los estudiantes (RN-04).
+      data: { mode: 'create', cases: options, groupAssignments: this.assignments().map(item => ({ ...item, caseTitle: this.titles().get(item.caseVersionId) ?? item.caseTitle })) },
     });
     const result = await firstValueFrom(ref.closed, { defaultValue: undefined });
-    if (!result || result.caseVersionId === undefined) return;
+    if (!result || result.caseVersionId === undefined || this.grupoId() !== groupId) return;
     this.run(
-      this.service.create({ caseVersionId: result.caseVersionId, target: { type: 'GROUP', groupId: this.grupoId() }, opensAt: result.opensAt, closesAt: result.closesAt }),
-      created => this.assignments.update(rows => [...rows, created]),
-      'Caso asignado al grupo.', 'No fue posible asignar el caso al grupo.',
+      this.service.create({ caseVersionId: result.caseVersionId, target: { type: 'GROUP', groupId }, opensAt: result.opensAt, closesAt: result.closesAt }),
+      created => {
+        this.assignments.update(rows => enSecuencia([...rows, created]));
+        this.service.list(groupId).subscribe({ next: fresh => {
+          if (this.grupoId() !== groupId) return;
+          this.assignments.update(rows => rows.map(item => ({ ...item, progress: fresh.find(row => row.id === item.id)?.progress ?? item.progress })));
+        }, error: () => { /* La fila indica que el avance aún no está disponible. */ } });
+      },
+      result.despuesDe === undefined ? 'Caso asignado al grupo.' : `Caso asignado al grupo. ${fraseDeSecuencia(result.despuesDe, !!result.opensAt && Date.parse(result.opensAt) > Date.now())}`,
+      'No fue posible asignar el caso al grupo.',
     );
   }
 
@@ -208,8 +268,44 @@ export class GroupAssignmentsComponent {
     );
   }
 
+  /**
+   * Sube o baja un caso un lugar. La lista se reordena al instante y el servidor recibe el orden completo; si no lo
+   * acepta, la lista vuelve a como estaba y se dice por qué (por ejemplo, que otra persona cambió los casos del grupo).
+   */
+  protected move(row: AssignmentRow, direction: -1 | 1): void {
+    if (this.busy()) return;
+    const before = this.assignments();
+    const ordered = enSecuencia(before);
+    const from = ordered.findIndex(item => item.id === row.assignment.id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= ordered.length) return;
+    const next = [...ordered];
+    [next[from], next[to]] = [next[to], next[from]];
+    const groupId = this.grupoId();
+    this.assignments.set(next.map((item, index) => ({ ...item, sortOrder: index + 1 })));
+    this.busy.set(true);
+    this.service.reorder(groupId, next.map(item => item.id), ordered.map(item => item.id)).subscribe({
+      next: saved => {
+        if (this.grupoId() === groupId) {
+          this.assignments.set(enSecuencia(saved.map(item => ({ ...item, progress: item.progress ?? before.find(old => old.id === item.id)?.progress }))));
+          this.announcer.announce(`«${row.title}» ahora es el caso ${to + 1} de ${next.length}.`, 'polite');
+          afterNextRender(() => this.host.querySelector<HTMLElement>(`[data-ga-move="${row.assignment.id}-${direction}"]`)?.focus(), { injector: this.injector });
+        }
+        this.busy.set(false);
+      },
+      error: (error: unknown) => {
+        if (this.grupoId() === groupId) this.assignments.set(before);
+        const conflict = (error as { error?: { code?: string } })?.error?.code === 'ASSIGNMENT_ORDER_STALE';
+        if (conflict && this.grupoId() === groupId) this.load(groupId);
+        const text = conflict ? 'Otra persona cambió el orden; esta es la lista actual.' : mensajeDeError(error, 'No fue posible cambiar el orden de los casos.');
+        if (text) this.notify.error(text);
+        this.busy.set(false);
+      },
+    });
+  }
+
   private replace(updated: Assignment): void {
-    this.assignments.update(rows => rows.map(item => (item.id === updated.id ? updated : item)));
+    this.assignments.update(rows => rows.map(item => (item.id === updated.id ? { ...updated, progress: updated.progress ?? item.progress } : item)));
   }
 
   /**
@@ -229,7 +325,7 @@ export class GroupAssignmentsComponent {
         this.notify.success(success);
       },
       error: (error: unknown) => {
-        const text = apiErrorMessage(error, failure);
+        const text = mensajeDeError(error, failure);
         if (text) this.notify.error(text);
         this.busy.set(false);
       },

@@ -6,7 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { ReporteService } from '../../core/api/reporte.service';
 import { ReporteEstudiante } from '../../core/models/reporte.model';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -208,7 +208,7 @@ export class ReporteEstudianteComponent implements OnInit {
         this.loadingMore.set(false);
         if (more) {
           // Lo que ya se veía sigue a la vista: solo se avisa que no llegó lo demás.
-          const message = apiErrorMessage(err, 'No fue posible traer más intentos.');
+          const message = mensajeDeError(err, 'No fue posible traer más intentos.');
           if (message) this.notify.error(message);
           return;
         }

@@ -85,6 +85,13 @@ class AssignmentCreateSerializer(serializers.Serializer):
     sortOrder = serializers.IntegerField(required=False)
 
 
+class AssignmentOrderSerializer(serializers.Serializer):
+    """``PUT /api/grupos/{id}/casos/orden``: los ids de TODAS las asignaciones del grupo, de la primera a la última."""
+
+    assignmentIds = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=1000)
+    previousAssignmentIds = serializers.ListField(child=serializers.IntegerField(), allow_empty=True, max_length=1000)
+
+
 class AssignmentUpdateSerializer(serializers.Serializer):
     """``PATCH /api/assignments/{id}``: solo lo que viene se toca; ``null`` borra una fecha."""
 

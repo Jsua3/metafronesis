@@ -19,7 +19,25 @@
 .ga-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--ds-space-3);
+}
+
+// El motivo por el que «Asignar un caso» está apagado, al lado del botón y con su salida (Casos, Reintentar).
+.ga-reason {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  min-inline-size: 0;
+}
+
+.ga-reason__text {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
 }
 
 .ga-loading {
@@ -37,12 +55,25 @@
 
 .ga-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--ds-space-2) var(--ds-space-3);
   padding: var(--ds-space-3) var(--ds-space-4);
   border: 1px solid var(--ds-border);
   border-radius: var(--ds-radius-md);
+}
+
+// El lugar del caso en la secuencia: un número a la vista (la lista ordenada ya lo dice a quien oye).
+.ga-item__orden {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--ds-space-8, 2rem);
+  block-size: var(--ds-space-8, 2rem);
+  border-radius: 50%;
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .ga-item__text {
@@ -56,6 +87,10 @@
   color: var(--ds-text-2);
   font-size: var(--ds-type-body-s-size);
   line-height: var(--ds-type-body-s-line);
+}
+
+.ga-sequence {
+  font-style: normal;
 }
 
 .ga-item__actions {

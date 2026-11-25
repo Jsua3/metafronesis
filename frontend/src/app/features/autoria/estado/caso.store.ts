@@ -132,6 +132,7 @@ export function mensajeDeFallo(error: unknown, nombre: string, aMedias = false):
     : `No se pudo guardar ${nombre}. Lo dejamos como estaba.`;
   if (!(error instanceof HttpErrorResponse)) return base;
   if (error.status === 0) return `${base} No hay conexión. Revisa tu internet y vuelve a intentarlo.`;
+  if (error.status === 403 && error.error?.code === 'AUTHORING_NOT_ALLOWED') return 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.';
   if (error.status === 403) return `${base} No tienes permiso para cambiar este caso.`;
   if (error.status === 404) return `${base} Esa parte del caso ya no existe; recarga el caso para verlo al día.`;
   if (error.status >= 500) return `${base} Hubo un problema al guardar; vuelve a intentarlo en un momento.`;
@@ -146,6 +147,7 @@ export function mensajeDeFallo(error: unknown, nombre: string, aMedias = false):
 
 export function mensajeDeCarga(error: unknown): string {
   const estado = error instanceof HttpErrorResponse ? error.status : -1;
+  if (error instanceof HttpErrorResponse && error.status === 403 && error.error?.code === 'AUTHORING_NOT_ALLOWED') return 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.';
   if (estado === 403) return 'No tienes permiso para abrir este caso.';
   if (estado === 404) return 'No encontramos ese caso. Puede que ya no exista.';
   if (estado === 0) return 'No pudimos abrir el caso: no hay conexión. Revisa tu internet y vuelve a intentarlo.';

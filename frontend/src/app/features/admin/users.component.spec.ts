@@ -9,6 +9,7 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 import { AccessRequest, AccessRequestAdminService } from '../../core/api/access-request-admin.service';
 import { AdminUser, UserAdminService } from '../../core/api/user-admin.service';
 import { NotificationService } from '../../core/notifications/notification.service';
+import { NavBadgesService } from '../../shared/layout/nav-badges.service';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { UiMenu } from '../../shared/ui/menu/ui-menu';
 import { UserFormSheetComponent } from './user-form-sheet.component';
@@ -47,7 +48,7 @@ describe('pantalla Usuarios (F7-6)', () => {
   async function render(api: Partial<Api> = {}, { stable = true, vista = 'cuentas' } = {}) {
     service = {
       list: vi.fn(api.users ?? (() => of([ana, beto]))), create: vi.fn(), update: vi.fn(), updateStatus: vi.fn(),
-      approve: vi.fn(),
+      approve: vi.fn(), permisoAutoria: vi.fn(() => of({})),
     };
     requestsApi = { listPending: vi.fn(api.requests ?? (() => of([]))), updateStatus: vi.fn() };
     dialog = { sheet: vi.fn(() => ({ close: vi.fn() })), confirm: vi.fn(() => Promise.resolve(true)) };
@@ -69,6 +70,43 @@ describe('pantalla Usuarios (F7-6)', () => {
     fixture.detectChanges();
   }
 
+  it('permite conceder y retirar el permiso de crear casos desde el menú del docente', async () => {
+    await render();
+    expect(component().rowActions(beto).map(item => item.label)).toContain('Permitir crear casos');
+    component().rowAction(beto, 'autoria');
+    expect(service['permisoAutoria']).toHaveBeenCalledWith(6, true);
+    expect(component().rowActions({ ...beto, permisoAutoria: true }).map(item => item.label)).toContain('Retirar permiso de crear casos');
+    expect(component().rowActions(ana).map(item => item.value)).not.toContain('autoria');
+  });
+  it('explica las dos listas vacías y permite pasar de una a otra', async () => {
+    await render({ users: () => of([]), requests: () => of([]) });
+    component().cambiarVista('por-aprobar');
+    fixture.detectChanges();
+    expect(text(host())).toContain('Las solicitudes de acceso llegan a «Solicitudes»');
+    labelled('Ver solicitudes')!.click();
+    fixture.detectChanges();
+    expect(text(host())).toContain('Las cuentas importadas pendientes están en «Por aprobar»');
+  });
+  it('el filtro de estudiantes pendientes y la pestaña cuentan las mismas cuentas', async () => {
+    await render({ users: () => of([{ ...ana, pendingApproval: true }, { ...beto, pendingApproval: true }, ana]) });
+    component().rol.set('ESTUDIANTE');
+    component().estadoFiltro.set('pendiente');
+    expect(component().filtrados().map(u => u.id)).toEqual([ana.id]);
+    expect(component().pendingUsers().filter(u => u.role === 'ESTUDIANTE').map(u => u.id)).toEqual([ana.id]);
+    expect(component().pendientes().cuentas).toBe(2);
+  });
+  it('muestra y cambia el permiso del profesor', async () => {
+    await render();
+    expect(text(rows()[1])).toContain('Permiso de autoría: No');
+    component().cambiarPermiso(beto);
+    fixture.detectChanges();
+    expect(service['permisoAutoria']).toHaveBeenCalledWith(6, true);
+    expect(text(rows()[1])).toContain('Permiso de autoría: Sí');
+    // El nombre accesible empieza por el texto visible (WCAG 2.5.3; axe label-content-name-mismatch en la pasada de humo).
+    const boton = [...rows()[1].querySelectorAll('button')].find(b => b.textContent?.includes('Permiso de autoría'))!;
+    expect(boton.getAttribute('aria-label')!.startsWith(boton.textContent!.trim())).toBe(true);
+  });
+
   it('abre la vista indicada en la URL y actualiza la navegacion', async () => {
     await render({}, { vista: 'solicitudes' });
     expect(component().vista()).toBe('solicitudes');
@@ -76,6 +114,16 @@ describe('pantalla Usuarios (F7-6)', () => {
     expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { vista: 'por-aprobar' }, queryParamsHandling: 'merge' }));
   });
 
+  it('muestra cuentas por bloques, permite cargar más y conserva el total', async () => {
+    const usuarios = Array.from({ length: 60 }, (_, i) => ({ ...ana, id: i + 1, nombre: `Persona ${String(i).padStart(2, '0')}` }));
+    await render({ users: () => of(usuarios) });
+    expect(rows()).toHaveLength(25);
+    expect(text(host())).toContain('Mostrando 25 de 60 cuentas');
+    labelled('Mostrar más cuentas')!.click();
+    fixture.detectChanges();
+    expect(rows()).toHaveLength(50);
+    expect(text(host())).toContain('Mostrando 50 de 60 cuentas');
+  });
   it('filtra por búsqueda y rol y conserva el recuento', async () => {
     await render();
     component().busqueda.set('beto');
@@ -166,7 +214,7 @@ describe('pantalla Usuarios (F7-6)', () => {
       await render({ users: () => (++calls === 1 ? throwError(() => new Error('HTTP 500')) : of([ana])) });
       const errors = host().querySelectorAll('ui-error-state');
       expect(errors).toHaveLength(1);
-      expect(text(errors[0])).toContain('No fue posible cargar los usuarios.');
+      expect(text(errors[0])).toContain('No pudimos cargar los usuarios. Inténtalo de nuevo.');
       expect(host().querySelector('ui-table ui-empty-state')).toBeNull();
       expect(text(host())).not.toContain('Aún no hay usuarios');
 
@@ -220,7 +268,7 @@ describe('pantalla Usuarios (F7-6)', () => {
       const edit = row.querySelector('button[aria-label="Editar a Ana Pérez"]') as HTMLButtonElement;
       expect(edit).not.toBeNull();
       expect(row.querySelectorAll('ui-menu')).toHaveLength(1);
-      expect(row.querySelector('ui-menu button')?.getAttribute('aria-label')).toBe('Más acciones de Ana Pérez');
+      expect(row.querySelector('ui-menu button')?.getAttribute('aria-label')).toBe('Más acciones de «Ana Pérez»');
 
       edit.click();
       expect(component().selectedUser()).toEqual(ana);
@@ -372,7 +420,7 @@ describe('pantalla Usuarios (F7-6)', () => {
 
   // req: RNF-04, BLOQUE-H
   describe('solicitudes de acceso', () => {
-    it('con solicitudes pendientes: cada una con «Crear usuario» y «Descartar»', async () => {
+    it('con solicitudes pendientes: cada una con «Aprobar y crear cuenta» y «Descartar»', async () => {
       await render({ requests: () => of([solicitud]) });
       component().cambiarVista('solicitudes');
       fixture.detectChanges();
@@ -380,7 +428,7 @@ describe('pantalla Usuarios (F7-6)', () => {
       expect(text(section)).toContain('Rosa Vega');
       expect(text(section)).toContain('rosa@siep.test');
       expect(text(section)).toContain('Rol solicitado: Docente');
-      const create = [...section.querySelectorAll('button')].find(button => text(button.querySelector('.ui-button__label')) === 'Crear usuario')!;
+      const create = [...section.querySelectorAll('button')].find(button => text(button.querySelector('.ui-button__label')) === 'Aprobar y crear cuenta')!;
       create.click();
       expect(dialog.sheet).toHaveBeenCalledTimes(1);
       expect(component().form.getRawValue().email).toBe('rosa@siep.test');
@@ -460,6 +508,134 @@ describe('pantalla Usuarios (F7-6)', () => {
       expect(names.length).toBeGreaterThan(1);
       expect(new Set(names).size).toBe(names.length);
       expect(host().querySelector('mat-card, mat-form-field, mat-select, mat-chip, table[mat-table], .psy-button, app-confirm-dialog')).toBeNull();
+    });
+  });
+
+  // P6: un solo número de pendientes (menú, resumen y pestañas), y «Aprobar» a la vista.
+  describe('pendientes: una sola cifra y «Aprobar» a la vista (P6)', () => {
+    const pendiente = (id: number, nombre: string) =>
+      ({ id, email: `${nombre.toLowerCase()}@siep.test`, nombre, apellido: 'Nueva', role: 'ESTUDIANTE', activo: false, pendingApproval: true } as AdminUser);
+    const solicitudDe = (id: number, nombre: string) => ({ ...solicitud, id, nombre, email: `${nombre.toLowerCase()}@siep.test` } as AccessRequest);
+    const dosYDos = {
+      users: () => of([ana, pendiente(7, 'Carla'), pendiente(8, 'Dario')]),
+      requests: () => of([solicitudDe(21, 'Rosa'), solicitudDe(22, 'Sara')]),
+    };
+    const insignia = () => TestBed.inject(NavBadgesService).cuenta('usuarios');
+    const pestanas = () => text(host().querySelector('ui-segmentado'));
+    const resumenPend = () => text(host().querySelector('[data-us-pendientes]'));
+    const boton = (root: ParentNode, etiqueta: string) => [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find(b => text(b.querySelector('.ui-button__label')) === etiqueta || b.getAttribute('aria-label') === etiqueta);
+
+    it('el menú, el resumen y las pestañas dicen el mismo número', async () => {
+      await render(dosYDos);
+      expect(insignia()).toBe(4);
+      expect(resumenPend()).toContain('4 pendientes: 2 solicitudes de acceso por revisar y 2 cuentas por aprobar.');
+      expect(pestanas()).toContain('Solicitudes · 2');
+      expect(pestanas()).toContain('Por aprobar · 2');
+    });
+
+    it('al descartar una solicitud el número baja en el menú y en el resumen a la vez', async () => {
+      await render(dosYDos);
+      requestsApi['updateStatus'].mockReturnValue(of({}));
+      component().dismissRequest(component().accessRequests()[0]);
+      fixture.detectChanges();
+      expect(insignia()).toBe(3);
+      expect(resumenPend()).toContain('3 pendientes: 1 solicitud de acceso por revisar y 2 cuentas por aprobar.');
+    });
+
+    it('sin pendientes lo dice y quita la insignia', async () => {
+      await render({ users: () => of([ana]), requests: () => of([]) });
+      expect(insignia()).toBe(0);
+      expect(resumenPend()).toBe('Todo al día: no hay solicitudes de acceso ni cuentas por aprobar.');
+      expect(host().querySelector('[data-us-pendientes] button')).toBeNull();
+    });
+
+    it('si las solicitudes no cargaron no inventa un cero: la pestaña no lleva cifra, no hay insignia y el resumen lo dice', async () => {
+      await render({ ...dosYDos, requests: () => throwError(() => new HttpErrorResponse({ status: 500 })) });
+      expect(insignia()).toBe(0);
+      expect(pestanas()).not.toContain('Solicitudes ·');
+      expect(pestanas()).toContain('Por aprobar · 2');
+      expect(resumenPend()).toContain('No pudimos contar los pendientes porque no cargaron las solicitudes de acceso.');
+      component().cambiarVista('solicitudes');
+      fixture.detectChanges();
+      expect(text(host().querySelector('.us-requests ui-error-state'))).toContain('No pudimos cargar las solicitudes de acceso. Es un problema nuestro, no tuyo');
+    });
+
+    it('el resumen lleva a cada lista con un botón', async () => {
+      await render(dosYDos);
+      boton(host(), 'Ver cuentas por aprobar')!.click();
+      expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { vista: 'por-aprobar' } }));
+      // En la vista de solicitudes ya no se ofrece ir a donde se está.
+      component().cambiarVista('solicitudes');
+      fixture.detectChanges();
+      expect(boton(host().querySelector('[data-us-pendientes]')!, 'Ver solicitudes')).toBeUndefined();
+    });
+
+    it('cada solicitud pendiente tiene «Aprobar y crear cuenta» a la vista, con el nombre de la persona', async () => {
+      await render(dosYDos, { vista: 'solicitudes' });
+      const botones = [...host().querySelectorAll('.us-request .us-request__actions button')]
+        .filter(b => text(b.querySelector('.ui-button__label')) === 'Aprobar y crear cuenta');
+      expect(botones).toHaveLength(2);
+      expect(botones[0].getAttribute('aria-label')).toBe('Aprobar la solicitud de Rosa Vega y crear su cuenta');
+    });
+
+    it('cada cuenta por aprobar tiene su «Aprobar», además del lote, y aprueba solo esa', async () => {
+      await render(dosYDos, { vista: 'por-aprobar' });
+      service['approve'].mockReturnValue(of({ approved: 1, approvedIds: [7], skipped: [], emailed: 1, failed: [] }));
+      const filas = [...host().querySelectorAll('.us-pending-row')];
+      expect(filas).toHaveLength(2);
+      expect(boton(filas[0], 'Aprobar la cuenta de Carla Nueva')).toBeDefined();
+      boton(filas[0], 'Aprobar la cuenta de Carla Nueva')!.click();
+      await fixture.whenStable();
+      expect(service['approve']).toHaveBeenCalledWith([7]);
+    });
+
+    it('en la tabla de cuentas, la pendiente muestra «Aprobar» sin abrir el menú; una activa no', async () => {
+      await render(dosYDos);
+      const filaCarla = rows().find(r => text(r).includes('Carla'))!;
+      const filaAna = rows().find(r => text(r).includes('Ana'))!;
+      expect(boton(filaCarla, 'Aprobar la cuenta de Carla Nueva')).toBeDefined();
+      expect(boton(filaAna, 'Aprobar la cuenta de Ana Pérez')).toBeUndefined();
+    });
+
+    it('«Aprobar» en lote apagado dice a la vista qué falta, y al marcar una se habilita', async () => {
+      await render(dosYDos, { vista: 'por-aprobar' });
+      const lote = () => host().querySelector<HTMLButtonElement>('.us-pending-lote button')!;
+      expect(lote().getAttribute('aria-disabled')).toBe('true');
+      expect(text(host().querySelector('[data-us-motivo]'))).toBe('Marca al menos una cuenta de la lista para aprobarlas juntas.');
+      expect(text(lote().querySelector('.ui-button__label'))).toBe('Aprobar las marcadas');
+      component().seleccionar(7, true, true);
+      fixture.detectChanges();
+      expect(lote().getAttribute('aria-disabled')).toBeNull();
+      expect(host().querySelector('[data-us-motivo]')).toBeNull();
+      expect(text(lote().querySelector('.ui-button__label'))).toBe('Aprobar 1 cuenta');
+    });
+
+    it('sin cuentas por aprobar la vista lo dice en vez de quedar vacía', async () => {
+      await render({ users: () => of([ana]), requests: () => of([solicitudDe(21, 'Rosa')]) }, { vista: 'por-aprobar' });
+      expect(text(host().querySelector('.us-pending ui-empty-state'))).toContain('No hay cuentas por aprobar');
+    });
+
+    it('mientras hay un cambio en curso, las acciones sobre cuentas dicen por qué esperan', async () => {
+      await render(dosYDos);
+      component().seleccion.set([5]);
+      component().saving.set(true);
+      fixture.detectChanges();
+      const desactivar = boton(host().querySelector('.us-batch')!, 'Desactivar')!;
+      expect(desactivar.getAttribute('aria-disabled')).toBe('true');
+      expect(desactivar.querySelector('[hidden]')?.textContent).toBe('Hay un cambio en curso: espera un momento.');
+    });
+
+    it('el ⋮ de cada fila se llama «Más acciones de «Nombre»» y el lápiz lleva el nombre', async () => {
+      await render(dosYDos);
+      const fila = rows().find(r => text(r).includes('Ana'))!;
+      expect(fila.querySelector('ui-menu button')?.getAttribute('aria-label')).toBe('Más acciones de «Ana Pérez»');
+      expect(fila.querySelector('button[aria-label="Editar a Ana Pérez"]')).not.toBeNull();
+    });
+
+    it('si falla cargar las cuentas lo dice en palabras de persona con qué hacer', async () => {
+      await render({ ...dosYDos, users: () => throwError(() => new HttpErrorResponse({ status: 0 })) });
+      expect(component().error()).toBe('No pudimos cargar los usuarios. Revisa tu conexión e inténtalo de nuevo.');
     });
   });
 });

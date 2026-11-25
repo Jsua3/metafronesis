@@ -1,3 +1,4 @@
+import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked,
   viewChild,
@@ -56,7 +57,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
 @Component({
   selector: 'app-autoria-shell',
   imports: [
-    RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
+    AsignarDesdeCasoComponent, RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
     UiGlassBar, UiMenu, TemaSelectorComponent, HiloDelCasoComponent, RielDeEscenasComponent,
     EstudioMarcoComponent, ExploradorBibliotecaComponent, TutorialCapaComponent,
   ],
@@ -93,6 +94,10 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
             <!-- La pasarela (pedido del usuario, 2026-11-22): todo lo que se puede agregar al caso, desde cualquier pantalla.
                  «Escena nueva» la crea después de la actual y abre su guion; lo demás lleva a su control con el foco puesto. -->
             <ui-menu class="menu-agregar" label="Agregar" icon="add" align="start" [items]="opcionesAgregar()" (itemSelected)="agregar($event)" />
+          }
+          <!-- «Asignar» es una acción, no parte del «dónde estoy»: va con las herramientas, antes de «Probar» (SIEP-259). -->
+          @if (store.caso(); as caso) {
+            @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" [titulo]="caso.titulo" [compacto]="true" /> }
           }
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
