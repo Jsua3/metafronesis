@@ -12,9 +12,10 @@ import { ServidorFalso } from '../testing/servidor-falso';
 import { universidad } from '../testing/universidad';
 
 /** Abre el editor del caso 41 (consultorio y pasillo) en `url`, como ruta del programa, y espera a que se dibuje. */
-export async function abrirEditor(url: string) {
+export async function abrirEditor(url: string, opciones: { estado?: 'DRAFT' | 'IN_REVIEW' | 'PUBLISHED' | 'ARCHIVED' } = {}) {
   TestBed.resetTestingModule();
   const servidor = new ServidorFalso(casoCopiadoDeLugar(universidad, ['consultorio', 'pasillo'], { caseVersionId: 41, revision: 3 }), universidad);
+  if (opciones.estado) servidor.editor.status = opciones.estado;
   await TestBed.configureTestingModule({
     providers: [
       provideRouter([

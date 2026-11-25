@@ -51,6 +51,29 @@ describe('PanelPendientesComponent', () => {
     expect(hoja.textContent).toContain('Respuesta 1 \u00b7 retroalimentaci\u00f3n');
   });
 
+  it('con el caso publicado no invita a enviarlo: dice por qué no hay nada que hacer y no ofrece «Ir a Enviar»', async () => {
+    const { raiz, listo } = await abrirEditor('/portal/casos/41/editor/datos', { estado: 'PUBLISHED' });
+    raiz.querySelector<HTMLButtonElement>('header button[data-accion="ver-pendientes"]')!.click();
+    await listo();
+    const hoja = document.querySelector<HTMLElement>('app-panel-pendientes')!;
+    expect(hoja.textContent).toContain('El caso está publicado');
+    expect(hoja.textContent).not.toContain('envíalo a Psicología');
+    expect(hoja.textContent).not.toContain('impiden enviar');
+    expect([...hoja.querySelectorAll('button')].some(b => b.textContent?.includes('Ir a Enviar'))).toBe(false);
+  });
+
+  it('las sugerencias plegadas muestran una marca de que se despliegan', async () => {
+    const { raiz, listo, store } = await abrirEditor('/portal/casos/41/editor/datos');
+    const escena = store.caso()!.escenas[0];
+    const r = store.agregarRespuesta(escena.id);
+    store.editarRespuesta(escena.id, r, { texto: 'Te escucho.', clase: 'RECOMMENDED', retroalimentacion: 'Bien.' });
+    await listo();
+    raiz.querySelector<HTMLButtonElement>('header button[data-accion="ver-pendientes"]')!.click();
+    await listo();
+    const resumen = document.querySelector<HTMLElement>('.pp__sugerencias summary')!;
+    expect(resumen.querySelector('.pp__chevron')).not.toBeNull();
+  });
+
   it('con cero pendientes ofrece ir a Enviar', async () => {
     const { raiz, listo, store } = await abrirEditor('/portal/casos/41/editor/datos');
     store.registrarRevision([]);
