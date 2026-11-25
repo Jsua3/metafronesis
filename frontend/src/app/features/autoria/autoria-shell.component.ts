@@ -83,7 +83,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
         @if (store.caso(); as caso) {
           <p class="caso-actual" [attr.title]="caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
           <app-hilo-del-caso />
-          @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" /> }
+          @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" [titulo]="caso.titulo" [compacto]="true" /> }
         } @else {
           <span class="contexto-editor">Editor de casos</span>
         }

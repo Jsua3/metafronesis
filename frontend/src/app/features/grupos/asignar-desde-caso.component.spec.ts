@@ -29,4 +29,21 @@ describe('Asignar desde el caso', () => {
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ caseVersionId: 7, target: { type: 'GROUP', groupId: 4 } }));
     expect(success).toHaveBeenCalledWith(expect.stringContaining('Grupo A. Lo verán 24 estudiantes'));
   });
+  it('en la barra dice una palabra, el lector oye qué caso se asigna y el diálogo lleva su nombre', async () => {
+    const open = vi.fn(() => ({ closed: of(undefined) }));
+    TestBed.configureTestingModule({ providers: [
+      { provide: GrupoService, useValue: { listar: () => of([]) } },
+      { provide: AssignmentService, useValue: { create: vi.fn() } },
+      { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
+      { provide: UiDialog, useValue: { open } },
+    ] });
+    const fixture = TestBed.createComponent(AsignarDesdeCasoComponent);
+    fixture.componentRef.setInput('caseId', 7); fixture.componentRef.setInput('publicado', true);
+    fixture.componentRef.setInput('titulo', 'Caso de prueba'); fixture.componentRef.setInput('compacto', true); fixture.detectChanges();
+    const boton: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    expect(boton.textContent?.trim()).toBe('Asignar');
+    expect(boton.getAttribute('aria-label')).toBe('Asignar «Caso de prueba» a un grupo');
+    boton.click(); await fixture.whenStable();
+    expect(open).toHaveBeenCalledWith(expect.anything(), { data: expect.objectContaining({ fixedCaseId: 7, title: 'Caso de prueba' }) });
+  });
 });

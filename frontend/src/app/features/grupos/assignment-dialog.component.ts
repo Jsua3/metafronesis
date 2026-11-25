@@ -97,7 +97,8 @@ export class AssignmentDialogComponent {
   private readonly injector = inject(Injector);
 
   protected readonly formId = uniqueUiId('ad-form');
-  protected readonly title = this.data.mode === 'create' ? 'Asignar un caso al grupo' : `Fechas de «${this.data.title ?? 'el caso'}»`;
+  protected readonly title = this.data.mode === 'create'
+    ? (this.data.fixedCaseId != null && this.data.title ? `Asignar «${this.data.title}» a un grupo` : 'Asignar un caso al grupo') : `Fechas de «${this.data.title ?? 'el caso'}»`;
   protected readonly description = this.data.mode === 'create'
     ? 'Los estudiantes del grupo verán el caso en su catálogo dentro de las fechas que elijas.'
     : 'El cambio vale desde ya para todo el grupo.';
