@@ -59,7 +59,7 @@
   "editor": {
     "complexions": ["a", "b"],
     "skins": ["piel-1", "piel-2", "piel-3", "piel-4", "piel-5", "piel-6"],
-    "hair": ["rapado", "corto-liso", "corto-rizado", "bob-flequillo", "media-melena", "largo-suelto", "cola-caballo", "mono", "trenza", "afro"],
+    "hair": ["rapado", "corto-liso", "corto-rizado", "bob-flequillo", "media-melena", "largo-suelto", "largo-raya-medio", "cola-caballo", "mono", "trenza", "afro"],
     "hairColors": ["negro", "castano-oscuro", "castano", "cobrizo", "rubio", "canoso"],
     "face": "sereno",
     "accessories": ["gafas", "gafete"],

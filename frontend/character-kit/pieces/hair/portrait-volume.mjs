@@ -45,6 +45,26 @@ const VOLUME = {
     ...rows(25, 28, ['bbbs', 'bbss']),
     29: ['bsss', 'ssss'],
   },
+  // Largo con raya al medio: arriba, el brillo a cada lado de la raya de la media melena; abajo, las cortinas del largo suelto.
+  'largo-raya-medio': {
+    2: ['hhsbss'],
+    3: ['hhbbshbbss'],
+    4: ['hhhbbshhbbss'],
+    5: ['hhhbbbsbhhbbss'],
+    6: ['hhbbbbbsbbhbbsss'],
+    7: ['hhbbbbsbbbbsbbbsss'],
+    8: ['hbbbbsbbbbbbsbbsss'],
+    9: ['bs', 'ss'],
+    ...rows(10, 13, ['hbs', 'bss']),
+    ...rows(14, 17, ['bhs', 'bss']),
+    ...rows(18, 20, ['bbs', 'bss']),
+    21: ['bbbs', 'bbss'],
+    22: ['bbbbs', 'bbbss'],
+    23: ['bbbbbs', 'bbbbss'],
+    24: ['bbbbsss', 'sssbbss'],
+    ...rows(25, 28, ['bbbs', 'bbss']),
+    29: ['bsss', 'ssss'],
+  },
   // Media melena con raya al medio: brillo a cada lado de la raya y un mechón por lado.
   'media-melena': {
     2: ['hhsbss'],

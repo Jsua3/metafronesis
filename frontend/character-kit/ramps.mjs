@@ -50,6 +50,9 @@ export const LITERAL_DEFAULTS = {
   eyeWhite: '#f1f2f4',
   iris: '#623b2d',
   shine: '#ffffff',
+  /** Labial rojo vino (rostro karen): luz y sombra de la rampa vinotinto. */
+  labios: '#a95366',
+  labiosSombra: '#7b3b4c',
   // accesorios
   gafas: '#302a3b',
   gafete: '#f1f2f4',
