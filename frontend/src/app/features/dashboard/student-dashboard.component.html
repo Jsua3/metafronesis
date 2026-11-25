@@ -6,12 +6,13 @@
 
 <!-- «Lo siguiente»: una frase, arriba de todo, que dice qué hacer ahora. La acción vive en la tarjeta de abajo (o en la
      invitación); aquí no se repite un segundo botón principal. El texto lleva el tipo para que no dependa del color. -->
-@if (loSiguiente(); as lo) {
+<!-- Con la tarjeta del caso a la vista («Continuar» o «Empezar») la frase la repetiría: solo va cuando dice algo nuevo. -->
+@if (loSiguiente(); as lo) { @if (!(siguiente() && (lo.tipo === 'continuar' || lo.tipo === 'empezar'))) {
   <section class="sd-siguiente" [attr.data-tipo]="lo.tipo" aria-labelledby="sd-siguiente-titulo">
     <h2 id="sd-siguiente-titulo" class="sd-siguiente__titulo">{{ copy.siguiente.titulo }}</h2>
     <p class="sd-siguiente__frase">{{ lo.frase }}</p>
   </section>
-}
+} }
 
 <!-- Sin aceptar la invitación no se ven los casos del grupo (E2-10): por eso va arriba. -->
 @if (pendientes() > 0) {

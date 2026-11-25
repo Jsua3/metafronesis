@@ -86,7 +86,8 @@ describe('Inicio del estudiante', () => {
     expect(empezar.getAttribute('aria-label')).toBe('Empezar «Caso 1»');
     expect(empezar.getAttribute('href')).toBe('/portal/simulador/1/ficha');
     expect(host.textContent).toContain('Sin empezar · 8 escenas');
-    expect(host.querySelector('.sd-siguiente__frase')?.textContent).toContain('Empieza «Caso 1»: es tu siguiente caso y ya está abierto.');
+    // La tarjeta ya dice «Empezar»: «Lo siguiente» no la repite.
+    expect(host.querySelector('.sd-siguiente')).toBeNull();
     expect(host.querySelector('.sd-invitacion')).toBeNull();
   });
 
@@ -148,9 +149,9 @@ describe('Inicio del estudiante', () => {
 
     it('con un intento a medias: continuar, con la escena donde se retoma', async () => {
       const { host } = await render({ invitaciones: [] });
-      expect(host.querySelector('.sd-siguiente__titulo')?.textContent).toContain('Lo siguiente');
-      expect(frase(host)).toBe('Continúa «Caso 1». Retomas en La sala de espera.');
-      expect(host.querySelector('.sd-siguiente')?.getAttribute('data-tipo')).toBe('continuar');
+      // La tarjeta del caso ya dice «Continuar» y dónde se retoma: la frase no se repite arriba.
+      expect(host.querySelector('.sd-siguiente')).toBeNull();
+      expect(host.textContent).toContain('La sala de espera');
     });
 
     it('con una invitación pendiente y nada que jugar: aceptarla; la invitación sigue arriba con su botón', async () => {
@@ -161,7 +162,8 @@ describe('Inicio del estudiante', () => {
 
     it('un caso listo gana a una invitación pendiente, pero la invitación no se esconde', async () => {
       const { host } = await render({ historial: [], invitaciones: [grupo({ status: 'INVITED', casesCount: null })] });
-      expect(frase(host)).toContain('Empieza «Caso 1»');
+      expect(host.querySelector('.sd-siguiente')).toBeNull();
+      expect(host.querySelector('.sd-protagonista')?.textContent).toContain('Caso 1');
       expect(host.querySelector('.sd-invitacion')).not.toBeNull();
     });
 

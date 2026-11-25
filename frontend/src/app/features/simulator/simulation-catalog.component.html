@@ -54,7 +54,7 @@
                 } @else {
                   <ui-badge tone="neutral">{{ statusLabel(card.item.status) }}</ui-badge>
                 }
-                <span>{{ plural(card.item.nodeCount, 'escena') }}</span>
+                @if (card.item.nodeCount > 0) { <span>{{ plural(card.item.nodeCount, 'escena') }}</span> }
               </p>
               @if (isStudent && card.estado.detalle) {
                 <p class="cs-detalle">{{ card.estado.detalle }}</p>
