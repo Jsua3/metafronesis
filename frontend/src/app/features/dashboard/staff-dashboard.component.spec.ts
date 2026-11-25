@@ -77,6 +77,15 @@ describe('Inicio docente y administración', () => {
     expect(badges.fijarUsuarios).toHaveBeenCalledWith(1, 1);
     expect(fixture.componentInstance.descripcion()).toContain('3 cosas');
   });
+  it('admin deja en «Revisión» la cifra de casos por aprobar, la misma de la tarjeta; sin leer los casos no deja ninguna', () => {
+    role = 'ADMIN'; casos.listAll.mockReturnValue(of([caso, publicado, { ...publicado, caseVersionId: 31, status: 'IN_REVIEW' }]));
+    const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();
+    expect(fixture.componentInstance.casosRevision()).toHaveLength(2);
+    expect(badges.fijar).toHaveBeenCalledWith('trazabilidad', 2);
+    badges.fijar.mockClear(); casos.listAll.mockReturnValue(throwError(() => new Error('sin red')));
+    fixture.componentInstance.reload();
+    expect(badges.fijar).toHaveBeenCalledWith('trazabilidad', 0);
+  });
   it('no presenta un total parcial como insignia completa', () => {
     role = 'ADMIN'; requests.listPending.mockReturnValue(throwError(() => new Error('sin red')));
     const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();

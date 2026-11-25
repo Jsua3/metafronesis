@@ -1,7 +1,8 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
+import { Observable, Subscription } from 'rxjs';
 import { Grupo } from '../../core/api/grupo.service';
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
@@ -10,6 +11,7 @@ import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiDialogActions, UiDialogFrame } from '../../shared/ui/dialog/ui-dialog';
 import { UiControl, UiField } from '../../shared/ui/field/ui-field';
 import { fromWindowIso, toWindowIso, windowError } from './assignment-window.util';
+import { fraseDeSecuencia, previaDelUltimo, tituloDe } from './secuencia.util';
 
 export interface AssignmentDialogData {
   mode: 'create' | 'edit';
@@ -20,6 +22,10 @@ export interface AssignmentDialogData {
   /** Al cambiar las fechas: la asignación y el título de su caso. */
   assignment?: Assignment;
   title?: string;
+  /** Al asignar desde la ficha del grupo: sus asignaciones de hoy; con ellas se dice cuándo harán el caso nuevo. */
+  groupAssignments?: Assignment[];
+  /** Al asignar desde el caso: pide las asignaciones del grupo elegido (el diálogo no conoce el servidor). */
+  loadGroupAssignments?: (groupId: number) => Observable<Assignment[]>;
 }
 
 /** Lo que la docente decidió: el caso (solo al asignar) y las dos fechas como instantes ISO; `null` = sin fecha. */
@@ -28,7 +34,14 @@ export interface AssignmentDialogResult {
   groupId?: number;
   opensAt: string | null;
   closesAt: string | null;
+  /**
+   * Lo que el diálogo le dijo a la docente sobre la secuencia: el caso que deben terminar antes (`string`), ninguno
+   * (`null`) o que no se pudo saber (ausente). Quien asigna lo repite en su confirmación.
+   */
+  despuesDe?: string | null;
 }
+
+type SecuenciaEstado = { estado: 'idle' | 'loading' | 'error' } | { estado: 'ready'; previa: string | null };
 
 type DialogField = 'groupId' | 'caseVersionId' | 'opensAt' | 'closesAt';
 
@@ -61,7 +74,7 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
         @if (data.fixedCaseId != null) {
           @if (data.groups?.length) {
             <ui-field label="Grupo" required [error]="errors().groupId">
-              <select uiControl [value]="groupId()" (change)="groupId.set(read($event))">
+              <select uiControl [value]="groupId()" (change)="onGroup($event)">
                 <option value="">Elige un grupo</option>
                 @for (group of data.groups; track group.id) { <option [value]="group.id">{{ group.nombre }} - {{ group.totalEstudiantes }} estudiantes</option> }
               </select>
@@ -79,6 +92,17 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
           <input uiControl type="datetime-local" [value]="closesAt()" (input)="onDate('closesAt', $event)" />
         </ui-field>
         <p class="ad-zone">La hora es la de tu navegador.</p>
+        @if (data.mode === 'create') {
+          <!-- Cuándo podrán empezarlo: el estudiante lo vio «Bloqueado» sin que la docente lo supiera (RN-04). -->
+          @switch (secuencia().estado) {
+            @case ('loading') { <p class="ad-secuencia" role="status">Revisando el orden de los casos del grupo…</p> }
+            @case ('error') { <p class="ad-secuencia" role="status">No pudimos revisar el orden del grupo. Lo verás en «Casos asignados» al asignar.</p> }
+            @case ('ready') {
+              <p class="ad-secuencia" role="status"><strong>Cuándo lo harán.</strong> {{ frase() }}
+                <span>Va después de los demás casos del grupo; puedes cambiar el orden en «Casos asignados».</span></p>
+            }
+          }
+        }
       </form>
       <button ui-button uiDialogActions type="button" variant="secondary" (click)="ref.close()">Cancelar</button>
       <button ui-button uiDialogActions type="submit" [disabledReason]="sinGrupos ? 'Crea un grupo primero: sin grupos no hay a quién asignar el caso.' : null" [attr.form]="formId">{{ confirmLabel }}</button>
@@ -87,6 +111,8 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
   styles: [`
     :host { display: block; }
     .ad-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-space-4); }
+    .ad-secuencia { display: grid; gap: var(--ds-space-1); margin: 0; padding: var(--ds-space-3); border-radius: var(--ds-radius-md); border: 1px solid var(--ds-border); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
+    .ad-secuencia span { color: var(--ds-text-2); }
     .ad-zone { margin: 0; color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
   `],
 })
@@ -111,8 +137,48 @@ export class AssignmentDialogComponent {
   protected readonly opensAt = signal(fromWindowIso(this.data.assignment?.opensAt));
   protected readonly closesAt = signal(fromWindowIso(this.data.assignment?.closesAt));
   protected readonly errors = signal<Partial<Record<DialogField, string>>>({});
+  /** Cuándo podrán empezar el caso: se sabe al elegir el grupo (o de entrada, si ya se está en la ficha del grupo). */
+  protected readonly secuencia = signal<SecuenciaEstado>(this.secuenciaInicial());
+  private readonly aperturaFutura = computed(() => {
+    const instante = Date.parse(this.opensAt());
+    return !Number.isNaN(instante) && instante > Date.now();
+  });
+  /** La frase de la secuencia; con una apertura programada dice además que no abrirá antes. */
+  protected readonly frase = computed(() => {
+    const actual = this.secuencia();
+    return actual.estado === 'ready' ? fraseDeSecuencia(actual.previa, this.aperturaFutura()) : '';
+  });
+  private cargaDeSecuencia: Subscription | null = null;
   /** El control de fecha tiene algo escrito que todavía no es una fecha (a medias): no es lo mismo que vacío. */
   private readonly incomplete = { opensAt: false, closesAt: false };
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.cargaDeSecuencia?.unsubscribe());
+  }
+
+  private secuenciaInicial(): SecuenciaEstado {
+    const actuales = this.data.groupAssignments;
+    return this.data.mode === 'create' && actuales ? { estado: 'ready', previa: this.previaDe(actuales) } : { estado: 'idle' };
+  }
+
+  private previaDe(asignaciones: Assignment[]): string | null {
+    const previa = previaDelUltimo(asignaciones);
+    return previa ? tituloDe(previa) : null;
+  }
+
+  /** Al elegir el grupo (asignando desde el caso) se pide su secuencia; elegir otro cancela la petición anterior. */
+  protected onGroup(event: Event): void {
+    const value = this.read(event);
+    this.groupId.set(value);
+    this.cargaDeSecuencia?.unsubscribe();
+    const cargar = this.data.loadGroupAssignments;
+    if (!value || !cargar) { this.secuencia.set({ estado: 'idle' }); return; }
+    this.secuencia.set({ estado: 'loading' });
+    this.cargaDeSecuencia = cargar(Number(value)).subscribe({
+      next: asignaciones => this.secuencia.set({ estado: 'ready', previa: this.previaDe(asignaciones) }),
+      error: () => this.secuencia.set({ estado: 'error' }),
+    });
+  }
 
   protected read(event: Event): string {
     return (event.target as HTMLInputElement | HTMLSelectElement).value;
@@ -144,6 +210,10 @@ export class AssignmentDialogComponent {
     const result: AssignmentDialogResult = { opensAt: this.windowValue('opensAt'), closesAt: this.windowValue('closesAt') };
     if (this.data.mode === 'create') result.caseVersionId = this.data.fixedCaseId ?? Number(this.caseVersionId());
     if (this.data.fixedCaseId != null) result.groupId = Number(this.groupId());
+    if (this.data.mode === 'create') {
+      const actual = this.secuencia();
+      if (actual.estado === 'ready') result.despuesDe = actual.previa;
+    }
     this.ref.close(result);
   }
 

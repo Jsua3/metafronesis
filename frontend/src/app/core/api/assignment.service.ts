@@ -36,6 +36,16 @@ export class AssignmentService {
     return this.http.patch<ApiDataResponse<Assignment>>(`${this.API}/${assignmentId}`, changes).pipe(map(response => response.data));
   }
 
+  /**
+   * Fija el orden de la secuencia del grupo (RN-04): los ids de TODAS sus asignaciones, activas o en pausa, de la primera
+   * a la última. El servidor las numera de una vez y devuelve la lista ya ordenada; si la lista cambió mientras tanto
+   * responde 409 y no toca nada.
+   */
+  reorder(groupId: number, assignmentIds: number[]) {
+    return this.http.put<ApiDataResponse<Assignment[]>>(`/api/grupos/${groupId}/casos/orden`, { assignmentIds })
+      .pipe(map(response => response.data));
+  }
+
   remove(assignmentId: number) {
     return this.http.delete<ApiDataResponse<{ id: number }>>(`${this.API}/${assignmentId}`).pipe(map(response => response.data));
   }

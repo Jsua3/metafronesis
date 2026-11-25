@@ -1,6 +1,7 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Subject, of, throwError } from 'rxjs';
 
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
@@ -200,5 +201,85 @@ describe('AssignmentDialogComponent', () => {
     expect(boton.getAttribute('aria-disabled')).toBe('true');
     expect(document.getElementById(boton.getAttribute('aria-describedby')!)?.textContent).toBe('Crea un grupo primero: sin grupos no hay a quién asignar el caso.');
     expect(el().textContent).toContain('No tienes grupos todavía');
+  });
+
+  // F2 · la docente se enteraba por el estudiante de que el caso nuevo le salía «Bloqueado» (RN-04).
+  describe('cuándo lo podrán empezar los estudiantes', () => {
+    const previa = (id: number, titulo: string, partial: Partial<Assignment> = {}): Assignment => ({
+      id, caseVersionId: id + 100, caseTitle: titulo, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: id, ...partial,
+    });
+    const secuencia = () => (el().querySelector('.ad-secuencia')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+    it('desde la ficha del grupo: nombra el caso que deben terminar antes y lo devuelve a quien asigna', () => {
+      setup({ mode: 'create', cases, groupAssignments: [previa(1, 'Violencia Familiar'), previa(2, 'Caso en Universidad')] });
+      expect(secuencia()).toContain('Tus estudiantes lo harán después de terminar «Caso en Universidad».');
+      write('Caso', '13');
+      submit();
+      expect(close).toHaveBeenCalledWith({ caseVersionId: 13, opensAt: null, closesAt: null, despuesDe: 'Caso en Universidad' });
+    });
+
+    it('sin casos que hagan esperar (grupo vacío, en pausa o ya cerrados) pueden empezarlo de inmediato', () => {
+      setup({ mode: 'create', cases, groupAssignments: [previa(1, 'Uno', { active: false }), previa(2, 'Dos', { state: 'CLOSED' })] });
+      expect(secuencia()).toContain('Tus estudiantes pueden empezarlo de inmediato.');
+      write('Caso', '12');
+      submit();
+      expect(close).toHaveBeenCalledWith({ caseVersionId: 12, opensAt: null, closesAt: null, despuesDe: null });
+    });
+
+    it('con una apertura programada dice que podrán empezarlo cuando se abra', () => {
+      setup({ mode: 'create', cases, groupAssignments: [] });
+      write('Abre', '2099-01-01T08:00');
+      fixture.detectChanges();
+      expect(secuencia()).toContain('podrán empezarlo cuando se abra');
+    });
+
+    describe('asignando desde el caso', () => {
+      const grupos = [{ id: 3, nombre: 'Grupo A', codigo: 'A', totalEstudiantes: 20 }, { id: 4, nombre: 'Grupo B', codigo: 'B', totalEstudiantes: 8 }];
+
+      it('hasta elegir el grupo no dice nada; al elegirlo lo pide, lo muestra y lo devuelve', () => {
+        const load = vi.fn((id: number) => of(id === 3 ? [previa(1, 'Violencia Familiar')] : []));
+        setup({ mode: 'create', cases: [], fixedCaseId: 7, groups: grupos, title: 'Nuevo', loadGroupAssignments: load });
+        expect(secuencia()).toBe('');
+        write('Grupo', '3');
+        fixture.detectChanges();
+        expect(load).toHaveBeenCalledWith(3);
+        expect(secuencia()).toContain('después de terminar «Violencia Familiar»');
+        write('Grupo', '4');
+        fixture.detectChanges();
+        expect(secuencia()).toContain('pueden empezarlo de inmediato');
+        submit();
+        expect(close).toHaveBeenCalledWith({ caseVersionId: 7, groupId: 4, opensAt: null, closesAt: null, despuesDe: null });
+      });
+
+      it('mientras llega lo dice, y si no llega lo dice sin impedir asignar ni inventar la secuencia', () => {
+        const respuesta = new Subject<Assignment[]>();
+        setup({ mode: 'create', cases: [], fixedCaseId: 7, groups: grupos, title: 'Nuevo', loadGroupAssignments: () => respuesta });
+        write('Grupo', '3');
+        fixture.detectChanges();
+        expect(secuencia()).toContain('Revisando el orden de los casos del grupo');
+        respuesta.error(new Error('red'));
+        fixture.detectChanges();
+        expect(secuencia()).toContain('No pudimos revisar el orden del grupo');
+        submit();
+        expect(close).toHaveBeenCalledWith({ caseVersionId: 7, groupId: 3, opensAt: null, closesAt: null });
+      });
+
+      it('elegir «Elige un grupo» otra vez quita lo dicho', () => {
+        setup({ mode: 'create', cases: [], fixedCaseId: 7, groups: grupos, title: 'Nuevo', loadGroupAssignments: () => of([]) });
+        write('Grupo', '3');
+        fixture.detectChanges();
+        expect(secuencia()).not.toBe('');
+        write('Grupo', '');
+        fixture.detectChanges();
+        expect(secuencia()).toBe('');
+      });
+
+      it('si falla la petición el error es de red, no un error del diálogo', () => {
+        setup({ mode: 'create', cases: [], fixedCaseId: 7, groups: grupos, title: 'Nuevo', loadGroupAssignments: () => throwError(() => new Error('x')) });
+        write('Grupo', '3');
+        fixture.detectChanges();
+        expect(errors()).toEqual([]);
+      });
+    });
   });
 });

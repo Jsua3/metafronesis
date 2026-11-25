@@ -65,7 +65,10 @@
     @if (item.escenasConGuion != null) {
       <p class="hub-card__meta">{{ item.escenasConGuion }} de {{ item.nodeCount }} escenas con guion</p>
     }
-    <app-asignar-desde-caso [caseId]="item.caseVersionId" [publicado]="item.status === 'PUBLISHED'" [titulo]="item.title" />
+    @if (item.status === 'PUBLISHED' && asignadoA(item.caseVersionId); as quien) {
+      <p class="hub-card__meta hub-card__asignado" data-hub-asignado>{{ quien }}</p>
+    }
+    <app-asignar-desde-caso [caseId]="item.caseVersionId" [publicado]="item.status === 'PUBLISHED'" [titulo]="item.title" (asignado)="loadAsignaciones()" />
     <div class="hub-card__actions">
       <a ui-button [routerLink]="item.status === 'IN_REVIEW' ? ['/portal/casos', item.caseVersionId, 'editor', 'revision'] : ['/portal/casos', item.caseVersionId, 'editor']">{{ accion(item.status) }}</a>
     </div>

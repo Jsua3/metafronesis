@@ -78,4 +78,49 @@ describe('Asignar desde el caso', () => {
     expect(error).toHaveBeenCalledWith('No fue posible asignar el caso. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     expect(asignado).not.toHaveBeenCalled();
   });
+
+  it('la confirmación dice cuándo podrán empezarlo los estudiantes (después de qué caso)', async () => {
+    const success = vi.fn();
+    const open = vi.fn(() => ({ closed: of({ groupId: 4, opensAt: null, closesAt: null, despuesDe: 'Violencia Familiar' }) }));
+    TestBed.configureTestingModule({ providers: [
+      { provide: GrupoService, useValue: { listar: () => of([{ id: 4, nombre: 'Grupo A', totalEstudiantes: 24 }]) } },
+      { provide: AssignmentService, useValue: { create: () => of({}), list: () => of([]) } },
+      { provide: NotificationService, useValue: { success, error: vi.fn() } },
+      { provide: UiDialog, useValue: { open } },
+    ] });
+    const fixture = TestBed.createComponent(AsignarDesdeCasoComponent);
+    fixture.componentRef.setInput('caseId', 7); fixture.componentRef.setInput('publicado', true); fixture.detectChanges();
+    fixture.nativeElement.querySelector('button').click(); await fixture.whenStable();
+    expect(success).toHaveBeenCalledWith(expect.stringContaining('Tus estudiantes lo harán después de terminar «Violencia Familiar».'));
+  });
+  it('sin casos previos dice que lo pueden empezar de inmediato', async () => {
+    const success = vi.fn();
+    const open = vi.fn(() => ({ closed: of({ groupId: 4, opensAt: null, closesAt: null, despuesDe: null }) }));
+    TestBed.configureTestingModule({ providers: [
+      { provide: GrupoService, useValue: { listar: () => of([{ id: 4, nombre: 'Grupo A', totalEstudiantes: 24 }]) } },
+      { provide: AssignmentService, useValue: { create: () => of({}) } },
+      { provide: NotificationService, useValue: { success, error: vi.fn() } },
+      { provide: UiDialog, useValue: { open } },
+    ] });
+    const fixture = TestBed.createComponent(AsignarDesdeCasoComponent);
+    fixture.componentRef.setInput('caseId', 7); fixture.componentRef.setInput('publicado', true); fixture.detectChanges();
+    fixture.nativeElement.querySelector('button').click(); await fixture.whenStable();
+    expect(success).toHaveBeenCalledWith(expect.stringContaining('Tus estudiantes pueden empezarlo de inmediato.'));
+  });
+  it('el diálogo recibe cómo pedir la secuencia del grupo elegido', async () => {
+    const list = vi.fn(() => of([]));
+    const open = vi.fn(() => ({ closed: of(undefined) }));
+    TestBed.configureTestingModule({ providers: [
+      { provide: GrupoService, useValue: { listar: () => of([]) } },
+      { provide: AssignmentService, useValue: { create: vi.fn(), list } },
+      { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
+      { provide: UiDialog, useValue: { open } },
+    ] });
+    const fixture = TestBed.createComponent(AsignarDesdeCasoComponent);
+    fixture.componentRef.setInput('caseId', 7); fixture.componentRef.setInput('publicado', true); fixture.detectChanges();
+    fixture.nativeElement.querySelector('button').click(); await fixture.whenStable();
+    const data = (open.mock.calls[0] as unknown as [unknown, { data: { loadGroupAssignments: (id: number) => unknown } }])[1].data;
+    data.loadGroupAssignments(4);
+    expect(list).toHaveBeenCalledWith(4);
+  });
 });

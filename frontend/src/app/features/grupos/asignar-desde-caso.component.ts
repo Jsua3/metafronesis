@@ -7,6 +7,7 @@ import { NotificationService } from '../../core/notifications/notification.servi
 import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { AssignmentDialogComponent, AssignmentDialogData, AssignmentDialogResult } from './assignment-dialog.component';
+import { fraseDeSecuencia } from './secuencia.util';
 
 /**
  * «Asignar a un grupo» desde el propio caso (SIEP-259): en la prueba de uso ningún docente encontró la asignación, que solo
@@ -50,14 +51,20 @@ export class AsignarDesdeCasoComponent {
     try {
       const groups = await firstValueFrom(this.injector.get(GrupoService).listar());
       const ref = this.injector.get(UiDialog).open<AssignmentDialogResult | undefined, AssignmentDialogData>(AssignmentDialogComponent, {
-        data: { mode: 'create', cases: [], fixedCaseId: this.caseId(), groups, title: this.titulo() ?? undefined },
+        data: {
+          mode: 'create', cases: [], fixedCaseId: this.caseId(), groups, title: this.titulo() ?? undefined,
+          // Con el grupo elegido, el diálogo dice cuándo podrán empezar el caso (la secuencia, RN-04).
+          loadGroupAssignments: groupId => this.injector.get(AssignmentService).list(groupId),
+        },
       });
       const result = await firstValueFrom(ref.closed, { defaultValue: undefined });
       if (!result?.groupId) return;
       const group = groups.find(g => g.id === result.groupId);
       if (!group) return;
       await firstValueFrom(this.injector.get(AssignmentService).create({ caseVersionId: this.caseId(), target: { type: 'GROUP', groupId: group.id }, opensAt: result.opensAt, closesAt: result.closesAt }));
-      notify.success(`Caso asignado a ${group.nombre}. Lo verán ${group.totalEstudiantes} estudiantes dentro de las fechas elegidas.`);
+      // El estudiante veía el caso «Bloqueado» sin que la docente supiera por qué: la confirmación dice cuándo lo harán.
+      const secuencia = result.despuesDe === undefined ? '' : ` ${fraseDeSecuencia(result.despuesDe, !!result.opensAt && Date.parse(result.opensAt) > Date.now())}`;
+      notify.success(`Caso asignado a ${group.nombre}. Lo verán ${group.totalEstudiantes} estudiantes dentro de las fechas elegidas.${secuencia}`);
       this.asignado.emit();
     } catch (error: unknown) {
       // Un error del servidor en español claro se dice tal cual; uno técnico se cambia por qué pasó y qué hacer.

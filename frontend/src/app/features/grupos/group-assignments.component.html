@@ -1,6 +1,7 @@
 <ui-section title="Casos asignados" [level]="3">
   <div class="ga-stack">
-    <p class="ga-hint">Los estudiantes del grupo solo ven los casos asignados, dentro de sus fechas.</p>
+    <p class="ga-hint">Los estudiantes del grupo solo ven los casos asignados, dentro de sus fechas.
+      Los hacen en el orden de esta lista: cada caso se abre cuando terminan el anterior.@if (rows().length > 1) { Cambia el orden con «Subir» y «Bajar».}</p>
 
     <div class="ga-toolbar">
       <button ui-button type="button" data-ga-assign icon="assignment_add" [disabledReason]="assignReason() ?? busyReason()" (click)="assign()">Asignar un caso</button>
@@ -33,25 +34,36 @@
         <p class="ga-empty">No hay casos asignados. Los estudiantes no verán casos hasta que asignes uno.</p>
       }
       @case ('ready') {
-        <ul class="ga-list">
+        <ol class="ga-list">
           @for (row of rows(); track row.assignment.id) {
             <li class="ga-item">
+              <span class="ga-item__orden" aria-hidden="true">{{ row.position }}</span>
               <span class="ga-item__text">
                 <strong>{{ row.title }}</strong>
                 @if (row.detail) {
                   <span>{{ row.detail }}</span>
                 }
                 <span class="ga-window">{{ row.window }}</span>
+                <span class="ga-sequence">{{ row.sequence }}</span>
               </span>
               <ui-badge class="ga-item__state" [tone]="row.tone">{{ row.label }}</ui-badge>
               <span class="ga-item__actions">
+                @if (rows().length > 1) {
+                  <!-- El orden se cambia con botones (teclado y ratón por igual); el lector oye el lugar nuevo al moverlo. -->
+                  <button ui-icon-button type="button" icon="arrow_upward" [attr.data-ga-move]="row.assignment.id + '--1'"
+                    [label]="'Subir «' + row.title + '» en el orden'"
+                    [disabledReason]="row.position === 1 ? 'Ya es el primer caso.' : busyReason()" (click)="move(row, -1)"></button>
+                  <button ui-icon-button type="button" icon="arrow_downward" [attr.data-ga-move]="row.assignment.id + '-1'"
+                    [label]="'Bajar «' + row.title + '» en el orden'"
+                    [disabledReason]="row.position === rows().length ? 'Ya es el último caso.' : busyReason()" (click)="move(row, 1)"></button>
+                }
                 <button ui-button type="button" size="sm" variant="secondary" [attr.aria-label]="'Cambiar fechas de «' + row.title + '»'" [disabledReason]="busyReason()" (click)="changeDates(row)">Cambiar fechas</button>
                 <button ui-button type="button" size="sm" variant="secondary" [attr.aria-label]="(row.assignment.active ? 'Pausar «' : 'Reanudar «') + row.title + '»'" [disabledReason]="busyReason()" (click)="togglePause(row)">{{ row.assignment.active ? 'Pausar' : 'Reanudar' }}</button>
                 <button ui-icon-button type="button" icon="delete_outline" [label]="'Retirar «' + row.title + '» del grupo'" [disabledReason]="busyReason()" (click)="remove(row)"></button>
               </span>
             </li>
           }
-        </ul>
+        </ol>
       }
     }
   </div>

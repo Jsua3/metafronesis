@@ -65,4 +65,14 @@ describe('AssignmentService', () => {
     request.flush({ data: { id: 5 } });
     expect(done).toBe(true);
   });
+
+  it('reorder manda el orden completo del grupo con PUT y devuelve la lista ya numerada', () => {
+    let result: Assignment[] | undefined;
+    service.reorder(3, [6, 5]).subscribe(value => (result = value));
+    const request = http.expectOne('/api/grupos/3/casos/orden');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ assignmentIds: [6, 5] });
+    request.flush({ data: [{ ...row, id: 6, sortOrder: 1 }, { ...row, id: 5, sortOrder: 2 }] });
+    expect(result?.map(item => item.sortOrder)).toEqual([1, 2]);
+  });
 });

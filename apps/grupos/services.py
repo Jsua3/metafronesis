@@ -23,7 +23,7 @@ from .import_contract import (
 )
 from shared import policies
 
-from . import memberships, notifications
+from . import assignment_service, memberships, notifications
 from .lector_xlsx import _cell_text, _parse_student_import
 from .models import Grupo, CaseAssignment, GrupoEstudiante, MembershipStatus
 from shared.policies import ESTUDIANTE
@@ -452,7 +452,8 @@ def asignar_caso(grupo_id, case_version_id, profesor):
     if version.status != "PUBLISHED" or not version.simulation_case.active:
         raise ValidationError("Solo se pueden asignar casos publicados y activos")
     assignment, created = CaseAssignment.objects.get_or_create(
-        grupo_id=grupo.id, case_version_id=version.id, defaults={"assigned_by": profesor}
+        grupo_id=grupo.id, case_version_id=version.id,
+        defaults={"assigned_by": profesor, "sort_order": assignment_service.next_sort_order(grupo.id)},
     )
     if not created and not assignment.active:
         # La ruta heredada no conoce la pausa: asignar de nuevo la reactiva.

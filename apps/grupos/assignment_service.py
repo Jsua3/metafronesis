@@ -44,6 +44,8 @@ def assignment_dto(assignment, now=None):
         "state": assignment_state(assignment, now),
         "active": assignment.active,
         "sortOrder": assignment.sort_order,
+        # El docente necesita nombrar cada asignación (orden, secuencia) sin una segunda consulta por caso.
+        "caseTitle": assignment.case_version.simulation_case.title,
     }
     if assignment.opens_at is not None:
         data["opensAt"] = format_window_value(assignment.opens_at)
@@ -87,6 +89,21 @@ def _check_window(opens_at, closes_at):
         raise _field_error("closesAt", "La fecha de cierre debe ser posterior a la de apertura.")
 
 
+def next_sort_order(grupo_id):
+    """El lugar al final de la secuencia del grupo (1 si aún no tiene casos). Si ya no cabe por debajo del tope, se
+    renumera la secuencia existente (1…N, en su orden actual) para que el caso nuevo quede al final."""
+    filas = list(CaseAssignment.objects.filter(grupo_id=grupo_id).order_by("sort_order", "case_version_id", "id"))
+    if not filas:
+        return 1
+    ultimo = max(fila.sort_order for fila in filas)
+    if ultimo < SORT_ORDER_MAX:
+        return ultimo + 1
+    for posicion, fila in enumerate(filas, start=1):
+        fila.sort_order = posicion
+    CaseAssignment.objects.bulk_update(filas, ["sort_order"])
+    return len(filas) + 1
+
+
 # ─── Carga con propiedad ──────────────────────────────────────────────────────────────────
 def _group_to_manage(group_id, actor):
     grupo = Grupo.objects.filter(pk=group_id).first()
@@ -114,7 +131,7 @@ def _assignable_version(case_version_id):
 
 
 def _load_to_manage(assignment_id, actor, *, lock=False):
-    queryset = CaseAssignment.objects.select_related("grupo")
+    queryset = CaseAssignment.objects.select_related("grupo", "case_version__simulation_case")
     if lock:
         queryset = queryset.select_for_update(of=("self",))
     row = queryset.filter(pk=assignment_id).first()
@@ -157,7 +174,9 @@ def create_assignment(actor, payload):
     opens_at = _parse_date(payload.get("opensAt"), "opensAt")
     closes_at = _parse_date(payload.get("closesAt"), "closesAt")
     _check_window(opens_at, closes_at)
-    sort_order = _parse_sort_order(payload["sortOrder"]) if "sortOrder" in payload else 0
+    # Sin ``sortOrder`` el caso nuevo va al final de la secuencia del grupo: antes todos empataban en 0 y el orden en que
+    # los estudiantes los hacían lo decidía el id del caso, sin que el docente lo supiera.
+    sort_order = _parse_sort_order(payload["sortOrder"]) if "sortOrder" in payload else next_sort_order(grupo.id)
     try:
         with transaction.atomic():
             return CaseAssignment.objects.create(
@@ -181,7 +200,7 @@ def create_assignment(actor, payload):
 
 def list_assignments(actor, group_id=None, case_version_id=None):
     """Las asignaciones que el actor puede listar: las de un grupo suyo (el ADMIN, todas)."""
-    queryset = CaseAssignment.objects.select_related("grupo")
+    queryset = CaseAssignment.objects.select_related("grupo", "case_version__simulation_case")
     if group_id is not None:
         grupo = Grupo.objects.filter(pk=group_id).first()
         if grupo is None or not policies.can(actor, "assignment", "list", owner_id=grupo.profesor_id):
@@ -220,3 +239,38 @@ def remove_assignment(actor, assignment_id):
     row = _load_to_manage(assignment_id, actor, lock=True)
     row.delete()
     return {"id": assignment_id}
+
+
+def _contexto_del_orden(args, kwargs, result):
+    return {"groupId": args[1] if len(args) > 1 else kwargs.get("group_id"), "assignmentIds": [row.id for row in result]}
+
+
+@auditable("asignacion.reordenar", "ASSIGNMENT", -1, context=_contexto_del_orden)
+@transaction.atomic
+def reorder_group_assignments(actor, group_id, ordered_ids):
+    """Fija el orden de la secuencia del grupo: ``ordered_ids`` son TODAS sus asignaciones (activas o en pausa), de la
+    primera a la última, y quedan numeradas 1…N de una vez. Un grupo ajeno no se toca (403, como crear); una lista que no
+    es exactamente la del grupo (faltan, sobran o se repiten) no cambia nada (409) y el docente recarga la lista."""
+    grupo = _group_to_manage(group_id, actor)
+    filas = list(
+        CaseAssignment.objects.select_for_update(of=("self",))
+        .filter(grupo_id=grupo.id)
+        .select_related("case_version__simulation_case")
+    )
+    por_id = {fila.id: fila for fila in filas}
+    if len(ordered_ids) != len(set(ordered_ids)) or set(ordered_ids) != set(por_id):
+        raise ApiError(
+            "ASSIGNMENT_ORDER_MISMATCH",
+            # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
+            "La lista de casos cambió mientras la ordenabas. Recarga la pantalla y vuelve a intentarlo.",
+            status.HTTP_409_CONFLICT,
+        )
+    if len(ordered_ids) > SORT_ORDER_MAX:
+        raise _field_error("assignmentIds", f"Un grupo admite hasta {SORT_ORDER_MAX} casos ordenados.")
+    ordenadas = []
+    for posicion, asignacion_id in enumerate(ordered_ids, start=1):
+        fila = por_id[asignacion_id]
+        fila.sort_order = posicion
+        ordenadas.append(fila)
+    CaseAssignment.objects.bulk_update(ordenadas, ["sort_order"])
+    return ordenadas

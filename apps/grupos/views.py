@@ -26,6 +26,7 @@ from .serializers import (
     AgregarEstudianteSerializer,
     AsignarCasoSerializer,
     AssignmentCreateSerializer,
+    AssignmentOrderSerializer,
     AssignmentUpdateSerializer,
     CrearGrupoSerializer,
     ImportarEstudiantesSerializer,
@@ -165,6 +166,23 @@ class GrupoCasosView(APIView):
             services.asignar_caso(pk, ser.validated_data["caseVersionId"], request.user),
             message="Caso asignado",
         )
+
+
+class GrupoCasosOrdenView(APIView):
+    """PUT /api/grupos/{id}/casos/orden — el docente dueño fija el orden en que su grupo hace los casos (RN-04)."""
+
+    permission_classes = [_CAN_MANAGE_ASSIGNMENTS]
+
+    @extend_schema(
+        request=AssignmentOrderSerializer,
+        responses={200: envelope_of(AssignmentSerializer, many=True), **error_responses(400, 401, 403, 404, 409)},
+    )
+    def put(self, request, pk):
+        ser = AssignmentOrderSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        rows = assignment_service.reorder_group_assignments(request.user, pk, ser.validated_data["assignmentIds"])
+        now = timezone.now()
+        return api_ok([assignment_service.assignment_dto(row, now) for row in rows], message="Orden actualizado")
 
 
 class GrupoCasoDetailView(APIView):

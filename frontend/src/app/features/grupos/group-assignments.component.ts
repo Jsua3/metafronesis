@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, a
 import { RouterLink } from '@angular/router';
 import { Observable, Subscription, firstValueFrom } from 'rxjs';
 
+import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import { AssignmentService } from '../../core/api/assignment.service';
 import { mensajeDeCarga, mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { Assignment } from '../../core/models/assignment.model';
@@ -17,12 +18,17 @@ import { errorKindFromStatus, uiDataState } from '../../shared/ui/state/ui-data-
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { AssignmentDialogComponent, AssignmentDialogData, AssignmentDialogResult } from './assignment-dialog.component';
 import { windowText } from './assignment-window.util';
+import { enSecuencia, fraseDeSecuencia, lineaDeSecuencia, tituloDe } from './secuencia.util';
 
 type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 type HttpLikeError = { status?: number };
 
 interface AssignmentRow {
   assignment: Assignment;
+  /** Su lugar en la secuencia (1, 2, 3…): el estudiante hace los casos en este orden. */
+  position: number;
+  /** Cuándo se abre respecto de los anteriores: «Se abre al terminar «X»», «Primer caso…». */
+  sequence: string;
   title: string;
   detail: string;
   label: string;
@@ -45,6 +51,10 @@ function statusOf(assignment: Assignment): { label: string; tone: Tone } {
  * pausar y retirar piden confirmar lo que le pasa al grupo (sin acceso no se inicia ni se sigue el caso). Cada acción avisa
  * su resultado y un error del servidor se dice con su mensaje, sin cambiar la lista. El destino de hoy es el grupo: el de un
  * estudiante concreto lo habilitará el servidor después (decisión 5).
+ *
+ * Los casos van numerados en el orden en que el grupo los hace (RN-04: cada uno se abre al terminar el anterior) y la
+ * docente lo cambia con «Subir» y «Bajar» (el teclado llega igual que el ratón): el servidor recibe la lista completa y
+ * la numera de una vez; si falla, la lista vuelve a como estaba y se dice por qué.
  */
 @Component({
   selector: 'app-group-assignments',
@@ -59,6 +69,7 @@ export class GroupAssignmentsComponent {
   private readonly notify = inject(NotificationService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
+  private readonly announcer = inject(LiveRegionAnnouncer);
   private loadSubscription: Subscription | null = null;
 
   readonly grupoId = input.required<number>();
@@ -83,20 +94,30 @@ export class GroupAssignmentsComponent {
   });
   protected readonly errorKind = computed(() => errorKindFromStatus(this.error()?.status));
 
-  protected readonly rows = computed<AssignmentRow[]>(() => this.assignments()
-    .filter(assignment => assignment.target.type === 'GROUP')
-    .map(assignment => {
+  /** El nombre de cada caso asignado: el del catálogo de la docente y, si no está, el que trae la propia asignación. */
+  private readonly titles = computed(() => new Map(this.assignments().map(assignment => [
+    assignment.caseVersionId,
+    this.cases().find(item => item.caseVersionId === assignment.caseVersionId)?.title ?? assignment.caseTitle ?? `Caso ${assignment.caseVersionId}`,
+  ] as const)));
+
+  protected readonly rows = computed<AssignmentRow[]>(() => {
+    const ordered = enSecuencia(this.assignments().filter(assignment => assignment.target.type === 'GROUP'));
+    const sequence = lineaDeSecuencia(ordered, this.titles());
+    return ordered.map((assignment, index) => {
       const found = this.cases().find(item => item.caseVersionId === assignment.caseVersionId);
       const status = statusOf(assignment);
       return {
         assignment,
-        title: found?.title ?? assignment.caseTitle ?? `Caso ${assignment.caseVersionId}`,
+        position: index + 1,
+        sequence: sequence[index],
+        title: this.titles().get(assignment.caseVersionId) ?? tituloDe(assignment),
         detail: found ? `${found.code} · v${found.semanticVersion}` : '',
         label: status.label,
         tone: status.tone,
         window: windowText(assignment.opensAt, assignment.closesAt),
       };
-    }));
+    });
+  });
 
   /** Los casos publicados que el grupo todavía no tiene asignados. */
   protected readonly assignable = computed(() => {
@@ -145,7 +166,7 @@ export class GroupAssignmentsComponent {
     this.loading.set(true);
     this.loadSubscription = this.service.list(groupId).subscribe({
       next: rows => {
-        this.assignments.set(rows);
+        this.assignments.set(enSecuencia(rows));
         this.error.set(null);
         this.loading.set(false);
       },
@@ -160,14 +181,16 @@ export class GroupAssignmentsComponent {
     const options = this.assignable();
     if (!options.length || this.busy()) return;
     const ref = this.dialog.open<AssignmentDialogResult | undefined, AssignmentDialogData>(AssignmentDialogComponent, {
-      data: { mode: 'create', cases: options },
+      // Las asignaciones de hoy, con su nombre: el diálogo dice tras qué caso lo harán los estudiantes (RN-04).
+      data: { mode: 'create', cases: options, groupAssignments: this.assignments().map(item => ({ ...item, caseTitle: this.titles().get(item.caseVersionId) ?? item.caseTitle })) },
     });
     const result = await firstValueFrom(ref.closed, { defaultValue: undefined });
     if (!result || result.caseVersionId === undefined) return;
     this.run(
       this.service.create({ caseVersionId: result.caseVersionId, target: { type: 'GROUP', groupId: this.grupoId() }, opensAt: result.opensAt, closesAt: result.closesAt }),
-      created => this.assignments.update(rows => [...rows, created]),
-      'Caso asignado al grupo.', 'No fue posible asignar el caso al grupo.',
+      created => this.assignments.update(rows => enSecuencia([...rows, created])),
+      result.despuesDe === undefined ? 'Caso asignado al grupo.' : `Caso asignado al grupo. ${fraseDeSecuencia(result.despuesDe, !!result.opensAt && Date.parse(result.opensAt) > Date.now())}`,
+      'No fue posible asignar el caso al grupo.',
     );
   }
 
@@ -220,6 +243,40 @@ export class GroupAssignmentsComponent {
       // El botón que se pulsó desaparece con la fila: el foco va a «Asignar un caso», que sigue ahí.
       () => afterNextRender(() => this.host.querySelector<HTMLElement>('[data-ga-assign]')?.focus(), { injector: this.injector }),
     );
+  }
+
+  /**
+   * Sube o baja un caso un lugar. La lista se reordena al instante y el servidor recibe el orden completo; si no lo
+   * acepta, la lista vuelve a como estaba y se dice por qué (por ejemplo, que otra persona cambió los casos del grupo).
+   */
+  protected move(row: AssignmentRow, direction: -1 | 1): void {
+    if (this.busy()) return;
+    const before = this.assignments();
+    const ordered = enSecuencia(before);
+    const from = ordered.findIndex(item => item.id === row.assignment.id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= ordered.length) return;
+    const next = [...ordered];
+    [next[from], next[to]] = [next[to], next[from]];
+    const groupId = this.grupoId();
+    this.assignments.set(next.map((item, index) => ({ ...item, sortOrder: index + 1 })));
+    this.busy.set(true);
+    this.service.reorder(groupId, next.map(item => item.id)).subscribe({
+      next: saved => {
+        if (this.grupoId() === groupId) {
+          this.assignments.set(enSecuencia(saved));
+          this.announcer.announce(`«${row.title}» ahora es el caso ${to + 1} de ${next.length}.`, 'polite');
+          afterNextRender(() => this.host.querySelector<HTMLElement>(`[data-ga-move="${row.assignment.id}-${direction}"]`)?.focus(), { injector: this.injector });
+        }
+        this.busy.set(false);
+      },
+      error: (error: unknown) => {
+        if (this.grupoId() === groupId) this.assignments.set(before);
+        const text = mensajeDeError(error, 'No fue posible cambiar el orden de los casos.');
+        if (text) this.notify.error(text);
+        this.busy.set(false);
+      },
+    });
   }
 
   private replace(updated: Assignment): void {

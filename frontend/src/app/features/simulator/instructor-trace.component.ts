@@ -36,6 +36,7 @@ import { UiTable, UiTableRow, UiTableTable } from '../../shared/ui/table/ui-tabl
 import { DRAFT_COPY } from './draft-copy';
 import { milestoneMark } from './outcome-text.util';
 import { ReplaceAttemptDialogComponent, ReplaceAttemptDialogData } from './replace-attempt-dialog.component';
+import { CasosPorAprobarComponent } from './revision/casos-por-aprobar.component';
 import { RubricaIntentoComponent } from './revision/rubrica-intento.component';
 import {
   FeedbackPanelView, SummaryFeedbackKey, TraceFeedbackDialogComponent, TraceFeedbackDialogData,
@@ -116,7 +117,7 @@ const ACCION_REEMPLAZAR = 'reemplazar';
   imports: [
     UiBadge, UiButton, UiCard, UiCheck, UiControl, UiField, UiMenu, UiCabeceraIlustrada, UiSection, UiSegmentado, UiSkeleton,
     UiStat, UiSwitch, UiTab, UiTabs, UiEmptyState, UiErrorState, UiTable, UiTableRow, UiTableTable,
-    RubricaIntentoComponent,
+    RubricaIntentoComponent, CasosPorAprobarComponent,
   ],
   templateUrl: './instructor-trace.component.html',
   styleUrl: './instructor-trace.component.scss',

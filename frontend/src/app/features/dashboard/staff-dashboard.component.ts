@@ -17,6 +17,7 @@ import { InstructorAttemptsPage, SimulationCaseSummary } from '../../core/models
 import { haceCuanto } from '../simulator/trace-labels.util';
 import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import { PasoSiguiente, loSiguienteDocente } from './lo-siguiente.util';
+import { CasosPorAprobarService, casosPorAprobar } from '../simulator/revision/casos-por-aprobar.service';
 import { NavBadgesService } from '../../shared/layout/nav-badges.service';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -52,6 +53,7 @@ export class StaffDashboardComponent implements OnInit {
   private readonly usuariosApi = inject(UserAdminService);
   private readonly solicitudesApi = inject(AccessRequestAdminService);
   private readonly badges = inject(NavBadgesService);
+  private readonly porAprobar = inject(CasosPorAprobarService);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   /** Solicitud que se está descartando, para no mandar dos veces el mismo cambio. */
@@ -73,7 +75,7 @@ export class StaffDashboardComponent implements OnInit {
   readonly cuentasActivas = computed(() => this.usuarios().filter(u => u.activo));
   contarRol(rol: string): number { return this.cuentasActivas().filter(u => u.role === rol).length; }
   readonly pendientesCuentas = computed(() => this.usuarios().filter(u => u.pendingApproval).length);
-  readonly casosRevision = computed(() => this.casos().filter(c => c.status === 'IN_REVIEW'));
+  readonly casosRevision = computed(() => casosPorAprobar(this.casos()));
   readonly casosEdicion = computed(() => this.casos().filter(c => c.status === 'DRAFT' || c.status === 'IN_REVIEW').slice(0, 3));
   readonly totalRevision = computed(() => this.revision()?.coverage.total ?? 0);
   /**
@@ -110,6 +112,8 @@ export class StaffDashboardComponent implements OnInit {
     if (this.isAdmin()) {
       forkJoin({ casos, solicitudes: this.solicitudesApi.listPending().pipe(catchError(() => this.fallar('solicitudes', [] as AccessRequest[]))), usuarios: this.usuariosApi.list().pipe(catchError(() => this.fallar('usuarios', [] as AdminUser[]))), actividad: this.auditoriaApi.list().pipe(map(pagina => pagina.items.slice(0, 5)), catchError(() => this.fallar('auditoria', [] as AuditLogItem[]))) }).subscribe(({ casos, solicitudes, usuarios, actividad }) => {
         this.casos.set(casos); this.solicitudes.set(solicitudes); this.usuarios.set(usuarios); this.actividad.set(actividad);
+        // «Revisión» en el menú cuenta los casos por aprobar con la misma regla que esta tarjeta.
+        this.porAprobar.registrarDesde(this.fallo('casos') ? null : casos);
         // Una insignia incompleta parecería un conteo exacto.
         this.badges.fijarUsuarios(this.fallo('solicitudes') ? null : solicitudes.length, this.fallo('usuarios') ? null : usuarios.filter(u => u.pendingApproval).length);
         this.loading.set(false);

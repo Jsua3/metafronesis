@@ -43,6 +43,7 @@ class AssignmentSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=ASSIGNMENT_STATES, help_text="Dónde está la ventana hoy.")
     active = serializers.BooleanField(help_text="Una asignación en pausa no habilita nada.")
     sortOrder = serializers.IntegerField(help_text="Su lugar en la secuencia de casos.")
+    caseTitle = serializers.CharField(help_text="El título del caso, para nombrar la asignación sin otra consulta.")
     opensAt = serializers.DateTimeField(required=False, help_text=f"Si no hay fecha, no viaja. {WINDOW}")
     closesAt = serializers.DateTimeField(required=False, help_text=f"Si no hay fecha, no viaja. {WINDOW}")
 

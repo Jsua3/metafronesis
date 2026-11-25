@@ -1,6 +1,7 @@
 import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import { ChangeDetectionStrategy, Component, Injector, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { CasoStore } from '../autoria/estado/caso.store';
 import { BibliotecaService } from '../autoria/modelo/biblioteca.service';
@@ -8,7 +9,10 @@ import { CAPITULOS } from '../autoria/tutorial/capitulos';
 import { asegurarCasoDePractica } from '../autoria/tutorial/caso-de-practica';
 import { guardarProgreso, leerProgreso } from '../autoria/tutorial/progreso-tutorial';
 import { AuthService } from '../../core/auth/auth.service';
+import { AssignmentService } from '../../core/api/assignment.service';
 import { AuthoringApi } from '../../core/api/authoring.api';
+import { GrupoService } from '../../core/api/grupo.service';
+import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/simulation.model';
 import { UiBadge, UiBadgeTone } from '../../shared/ui/badge/ui-badge';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -70,6 +74,13 @@ export class CaseAuthoringHubComponent implements OnInit {
       (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '') || b.caseVersionId - a.caseVersionId));
   });
   readonly cases = signal<SimulationCaseSummary[]>([]);
+  /**
+   * A qué grupos está asignado cada caso (tras asignar, la tarjeta no lo decía). `null` mientras no se haya podido leer:
+   * sin el dato la tarjeta no dice nada, porque «Sin asignar» sería una afirmación falsa.
+   */
+  private readonly grupoDeCada = signal<{ asignaciones: Assignment[]; nombres: ReadonlyMap<number, string> } | null>(null);
+  private readonly asignacionesApi = inject(AssignmentService);
+  private readonly gruposApi = inject(GrupoService);
   readonly loading = signal(true);
   /** La LISTA no pudo cargarse (el texto va en el estado de error de la lista). */
   readonly error = signal('');
@@ -128,6 +139,32 @@ export class CaseAuthoringHubComponent implements OnInit {
     }
   }
 
+  /**
+   * «Asignado a: Grupo A, Grupo B» o «Sin asignar», solo para un caso publicado (los demás no se pueden asignar). Un grupo
+   * con la asignación en pausa lo dice. Con más de tres grupos se nombran tres y se cuenta el resto.
+   */
+  asignadoA(caseVersionId: number): string | null {
+    const datos = this.grupoDeCada();
+    if (!datos) return null;
+    const grupos = datos.asignaciones
+      .filter(a => a.caseVersionId === caseVersionId && a.target.type === 'GROUP')
+      .flatMap(a => {
+        const nombre = a.target.type === 'GROUP' ? datos.nombres.get(a.target.groupId) : undefined;
+        return nombre ? [a.active ? nombre : `${nombre} (en pausa)`] : [];
+      });
+    if (!grupos.length) return 'Sin asignar';
+    const vistos = grupos.slice(0, 3).join(', ');
+    return `Asignado a: ${vistos}${grupos.length > 3 ? ` y ${grupos.length - 3} más` : ''}`;
+  }
+
+  /** Lee las asignaciones y los grupos; si no se pueden leer, la tarjeta calla en vez de afirmar «Sin asignar». */
+  loadAsignaciones(): void {
+    forkJoin({ asignaciones: this.asignacionesApi.listAll(), grupos: this.gruposApi.listar() }).subscribe({
+      next: ({ asignaciones, grupos }) => this.grupoDeCada.set({ asignaciones, nombres: new Map(grupos.map(g => [g.id, g.nombre] as const)) }),
+      error: () => this.grupoDeCada.set(null),
+    });
+  }
+
   statusTone(status: string | null | undefined): UiBadgeTone {
     const normalized = (status ?? '').toUpperCase();
     if (normalized === 'PUBLISHED') return 'success';
@@ -163,6 +200,7 @@ export class CaseAuthoringHubComponent implements OnInit {
       next: cases => {
         this.cases.set(cases);
         this.loading.set(false);
+        if (cases.some(c => c.status === 'PUBLISHED')) this.loadAsignaciones();
       },
       error: (err: { status?: number; error?: { code?: string } }) => {
         this.error.set(err?.status === 403 && err.error?.code === 'AUTHORING_NOT_ALLOWED'

@@ -5,6 +5,9 @@
 
 <p class="ds-sr-only" role="status">{{ statusText() }}</p>
 
+<!-- Solo la administración: lo que espera su aprobación va ARRIBA, antes de los intentos de estudiantes. -->
+<app-casos-por-aprobar />
+
 <div class="tr-layout p-densidad-compacta">
   <!-- Bajo 1440 px la bandeja no cabe como columna: este selector la abre y dice qué intento está abierto. -->
   <button type="button" class="tr-selector" aria-controls="tr-bandeja" [attr.aria-expanded]="bandejaVisible()"
