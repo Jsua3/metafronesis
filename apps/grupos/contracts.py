@@ -63,6 +63,11 @@ class InvitationSerializer(serializers.Serializer):
         help_text="Hora local del servidor (America/Bogota), sin zona. Nula en las membresías anteriores a las invitaciones.",
     )
     status = serializers.ChoiceField(choices=MembershipStatus.choices)
+    casesCount = serializers.IntegerField(
+        allow_null=True,
+        min_value=0,
+        help_text="Casos publicados que el docente asignó al grupo. Solo si ya eres miembro (`ACTIVE`); si no, es nulo.",
+    )
 
 
 class MembershipConflictEnvelopeSerializer(ErrorEnvelopeSerializer):

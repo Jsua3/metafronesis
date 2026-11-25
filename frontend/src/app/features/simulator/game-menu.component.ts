@@ -261,8 +261,11 @@ export class ClinicMenuScene extends Phaser.Scene {
       <!-- Sin casos asignados (F5-5): se dice, sin pasillo vacío; la salida sigue a mano. -->
       @if (phase() === 'ready' && !catalog().length) {
         <div class="menu-empty">
+          <!-- La sala no sabe de grupos: dice lo cierto (los asigna el docente) y lleva a Grupos, donde se acepta una
+               invitación o se ve a qué grupo se pertenece. Inicio y Casos sí distinguen el motivo. -->
           <ui-empty-state kind="first-use" title="Aún no tienes casos asignados"
-            description="Cuando tu docente te asigne un caso, aparecerá su puerta en esta sala." />
+            description="Los casos los asigna tu docente a tu grupo y aparecerán como puertas en esta sala. Si ya debería haber uno, avísale; si te llegó una invitación, acéptala en Grupos."
+            actionLabel="Ir a Grupos" (action)="openGroups()" />
         </div>
       }
       @if (phase() === 'error') {
@@ -532,6 +535,11 @@ export class GameMenuComponent implements OnDestroy {
 
   focusCanvas() {
     this.host?.nativeElement.focus({ preventScroll: true });
+  }
+
+  /** «Ir a Grupos» del vacío sin casos: ahí se aceptan las invitaciones. */
+  openGroups(): void {
+    void this.router.navigate(['/portal/invitaciones']);
   }
 
   /** «Volver al panel»: un enlace de verdad (abre en otra pestaña con Ctrl o el botón central); el clic simple navega. */

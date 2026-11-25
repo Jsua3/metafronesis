@@ -1,10 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { CaseAccessCache } from '../../core/api/case-access.cache';
-import { InvitationsApi } from '../../core/api/invitations.api';
+import { Invitation, InvitationsApi } from '../../core/api/invitations.api';
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { CatalogItem, StudentAttemptSummary } from '../../core/models/simulation.model';
@@ -17,11 +17,12 @@ import { plural } from '../../shared/ui/labels';
 import { UiPortadaCaso } from '../../shared/ui/portada-caso/ui-portada-caso';
 import { UiSection } from '../../shared/ui/section/ui-section';
 import { UiSkeleton } from '../../shared/ui/skeleton/ui-skeleton';
-import { UiEmptyState } from '../../shared/ui/state/ui-empty-state';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { EstadoCaso, estadoCaso, ultimoRecorrido } from '../simulator/estado-caso.util';
 import { INICIO_COPY } from './inicio-copy';
+import { SinCasosEstudianteComponent } from './sin-casos-estudiante.component';
 import { formatDate, lastClosings, siguientePaso } from './student-dashboard.util';
+import { loSiguiente } from './student-guidance.util';
 
 /** Cuántos casos caben en «Tus casos» antes de mandar a la biblioteca completa. */
 const MAX_FILAS = 6;
@@ -52,7 +53,7 @@ interface FilaCaso {
  */
 @Component({
   selector: 'app-student-dashboard',
-  imports: [NgTemplateOutlet, RouterLink, UiBadge, UiButton, UiCabeceraIlustrada, UiCard, UiPortadaCaso, UiSection, UiSkeleton, UiErrorState, UiEmptyState],
+  imports: [NgTemplateOutlet, RouterLink, UiBadge, UiButton, UiCabeceraIlustrada, UiCard, UiPortadaCaso, UiSection, UiSkeleton, UiErrorState, SinCasosEstudianteComponent],
   templateUrl: './student-dashboard.component.html',
   styleUrl: './student-dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,14 +64,15 @@ export class StudentDashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly invitations = inject(InvitationsApi);
   private readonly badges = inject(NavBadgesService);
-  private readonly router = inject(Router);
 
   protected readonly copy = INICIO_COPY;
   protected readonly casos = signal<CatalogItem[]>([]);
   protected readonly historial = signal<StudentAttemptSummary[]>([]);
   protected readonly cargando = signal(true);
   protected readonly error = signal(false);
-  protected readonly pendientes = signal(0);
+  /** Las invitaciones del estudiante; `null` mientras llegan o si no cargaron (Inicio sigue sirviendo sin ellas). */
+  protected readonly invitaciones = signal<Invitation[] | null>(null);
+  protected readonly pendientes = computed(() => (this.invitaciones() ?? []).filter(invitacion => invitacion.status === 'INVITED').length);
   /** El título de la escena donde se retoma (solo con un intento abierto); `null` mientras no se sabe. */
   protected readonly escena = signal<string | null>(null);
   /** La portada del protagonista en tamaño compacto (teléfono estrecho). Observer sobre la consulta de medios. */
@@ -85,10 +87,10 @@ export class StudentDashboardComponent {
     const nombre = this.auth.currentUser()?.nombre?.trim().split(/\s+/)[0];
     return nombre ? `Hola, ${nombre}` : this.copy.tituloSinNombre;
   });
-  protected readonly descripcion = computed(() => {
+  /** «Lo siguiente»: una frase que dice qué hacer ahora, arriba de todo. `null` mientras carga o si falló. */
+  protected readonly loSiguiente = computed(() => {
     if (this.cargando() || this.error()) return null;
-    const paso = this.siguiente();
-    return this.copy.descripcion[paso ? paso.tipo : 'vacio'];
+    return loSiguiente({ paso: this.siguiente(), escena: this.escena(), invitaciones: this.invitaciones(), pendientes: this.pendientes() });
   });
   /** La línea bajo el título del protagonista: dónde se retoma, cuántas escenas tiene o por qué todavía no abre. */
   protected readonly contexto = computed(() => {
@@ -134,9 +136,8 @@ export class StudentDashboardComponent {
     this.cargar();
     this.invitations.list().subscribe({
       next: lista => {
-        const n = lista.filter(invitacion => invitacion.status === 'INVITED').length;
-        this.pendientes.set(n);
-        this.badges.fijar('invitaciones', n);
+        this.invitaciones.set(lista);
+        this.badges.fijar('invitaciones', lista.filter(invitacion => invitacion.status === 'INVITED').length);
       },
       // Sin las invitaciones Inicio sigue sirviendo: solo no avisa de ellas.
       error: () => undefined,
@@ -169,10 +170,6 @@ export class StudentDashboardComponent {
     const alCambiar = (evento: MediaQueryListEvent): void => this.portadaCompacta.set(evento.matches);
     consulta.addEventListener?.('change', alCambiar);
     inject(DestroyRef).onDestroy(() => consulta.removeEventListener?.('change', alCambiar));
-  }
-
-  protected abrirInvitaciones(): void {
-    void this.router.navigate(['/portal/invitaciones']);
   }
 
   private recibir(catalogo: CatalogItem[], historial: StudentAttemptSummary[]): void {

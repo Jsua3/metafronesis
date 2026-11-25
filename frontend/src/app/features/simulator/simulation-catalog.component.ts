@@ -21,6 +21,7 @@ import { UiVacioIlustrado } from '../../shared/ui/vacio-ilustrado/ui-vacio-ilust
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { UiTable, UiTableRow, UiTableTable } from '../../shared/ui/table/ui-table';
 import { UiTooltip } from '../../shared/ui/tooltip/ui-tooltip';
+import { SinCasosEstudianteComponent } from '../dashboard/sin-casos-estudiante.component';
 import { attemptTone, formatDate } from '../dashboard/student-dashboard.util';
 import { blockedNotice } from './case-lock.util';
 import { CASOS_COPY } from './casos-copy';
@@ -47,9 +48,9 @@ interface TarjetaCaso {
 
 /**
  * Casos del estudiante: la biblioteca completa y el historial por caso (DISENO §4.2, DP-07). Es el destino de «Ver todos
- * tus casos» de Inicio. Cada tarjeta dice el estado en palabras y ofrece UNA acción: «Ver ficha» (sin empezar), «Continuar»
- * (lo abierto, directo al umbral con `?intento=continuar`), «Ver tu recorrido» (terminado, navega a la página de cierre) o,
- * bloqueado, el motivo en un botón deshabilitado. Los intentos de cada caso viven dentro de su tarjeta, sin la columna
+ * tus casos» de Inicio. Cada tarjeta dice el estado en palabras y ofrece UNA acción principal: «Empezar» (sin empezar; lleva a
+ * la ficha, donde se confirma), «Continuar» (lo abierto, directo al umbral con `?intento=continuar`), «Ver mi resultado»
+ * (terminado, navega a la página de cierre) o, bloqueado, el motivo en un botón deshabilitado. Los intentos de cada caso viven dentro de su tarjeta, sin la columna
  * «Caso» (era el mismo nombre en cada fila) ni la de duración (tiempo de reloj que engañaba, P6).
  *
  * El acceso sale de `CaseAccessCache` si está fresco. El historial tiene su propio error con «Reintentar», distinto de
@@ -59,7 +60,7 @@ interface TarjetaCaso {
 @Component({
   selector: 'app-simulation-catalog',
   imports: [
-    UiBadge, UiButton, UiCabeceraIlustrada, UiCard, UiErrorState, UiFiltros, UiPortadaCaso, UiVacioIlustrado, UiSegmentado, UiSkeleton,
+    UiBadge, UiButton, UiCabeceraIlustrada, UiCard, UiErrorState, UiFiltros, UiPortadaCaso, UiVacioIlustrado, UiSegmentado, UiSkeleton, SinCasosEstudianteComponent,
     UiTable, UiTableRow, UiTableTable, UiTooltip,
   ],
   templateUrl: './simulation-catalog.component.html',
@@ -314,7 +315,7 @@ export class SimulationCatalogComponent {
     void this.router.navigate(['/portal/casos', caseVersionId, 'editor']);
   }
 
-  /** «Ver tu recorrido»: la página de cierre del intento (DP-13), con URL estable. */
+  /** «Ver mi resultado»: la página de cierre del intento (DP-13), con URL estable. */
   protected openReport(attempt: StudentAttemptSummary): void {
     try { sessionStorage.setItem('siep.catalogo.retorno', String(attempt.caseVersionId)); } catch { /* almacenamiento bloqueado */ }
     void this.router.navigate(['/portal/simulador', attempt.caseVersionId, 'cierre', attempt.attemptId]);

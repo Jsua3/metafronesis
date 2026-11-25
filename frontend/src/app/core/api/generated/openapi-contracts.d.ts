@@ -930,6 +930,8 @@ export type IntensityEnum = 'LOW' | 'MEDIUM' | 'HIGH';
 
 /** La membresía del estudiante en un grupo: pendiente de respuesta, aceptada o rechazada. El listado no trae las retiradas (`REMOVED`), pero la respuesta de `leave` (y la de aceptar o rechazar) sí devuelve la membresía tal como quedó, también con ese estado. */
 export interface Invitation {
+  /** Casos publicados que el docente asignó al grupo. Solo si ya eres miembro (`ACTIVE`); si no, es nulo. */
+  readonly casesCount: number | null;
   readonly groupId: number;
   readonly groupName: string;
   /** Igual a `groupId`: la membresía es `(grupo, estudiante)`. */

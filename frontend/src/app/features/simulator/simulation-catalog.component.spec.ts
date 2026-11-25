@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { of, throwError } from 'rxjs';
 
 import { CaseAccessCache } from '../../core/api/case-access.cache';
+import { Invitation, InvitationsApi } from '../../core/api/invitations.api';
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -21,7 +22,7 @@ const intento = (extra: Partial<StudentAttemptSummary> = {}): StudentAttemptSumm
 describe('Casos del estudiante', () => {
   const info = vi.fn();
 
-  async function render(catalogo: CatalogItem[], historial: StudentAttemptSummary[], opciones: { rol?: string; bloqueado?: string } = {}) {
+  async function render(catalogo: CatalogItem[], historial: StudentAttemptSummary[], opciones: { rol?: string; bloqueado?: string; invitaciones?: Invitation[] } = {}) {
     const rol = opciones.rol ?? 'ESTUDIANTE';
     TestBed.configureTestingModule({
       providers: [
@@ -32,6 +33,7 @@ describe('Casos del estudiante', () => {
         { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap(opciones.bloqueado ? { bloqueado: opciones.bloqueado } : {})) } },
         { provide: CaseAccessCache, useValue: { acceso: () => ({ catalogo, historial }), guardandoAcceso: () => (fuente: unknown) => fuente } },
         { provide: SimulationService, useValue: { listCases: () => of(catalogo.map(item => resumen(item.caseVersionId))) } },
+        { provide: InvitationsApi, useValue: { list: () => of(opciones.invitaciones ?? []) } },
       ],
     });
     const router = TestBed.inject(Router);
@@ -44,7 +46,7 @@ describe('Casos del estudiante', () => {
 
   beforeEach(() => { info.mockClear(); sessionStorage.removeItem('siep.catalogo.retorno'); });
 
-  it('agrupa los intentos por caso sin duración ni nombre repetido, y «Ver tu recorrido» navega al cierre', async () => {
+  it('agrupa los intentos por caso sin duración ni nombre repetido, y «Ver mi resultado» navega al cierre', async () => {
     const { host, navegar } = await render([entrada(1, { completed: true })], [intento()]);
     const historial = host.querySelector('details')!;
     expect(historial.textContent).toContain('Tus intentos (1)');
@@ -55,10 +57,11 @@ describe('Casos del estudiante', () => {
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'cierre', 'abc']);
   });
 
-  it('la acción de la tarjeta depende del estado: terminado lleva al recorrido', async () => {
+  it('la acción de la tarjeta depende del estado: terminado lleva al resultado', async () => {
     const { host, navegar } = await render([entrada(1, { completed: true })], [intento()]);
     const accion = host.querySelector('.cs-acciones button') as HTMLButtonElement;
-    expect(accion.textContent).toContain('Ver tu recorrido');
+    expect(accion.textContent).toContain('Ver mi resultado');
+    expect(accion.classList).toContain('ui-button--primary');
     accion.click();
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'cierre', 'abc']);
   });
@@ -79,7 +82,7 @@ describe('Casos del estudiante', () => {
     const botones = Array.from(host.querySelectorAll<HTMLButtonElement>('.cs-acciones button'));
     expect(botones).toHaveLength(2);
     expect(botones[0].textContent).toContain('Continuar');
-    expect(botones[1].textContent).toContain('Ver ficha');
+    expect(botones[1].textContent).toContain('Empezar');
     botones[0].click();
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1], expect.objectContaining({ queryParams: { intento: 'continuar' } }));
     botones[1].click();
@@ -136,6 +139,78 @@ describe('Casos del estudiante', () => {
     expect(host.textContent).toContain('Editor visual');
     expect(host.querySelector('ui-segmentado')).toBeNull();
     expect(host.querySelector('details')).toBeNull();
+  });
+
+  describe('cada tarjeta tiene UNA acción principal, dicha con palabras (P7)', () => {
+    const principales = (tarjeta: Element) => Array.from(tarjeta.querySelectorAll('.cs-acciones .ui-button--primary'));
+    // El nombre accesible de cada botón (el texto visible lleva la ligadura del icono).
+    const nombres = (tarjeta: Element) => principales(tarjeta).map(b => b.getAttribute('aria-label'));
+
+    it('sin empezar: «Empezar» (lleva a la ficha); en curso: «Continuar»; terminado: «Ver mi resultado»; bloqueado: ninguna principal', async () => {
+      const { host, navegar } = await render(
+        [entrada(1, { completed: true }), entrada(2), entrada(3, { unlocked: false, locked: true }), entrada(4)],
+        [intento({ caseVersionId: 1 }), intento({ attemptId: 'x', caseVersionId: 2, status: 'IN_PROGRESS' })],
+      );
+      const tarjetas = Array.from(host.querySelectorAll('.cs-tarjeta'));
+      const [terminado, enCurso, bloqueado, sinEmpezar] = tarjetas;
+      expect(nombres(terminado)).toEqual(['Ver mi resultado de «Caso 1»']);
+      expect(principales(terminado)[0].textContent).toContain('Ver mi resultado');
+      expect(nombres(enCurso)).toEqual(['Continuar «Caso 2»']);
+      expect(principales(enCurso)[0].textContent).toContain('Continuar');
+      expect(principales(bloqueado)).toHaveLength(0);
+      expect(principales(sinEmpezar).map(b => b.textContent?.trim())).toEqual(['Empezar']);
+      // Cada botón nombra su caso: con uno por tarjeta, «Empezar» a secas sonaría igual cuatro veces.
+      expect(nombres(sinEmpezar)).toEqual(['Empezar «Caso 4»']);
+      (principales(sinEmpezar)[0] as HTMLButtonElement).click();
+      expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 4, 'ficha'], expect.anything());
+      // El estado va en palabras (insignia con texto), no solo en el color.
+      expect(terminado.querySelector('ui-badge')?.textContent).toContain('Terminado');
+      expect(enCurso.querySelector('ui-badge')?.textContent).toContain('En curso');
+      expect(bloqueado.querySelector('ui-badge')?.textContent).toContain('Bloqueado');
+    });
+
+    it('un caso que el docente aún no abre lo dice con texto y su botón no se puede pulsar', async () => {
+      const { host } = await render([entrada(1, { unlocked: false, locked: true, access: { allowed: false, reason: 'NOT_YET_OPEN' } as CatalogItem['access'] })], []);
+      const tarjeta = host.querySelector('.cs-tarjeta')!;
+      expect(tarjeta.querySelector('ui-badge')?.textContent).toContain('Aún no abre');
+      expect(tarjeta.querySelector('.cs-detalle')?.textContent).toContain('Tu docente aún');
+      expect(tarjeta.querySelector('.cs-acciones button')?.getAttribute('aria-disabled')).toBe('true');
+    });
+  });
+
+  describe('sin casos: dice por qué y qué hacer, según el grupo de la persona (P7)', () => {
+    const invitacion = (extra: Partial<Invitation> = {}): Invitation => ({
+      id: 1, groupId: 1, groupName: 'Grupo A', teacherName: 'Paula Ríos', invitedAt: null, status: 'ACTIVE', casesCount: 0, ...extra,
+    });
+    const motivo = (host: HTMLElement) => host.querySelector('ui-vacio-ilustrado')?.getAttribute('data-motivo');
+
+    it('sin grupo: lo dice y manda a Grupos', async () => {
+      const { host } = await render([], [], { invitaciones: [] });
+      expect(motivo(host)).toBe('sin-grupo');
+      expect(host.textContent).toContain('Todavía no estás en ningún grupo');
+      expect(host.querySelector('ui-vacio-ilustrado a')?.getAttribute('href')).toBe('/portal/invitaciones');
+    });
+
+    it('con una invitación esperando: la nombra y la acción es principal', async () => {
+      const { host } = await render([], [], { invitaciones: [invitacion({ status: 'INVITED', casesCount: null })] });
+      expect(motivo(host)).toBe('invitacion-pendiente');
+      expect(host.textContent).toContain('Paula Ríos te invitó al grupo «Grupo A»');
+      expect(host.querySelector('ui-vacio-ilustrado a')?.classList).toContain('ui-button--primary');
+    });
+
+    it('en un grupo que aún no tiene casos: nombra el grupo y al docente, sin culpar a la persona', async () => {
+      const { host } = await render([], [], { invitaciones: [invitacion()] });
+      expect(motivo(host)).toBe('grupo-sin-casos');
+      expect(host.textContent).toContain('Tu grupo todavía no tiene casos');
+      expect(host.textContent).toContain('«Grupo A» aún no tiene casos asignados');
+      expect(host.textContent).toContain('Si ya debería haber uno, avísale');
+    });
+
+    it('quien no es estudiante conserva el vacío del catálogo', async () => {
+      const { host } = await render([], [], { rol: 'ADMIN' });
+      expect(host.querySelector('app-sin-casos-estudiante')).toBeNull();
+      expect(host.textContent).toContain('Aún no hay casos publicados');
+    });
   });
 
   describe('catálogo e historial fallan por separado (B4a, hallazgo 3)', () => {
