@@ -10,7 +10,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import type { CanLeave } from '../../core/navigation/can-leave.guard';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { UiGlassBar } from '../../shared/ui/glass-bar/ui-glass-bar';
-import { roleLabel } from '../../shared/ui/labels';
+import { autorLabel, editadoPorLabel, roleLabel } from '../../shared/ui/labels';
 import { UiMenu, UiMenuItem } from '../../shared/ui/menu/ui-menu';
 import { TemaSelectorComponent } from '../../shared/ui/tema/tema-selector.component';
 
@@ -80,7 +80,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
            (DG-6); lo que no cabe cede por ancho, con su nombre completo para el lector. -->
       <div class="modulo modulo-principal ds-motion">
         @if (store.caso(); as caso) {
-          <p class="caso-actual" [attr.title]="caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
+          <p class="caso-actual" [attr.title]="autoriaDelCaso() ? caso.titulo + ' · ' + autoriaDelCaso() : caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
           <app-hilo-del-caso />
         } @else {
           <span class="contexto-editor">Editor de casos</span>
@@ -167,6 +167,12 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
             </div>
           </div>
         } @else {
+          <!-- Autoría compartida: el autor del caso (no cambia) y quiénes más crearon versiones. En la barra solo cabe el
+               nombre del caso (lo lleva su título emergente); aquí se lee siempre, sobre la pantalla. -->
+          <!-- BORRADOR: texto pendiente de Psicología (VD-23). -->
+          @if (autoriaDelCaso(); as autoria) {
+            <p class="caso-autoria">{{ autoria }}</p>
+          }
           @if (store.soloLectura()) {
             <p class="solo-lectura" role="note">{{ textoSoloLectura() }}</p>
           }
@@ -282,6 +288,8 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     /* La sala encaja su lienzo en el alto que queda: necesita un alto definido en toda la cadena (sin esto el lienzo
        medía 89 px dentro del estudio, medido el 2026-11-22). Las demás pantallas crecen con su contenido y desplazan. */
     .marco-pantalla:has(> app-sala) { block-size: 100%; }
+    /* La autoría del caso: una línea de apoyo, discreta, sobre la pantalla. */
+    .caso-autoria { margin: 0.75rem 1rem 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); overflow-wrap: anywhere; }
     /* Aviso de solo lectura: un aviso de verdad (filo, icono de candado en píxeles y texto), igual en claro y en oscuro. */
     .solo-lectura {
       display: flex; align-items: center; gap: 0.625rem; margin: 0.75rem 1rem 0; padding: 0.5rem 0.875rem;
@@ -489,6 +497,11 @@ export class AutoriaShellComponent implements CanLeave {
     return `${usuario?.nombre ?? ''} ${usuario?.apellido ?? ''}`.trim() || 'Cuenta institucional';
   });
   protected readonly rolCuenta = computed(() => roleLabel(this.auth.currentUser()?.role));
+  /** «Autor: Ana · Editado por: Beto, Carla» del caso abierto; vacío si el servidor no dice quién lo creó. */
+  protected readonly autoriaDelCaso = computed(() => {
+    const caso = this.store.caso();
+    return [autorLabel(caso?.autor), editadoPorLabel(caso?.editadoPor)].filter(Boolean).join(' · ');
+  });
   private origenBuscador: HTMLElement | null = null;
   private readonly botonIa = viewChild<ElementRef<HTMLButtonElement>>('botonIa');
   private readonly cabecera = viewChild<unknown, ElementRef<HTMLElement>>('cabecera', { read: ElementRef });

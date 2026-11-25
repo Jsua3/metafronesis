@@ -12,6 +12,7 @@ ui-filtros { display: block; min-width: 0; margin-block-end: var(--ds-space-5); 
 // Las acciones se apoyan en el pie de la tarjeta, tras un filo: en una fila de tarjetas de alto distinto quedan alineadas.
 .hub-card__actions { display: flex; flex-wrap: wrap; gap: var(--ds-space-2); margin-block-start: auto; padding-block-start: var(--ds-space-3); border-block-start: 1px solid var(--l-filo, var(--ds-border)); }
 .hub-versiones { margin-block-start: var(--ds-space-2); }
+.hub-error { margin: 0 0 var(--ds-space-3); color: var(--ds-danger, var(--ds-text-1)); }
 .hub-versiones summary { min-height: var(--ds-target-min); display: flex; align-items: center; cursor: pointer; color: var(--ds-text-1); }
 .hub-versiones summary:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
 .hub-versiones__lista { display: grid; gap: var(--ds-space-3); }
