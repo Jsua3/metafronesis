@@ -95,6 +95,15 @@ describe('InvitationsComponent', () => {
     expect(text(host().querySelector('[role="status"].ds-sr-only'))).toContain('Te uniste a Psicología Jurídica · 2026-2');
   });
 
+  it('al aceptar lleva el foco a Ver mis casos', async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    await render();
+    button('Aceptar')!.click();
+    await fixture.whenStable();
+    expect(focus.mock.instances).toContain(host().querySelector('.inv-ingreso a'));
+    focus.mockRestore();
+  });
+
   describe('después de aceptar: el grupo y qué sigue (P7)', () => {
     const aceptar = async (casesCount: number | null | undefined, extra: Partial<Invitation> = {}) => {
       await render({ accept: id => of(invitation({ id, groupId: id, status: 'ACTIVE', casesCount, ...extra })) });

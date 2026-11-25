@@ -85,6 +85,7 @@ export class SimulationCatalogComponent {
   protected readonly busqueda = signal('');
   /** El caso que se está abriendo: su portada lleva la transición de vistas hasta el umbral del juego (DP-10). */
   protected readonly entrando = signal<number | null>(null);
+  protected readonly errorEntrada = signal(false);
   /** ?bloqueado=<id> de la guardia: reactivo (la guardia puede redirigir a esta misma ruta y Angular la reutiliza). */
   private readonly query = toSignal(inject(ActivatedRoute).queryParamMap);
   private readonly blockedId = computed(() => Number(this.query()?.get('bloqueado')) || null);
@@ -298,12 +299,16 @@ export class SimulationCatalogComponent {
    * y la portada viajan en el estado de la navegación para que el umbral pinte desde el primer cuadro (DP-10).
    */
   protected openCase(card: TarjetaCaso, resume: boolean): void {
+    if (this.entrando() !== null) return;
     this.entrando.set(card.item.caseVersionId);
+    this.errorEntrada.set(false);
     const umbral = { titulo: card.item.title, portada: card.portada ?? null };
     void this.router.navigate(
       resume ? ['/portal/simulador', card.item.caseVersionId] : ['/portal/simulador', card.item.caseVersionId, 'ficha'],
       resume ? { queryParams: { intento: 'continuar' }, state: { umbral } } : { state: { umbral } },
-    );
+    // `false` = una guarda la desvió (p. ej. ?bloqueado=): eso lo explica la propia guarda; solo un error real es «conexión».
+    ).then(() => this.entrando.set(null))
+      .catch(() => { this.entrando.set(null); this.errorEntrada.set(true); });
   }
 
   /** Continuar un intento de la tabla de intentos (lo abierto de ese caso). */

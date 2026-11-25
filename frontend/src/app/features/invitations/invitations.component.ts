@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
@@ -72,7 +72,7 @@ const GRUPOS_COPY = {
           <h2 class="inv-item__title">{{ ingresoActual.titulo }}</h2>
           <p class="inv-item__meta">{{ ingresoActual.texto }}</p>
         </div>
-        <a ui-button [variant]="ingresoActual.conCasos ? 'primary' : 'secondary'" routerLink="/portal/simulador">{{ copy.ingreso.accion }}</a>
+        <a #verMisCasos ui-button [variant]="ingresoActual.conCasos ? 'primary' : 'secondary'" routerLink="/portal/simulador">{{ copy.ingreso.accion }}</a>
       </ui-card>
     }
 
@@ -105,7 +105,7 @@ const GRUPOS_COPY = {
                     </div>
                     <div class="inv-item__actions">
                       <button ui-button type="button" [loading]="busy() === item.groupId"
-                        [attr.aria-label]="'Aceptar la invitación a ' + item.groupName" (click)="accept(item)">Aceptar</button>
+                        [attr.aria-label]="busy() === item.groupId ? 'Aceptando invitación…' : 'Aceptar la invitación a ' + item.groupName" (click)="accept(item)">{{ busy() === item.groupId ? 'Aceptando…' : 'Aceptar' }}</button>
                       <button ui-button type="button" variant="secondary"
                         [attr.aria-label]="'Rechazar la invitación a ' + item.groupName" (click)="decline(item)">Rechazar</button>
                     </div>
@@ -259,6 +259,7 @@ export class InvitationsComponent {
   protected readonly errorKind = computed(() => errorKindFromStatus(this.error()?.status));
   protected readonly errorStatus = computed(() => this.error()?.status ?? null);
 
+  private readonly injector = inject(Injector);
   private confirming = false;
 
   constructor() {
@@ -293,6 +294,7 @@ export class InvitationsComponent {
     this.respond(item, this.api.accept(item.groupId), `Te uniste a ${item.groupName}.`, updated => {
       const confirmacion = confirmacionIngreso(updated);
       this.ingreso.set(confirmacion);
+      afterNextRender(() => document.querySelector<HTMLElement>('.inv-ingreso a')?.focus(), { injector: this.injector });
       // Lo que se anuncia: que entró y qué sigue, en una sola frase (la tarjeta no es una región viva).
       this.actionStatus.set(`Te uniste a ${updated.groupName}. ${confirmacion.texto}`);
     });
@@ -335,7 +337,7 @@ export class InvitationsComponent {
   private respond(item: Invitation, request: Observable<Invitation>, success: string, alExito?: (updated: Invitation) => void): void {
     if (this.busy() !== null) return;
     this.busy.set(item.groupId);
-    this.actionStatus.set('');
+    this.actionStatus.set('Procesando tu respuesta…');
     this.ingreso.set(null);
     request.subscribe({
       next: updated => {

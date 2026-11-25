@@ -3,11 +3,13 @@
 <ui-cabecera-ilustrada [eyebrow]="isStudent ? copy.eyebrow : 'Catálogo'" [title]="titulo"
   [escena]="casesState() === 'empty' ? null : 'casos'" />
 
-<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+<p class="ds-sr-only" role="status">{{ entrando() !== null ? 'Cargando el caso…' : statusText() }}</p>
 
 @if (isStudent && historyState() === 'error') {
   <ui-error-state [kind]="historyErrorKind()" [message]="copy.errorHistorial" (retry)="loadHistory()" />
 }
+
+@if (errorEntrada()) { <p role="alert">No pudimos abrir el caso. Revisa tu conexión y vuelve a intentarlo.</p> }
 
 <section class="cs-biblioteca" [attr.aria-label]="titulo">
   @switch (casesState()) {
@@ -66,13 +68,13 @@
                          nombra su caso (hay uno por tarjeta y sin nombre sonarían igual). Bloqueado: el motivo ya está en
                          el texto de la tarjeta y el botón lo repite en su aviso. -->
                     @if (card.estado.abierto) {
-                      <button ui-button type="button" icon="play_arrow" [attr.aria-label]="copy.acciones.continuar + ' «' + card.item.title + '»'" (click)="openCase(card, true)">{{ copy.acciones.continuar }}</button>
+                      <button ui-button type="button" icon="play_arrow" [loading]="entrando() === card.item.caseVersionId" [attr.aria-label]="copy.acciones.continuar + ' «' + card.item.title + '»'" (click)="openCase(card, true)">{{ entrando() === card.item.caseVersionId ? 'Entrando…' : copy.acciones.continuar }}</button>
                     } @else if (card.estado.clave === 'terminado' && card.recorrido) {
                       <button ui-button type="button" icon="description" [attr.aria-label]="copy.acciones.recorrido + ' de «' + card.item.title + '»'" (click)="openReport(card.recorrido)">{{ copy.acciones.recorrido }}</button>
                     } @else if (card.estado.clave === 'terminado') {
                       <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
                     } @else if (card.estado.clave === 'sin-empezar') {
-                      <button ui-button type="button" [attr.aria-label]="copy.acciones.empezar + ' «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.empezar }}</button>
+                      <button ui-button type="button" [loading]="entrando() === card.item.caseVersionId" [attr.aria-label]="copy.acciones.empezar + ' «' + card.item.title + '»'" (click)="openCase(card, false)">{{ entrando() === card.item.caseVersionId ? 'Cargando…' : copy.acciones.empezar }}</button>
                     } @else {
                       <button ui-button type="button" variant="secondary" [disabledReason]="card.estado.detalle ?? card.estado.etiqueta">{{ copy.acciones.empezar }}</button>
                     }

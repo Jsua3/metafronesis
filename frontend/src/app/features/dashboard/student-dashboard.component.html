@@ -2,7 +2,7 @@
      simulador, y los doodles suaves detrás de esta banda solamente (nunca detrás de tarjetas ni de texto del caso). -->
 <ui-cabecera-ilustrada [eyebrow]="copy.eyebrow" [title]="saludo()" escena="estudio" />
 
-<p class="ds-sr-only" role="status">{{ cargando() ? copy.cargando : '' }}</p>
+<p class="ds-sr-only" role="status">{{ entrando() ? 'Cargando el caso…' : cargando() ? copy.cargando : '' }}</p>
 
 <!-- «Lo siguiente»: una frase, arriba de todo, que dice qué hacer ahora. La acción vive en la tarjeta de abajo (o en la
      invitación); aquí no se repite un segundo botón principal. El texto lleva el tipo para que no dependa del color. -->
@@ -46,14 +46,15 @@
         <h3 class="sd-protagonista__titulo">{{ paso.caso.title }}</h3>
         <p class="sd-protagonista__contexto">{{ contexto() }}</p>
         <div class="sd-protagonista__accion">
+          @if (errorNavegacion()) { <p role="alert">No pudimos abrir el caso. Revisa tu conexión y vuelve a intentarlo.</p> }
           @switch (paso.tipo) {
             @case ('continuar') {
-              <a ui-button size="lg" icon="play_arrow" [routerLink]="['/portal/simulador', paso.caso.caseVersionId]" [queryParams]="{ intento: 'continuar' }" [state]="umbral()"
-                [attr.aria-label]="copy.paso.continuar + ' «' + paso.caso.title + '»'">{{ copy.paso.continuar }}</a>
+              <a ui-button size="lg" icon="play_arrow" [loading]="entrando()" (click)="iniciarNavegacion()" [routerLink]="['/portal/simulador', paso.caso.caseVersionId]" [queryParams]="{ intento: 'continuar' }" [state]="umbral()"
+                [attr.aria-label]="copy.paso.continuar + ' «' + paso.caso.title + '»'">{{ entrando() ? 'Entrando…' : copy.paso.continuar }}</a>
             }
             @case ('ficha') {
-              <a ui-button size="lg" [routerLink]="['/portal/simulador', paso.caso.caseVersionId, 'ficha']" [state]="umbral()"
-                [attr.aria-label]="copy.paso.ficha + ' «' + paso.caso.title + '»'">{{ copy.paso.ficha }}</a>
+              <a ui-button size="lg" [loading]="entrando()" (click)="iniciarNavegacion()" [routerLink]="['/portal/simulador', paso.caso.caseVersionId, 'ficha']" [state]="umbral()"
+                [attr.aria-label]="copy.paso.ficha + ' «' + paso.caso.title + '»'">{{ entrando() ? 'Cargando…' : copy.paso.ficha }}</a>
             }
             @case ('terminado') {
               <!-- Todo terminado: no hay nada que empujar, así que la única acción es secundaria. -->

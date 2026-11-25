@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 
 import { CaseAccessCache } from '../../core/api/case-access.cache';
@@ -59,7 +60,14 @@ interface FilaCaso {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StudentDashboardComponent {
+  private readonly router = inject(Router);
   private readonly api = inject(SimulationService);
+  protected readonly entrando = signal(false);
+  protected readonly errorNavegacion = signal(false);
+  protected iniciarNavegacion(): void {
+    this.entrando.set(true);
+    this.errorNavegacion.set(false);
+  }
   private readonly cache = inject(CaseAccessCache);
   private readonly auth = inject(AuthService);
   private readonly invitations = inject(InvitationsApi);
@@ -132,6 +140,16 @@ export class StudentDashboardComponent {
   protected readonly fecha = formatDate;
 
   constructor() {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
+      if (!this.entrando()) return;
+      if (event instanceof NavigationEnd) this.entrando.set(false);
+      // Cancelada (una guarda redirige o la desvía) no es un fallo de conexión: solo se suelta el botón.
+      if (event instanceof NavigationCancel) this.entrando.set(false);
+      if (event instanceof NavigationError) {
+        this.entrando.set(false);
+        this.errorNavegacion.set(true);
+      }
+    });
     this.observarAncho();
     this.cargar();
     this.invitations.list().subscribe({
