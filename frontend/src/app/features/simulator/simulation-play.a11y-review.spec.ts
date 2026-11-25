@@ -64,14 +64,16 @@ describe('F9: el interruptor «Movimiento reducido» del juego apaga las animaci
   });
 
   it('apaga animaciones y transiciones igual que la regla global de prefers-reduced-motion', () => {
-    expect(reduceRule).toContain('animation-duration: 1ms !important;');
-    expect(reduceRule).toContain('animation-iteration-count: 1 !important;');
-    expect(reduceRule).toContain('transition-duration: 1ms !important;');
-    expect(reduceRule).toContain('scroll-behavior: auto !important;');
-    // La red de seguridad global vive en styles/base/_motion.scss desde F1-6.
+    // La red de seguridad global vive en styles/base/_motion.scss (F1-6; sin demoras desde SIEP-267). El juego queda fuera
+    // de ella y aplica la suya con el interruptor, que arranca con la preferencia del sistema: las dos deben decir lo mismo.
     const globalRule = readFileSync(join(__dirname, '../../../styles/base/_motion.scss'), 'utf-8');
     const media = globalRule.slice(globalRule.indexOf('@media (prefers-reduced-motion: reduce) {'));
-    for (const declaration of ['animation-duration: 1ms !important;', 'animation-iteration-count: 1 !important;', 'transition-duration: 1ms !important;']) {
+    const declarations = [
+      'animation-delay: 0ms !important;', 'animation-duration: 0.01ms !important;', 'animation-iteration-count: 1 !important;',
+      'transition-delay: 0ms !important;', 'transition-duration: 0.01ms !important;', 'scroll-behavior: auto !important;',
+    ];
+    for (const declaration of declarations) {
+      expect(reduceRule).toContain(declaration);
       expect(media).toContain(declaration);
     }
   });
