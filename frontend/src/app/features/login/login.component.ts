@@ -115,6 +115,7 @@ export class LoginComponent implements AfterViewInit {
   readonly activeRole = computed(() => findLoginRole(this.selectedRole()));
   readonly showRegister = signal(false);
   readonly loading = signal(false);
+  readonly demoLoading = signal(false);
   readonly error = signal('');
 
   // ── Google Identity Services ──────────────────────────────────────────────
@@ -153,10 +154,10 @@ export class LoginComponent implements AfterViewInit {
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
   /** El correo que una visita anterior pidió recordar (vacío si nadie lo pidió). */
-  private readonly correoRecordado = this.loadRememberedEmail();
+  readonly correoRecordado = this.loadRememberedEmail();
 
   readonly form = this.fb.nonNullable.group({
-    email: [this.correoRecordado, [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
     // Parte desmarcado: en un aula con equipos compartidos, guardar el correo en el navegador lo decide quien lo usa, no un
     // valor por defecto. Si ya había uno guardado (lo pidió esa persona), la casilla sigue marcada.
@@ -164,7 +165,7 @@ export class LoginComponent implements AfterViewInit {
   });
 
   readonly forgotForm = this.fb.nonNullable.group({
-    email: [this.loadRememberedEmail(), [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email]],
   });
 
   readonly registerForm = this.fb.nonNullable.group({
@@ -201,7 +202,15 @@ export class LoginComponent implements AfterViewInit {
 
     // El build de producción pliega ngDevMode a false y descarta la rama: el import() y su chunk no existen.
     if (typeof ngDevMode === 'undefined' || ngDevMode) {
-      void import('./login-demo.dev').then(module => this.demo.set(module.LOGIN_DEMO_CREDENTIALS));
+      this.auth.demoConfig().subscribe({
+        next: config => {
+          if (!config.enabled) return;
+          void import('./login-demo.dev').then(module => {
+            if (!this.destroyRef.destroyed) this.demo.set(module.LOGIN_DEMO_CREDENTIALS);
+          }).catch(() => { /* Sin credenciales disponibles, no se ofrece la demostración. */ });
+        },
+        error: () => { /* Sin confirmación del servidor, no se ofrece la demostración. */ },
+      });
     }
     // Al cambiar de modo, el botón de Google se pinta otra vez con el tema que toca (claro u oscuro).
     effect(() => {
@@ -352,8 +361,23 @@ export class LoginComponent implements AfterViewInit {
   /** «Usar demo» (solo desarrollo): llena el correo y la contraseña de la cuenta demo de ese rol. */
   fillDemoCredentials(role: LoginRole): void {
     const credentials = this.demo()?.[role];
-    if (!credentials) return;
-    this.form.patchValue({ email: credentials.email, password: credentials.password });
+    if (!credentials || this.loading()) return;
+    this.demoLoading.set(true);
+    this.authenticate(credentials.email, credentials.password, 'Entrando como estudiante de demostración…');
+  }
+
+  useRememberedEmail(): void {
+    this.form.controls.email.setValue(this.correoRecordado);
+    this.pageRef.nativeElement.querySelector<HTMLInputElement>('#login-email')?.focus();
+  }
+
+  @HostListener('keydown', ['$event'])
+  submitFromField(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement) || event.isComposing || event.repeat) return;
+    const form = event.target.form;
+    if (!form) return;
+    event.preventDefault();
+    form.requestSubmit();
   }
 
   ngAfterViewInit(): void {
@@ -375,9 +399,6 @@ export class LoginComponent implements AfterViewInit {
       return;
     }
 
-    this.loading.set(true);
-    this.error.set('');
-    this.announcement.set('Ingresando…');
     const { email, password, remember } = this.form.getRawValue();
     const normalizedEmail = email.trim().toLowerCase();
     try {
@@ -385,12 +406,24 @@ export class LoginComponent implements AfterViewInit {
       else localStorage.removeItem(LOGIN_REMEMBER_EMAIL_KEY);
     } catch { /* almacenamiento bloqueado: se entra igual */ }
 
-    this.auth.login(normalizedEmail, password).subscribe({
+    this.authenticate(normalizedEmail, password, 'Ingresando…');
+  }
+
+  private authenticate(email: string, password: string, announcement: string): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.announcement.set(announcement);
+    this.auth.login(email, password).subscribe({
       next: () => this.router.navigateByUrl(this.destination),
       error: (error: unknown) => {
         this.error.set(this.loginErrorMessage(error));
         this.announcement.set('');
         this.loading.set(false);
+        if (this.demoLoading()) {
+          this.demoLoading.set(false);
+          this.demo.set(null);
+          this.focusHeading();
+        }
       },
     });
   }

@@ -57,7 +57,7 @@ describe('shell: barra accesible', () => {
   it('el logo es la marca de Metafrónesis, decorativa, dentro de un enlace con nombre propio (DP-06; WCAG 2.5.3)', async () => {
     const host = await render();
     const logo = host.querySelector('a.modulo-logo')!;
-    expect(logo.getAttribute('aria-label')).toBe('Metafrónesis · SIEP: ir al inicio');
+    expect(logo.getAttribute('aria-label')).toBe('Metafrónesis: ir al inicio');
     expect(logo.querySelector('app-marca')).not.toBeNull();
     for (const svg of logo.querySelectorAll('svg')) expect(svg.getAttribute('aria-hidden')).toBe('true');
     // Axe mide el texto VISIBLE del DOM: la palabra de la marca es un dibujo, así que el enlace no tiene texto que

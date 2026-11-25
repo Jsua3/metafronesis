@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
+import { APP_BRAND } from '../../../core/config/brand.config';
+
 import { UiBadge } from '../badge/ui-badge';
 
 /**
  * Frase de la regla RN-01 en BORRADOR (VD-23, decisión 17): la usa el componente mientras Psicología no fije el texto
  * oficial y las pantallas donde va (acceso, aviso previo y resultado). Cambiarla es decisión de Psicología.
  */
-export const SCOPE_NOTICE_DRAFT_TEXT = 'SIEP es un simulador con fines educativos; no realiza diagnósticos clínicos.';
+export const SCOPE_NOTICE_DRAFT_TEXT = `${APP_BRAND.shortName} es un simulador con fines educativos; no realiza diagnósticos clínicos.`;
 
 /**
  * Aviso de alcance (plan visual F2-11; RN-01): nota con nombre («Alcance del simulador»), no una alerta. Lleva la

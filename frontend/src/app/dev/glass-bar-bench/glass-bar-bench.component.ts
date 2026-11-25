@@ -1,3 +1,4 @@
+import { APP_BRAND } from '../../core/config/brand.config';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -50,9 +51,9 @@ const ACCOUNT_MENU: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', i
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header ui-glass-bar label="Navegación principal">
-      <a class="modulo modulo-logo pulsable ds-motion" href="/dev/barra" aria-label="SIEP: ir al panel">
+      <a class="modulo modulo-logo pulsable ds-motion" href="/dev/barra" [attr.aria-label]="brand.shortName + ': ir al panel'">
         <span class="logo-doble ds-motion">
-          <span class="logo-doble__completo ds-motion"><span class="logo-doble__marca" aria-hidden="true"></span><span class="logo-doble__nombre">SIEP</span></span>
+          <span class="logo-doble__completo ds-motion"><span class="logo-doble__marca" aria-hidden="true"></span><span class="logo-doble__nombre">{{ brand.shortName }}</span></span>
           <span class="logo-doble__isotipo ds-motion" aria-hidden="true"><span class="logo-doble__marca" aria-hidden="true"></span></span>
         </span>
       </a>
@@ -109,6 +110,7 @@ const ACCOUNT_MENU: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', i
   `],
 })
 export class GlassBarBenchComponent {
+  readonly brand = APP_BRAND;
   private readonly role = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map(params => {
       const role = params.get('rol');

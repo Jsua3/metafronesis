@@ -45,7 +45,7 @@ describe('LoginComponent', () => {
         ...extraProviders,
         provideZonelessChangeDetection(),
         provideRouter([{ path: '**', component: Screen }]),
-        { provide: AuthService, useValue: { login, googleConfig: () => googleConfig(), requestAccess: (payload: unknown) => requestAccess(payload),
+        { provide: AuthService, useValue: { login, demoConfig: () => of({ enabled: false }), googleConfig: () => googleConfig(), requestAccess: (payload: unknown) => requestAccess(payload),
           requestPasswordReset: (email: string) => (requestPasswordReset as unknown as (e: string) => Observable<unknown>)(email) } },
         { provide: UiDialog, useValue: { sheet: vi.fn() } },
       ],
@@ -140,6 +140,9 @@ describe('LoginComponent', () => {
     try {
       await render();
       expect(form().querySelector<HTMLInputElement>('label.ui-check input[type="checkbox"]')!.checked).toBe(true);
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('');
+      button('Usar mi correo recordado').click();
+      await fixture.whenStable();
       expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('ana@cue.edu.co');
     } finally {
       localStorage.removeItem(LOGIN_REMEMBER_EMAIL_KEY);
