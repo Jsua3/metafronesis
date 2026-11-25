@@ -1,4 +1,5 @@
 <div class="p-pagina ficha">
+  <p class="ds-sr-only" role="status" aria-live="polite">{{ entrando() ? 'Entrando al caso…' : '' }}</p>
   <!-- Cabecera ilustrada sin viñeta (ronda 3): la portada del caso, más abajo, es la ilustración de esta pantalla. -->
   <ui-cabecera-ilustrada
     [eyebrow]="brief() ? 'Ficha del caso' : null"
@@ -21,7 +22,27 @@
     }
     @case ('ready') {
       @if (brief(); as b) {
+        @if (!amplio()) {
+          <ui-barra-acciones class="ficha__barra" [nota]="lineaConsentimiento()">
+            <ng-container [ngTemplateOutlet]="principal" />
+          </ui-barra-acciones>
+          <ng-container [ngTemplateOutlet]="errorDeEntrada" />
+          @if (intentoAbierto()) {
+            <div class="ficha__botones"><ng-container [ngTemplateOutlet]="secundaria" /></div>
+          }
+        }
         <div class="p-dividida ficha__columnas">
+          @if (amplio()) {
+            <aside class="ficha__lateral p-pegajosa p-pegajosa--desplaza" aria-labelledby="entrada-titulo">
+              <ui-card class="ficha__entrada" superficie="tinte">
+                <h2 id="entrada-titulo" class="ficha__entrada-titulo">Tu entrada</h2>
+                <ng-container [ngTemplateOutlet]="cabezaEntrada" />
+                <!-- Las acciones antes de la seguridad: a 1440 × 900 la principal queda a la vista sin desplazar. -->
+                <ng-container [ngTemplateOutlet]="acciones" />
+                <ng-container [ngTemplateOutlet]="seguridad" />
+              </ui-card>
+            </aside>
+          }
           <div class="ficha__lectura">
             @if (access(); as notice) {
               <p class="ficha__acceso brief-access" [attr.data-tone]="notice.tone">
@@ -55,9 +76,6 @@
                 <section aria-labelledby="entrada-titulo-linea">
                   <h2 id="entrada-titulo-linea" class="ds-sr-only">Tu entrada</h2>
                   <ng-container [ngTemplateOutlet]="cabezaEntrada" />
-                  @if (intentoAbierto()) {
-                    <div class="ficha__botones"><ng-container [ngTemplateOutlet]="secundaria" /></div>
-                  }
                   <ng-container [ngTemplateOutlet]="seguridad" />
                 </section>
               </ui-card>
@@ -117,25 +135,10 @@
             }
           </div>
 
-          @if (amplio()) {
-            <aside class="ficha__lateral p-pegajosa p-pegajosa--desplaza" aria-labelledby="entrada-titulo">
-              <ui-card class="ficha__entrada" superficie="tinte">
-                <h2 id="entrada-titulo" class="ficha__entrada-titulo">Tu entrada</h2>
-                <ng-container [ngTemplateOutlet]="cabezaEntrada" />
-                <!-- Las acciones antes de la seguridad: a 1440 × 900 la principal queda a la vista sin desplazar. -->
-                <ng-container [ngTemplateOutlet]="acciones" />
-                <ng-container [ngTemplateOutlet]="seguridad" />
-              </ui-card>
-            </aside>
-          }
+
         </div>
 
-        @if (!amplio()) {
-          <ui-barra-acciones class="ficha__barra" [nota]="lineaConsentimiento()">
-            <ng-container [ngTemplateOutlet]="principal" />
-          </ui-barra-acciones>
-          <ng-container [ngTemplateOutlet]="errorDeEntrada" />
-        }
+
       }
     }
   }
@@ -168,10 +171,10 @@
 
 <ng-template #acciones>
   <div class="ficha__acciones">
+    <div class="ficha__botones"><ng-container [ngTemplateOutlet]="botones" /></div>
     @if (lineaConsentimiento(); as linea) {
       <p class="ficha__consentimiento">{{ linea }} <a href="#aviso" class="ficha__enlace" (click)="irAlAviso($event)">Leer el aviso</a></p>
     }
-    <div class="ficha__botones"><ng-container [ngTemplateOutlet]="botones" /></div>
     <ng-container [ngTemplateOutlet]="errorDeEntrada" />
     <a class="ficha__enlace ficha__volver" routerLink="/portal/simulador">Volver a tus casos</a>
   </div>
@@ -179,19 +182,19 @@
 
 <!-- UNA acción principal (la última, a la derecha en la barra del pie); la secundaria al lado, en la columna. -->
 <ng-template #botones>
-  <ng-container [ngTemplateOutlet]="secundaria" />
   <ng-container [ngTemplateOutlet]="principal" />
+  <ng-container [ngTemplateOutlet]="secundaria" />
 </ng-template>
 
 <ng-template #principal>
   @if (intentoAbierto()) {
     <button ui-button type="button" variant="primary" [size]="amplio() ? 'lg' : 'md'" icon="play_arrow" class="ficha__boton"
       [loading]="entrando() === 'continuar'" [disabledReason]="entrando() && entrando() !== 'continuar' ? 'Entrando al caso' : null"
-      (click)="continuar()">Continuar donde quedaste @if (entrando() === 'continuar') { <span aria-hidden="true">· Preparando el caso…</span> }</button>
+      (click)="continuar()">{{ entrando() === 'continuar' ? 'Entrando…' : 'Continuar donde quedaste' }}</button>
   } @else {
     <button ui-button type="button" variant="primary" [size]="amplio() ? 'lg' : 'md'" icon="play_arrow" class="ficha__boton"
       [loading]="entrando() === 'comenzar'" [disabledReason]="startBlockedReason()"
-      (click)="comenzar()">Comenzar @if (entrando() === 'comenzar') { <span aria-hidden="true">· Preparando el caso…</span> }</button>
+      (click)="comenzar()">{{ entrando() === 'comenzar' ? 'Entrando…' : 'Comenzar' }}</button>
   }
 </ng-template>
 
@@ -212,6 +215,9 @@
       @if (motivo === 'aviso') {
         <p>{{ copy.briefConsentStale.text }}</p>
         <button ui-button type="button" variant="secondary" size="sm" (click)="recargar()">Recargar</button>
+      } @else if (motivo === 'navegacion') {
+        <p>No pudimos entrar al caso. Revisa tu conexión y vuelve a intentarlo.</p>
+        <button ui-button type="button" variant="secondary" size="sm" (click)="reintentarEntrada()">Reintentar</button>
       } @else {
         <p>{{ copy.briefConsentError.text }}</p>
         <button ui-button type="button" variant="secondary" size="sm" (click)="reintentarEntrada()">Reintentar</button>

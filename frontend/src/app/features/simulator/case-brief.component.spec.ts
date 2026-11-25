@@ -137,7 +137,7 @@ describe('CaseBriefComponent', () => {
   // Criterio (1) de B4b: el orden ES la decisión de cuidado.
   it('el aviso de contenido va ANTES del contexto, y el contexto antes de los personajes', async () => {
     await render();
-    expect(h2s()).toEqual(['Antes de leer', 'Qué vas a practicar', 'Cómo funciona esta práctica', 'Contexto', 'Quiénes aparecen', 'Tu entrada']);
+    expect(h2s()).toEqual(['Tu entrada', 'Antes de leer', 'Qué vas a practicar', 'Cómo funciona esta práctica', 'Contexto', 'Quiénes aparecen']);
     const aviso = host().querySelector('#aviso')!;
     const contexto = host().querySelector('.brief-context')!;
     expect(aviso.compareDocumentPosition(contexto) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -189,6 +189,26 @@ describe('CaseBriefComponent', () => {
     expect(button('Volver a tus casos')?.getAttribute('href')).toBe('/portal/simulador');
   });
 
+  it('ofrece la acción principal antes de leer el aviso y explica una navegación fallida', async () => {
+    await render();
+    const principal = button('Comenzar')!;
+    const aviso = host().querySelector('a[href="#aviso"]')!;
+    expect(principal.compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Una guarda que desvía (false) no es un fallo de conexión: solo suelta el botón.
+    navigate.mockResolvedValueOnce(false);
+    principal.click();
+    await fixture.whenStable();
+    expect(text(host())).not.toContain('No pudimos entrar al caso');
+    expect(principal.getAttribute('aria-disabled')).not.toBe('true');
+    // Un error real de navegación sí se explica, con salida.
+    navigate.mockRejectedValueOnce(new Error('red'));
+    principal.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text(host())).toContain('No pudimos entrar al caso');
+    expect(button('Reintentar')).toBeDefined();
+  });
+
   // Criterio (2): registra y luego navega; nunca crea el intento.
   it('«Comenzar» registra el consentimiento y SOLO después navega al juego, con los datos del umbral', async () => {
     const service = await render();
@@ -229,7 +249,7 @@ describe('CaseBriefComponent', () => {
     button('Comenzar')!.click();
     await fixture.whenStable();
     expect(consent.recordForCase).toHaveBeenCalledTimes(1);
-    expect(button('Comenzar')!.getAttribute('aria-busy')).toBe('true');
+    expect(button('Entrando…')!.getAttribute('aria-busy')).toBe('true');
     terminar();
     await fixture.whenStable();
     expect(navigate).toHaveBeenCalledTimes(1);
@@ -314,7 +334,7 @@ describe('CaseBriefComponent', () => {
 
   it('sin objetivos ni personajes no pinta secciones vacías y dice que falta lo demás', async () => {
     await render({ getCaseBrief: () => of(brief({ characters: [], learningObjectives: [] })) });
-    expect(h2s()).toEqual(['Antes de leer', 'Cómo funciona esta práctica', 'Contexto', 'Tu entrada']);
+    expect(h2s()).toEqual(['Tu entrada', 'Antes de leer', 'Cómo funciona esta práctica', 'Contexto']);
     expect(text(host().querySelector('.brief-pending'))).toContain('Tu docente aún no ha redactado');
     expect(button('Comenzar')!.getAttribute('aria-disabled')).not.toBe('true');
   });

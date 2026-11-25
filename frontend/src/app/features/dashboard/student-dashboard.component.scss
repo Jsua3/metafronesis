@@ -19,6 +19,37 @@
   gap: var(--ds-space-4);
 }
 
+// ── Lo siguiente ───────────────────────────────────────────────────────────────────────────────────────────────
+// Una frase grande y quieta, arriba de todo: lo primero que se lee. Barra de acento a la izquierda (no solo color: lleva
+// el título «Lo siguiente» y la frase); sin sombra, sin movimiento.
+.sd-siguiente {
+  display: grid;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-4) var(--ds-space-5);
+  border-inline-start: 4px solid var(--l-acento, var(--ds-primary));
+  border-radius: var(--l-radio-tarjeta, var(--ds-radius-lg));
+  background: var(--ds-surface-1);
+  overflow-wrap: anywhere;
+}
+
+.sd-siguiente__titulo {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  font-weight: var(--ds-type-h3-weight);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sd-siguiente__frase {
+  margin: 0;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line);
+  font-weight: var(--ds-type-h3-weight);
+}
+
 // ── Invitaciones pendientes ───────────────────────────────────────────────────────────────────────────────────
 .sd-invitacion {
   display: flex;

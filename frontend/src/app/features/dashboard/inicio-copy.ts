@@ -6,22 +6,13 @@ export const INICIO_COPY = {
   eyebrow: 'Tu entrenamiento',
   /** Cuando no hay nombre de la sesión, el título no inventa uno. */
   tituloSinNombre: 'Tu entrenamiento',
-  descripcion: {
-    continuar: 'Tienes un caso en curso.',
-    ficha: 'Tu siguiente caso está listo.',
-    espera: 'Tu siguiente caso todavía no está abierto.',
-    terminado: 'Terminaste los casos asignados.',
-    vacio: 'Aún no tienes casos asignados.',
-  },
-  sinCasos: {
-    titulo: 'Aún no tienes casos asignados',
-    texto: 'Cuando tu docente te asigne un caso, aparecerá aquí. Si te invitaron a un grupo, acepta la invitación primero.',
-  },
+  /** El bloque de arriba: la frase sale de `loSiguiente()` (`student-guidance.util.ts`), que sabe qué toca hacer. */
+  siguiente: { titulo: 'Lo siguiente' },
   paso: {
     titulo: 'Tu siguiente paso',
     continuar: 'Continuar',
-    ficha: 'Ver ficha del caso',
-    recorrido: 'Ver tu recorrido',
+    ficha: 'Empezar',
+    recorrido: 'Ver mi resultado',
     retomasSinEscena: 'Retomas donde lo dejaste.',
   },
   invitaciones: {
@@ -31,7 +22,7 @@ export const INICIO_COPY = {
     accion: 'Ver invitaciones',
   },
   casos: { titulo: 'Tus casos', verTodos: 'Ver todos tus casos' },
-  cierres: { titulo: 'Tus cierres', accion: 'Ver tu recorrido' },
+  cierres: { titulo: 'Tus cierres', accion: 'Ver mi resultado' },
   error: 'No pudimos cargar tus casos.',
   cargando: 'Cargando tus casos…',
 } as const;

@@ -415,10 +415,16 @@ describe('GameMenuComponent: salida, carga y error de la sala (F5-3)', () => {
   });
 
   it('F5-5: sin casos asignados, la sala lo dice (sin pasillo vacío) y la salida sigue a mano', () => {
-    const { fixture, root } = mountWith(() => of([]));
+    const { fixture, root, router } = mountWith(() => of([]));
     fixture.detectChanges();
     const empty = root.querySelector('ui-empty-state')!;
     expect(text(empty)).toContain('Aún no tienes casos asignados');
+    // P7: dice quién los asigna y qué hacer, y lleva a Grupos (donde se acepta una invitación).
+    expect(text(empty)).toContain('Los casos los asigna tu docente a tu grupo');
+    expect(text(empty)).toContain('si te llegó una invitación, acéptala en Grupos');
+    const ir = [...empty.querySelectorAll('button')].find(boton => text(boton) === 'Ir a Grupos')!;
+    ir.click();
+    expect(router.navigate).toHaveBeenCalledWith(['/portal/invitaciones']);
     expect(root.querySelector('.menu-loading')).toBeNull();
     expect([...root.querySelectorAll('a')].some(link => spoken(link) === 'Volver al panel')).toBe(true);
   });

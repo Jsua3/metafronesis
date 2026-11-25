@@ -29,6 +29,10 @@
 // «Tu entrada» un poco más ancha que la columna lateral por defecto (22rem): «Continuar donde quedaste» cabe en una línea.
 .ficha__columnas {
   --p-lateral: 24rem;
+  @media (min-width: 64rem) {
+    .ficha__lectura { grid-column: 1; grid-row: 1; }
+    .ficha__lateral { grid-column: 2; grid-row: 1; }
+  }
 }
 
 // ── Columna de lectura ──────────────────────────────────────────────────────────────────────────────────────

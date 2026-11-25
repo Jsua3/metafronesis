@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
+import { CaseAccessCache } from '../../core/api/case-access.cache';
 import { Invitation, InvitationsApi } from '../../core/api/invitations.api';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { NavBadgesService } from '../../shared/layout/nav-badges.service';
@@ -39,7 +40,10 @@ describe('InvitationsComponent', () => {
     leave: (groupId: number) => Observable<Invitation>;
   }
 
+  const vaciar = vi.fn();
+
   async function render(api: Partial<Api> = {}, confirm = vi.fn(async () => true)) {
+    vaciar.mockClear();
     const resolved: Api = {
       list: () => of([invitation()]),
       accept: id => of(invitation({ id, groupId: id, status: 'ACTIVE' })),
@@ -52,6 +56,7 @@ describe('InvitationsComponent', () => {
         provideZonelessChangeDetection(), provideRouter([]),
         { provide: InvitationsApi, useValue: resolved },
         { provide: NavBadgesService, useValue: { fijar: vi.fn() } },
+        { provide: CaseAccessCache, useValue: { vaciar } },
         { provide: UiDialog, useValue: { confirm } },
         { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } },
       ],
@@ -88,6 +93,77 @@ describe('InvitationsComponent', () => {
     expect(text(host().querySelectorAll('ui-section')[1])).toContain('Psicología Jurídica · 2026-2');
     expect(button('Aceptar')).toBeNull();
     expect(text(host().querySelector('[role="status"].ds-sr-only'))).toContain('Te uniste a Psicología Jurídica · 2026-2');
+  });
+
+  it('al aceptar lleva el foco a Ver mis casos', async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    await render();
+    button('Aceptar')!.click();
+    await fixture.whenStable();
+    expect(focus.mock.instances).toContain(host().querySelector('.inv-ingreso a'));
+    focus.mockRestore();
+  });
+
+  describe('después de aceptar: el grupo y qué sigue (P7)', () => {
+    const aceptar = async (casesCount: number | null | undefined, extra: Partial<Invitation> = {}) => {
+      await render({ accept: id => of(invitation({ id, groupId: id, status: 'ACTIVE', casesCount, ...extra })) });
+      button('Aceptar')!.click();
+      await fixture.whenStable();
+    };
+    const tarjeta = () => host().querySelector('.inv-ingreso');
+
+    it('con casos: dice el grupo, cuántos hay y «Ver mis casos» es la acción principal', async () => {
+      await aceptar(2);
+      expect(text(tarjeta())).toContain('Ya estás en «Psicología Jurídica · 2026-2»');
+      expect(text(tarjeta())).toContain('Tu docente ya le asignó 2 casos a este grupo');
+      const ir = tarjeta()!.querySelector('a')!;
+      expect(text(ir)).toBe('Ver mis casos');
+      expect(ir.getAttribute('href')).toBe('/portal/simulador');
+      expect(ir.classList).toContain('ui-button--primary');
+      // Una sola región viva dice lo mismo: que entró y qué sigue.
+      expect(text(host().querySelector('[role="status"].ds-sr-only'))).toContain('Te uniste a Psicología Jurídica · 2026-2. Tu docente ya le asignó 2 casos');
+    });
+
+    it('con un solo caso, habla en singular', async () => {
+      await aceptar(1);
+      expect(text(tarjeta())).toContain('ya le asignó 1 caso a este grupo');
+    });
+
+    it('si el grupo aún no tiene casos: lo explica, nombra al docente y no empuja', async () => {
+      await aceptar(0);
+      expect(text(tarjeta())).toContain('Este grupo todavía no tiene casos');
+      expect(text(tarjeta())).toContain('Los asigna tu docente, Paula Docente, y aparecerán en Casos cuando los abra');
+      expect(text(tarjeta())).toContain('Si ya debería haber uno, avísale');
+      expect(tarjeta()!.querySelector('a')!.classList).not.toContain('ui-button--primary');
+      expect(text(host().querySelector('[role="status"].ds-sr-only'))).toContain('Este grupo todavía no tiene casos');
+    });
+
+    it('si el servidor no informa cuántos casos tiene, no afirma que esté vacío', async () => {
+      await aceptar(undefined);
+      expect(text(tarjeta())).toContain('Los casos que tu docente asigne a este grupo aparecerán en Casos.');
+      expect(text(tarjeta())).not.toContain('todavía no tiene casos');
+    });
+
+    it('olvida lo que la caché sabía de los casos: aceptar y salir cambian lo que se ve', async () => {
+      await aceptar(1);
+      expect(vaciar).toHaveBeenCalledTimes(1);
+    });
+
+    it('rechazar no deja tarjeta de ingreso ni toca la caché', async () => {
+      await render();
+      button('Rechazar')!.click();
+      await fixture.whenStable();
+      expect(tarjeta()).toBeNull();
+      expect(vaciar).not.toHaveBeenCalled();
+    });
+
+    it('salir de un grupo quita la tarjeta y vacía la caché', async () => {
+      await render({ list: () => of([invitation({ status: 'ACTIVE', casesCount: 2 })]) });
+      elegirSalir();
+      await fixture.whenStable();
+      expect(tarjeta()).toBeNull();
+      expect(vaciar).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('«Rechazar» pide confirmar; si se cancela no se envía nada', async () => {

@@ -1309,10 +1309,12 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     .game-container--reduce-motion ::ng-deep *,
     .game-container--reduce-motion ::ng-deep *::before,
     .game-container--reduce-motion ::ng-deep *::after {
-      animation-duration: 1ms !important;
+      animation-delay: 0ms !important;
+      animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       scroll-behavior: auto !important;
-      transition-duration: 1ms !important;
+      transition-delay: 0ms !important;
+      transition-duration: 0.01ms !important;
     }
     @media (prefers-reduced-motion: reduce) {
       .scene-fade { transition: none; }

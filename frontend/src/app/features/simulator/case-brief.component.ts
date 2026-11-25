@@ -113,7 +113,7 @@ export class CaseBriefComponent {
   /** La entrada en curso: deshabilita los botones (una doble pulsación no registra ni navega dos veces). */
   protected readonly entrando = signal<Entrada | null>(null);
   /** El registro del consentimiento falló (`fallo`) o el aviso cambió de versión (`aviso`, 409). */
-  protected readonly errorEntrada = signal<'fallo' | 'aviso' | null>(null);
+  protected readonly errorEntrada = signal<'fallo' | 'aviso' | 'navegacion' | null>(null);
   private ultimaEntrada: (() => void) | null = null;
 
   /** Dos columnas (con «Tu entrada» pegajosa) o una sola, con las acciones en la barra del pie. */
@@ -301,10 +301,17 @@ export class CaseBriefComponent {
     if (this.destruida) return;
     try {
       // Si la navegación no ocurre (una guarda la desvía), los botones vuelven a responder.
-      if (!(await navegar())) this.entrando.set(null);
+      // `false` = una guarda la desvió (p. ej. un caso bloqueado): no es un fallo de conexión.
+      if (!(await navegar()) && !this.destruida) this.entrando.set(null);
     } catch {
-      this.entrando.set(null);
+      if (!this.destruida) this.falloNavegacion();
     }
+  }
+
+  private falloNavegacion(): void {
+    this.entrando.set(null);
+    this.errorEntrada.set('navegacion');
+    this.announcer.announce('No pudimos entrar al caso. Revisa tu conexión y vuelve a intentarlo.', 'assertive');
   }
 
   /** `prime` pregunta al servidor; el registro sigue a la persona (S7-2), así que esto nunca muestra lo de otra cuenta. */
