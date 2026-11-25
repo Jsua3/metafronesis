@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, Injector, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { GrupoService } from '../../core/api/grupo.service';
 import { AssignmentService } from '../../core/api/assignment.service';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
@@ -35,6 +36,8 @@ export class AsignarDesdeCasoComponent {
   /** Nombre del caso: el diálogo y el lector de pantalla dicen qué se asigna. */
   readonly titulo = input<string | null>(null);
   readonly compacto = input(false);
+  /** El caso quedó asignado a un grupo: quien lo contiene puede refrescar lo que dependa de eso. */
+  readonly asignado = output<void>();
   protected readonly motivoId = `asignar-motivo-${AsignarDesdeCasoComponent.siguiente++}`;
   protected readonly etiqueta = () => (this.titulo() ? `Asignar «${this.titulo()}» a un grupo` : 'Asignar el caso a un grupo');
   protected readonly busy = signal(false);
@@ -55,9 +58,11 @@ export class AsignarDesdeCasoComponent {
       if (!group) return;
       await firstValueFrom(this.injector.get(AssignmentService).create({ caseVersionId: this.caseId(), target: { type: 'GROUP', groupId: group.id }, opensAt: result.opensAt, closesAt: result.closesAt }));
       notify.success(`Caso asignado a ${group.nombre}. Lo verán ${group.totalEstudiantes} estudiantes dentro de las fechas elegidas.`);
+      this.asignado.emit();
     } catch (error: unknown) {
-      const message = (error as { error?: { message?: string } })?.error?.message;
-      notify.error(message || 'No fue posible asignar el caso. Inténtalo de nuevo.');
+      // Un error del servidor en español claro se dice tal cual; uno técnico se cambia por qué pasó y qué hacer.
+      const message = mensajeDeError(error, 'No fue posible asignar el caso.');
+      if (message) notify.error(message);
     } finally { this.busy.set(false); }
   }
 }

@@ -20,6 +20,14 @@ export class AssignmentService {
       .pipe(map(response => response.data));
   }
 
+  /**
+   * Todas las asignaciones de los grupos de la docente (sin `groupId`; el servidor devuelve solo las de SUS grupos, y a la
+   * administración, todas). Sirven para saber qué casos publicados todavía no están asignados a nadie.
+   */
+  listAll() {
+    return this.http.get<ApiDataResponse<Assignment[]>>(this.API).pipe(map(response => response.data));
+  }
+
   create(body: AssignmentCreate) {
     return this.http.post<ApiDataResponse<Assignment>>(this.API, body).pipe(map(response => response.data));
   }

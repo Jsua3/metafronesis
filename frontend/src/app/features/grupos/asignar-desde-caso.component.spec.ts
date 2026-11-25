@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { vi, describe, it, expect } from 'vitest';
 import { GrupoService } from '../../core/api/grupo.service';
 import { AssignmentService } from '../../core/api/assignment.service';
@@ -45,5 +46,36 @@ describe('Asignar desde el caso', () => {
     expect(boton.getAttribute('aria-label')).toBe('Asignar «Caso de prueba» a un grupo');
     boton.click(); await fixture.whenStable();
     expect(open).toHaveBeenCalledWith(expect.anything(), { data: expect.objectContaining({ fixedCaseId: 7, title: 'Caso de prueba' }) });
+  });
+  it('avisa que el caso quedó asignado, para que el Inicio refresque «Lo siguiente»', async () => {
+    const open = vi.fn(() => ({ closed: of({ groupId: 4, opensAt: null, closesAt: null }) }));
+    TestBed.configureTestingModule({ providers: [
+      { provide: GrupoService, useValue: { listar: () => of([{ id: 4, nombre: 'Grupo A', totalEstudiantes: 24 }]) } },
+      { provide: AssignmentService, useValue: { create: () => of({}) } },
+      { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
+      { provide: UiDialog, useValue: { open } },
+    ] });
+    const fixture = TestBed.createComponent(AsignarDesdeCasoComponent);
+    const asignado = vi.fn();
+    fixture.componentInstance.asignado.subscribe(asignado);
+    fixture.componentRef.setInput('caseId', 7); fixture.componentRef.setInput('publicado', true); fixture.detectChanges();
+    fixture.nativeElement.querySelector('button').click(); await fixture.whenStable();
+    expect(asignado).toHaveBeenCalledTimes(1);
+  });
+  it('un error técnico del servidor se dice en palabras de persona y no se avisa que se asignó', async () => {
+    const error = vi.fn(); const asignado = vi.fn();
+    const open = vi.fn(() => ({ closed: of({ groupId: 4, opensAt: null, closesAt: null }) }));
+    TestBed.configureTestingModule({ providers: [
+      { provide: GrupoService, useValue: { listar: () => of([{ id: 4, nombre: 'Grupo A', totalEstudiantes: 24 }]) } },
+      { provide: AssignmentService, useValue: { create: () => throwError(() => new HttpErrorResponse({ status: 500, error: { message: 'Internal Server Error' } })) } },
+      { provide: NotificationService, useValue: { success: vi.fn(), error } },
+      { provide: UiDialog, useValue: { open } },
+    ] });
+    const fixture = TestBed.createComponent(AsignarDesdeCasoComponent);
+    fixture.componentInstance.asignado.subscribe(asignado);
+    fixture.componentRef.setInput('caseId', 7); fixture.componentRef.setInput('publicado', true); fixture.detectChanges();
+    fixture.nativeElement.querySelector('button').click(); await fixture.whenStable();
+    expect(error).toHaveBeenCalledWith('No fue posible asignar el caso. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
+    expect(asignado).not.toHaveBeenCalled();
   });
 });

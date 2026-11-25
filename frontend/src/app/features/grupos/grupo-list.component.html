@@ -64,12 +64,12 @@
               <p class="gl-hint">Código {{ grupo.codigo }} · {{ detalleConteo() }}</p>
             </div>
             <div class="gl-detail__actions">
-              <ui-menu iconOnly [label]="'Más acciones de ' + grupo.nombre" [items]="rowActions"
+              <ui-menu iconOnly [label]="'Más acciones de «' + grupo.nombre + '»'" [items]="rowActions"
                 (itemSelected)="accionDeFila(grupo, $event)" />
             </div>
           </header>
 
-          <ui-tabs label="Contenido del grupo" [(selected)]="pestana">
+          <ui-tabs label="Contenido del grupo" [(selected)]="pestana" (selectedChange)="alCambiarPestana($event)">
             <ng-template uiTab="estudiantes" label="Estudiantes">
               <div class="gl-stack">
                 <div class="gl-toolbar">
@@ -143,7 +143,7 @@
 
 <ng-template uiTab="casos" label="Casos asignados">
               <app-group-assignments [grupoId]="grupo.id" [cases]="casosDisponibles()" [casesStatus]="casosEstado()"
-                (assignedChange)="casosAsignadosTotal.set($event)" />
+                (assignedChange)="casosAsignadosTotal.set($event)" (retryCases)="cargarCasos()" />
             </ng-template>
 
             <ng-template uiTab="invitaciones" [label]="etiquetaInvitaciones()">

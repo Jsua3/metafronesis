@@ -10,10 +10,13 @@ import { Grupo, GrupoService } from '../../core/api/grupo.service';
 import { ReporteService } from '../../core/api/reporte.service';
 import { InstructorApi } from '../../core/api/instructor.api';
 import { AdminUser, UserAdminService } from '../../core/api/user-admin.service';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { AuthService } from '../../core/auth/auth.service';
 import { Assignment } from '../../core/models/assignment.model';
 import { InstructorAttemptsPage, SimulationCaseSummary } from '../../core/models/revision.model';
 import { haceCuanto } from '../simulator/trace-labels.util';
+import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
+import { PasoSiguiente, loSiguienteDocente } from './lo-siguiente.util';
 import { NavBadgesService } from '../../shared/layout/nav-badges.service';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -24,12 +27,12 @@ import { uiDataState } from '../../shared/ui/state/ui-data-state';
 import { UiEmptyState } from '../../shared/ui/state/ui-empty-state';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 
-type Source = 'revision' | 'grupos' | 'casos' | 'solicitudes' | 'usuarios' | 'auditoria';
+type Source = 'revision' | 'grupos' | 'casos' | 'asignaciones' | 'solicitudes' | 'usuarios' | 'auditoria';
 interface GrupoVista { grupo: Grupo; asignaciones: Assignment[] | null; avances: Record<number, number | null>; }
 
 @Component({
   selector: 'app-staff-dashboard',
-  imports: [RouterLink, UiButton, UiCabeceraIlustrada, UiProgress, UiSkeleton, UiEmptyState, UiErrorState],
+  imports: [RouterLink, AsignarDesdeCasoComponent, UiButton, UiCabeceraIlustrada, UiProgress, UiSkeleton, UiEmptyState, UiErrorState],
   templateUrl: './staff-dashboard.component.html', styleUrl: './staff-dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -59,6 +62,8 @@ export class StaffDashboardComponent implements OnInit {
   readonly revision = signal<InstructorAttemptsPage | null>(null);
   readonly grupos = signal<GrupoVista[]>([]);
   readonly casos = signal<SimulationCaseSummary[]>([]);
+  /** TODAS las asignaciones de sus grupos (no solo las de los cuatro que se pintan): `null` si no se pudieron leer. */
+  readonly todasAsignaciones = signal<Assignment[] | null>(null);
   readonly publicados = computed(() => this.casos().filter(c => c.status === 'PUBLISHED'));
   /** Lo último que quedó en el registro de auditoría (solo administración). */
   readonly actividad = signal<AuditLogItem[]>([]);
@@ -71,6 +76,19 @@ export class StaffDashboardComponent implements OnInit {
   readonly casosRevision = computed(() => this.casos().filter(c => c.status === 'IN_REVIEW'));
   readonly casosEdicion = computed(() => this.casos().filter(c => c.status === 'DRAFT' || c.status === 'IN_REVIEW').slice(0, 3));
   readonly totalRevision = computed(() => this.revision()?.coverage.total ?? 0);
+  /**
+   * «Lo siguiente» de la docente: una o dos frases con su acción, calculadas con lo que la API ya da. Una fuente que no
+   * cargó no produce frase (y la pantalla no declara «todo al día» si falta alguna: `loSiguienteCompleto`).
+   */
+  readonly pasosSiguientes = computed<PasoSiguiente[]>(() => loSiguienteDocente({
+    publicados: this.fallo('casos') ? null : this.publicados(),
+    asignaciones: this.fallo('asignaciones') ? null : this.todasAsignaciones(),
+    grupos: this.fallo('grupos') ? null : this.gruposTotal(),
+    porRevisar: this.fallo('revision') ? null : this.totalRevision(),
+  }));
+  /** Cuántos grupos tiene en total (el inicio solo pinta cuatro, pero «sin grupos» se decide con todos). */
+  readonly gruposTotal = signal(0);
+  readonly loSiguienteCompleto = computed(() => !this.fallo('casos') && !this.fallo('asignaciones') && !this.fallo('grupos') && !this.fallo('revision'));
   readonly totalAdmin = computed(() => this.solicitudes().length + this.pendientesCuentas() + this.casosRevision().length);
   readonly titulo = computed(() => `Hola, ${this.auth.currentUser()?.nombre?.trim().split(/\s+/)[0] || 'bienvenido'}`);
   readonly descripcion = computed(() => {
@@ -87,16 +105,18 @@ export class StaffDashboardComponent implements OnInit {
   }
   reload(): void {
     this.loading.set(true); this.error.set(false); this.failedSources.set(new Set());
+    this.gruposTotal.set(0); this.todasAsignaciones.set(null);
     const casos = this.casosApi.listAll().pipe(catchError(() => this.fallar('casos', [] as SimulationCaseSummary[])));
     if (this.isAdmin()) {
       forkJoin({ casos, solicitudes: this.solicitudesApi.listPending().pipe(catchError(() => this.fallar('solicitudes', [] as AccessRequest[]))), usuarios: this.usuariosApi.list().pipe(catchError(() => this.fallar('usuarios', [] as AdminUser[]))), actividad: this.auditoriaApi.list().pipe(map(pagina => pagina.items.slice(0, 5)), catchError(() => this.fallar('auditoria', [] as AuditLogItem[]))) }).subscribe(({ casos, solicitudes, usuarios, actividad }) => {
         this.casos.set(casos); this.solicitudes.set(solicitudes); this.usuarios.set(usuarios); this.actividad.set(actividad);
         // Una insignia incompleta parecería un conteo exacto.
-        this.badges.fijar('usuarios', this.fallo('solicitudes') || this.fallo('usuarios') ? 0 : solicitudes.length + usuarios.filter(u => u.pendingApproval).length);
+        this.badges.fijarUsuarios(this.fallo('solicitudes') ? null : solicitudes.length, this.fallo('usuarios') ? null : usuarios.filter(u => u.pendingApproval).length);
         this.loading.set(false);
       });
     } else {
       const grupos = this.gruposApi.listar().pipe(switchMap(items => {
+        this.gruposTotal.set(items.length);
         const primeros = items.slice(0, 4);
         if (!primeros.length) return of([] as GrupoVista[]);
         return forkJoin(primeros.map(grupo => this.asignacionesApi.list(grupo.id).pipe(
@@ -114,8 +134,9 @@ export class StaffDashboardComponent implements OnInit {
           catchError(() => this.fallar('grupos', { grupo, asignaciones: null, avances: {} } as GrupoVista)),
         )));
       }), catchError(() => this.fallar('grupos', [] as GrupoVista[])));
-      forkJoin({ casos, grupos, revision: this.instructor.listAttempts({ evaluacion: 'pendiente', pageSize: 5 }).pipe(catchError(() => this.fallar('revision', null as InstructorAttemptsPage | null))) }).subscribe(({ casos, grupos, revision }) => {
-        this.casos.set(casos); this.grupos.set(grupos); this.revision.set(revision);
+      const asignaciones = this.asignacionesApi.listAll().pipe(catchError(() => this.fallar('asignaciones', null as Assignment[] | null)));
+      forkJoin({ casos, grupos, asignaciones, revision: this.instructor.listAttempts({ evaluacion: 'pendiente', pageSize: 5 }).pipe(catchError(() => this.fallar('revision', null as InstructorAttemptsPage | null))) }).subscribe(({ casos, grupos, asignaciones, revision }) => {
+        this.casos.set(casos); this.grupos.set(grupos); this.revision.set(revision); this.todasAsignaciones.set(asignaciones);
         this.badges.fijar('trazabilidad', revision?.coverage.total ?? 0); this.loading.set(false);
       });
     }
@@ -171,14 +192,28 @@ export class StaffDashboardComponent implements OnInit {
     this.solicitudesApi.updateStatus(solicitud.id, 'DISMISSED').subscribe({
       next: () => {
         this.solicitudes.update(items => items.filter(item => item.id !== solicitud.id));
-        this.badges.fijar('usuarios', this.fallo('usuarios') ? 0 : this.solicitudes().length + this.pendientesCuentas());
+        this.badges.fijarUsuarios(this.solicitudes().length, this.fallo('usuarios') ? null : this.pendientesCuentas());
         this.notify.success('Solicitud descartada.');
         this.descartando.set(null);
       },
-      error: () => { this.notify.error('No pudimos descartar la solicitud. Inténtalo de nuevo.'); this.descartando.set(null); },
+      error: (err: unknown) => {
+        const texto = mensajeDeError(err, 'No pudimos descartar la solicitud.');
+        if (texto) this.notify.error(texto);
+        this.descartando.set(null);
+      },
     });
   }
   fecha(valor: string | null | undefined): string { if (!valor) return 'Fecha no disponible'; const d = new Date(valor); return Number.isNaN(d.getTime()) ? 'Fecha no disponible' : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(d); }
   fechaHora(valor: string | null | undefined): string { if (!valor) return 'Fecha no disponible'; const d = new Date(valor); return Number.isNaN(d.getTime()) ? 'Fecha no disponible' : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(d); }
+  /** Tras asignar un caso desde «Lo siguiente»: se vuelven a leer las asignaciones, sin esqueleto, para que la frase se actualice. */
+  refrescarAsignaciones(): void {
+    this.asignacionesApi.listAll().subscribe({
+      next: filas => {
+        this.todasAsignaciones.set(filas);
+        this.failedSources.update(s => { const n = new Set(s); n.delete('asignaciones'); return n; });
+      },
+      error: () => this.failedSources.update(s => new Set(s).add('asignaciones')),
+    });
+  }
   irGrupos(): void { void this.router.navigateByUrl('/portal/grupos'); }
 }

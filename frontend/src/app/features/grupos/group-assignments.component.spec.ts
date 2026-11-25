@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AssignmentService } from '../../core/api/assignment.service';
@@ -65,6 +66,7 @@ describe('GroupAssignmentsComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AssignmentService, useValue: api },
         { provide: UiDialog, useValue: { open, confirm } },
         { provide: NotificationService, useValue: notify },
@@ -140,7 +142,7 @@ describe('GroupAssignmentsComponent', () => {
       await render({ cases: [caso12] });
       const button = buttonIn(host(), 'Asignar un caso')!;
       expect(button.getAttribute('aria-disabled')).toBe('true');
-      expect(text(document.getElementById(button.getAttribute('aria-describedby')!))).toBe('No hay más casos publicados para asignar.');
+      expect(text(document.getElementById(button.getAttribute('aria-describedby')!))).toBe('Ya asignaste a este grupo todos tus casos publicados. Para ofrecer otro, publícalo en «Casos».');
       button.click();
       expect(open).not.toHaveBeenCalled();
     });
@@ -165,10 +167,10 @@ describe('GroupAssignmentsComponent', () => {
     });
     buttonIn(host(), 'Asignar un caso')!.click();
     await fixture.whenStable();
-    expect(notify.error).toHaveBeenLastCalledWith('No fue posible asignar el caso al grupo.');
+    expect(notify.error).toHaveBeenLastCalledWith('No fue posible asignar el caso al grupo.' + ' Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     buttonIn(items()[0], 'Retirar «Caso doce» del grupo')!.click();
     await fixture.whenStable();
-    expect(notify.error).toHaveBeenLastCalledWith('No fue posible retirar el caso del grupo.');
+    expect(notify.error).toHaveBeenLastCalledWith('No fue posible retirar el caso del grupo.' + ' Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
   });
 
   describe('cambiar las fechas', () => {
@@ -349,7 +351,7 @@ describe('GroupAssignmentsComponent', () => {
 
       fixture.componentRef.setInput('casesStatus', 'failed');
       await fixture.whenStable();
-      expect(text(buttonIn(host(), 'Asignar un caso')!.querySelector('[hidden]'))).toBe('No pudimos cargar los casos publicados.');
+      expect(text(buttonIn(host(), 'Asignar un caso')!.querySelector('[hidden]'))).toBe('No pudimos cargar tus casos publicados. Reintenta para poder asignar.');
     });
 
     it('cada botón de una fila lleva el nombre de su caso, para distinguirlos en la lista de botones', async () => {
@@ -385,6 +387,67 @@ describe('GroupAssignmentsComponent', () => {
       } finally {
         host().remove();
       }
+    });
+  });
+  // P6: un botón apagado dice su causa a la vista (no solo en un globo) y, cuando la hay, ofrece la salida.
+  describe('el motivo del botón apagado se ve junto a él', () => {
+    const motivo = () => host().querySelector('[data-ga-reason]');
+    const salida = () => host().querySelector('.ga-reason a, .ga-reason button');
+
+    it('sin ningún caso publicado lo dice y lleva a «Casos»', async () => {
+      await render({ cases: [], api: { list: vi.fn(() => of([])) } });
+      expect(text(motivo())).toBe('Aún no tienes casos publicados. Publica uno en «Casos» y vuelve aquí para asignarlo.');
+      expect(salida()?.getAttribute('href')).toBe('/portal/casos');
+      expect(text(salida())).toBe('Ir a «Casos»');
+      expect(buttonIn(host(), 'Asignar un caso')!.getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('con todos los publicados ya asignados dice cuál es la situación y también lleva a «Casos»', async () => {
+      await render({ cases: [caso12] });
+      expect(text(motivo())).toContain('Ya asignaste a este grupo todos tus casos publicados');
+      expect(salida()?.getAttribute('href')).toBe('/portal/casos');
+    });
+
+    it('si los casos publicados no cargaron, ofrece «Reintentar» y lo avisa a quien los trae', async () => {
+      await render();
+      const reintentos = vi.fn();
+      fixture.componentInstance.retryCases.subscribe(reintentos);
+      fixture.componentRef.setInput('casesStatus', 'failed');
+      await fixture.whenStable();
+      expect(text(motivo())).toBe('No pudimos cargar tus casos publicados. Reintenta para poder asignar.');
+      (salida() as HTMLButtonElement).click();
+      expect(reintentos).toHaveBeenCalledTimes(1);
+    });
+
+    it('mientras cargan los casos del grupo o los publicados, lo dice sin ofrecer salidas', async () => {
+      await render();
+      fixture.componentRef.setInput('casesStatus', 'loading');
+      await fixture.whenStable();
+      expect(text(motivo())).toBe('Cargando los casos publicados…');
+      expect(salida()).toBeNull();
+    });
+
+    it('con casos por asignar no hay motivo ni salida: el botón funciona', async () => {
+      await render({ api: { list: vi.fn(() => of([])) } });
+      expect(motivo()).toBeNull();
+      expect(buttonIn(host(), 'Asignar un caso')!.getAttribute('aria-disabled')).toBeNull();
+    });
+
+    it('mientras hay un cambio en curso lo dice junto al botón', async () => {
+      const pending = new Subject<Assignment>();
+      await render({ api: { update: vi.fn(() => pending) }, confirmed: true });
+      buttonIn(items()[0], 'Pausar «Caso doce»')!.click();
+      await fixture.whenStable();
+      await fixture.whenStable();
+      expect(text(motivo())).toBe('Hay un cambio en curso: espera un momento.');
+    });
+
+    it('si falla cargar los casos asignados, el error lo dice en palabras de persona con su acción', async () => {
+      await render({ api: { list: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500, error: 'Traceback (most recent call last)' }))) } });
+      const error = host().querySelector('ui-error-state')!;
+      expect(text(error)).toContain('No pudimos cargar los casos asignados. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
+      expect(text(error)).not.toContain('Traceback');
+      expect(buttonIn(error, 'Reintentar')).toBeDefined();
     });
   });
 });

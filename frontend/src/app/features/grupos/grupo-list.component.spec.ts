@@ -238,7 +238,7 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
       expect(detail.querySelector('.gl-detail__actions a')).toBeNull();
 
       expect(detail.querySelectorAll('.gl-detail__head ui-menu')).toHaveLength(1);
-      expect(detail.querySelector('.gl-detail__head ui-menu button')?.getAttribute('aria-label')).toBe('Más acciones de Cohorte A');
+      expect(detail.querySelector('.gl-detail__head ui-menu button')?.getAttribute('aria-label')).toBe('Más acciones de «Cohorte A»');
       const menu = fixture.debugElement.query(By.directive(UiMenu)).componentInstance as UiMenu;
       expect(menu.items().map(item => item.label)).toEqual(['Copiar código', 'Editar', 'Borrar']);
     });

@@ -7,6 +7,34 @@
   <div aria-busy="true"><ui-skeleton shape="row" /><ui-skeleton shape="row" /></div>
 } @else {
   @if (!isAdmin()) {
+    <!-- «Lo siguiente» (P6): qué hacer ahora, en una o dos frases con su acción, antes de las listas. -->
+    <section aria-labelledby="siguiente-titulo" data-lo-siguiente>
+      <div class="encabezado">
+        <div><p class="epigrafe">Ahora</p><h2 id="siguiente-titulo">Lo siguiente</h2></div>
+      </div>
+      <div class="panel siguiente">
+        @if (pasosSiguientes().length) {
+          <ul class="pasos">
+            @for (paso of pasosSiguientes(); track paso.id) {
+              <li class="paso" [attr.data-paso]="paso.id">
+                <p>{{ paso.texto }}</p>
+                @if (paso.accion.tipo === 'asignar') {
+                  <app-asignar-desde-caso [caseId]="paso.accion.caseVersionId" [publicado]="true" [titulo]="paso.accion.titulo" (asignado)="refrescarAsignaciones()" />
+                } @else {
+                  <a ui-button variant="secondary" [routerLink]="paso.accion.ruta" [queryParams]="paso.accion.parametros">{{ paso.accion.etiqueta }}</a>
+                }
+              </li>
+            }
+          </ul>
+        } @else if (loSiguienteCompleto()) {
+          <p>Por ahora no hay nada urgente: no hay intentos por revisar y tus casos publicados ya están asignados a un grupo.</p>
+        } @else {
+          <p>No pudimos revisar todo lo que sigue, así que no te decimos «todo al día» todavía. Vuelve a intentarlo.</p>
+          <div class="acciones"><button ui-button type="button" variant="secondary" (click)="reload()">Reintentar</button></div>
+        }
+      </div>
+    </section>
+
     <section aria-labelledby="revision-titulo">
       <div class="encabezado">
         <div><p class="epigrafe">Tu bandeja</p><h2 id="revision-titulo">Por revisar</h2></div>
@@ -47,7 +75,7 @@
           @for (vista of grupos(); track vista.grupo.id) {
             <article class="panel">
               <div>
-                <h3>{{ vista.grupo.nombre }}</h3>
+                <h3><a class="nombre-grupo" [routerLink]="['/portal/grupos', vista.grupo.id]">{{ vista.grupo.nombre }}</a></h3>
                 <p>{{ cantidad(vista.grupo.totalEstudiantes, 'estudiante', 'estudiantes') }}</p>
               </div>
               @if (vista.asignaciones === null) {
@@ -122,8 +150,8 @@
                     <small>Pidió acceso el {{ fecha(solicitud.createdAt) }}</small>
                   </div>
                   <div class="acciones">
-                    <a ui-button variant="secondary" routerLink="/portal/admin/usuarios" [queryParams]="{ vista: 'solicitudes' }">Crear cuenta<span class="ds-sr-only"> para {{ solicitud.nombre }} {{ solicitud.apellido }}</span></a>
-                    <button ui-button variant="ghost" type="button" [disabled]="descartando() !== null" (click)="descartar(solicitud)">Descartar<span class="ds-sr-only"> la solicitud de {{ solicitud.nombre }} {{ solicitud.apellido }}</span></button>
+                    <a ui-button variant="secondary" routerLink="/portal/admin/usuarios" [queryParams]="{ vista: 'solicitudes' }">Aprobar y crear cuenta<span class="ds-sr-only"> de {{ solicitud.nombre }} {{ solicitud.apellido }}</span></a>
+                    <button ui-button variant="ghost" type="button" [disabledReason]="descartando() !== null ? 'Se está descartando otra solicitud: espera un momento.' : null" (click)="descartar(solicitud)">Descartar<span class="ds-sr-only"> la solicitud de {{ solicitud.nombre }} {{ solicitud.apellido }}</span></button>
                   </div>
                 </li>
               }

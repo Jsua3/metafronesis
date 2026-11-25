@@ -8,6 +8,18 @@
 <div class="us-views">
   <ui-segmentado etiqueta="Vista de usuarios" [opciones]="vistas()" [valor]="vista()" (valorChange)="cambiarVista($event)" />
 </div>
+@if (resumenPendientes(); as resumen) {
+  <!-- Una sola cifra de pendientes: la misma del menú lateral y de las pestañas. Cada parte lleva a su lista. -->
+  <div class="us-pendientes" [class.us-pendientes--atencion]="resumen.tono === 'atencion'" [class.us-pendientes--aviso]="resumen.tono === 'aviso'" role="status" data-us-pendientes>
+    <p class="us-pendientes__texto">{{ resumen.texto }}</p>
+    @if (pendientes().solicitudes && vista() !== 'solicitudes') {
+      <button ui-button type="button" size="sm" variant="secondary" (click)="cambiarVista('solicitudes')">Ver solicitudes</button>
+    }
+    @if (pendientes().cuentas && vista() !== 'por-aprobar') {
+      <button ui-button type="button" size="sm" variant="secondary" (click)="cambiarVista('por-aprobar')">Ver cuentas por aprobar</button>
+    }
+  </div>
+}
 <p class="us-result" [class.us-result--vacio]="!resumen()" role="status" aria-live="polite">{{ resumen() }}</p>
 
 @if (vista() === 'solicitudes') {
@@ -15,7 +27,7 @@
     <div class="us-stack">
       <p class="us-hint">Personas que pidieron cuenta desde el acceso, con el rol que solicitan.</p>
       @if (requestsError()) {
-        <ui-error-state kind="server" message="No pudimos cargar las solicitudes de acceso." (retry)="loadAccessRequests()" />
+        <ui-error-state kind="server" [message]="requestsErrorTexto()" (retry)="loadAccessRequests()" />
       } @else {
         @if (!accessRequests().length) { <ui-empty-state kind="first-use" title="No hay solicitudes pendientes" /> }
         <ul class="us-request-list">
@@ -28,8 +40,9 @@
                 <small>Solicitado: {{ formatDate(request.createdAt) }}</small>
               </span>
               <span class="us-request__actions">
-                <button ui-button type="button" icon="person_add" (click)="attendRequest(request)">Crear usuario</button>
-                <button ui-button type="button" variant="ghost" [loading]="saving()" (click)="dismissRequest(request)">Descartar</button>
+                <!-- «Aprobar» a la vista en cada solicitud: aprobarla ES crear la cuenta de esa persona (se abre el formulario ya lleno). -->
+                <button ui-button type="button" icon="person_add" [attr.aria-label]="'Aprobar la solicitud de ' + request.nombre + ' ' + request.apellido + ' y crear su cuenta'" (click)="attendRequest(request)">Aprobar y crear cuenta</button>
+                <button ui-button type="button" variant="ghost" [loading]="saving()" [attr.aria-label]="'Descartar la solicitud de ' + request.nombre + ' ' + request.apellido" (click)="dismissRequest(request)">Descartar</button>
               </span>
             </li>
           }
@@ -46,16 +59,29 @@
     } @else if (state() === 'error') {
       <ui-error-state kind="server" [message]="error()" (retry)="load()" />
     } @else {
-      <ui-card class="us-pending__card">
-        <p class="us-hint">{{ pendingText() }}</p>
-        <label class="us-check"><input type="checkbox" [checked]="pendingUsers().length > 0 && seleccionPendientes().length === pendingUsers().length"
-          (change)="seleccionarVisibles($any($event.target).checked, true)"> Seleccionar cuentas pendientes</label>
-        @for (user of pendingUsers(); track user.id) {
-          <label class="us-check"><input type="checkbox" [checked]="seleccionPendientes().includes(user.id)"
-            (change)="seleccionar(user.id, $any($event.target).checked, true)"> {{ user.nombre }} {{ user.apellido }} <span class="us-email" [title]="user.email">{{ user.email }}</span></label>
-        }
-        <button ui-button type="button" icon="task_alt" [disabled]="!seleccionPendientes().length" [loading]="saving()" (click)="aprobarSeleccion()">Aprobar {{ seleccionPendientes().length }} cuentas</button>
-      </ui-card>
+      @if (!pendingUsers().length) {
+        <ui-empty-state kind="first-use" title="No hay cuentas por aprobar" description="Las cuentas que se crean al importar estudiantes aparecen aquí hasta que las apruebes." />
+      } @else {
+        <ui-card class="us-pending__card">
+          <p class="us-hint">{{ pendingText() }}</p>
+          <label class="us-check"><input type="checkbox" [checked]="pendingUsers().length > 0 && seleccionPendientes().length === pendingUsers().length"
+            (change)="seleccionarVisibles($any($event.target).checked, true)"> Seleccionar todas las cuentas pendientes</label>
+          <ul class="us-pending-list">
+            @for (user of pendingUsers(); track user.id) {
+              <li class="us-pending-row">
+                <label class="us-check"><input type="checkbox" [checked]="seleccionPendientes().includes(user.id)"
+                  (change)="seleccionar(user.id, $any($event.target).checked, true)"> {{ user.nombre }} {{ user.apellido }} <span class="us-email" [title]="user.email">{{ user.email }}</span></label>
+                <!-- «Aprobar» a la vista en cada cuenta pendiente, además del lote. -->
+                <button ui-button type="button" size="sm" icon="task_alt" [disabledReason]="esperaPorCambio()" [attr.aria-label]="'Aprobar la cuenta de ' + user.nombre + ' ' + user.apellido" (click)="approveUser(user)">Aprobar</button>
+              </li>
+            }
+          </ul>
+          <div class="us-pending-lote">
+            <button ui-button type="button" variant="secondary" icon="task_alt" [disabledReason]="motivoLote()" [loading]="saving()" (click)="aprobarSeleccion()">{{ seleccionPendientes().length ? 'Aprobar ' + accounts(seleccionPendientes().length) : 'Aprobar las marcadas' }}</button>
+            @if (motivoLote(); as motivo) { <p class="us-hint us-pending-lote__motivo" data-us-motivo>{{ motivo }}</p> }
+          </div>
+        </ui-card>
+      }
     }
   </ui-section>
 }
@@ -80,8 +106,8 @@
   @if (seleccion().length) {
     <div class="us-batch" aria-label="Acciones de cuentas seleccionadas">
       <strong>{{ seleccion().length }} {{ seleccion().length === 1 ? 'seleccionada' : 'seleccionadas' }}</strong>
-      <button ui-button type="button" variant="secondary" [disabled]="saving()" (click)="cambiarLote(false)">Desactivar</button>
-      <button ui-button type="button" variant="secondary" [disabled]="saving()" (click)="cambiarLote(true)">Activar</button>
+      <button ui-button type="button" variant="secondary" [disabledReason]="esperaPorCambio()" (click)="cambiarLote(false)">Desactivar</button>
+      <button ui-button type="button" variant="secondary" [disabledReason]="esperaPorCambio()" (click)="cambiarLote(true)">Activar</button>
       <button ui-button type="button" variant="ghost" (click)="seleccion.set([])">Quitar selección</button>
     </div>
   }
@@ -111,15 +137,18 @@
             <td><span class="us-email" [title]="user.email">{{ user.email }}</span></td>
             <td>{{ roleLabel(user.role) }}
               @if (user.role === 'PROFESOR') {
-                <button ui-button type="button" size="sm" variant="secondary" [disabled]="saving()" [attr.aria-pressed]="!!user.permisoAutoria" (click)="cambiarPermiso(user)">Permiso de autoría: {{ user.permisoAutoria ? 'Sí' : 'No' }}</button>
+                <button ui-button type="button" size="sm" variant="secondary" [disabledReason]="esperaPorCambio()" [attr.aria-pressed]="!!user.permisoAutoria" [attr.aria-label]="'Permiso de autoría de ' + user.nombre + ' ' + user.apellido + ': ' + (user.permisoAutoria ? 'sí' : 'no') + '. Pulsa para cambiarlo.'" (click)="cambiarPermiso(user)">Permiso de autoría: {{ user.permisoAutoria ? 'Sí' : 'No' }}</button>
               }
             </td>
             @let badge = statusBadge(user);
             <td><ui-badge [tone]="badge.tone">{{ badge.label }}</ui-badge></td>
             <td class="us-actions" data-celda="acciones">
+              @if (user.pendingApproval) {
+                <button ui-button type="button" size="sm" icon="task_alt" [disabledReason]="esperaPorCambio()" [attr.aria-label]="'Aprobar la cuenta de ' + user.nombre + ' ' + user.apellido" (click)="approveUser(user)">Aprobar</button>
+              }
               <button ui-icon-button type="button" icon="edit" [label]="'Editar a ' + user.nombre + ' ' + user.apellido"
                 (click)="editUser(user)"></button>
-              <ui-menu iconOnly [label]="'Más acciones de ' + user.nombre + ' ' + user.apellido" [items]="rowActions(user)"
+              <ui-menu iconOnly [label]="'Más acciones de «' + user.nombre + ' ' + user.apellido + '»'" [items]="rowActions(user)"
                 (itemSelected)="rowAction(user, $event)" />
             </td>
           </tr>

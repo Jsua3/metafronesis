@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
@@ -31,7 +32,7 @@ describe('AssignmentDialogComponent', () => {
     close = vi.fn();
     TestBed.configureTestingModule({
       imports: [AssignmentDialogComponent],
-      providers: [{ provide: DialogRef, useValue: { close } }, { provide: DIALOG_DATA, useValue: data }],
+      providers: [provideRouter([]), { provide: DialogRef, useValue: { close } }, { provide: DIALOG_DATA, useValue: data }],
     });
     fixture = TestBed.createComponent(AssignmentDialogComponent);
     fixture.detectChanges();
@@ -190,5 +191,14 @@ describe('AssignmentDialogComponent', () => {
 
       expect(close).toHaveBeenCalledWith({ opensAt: new Date('2026-10-21T09:30').toISOString(), closesAt: withSeconds.closesAt });
     });
+  });
+
+  // P6: el botón apagado dice por qué.
+  it('al asignar desde el caso sin tener grupos, «Asignar» dice por qué no se puede y no envía', () => {
+    setup({ mode: 'create', cases: [], fixedCaseId: 7, groups: [], title: 'Caso doce' });
+    const boton = el().querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(boton.getAttribute('aria-disabled')).toBe('true');
+    expect(document.getElementById(boton.getAttribute('aria-describedby')!)?.textContent).toBe('Crea un grupo primero: sin grupos no hay a quién asignar el caso.');
+    expect(el().textContent).toContain('No tienes grupos todavía');
   });
 });

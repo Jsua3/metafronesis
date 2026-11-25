@@ -121,7 +121,7 @@ describe('rúbricas: feedback de acciones (comportamiento)', () => {
 
       component.save();
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible guardar la rúbrica.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible guardar la rúbrica. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
 
     it('sin conexión (status 0): no duplica el aviso del interceptor pero libera saving', () => {
@@ -165,7 +165,7 @@ describe('rúbricas: feedback de acciones (comportamiento)', () => {
 
       component.assign();
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible asignar la rúbrica.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible asignar la rúbrica. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
   });
 
@@ -207,7 +207,7 @@ describe('rúbricas: feedback de acciones (comportamiento)', () => {
 
       component.activate();
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible actualizar la rúbrica.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible actualizar la rúbrica. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
 
     it('sin rúbrica abierta no llama al backend ni avisa', () => {

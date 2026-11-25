@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Observable, Subscription, firstValueFrom } from 'rxjs';
 
 import { AssignmentService } from '../../core/api/assignment.service';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeCarga, mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -47,7 +48,7 @@ function statusOf(assignment: Assignment): { label: string; tone: Tone } {
  */
 @Component({
   selector: 'app-group-assignments',
-  imports: [UiBadge, UiButton, UiErrorState, UiIconButton, UiSection, UiSkeleton],
+  imports: [RouterLink, UiBadge, UiButton, UiErrorState, UiIconButton, UiSection, UiSkeleton],
   templateUrl: './group-assignments.component.html',
   styleUrl: './group-assignments.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,6 +68,8 @@ export class GroupAssignmentsComponent {
   readonly casesStatus = input<'loading' | 'ready' | 'failed'>('ready');
   /** Cuántos casos tiene asignados el grupo, cuando termina de cargar y cada vez que cambian: el detalle del grupo los cuenta. */
   readonly assignedChange = output<number>();
+  /** «Reintentar» tras fallar la carga de los casos publicados: esa lista la trae quien contiene este componente. */
+  readonly retryCases = output<void>();
 
   protected readonly assignments = signal<Assignment[]>([]);
   private readonly loading = signal(true);
@@ -105,10 +108,21 @@ export class GroupAssignmentsComponent {
     if (this.loading()) return 'Cargando los casos del grupo…';
     if (this.error()) return 'Primero reintenta cargar los casos asignados.';
     if (this.casesStatus() === 'loading') return 'Cargando los casos publicados…';
-    if (this.casesStatus() === 'failed') return 'No pudimos cargar los casos publicados.';
-    return this.assignable().length ? null : 'No hay más casos publicados para asignar.';
+    if (this.casesStatus() === 'failed') return 'No pudimos cargar tus casos publicados. Reintenta para poder asignar.';
+    if (!this.cases().length) return 'Aún no tienes casos publicados. Publica uno en «Casos» y vuelve aquí para asignarlo.';
+    return this.assignable().length ? null : 'Ya asignaste a este grupo todos tus casos publicados. Para ofrecer otro, publícalo en «Casos».';
   });
   protected readonly busyReason = computed(() => (this.busy() ? 'Hay un cambio en curso: espera un momento.' : null));
+  /** El motivo que se ve junto al botón y, cuando hay una salida (publicar un caso, reintentar), el camino para tomarla. */
+  protected readonly motivoVisible = computed<{ texto: string; salida: 'casos' | 'reintentar-casos' | null } | null>(() => {
+    const texto = this.assignReason() ?? this.busyReason();
+    if (!texto) return null;
+    const cargado = !this.loading() && !this.error();
+    if (cargado && this.casesStatus() === 'failed') return { texto, salida: 'reintentar-casos' };
+    if (cargado && this.casesStatus() === 'ready' && !this.assignable().length) return { texto, salida: 'casos' };
+    return { texto, salida: null };
+  });
+  protected readonly errorTexto = computed(() => mensajeDeCarga(this.error()?.status, 'No pudimos cargar los casos asignados.'));
 
   constructor() {
     effect(() => {
@@ -229,7 +243,7 @@ export class GroupAssignmentsComponent {
         this.notify.success(success);
       },
       error: (error: unknown) => {
-        const text = apiErrorMessage(error, failure);
+        const text = mensajeDeError(error, failure);
         if (text) this.notify.error(text);
         this.busy.set(false);
       },

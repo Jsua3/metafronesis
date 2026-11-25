@@ -6,7 +6,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { InstructorApi } from '../../core/api/instructor.api';
 import { CanLeave } from '../../core/navigation/can-leave.guard';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -492,7 +492,7 @@ export class InstructorTraceComponent implements OnInit, CanLeave {
         },
         error: (err: unknown) => {
           this.replacing.set(false);
-          const text = apiErrorMessage(err, 'No fue posible reemplazar el intento.');
+          const text = mensajeDeError(err, 'No fue posible reemplazar el intento.');
           if (text) this.notify.error(text);
         },
       });

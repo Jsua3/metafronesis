@@ -11,7 +11,7 @@ import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { mapAgregarEstudianteError, mapGrupoError } from '../../core/api/grupo-error.utils';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { NotificationService } from '../../core/notifications/notification.service';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { focusFirstInvalid } from '../../shared/forms/focus-first-invalid.util';
 import { UiBadge, UiBadgeTone } from '../../shared/ui/badge/ui-badge';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -250,16 +250,7 @@ export class GrupoListComponent implements OnInit {
 
   ngOnInit() {
     this.cargar();
-    this.casosApi.listPublished().subscribe({
-      next: cases => {
-        this.casosDisponibles.set(cases);
-        this.casosCargados.set(true);
-      },
-      error: () => {
-        this.casosDisponibles.set([]);
-        this.casosFallaron.set(true);
-      }
-    });
+    this.cargarCasos();
     this.grupoService.importSpec().subscribe({
       next: spec => this.importSpec.set(spec),
       error: () => this.importSpec.set({
@@ -270,6 +261,32 @@ export class GrupoListComponent implements OnInit {
         acceptedExtensions: ['.xlsx']
       })
     });
+  }
+
+  /**
+   * Los casos publicados que el docente puede asignar. Se piden otra vez cada vez que abre «Casos asignados» (`silencioso`):
+   * un caso que acaba de publicar en otra pantalla tiene que aparecer sin recargar la página. Un refresco silencioso que
+   * falla conserva la lista que ya había; el primero que falla lo dice (con «Reintentar» junto al botón de asignar).
+   */
+  cargarCasos(silencioso = false): void {
+    if (!silencioso) { this.casosFallaron.set(false); this.casosCargados.set(false); }
+    this.casosApi.listPublished().subscribe({
+      next: cases => {
+        this.casosDisponibles.set(cases);
+        this.casosCargados.set(true);
+        this.casosFallaron.set(false);
+      },
+      error: () => {
+        if (silencioso && this.casosCargados()) return;
+        this.casosDisponibles.set([]);
+        this.casosFallaron.set(true);
+      }
+    });
+  }
+
+  /** Al abrir «Casos asignados» se vuelve a leer lo publicado (el docente pudo publicar un caso mientras tanto). */
+  alCambiarPestana(valor: string | undefined): void {
+    if (valor === 'casos') this.cargarCasos(true);
   }
 
   /** Mensaje de error de un campo, solo cuando ya se tocó o se intentó enviar. */
@@ -343,7 +360,7 @@ export class GrupoListComponent implements OnInit {
         this.notify.success('Grupo creado.');
       },
       error: (err: unknown) => {
-        const text = apiErrorMessage(err, 'No fue posible crear el grupo.');
+        const text = mensajeDeError(err, 'No fue posible crear el grupo.');
         if (text) this.notify.error(text);
         this.saving.set(false);
       }
@@ -380,7 +397,7 @@ export class GrupoListComponent implements OnInit {
       },
       error: (err: unknown) => {
         const text = err instanceof HttpErrorResponse && [400, 404].includes(err.status)
-          ? mapGrupoError(err, 'No fue posible actualizar el grupo.') : apiErrorMessage(err, 'No fue posible actualizar el grupo.');
+          ? mapGrupoError(err, 'No fue posible actualizar el grupo.') : mensajeDeError(err, 'No fue posible actualizar el grupo.');
         if (text) this.notify.error(text);
         this.saving.set(false);
       }
@@ -433,7 +450,7 @@ export class GrupoListComponent implements OnInit {
       },
       error: (err: unknown) => {
         const text = err instanceof HttpErrorResponse && [400, 404].includes(err.status)
-          ? mapGrupoError(err, 'No fue posible borrar el grupo.') : apiErrorMessage(err, 'No fue posible borrar el grupo.');
+          ? mapGrupoError(err, 'No fue posible borrar el grupo.') : mensajeDeError(err, 'No fue posible borrar el grupo.');
         if (text) this.notify.error(text);
       }
     });
@@ -459,7 +476,7 @@ export class GrupoListComponent implements OnInit {
       },
       error: (err: unknown) => {
         const text = err instanceof HttpErrorResponse && [400, 404].includes(err.status)
-          ? mapGrupoError(err, 'No fue posible quitar al estudiante.') : apiErrorMessage(err, 'No fue posible quitar al estudiante.');
+          ? mapGrupoError(err, 'No fue posible quitar al estudiante.') : mensajeDeError(err, 'No fue posible quitar al estudiante.');
         if (text) this.notify.error(text);
       }
     });

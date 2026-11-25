@@ -81,7 +81,7 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
         <p class="ad-zone">La hora es la de tu navegador.</p>
       </form>
       <button ui-button uiDialogActions type="button" variant="secondary" (click)="ref.close()">Cancelar</button>
-      <button ui-button uiDialogActions type="submit" [disabled]="data.fixedCaseId != null && !data.groups?.length" [attr.form]="formId">{{ confirmLabel }}</button>
+      <button ui-button uiDialogActions type="submit" [disabledReason]="sinGrupos ? 'Crea un grupo primero: sin grupos no hay a quién asignar el caso.' : null" [attr.form]="formId">{{ confirmLabel }}</button>
     </ui-dialog-frame>
   `,
   styles: [`
@@ -97,6 +97,8 @@ export class AssignmentDialogComponent {
   private readonly injector = inject(Injector);
 
   protected readonly formId = uniqueUiId('ad-form');
+  /** Se asigna desde el propio caso y la docente aún no tiene grupos: el botón dice por qué está apagado. */
+  protected readonly sinGrupos = this.data.fixedCaseId != null && !this.data.groups?.length;
   protected readonly title = this.data.mode === 'create'
     ? (this.data.fixedCaseId != null && this.data.title ? `Asignar «${this.data.title}» a un grupo` : 'Asignar un caso al grupo') : `Fechas de «${this.data.title ?? 'el caso'}»`;
   protected readonly description = this.data.mode === 'create'

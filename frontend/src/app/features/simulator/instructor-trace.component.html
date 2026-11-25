@@ -107,7 +107,7 @@
                   @if (canReplace(item)) {
                     <!-- E1-2 (RN-07): solo el docente reemplaza un intento abierto, con motivo; es una acción de peso,
                          por eso va en el menú y en rojo, no junto al título. -->
-                    <ui-menu class="tr-mas" label="Más acciones" iconOnly [items]="menuIntento"
+                    <ui-menu class="tr-mas" [label]="'Más acciones del intento de «' + clean(item.studentAlias, 'Estudiante') + '» en «' + clean(item.caseTitle, 'Caso sin título') + '»'" iconOnly [items]="menuIntento"
                       (itemSelected)="accionIntento($event, item)" />
                   }
                 </div>

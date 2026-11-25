@@ -1,6 +1,6 @@
 import { ApproveTeachersDialogComponent } from './approve-teachers-dialog.component';
 import { DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom, from, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,7 +13,8 @@ import { APPROVE_BATCH_SIZE, AdminUser, ApproveUsersResult, UserAdminService, Us
 import { PASSWORD_MIN_LENGTH } from '../../core/auth/password-change';
 import { AccessRequest, AccessRequestAdminService } from '../../core/api/access-request-admin.service';
 import { NotificationService } from '../../core/notifications/notification.service';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeCarga, mensajeDeError } from '../../core/api/mensaje-de-error.util';
+import { NavBadgesService, pendientesDeUsuarios } from '../../shared/layout/nav-badges.service';
 import { focusFirstInvalid } from '../../shared/forms/focus-first-invalid.util';
 import { UiBadge } from '../../shared/ui/badge/ui-badge';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -84,6 +85,7 @@ export class UsersComponent implements OnInit {
   private readonly accessRequestsService = inject(AccessRequestAdminService);
   private readonly fb = inject(FormBuilder);
   private readonly notify = inject(NotificationService);
+  private readonly badges = inject(NavBadgesService);
   private readonly dialog = inject(UiDialog);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -106,11 +108,37 @@ export class UsersComponent implements OnInit {
     { valor: 'todos', etiqueta: 'Todos' }, { valor: 'ESTUDIANTE', etiqueta: 'Estudiantes' },
     { valor: 'PROFESOR', etiqueta: 'Docentes' }, { valor: 'ADMIN', etiqueta: 'Administradores' },
   ];
+  /**
+   * Las cifras de pendientes, de UNA sola fuente: salen de las mismas listas que pintan las pestañas, y de ellas sale
+   * también la insignia del menú lateral (`fijarUsuarios`). Una fuente que no se pudo leer es `null`, no 0: un cero falso
+   * diría «no hay nada por atender» justo cuando no se sabe.
+   */
+  readonly pendientes = computed(() => {
+    const solicitudes = this.solicitudesCargadas() && !this.requestsError() ? this.accessRequests().length : null;
+    const cuentas = this.usuariosCargados() && !this.error() ? this.pendingUsers().length : null;
+    return { solicitudes, cuentas, total: pendientesDeUsuarios(solicitudes, cuentas) };
+  });
   readonly vistas = computed(() => [
-    { valor: 'cuentas', etiqueta: 'Cuentas', cuenta: this.users().length },
-    { valor: 'solicitudes', etiqueta: 'Solicitudes', cuenta: this.accessRequests().length },
-    { valor: 'por-aprobar', etiqueta: 'Por aprobar', cuenta: this.pendingUsers().length },
+    { valor: 'cuentas', etiqueta: 'Cuentas', cuenta: this.usuariosCargados() && !this.error() ? this.users().length : null },
+    { valor: 'solicitudes', etiqueta: 'Solicitudes', cuenta: this.pendientes().solicitudes },
+    { valor: 'por-aprobar', etiqueta: 'Por aprobar', cuenta: this.pendientes().cuentas },
   ]);
+  /** El resumen de arriba: cuántos pendientes hay (el mismo número del menú) y de qué son; o por qué no se sabe. */
+  readonly resumenPendientes = computed<{ texto: string; tono: 'atencion' | 'aviso' | 'ok' } | null>(() => {
+    const { solicitudes, cuentas, total } = this.pendientes();
+    if (!this.solicitudesCargadas() && !this.usuariosCargados() && !this.requestsError() && !this.error()) return null;
+    if (total === null) {
+      // Solo se dice lo que falló de verdad; si una fuente aún carga, no hay nada que decir todavía.
+      const fallas = [this.requestsError() ? 'las solicitudes de acceso' : '', this.error() ? 'las cuentas' : ''].filter(Boolean);
+      return fallas.length ? { texto: `No pudimos contar los pendientes porque no cargaron ${fallas.join(' ni ')}. Reintenta en cada sección.`, tono: 'aviso' } : null;
+    }
+    if (!total) return { texto: 'Todo al día: no hay solicitudes de acceso ni cuentas por aprobar.', tono: 'ok' };
+    const partes = [
+      solicitudes ? `${solicitudes} ${solicitudes === 1 ? 'solicitud de acceso por revisar' : 'solicitudes de acceso por revisar'}` : '',
+      cuentas ? `${cuentas} ${cuentas === 1 ? 'cuenta por aprobar' : 'cuentas por aprobar'}` : '',
+    ].filter(Boolean);
+    return { texto: `${total === 1 ? '1 pendiente' : `${total} pendientes`}: ${partes.join(' y ')}.`, tono: 'atencion' };
+  });
   readonly filtrados = computed(() => {
     const q = this.busqueda().trim().toLocaleLowerCase('es');
     const estado = (u: AdminUser) => u.pendingApproval ? 'pendiente' : u.activo ? 'activa' : 'inactiva';
@@ -125,6 +153,13 @@ export class UsersComponent implements OnInit {
   readonly algunosVisibles = computed(() => this.filtrados().some(u => this.seleccion().includes(u.id)) && !this.todosVisibles());
 
   constructor() {
+    // La insignia de «Usuarios» en el menú dice lo mismo que el resumen y las pestañas de esta pantalla: la misma cifra.
+    effect(() => {
+      const { solicitudes, cuentas } = this.pendientes();
+      // Hasta que las dos fuentes responden (con una lista o con un error) no se toca la insignia: no parpadea.
+      if (!this.solicitudesCargadas() || !this.usuariosCargados()) return;
+      untracked(() => this.badges.fijarUsuarios(solicitudes, cuentas));
+    });
     this.route?.queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
       const valor = params.get('vista');
       this.vista.set(valor === 'solicitudes' || valor === 'por-aprobar' ? valor : 'cuentas');
@@ -177,7 +212,7 @@ export class UsersComponent implements OnInit {
     this.resultadoLote.set('');
     from(ejecutar).pipe(concatMap(usuario => this.service.updateStatus(usuario.id, activo).pipe(
       map(saved => ({ usuario, saved, error: '' })),
-      catchError((err: unknown) => of({ usuario, saved: null, error: apiErrorMessage(err, 'No fue posible actualizar la cuenta.') || 'No fue posible actualizar la cuenta.' }))
+      catchError((err: unknown) => of({ usuario, saved: null, error: mensajeDeError(err, 'No fue posible actualizar la cuenta.') || 'No fue posible actualizar la cuenta.' }))
     )), reduce((res, item) => [...res, item], [] as { usuario: AdminUser; saved: AdminUser | null; error: string }[])).subscribe({
       next: resultados => {
         for (const item of resultados) if (item.saved) this.users.update(users => users.map(u => u.id === item.saved!.id ? item.saved! : u));
@@ -196,10 +231,20 @@ export class UsersComponent implements OnInit {
 
   readonly roles: UserRole[] = ['ADMIN', 'PROFESOR', 'ESTUDIANTE'];
   readonly roleLabel = roleLabel;
+  /** Por qué las acciones sobre cuentas esperan: se dice junto al botón apagado (nunca un botón apagado sin causa). */
+  readonly esperaPorCambio = computed(() => (this.saving() ? 'Hay un cambio en curso: espera un momento.' : null));
+  /** Por qué «Aprobar» en lote todavía no se puede pulsar. */
+  readonly motivoLote = computed(() => (this.esperaPorCambio() ?? (this.seleccionPendientes().length ? null : 'Marca al menos una cuenta de la lista para aprobarlas juntas.')));
+  readonly accounts = accounts;
   readonly users = signal<AdminUser[]>([]);
   readonly accessRequests = signal<AccessRequest[]>([]);
+  /** Las solicitudes ya respondieron (con una lista o con un error): antes de eso no hay cifra que decir. */
+  private readonly solicitudesCargadas = signal(false);
+  private readonly usuariosCargados = signal(false);
   /** Las solicitudes no pudieron cargarse (distinto de «no hay solicitudes»). */
   readonly requestsError = signal(false);
+  /** El texto con que se dice por qué no cargaron las solicitudes (y qué hacer). */
+  readonly requestsErrorTexto = signal('No pudimos cargar las solicitudes de acceso. Inténtalo de nuevo.');
   readonly selectedUser = signal<AdminUser | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -270,10 +315,15 @@ export class UsersComponent implements OnInit {
   loadAccessRequests() {
     this.requestsError.set(false);
     this.accessRequestsService.listPending().subscribe({
-      next: requests => this.accessRequests.set(requests),
-      error: () => {
+      next: requests => {
+        this.accessRequests.set(requests);
+        this.solicitudesCargadas.set(true);
+      },
+      error: (err: { status?: number } | null) => {
         this.accessRequests.set([]);
+        this.requestsErrorTexto.set(mensajeDeCarga(err?.status, 'No pudimos cargar las solicitudes de acceso.'));
         this.requestsError.set(true);
+        this.solicitudesCargadas.set(true);
       },
     });
   }
@@ -303,7 +353,7 @@ export class UsersComponent implements OnInit {
         this.saving.set(false);
       },
       error: (err: unknown) => {
-        const text = apiErrorMessage(err, 'No fue posible actualizar la solicitud.');
+        const text = mensajeDeError(err, 'No fue posible actualizar la solicitud.');
         if (text) this.notify.error(text);
         this.saving.set(false);
       },
@@ -329,16 +379,18 @@ export class UsersComponent implements OnInit {
     this.service.list().subscribe({
       next: users => {
         this.users.set(users);
+        this.usuariosCargados.set(true);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err: { status?: number } | null) => {
         this.loading.set(false);
         // Un refresco silencioso que falla no tira una lista válida: se conserva y se avisa.
         if (silencioso) {
           this.notify.warning('No pudimos actualizar la lista de usuarios.');
           return;
         }
-        this.error.set('No fue posible cargar los usuarios.');
+        this.usuariosCargados.set(true);
+        this.error.set(mensajeDeCarga(err?.status, 'No pudimos cargar los usuarios.'));
       }
     });
   }
@@ -452,7 +504,7 @@ export class UsersComponent implements OnInit {
         } else this.loadAccessRequests();
       },
       error: (err: unknown) => {
-        const text = apiErrorMessage(err, 'No fue posible guardar los cambios.');
+        const text = mensajeDeError(err, 'No fue posible guardar los cambios.');
         if (text) this.notify.error(text);
         this.saving.set(false);
         // Si la hoja se cerró mientras se guardaba, vuelve con lo que se escribió (el formulario no se perdió).
@@ -477,7 +529,11 @@ export class UsersComponent implements OnInit {
         this.notify.success(permiso ? 'Permiso de autoría concedido.' : 'Permiso de autoría retirado.');
         this.saving.set(false);
       },
-      error: () => { this.notify.error('No fue posible cambiar el permiso de autoría.'); this.saving.set(false); },
+      error: (err: unknown) => {
+        const text = mensajeDeError(err, 'No fue posible cambiar el permiso de autoría.');
+        if (text) this.notify.error(text);
+        this.saving.set(false);
+      },
     });
   }
 
@@ -572,7 +628,7 @@ export class UsersComponent implements OnInit {
         else this.notify.success(summary);
       },
       error: (err: unknown) => {
-        const text = apiErrorMessage(err, 'No fue posible aprobar las cuentas.');
+        const text = mensajeDeError(err, 'No fue posible aprobar las cuentas.');
         if (text) {
           this.notify.error(text);
           this.actionStatus.set(text);
@@ -616,7 +672,7 @@ export class UsersComponent implements OnInit {
         if (this.selectedUser()?.id === saved.id) this.populateEdit(saved);
       },
       error: (err: unknown) => {
-        const text = apiErrorMessage(err, 'No fue posible actualizar el estado del usuario.');
+        const text = mensajeDeError(err, 'No fue posible actualizar el estado del usuario.');
         if (text) this.notify.error(text);
         this.saving.set(false);
       }

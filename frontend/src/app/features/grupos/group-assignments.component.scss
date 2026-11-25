@@ -19,7 +19,25 @@
 .ga-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--ds-space-3);
+}
+
+// El motivo por el que «Asignar un caso» está apagado, al lado del botón y con su salida (Casos, Reintentar).
+.ga-reason {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  min-inline-size: 0;
+}
+
+.ga-reason__text {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
 }
 
 .ga-loading {
