@@ -459,6 +459,10 @@ export class ServidorFalso {
       return of({ enabled: true, mode: 'connected' as const, remainingToday: 10 });
     },
 
+    // El manifiesto de piezas de la biblioteca: uno válido y vacío (sin piezas), como un catálogo recién instalado.
+    staticJson: (_url: string): Observable<unknown> =>
+      of({ esquema: 2, piezas: {}, pisos: {}, muros: {}, muebles: {}, propios: [], lugares: [] }),
+
     // La generación por etapas vive en `generaciones` (con su propio registro de llamadas).
     generationStatus: () => this.generaciones.generationStatus(),
     startGeneration: (cuerpo: GenerationStartRequest) => this.generaciones.startGeneration(cuerpo),
