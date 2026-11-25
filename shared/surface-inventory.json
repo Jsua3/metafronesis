@@ -1139,7 +1139,7 @@
       "exposure": "role:PROFESOR",
       "body": "none",
       "throttle": null,
-      "audit": "EXENTO: lectura de sesiones propias sin datos de convocados"
+      "audit": "EXENTO: lectura de sesiones propias con conteo de convocados"
     },
     {
       "route": "api/sesiones",
@@ -1155,15 +1155,23 @@
       "exposure": "role:PROFESOR",
       "body": "none",
       "throttle": null,
-      "audit": "EXENTO: lectura de sesión propia sin datos de convocados"
+      "audit": "EXENTO: lectura de sesión propia y de sus convocados"
     },
     {
-      "route": "api/sesiones/<int:pk>/convocados",
+      "route": "api/sesiones/<int:pk>",
+      "method": "PATCH",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_EDITADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/cancelar",
       "method": "POST",
       "exposure": "role:PROFESOR",
       "body": "json-small",
       "throttle": null,
-      "audit": "CONVOCADOS_AGREGADOS"
+      "audit": "SESION_CANCELADA"
     },
     {
       "route": "api/sesiones/<int:pk>/convocados/<int:estudiante_id>",
@@ -1196,6 +1204,38 @@
       "body": "json-small",
       "throttle": null,
       "audit": "SESION_INICIADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/pausar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_PAUSADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/reanudar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_REANUDADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/sincronizar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CONVOCADOS_SINCRONIZADOS"
+    },
+    {
+      "route": "api/sesiones/casos",
+      "method": "GET",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: catálogo de casos publicados sin su contenido"
     },
     {
       "route": "api/simulation/ai-assistant",

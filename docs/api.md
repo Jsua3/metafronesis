@@ -50,6 +50,26 @@ En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por d
 | GET | /schema/ | SpectacularAPIView tras _docs_gate | Cerrado 404 por flag; si habilitado JWT y user/manage | OpenAPI; sin serializer de aplicación | psychosim; S1; psychosim/urls.py:120 |
 | GET | /swagger-ui.html | SpectacularSwaggerView tras _docs_gate | Cerrado 404 por flag; si habilitado JWT y user/manage | HTML de Swagger; — | psychosim; S1; psychosim/urls.py:128 |
 
+## Sesiones del docente
+
+Permiso de todas las rutas: `assignment/manage` (PROFESOR sobre sus propias sesiones; una sesión ajena responde 404). Las respuestas usan el sobre `{success, data}`; los errores de estado responden 409 `INVALID_TRANSITION` y los de campo 400 con `field`.
+
+| Método | Ruta | Cuerpo | Respuesta | Auditoría |
+|---|---|---|---|---|
+| GET | /api/sesiones?estado= | `estado` admite varios valores separados por coma | Lista de sesiones: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn` | EXENTO |
+| POST | /api/sesiones | `{grupoId, caseVersionId, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` | 201, sesión con detalle (los campos de la lista más `convocados`) | SESION_CREADA |
+| GET | /api/sesiones/casos | — | Casos de la biblioteca: `caseVersionId, titulo, version, autor, tiempoEstimadoMin, descripcion` (sin el contenido del caso) | EXENTO |
+| GET | /api/sesiones/<id> | — | Sesión con `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento, puedeRepetir}]` | EXENTO |
+| PATCH | /api/sesiones/<id> | Los campos de crear, todos opcionales | Sesión con detalle | SESION_EDITADA |
+| POST | /api/sesiones/<id>/iniciar, pausar, reanudar, finalizar, cancelar | Sin cuerpo | Sesión con detalle | SESION_INICIADA, SESION_PAUSADA, SESION_REANUDADA, SESION_FINALIZADA, SESION_CANCELADA |
+| POST | /api/sesiones/<id>/sincronizar | Sin cuerpo | `{agregados: n}` | CONVOCADOS_SINCRONIZADOS |
+| DELETE | /api/sesiones/<id>/convocados/<estudiante_id> | — | Mensaje de confirmación | CONVOCADO_RETIRADO |
+| POST | /api/sesiones/<id>/convocados/<estudiante_id>/repeticion | `{motivo}` | 201 `{id}` | REPETICION_AUTORIZADA |
+
+`acciones` es la lista de lo que el estado actual permite (`iniciar`, `pausar`, `reanudar`, `finalizar`, `cancelar`, `editar`, `gestionarConvocados`); el cliente solo muestra esas.
+
+La ruta `POST /api/sesiones/<id>/convocados` (convocar por correos) se eliminó: los convocados salen de los miembros activos del grupo de la sesión.
+
 ## Rutas referenciadas pero no incluidas como endpoints del corte
 
 psychosim/urls.py:95 incluye apps.simulation.urls y :102/:104 incluyen URLs de autoría; esos URLConfs no figuran en el manifiesto del corte. Por tanto no se listan sus rutas. En el código completo, podrían resultar accesibles; qué rutas nuevas se activarán en S3/S4 queda **sin verificar** hasta decidir los URLConfs del repo nuevo. Tampoco se listan reportes/rubrics/authoring completos: su código no forma parte del alcance declarado.
