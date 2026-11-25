@@ -38,7 +38,7 @@ function quienesBloquean(err: unknown): string {
   template: `
     <!-- BORRADOR: textos pendientes de Psicología (VD-23). -->
     @if (sesion(); as s) {
-      <ui-page-header [title]="s.caso.titulo" [eyebrow]="s.espacioAcademico" volverA="/portal/sesiones" volverEtiqueta="Sesiones"
+      <ui-page-header [title]="s.caso.titulo" volverA="/portal/sesiones" volverEtiqueta="Sesiones"
         [description]="(s.grupo?.nombre ?? 'Sin grupo') + ' · ' + horario(s.inicio, s.fin) + (s.lugar ? ' · ' + s.lugar : '')">
         @for (accion of transiciones(); track accion) {
           <button ui-button uiPageActions type="button" [attr.data-accion]="accion" [variant]="presentacion[accion].variante"

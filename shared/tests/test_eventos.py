@@ -18,7 +18,7 @@ def test_las_senales_llegan_a_un_receptor(senal, monkeypatch):
     caso = SimpleNamespace(title="Caso", created_by=docente)
     version = SimpleNamespace(simulation_case=caso)
     sesion = SimpleNamespace(case_version=version, mensaje="Mensaje", creada_por=docente,
-                              inicio=datetime(2026, 1, 1, 8, 0), espacio_academico="Espacio", lugar="")
+                              inicio=datetime(2026, 1, 1, 8, 0), lugar="")
     intento = SimpleNamespace(student=estudiante, case_version=version)
     argumentos = {
         eventos.convocados_cambiaron: {"sesion": sesion, "agregados": [], "retirados": [estudiante]},

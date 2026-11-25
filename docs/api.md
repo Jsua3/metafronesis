@@ -56,8 +56,8 @@ Permiso de todas las rutas: `assignment/manage` (PROFESOR sobre sus propias sesi
 
 | Método | Ruta | Cuerpo | Respuesta | Auditoría |
 |---|---|---|---|---|
-| GET | /api/sesiones?estado= | `estado` admite varios valores separados por coma | Lista de sesiones: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn` | EXENTO |
-| POST | /api/sesiones | `{grupoId, caseVersionId, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` | 201, sesión con detalle (los campos de la lista más `convocados`) | SESION_CREADA |
+| GET | /api/sesiones?estado= | `estado` admite varios valores separados por coma | Lista de sesiones: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn` | EXENTO |
+| POST | /api/sesiones | `{grupoId, caseVersionId, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` | 201, sesión con detalle (los campos de la lista más `convocados`) | SESION_CREADA |
 | GET | /api/sesiones/casos | — | Casos de la biblioteca: `caseVersionId, titulo, version, autor, tiempoEstimadoMin, descripcion` (sin el contenido del caso) | EXENTO |
 | GET | /api/sesiones/<id> | — | Sesión con `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento, puedeRepetir}]` | EXENTO |
 | PATCH | /api/sesiones/<id> | Los campos de crear, todos opcionales | Sesión con detalle | SESION_EDITADA |

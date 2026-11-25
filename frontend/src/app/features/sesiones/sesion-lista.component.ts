@@ -45,7 +45,6 @@ import { ESTADOS, FILTROS, horario } from './sesion-presentacion';
               <tr uiRow>
                 <td uiCeldaPrincipal>
                   <a [routerLink]="['/portal/sesiones', s.id]">{{ s.caso.titulo }}</a>
-                  <span class="sl-sub">{{ s.espacioAcademico }}</span>
                 </td>
                 <td uiCelda="Grupo">{{ s.grupo?.nombre ?? '—' }}</td>
                 <td uiCelda="Horario">{{ horario(s.inicio, s.fin) }}</td>
@@ -60,7 +59,6 @@ import { ESTADOS, FILTROS, horario } from './sesion-presentacion';
   `,
   styles: [`
     :host { display: grid; gap: var(--ds-space-5); }
-    .sl-sub { display: block; color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); }
   `],
 })
 export class SesionListaComponent {

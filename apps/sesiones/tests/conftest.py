@@ -58,7 +58,7 @@ def crear_sesion(docente, grupo, version):
     def crear(**cambios):
         ahora = timezone.now()
         datos = {
-            "case_version": version, "grupo": grupo, "creada_por": docente, "espacio_academico": "Psicología clínica",
+            "case_version": version, "grupo": grupo, "creada_por": docente,
             "inicio": ahora - timedelta(minutes=5), "fin": ahora + timedelta(minutes=55), "tiempo_maximo_min": 30,
         }
         datos.update(cambios)

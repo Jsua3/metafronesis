@@ -14,7 +14,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-35", "SIEP-36")]
 def cuerpo(grupo, version):
     inicio = timezone.now().replace(microsecond=0)
     return {
-        "grupoId": grupo.pk, "caseVersionId": version.pk, "espacioAcademico": "Psicología clínica",
+        "grupoId": grupo.pk, "caseVersionId": version.pk,
         "inicio": inicio.isoformat(), "fin": (inicio + timedelta(hours=1)).isoformat(), "tiempoMaximoMin": 30,
         "lugar": "Aula 3", "mensaje": "",
     }

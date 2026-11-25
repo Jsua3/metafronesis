@@ -11,7 +11,6 @@ export interface SesionResumen {
   acciones: AccionSesion[];
   grupo: { id: number; nombre: string } | null;
   caso: { caseVersionId: number; titulo: string };
-  espacioAcademico: string;
   inicio: string;
   fin: string;
   tiempoMaximoMin: number;
@@ -48,7 +47,6 @@ export interface CasoBiblioteca {
 export interface SesionDatos {
   grupoId: number;
   caseVersionId: number;
-  espacioAcademico: string;
   inicio: string;
   fin: string;
   tiempoMaximoMin: number;

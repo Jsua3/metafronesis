@@ -22,7 +22,7 @@ _AUDITORIA = {
 }
 _MARCAS = {EstadoSesion.EN_CURSO: "iniciada_en", EstadoSesion.FINALIZADA: "finalizada_en", EstadoSesion.CANCELADA: "cancelada_en"}
 _CAMPOS = {
-    "espacioAcademico": "espacio_academico", "inicio": "inicio", "fin": "fin",
+    "inicio": "inicio", "fin": "fin",
     "tiempoMaximoMin": "tiempo_maximo_min", "lugar": "lugar", "mensaje": "mensaje",
 }
 _INTENTO = {AttemptStatus.IN_PROGRESS: "JUGANDO", AttemptStatus.PAUSED: "EN_PAUSA", AttemptStatus.COMPLETED: "TERMINADO"}
@@ -59,7 +59,7 @@ def dto(sesion):
         "id": sesion.pk, "estado": sesion.estado, "acciones": sesion.estado_actual().acciones(),
         "grupo": {"id": sesion.grupo_id, "nombre": sesion.grupo.nombre} if sesion.grupo_id else None,
         "caso": {"caseVersionId": sesion.case_version_id, "titulo": sesion.case_version.simulation_case.title},
-        "espacioAcademico": sesion.espacio_academico, "inicio": _iso(sesion.inicio), "fin": _iso(sesion.fin),
+        "inicio": _iso(sesion.inicio), "fin": _iso(sesion.fin),
         "tiempoMaximoMin": sesion.tiempo_maximo_min, "lugar": sesion.lugar, "mensaje": sesion.mensaje,
         "totalConvocados": total, "iniciadaEn": _iso(sesion.iniciada_en),
         "finalizadaEn": _iso(sesion.finalizada_en), "canceladaEn": _iso(sesion.cancelada_en),
@@ -131,7 +131,7 @@ def crear(usuario, datos):
     _validar_tiempo(version, datos["tiempoMaximoMin"])
     _exigir_miembros(grupo)
     sesion = Sesion.objects.create(
-        case_version=version, grupo=grupo, creada_por=usuario, espacio_academico=datos["espacioAcademico"],
+        case_version=version, grupo=grupo, creada_por=usuario,
         inicio=datos["inicio"], fin=datos["fin"], tiempo_maximo_min=datos["tiempoMaximoMin"],
         lugar=datos.get("lugar", ""), mensaje=datos.get("mensaje", ""),
     )
