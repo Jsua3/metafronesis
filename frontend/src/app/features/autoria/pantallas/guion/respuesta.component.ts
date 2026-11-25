@@ -166,6 +166,7 @@ export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolea
         } @empty {
           <p class="nota">Este caso todavía no tiene pasos profesionales.</p>
         }
+        <a class="enlace" [routerLink]="rutas.a('/editor/evaluacion')">Ver todos los pasos</a>
       </fieldset>
     }
     @if (abierta('criterios')) {

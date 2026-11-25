@@ -31,7 +31,7 @@ import { PintorDeVistas } from './pintor-de-vistas.service';
       <header class="titulo">
         <p class="sobre">Nuevo caso</p>
         <h1>¿Dónde pasa tu caso?</h1>
-        <p class="texto-secundario">Elige un lugar. El caso recibe una copia de sus salas, muebles y personajes: puedes cambiar todo y el lugar original no cambia. <ui-ayuda-breve termino="Sala" [explicacion]="glosario['Sala']" /> <ui-ayuda-breve termino="Insignia" [explicacion]="glosario['Insignia']" /></p>
+        <p class="texto-secundario">Elige un lugar. El caso recibe una copia de sus salas, muebles y personajes: puedes cambiar todo y el lugar original no cambia. <ui-ayuda-breve termino="Sala" [explicacion]="glosario['Sala']" /></p>
       </header>
 
       @if (temasPresentes().length > 1) {

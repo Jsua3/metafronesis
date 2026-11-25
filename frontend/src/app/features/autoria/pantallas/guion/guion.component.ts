@@ -1,3 +1,5 @@
+import { NotificationService } from '../../../../core/notifications/notification.service';
+import { injectLlevar } from '../../marco/llevar';
 import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, input, linkedSignal, signal, untracked,
@@ -64,6 +66,8 @@ export class GuionComponent {
   protected readonly nombreIntensidad = NOMBRE_INTENSIDAD;
   protected readonly maximoRespuestas = MAX_RESPUESTAS;
 
+  private readonly llevarRelleno = injectLlevar();
+  private readonly avisosRelleno = inject(NotificationService);
   protected readonly anuncio = signal('');
   protected readonly lineaVista = signal<string | null>(null);
   /** La imagen de cada sala (las por piezas, compuestas con el pintor del juego), para la cámara. */
@@ -210,7 +214,15 @@ export class GuionComponent {
     this.enfocarPrimero('#en');
     await this.store.sincronizado();
     // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
-    if (this.store.partesIaDeEscena(e.id) === 0) this.anuncio.set('Aceptaste todo lo sugerido en esta escena.');
+    if (this.store.partesIaDeEscena(e.id) === 0) {
+      const faltas = this.store.guiaLocal().filter(p => p.codigo === 'CONTENT_PLACEHOLDER' && p.escenaId === e.id);
+      if (faltas.length) {
+        const mensaje = `La propuesta trae ${faltas.length} ${faltas.length === 1 ? 'texto' : 'textos'} de muestra: escríbelos antes de enviar.`;
+        this.anuncio.set(mensaje);
+        this.avisosRelleno.info(mensaje);
+        await this.llevarRelleno({ ...faltas[0].ir, ruta: '' });
+      } else this.anuncio.set('Aceptaste todo lo sugerido en esta escena.');
+    }
   }
 
   protected async alElegirEnEscena(valor: string | undefined, e: Escena, origen: HTMLElement): Promise<void> {

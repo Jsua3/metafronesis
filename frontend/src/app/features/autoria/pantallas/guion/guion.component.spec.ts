@@ -140,6 +140,22 @@ describe('GuionComponent', () => {
     fixture.nativeElement.remove();
   });
 
+  it('avisa y lleva al primer texto de muestra al aceptar la escena', async () => {
+    const { fixture, store, id, raiz, listo } = await montar();
+    const caso = structuredClone(store.caso()!);
+    const escena = caso.escenas.find(e => e.id === id)!;
+    escena.marcaIa = true;
+    escena.respuestas.push({ id: 'r-ia', texto: 'Respuesta 1 de la persona profesional.', clase: 'RECOMMENDED', razon: '', efectos: {}, retroalimentacion: '[retroalimentacion]', destinoId: null, marcaIa: true });
+    store.fijar(caso);
+    document.body.appendChild(fixture.nativeElement);
+    await listo();
+    boton(raiz, 'Aceptar toda la escena (2 partes)').click();
+    await listo();
+    await vi.waitFor(() => expect(raiz.querySelector('[role="status"].solo-lector')!.textContent).toContain('2 textos de muestra'));
+    await vi.waitFor(() => expect(document.activeElement?.id).toBe('respuesta-r-ia'));
+    fixture.nativeElement.remove();
+  });
+
   it('con una sola parte sugerida el botón dice «1 parte»', async () => {
     const { store, id, raiz, listo } = await montar();
     const caso = structuredClone(store.caso()!);

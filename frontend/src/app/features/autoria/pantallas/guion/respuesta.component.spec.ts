@@ -44,6 +44,19 @@ describe('RespuestaComponent', () => {
     expect(raiz.querySelectorAll('button.faceta[aria-expanded="true"]')).toHaveLength(0);
   });
 
+  it('abre los pasos en la ficha y permite desmarcar sin navegar', async () => {
+    const { fixture, raiz } = await montar();
+    const cambios = vi.fn();
+    fixture.componentInstance.efectos.subscribe(cambios);
+    [...raiz.querySelectorAll<HTMLButtonElement>('button.faceta')].find(b => b.textContent?.includes('Pasos'))!.click();
+    await fixture.whenStable();
+    const casilla = raiz.querySelector<HTMLInputElement>('fieldset.hitos input[type=checkbox]')!;
+    expect(casilla.checked).toBe(true);
+    casilla.click();
+    expect(cambios.mock.calls[0][0](base.efectos).hitos).not.toContain('valorar');
+    expect(raiz.querySelector('fieldset.hitos a')?.textContent).toContain('Ver todos los pasos');
+  });
+
   it('lleva la letra con que el estudiante ve la opción y conserva los nombres de las pruebas de extremo a extremo', async () => {
     const { raiz } = await montar();
     expect(raiz.querySelector('.ficha__letra')!.textContent).toBe('B');

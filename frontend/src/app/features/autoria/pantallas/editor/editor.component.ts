@@ -1,3 +1,5 @@
+import { NotificationService } from '../../../../core/notifications/notification.service';
+import { injectLlevar } from '../../marco/llevar';
 import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
@@ -305,6 +307,8 @@ export class EditorComponent {
   protected readonly conectando = signal<string | null>(null);
   protected readonly destino = signal<string | 'nueva' | null>(null);
   protected readonly borrando = signal<string | null>(null);
+  private readonly llevarRelleno = injectLlevar();
+  private readonly avisosRelleno = inject(NotificationService);
   protected readonly anuncio = signal('');
   /** Por qué aviso va «N avisos en los caminos» (avanza uno por pulsación). */
   private indiceAviso = 0;
@@ -314,8 +318,17 @@ export class EditorComponent {
     this.store.aceptarEscenaIa(id);
     await this.store.sincronizado();
     // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
-    if (this.store.partesIaDeEscena(id) === 0) this.anuncio.set('Aceptaste todo lo sugerido en esta escena.');
-    this.enfocar('#pe'); // el botón pulsado desaparece: el foco no cae al cuerpo de la página
+    if (this.store.partesIaDeEscena(id) === 0) {
+      const faltas = this.store.guiaLocal().filter(p => p.codigo === 'CONTENT_PLACEHOLDER' && p.escenaId === id);
+      if (faltas.length) {
+        const mensaje = `La propuesta trae ${faltas.length} ${faltas.length === 1 ? 'texto' : 'textos'} de muestra: escríbelos antes de enviar.`;
+        this.avisosRelleno.info(mensaje);
+        await this.llevarRelleno(faltas[0].ir);
+        return;
+      }
+      this.anuncio.set('Aceptaste todo lo sugerido en esta escena.');
+    }
+    this.enfocar('#pe');
   }
 
   /** Las escenas en orden de historia: el número de cada una es el mismo del riel y del mapa. */

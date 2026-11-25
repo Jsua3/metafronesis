@@ -85,6 +85,13 @@ describe('clasificarPendientes y siguientePaso', () => {
     expect(textoDeEtapa(conFalta)).toBe('Historia: escenas y guion, 1 de 3 escenas escritas, 1 pendiente');
   });
 
+  it('la historia excluye escenas con texto de muestra', () => {
+    const caso = casoNuevo();
+    caso.escenas.forEach(e => e.narracion = 'Una narracion completa.');
+    caso.escenas[1].narracion = 'Lorem ipsum dolor sit amet';
+    expect(avanceDelCaso(caso, []).find(a => a.etapa === 'historia')).toMatchObject({ estado: 'en-curso', detalle: '2 de 3 escenas escritas' });
+  });
+
   it('cada dirección del editor pertenece a una etapa', () => {
     expect(etapaDeDireccion('/portal/casos/2/editor/escena/10')).toBe('historia');
     expect(etapaDeDireccion('/portal/casos/2/editor')).toBe('historia');

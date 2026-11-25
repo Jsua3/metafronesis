@@ -33,8 +33,11 @@ interface Grupo {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-dialog-frame title="Pendientes del caso" [description]="resumen()">
-      @if (grupos().length === 0) {
+      @if (grupos().length === 0 && rellenos().length === 0) {
         <p class="pp__vacio">@if (store.revisionPendiente()) { Falta completar la revisión. } @else { Nada pendiente. Cuando quieras, prueba el caso y envíalo a Psicología. }</p>
+      }
+      @if (!store.revisionPendiente() && progreso.totalPendientes() === 0) {
+        <button ui-button type="button" (click)="irEnviar()">Ir a Enviar</button>
       }
       @for (g of grupos(); track g.etapa) {
         <section class="pp__grupo" [attr.aria-labelledby]="'pp-' + g.etapa">
@@ -63,6 +66,13 @@ interface Grupo {
               }
             </ul>
           }
+        </section>
+      }
+      @for (grupo of rellenos(); track grupo.id) {
+        <section class="pp__grupo">
+          <h3 class="pp__etapa">Escena {{ grupo.numero }} · {{ grupo.titulo }}: {{ grupo.items.length }} {{ grupo.items.length === 1 ? 'texto de muestra por escribir' : 'textos de muestra por escribir' }}</h3>
+          <ul>@for (item of grupo.items; track $index) { <li>{{ item.detalle }}</li> }</ul>
+          <button ui-button type="button" variant="ghost" size="sm" (click)="ir(grupo.items[0].pendiente)">Ir</button>
         </section>
       }
       @if (sugerencias().length) {
@@ -106,7 +116,7 @@ interface Grupo {
   `,
 })
 export class PanelPendientesComponent {
-  private readonly progreso = inject(ProgresoDelCaso);
+  protected readonly progreso = inject(ProgresoDelCaso);
   protected readonly store = inject(CasoStore);
   private readonly ref = inject(DialogRef, { optional: true });
   private readonly llevar = injectLlevar();
@@ -117,11 +127,32 @@ export class PanelPendientesComponent {
       etapa,
       nombre: NOMBRE_ETAPA[etapa],
       corregir: todos.filter((p) => p.etapa === etapa && p.tipo === 'por-corregir'),
-      escribir: todos.filter((p) => p.etapa === etapa && p.tipo === 'por-escribir'),
+      escribir: todos.filter((p) => p.etapa === etapa && p.tipo === 'por-escribir' && p.codigo !== 'CONTENT_PLACEHOLDER'),
     })).filter((g) => g.corregir.length || g.escribir.length);
   });
 
-  protected readonly sugerencias = computed(() => this.progreso.pendientes().filter((p) => p.tipo === 'sugerencia'));
+  protected readonly sugerencias = computed(() => this.progreso.pendientes().filter((p) => p.tipo === 'sugerencia' && p.codigo !== 'CONTENT_PLACEHOLDER'));
+
+  protected readonly rellenos = computed(() => {
+    const escenas = this.progreso.escenas();
+    const pendientes = this.progreso.pendientes().filter(p => p.codigo === 'CONTENT_PLACEHOLDER');
+    const ids = [...new Set(pendientes.map(p => p.escenaId))];
+    return ids.map(id => {
+      const indice = escenas.findIndex(e => e.id === id);
+      const escena = escenas[indice];
+      const items = pendientes.filter(p => p.escenaId === id).map(p => {
+        const respuesta = escena?.respuestas.findIndex(r => p.ir.ancla === `respuesta-${r.id}`) ?? -1;
+        const campo = /retroalimentaci[oó]n|justificaci[oó]n/i.test(p.mensaje) ? 'retroalimentación' : 'texto';
+        return { pendiente: p, detalle: respuesta >= 0 ? `Respuesta ${respuesta + 1} · ${campo}` : p.mensaje };
+      });
+      return { id: id ?? 'sin-escena', numero: indice + 1 || '?', titulo: escena?.titulo ?? 'Escena sin identificar', items };
+    });
+  });
+
+  protected async irEnviar(): Promise<void> {
+    this.ref?.close();
+    await this.llevar({ ruta: '/revision' });
+  }
 
   protected readonly resumen = computed(() => {
     if (this.store.revisionPendiente()) return 'Falta completar la revisión con el servidor.';

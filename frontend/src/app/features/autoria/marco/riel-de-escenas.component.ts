@@ -327,7 +327,7 @@ export class RielDeEscenasComponent {
   /** «3 de 8 escritas». */
   protected readonly escritas = computed(() => {
     const filas = this.filas();
-    return `${filas.filter((f) => !estaVacia(f.escena)).length} de ${filas.length} escritas`;
+    return `${filas.filter((f) => !estaVacia(f.escena) && !tieneRelleno(f.escena)).length} de ${filas.length} escritas`;
   });
 
   protected readonly enCaminos = computed(() => /\/editor\/?$/.test(this.progreso.direccion().split(/[?#]/)[0]));

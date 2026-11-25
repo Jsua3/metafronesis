@@ -127,7 +127,7 @@ export class RubricaDelCasoComponent {
     if (this.vista().tipo === 'error') this.vista.set({ tipo: 'cargando' });
     try {
       const rubrica = await firstValueFrom(this.rubricas.caseVersionRubric(id));
-      if (this.versionId() === id) this.vista.set(tipoDeRubrica(rubrica, id));
+      if (this.versionId() === id) this.vista.set(rubrica ? tipoDeRubrica(rubrica, id) : { tipo: 'sin-rubrica' });
     } catch (error) {
       if (this.versionId() !== id) return;
       // 404 = el caso no tiene ninguna (ni la predeterminada): es el estado vacío, no un error.
