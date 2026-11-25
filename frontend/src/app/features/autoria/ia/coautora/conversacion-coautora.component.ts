@@ -18,12 +18,12 @@ type Trabajo = 'empezar' | 'preguntar' | 'responder' | 'saltar' | 'resumir' | 'c
 
 // BORRADOR: textos nuevos, pendientes de la aprobación de Psicología (VD-23).
 const PENSANDO: Record<Trabajo, string> = {
-  empezar: 'La IA está leyendo tu idea…',
-  preguntar: 'La IA está pensando la siguiente pregunta…',
-  responder: 'La IA está pensando la siguiente pregunta…',
+  empezar: 'La IA está leyendo tu idea… Puede tardar hasta medio minuto.',
+  preguntar: 'La IA está pensando la siguiente pregunta… Puede tardar hasta medio minuto.',
+  responder: 'La IA está pensando la siguiente pregunta… Puede tardar hasta medio minuto.',
   saltar: 'Pasando al resumen…',
-  resumir: 'La IA está escribiendo lo que acordamos…',
-  cambiar: 'La IA está aplicando tu cambio…',
+  resumir: 'La IA está escribiendo lo que acordamos… Puede tardar cerca de un minuto.',
+  cambiar: 'La IA está aplicando tu cambio… Puede tardar cerca de un minuto.',
   corregir: 'Guardando tu corrección…',
   aceptar: 'Guardando lo que acordamos…',
   cancelar: 'Cerrando la conversación…',
@@ -79,6 +79,9 @@ interface ErrorVisible {
               <span class="ayuda">Escribe al menos {{ minimo }} caracteres.</span>
             }
           </div>
+          @if (trabajando() === 'empezar') {
+            <p class="pensando" role="status"><span class="punto" aria-hidden="true"></span>{{ textoPensando()['empezar'] }}</p>
+          }
         </form>
       } @else {
         @let a = acuerdo()!;

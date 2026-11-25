@@ -12,7 +12,20 @@ from apps.ia.privacidad import sin_datos_personales
 from . import esquemas
 from .falso import MARCA_PREGUNTAR, MARCA_RESUMIR
 
-_PEDIR_ESQUEMA = "\n\nResponde únicamente un JSON que cumpla este esquema, sin texto alrededor:\n"
+_PEDIR_ESQUEMA = (
+    "\n\nResponde únicamente con TUS DATOS en JSON, sin texto alrededor. Nunca copies ni devuelvas el esquema: el esquema solo "
+    "dice qué campos lleva tu respuesta. Esquema:\n"
+)
+
+# BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
+#: Un ejemplo de respuesta válida: los modelos rápidos a veces devolvían el esquema en lugar de una pregunta (medido con
+#: NVIDIA el 2026-11-25); con un ejemplo concreto lo hacen menos.
+_EJEMPLO_PREGUNTA = (
+    '\n\nEjemplo SOLO de la forma (otro caso; no copies su tema):\n{"listo": false, "ambito": "evaluacion", '
+    '"pregunta": "¿Qué debe lograr quien juega para llegar al mejor final?", "porque": "Define qué respuestas cuentan.", '
+    '"opciones": ["Acordar un plan de seguridad", "Que la persona vuelva a consulta", "Activar la ruta institucional"], '
+    '"recomendada": 0}'
+)
 
 # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
 _QUIEN = """Eres la IA coautora del editor de casos de MetaFrónesis, un simulador donde estudiantes de Psicología practican la atención de personas en situaciones difíciles (orientación, bienestar universitario, violencia de género). Trabajas con una persona docente de Psicología que no programa: le hablas en español claro y cálido, y la tratas de «tú»."""
@@ -49,7 +62,10 @@ Cómo escribirla:
 
 
 def instrucciones_preguntar() -> str:
-    return MARCA_PREGUNTAR + "\n" + SISTEMA_PREGUNTAR + _PEDIR_ESQUEMA + json.dumps(esquemas.PREGUNTA, ensure_ascii=False)
+    return (
+        MARCA_PREGUNTAR + "\n" + SISTEMA_PREGUNTAR + _PEDIR_ESQUEMA + json.dumps(esquemas.PREGUNTA, ensure_ascii=False)
+        + _EJEMPLO_PREGUNTA
+    )
 
 
 def instrucciones_resumir() -> str:

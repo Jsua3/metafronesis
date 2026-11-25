@@ -17,6 +17,7 @@ Reglas (las mismas del asistente por partes):
 import json
 import logging
 import time
+from dataclasses import replace
 from datetime import timedelta
 
 from django.db import transaction
@@ -47,7 +48,11 @@ MAXIMO_RESPUESTA = 300
 MAXIMO_CAMBIO = 1000
 #: Una llamada «en curso» desde hace tanto se considera abandonada y se puede pedir de nuevo.
 SEGUNDOS_OCUPADO = 150
-MAXIMO_TOKENS = 2000
+#: Los modelos que razonan (los de NVIDIA) gastan buena parte de los tokens pensando: con menos de ~2000, la respuesta
+#: llega vacía. 8000 alcanza para el razonamiento y la ficha.
+MAXIMO_TOKENS = 8000
+#: Esos mismos modelos tardan de 30 a 90 s por respuesta: la coautora espera al menos esto aunque el asistente use menos.
+SEGUNDOS_MINIMOS = 120
 
 # BORRADOR: textos nuevos del servidor, pendientes de la aprobación de Psicología (VD-23).
 MENSAJE_NO_DISPONIBLE = "El asistente no está disponible"
@@ -233,19 +238,24 @@ def _soltar(acuerdo, *, devolver_llamada: bool):
         fila.save(update_fields=["calls", "busy_since", "updated_at"])
 
 
-def _llamar(actor, acuerdo, etapa: str, instrucciones: str, mensajes: list[dict], validar):
-    """Llama al proveedor fuera de toda transacción y devuelve lo validado. Suelta la reserva si algo falla."""
+def _llamar(actor, acuerdo, etapa: str, instrucciones: str, mensajes: list[dict], validar, *, rapido: bool = False):
+    """Llama al proveedor fuera de toda transacción y devuelve lo validado. Suelta la reserva si algo falla.
+
+    Las preguntas usan el modelo rápido (``AI_AUTHORING_MODEL``): son varias y cortas, y el docente espera cada una. El
+    resumen usa el capaz (``AI_AUTHORING_MODEL_CAPABLE``): es uno solo y es lo que se acuerda. Medido con NVIDIA el
+    2026-11-25: un modelo que razona tarda de 57 a 111 s por pregunta; uno rápido, unos 20 s."""
     config = config_del_asistente.actual()
+    config = replace(config, timeout_seconds=max(config.timeout_seconds, SEGUNDOS_MINIMOS))
+    modelo = config.model_fast if rapido else config.model_capable
     inicio = time.monotonic()
 
     def auditar(resultado, **extra):
-        contexto = {"stage": etapa, "outcome": resultado, "model": config.model_capable,
+        contexto = {"stage": etapa, "outcome": resultado, "model": modelo,
                     "duration_ms": int((time.monotonic() - inicio) * 1000), **extra}
         _auditar(actor, "AI_COAUTHOR_STAGE", acuerdo.pk, contexto)
 
     try:
-        crudo = llamada.completar(config, instrucciones, mensajes, modelo=config.model_capable, max_tokens=MAXIMO_TOKENS)
-        resultado = validar(crudo)
+        resultado = _completar_y_validar(config, instrucciones, mensajes, modelo, validar)
     except ErrorDeProveedor as error:
         logger.warning("IA coautora: fallo del proveedor (kind=%s)", error.tipo)
         if error.tipo == "refusal":
@@ -264,6 +274,23 @@ def _llamar(actor, acuerdo, etapa: str, instrucciones: str, mensajes: list[dict]
         raise
     auditar("ok")
     return resultado
+
+
+def _completar_y_validar(config, instrucciones, mensajes, modelo, validar):
+    """Una respuesta validada. Si la primera no tiene la forma esperada (o no es JSON), se pide UNA vez más sin molestar al
+    docente: los modelos rápidos a veces devuelven el esquema en vez de los datos. El segundo fallo sí llega al cliente, y
+    lo que no cumple las reglas de contenido nunca se vuelve a pedir."""
+    for intento in range(2):
+        try:
+            return validar(llamada.completar(config, instrucciones, mensajes, modelo=modelo, max_tokens=MAXIMO_TOKENS))
+        except CoautoriaInvalida as invalida:
+            if intento or invalida.motivo != esquemas.MOTIVO_FORMA:
+                raise
+        except ErrorDeProveedor as error:
+            if intento or error.tipo != "malformed":
+                raise
+        logger.info("IA coautora: respuesta mal formada; se pide otra vez")
+    raise AssertionError("inalcanzable")
 
 
 def _respuestas_para_la_ia(turnos: list[dict]) -> list[dict]:
@@ -292,7 +319,7 @@ def _preguntar(actor, acuerdo_id) -> dict:
         acuerdo.idea, _contexto(acuerdo), _respuestas_para_la_ia(turnos),
         preguntaNumero=len(turnos) + 1, topePreguntas=esquemas.TOPE_PREGUNTAS,
     )
-    pregunta = _llamar(actor, acuerdo, "preguntar", prompts.instrucciones_preguntar(), mensajes, esquemas.pregunta)
+    pregunta = _llamar(actor, acuerdo, "preguntar", prompts.instrucciones_preguntar(), mensajes, esquemas.pregunta, rapido=True)
 
     def cambiar(fila):
         if pregunta is None:

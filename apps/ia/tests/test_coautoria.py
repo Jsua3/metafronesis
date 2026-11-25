@@ -292,3 +292,46 @@ def test_la_descripcion_de_la_ficha_cabe_en_el_tope_de_la_generacion():
 
     assert len(texto) <= 2000 and texto.startswith("Caso: ")
     assert coautorias.MAXIMO_IDEA == 2000
+
+
+def test_las_preguntas_usan_el_modelo_rapido_y_el_resumen_el_capaz(encendida, docente, settings, monkeypatch):
+    # Medido con NVIDIA: un modelo que razona tarda hasta 2 min por pregunta; las preguntas van con el rápido.
+    settings.AI_AUTHORING_MODEL = "modelo-rapido"
+    settings.AI_AUTHORING_MODEL_CAPABLE = "modelo-capaz"
+    usados = []
+    original = coautorias.llamada.completar
+
+    def espiar(config, instrucciones, mensajes, *, modelo, max_tokens):
+        usados.append((instrucciones.split("\n", 1)[0], modelo, config.timeout_seconds, max_tokens))
+        return original(config, instrucciones, mensajes, modelo=modelo, max_tokens=max_tokens)
+
+    monkeypatch.setattr(coautorias.llamada, "completar", espiar)
+    _hasta_el_resumen(cliente_de(docente))
+
+    assert {(marca, modelo) for marca, modelo, _, _ in usados} == {
+        (falso.MARCA_PREGUNTAR, "modelo-rapido"), (falso.MARCA_RESUMIR, "modelo-capaz"),
+    }
+    assert all(tiempo >= coautorias.SEGUNDOS_MINIMOS and tokens >= 8000 for _, _, tiempo, tokens in usados)
+
+
+def test_una_respuesta_mal_formada_se_pide_otra_vez_sola(encendida, docente, monkeypatch):
+    # Los modelos rápidos a veces devuelven el esquema en vez de los datos: un reintento automático, sin molestar.
+    respuestas = iter([json.dumps(esquemas.PREGUNTA), json.dumps({"listo": False, **falso.PREGUNTAS[0]})])
+    monkeypatch.setattr(falso, "preguntar", lambda mensajes: next(respuestas))
+
+    datos = _iniciar(cliente_de(docente)).json()["data"]
+
+    assert "error" not in datos and datos["pregunta"]["texto"] == falso.PREGUNTAS[0]["pregunta"]
+
+
+def test_el_contenido_que_no_cumple_las_reglas_no_se_reintenta(encendida, docente, monkeypatch):
+    llamadas = []
+
+    def grafica(mensajes):
+        llamadas.append(1)
+        return json.dumps({"listo": False, **falso.PREGUNTAS[0], "opciones": ["Hablar de la golpiza con detalle", "b", "c"]})
+
+    monkeypatch.setattr(falso, "preguntar", grafica)
+    datos = _iniciar(cliente_de(docente)).json()["data"]
+
+    assert datos["error"]["code"] == "AI_COAUTHOR_INVALID" and len(llamadas) == 1
