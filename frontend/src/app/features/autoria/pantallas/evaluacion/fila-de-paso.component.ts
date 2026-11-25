@@ -56,7 +56,7 @@ const LARGO_DESCRIPCION = 110;
                  (change)="cambiar.emit({ decisivo: $any($event.target).checked })" />
           Decide el final
         </label>
-        <ui-ayuda-breve termino="Decide el final" [explicacion]="glosario['Decide el final']" />
+        @if (conAyuda()) { <ui-ayuda-breve termino="Decide el final" [explicacion]="glosario['Decide el final']" /> }
         @if (!soloLectura()) {
           <ui-menu class="paso__mas" iconOnly [label]="'Más acciones del paso ' + p.hito.nombre" [items]="menu()" (itemSelected)="elegir($event)" />
         }
@@ -128,6 +128,8 @@ export class FilaDePasoComponent {
   readonly paso = input.required<PasoVista>();
   readonly escenas = input.required<readonly EscenaElegible[]>();
   readonly soloLectura = input(false);
+  /** La explicación de «Decide el final» va solo en la primera fila: repetida en cada paso recargaba la lista. */
+  readonly conAyuda = input(false);
   readonly abierto = input(false);
   readonly editando = input(false);
   readonly borrando = input(false);

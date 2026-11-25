@@ -93,8 +93,8 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
 
           @if (pasos().length) {
             <div class="lista">
-              @for (p of pasos(); track p.hito.clave) {
-                <app-fila-de-paso [class.abierta]="abierto() === p.hito.clave || editando() === p.hito.clave || borrando() === p.hito.clave" [paso]="p" [escenas]="escenas()" [soloLectura]="store.soloLectura()"
+              @for (p of pasos(); track p.hito.clave; let primera = $first) {
+                <app-fila-de-paso [conAyuda]="primera" [class.abierta]="abierto() === p.hito.clave || editando() === p.hito.clave || borrando() === p.hito.clave" [paso]="p" [escenas]="escenas()" [soloLectura]="store.soloLectura()"
                                   [abierto]="abierto() === p.hito.clave" [editando]="editando() === p.hito.clave"
                                   [borrando]="borrando() === p.hito.clave" [finalesQueLoNombran]="borrando() === p.hito.clave ? nombranA(caso, p.hito.clave) : []"
                                   (cambiar)="cambiar(p.hito, $event)" (marcar)="marcar(p.hito, $event)" (quitar)="quitar(p.hito, $event)"
