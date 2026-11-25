@@ -32,6 +32,8 @@ class Sesion(models.Model):
     iniciada_en = models.DateTimeField(null=True, blank=True)
     finalizada_en = models.DateTimeField(null=True, blank=True)
     cancelada_en = models.DateTimeField(null=True, blank=True)
+    #: Cuándo salió el recordatorio previo (una sola vez); al cambiar el horario se borra para que vuelva a salir.
+    recordatorio_enviado_en = models.DateTimeField(null=True, blank=True)
     creada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sesiones_creadas")
 
     class Meta:

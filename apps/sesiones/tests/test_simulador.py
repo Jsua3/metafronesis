@@ -161,3 +161,24 @@ def test_la_regla_lee_el_estado_despues_de_bloquear_la_sesion(crear_sesion, estu
     with pytest.raises(ApiError) as error:
         start(estudiantes[0], version.pk)
     assert error.value.api_code == "SESSION_PAUSED"
+
+
+def test_el_estudiante_lee_su_resultado_cuando_la_sesion_ya_termino(crear_sesion, estudiantes, version, docente):
+    from django.http import Http404
+    from rest_framework.test import APIClient
+    from apps.sesiones import servicios
+
+    sesion = iniciada(crear_sesion)
+    intento, _ = start(estudiantes[0], version.pk)
+    servicios.finalizar(docente, sesion.pk)
+    assert version not in available_versions(estudiantes[0])
+    cliente = APIClient()
+    cliente.force_authenticate(estudiantes[0])
+    base = f"/api/simulation/attempts/{intento.pk}"
+    assert cliente.get(base + "/student-report").status_code == 200
+    assert cliente.get(base + "/state").status_code == 200
+    assert cliente.get(f"/api/simulation/cases/{version.pk}/brief").status_code == 200
+    with pytest.raises(Http404):
+        transition(estudiantes[0], intento.pk, "pause")
+    assert cliente.post(base + "/pause", {}, format="json").status_code == 404
+    assert cliente.get(f"/api/simulation/cases/{version.pk}/active-attempt").status_code == 404

@@ -95,6 +95,14 @@ textarea.ui-control {
 .ui-field__message--error {
   color: var(--ds-danger);
   font-weight: var(--ds-type-h3-weight);
+
+  // Un símbolo delante: el error no se distingue de la ayuda solo por el rojo (WCAG 1.4.1). El texto alternativo tras la
+  // barra lo lee el lector de pantalla («Error: …»); un navegador sin esa sintaxis descarta la segunda declaración y
+  // se queda con el símbolo.
+  &::before {
+    content: '\26A0\FE0E\00A0';
+    content: '\26A0\FE0E\00A0' / 'Error: ';
+  }
 }
 
 // ── Portal y capas del portal (DISENO C4): el campo de la portada, hundido y con esquinas de control ─────────────────

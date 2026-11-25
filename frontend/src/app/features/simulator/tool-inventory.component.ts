@@ -152,6 +152,11 @@ const RUTA_ICONOS = 'assets/biblioteca/piezas/herramientas/iconos/';
       70%  { transform: scale(1.02); }
       100% { transform: scale(1); }
     }
+    @media (max-height: 520px) {
+      .tool-count { display: none; }
+      .tool-dock { max-width: 100%; padding-bottom: 0; }
+      .tool-card { width: 44px; height: 44px; min-height: 44px; padding: 0; }
+    }
     @media (prefers-reduced-motion: reduce) {
       .tool-card--selected { animation: none; }
     }

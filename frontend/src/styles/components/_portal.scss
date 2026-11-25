@@ -159,9 +159,9 @@
   margin: 0 0 var(--ds-space-4);
   padding: var(--ds-space-1) var(--ds-space-3);
   border-radius: var(--ds-radius-pill);
-  background: var(--l-tinte);
+  background: var(--l-etiqueta-fondo);
   box-shadow: inset 0 0 0 1px var(--l-tinte-filo);
-  color: var(--l-acento-tinta);
+  color: var(--l-etiqueta-tinta);
   font-size: var(--ds-type-caption-size);
   font-weight: 600;
   line-height: var(--ds-type-caption-line);
@@ -307,6 +307,8 @@ html:has(app-shell.portal[data-skin='game']) {
 // game y esto repite los mismos valores. Solo los tokens de color (no el mixin entero: todo esto viaja en el CSS inicial).
 .portal [data-skin='game'] {
   --l-acento-tinta: var(--ds-primary-hover);
+  --l-etiqueta-tinta: var(--ds-primary-hover);
+  --l-etiqueta-fondo: color-mix(in oklab, var(--l-acento) 16%, var(--ds-surface-1));
   --l-superficie: var(--ds-surface-1);
   --l-superficie-hundida: var(--ds-surface-2);
   --l-relleno: color-mix(in oklab, var(--ds-text-1) 5%, transparent);

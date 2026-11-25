@@ -358,10 +358,10 @@ describe('persona clave: la lista accesible de la sala («Ir a…»)', () => {
         { key: 'a', label: 'Ana', kind: 'person' },
         { key: 'madre', label: 'Marta', kind: 'person', note: NOTA },
       ]);
-      expect(texto(ana)).toBe('Persona Ana');
-      expect(texto(marta)).toBe(`Persona Marta ${NOTA}`);
+      expect(texto(ana)).toBe('Hablar con Ana Opcional: puede servirte más adelante');
+      expect(texto(marta)).toBe(`Hablar con Marta Opcional: puede servirte más adelante ${NOTA}`);
       // Texto real del botón: el lector de pantalla lo lee sin depender del color.
-      expect(marta.querySelector('.places__note')?.textContent?.trim()).toBe(NOTA);
+      expect(Array.from(marta.querySelectorAll('.places__note')).map(el => el.textContent?.trim())).toContain(NOTA);
     });
   });
 

@@ -35,6 +35,7 @@
         [total]="cases().length" [visibles]="filtrados().length" [hayFiltros]="filtro() !== 'ALL'" (limpiar)="filtro.set('ALL')">
         <ui-segmentado etiqueta="Estado del caso" [opciones]="opciones()" [(valor)]="filtro" />
       </ui-filtros>
+      @if (errorVersion()) { <p class="hub-error" role="alert">{{ errorVersion() }}</p> }
       <ul class="hub-grid">
         @for (grupo of grupos(); track grupo[0].caseVersionId) {
           <li class="hub-grupo">
@@ -61,6 +62,9 @@
     <div class="hub-card__top"><ui-badge [tone]="statusTone(item.status)">{{ statusLabel(item.status) }}</ui-badge></div>
     <h3 class="hub-card__title">{{ item.title }}</h3>
     <p class="hub-card__code" [title]="item.code">{{ item.code }}</p>
+    <!-- BORRADOR: texto pendiente de Psicología (VD-23). -->
+    @if (autorLabel(item.autor?.nombre); as autor) { <p class="hub-card__meta hub-card__autor">{{ autor }}</p> }
+    @if (editadoPor(item); as editores) { <p class="hub-card__meta hub-card__editores">{{ editores }}</p> }
     @if (fecha(item.updatedAt); as editado) { <p class="hub-card__meta">{{ editado }}</p> }
     @if (item.escenasConGuion != null) {
       <p class="hub-card__meta">{{ item.escenasConGuion }} de {{ item.nodeCount }} escenas con guion</p>
@@ -70,7 +74,15 @@
     }
     <app-asignar-desde-caso [caseId]="item.caseVersionId" [publicado]="item.status === 'PUBLISHED'" [titulo]="item.title" (asignado)="loadAsignaciones()" />
     <div class="hub-card__actions">
-      <a ui-button [routerLink]="item.status === 'IN_REVIEW' ? ['/portal/casos', item.caseVersionId, 'editor', 'revision'] : ['/portal/casos', item.caseVersionId, 'editor']">{{ accion(item.status) }}</a>
+      @if (creaVersion(item)) {
+        <!-- BORRADOR: texto pendiente de Psicología (VD-23). -->
+        <button ui-button type="button" class="hub-card__crear-version" [disabled]="creandoVersion() !== null" (click)="crearVersion(item)">
+          {{ creandoVersion() === item.caseVersionId ? 'Creando…' : 'Crear nueva versión' }}
+        </button>
+        <a ui-button variant="ghost" [routerLink]="['/portal/casos', item.caseVersionId, 'editor']">Ver</a>
+      } @else {
+        <a ui-button [routerLink]="item.status === 'IN_REVIEW' ? ['/portal/casos', item.caseVersionId, 'editor', 'revision'] : ['/portal/casos', item.caseVersionId, 'editor']">{{ accion(item.status) }}</a>
+      }
     </div>
   </ui-card>
 </ng-template>

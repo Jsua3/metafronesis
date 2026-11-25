@@ -1,3 +1,4 @@
+import { APP_BRAND } from '../../core/config/brand.config';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -45,7 +46,7 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
     @if (conBarra()) {
       <header ui-glass-bar class="barra-portal" label="Navegación principal" navSkip>
         <!-- DP-06: la marca completa de Metafrónesis (la misma de la barra pública); «SIEP» vive en títulos y textos. -->
-        <a class="modulo modulo-logo pulsable ds-motion" routerLink="/portal/dashboard" aria-label="Metafrónesis · SIEP: ir al inicio">
+        <a class="modulo modulo-logo pulsable ds-motion" routerLink="/portal/dashboard" [attr.aria-label]="brand.shortName + ': ir al inicio'">
           <app-marca class="barra-marca" />
         </a>
         <div class="modulo modulo-principal ds-motion">
@@ -113,6 +114,7 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
   `],
 })
 export class ShellComponent {
+  readonly brand = APP_BRAND;
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly tema = inject(TemaService);

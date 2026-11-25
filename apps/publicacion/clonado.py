@@ -1,9 +1,12 @@
 from django.db import transaction
+from django.http import Http404
 
 from apps.simulation.models import (CaseCharacter, CaseVersion, CaseVersionStatus, ClinicalTool, CollisionZone,
                                     DecisionOption, DialogueChoice, DialogueLine, DialogueTree, MapObject,
                                     SceneHint, SceneMap, SimulationNode, SimulationRubricAssignment)
 from apps.simulation.services.audit_service import auditable
+from apps.autoria import autoria
+from apps.users.permisos import exigir_autoria
 from .ciclo import _exigir_estado, version_accesible
 
 
@@ -12,10 +15,22 @@ def _valores(objeto, excluidos):
             if not campo.primary_key and campo.name not in excluidos}
 
 
+def _numeros(semver):
+    """``(mayor, menor, parche)`` de una versión semántica ``M.m.p``; ``None`` si no tiene esa forma."""
+    try:
+        mayor, menor, parche = (int(parte) for parte in str(semver).split('.'))
+    except ValueError:
+        return None
+    return mayor, menor, parche
+
+
 def _siguiente(version):
-    mayor, menor, _ = version.semantic_version.split('.')
+    """La versión menor siguiente a la MAYOR de todas las del caso (``M.m+1.0``), no a la del original: dos docentes que
+    clonan la misma publicada reciben números distintos (el caso está bloqueado mientras se calcula)."""
     ocupadas = set(version.simulation_case.versions.values_list('semantic_version', flat=True))
-    menor = int(menor) + 1
+    numeros = [n for n in map(_numeros, ocupadas | {version.semantic_version}) if n is not None]
+    mayor, menor, _ = max(numeros) if numeros else (1, 0, 0)
+    menor += 1
     while f'{mayor}.{menor}.0' in ocupadas:
         menor += 1
     return f'{mayor}.{menor}.0'
@@ -67,8 +82,15 @@ def _copiar_arbol(original, clon):
 @auditable('CASE_VERSION_CLONED', 'CASE_VERSION', resource_id=lambda args, kwargs, result: result.pk)
 @transaction.atomic
 def clonar(usuario, case_version_id) -> CaseVersion:
+    """Un borrador nuevo del mismo caso, copia de una versión publicada (de cualquier caso) o archivada (de los propios).
+
+    Quien clona es el creador del borrador; el caso conserva su autor. En un caso ajeno hace falta el permiso de autoría."""
     original = version_accesible(usuario, case_version_id, lock=True)
     _exigir_estado(original, (CaseVersionStatus.PUBLISHED, CaseVersionStatus.ARCHIVED))
+    if autoria.autor_id(original) != usuario.pk:
+        exigir_autoria(usuario)
+    if not autoria.puede_crear_version(usuario, original, autoriza=True):
+        raise Http404
     type(original.simulation_case).objects.select_for_update().get(pk=original.simulation_case_id)
     valores = _valores(original, {'semantic_version', 'status', 'cloned_from', 'published_at', 'validated_at',
                                   'definition_hash', 'reuse_ratio', 'created_by', 'created_at', 'version',

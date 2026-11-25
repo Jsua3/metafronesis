@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { DRAFT_COPY } from '../draft-copy';
-import { PASOS_UMBRAL, UMBRAL_TEXTO_MS, UmbralCasoComponent } from './umbral-caso.component';
+import { PASOS_UMBRAL, UmbralCasoComponent } from './umbral-caso.component';
 
 /**
  * El umbral del juego (DISENO §4.4, DP-09): una sola pantalla entre la ficha y el mundo, con la portada, el título, la
@@ -17,15 +17,7 @@ describe('app-umbral-caso', () => {
   const host = () => fixture.nativeElement as HTMLElement;
   const text = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
-  /** Dispara a mano el reloj de 1 s del componente (los temporizadores falsos cuelgan `whenStable` sin zonas). */
-  let pasaUnSegundo: () => void = () => undefined;
-
   async function crear(inputs: Record<string, unknown> = {}) {
-    const original = window.setTimeout.bind(window);
-    vi.spyOn(window, 'setTimeout').mockImplementation(((fn: () => void, ms?: number) => {
-      if (ms === UMBRAL_TEXTO_MS) { pasaUnSegundo = fn; return 0; }
-      return original(fn, ms);
-    }) as typeof window.setTimeout);
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
     fixture = TestBed.createComponent(UmbralCasoComponent);
     for (const [clave, valor] of Object.entries({ titulo: 'Primer contacto', ...inputs })) fixture.componentRef.setInput(clave, valor);
@@ -51,13 +43,11 @@ describe('app-umbral-caso', () => {
     expect(text(host())).toContain(DRAFT_COPY.umbralCareLine.text);
   });
 
-  it('un píxel por fase real y, pasado 1 s, el paso en texto (antes, solo los píxeles)', async () => {
+  it('un píxel por fase real y el paso en texto desde el comienzo', async () => {
     await crear({ fase: 'sala' });
     const progreso = host().querySelector('app-firma-progreso')!;
     expect(progreso.getAttribute('aria-valuenow')).toBe('1');
-    expect(text(host().querySelector('.umbral-caso__paso'))).toBe('');
-    pasaUnSegundo();
-    await fixture.whenStable();
+    expect(text(host().querySelector('.umbral-caso__paso'))).toBe('Cargando la sala…');
     expect(text(host().querySelector('.umbral-caso__paso'))).toBe(PASOS_UMBRAL.sala);
     fixture.componentRef.setInput('fase', 'escena');
     await fixture.whenStable();
@@ -65,10 +55,15 @@ describe('app-umbral-caso', () => {
     expect(text(host().querySelector('.umbral-caso__paso'))).toBe(PASOS_UMBRAL.escena);
   });
 
+  it('muestra el porcentaje real de recursos de la escena', async () => {
+    await crear({ fase: 'escena', porcentaje: 37 });
+    const progreso = host().querySelector('[aria-label="Carga de recursos de la escena"]');
+    expect(progreso?.getAttribute('aria-valuenow')).toBe('37');
+    expect(text(progreso)).toContain('37 %');
+  });
+
   it('con una tarjeta a la vista no dice «Preparando…»: espera a la persona, no carga', async () => {
     await crear({ fase: 'intento', conTarjeta: true });
-    pasaUnSegundo();
-    await fixture.whenStable();
     expect(text(host().querySelector('.umbral-caso__paso'))).toBe('');
     expect(host().classList).toContain('umbral-caso--con-tarjeta');
   });

@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../core/a11y/reduced-motion';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, inject, signal,
 } from '@angular/core';
@@ -149,13 +150,17 @@ export class LandingComponent {
   readonly cargarVideos = signal(false);
   /** Movimiento reducido: los clips no arrancan solos; se ven con el botón. */
   readonly videosPausados = signal(
-    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    (reducedMotionQuery()?.matches ?? false));
 
   /** El relato está en pantalla: solo entonces se pinta el modo ambiente. */
   private readonly relatoVisible = signal(false);
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+    const motion = reducedMotionQuery();
+    const onMotionChange = () => { if (motion?.matches) this.videosPausados.set(true); };
+    motion?.addEventListener('change', onMotionChange);
+    destroyRef.onDestroy(() => motion?.removeEventListener('change', onMotionChange));
 
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 

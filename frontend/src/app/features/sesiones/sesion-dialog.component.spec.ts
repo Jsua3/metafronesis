@@ -85,6 +85,15 @@ describe('SesionDialogComponent', () => {
     }
   });
 
+  it('la opción del caso nombra a quienes lo editaron, si los hay', async () => {
+    await montar({ modo: 'crear' }, of({ id: 5 }), { casos: of([
+      ...casos, { caseVersionId: 10, titulo: 'El aula', version: '1.2.0', autor: 'Ana', editadoPor: ['Beto', 'Carla'], tiempoEstimadoMin: 30, descripcion: '' },
+    ]) });
+    const opciones = [...input('[name=caseVersionId]').querySelectorAll('option')].map(o => o.textContent?.trim());
+    expect(opciones).toContain('La casa de Sofía · v1.0.0 · Ana');
+    expect(opciones).toContain('El aula · v1.2.0 · Ana · editado por Beto, Carla');
+  });
+
   it('valida antes de enviar', async () => {
     await montar({ modo: 'crear' });
     el().querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));

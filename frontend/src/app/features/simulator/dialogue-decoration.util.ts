@@ -2,7 +2,6 @@ import {
   DialogueChoiceState, DialogueLineState, DialogueState, MapObjectState, SimulationWorldState,
 } from '../../core/models/simulation.model';
 import type { CopyContext } from './evidence-copy.util';
-import { DRAFT_COPY } from './draft-copy';
 
 /**
  * Decoración de una conversación antes de mostrarla (extraída de
@@ -73,11 +72,6 @@ export function decorateDialogueState(d: DialogueState, ctx: DecorationCtx): Dia
     choices = choices.filter(c => !isDecision(c) || ids.has(c.decisionOptionId!));
     if (hadDecision && !choices.some(isDecision)) {
       stale = true;
-      if (!lines.some(line => line.text === DRAFT_COPY.noStepNow.text)) {
-        lines = [...lines, {
-          order: lines.length + 1, speakerName: '', text: DRAFT_COPY.noStepNow.text, emotion: 'neutral',
-        }];
-      }
     }
   }
 

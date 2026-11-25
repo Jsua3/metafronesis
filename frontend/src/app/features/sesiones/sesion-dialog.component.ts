@@ -63,7 +63,7 @@ function sumarHora(local: string): string {
           <select uiControl name="caseVersionId" (change)="caseVersionId.set(leer($event))">
             <option value="">Elige un caso</option>
             @for (c of casos(); track c.caseVersionId) {
-              <option [value]="c.caseVersionId" [selected]="'' + c.caseVersionId === caseVersionId()">{{ c.titulo }} · v{{ c.version }} · {{ c.autor }}</option>
+              <option [value]="c.caseVersionId" [selected]="'' + c.caseVersionId === caseVersionId()">{{ c.titulo }} · v{{ c.version }} · {{ c.autor }}{{ c.editadoPor?.length ? ' · editado por ' + c.editadoPor!.join(', ') : '' }}</option>
             }
           </select>
         </ui-field>
