@@ -68,7 +68,7 @@ def test_editar_y_sincronizar(cliente_docente, cuerpo):
 def test_biblioteca_no_expone_el_contenido(cliente_docente, version):
     casos = cliente_docente.get("/api/sesiones/casos").data["data"]
     assert [c["caseVersionId"] for c in casos] == [version.pk]
-    assert set(casos[0]) == {"caseVersionId", "titulo", "version", "autor", "tiempoEstimadoMin", "descripcion"}
+    assert set(casos[0]) == {"caseVersionId", "titulo", "version", "autor", "editadoPor", "tiempoEstimadoMin", "descripcion"}
 
 
 def test_permisos(cuerpo, cliente_docente):
