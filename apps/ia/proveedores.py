@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 from django.core.exceptions import ImproperlyConfigured
 
 from .asistente import falso as falso_del_asistente
+from .coautoria import falso as falso_de_la_coautora
 from .generacion import falso
 
 TIEMPO_MAXIMO_SEGUNDOS = 20
@@ -40,6 +41,10 @@ class ProveedorFalso(ProveedorIA):
             return falso_del_asistente.proponer()
         if instrucciones.startswith(falso_del_asistente.MARCA_GUIA):
             return falso_del_asistente.guiar(mensajes)
+        if instrucciones.startswith(falso_de_la_coautora.MARCA_PREGUNTAR):
+            return falso_de_la_coautora.preguntar(mensajes)
+        if instrucciones.startswith(falso_de_la_coautora.MARCA_RESUMIR):
+            return falso_de_la_coautora.resumir(mensajes)
         return "Revisa el contexto del caso y considera las alternativas disponibles."
 
 

@@ -83,6 +83,26 @@ La regla está en `apps/autoria/autoria.py` y en `docs/diseno/2026-11-24-autoria
 | GET, POST | /api/authoring/cases/<id>/lifecycle | `submit` (y la transición `submit` de `allowedTransitions`) es de quien creó la versión; `archive`, del autor del caso; `clone` aparece en una publicada ajena. Al devolver a borrador (`reject`), la revisión queda pedida por quien creó la versión (`review.requestedBy`). |
 | POST | /api/authoring/cases/<id>/publish | Sin cambios (solo ADMIN). Publicar la versión de otro docente no cambia el autor del caso. |
 
+## IA coautora (SIEP-269)
+
+Permiso de todas las rutas: `case/author` (el docente sobre sus propias conversaciones; una ajena responde 404). Con el asistente de autoría apagado (`AI_AUTHORING_ENABLED`), todas responden 404. Diseño: `docs/diseno/2026-11-25-ia-coautora-del-editor.md`.
+
+| Método | Ruta | Cuerpo | Respuesta | Auditoría |
+|---|---|---|---|---|
+| POST | /api/authoring/coauthor | `{idea, lugarId}` (caso nuevo) o `{idea, caseVersionId}` (caso en borrador) | 201, acuerdo con la primera pregunta. Gasta una ayuda del día. Si la primera pregunta falla, trae `error {code, message}` y `pregunta: null` | AI_COAUTHOR_STARTED |
+| GET | /api/authoring/coauthor/<id> | — | Acuerdo | EXENTO |
+| DELETE | /api/authoring/coauthor/<id> | — | Acuerdo `cancelled` | AI_COAUTHOR_CANCELLED |
+| POST | /api/authoring/coauthor/<id>/question | Sin cuerpo | Vuelve a pedir la pregunta pendiente tras una falla | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/answer | `{numero, eleccion: {tipo: opcion, indice} \| {tipo: propia, texto} \| {tipo: decide}}` | Acuerdo con la siguiente pregunta, o `ready` al llegar al tope o cuando la IA dice que ya tiene lo necesario. Un `numero` anterior cambia esa respuesta y descarta las posteriores | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/skip | Sin cuerpo | Acuerdo `ready` | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/summary | `{}` desde `ready`, o `{cambio}` desde `summarized` | Acuerdo `summarized` con la ficha | AI_COAUTHOR_STAGE |
+| PUT | /api/authoring/coauthor/<id>/summary | `{ficha}` | La ficha corregida a mano (se valida igual que la de la IA; no gasta llamadas) | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/accept | Sin cuerpo | Acuerdo `accepted`. En un caso nuevo arranca la generación por etapas con la ficha como descripción y trae `generationId` | AI_COAUTHOR_ACCEPTED |
+
+El acuerdo es `{id, status (clarifying, ready, summarized, accepted, cancelled), lugarId, caseVersionId, idea, respuestas [{numero, ambito, pregunta, porque, opciones, recomendada, eleccion, respuesta}], pregunta {numero, ambito, texto, porque, opciones[3], recomendada} | null, topePreguntas, ficha, llamadasUsadas, llamadasTope, generationId, ocupado}`. La ficha es `{titulo, objetivo, personajes [{nombre, descripcion}], lugar, momento (dia, noche), escenas [{titulo, proposito}], hitos, finales [{titulo, descripcion}], intensidad (LOW, MEDIUM, HIGH), temasSensibles}`.
+
+Errores nuevos: 409 `COAUTHOR_STATE` (el paso no corresponde al estado), 409 `COAUTHOR_BUSY` (la IA ya está pensando esa conversación), 409 `COAUTHOR_EXHAUSTED` (se agotaron las llamadas de la conversación), 422 `AI_COAUTHOR_INVALID` (la IA respondió algo que no cumple el esquema o las reglas de contenido; trae `motivo` fijo). También responde los del asistente: 429 `AI_LIMIT_EXCEEDED`, 422 `AI_REFUSED` y 502 `AI_PROVIDER_ERROR`.
+
 ## Rutas referenciadas pero no incluidas como endpoints del corte
 
 psychosim/urls.py:95 incluye apps.simulation.urls y :102/:104 incluyen URLs de autoría; esos URLConfs no figuran en el manifiesto del corte. Por tanto no se listan sus rutas. En el código completo, podrían resultar accesibles; qué rutas nuevas se activarán en S3/S4 queda **sin verificar** hasta decidir los URLConfs del repo nuevo. Tampoco se listan reportes/rubrics/authoring completos: su código no forma parte del alcance declarado.

@@ -60,6 +60,10 @@ AUDIT_TAXONOMY: dict[str, str] = {
     "AI_GENERATION_CREATED": "generacion.crear",
     "AI_GENERATION_CANCELLED": "generacion.cancelar",
     "AI_GENERATION_STAGE": "generacion.etapa",
+    "AI_COAUTHOR_STARTED": "coautoria.iniciar",
+    "AI_COAUTHOR_STAGE": "coautoria.etapa",
+    "AI_COAUTHOR_ACCEPTED": "coautoria.aceptar",
+    "AI_COAUTHOR_CANCELLED": "coautoria.cancelar",
     "TRACE_VIEWED": "traza.leer",
     "RUBRIC_SAVED": "rubrica.evaluar",
     "ANALYTICS_VIEWED": "analitica.ver",
@@ -195,6 +199,8 @@ CONTEXT_WHITELIST: dict[str, frozenset[str]] = {
     "AI_AUTHORING_GUIDE": frozenset({"screen", "model", "changes", "duration_ms", "outcome"}),
     # Generación de casos: etapa, resultado, ronda de reparación, duración y tipo de falla. Nunca la descripción ni el texto del modelo.
     "AI_GENERATION_STAGE": frozenset({"stage", "outcome", "round", "duration_ms", "kind"}),
+    # IA coautora (SIEP-269): etapa, resultado, modelo, duración y tipo de falla. Nunca la idea, las respuestas ni la ficha.
+    "AI_COAUTHOR_STAGE": frozenset({"stage", "outcome", "model", "duration_ms", "kind"}),
     "CONSENT_ACCEPTED": frozenset({"caseVersionId", "noticeVersion"}),
     "CONSENT_WITHDRAWN": frozenset({"caseVersionId", "noticeVersion"}),
     # S3-4 · solo ids (de la persona y del ADMIN que ejecuta) y recuentos: nunca el correo, el nombre ni un texto de la persona.
