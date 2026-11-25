@@ -102,6 +102,9 @@ describe('pantalla Usuarios (F7-6)', () => {
     fixture.detectChanges();
     expect(service['permisoAutoria']).toHaveBeenCalledWith(6, true);
     expect(text(rows()[1])).toContain('Permiso de autoría: Sí');
+    // El nombre accesible empieza por el texto visible (WCAG 2.5.3; axe label-content-name-mismatch en la pasada de humo).
+    const boton = [...rows()[1].querySelectorAll('button')].find(b => b.textContent?.includes('Permiso de autoría'))!;
+    expect(boton.getAttribute('aria-label')!.startsWith(boton.textContent!.trim())).toBe(true);
   });
 
   it('abre la vista indicada en la URL y actualiza la navegacion', async () => {

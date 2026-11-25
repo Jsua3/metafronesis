@@ -143,7 +143,7 @@
             <td><span class="us-email" [title]="user.email">{{ user.email }}</span></td>
             <td>{{ roleLabel(user.role) }}
               @if (user.role === 'PROFESOR') {
-                <button ui-button type="button" size="sm" variant="secondary" [disabledReason]="esperaPorCambio()" [attr.aria-pressed]="!!user.permisoAutoria" [attr.aria-label]="'Permiso de autoría de ' + user.nombre + ' ' + user.apellido + ': ' + (user.permisoAutoria ? 'sí' : 'no') + '. Pulsa para cambiarlo.'" (click)="cambiarPermiso(user)">Permiso de autoría: {{ user.permisoAutoria ? 'Sí' : 'No' }}</button>
+                <button ui-button type="button" size="sm" variant="secondary" [disabledReason]="esperaPorCambio()" [attr.aria-pressed]="!!user.permisoAutoria" [attr.aria-label]="'Permiso de autoría: ' + (user.permisoAutoria ? 'Sí' : 'No') + ', de ' + user.nombre + ' ' + user.apellido + '. Pulsa para cambiarlo.'" (click)="cambiarPermiso(user)">Permiso de autoría: {{ user.permisoAutoria ? 'Sí' : 'No' }}</button>
               }
             </td>
             @let badge = statusBadge(user);
