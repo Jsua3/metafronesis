@@ -204,7 +204,14 @@ export class GrupoListComponent implements OnInit {
     const n = grupo.totalEstudiantes;
     const m = grupo.totalInvitados ?? 0;
     const partes = [`${n} ${n === 1 ? 'estudiante' : 'estudiantes'}`];
-    if (m) partes.push(`${m} ${m === 1 ? 'invitación pendiente' : 'invitaciones pendientes'}`);
+    partes.push(`${m} ${m === 1 ? 'invitación pendiente' : 'invitaciones pendientes'}`);
+    // BORRADOR: texto pendiente de Psicología.
+    if (grupo.resumenCasos) {
+      const r = grupo.resumenCasos;
+      partes.push(`${r.asignados} ${r.asignados === 1 ? 'caso asignado' : 'casos asignados'}`);
+      if (r.oportunidades) partes.push(`${r.terminados} de ${r.oportunidades} casos terminados por estudiantes`);
+      else if (r.asignados) partes.push('Aún sin estudiantes que puedan avanzar');
+    }
     return partes.join(' · ');
   }
   protected verTodos(): void { void this.router.navigate(['/portal/grupos']); }
@@ -587,7 +594,8 @@ export class GrupoListComponent implements OnInit {
         // E2-10: el docente invita; la persona entra al grupo cuando acepta (su bandeja de invitaciones).
         // D-14: el servidor responde lo mismo exista o no la cuenta, así que el texto tampoco afirma que se envió.
         this.mensajeEstudiante.set(message?.trim() || 'Si el correo corresponde a un estudiante registrado, recibirá la invitación.');
-        this.grupos.update(list => list.map(g => g.id === grupo.id ? grupo : g));
+        this.notify.success(this.mensajeEstudiante());
+        this.grupos.update(list => list.map(g => g.id === grupo.id ? { ...g, ...grupo } : g));
         if (this.grupoActivo()?.id === grupo.id) this.grupoActivo.set(grupo);
         this.mensajeEsError.set(false);
         this.estudianteForm.reset();

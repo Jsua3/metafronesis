@@ -18,6 +18,11 @@ export interface AssignmentProgress {
   readonly inProgress: number;
 }
 
+/** Resumen del listado de grupos: pares de estudiante activo y caso asignado. */
+export interface GrupoResumenCasos { readonly asignados: number; readonly terminados: number; readonly oportunidades: number; }
+export interface GrupoListado { readonly id: number; readonly nombre: string; readonly codigo: string; readonly totalEstudiantes: number; readonly totalInvitados: number; readonly resumenCasos: GrupoResumenCasos; }
+export interface GrupoListadoListEnvelope { readonly success: boolean; readonly message?: string; readonly data: ReadonlyArray<GrupoListado>; }
+
 export type AccessReasonEnum = 'NOT_ASSIGNED' | 'NOT_YET_OPEN' | 'CLOSED' | 'LOCKED_BY_SEQUENCE';
 
 export type ActivationEnum = 'CALM' | 'TENSE' | 'CRISIS';

@@ -40,7 +40,8 @@ export class AsignarDesdeCasoComponent {
   /** El caso quedó asignado a un grupo: quien lo contiene puede refrescar lo que dependa de eso. */
   readonly asignado = output<void>();
   protected readonly motivoId = `asignar-motivo-${AsignarDesdeCasoComponent.siguiente++}`;
-  protected readonly etiqueta = () => (this.titulo() ? `Asignar «${this.titulo()}» a un grupo` : 'Asignar el caso a un grupo');
+  // El nombre accesible empieza por el texto visible (WCAG 2.5.3, «label in name»): quien maneja por voz dice lo que ve.
+  protected readonly etiqueta = () => (this.titulo() ? `Asignar a un grupo: «${this.titulo()}»` : null);
   protected readonly busy = signal(false);
   private readonly injector = inject(Injector);
 

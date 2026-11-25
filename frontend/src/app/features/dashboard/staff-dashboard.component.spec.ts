@@ -53,6 +53,14 @@ describe('Inicio docente y administración', () => {
       { provide: AssignmentService, useValue: { list: () => of([{ id: 2, active: true, caseVersionId: 7 }, { id: 3, active: true, caseVersionId: 9 }]), listAll: () => of(todas) } },
     ] });
   });
+  it('muestra el resumen y pone Ver grupo antes de las acciones secundarias', () => {
+    groups.listar.mockReturnValue(of([{ id: 1, nombre: 'Grupo A', totalEstudiantes: 3, totalInvitados: 2, resumenCasos: { asignados: 2, terminados: 1, oportunidades: 6 } }]));
+    const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector('.rejilla article') as HTMLElement;
+    expect(card.textContent).toContain('2 invitaciones pendientes');
+    expect(card.textContent).toContain('1 de 6 casos terminados');
+    expect(card.querySelector('a')?.textContent).toContain('Ver grupo');
+  });
   it('pide la bandeja filtrada y publica el total, no el tamaño de la página', () => {
     const fixture = TestBed.createComponent(StaffDashboardComponent); fixture.detectChanges();
     expect(instructor.listAttempts).toHaveBeenCalledWith({ evaluacion: 'pendiente', pageSize: 5 });

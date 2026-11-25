@@ -13,6 +13,7 @@ import { textoInsignia, textoInsigniaAccesible } from './nav-badges.service';
 export interface BottomTab {
   id: string;
   label: string;
+  descripcion?: string;
   icon: string;
   route?: string;
   href?: string;
@@ -43,7 +44,7 @@ const pathOf = (url: string) => url.split(/[?#;]/, 1)[0];
             @if (tab.route) {
               <a class="hoja-mas__enlace" [routerLink]="tab.route" routerLinkActive="hoja-mas__enlace--activa"
                 ariaCurrentWhenActive="page" (click)="ref.close()">
-                <mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon><span>{{ tab.label }}</span>
+                <mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon><span>{{ tab.label }} @if (tab.descripcion) { <small class="hoja-mas__descripcion">{{ tab.descripcion }}</small> }</span>
                 @if (tab.cuenta) {
                   <span class="hoja-mas__cuenta" aria-hidden="true">{{ insignia(tab.cuenta) }}</span>
                   <span class="ds-sr-only">{{ insigniaAccesible(tab.cuenta) }}</span>
@@ -96,6 +97,7 @@ const pathOf = (url: string) => url.split(/[?#;]/, 1)[0];
       transition: background-color var(--ds-dur-fast) var(--ds-ease-out);
     }
     .hoja-mas__enlace > mat-icon:first-child { flex: none; color: var(--ds-text-2); }
+    .hoja-mas__descripcion { display: block; font-weight: normal; color: var(--ds-text-2); }
     .hoja-mas__enlace:focus-visible { outline-offset: -3px; }
     @media (hover: hover) and (pointer: fine) {
       .hoja-mas__enlace:hover { background-color: var(--l-fila-encima, var(--ds-surface-2)); }
@@ -158,7 +160,7 @@ export class MoreSheetComponent {
     <div class="pestanas ds-motion">
       @for (tab of visible(); track tab.id) {
         @if (tab.route) {
-          <a class="pestana ds-motion" [routerLink]="tab.route" routerLinkActive="pestana--activa" ariaCurrentWhenActive="page">
+          <a class="pestana ds-motion" [routerLink]="tab.route" [attr.title]="tab.descripcion || null" [attr.aria-description]="tab.descripcion || null" routerLinkActive="pestana--activa" ariaCurrentWhenActive="page">
             <span class="pestana__icono"><mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon>@if (tab.cuenta) {<span class="pestana__cuenta" aria-hidden="true">{{ insignia(tab.cuenta) }}</span>}</span>
             <span class="pestana__rotulo ds-motion"><span>{{ tab.etiquetaCorta ?? tab.label }}</span></span>
             @if (tab.cuenta) {<span class="ds-sr-only">{{ insigniaAccesible(tab.cuenta) }}</span>}
@@ -215,6 +217,8 @@ export class BottomTabsComponent {
   protected readonly insigniaAccesible = textoInsigniaAccesible;
 
   protected openMore(): void {
-    this.dialog.sheet(MoreSheetComponent, { side: 'bottom', data: [...this.overflow()] });
+    // BORRADOR: texto pendiente de Psicología. En docencia la hoja también explica los destinos visibles de la barra.
+    const destinos = this.tabs().some(tab => tab.descripcion) ? [...this.tabs(), ...this.more()] : this.overflow();
+    this.dialog.sheet(MoreSheetComponent, { side: 'bottom', data: [...destinos] });
   }
 }

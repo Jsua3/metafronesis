@@ -19,7 +19,7 @@ from shared.response import api_created, api_ok
 from shared import policies
 
 from . import assignment_service, lector_xlsx, memberships, services
-from .contracts import AssignmentSerializer, InvitationSerializer, MembershipConflictEnvelopeSerializer
+from .contracts import AssignmentSerializer, GrupoListadoSerializer, InvitationSerializer, MembershipConflictEnvelopeSerializer
 from .import_contract import STUDENT_IMPORT_TEMPLATE_FILENAME
 from .serializers import (
     ActualizarGrupoSerializer,
@@ -49,6 +49,7 @@ class GrupoListCreateView(APIView):
             return [_CAN_LIST_GROUPS()]
         return [_CAN_MANAGE_GROUP()]
 
+    @extend_schema(responses={200: envelope_of(GrupoListadoSerializer, many=True), **error_responses(401, 403)})
     def get(self, request):
         if request.user.role == ADMIN:
             return api_ok(services.listar_activos())

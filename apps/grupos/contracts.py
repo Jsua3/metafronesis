@@ -17,6 +17,21 @@ ASSIGNMENT_TARGETS = ("GROUP", "STUDENT")
 WINDOW = "ISO 8601 con el desfase de Bogotá (-05:00)."
 
 
+class GrupoResumenCasosSerializer(serializers.Serializer):
+    asignados = serializers.IntegerField(help_text="Asignaciones del grupo, incluidas las pausadas.")
+    terminados = serializers.IntegerField(help_text="Pares estudiante y caso terminados al menos una vez.")
+    oportunidades = serializers.IntegerField(help_text="Pares de membresía activa y caso asignado.")
+
+
+class GrupoListadoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    codigo = serializers.CharField()
+    totalEstudiantes = serializers.IntegerField()
+    totalInvitados = serializers.IntegerField()
+    resumenCasos = GrupoResumenCasosSerializer()
+
+
 class AccessDecisionSerializer(serializers.Serializer):
     """La decisión de acceso del estudiante a una versión de caso: si puede empezar y, si no, por qué."""
 

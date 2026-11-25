@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from django.contrib.auth import get_user_model
 from django.core.validators import validate_email
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, IntegerField, Sum
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast
 from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.simulation.models import CaseVersion, SimulationNode
@@ -75,7 +77,18 @@ def grupo_dto(grupo, counts=None):
 def _grupo_dtos(grupos):
     grupos = list(grupos)
     counts = _membership_counts([g.id for g in grupos])
-    return [grupo_dto(g, counts) for g in grupos]
+    resumenes = {g.id: {"asignados": 0, "terminados": 0, "oportunidades": 0} for g in grupos}
+    # Una consulta para todos los grupos visibles. La misma definición que GET /assignments:
+    # membresía activa actual, sin ensayos y una finalización por persona y versión.
+    rows = (assignment_service.assignments_with_progress().filter(grupo_id__in=resumenes)
+            .order_by().values('grupo_id')
+            .annotate(asignados=Count('id'),
+                      terminados=Sum(Cast(KeyTextTransform('completed', 'progress'), IntegerField())),
+                      oportunidades=Sum(Cast(KeyTextTransform('students', 'progress'), IntegerField()))))
+    for row in rows:
+        resumenes[row['grupo_id']] = {"asignados": row['asignados'], "terminados": row['terminados'] or 0,
+                                      "oportunidades": row['oportunidades'] or 0}
+    return [{**grupo_dto(g, counts), "resumenCasos": resumenes[g.id]} for g in grupos]
 
 
 def listar_de_profesor(profesor_id):

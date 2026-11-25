@@ -43,8 +43,26 @@ def test_avance_por_estudiante_y_permisos(caso_publicado):
     with CaptureQueriesContext(connection) as one:
         [assignment_dto(row) for row in list_assignments(teacher, group.id)]
     version2 = CaseVersion.objects.create(simulation_case=caso_publicado.simulation_case, semantic_version='2.0.0', status='PUBLISHED', created_by=teacher)
-    CaseAssignment.objects.create(grupo=group, case_version=version2, assigned_by=teacher)
+    CaseAssignment.objects.create(grupo=group, case_version=version2, assigned_by=teacher, active=False)
     with CaptureQueriesContext(connection) as two:
         result = [assignment_dto(row) for row in list_assignments(teacher, group.id)]
     assert len(one) == len(two) == 2
     assert result[1]['progress'] == {'students': 3, 'completed': 0, 'inProgress': 0}
+
+    # El resumen del listado suma oportunidades de persona y caso, sin contar ensayos ni invitados.
+    client.force_authenticate(teacher)
+    with CaptureQueriesContext(connection) as first:
+        response = client.get('/api/grupos')
+    assert response.data['data'][0]['resumenCasos'] == {'asignados': 2, 'terminados': 1, 'oportunidades': 6}
+    second_group = Grupo.objects.create(nombre='Otro', codigo='G6', profesor=teacher)
+    CaseAssignment.objects.create(grupo=second_group, case_version=caso_publicado, assigned_by=teacher)
+    with CaptureQueriesContext(connection) as second:
+        response = client.get('/api/grupos')
+    assert len(first) == len(second) == 3  # grupos, membresías y agregado de asignaciones
+    assert next(g for g in response.data['data'] if g['id'] == second_group.id)['resumenCasos'] == {'asignados': 1, 'terminados': 0, 'oportunidades': 0}
+    client.force_authenticate(admin)
+    assert next(g for g in client.get('/api/grupos').data['data'] if g['id'] == group.id)['resumenCasos']['asignados'] == 2
+    client.force_authenticate(other)
+    assert all(g['id'] != group.id for g in client.get('/api/grupos').data['data'])
+    client.force_authenticate(students[0])
+    assert client.get('/api/grupos').status_code == 403

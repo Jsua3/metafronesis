@@ -209,15 +209,9 @@ export class StaffDashboardComponent implements OnInit {
   }
   fecha(valor: string | null | undefined): string { if (!valor) return 'Fecha no disponible'; const d = new Date(valor); return Number.isNaN(d.getTime()) ? 'Fecha no disponible' : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(d); }
   fechaHora(valor: string | null | undefined): string { if (!valor) return 'Fecha no disponible'; const d = new Date(valor); return Number.isNaN(d.getTime()) ? 'Fecha no disponible' : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(d); }
-  /** Tras asignar un caso desde «Lo siguiente»: se vuelven a leer las asignaciones, sin esqueleto, para que la frase se actualice. */
+  /** Tras asignar desde «Lo siguiente», refresca también los resúmenes de las tarjetas. */
   refrescarAsignaciones(): void {
-    this.asignacionesApi.listAll().subscribe({
-      next: filas => {
-        this.todasAsignaciones.set(filas);
-        this.failedSources.update(s => { const n = new Set(s); n.delete('asignaciones'); return n; });
-      },
-      error: () => this.failedSources.update(s => new Set(s).add('asignaciones')),
-    });
+    this.reload();
   }
   irGrupos(): void { void this.router.navigateByUrl('/portal/grupos'); }
 }

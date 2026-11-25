@@ -10,6 +10,7 @@ import { Grupo, GrupoService } from '../../core/api/grupo.service';
 import { ReporteService } from '../../core/api/reporte.service';
 import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { NotificationService } from '../../core/notifications/notification.service';
+import { AuthService } from '../../core/auth/auth.service';
 import {
   CoberturaCategoria, EstudianteSimulacionReporte, HitoCobertura, ReporteGrupo, ReporteSimulacionGrupo,
 } from '../../core/models/reporte.model';
@@ -62,6 +63,7 @@ const COBERTURA_SIN_DATOS = 'Aún no hay datos suficientes para mostrarlo';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReporteGrupoComponent {
+  protected readonly auth = inject(AuthService);
   private readonly reporteService = inject(ReporteService);
   private readonly grupoService = inject(GrupoService);
   private readonly casosApi = inject(CaseCatalogApi);

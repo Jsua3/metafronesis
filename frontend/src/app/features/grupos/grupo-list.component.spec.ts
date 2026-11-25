@@ -491,6 +491,11 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
       expect(text(items()[1].querySelector('.gl-group__meta'))).toBe('0 estudiantes · 1 invitación pendiente');
     });
 
+    it('la lista muestra casos y avance aun sin abrir el grupo', async () => {
+      await render({ listar: () => of([{ ...grupoA, totalInvitados: 0, resumenCasos: { asignados: 2, terminados: 1, oportunidades: 6 } }, grupoB]) });
+      expect(text(items()[0].querySelector('.gl-group__meta'))).toContain('0 invitaciones pendientes · 2 casos asignados · 1 de 6 casos terminados por estudiantes');
+    });
+
     it('«Invitar estudiante» abre el formulario de correo en la pestaña; el resultado dice que la persona verá el grupo cuando acepte', async () => {
       await render();
       const invitar = [...host().querySelectorAll<HTMLButtonElement>('.gl-toolbar button')].find(b => text(b).includes('Invitar estudiante'))!;
@@ -503,6 +508,7 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
       component().confirmarAgregar();
       fixture.detectChanges();
       expect(component().mensajeEstudiante()).toBe('Si el correo es de un estudiante registrado, recibirá la invitación.');
+      expect(notify.success).toHaveBeenCalledWith('Si el correo es de un estudiante registrado, recibirá la invitación.');
       expect(text(host().querySelector('.gl-detail .gl-message'))).toContain('recibirá la invitación');
     });
   });

@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 import { apiErrorMessage } from '../../core/api/api-error.util';
 import { GrupoService } from '../../core/api/grupo.service';
@@ -40,12 +41,16 @@ function sumarHora(local: string): string {
  * (propio o del servidor) sale en su campo y recibe el foco. */
 @Component({
   selector: 'app-sesion-dialog',
-  imports: [UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
+  imports: [RouterLink, UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- BORRADOR: textos pendientes de Psicología (VD-23). -->
     <ui-dialog-frame [title]="titulo" description="Los estudiantes activos del grupo quedan convocados.">
       <form class="sd-form" novalidate [id]="formId" (submit)="enviar($event)">
+        @if (!actual) {
+          <!-- BORRADOR: texto pendiente de Psicología. -->
+          <p>¿Quieres que lo hagan a su ritmo? <a [routerLink]="grupoId() ? ['/portal/grupos', grupoId()] : ['/portal/grupos']" (click)="ref.close()">Asigna el caso al grupo</a>.</p>
+        }
         <ui-field label="Grupo" required [error]="errores().grupoId">
           <select uiControl name="grupoId" (change)="grupoId.set(leer($event))">
             <option value="">Elige un grupo</option>
@@ -99,7 +104,7 @@ export class SesionDialogComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
   private readonly notify = inject(NotificationService);
-  private readonly actual = this.data.modo === 'editar' ? this.data.sesion : null;
+  protected readonly actual = this.data.modo === 'editar' ? this.data.sesion : null;
 
   protected readonly formId = uniqueUiId('sd-form');
   // BORRADOR: textos pendientes de Psicología (VD-23).

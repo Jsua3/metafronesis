@@ -43,7 +43,9 @@ describe('Asignar desde el caso', () => {
     fixture.componentRef.setInput('titulo', 'Caso de prueba'); fixture.componentRef.setInput('compacto', true); fixture.detectChanges();
     const boton: HTMLButtonElement = fixture.nativeElement.querySelector('button');
     expect(boton.textContent?.trim()).toBe('Asignar');
-    expect(boton.getAttribute('aria-label')).toBe('Asignar «Caso de prueba» a un grupo');
+    // El nombre accesible empieza por el texto visible (WCAG 2.5.3).
+    expect(boton.getAttribute('aria-label')).toBe('Asignar a un grupo: «Caso de prueba»');
+    expect(boton.getAttribute('aria-label')!.startsWith(boton.textContent!.trim())).toBe(true);
     boton.click(); await fixture.whenStable();
     expect(open).toHaveBeenCalledWith(expect.anything(), { data: expect.objectContaining({ fixedCaseId: 7, title: 'Caso de prueba' }) });
   });

@@ -5,6 +5,7 @@ import { Subject, of, throwError } from 'rxjs';
 
 import { GrupoService } from '../../core/api/grupo.service';
 import { NotificationService } from '../../core/notifications/notification.service';
+import { provideRouter } from '@angular/router';
 import { SesionesApi } from '../../core/api/sesiones.api';
 import { SesionDetalle } from '../../core/models/sesion.model';
 import { SesionDialogComponent, SesionDialogData } from './sesion-dialog.component';
@@ -34,7 +35,7 @@ describe('SesionDialogComponent', () => {
     crear = vi.fn(() => respuestaCrear);
     await TestBed.configureTestingModule({
       imports: [SesionDialogComponent],
-      providers: [
+      providers: [provideRouter([]),
         { provide: DIALOG_DATA, useValue: data },
         { provide: DialogRef, useValue: { close } },
         { provide: SesionesApi, useValue: { casos: () => fuentes.casos ?? of(casos), crear, editar } },

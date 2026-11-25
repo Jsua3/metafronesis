@@ -7,8 +7,9 @@
   @if (state() !== 'empty') { <button ui-button uiHerramientaAcciones type="button" icon="add" (click)="nuevoGrupo()">Nuevo grupo</button> }
 </ui-cabecera-ilustrada>
 @if (grupoActivo(); as abierto) {
+  <!-- BORRADOR: texto pendiente de Psicología. -->
   <ui-page-header class="gl-cab gl-cab--detalle" [class.gl-cab--con-detalle]="!!grupoId()"
-    eyebrow="Grupo" [title]="abierto.nombre" volverA="/portal/grupos" volverEtiqueta="Todos los grupos" />
+    eyebrow="Grupo" [title]="abierto.nombre" description="Invita estudiantes y asigna casos para que los hagan a su ritmo." volverA="/portal/grupos" volverEtiqueta="Todos los grupos" />
 }
 
 <p class="ds-sr-only" role="status">{{ statusText() }}</p>
@@ -145,7 +146,7 @@
 
 <ng-template uiTab="casos" label="Casos asignados">
               <app-group-assignments [grupoId]="grupo.id" [cases]="casosDisponibles()" [casesStatus]="casosEstado()" [solicitudAsignar]="solicitudAsignar()"
-                (assignedChange)="casosAsignadosTotal.set($event)" (retryCases)="cargarCasos()" (solicitudAtendida)="solicitudAsignar.set(0)" />
+                (assignedChange)="casosAsignadosTotal.set($event); cargar(true)" (retryCases)="cargarCasos()" (solicitudAtendida)="solicitudAsignar.set(0)" />
             </ng-template>
 
             <ng-template uiTab="invitaciones" [label]="etiquetaInvitaciones()">

@@ -51,6 +51,8 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
         <div class="modulo modulo-principal ds-motion">
           @for (item of navItems(); track item.id) {
             <a class="nav-enlace ds-motion" [class.control-plegable]="folds(item)" [routerLink]="item.route"
+              [attr.title]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null" [attr.aria-description]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null"
+              [attr.data-ayuda]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null"
               routerLinkActive="nav-enlace--activo" ariaCurrentWhenActive="page">{{ item.label }}@if (cuenta(item.id); as n) {<span
                 class="nav-enlace__cuenta" aria-hidden="true">{{ insignia(n) }}</span><span class="ds-sr-only">{{ insigniaAccesible(n) }}</span>}</a>
           }
@@ -84,6 +86,10 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
     </main>
   `,
   styles: [`
+    /* BORRADOR: textos pendientes de Psicología. Ayuda al pasar o enfocar cada entrada. */
+    .nav-enlace { position: relative; }
+    .nav-enlace[data-ayuda]::after { content: attr(data-ayuda); display: none; position: absolute; top: calc(100% + 0.4rem); left: 0; z-index: 10; width: max-content; max-width: 18rem; padding: 0.55rem 0.75rem; white-space: normal; color: var(--ds-text-1); background: var(--ds-surface-1); border: 1px solid var(--ds-border); border-radius: var(--ds-radius-md); font-weight: normal; }
+    .nav-enlace[data-ayuda]:hover::after, .nav-enlace[data-ayuda]:focus-visible::after { display: block; }
     /* La barra es fija: el contenido arranca bajo ella. --l-alto-barra (_materiales.scss) es la píldora más su caída
        de 6 px en escritorio y, en móvil, la banda de arriba (_portal.scss la redefine). El canal lateral es el de la
        portada: 16 px en el teléfono. */
@@ -107,7 +113,7 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
   `],
 })
 export class ShellComponent {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly tema = inject(TemaService);
   private readonly insignias = inject(NavBadgesService);
@@ -156,9 +162,9 @@ export class ShellComponent {
     return this.insignias.cuentas()[id] ?? 0;
   }
 
-  private toTab({ id, label, etiquetaCorta, icon, route }: NavItem): BottomTab {
+  private toTab({ id, label, etiquetaCorta, icon, route, descripcion }: NavItem): BottomTab {
     const cuenta = this.cuenta(id);
-    return { id, label, icon, route, ...(etiquetaCorta ? { etiquetaCorta } : {}), ...(cuenta ? { cuenta } : {}) };
+    return { id, label, icon, route, ...(this.auth.currentUser()?.role === 'PROFESOR' && descripcion ? { descripcion } : {}), ...(etiquetaCorta ? { etiquetaCorta } : {}), ...(cuenta ? { cuenta } : {}) };
   }
 
   /** El destino es secundario para el rol actual: se pliega al desplazarse (D3). */

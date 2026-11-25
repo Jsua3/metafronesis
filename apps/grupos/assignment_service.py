@@ -206,8 +206,8 @@ def create_assignment(actor, payload):
         ) from None
 
 
-def list_assignments(actor, group_id=None, case_version_id=None):
-    """Las asignaciones que el actor puede listar: las de un grupo suyo (el ADMIN, todas)."""
+def assignments_with_progress():
+    """Consulta reutilizable para contar personas por asignación sin consultas por fila."""
     # Una sola consulta para todas las asignaciones: los EXISTS cuentan personas, no intentos.
     # Si alguien terminó y después volvió a empezar, prevalece «terminó».
     attempts = SimulationAttempt.objects.filter(
@@ -221,7 +221,12 @@ def list_assignments(actor, group_id=None, case_version_id=None):
                   in_progress=Count("estudiante_id", filter=Q(done=False, ongoing=True)))
         .annotate(result=JSONObject(students="total", completed="completed", inProgress="in_progress"))
         .values("result")[:1])
-    queryset = CaseAssignment.objects.select_related("grupo", "case_version__simulation_case").annotate(progress=Subquery(members))
+    return CaseAssignment.objects.select_related("grupo", "case_version__simulation_case").annotate(progress=Subquery(members))
+
+
+def list_assignments(actor, group_id=None, case_version_id=None):
+    """Las asignaciones que el actor puede listar: las de un grupo suyo (el ADMIN, todas)."""
+    queryset = assignments_with_progress()
     if group_id is not None:
         grupo = Grupo.objects.filter(pk=group_id).first()
         if grupo is None or not policies.can(actor, "assignment", "list", owner_id=grupo.profesor_id):

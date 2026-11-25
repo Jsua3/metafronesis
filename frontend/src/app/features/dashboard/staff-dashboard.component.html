@@ -73,10 +73,19 @@
       } @else if (grupos().length) {
         <div class="rejilla">
           @for (vista of grupos(); track vista.grupo.id) {
-            <article class="panel">
-              <div>
+            <article class="panel grupo-inicio">
+              <div class="acciones grupo-inicio__acciones">
+                <a ui-button variant="secondary" [routerLink]="['/portal/grupos', vista.grupo.id]">Ver grupo</a>
+                <a ui-button variant="ghost" routerLink="/portal/reportes" [queryParams]="{ grupo: vista.grupo.id, caseVersionId: vista.asignaciones?.[0]?.caseVersionId }">Ver reporte</a>
+              </div>
+              <div class="grupo-inicio__cabecera">
                 <h3><a class="nombre-grupo" [routerLink]="['/portal/grupos', vista.grupo.id]">{{ vista.grupo.nombre }}</a></h3>
                 <p>{{ cantidad(vista.grupo.totalEstudiantes, 'estudiante', 'estudiantes') }}</p>
+                <!-- BORRADOR: texto pendiente de Psicología. -->
+                <p>{{ cantidad(vista.grupo.totalInvitados ?? 0, 'invitación pendiente', 'invitaciones pendientes') }}</p>
+                @if (vista.grupo.resumenCasos; as resumen) {
+                  <p>{{ cantidad(resumen.asignados, 'caso asignado', 'casos asignados') }}@if (resumen.oportunidades) { · {{ resumen.terminados }} de {{ resumen.oportunidades }} casos terminados por estudiantes } @else if (resumen.asignados) { · Aún sin estudiantes que puedan avanzar }</p>
+                }
               </div>
               @if (vista.asignaciones === null) {
                 <p>No pudimos cargar las asignaciones.</p>
@@ -96,11 +105,6 @@
                   }
                 </ul>
               }
-              <div class="acciones">
-                <a ui-button variant="secondary" [routerLink]="['/portal/grupos', vista.grupo.id]">Ver grupo</a>
-                <!-- El reporte se lee caso por caso: se abre en el primer caso asignado (sin asignaciones, pide elegirlo). -->
-                <a ui-button variant="ghost" routerLink="/portal/reportes" [queryParams]="{ grupo: vista.grupo.id, caseVersionId: vista.asignaciones?.[0]?.caseVersionId }">Ver reporte</a>
-              </div>
             </article>
           }
         </div>

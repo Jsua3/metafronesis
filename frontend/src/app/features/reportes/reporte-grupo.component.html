@@ -5,6 +5,13 @@
   title="Reportes por grupo"
   description="Cómo le fue al grupo en un caso: intentos, hitos y decisiones. Sin puntajes por persona." />
 
+<!-- BORRADOR: texto pendiente de Psicología. -->
+@if (auth.hasRole('PROFESOR')) {
+  @if (selectedGroup(); as grupo) {
+    <p><a [routerLink]="['/portal/grupos', grupo.id]">Ver grupo {{ grupo.nombre }}</a></p>
+  }
+}
+
 <p class="ds-sr-only" role="status">{{ statusText() }}</p>
 
 <!-- El corte es la barra de filtros del panel (como en un tablero de datos): una fila con grupo, caso y acciones. -->

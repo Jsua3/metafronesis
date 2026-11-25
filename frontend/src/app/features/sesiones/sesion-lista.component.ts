@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error.util';
@@ -65,7 +65,6 @@ export class SesionListaComponent {
   private readonly api = inject(SesionesApi);
   private readonly dialog = inject(UiDialog);
   private readonly notify = inject(NotificationService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly filtros = FILTROS;
@@ -100,7 +99,13 @@ export class SesionListaComponent {
   protected nueva(): void {
     const ref = this.dialog.open<SesionDialogResult | undefined, SesionDialogData>(SesionDialogComponent, { data: { modo: 'crear' } });
     ref.closed.subscribe(resultado => {
-      if (resultado) void this.router.navigate(['/portal/sesiones', resultado.id]);
+      if (resultado) {
+        // BORRADOR: texto pendiente de Psicología.
+        this.notify.success('Sesión creada.');
+        this.sesiones.update(filas => [resultado, ...filas.filter(fila => fila.id !== resultado.id)]);
+        this.estado.set('ready');
+        this.filtro.set('proximas');
+      }
     });
   }
 }
