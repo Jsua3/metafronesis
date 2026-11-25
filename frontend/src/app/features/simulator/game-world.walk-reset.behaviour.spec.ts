@@ -46,6 +46,21 @@ describe('DataDrivenWorldScene.setWorld: la caminata del ratón no cruza de mapa
     expect(scene.walkGoal).toBeNull();
   });
 
+  it('un refresco de la misma sala no emite una cercanía vacía intermedia', () => {
+    const primary = vi.fn();
+    const secondary = vi.fn();
+    const scene = new DataDrivenWorldScene({ reduceMotion: false, onProximity: primary, onProximityAlso: secondary } as never) as unknown as SceneProbe;
+    scene.ready = false;
+    scene.setWorld(world('sala-a'));
+    primary.mockClear(); secondary.mockClear();
+    scene.setWorld(world('sala-a'));
+    expect(primary).not.toHaveBeenCalled();
+    expect(secondary).not.toHaveBeenCalled();
+    scene.setWorld(world('sala-b'));
+    expect(primary).toHaveBeenCalledWith(null);
+    expect(secondary).toHaveBeenCalledWith(null);
+  });
+
   it('un refresco del MISMO mapa conserva la caminata en curso', () => {
     const scene = crearEscena();
     scene.setWorld(world('sala-a'));

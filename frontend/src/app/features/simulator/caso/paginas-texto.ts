@@ -12,19 +12,28 @@ export function frasesDe(texto: string): string[] {
 }
 
 /**
- * Agrupa las frases en páginas: cada página lleva tantas frases enteras como quepan. Una frase que no cabe ni sola va sola
- * en su página (no se corta a media frase). Sin nada que partir, devuelve el texto entero como única página.
+ * Agrupa las frases en páginas: cada página lleva tantas frases enteras como quepan. Una frase que no cabe sola se divide por palabras
+ * para que también se lea en páginas cortas. Sin nada que partir, devuelve el texto entero como única página.
  */
 export function partirEnPaginas(texto: string, cabe: (pagina: string) => boolean): string[] {
   const paginas: string[] = [];
   let actual = '';
   for (const frase of frasesDe(texto)) {
-    const prueba = actual + frase;
-    if (actual.trim() && !cabe(prueba.trim())) {
+    if (actual.trim() && !cabe((actual + frase).trim())) {
       paginas.push(actual.trim());
-      actual = frase;
+      actual = '';
+    }
+    // Una frase muy larga también debe caber: se parte por palabras, sin modificar su contenido.
+    if (!cabe(frase.trim())) {
+      for (const palabra of frase.match(/\S+\s*/g) ?? []) {
+        if (actual.trim() && !cabe((actual + palabra).trim())) {
+          paginas.push(actual.trim());
+          actual = '';
+        }
+        actual += palabra;
+      }
     } else {
-      actual = prueba;
+      actual += frase;
     }
   }
   if (actual.trim()) paginas.push(actual.trim());

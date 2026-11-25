@@ -160,7 +160,7 @@ describe('DialoguePanelComponent - integración renderizada', () => {
 
       // DOM renderizado: no hay nada que saltar y el control de avance ya está disponible.
       expect(dialog.querySelector('[aria-label="Saltar animación de texto"]')).toBeNull();
-      expect(dialog.querySelector('[aria-label="Mostrar siguiente intervención"]')).not.toBeNull();
+      expect(dialog.querySelector('button.close-btn')?.textContent).toContain('Continuar');
       // La máquina de escribir no dejó ningún temporizador programado.
       expect(vi.getTimerCount()).toBe(0);
 
@@ -721,15 +721,11 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
       expect(toolBtn.disabled).toBe(false);   // sigue enfocable
       expect(decisionBtn.hasAttribute('aria-disabled')).toBe(false);
       const chip = toolBtn.querySelector('.choice-btn__hint')!;
-      expect(text(chip)).toBe('Aún no tienes esta herramienta. Recógela en la sala.');
-      // WCAG 2.5.3 (Axe label-content-name-mismatch, nivel A): el texto visible —el aviso también— forma parte del nombre
-      // accesible. Como ya está en el nombre, no se repite como descripción (un lector lo leería dos veces).
-      expect(toolBtn.getAttribute('aria-label')).toBe('A. Aplicar el material de apoyo. Aún no tienes esta herramienta. Recógela en la sala.');
-      expect(toolBtn.hasAttribute('aria-describedby')).toBe(false);
-      expect(chip.hasAttribute('aria-hidden')).toBe(false);
-      // Axe junta el texto visible de los hijos TAL CUAL: sin un espacio entre la etiqueta y el aviso queda «apoyoAún» y no
-      // coincide con el nombre accesible (el e2e de las pistas lo midió en el navegador).
-      expect(toolBtn.textContent).toMatch(/apoyo\s+Aún/);
+      expect(text(chip)).toBe('Necesitas PAP. Busca esta herramienta al explorar las salas.');
+      expect(toolBtn.getAttribute('aria-label')).toBe('A. Aplicar el material de apoyo');
+      expect(toolBtn.getAttribute('aria-describedby')).toBe(chip.id);
+      expect(chip.getAttribute('aria-hidden')).toBe('true'); // descrito por referencia, sin duplicarlo en el nombre
+      expect(toolBtn.textContent).toMatch(/apoyo\s+Necesitas/);
       // Y lo mismo entre la letra y la etiqueta, en cualquier opción: «BEscuchar» tampoco coincide con «B. Escuchar».
       // (Bloque I1: las opciones se nombran A a D; la letra se dibuja en pixel art y sigue como texto al principio.)
       expect(toolBtn.textContent).toMatch(/^\s*A\s+Aplicar/);
@@ -745,6 +741,20 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('describe la herramienta y solo indica la sala cuando el mundo contiene el objeto', () => {
+    writeInputSignal(component.world, { map: { title: 'Sala de espera' }, tools: [{ code: 'PAP', label: 'Kit PAP' }],
+      objects: [{ type: 'TOOL', toolCode: 'PAP', label: 'Kit PAP' }] } as any);
+    render(dialogueWith([tool('PAP', 'Aplicar apoyo', { toolMissing: true })]));
+    const button = host().querySelector<HTMLButtonElement>('.choice-btn')!;
+    const hint = host().querySelector<HTMLElement>('.choice-btn__hint')!;
+    expect(hint.textContent).toContain('Necesitas Kit PAP. La encuentras en Sala de espera.');
+    expect(button.getAttribute('aria-describedby')).toBe(hint.id);
+    writeInputSignal(component.world, { map: { title: 'Otra sala' }, tools: [{ code: 'PAP', label: 'Kit PAP' }], objects: [] } as any);
+    fixture.detectChanges();
+    expect(hint.textContent).toContain('Busca esta herramienta al explorar las salas.');
+    expect(hint.textContent).not.toContain('Otra sala');
   });
 
   it('con la herramienta en la mochila la opción es activable sin chip', () => {
@@ -788,7 +798,7 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     render(dialogueWith([decision(1, 'Escuchar'), tool('PAP', 'Aplicar material')], { stale: true }));
     expect(host().querySelector('.choices')).toBeNull();
     expect(host().querySelector('.choice-btn')).toBeNull();
-    expect(text(host().querySelector('.stale-note'))).toBe('Esta conversación corresponde a otro momento del caso.');
+    expect(text(host().querySelector('.stale-note'))).toContain('Vuelve al mapa');
     const advance = Array.from(host().querySelectorAll('button.close-btn')).map(b => text(b));
     expect(advance).toEqual(['Continuar ▶']);
     // Enter cierra (no hay nada que elegir) y los dígitos no eligen.
@@ -800,7 +810,8 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  it('si la conversación stale ya trae la frase como línea, no se repite como nota', () => {
+  it('una conversación antigua ofrece la indicación actual incluso con un texto heredado', () => {
+    writeInputSignal(component.nextStep, 'Habla con Vigilante');
     render(dialogueWith([], {
       stale: true,
       lines: [
@@ -808,7 +819,8 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
         { order: 2, speakerName: 'Sistema', text: 'Esta conversación corresponde a otro momento del caso.', emotion: 'neutral' },
       ],
     }));
-    expect(host().querySelector('.stale-note')).toBeNull();
+    expect(text(host().querySelector('.stale-note'))).toContain('Vuelve al mapa');
+    expect(text(host().querySelector('.stale-note'))).toContain('Ahora te toca: Habla con Vigilante');
   });
 
   it('la cabecera anuncia «Decisión» solo si alguna opción registra una decisión', () => {
@@ -827,7 +839,8 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     render(dialogueWith([]));
     expect(text(host().querySelector('.keyboard-hint'))).toBe('Enter: continuar · Esc: volver al mapa');
     expect(source).toMatch(/\.keyboard-hint \{ display: none;/);
-    expect(source).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.keyboard-hint \{ display: block; \}/);
+    expect(source).not.toMatch(/\.strip-body > \.keyboard-hint:last-child \{ display: none; \}/);
+    expect(source).toContain('font-size: max(14px, .9em)');
   });
 });
 
@@ -940,12 +953,12 @@ describe('DialoguePanelComponent - «Continuar» y sonido de opciones (T4.7)', (
     // Línea 1 de 2, todavía escribiéndose: «Saltar».
     render({ ...MULTI_LINE_DIALOGUE, choices: [] });
     expectPrimary();
-    expect(advanceButtons()[0].getAttribute('aria-label')).toBe('Saltar animación de texto');
+    expect(advanceButtons()[0].textContent).toContain('Continuar');
     // Línea 1 completa: «Siguiente».
     component.skipTypewriter();
     fixture.detectChanges();
     expectPrimary();
-    expect(advanceButtons()[0].getAttribute('aria-label')).toBe('Mostrar siguiente intervención');
+    expect(advanceButtons()[0].textContent).toContain('Continuar');
     // Última línea completa y sin opciones: «Continuar».
     component.advanceLine();
     component.skipTypewriter();
@@ -1664,7 +1677,7 @@ describe('DialoguePanelComponent - el aviso breve va dentro del cuadro', () => {
   it('la pantalla no pinta el aviso suelto mientras hay un diálogo sobre el mundo: se lo pasa al cuadro', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
     expect(pantalla).toContain("@if (softNotice() && viewMode() !== 'dialogue-cinematic') {");
-    expect(pantalla).toMatch(/<app-dialogue-panel class="dialogue-cinematic"[^>]*\[avisoBreve\]="softNotice\(\)"/);
+    expect(pantalla).toMatch(/<app-dialogue-panel class="dialogue-cinematic"[^>]*\[avisoBreve\]="softNotice\(\) \+/);
   });
 });
 
@@ -1700,11 +1713,11 @@ describe('DialoguePanelComponent - páginas solo cuando no cabe (V6, living-worl
   it('la sonda mide el texto sin el alto mínimo del párrafo y la regla es paginarSiNoCabe', () => {
     // Con el min-height de 4,35em en la sonda ninguna página cabía y cada frase salía sola (tres páginas para 80 caracteres).
     expect(source).toMatch(/sonda\.style\.cssText = `[^`]*min-height:0;/);
-    expect(source).toContain('paginarSiNoCabe(text, parrafo.offsetHeight - culpa, renglon,');
+    expect(source).toContain('paginarSiNoCabe(text, Math.min(parrafo.offsetHeight - culpa, 6 * renglon), renglon,');
   });
 
   it('solo resta lo que desborda por el texto: mide la banda con el párrafo plegado', () => {
     expect(source).toContain("parrafo.style.cssText += ';height:0;min-height:0;overflow:hidden';");
-    expect(source).toMatch(/const culpa = sobra - desborde\(\);[\s\S]{0,80}if \(culpa <= 1\) return;/);
+    expect(source).toContain('const culpa = sobra - desborde();');
   });
 });

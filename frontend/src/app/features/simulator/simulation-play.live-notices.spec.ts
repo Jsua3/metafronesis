@@ -122,7 +122,13 @@ describe('SimulationPlayComponent: anuncios y avisos (F6-12)', () => {
       fixture.detectChanges();
       settle();
       const button = root().querySelector<HTMLButtonElement>('button.context-bar__interaction')!;
-      expect(button.getAttribute('aria-label')).toBe('Interactuar: Hablar con Enfermera de urgencias');
+      // El nombre sale del contenido (texto visible + «Interactuar:» solo para lectores): sin aria-label que
+      // contradiga lo que se ve (WCAG 2.5.3, axe label-content-name-mismatch en la medición del 25 de noviembre).
+      expect(button.hasAttribute('aria-label')).toBe(false);
+      const nombre = button.cloneNode(true) as HTMLElement;
+      nombre.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+      expect(nombre.textContent!.replace(/\s+/g, ' ').trim()).toBe('Interactuar: Hablar con Enfermera de urgencias');
+      expect(button.querySelector('kbd')?.getAttribute('aria-hidden')).toBe('true');
       expect(region('polite').textContent).toBe('Interactuar: Hablar con Enfermera de urgencias');
 
       component.nearbyInteraction.set(null);

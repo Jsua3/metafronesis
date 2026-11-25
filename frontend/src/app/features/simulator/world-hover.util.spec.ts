@@ -69,3 +69,18 @@ describe('world-hover: solo lo que el jugador ya podría saber (VD-19)', () => {
     expect(pickHoverTarget(pointerOn(300, 200), [hidden], new Set(['otra-cosa']))).toBeNull();
   });
 });
+
+describe('world-hover: el toque del dedo (P9)', () => {
+  const nurse = actor('npc:enfermera', 300, 200, 60);
+
+  it('con margen de toque se elige lo que un cursor fallaría por poco; sin margen, no', () => {
+    const cerca = { x: 300 + HOVER_HIT.halfWidth + 8, y: 200 };
+    expect(pickHoverTarget(cerca, [nurse], NONE)).toBeNull();
+    expect(pickHoverTarget(cerca, [nurse], NONE, 14)).toBe('npc:enfermera');
+  });
+
+  it('el margen no vuelve elegible lo que no se podía saber: lejos y sin examinar sigue sin elegirse', () => {
+    const lejos = actor('npc:oculta', 300, 200, REVEAL_RADIUS + 1);
+    expect(pickHoverTarget({ x: 300, y: 200 }, [lejos], NONE, 14)).toBeNull();
+  });
+});
