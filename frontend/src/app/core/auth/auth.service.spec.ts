@@ -41,7 +41,7 @@ describe('AuthService: cambio de contraseña obligatorio (E2-9)', () => {
   const summary = (mustChangePassword: boolean) =>
     ({ id: 7, nombre: 'Ana', apellido: 'Ríos', email: 'ana@cue.edu.co', role: 'ESTUDIANTE', mustChangePassword });
 
-  it('al cerrar sesi?n elimina todos los respaldos del editor', () => {
+  it('al cerrar sesión elimina todos los respaldos del editor', () => {
     sessionStorage.setItem('autoria-respuestas:7:41:escena', 'privado');
     sessionStorage.setItem('otra-clave', 'conservar');
     vi.spyOn(service, 'redirectToLogin').mockImplementation(() => {});

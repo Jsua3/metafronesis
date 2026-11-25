@@ -377,7 +377,7 @@ it('ubica la marca de IA y el texto largo cuando llegan sus identificadores', as
 
 
 describe('rutas de relleno de la compuerta', () => {
-  it('lleva a la narraci?n y a cada l?nea concreta', () => {
+  it('lleva a la narración y a cada línea concreta', () => {
     const caso = structuredClone(CASO_HOSPITAL);
     const escena = caso.escenas[0];
     escena.id = '7';

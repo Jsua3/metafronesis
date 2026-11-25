@@ -81,7 +81,7 @@ describe('S2 · no se pierde lo escrito', () => {
 });
 
 describe('S1 · salir sin perder nada', () => {
-  it('guarda el texto en la sesi?n del usuario y no en almacenamiento persistente', async () => {
+  it('guarda el texto en la sesión del usuario y no en almacenamiento persistente', async () => {
     sessionStorage.clear();
     const { store } = await abrir();
     const origen = escenaDe(store, 'consultorio');
@@ -124,7 +124,7 @@ describe('S1 · salir sin perder nada', () => {
     await store.sincronizado();
   });
 
-  it('a?sla por usuario y elimina los respaldos vencidos', async () => {
+  it('aísla por usuario y elimina los respaldos vencidos', async () => {
     const { store } = await abrir();
     const origen = escenaDe(store, 'consultorio');
     const r = store.agregarRespuesta(origen.id);
