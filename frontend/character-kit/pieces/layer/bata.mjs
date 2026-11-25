@@ -72,6 +72,110 @@ const PORTRAIT = [
   },
 ];
 
+/** Complexiones con cadera de 15 px (A y B): los faldones de arriba les quedan 1 px más anchos. */
+const AB = ['a', 'b'];
+
+/**
+ * Complexión C: cintura más recogida y cadera de 19 px. La bata cae recta del
+ * busto a la cadera (rellena el hueco de la cintura entre brazo y torso) y el
+ * faldón abre 2 px más que el de A para tapar la cadera.
+ */
+const C = ['c'];
+
+const C_WAIST_FRONT = { anchor: 'T', at: [16, 32], mode: 'cover', complexions: C, legend: LEGEND, grid: `
+  LL.............LL
+  LL.............LL
+  LL.............LL
+  LL.............LL
+  L...............L
+  L...............L
+` };
+
+const C_SKIRT_FRONT = `
+  LLLLLLLLLXLLLLLLLLL
+  LLLLLLLLLXLLLLLLLLL
+  LKKKLLLLLXLLLLLKKKL
+  LLLLLLLLLXLLLLLLLLL
+  LLLLLLLLLXLLLLLLLLL
+  LLLLLLLLLXLLLLLLLLL
+  LLLLLLLLX.XLLLLLLLL
+  LLLLLLLLX.XLLLLLLLL
+  LLLLLLLLX.XLLLLLLLL
+  .LLLLLLLX.XLLLLLLL.
+`;
+
+const C_SKIRT_BACK = `
+  LLLLLLLLLLLLLLLLLLL
+  LLLLLLLLLLLLLLLLLLL
+  LLLLLLLLLLLLLLLLLLL
+  LLLLLLLLLLLLLLLLLLL
+  LLLLLLLLLLLLLLLLLLL
+  LLLLLLLLLLLLLLLLLLL
+  LLLLLLLLLXLLLLLLLLL
+  LLLLLLLLLXLLLLLLLLL
+  LLLLLLLLLXLLLLLLLLL
+  .LLLLLLLLXLLLLLLLL.
+`;
+
+/** Perfil de C: el busto llega a x = 17; de ahí la bata cae recta hasta el faldón. */
+const C_SIDE = [
+  {
+    anchor: 'T', at: [17, 23], mode: 'repaint', complexions: C, legend: LEGEND,
+    grid: `
+      ....LLLLLLLLL
+      ...XLLLLLLLLL
+      ..XLLLLLLLLLL
+      XLLLLLLLLLLLL
+      XLLLLLLLLLLLL
+      XLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+      LLLLLLLLLLLLL
+    `,
+  },
+  { anchor: 'T', at: [17, 29], mode: 'cover', complexions: C, legend: LEGEND, grid: `
+      X..
+      XL.
+      XLL
+      XLL
+      XLL
+      XLL
+      XLL
+      XLL
+      XLL
+    ` },
+  {
+    anchor: 'P', at: [17, 38], mode: 'cover', complexions: C, legend: LEGEND,
+    grid: `
+      XLLLLLLLLLLLLL
+      XLLLLLLLLLLLLL
+      XLLKKKLLLLLLLL
+      XLLLLLLLLLLLLL
+      XLLLLLLLLLLLLL
+      XLLLLLLLLLLLLL
+      XLLLLLLLLLLLLL
+      XLLLLLLLLLLLLL
+      XLLLLLLLLLLLLL
+      .XLLLLLLLLLLL.
+    `,
+  },
+];
+
+/** Tres cuartos de C: la cintura de 12 px deja un hueco a cada lado; la bata lo cubre. */
+const C_WAIST_QUARTER = { anchor: 'T', at: [17, 31], mode: 'cover', complexions: C, legend: LEGEND, grid: `
+  L............L
+  L............L
+  L............L
+  L............L
+  L............L
+` };
+
 export default {
   id: 'bata',
   kind: 'layer',
@@ -81,6 +185,8 @@ export default {
   edges: [{ labels: ['b', 'B'], edge: 'bottom', tone: 2 }],
   views: {
     ...DIAGONAL,
+    'down-left': [...DIAGONAL['down-left'], C_WAIST_QUARTER],
+    'up-left': [...DIAGONAL['up-left'], C_WAIST_QUARTER],
     down: [
       { anchor: 'T', at: [16, 23], mode: 'repaint', legend: LEGEND, grid: FRONT_BODY },
       {
@@ -91,12 +197,16 @@ export default {
           ..t..
         `,
       },
-      { anchor: 'P', at: [16, 38], mode: 'cover', legend: LEGEND, grid: FRONT_SKIRT },
+      { anchor: 'P', at: [16, 38], mode: 'cover', complexions: AB, legend: LEGEND, grid: FRONT_SKIRT },
+      C_WAIST_FRONT,
+      { anchor: 'P', at: [15, 38], mode: 'cover', complexions: C, legend: LEGEND, grid: C_SKIRT_FRONT },
     ],
     up: [
       { anchor: 'T', at: [16, 23], mode: 'repaint', legend: LEGEND, grid: gridFrom(17, 15, () => 'L') },
+      C_WAIST_FRONT,
+      { anchor: 'P', at: [15, 38], mode: 'cover', complexions: C, legend: LEGEND, grid: C_SKIRT_BACK },
       {
-        anchor: 'P', at: [16, 38], mode: 'cover', legend: LEGEND,
+        anchor: 'P', at: [16, 38], mode: 'cover', complexions: AB, legend: LEGEND,
         grid: `
           LLLLLLLLLLLLLLLLL
           LLLLLLLLLLLLLLLLL
@@ -112,8 +222,9 @@ export default {
       },
     ],
     left: [
+      ...C_SIDE,
       {
-        anchor: 'T', at: [18, 23], mode: 'repaint', legend: LEGEND,
+        anchor: 'T', at: [18, 23], mode: 'repaint', complexions: AB, legend: LEGEND,
         grid: `
           ...LLLLLLLLL
           ..XLLLLLLLLL
@@ -140,7 +251,7 @@ export default {
         `,
       },
       {
-        anchor: 'P', at: [18, 38], mode: 'cover', legend: LEGEND,
+        anchor: 'P', at: [18, 38], mode: 'cover', complexions: AB, legend: LEGEND,
         grid: `
           .XLLLLLLLLLLL
           .XLLLLLLLLLLL
