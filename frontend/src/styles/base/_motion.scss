@@ -1,9 +1,5 @@
-// «Movimiento reducido» (plan visual §2.7, F1-6). Los componentes del lenguaje nuevo degradan por tokens: todas
-// las duraciones valen 0,01 ms salvo --ds-dur-fade (el fundido corto de opacidad sigue). Esos componentes llevan
-// la clase .ds-motion en su host. Todo lo demás —también lo que se proyecta DENTRO de un .ds-motion— conserva la
-// red de seguridad de siempre (1 ms, una iteración, sin scroll suave): es la misma regla que replica el
-// interruptor del juego (.game-container--reduce-motion). Se retira en F9-4, cuando ui:lint no cuente
-// duraciones literales.
+// Red de seguridad del portal: sin desplazamientos, giros ni escalas animadas, ni demoras.
+// El contenido del juego conserva su propio tratamiento de movimiento reducido.
 @media (prefers-reduced-motion: reduce) {
   :root {
     --ds-dur-press: 0.01ms;
@@ -16,12 +12,18 @@
     --ds-dur-revelar: 0.01ms;
   }
 
-  :where(:not(.ds-motion)),
-  :where(:not(.ds-motion))::before,
-  :where(:not(.ds-motion))::after {
-    animation-duration: 1ms !important;
+  :where(:not(.game-container, .game-container *)),
+  :where(:not(.game-container, .game-container *))::before,
+  :where(:not(.game-container, .game-container *))::after {
+    animation-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* Los pseudo-elementos de View Transition no son descendientes del documento. */
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+    animation: none !important;
   }
 }

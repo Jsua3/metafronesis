@@ -1,5 +1,7 @@
 import { NgStyle } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
+
+import { reducedMotionQuery } from '../../../core/a11y/reduced-motion';
 
 import { CharacterVisual } from './character-visual.resolver';
 import { PortraitState, SHEETS, SheetId, ViewId } from './kit-engine';
@@ -32,19 +34,22 @@ export class KitFigureComponent {
   readonly label = input('');
 
   private readonly col = signal(0);
-  private readonly reduceMotion = typeof window !== 'undefined'
-    && (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false);
+  private readonly motionQuery = reducedMotionQuery();
+  private readonly reduceMotion = signal(this.motionQuery?.matches ?? false);
 
   readonly style = computed(() => figureStyle(this.visual(), {
     view: this.view(), sheet: this.sheet(), col: this.col(), scale: this.scale(), portrait: this.portrait(),
   }));
 
   constructor() {
+    const actualizarMovimiento = () => this.reduceMotion.set(this.motionQuery?.matches ?? false);
+    this.motionQuery?.addEventListener('change', actualizarMovimiento);
+    inject(DestroyRef).onDestroy(() => this.motionQuery?.removeEventListener('change', actualizarMovimiento));
     // Reposo o caminata en bucle a su fps; con movimiento reducido, el cuadro 0.
     effect(onCleanup => {
       const sheet = this.sheet();
       this.col.set(0);
-      if (!this.animated() || this.reduceMotion || this.portrait() || !this.visual()) return;
+      if (!this.animated() || this.reduceMotion() || this.portrait() || !this.visual()) return;
       const { frames, fps } = SHEETS[sheet];
       const timer = setInterval(() => this.col.update(col => (col + 1) % frames), 1000 / fps);
       onCleanup(() => clearInterval(timer));

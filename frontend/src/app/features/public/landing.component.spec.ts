@@ -42,6 +42,23 @@ describe('LandingComponent', () => {
     await fixture.whenStable();
   });
 
+  it('pausa los videos cuando se activa reducir movimiento durante la visita', async () => {
+    const original = window.matchMedia;
+    const query = new EventTarget() as MediaQueryList;
+    Object.defineProperty(query, 'matches', { configurable: true, value: false });
+    window.matchMedia = () => query;
+    try {
+      const otra = TestBed.createComponent(LandingComponent);
+      await otra.whenStable();
+      expect(otra.componentInstance.videosPausados()).toBe(false);
+      Object.defineProperty(query, 'matches', { configurable: true, value: true });
+      query.dispatchEvent(new Event('change'));
+      await otra.whenStable();
+      expect(otra.componentInstance.videosPausados()).toBe(true);
+      otra.destroy();
+    } finally { window.matchMedia = original; }
+  });
+
   it('la cabecera es la barra pública compartida, con las anclas de esta página', () => {
     expect(host().querySelector('app-public-bar header.cromo')).not.toBeNull();
     expect(host().querySelectorAll('header.cromo .modulo-principal a.nav-enlace').length).toBeGreaterThan(0);
