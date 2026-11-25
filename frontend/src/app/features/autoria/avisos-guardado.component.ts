@@ -86,7 +86,7 @@ type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
     :host(.en-barra) { display: inline-flex; align-items: center; gap: 0.375rem; min-inline-size: 0; }
     .estado-guardado {
       display: inline-flex; align-items: center; gap: 0.375rem; margin: 0; min-block-size: 2.75rem;
-      color: var(--asb-cromo-tinta-tenue); font-size: var(--autoria-texto-14); font-weight: 600; line-height: 1.25rem; white-space: normal;
+      color: var(--asb-cromo-tinta-tenue); font-size: var(--autoria-texto-14); font-weight: 600; line-height: 1.25rem; white-space: nowrap;
     }
     /* La marca dice el estado con forma: punto lleno (guardado), anillo vacío (guardando), triángulo (falta algo). */
     .estado-guardado__marca { inline-size: 0.625rem; block-size: 0.625rem; border-radius: 50%; background: var(--ds-success); flex: none; }

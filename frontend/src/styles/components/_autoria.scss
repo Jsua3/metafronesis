@@ -195,7 +195,7 @@ app-autoria-shell .cromo .menu-agregar .ui-menu__trigger[aria-expanded='true'] {
 
   // Sin la marca, el nombre del caso abre la masa (antes se centraba y dejaba un hueco a su izquierda).
   app-autoria-shell .cromo .modulo-principal {
-    justify-self: start;
+    justify-self: stretch;
   }
 }
 

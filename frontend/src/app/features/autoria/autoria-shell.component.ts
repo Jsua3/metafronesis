@@ -249,7 +249,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
       margin: 0; padding: 0 0.625rem 0 0.25rem; max-inline-size: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       border-inline-end: 1px solid var(--l-filo-fuerte); font-weight: 700; color: var(--asb-cromo-tinta);
       /* Un nombre largo cede con puntos suspensivos antes de que el hilo se monte sobre las herramientas. */
-      flex: 1 0 12rem; min-inline-size: 12rem;
+      flex: 1 1 12rem; min-inline-size: 0;
     }
     @media (min-width: 64rem) { app-hilo-del-caso { flex: none; } }
     .contexto-editor { padding: 0 0.75rem; font-weight: 700; color: var(--asb-cromo-tinta); white-space: nowrap; }

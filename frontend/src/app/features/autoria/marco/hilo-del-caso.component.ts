@@ -36,7 +36,7 @@ export function cifraDeEtapa(a: AvanceEtapa): string {
   template: `
     <nav aria-label="Secciones del caso" class="hilo__nav">
       <ol class="hilo__lista">
-        @for (a of progreso.avance(); track a.etapa) {
+        @for (a of progreso.avance(); track a.etapa; let i = $index) {
           <li>
             <a class="hilo__etapa ds-motion" [routerLink]="rutas.a(a.ruta)" [attr.data-estado]="a.estado"
                [attr.data-accion]="accion[a.etapa]" [attr.aria-current]="progreso.etapaActual() === a.etapa ? 'page' : null"
@@ -45,6 +45,7 @@ export function cifraDeEtapa(a: AvanceEtapa): string {
                    visible pegado («Historia1») y lo daba por distinto. Empieza por el nombre visible (WCAG 2.5.3). -->
               <span class="solo-lector">{{ a.nombre + (cifraDeEtapa(a) ? ' ' + cifraDeEtapa(a) : '') + ', ' + textoDeEtapa(a) }}</span>
               <span class="hilo__marca marca-estado" [attr.data-estado]="a.estado" aria-hidden="true"></span>
+              <span class="hilo__numero" aria-hidden="true">{{ i + 1 }}</span>
               <span class="hilo__nombre" aria-hidden="true">{{ a.nombre }}</span>
               @if (cifraDeEtapa(a); as cifra) { <span class="hilo__cifra" aria-hidden="true">{{ cifra }}</span> }
             </a>
@@ -101,9 +102,8 @@ export function cifraDeEtapa(a: AvanceEtapa): string {
     /* Por debajo de 120rem (medido: a 1600 px los cinco nombres se montaban 100 px sobre las herramientas) el nombre
        cede y queda el número con su estado. */
     @media (min-width: 64rem) and (max-width: 119.999rem) {
-      .hilo__nombre { display: inline; }
-      /* La etapa en la que estás conserva su nombre: un número solo no dice dónde estoy. */
-      .hilo__etapa[aria-current='page'] .hilo__nombre { display: inline; }
+      .hilo__nombre { display: none; }
+      .hilo__numero { display: inline; }
       .hilo__etapa { gap: 0.25rem; padding-inline: 0.375rem; }
     }
     @media (max-width: 63.999rem) {

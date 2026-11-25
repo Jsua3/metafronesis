@@ -2,11 +2,32 @@ import { TestBed } from '@angular/core/testing';
 import { abrirEditor } from '../marco/marco.testing';
 import { ProgresoDelCaso } from '../marco/progreso.service';
 import { alPulsarProbar } from '../ensayo';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 describe('P4 · contrato visible del editor', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     document.querySelectorAll('body > [ng-version]').forEach(n => n.remove());
+  });
+
+  it('el título largo cede y las cinco etapas se compactan sin invadir las herramientas', async () => {
+    const { raiz, store, listo } = await abrirEditor('/portal/casos/41/editor');
+    const caso = structuredClone(store.caso()!);
+    caso.titulo = 'Violencia Familiar y Tentativa de Feminicidio — tres capítulos';
+    store.fijar(caso);
+    await listo();
+    expect(raiz.querySelector<HTMLElement>('.caso-actual')!.title).toBe(caso.titulo);
+    expect(raiz.querySelectorAll('.hilo__numero')).toHaveLength(5);
+    expect(raiz.querySelectorAll('.hilo__etapa[title]')).toHaveLength(5);
+    const leer = (ruta: string) => readFileSync(join(__dirname, ruta), 'utf8');
+    const shell = leer('../autoria-shell.component.ts');
+    const hilo = leer('../marco/hilo-del-caso.component.ts');
+    const barra = leer('../../../../styles/components/_autoria.scss');
+    expect(shell).toMatch(/flex: 1 1 12rem; min-inline-size: 0/);
+    expect(barra).toMatch(/grid-template-columns: minmax\(0, 1fr\) auto/);
+    expect(barra).toMatch(/justify-self: stretch/);
+    expect(hilo).toMatch(/max-width: 119\.999rem[\s\S]*?\.hilo__nombre \{ display: none; \}[\s\S]*?\.hilo__numero \{ display: inline; \}/);
   });
 
   it('barra, Evaluación y Enviar muestran el mismo total confirmado por servidor', async () => {

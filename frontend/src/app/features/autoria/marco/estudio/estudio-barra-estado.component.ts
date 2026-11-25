@@ -29,9 +29,13 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       font-size: var(--autoria-texto-14); line-height: 1.25rem; font-variant-numeric: tabular-nums; flex-wrap: nowrap;
     }
     .lado { display: flex; align-items: center; gap: 0.125rem; min-inline-size: 0; flex-wrap: nowrap; }
-    .lado--fin { flex: 0 1 auto; overflow-x: auto; white-space: nowrap; }
+    .lado:first-child { flex: 1 1 auto; }
+    .lado--fin { flex: 0 0 auto; white-space: nowrap; }
     .lado { white-space: nowrap; }
     :host ::ng-deep .est-siguiente { min-inline-size: 0; }
+    :host ::ng-deep .estado-donde, :host ::ng-deep .guardado-estado { flex: none; white-space: nowrap; }
+    @media (max-width: 90rem) { :host ::ng-deep .est-siguiente { display: none; } }
+    @media (max-width: 75rem) { :host ::ng-deep .estado-donde { display: none; } }
     :host ::ng-deep .est-dato { display: inline-flex; align-items: center; gap: 0.375rem; padding-inline: 0.5rem; }
     :host ::ng-deep .est-dato + .est-dato, :host ::ng-deep .est-dato + .est-dato-boton, :host ::ng-deep .est-dato-boton + .est-dato {
       border-inline-start: 1px solid var(--l-filo);

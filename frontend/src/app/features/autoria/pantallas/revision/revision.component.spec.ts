@@ -80,6 +80,14 @@ describe('RevisionComponent · la compuerta de publicación en lenguaje del doce
     expect(raiz.querySelector('.pildora.estado')!.textContent!.trim()).toBe('Borrador');
   });
 
+  it('al abrir Enviar comprueba el servidor y habilita el envío sin pulsar Revisar', async () => {
+    const { store, servidor, enviar } = await montar();
+    expect(servidor.metodos).toContain('validateCase');
+    expect(servidor.metodos).toContain('lifecycle');
+    expect(store.revisionPendiente()).toBe(false);
+    expect(enviar().getAttribute('aria-disabled')).not.toBe('true');
+  });
+
   it('la revisión lista los seis códigos del validador en lenguaje del docente con «Llévame ahí»', async () => {
     const { raiz } = await montar({
       hallazgos: [
