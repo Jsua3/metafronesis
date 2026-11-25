@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../../core/a11y/reduced-motion';
 import { addAriaReferencedId, removeAriaReferencedId } from '@angular/cdk/a11y';
 import { DIALOG_DATA, Dialog, DialogConfig, DialogRef } from '@angular/cdk/dialog';
 import { createGlobalPositionStrategy } from '@angular/cdk/overlay';
@@ -271,7 +272,7 @@ export class UiDialog {
   }
 
   private launch<R, D, C>(component: ComponentType<C>, options: UiDialogOptions<D>, extra: Partial<DialogConfig<D, DialogRef<R, C>>>): DialogRef<R, C> {
-    const reduceMotion = typeof matchMedia !== 'function' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduceMotion = reducedMotionQuery()?.matches ?? true;
     let leaving = false;
     let mayClose = reduceMotion;
     const priorityFocus = !options.autoFocus && !extra.autoFocus;

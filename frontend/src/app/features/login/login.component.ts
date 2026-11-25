@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../core/a11y/reduced-motion';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   AfterViewInit, CSP_NONCE, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, NgZone,
@@ -82,7 +83,7 @@ export class LoginComponent implements AfterViewInit {
   /** Se escribe en un formulario: el recorrido espera sin cambiar de paso (la ventana no compite con quien llena el acceso). */
   readonly formularioActivo = signal(false);
   /** Con «movimiento reducido» nada avanza solo, y tampoco hay una pausa que ofrecer. */
-  readonly recorridoAutomatico = !(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  readonly recorridoAutomatico = !((reducedMotionQuery()?.matches ?? false));
 
   /** Tema de las pantallas públicas: claro (piel portal) u oscuro (piel juego), en el contenedor de la página. */
   protected readonly tema = inject(TemaService);
@@ -233,7 +234,7 @@ export class LoginComponent implements AfterViewInit {
   /** Fin de la barra de progreso del paso activo: pasa al siguiente. Angular antepone su prefijo al nombre de la animación. */
   alTerminarPaso(event: AnimationEvent, indice: number): void {
     if (!event.animationName.endsWith('acceso-avance') || indice !== this.paso()) return;
-    if (!this.recorridoAutomatico || this.recorridoPausado() || this.formularioActivo()) return;
+    if (!this.recorridoAutomatico || reducedMotionQuery()?.matches || this.recorridoPausado() || this.formularioActivo()) return;
     this.paso.set(pasoSiguiente(indice));
   }
 
@@ -437,7 +438,7 @@ export class LoginComponent implements AfterViewInit {
    */
   private trackPointer(): void {
     if (typeof matchMedia !== 'function' || typeof requestAnimationFrame !== 'function') return;
-    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const motion = reducedMotionQuery()!;
     const page = this.pageRef.nativeElement.querySelector<HTMLElement>('.acceso');
     if (!page) return;
     let last: PointerEvent | null = null;
