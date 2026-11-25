@@ -128,8 +128,16 @@ def cargar(plan, autor, publicador=None):
     datos_caso = descongelar(plan.caso)
     caso = SimulationCase.objects.select_for_update().filter(code=datos_caso['code']).first()
     if caso:
-        if any(getattr(caso, campo) != valor for campo, valor in datos_caso.items()):
+        distintos = {campo: valor for campo, valor in datos_caso.items() if getattr(caso, campo) != valor}
+        nueva = not CaseVersion.objects.filter(simulation_case=caso, semantic_version=plan.version['semantic_version']).exists()
+        if distintos and not nueva:
             raise ErrorDeCarga('El caso existente tiene una huella diferente.')
+        if distintos:
+            # Una versión nueva del documento puede renovar el título y la descripción del caso (p. ej. 1.0.0 → 2.0.0).
+            for campo, valor in distintos.items():
+                setattr(caso, campo, valor)
+            caso.full_clean()
+            caso.save(update_fields=list(distintos))
     else:
         caso = _crear(SimulationCase, created_by=autor, **datos_caso)
     semantica = plan.version['semantic_version']

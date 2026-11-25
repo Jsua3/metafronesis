@@ -88,7 +88,7 @@ def test_siembra_completa(admin, clave):
 def test_caso_insignia_publicado_con_rubrica_y_asignado(admin, clave):
     sembrar(admin, "--confirmar")
     version = CaseVersion.objects.get(simulation_case__code="SIM-VBG-002")
-    assert version.status == "PUBLISHED" and version.estimated_minutes == 45
+    assert version.status == "PUBLISHED" and version.estimated_minutes == 40
     assert version.definition_hash == huella_de(version)
     asignacion = SimulationRubricAssignment.objects.get(case_version=version, active=True)
     criterios = list(asignacion.rubric.criteria.order_by("display_order"))

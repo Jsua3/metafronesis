@@ -159,7 +159,12 @@ def usar(usuario, identificador, datos):
             _cerca(estado, objeto)
         pertinente = (herramienta.category.strip().lower() == "global") if not objeto else (
             objeto.tool_code == codigo or objeto.dialoguetree_set.filter(choices__required_tool_code=codigo).exists())
-        if pertinente:
+        # Lo que la herramienta muestra sobre este objetivo, si el caso lo escribió (metadatos.usoHerramienta).
+        usos = world._mapa_json(objeto.metadata_json).get("usoHerramienta") if objeto else None
+        propio = usos.get(codigo) if isinstance(usos, dict) else None
+        if pertinente and isinstance(propio, str) and propio.strip():
+            mensaje = propio.strip()
+        elif pertinente:
             mensaje = f"Has aplicado {herramienta.label} de forma pertinente" + (" en el contexto adecuado" if objetivo else "") + ". Esto contribuye a una intervención profesional y ética."
         else:
             mensaje = f"Has utilizado {herramienta.label}, pero este no es el contexto más apropiado para esta herramienta. Considera revisar qué herramienta se ajusta mejor a la situación actual."

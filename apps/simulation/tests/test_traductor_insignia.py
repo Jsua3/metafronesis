@@ -22,13 +22,13 @@ def test_traduce_el_documento_real_sin_perder_elementos(documento):
     plan = traducir(documento)
     escenas = documento["x-siep"]["escenas"]
     mapas = [escena["mapa"] for escena in escenas]
-    assert len(plan.nodos) == len(escenas) == 18
-    assert len(plan.opciones) == sum(len(escena["opciones"]) for escena in escenas) == 49
-    assert len(plan.salas) == len(mapas) == 18
-    assert len(plan.objetos) == sum(len(mapa["objetos"]) for mapa in mapas) == 223
-    assert len(plan.zonas) == sum(len(mapa["colisiones"]) for mapa in mapas) == 191
-    assert len(plan.dialogos) == sum(len(mapa["dialogos"]) for mapa in mapas) == 64
-    assert len(plan.comentarios) == 63
+    assert len(plan.nodos) == len(escenas) == 24
+    assert len(plan.opciones) == sum(len(escena["opciones"]) for escena in escenas) == 62
+    assert len(plan.salas) == len(mapas) == 24
+    assert len(plan.objetos) == sum(len(mapa["objetos"]) for mapa in mapas) == 300
+    assert len(plan.zonas) == sum(len(mapa["colisiones"]) for mapa in mapas) == 267
+    assert len(plan.dialogos) == sum(len(mapa["dialogos"]) for mapa in mapas) == 87
+    assert len(plan.comentarios) == 12
     assert len(plan.personajes) == 13
     assert len(plan.herramientas) == 5
     assert not plan.no_soportado
@@ -62,7 +62,7 @@ def test_conserva_retroalimentacion_y_clasificacion_de_cada_opcion(documento):
 def test_pregunta_de_autor_precede_a_la_pregunta_derivada_del_dsl(documento):
     plan = traducir(documento)
     preguntas = [nodo.datos["decision_prompt"] for nodo in plan.nodos]
-    assert sum(bool(pregunta) for pregunta in preguntas) == 16
+    assert sum(bool(pregunta) for pregunta in preguntas) == 20
     assert preguntas[0] == documento["escenas"][0]["decision"]["pregunta"]
     documento["x-siep"]["escenas"][0]["pregunta"] = "¿Cuál es la pregunta de autor?"
     documento["x-siep"]["escenas"][0]["preguntaDerivada"] = False

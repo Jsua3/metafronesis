@@ -30,7 +30,7 @@ from apps.users.models import CustomUser, PermisoDeAutoria, UserRole
 from shared.exceptions import ApiError
 
 DOMINIO = "demo.metafronesis.test"
-MINUTOS_ESTIMADOS = 45
+MINUTOS_ESTIMADOS = 40  # el caso lineal se juega en unos 40 minutos
 RUTA_DOCUMENTO = Path(__file__).resolve().parents[1] / "simulation/data/casos/SIM-VBG-002.dsl.json"
 
 DOCENTES = (
