@@ -1437,7 +1437,7 @@ export interface OpenApiPaths {
   readonly '/api/reportes/grupo/{grupo_id}': 'GET';
   readonly '/api/reportes/grupo/{grupo_id}/export': 'GET';
   readonly '/api/rubrics': 'GET' | 'POST';
-  readonly '/api/rubrics/case-versions/{case_version_id}': 'GET' | 'POST' | 'PUT';
+  readonly '/api/rubrics/case-versions/{case_version_id}': 'GET' | 'PUT';
   readonly '/api/rubrics/{rubric_id}': 'GET' | 'PATCH' | 'PUT';
   readonly '/api/rubrics/{rubric_id}/activate': 'POST';
   readonly '/api/rubrics/{rubric_id}/deactivate': 'POST';

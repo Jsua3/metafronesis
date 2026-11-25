@@ -1085,6 +1085,7 @@ export interface PublicationChecklistView {
 }
 
 export interface CaseEditorView {
+  estimatedMinutes?: number | null;
   caseVersionId: number;
   /** Revisión del borrador (E2-6): viaja en `X-Case-Revision` en cada mutación y la respuesta trae la siguiente. */
   revision: number;
@@ -1186,6 +1187,7 @@ export interface CharacterUpsertRequest {
 
 /** La ficha del caso: ausente = no se toca; `[]` vacía los objetivos. */
 export interface BriefUpdateRequest {
+  estimatedMinutes?: number | null;
   context?: string;
   learningObjectives?: string[];
   /**

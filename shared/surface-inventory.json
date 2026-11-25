@@ -1109,6 +1109,14 @@
     },
     {
       "route": "api/rubrics/case-versions/<int:case_version_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de la rúbrica del propio caso o de un catálogo común"
+    },
+    {
+      "route": "api/rubrics/case-versions/<int:case_version_id>",
       "method": "PUT",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "json-small",

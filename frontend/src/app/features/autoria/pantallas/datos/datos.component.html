@@ -26,6 +26,15 @@
             <p id="d-nombre-ayuda" class="ayuda">Así reconocen el caso Psicología y el estudiante. Si ya hay otra versión publicada, el nombre no se puede cambiar.</p>
             @if (errores().nombre; as error) { <p id="d-nombre-error" class="error">{{ error }}</p> }
           </div>
+          <div class="grupo">
+            <label for="d-tiempo" class="etiqueta">Tiempo estimado (minutos)</label>
+            <input id="d-tiempo" class="campo" type="number" min="5" max="240" step="1" [readOnly]="soloLectura()" [value]="tiempo()"
+                   [attr.aria-invalid]="errorTiempo() ? 'true' : null"
+                   [attr.aria-describedby]="'d-tiempo-ayuda' + (errorTiempo() ? ' d-tiempo-error' : '')"
+                   (input)="tiempo.set($any($event.target).value)" (change)="guardarAlSalir()" />
+            <p id="d-tiempo-ayuda" class="ayuda">Cuánto tarda un estudiante en recorrer el caso. Se muestra en su ficha.</p>
+            @if (errorTiempo(); as error) { <p id="d-tiempo-error" class="error">{{ error }}</p> }
+          </div>
         </app-estudio-seccion>
 
         <app-estudio-seccion titulo="Antes de empezar" [resumen]="resumenContexto()" [(abierta)]="abiertaContexto">

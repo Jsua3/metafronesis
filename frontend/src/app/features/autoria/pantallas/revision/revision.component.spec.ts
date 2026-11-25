@@ -503,3 +503,23 @@ describe('RevisionComponent · el ensayo en otra pestaña', () => {
     expect(sugerencia(raiz)).toBeUndefined();
   });
 });
+
+
+describe('Pendiente de tiempo estimado', () => {
+  afterEach(() => document.querySelectorAll('body > app-revision, body > [ng-version]').forEach((n) => n.remove()));
+  it('muestra el aviso y dirige a Datos con foco en el tiempo', async () => {
+    const { raiz, listo } = await montar({ hallazgos: [issue('CASE_NO_TIME', 'mensaje del servidor')] });
+    expect(raiz.textContent).toContain('Falta el tiempo estimado del caso');
+    const router = TestBed.inject(Router);
+    const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    const campo = document.createElement('input');
+    campo.id = 'd-tiempo';
+    document.body.appendChild(campo);
+    const boton = [...raiz.querySelectorAll<HTMLButtonElement>('button')].find(b => b.getAttribute('aria-label')?.includes('Falta el tiempo estimado'))!;
+    boton.click();
+    await listo();
+    expect(navegar).toHaveBeenCalledWith('/portal/casos/41/editor/datos');
+    expect(document.activeElement).toBe(campo);
+    campo.remove();
+  });
+});

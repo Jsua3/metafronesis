@@ -269,6 +269,7 @@ export interface CasoBorrador {
   /** La revisión del caso que se está viendo (viaja en cada cambio); 0 en un caso que aún no está en el servidor. */
   revision: number;
   titulo: string;
+  tiempoEstimado?: number | null;
   /** El contexto que lee el estudiante antes de empezar (texto plano); ausente en un borrador que aún no está en el servidor. */
   contexto?: string;
   /** Los objetivos de aprendizaje del caso, uno por renglón; ausente en un borrador que aún no está en el servidor. */

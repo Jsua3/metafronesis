@@ -343,6 +343,7 @@ export class AuthoringApi {
   updateBrief(caseVersionId: number, body: BriefUpdateRequest, revision?: number) {
     const cuerpo: Record<string, unknown> = {};
     if (body.context !== undefined) cuerpo['narrativeContext'] = body.context;
+    if (body.estimatedMinutes !== undefined) cuerpo['estimatedMinutes'] = body.estimatedMinutes;
     if (body.learningObjectives !== undefined) cuerpo['learningObjectives'] = body.learningObjectives;
     if (body.title !== undefined) cuerpo['title'] = body.title;
     if (body.contentWarnings !== undefined) cuerpo['contentWarnings'] = body.contentWarnings;

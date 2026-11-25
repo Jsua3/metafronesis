@@ -530,6 +530,7 @@ export async function guardarFicha(s: SesionServidor, caso: CasoBorrador): Promi
   }
   if (caso.temasSensibles && !igual(s.vista.contentWarnings ?? [], caso.temasSensibles)) cuerpo.contentWarnings = caso.temasSensibles;
   if (caso.titulo.trim() && caso.titulo !== s.vista.title) cuerpo.title = caso.titulo;
+  if (caso.tiempoEstimado !== undefined && caso.tiempoEstimado !== (s.vista.estimatedMinutes ?? null)) cuerpo.estimatedMinutes = caso.tiempoEstimado;
   if (Object.keys(cuerpo).length) await s.guardarFicha(cuerpo);
 }
 

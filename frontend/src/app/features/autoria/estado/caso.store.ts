@@ -1546,7 +1546,7 @@ export class CasoStore {
    * El contexto que lee el estudiante y los objetivos de aprendizaje del caso (texto plano; el servidor pone los topes).
    * `extra` (opcional) lleva los temas sensibles (RK-7) y el nombre (RK-8); lo que no se pasa no se toca.
    */
-  editarFicha(contexto: string, objetivos: string[], extra: { temas?: string[]; titulo?: string } = {}): void {
+  editarFicha(contexto: string, objetivos: string[], extra: { temas?: string[]; titulo?: string; tiempoEstimado?: number | null } = {}): void {
     const limpio = contexto.trim();
     const lista = objetivos.map((o) => o.trim()).filter(Boolean);
     const temas = extra.temas?.map((t) => t.trim()).filter(Boolean);
@@ -1564,6 +1564,7 @@ export class CasoStore {
         caso.objetivos = [...lista];
         if (temas) caso.temasSensibles = [...temas];
         if (titulo) caso.titulo = titulo;
+        if (extra.tiempoEstimado !== undefined) caso.tiempoEstimado = extra.tiempoEstimado;
       },
       enviar: (despues, sesion) => persistir.guardarFicha(sesion, despues),
       fusion: 'ficha',

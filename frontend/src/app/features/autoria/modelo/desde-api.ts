@@ -296,6 +296,7 @@ export function casoDesdeApi(editor: CaseEditorView, mundos: WorldDefinition[], 
   const textosPlantilla = guardados.length > 0 ? textosDeLaPlantillaGuardada(guardados, hitos) : null;
   return {
     id: String(editor.caseVersionId), revision: editor.revision, titulo: editor.title, lugarId, salas, escenas,
+    tiempoEstimado: editor.estimatedMinutes ?? null,
     contexto: editor.context ?? '', objetivos: [...(editor.learningObjectives ?? [])],
     ...(editor.contentWarnings ? { temasSensibles: [...editor.contentWarnings] } : {}),
     inicioId: inicio ? String(inicio.id) : null,

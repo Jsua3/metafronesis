@@ -356,6 +356,7 @@ export class ServidorFalso {
     updateBrief: (cv: number, cuerpo: BriefUpdateRequest, revision?: number) =>
       this.escribir('updateBrief', revision, [cuerpo], () => {
         if (cuerpo.context !== undefined) this.editor.context = cuerpo.context;
+        if (cuerpo.estimatedMinutes !== undefined) this.editor.estimatedMinutes = cuerpo.estimatedMinutes;
         if (cuerpo.learningObjectives !== undefined) this.editor.learningObjectives = [...cuerpo.learningObjectives];
         if (cuerpo.contentWarnings !== undefined) this.editor.contentWarnings = [...cuerpo.contentWarnings];
         if (cuerpo.title !== undefined) this.editor.title = cuerpo.title;

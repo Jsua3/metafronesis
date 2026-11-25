@@ -357,3 +357,19 @@ describe('DatosComponent · temas sensibles (RK-7)', () => {
     expect(vista.textContent).toContain('Violencia de pareja');
   });
 });
+
+
+describe('Tiempo estimado', () => {
+  afterEach(() => document.querySelectorAll('body > app-datos, body > [ng-version]').forEach((n) => n.remove()));
+  it('guarda minutos válidos y conserva en pantalla los valores fuera del rango', async () => {
+    const { raiz, escribir, servidor, store } = await montar();
+    const campo = raiz.querySelector<HTMLInputElement>('#d-tiempo')!;
+    expect(raiz.querySelector('label[for="d-tiempo"]')!.textContent).toContain('Tiempo estimado (minutos)');
+    await escribir(campo, '60', true);
+    await store.sincronizado();
+    expect(servidor.llamadasA('updateBrief')[0].args[0]).toEqual({ estimatedMinutes: 60 });
+    await escribir(campo, '241', true);
+    expect(servidor.llamadasA('updateBrief')).toHaveLength(1);
+    expect(raiz.querySelector('#d-tiempo-error')!.textContent).toContain('entre 5 y 240');
+  });
+});

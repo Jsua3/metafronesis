@@ -204,6 +204,7 @@ class VistaEditorSerializer(serializers.Serializer):
     semanticVersion = serializers.CharField()
     status = serializers.CharField()
     context = serializers.CharField(allow_blank=True)
+    estimatedMinutes = serializers.IntegerField(allow_null=True)
     learningObjectives = serializers.ListField(child=serializers.CharField())
     contentWarnings = serializers.ListField(child=serializers.CharField())
     rehearsedToEnd = serializers.BooleanField()

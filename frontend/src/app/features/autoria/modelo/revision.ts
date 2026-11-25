@@ -283,6 +283,9 @@ export function faltasDelServidor(
     const escena = h.nodeId !== undefined ? rutaDeEscena(h.nodeId) : null;
     const falta = (ir: Falta['ir']): Falta => ({ codigo: h.code, mensaje: h.message, ir });
     switch (h.code) {
+      case 'CASE_NO_TIME':
+        faltas.push({ codigo: h.code, mensaje: 'Falta el tiempo estimado del caso', ir: { ruta: '/editor/datos', ancla: 'd-tiempo' } });
+        break;
       case 'scene-without-recommended':
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'respuestas-escena' } : {}) }));
         break;
