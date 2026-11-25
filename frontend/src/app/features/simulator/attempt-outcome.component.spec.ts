@@ -223,16 +223,16 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     expect(host().querySelector('.oc-pause-note')).toBeNull();
   });
 
-  it('«Reanudar este intento» es la primera acción y «Volver al catálogo» la segunda', () => {
+  it('«Volver al juego» es la primera acción y «Volver al catálogo» la segunda', () => {
     render('PAUSED');
     const actions = Array.from(host().querySelectorAll('button, a')).filter(el => !el.closest('details'));
-    expect(text(actions[0])).toBe('Reanudar este intento');
+    expect(text(actions[0])).toBe('Volver al juego');
     expect(actions[0].tagName).toBe('BUTTON');
     expect(text(actions[1])).toBe('Volver al catálogo');
     expect(actions).toHaveLength(2);
   });
 
-  it('«Reanudar este intento» emite resume y es el elemento con foco inicial', () => {
+  it('«Volver al juego» emite resume y es el elemento con foco inicial', () => {
     render('PAUSED');
     const resume = vi.fn();
     component.resume.subscribe(resume);
@@ -242,7 +242,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     expect(resume).toHaveBeenCalledTimes(1);
   });
 
-  it('la pausa captura el foco: el elemento activo es «Reanudar este intento»', async () => {
+  it('la pausa captura el foco: el elemento activo es «Volver al juego»', async () => {
     render('PAUSED');
     await fixture.whenStable();
     expect(document.activeElement).toBe(host().querySelector('button.oc-btn--go'));
@@ -279,7 +279,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   it('sin informe no hay details y la pausa sigue ofreciendo reanudar', () => {
     render('PAUSED', { report: null });
     expect(host().querySelector('details')).toBeNull();
-    expect(text(host().querySelector('button.oc-btn--go'))).toBe('Reanudar este intento');
+    expect(text(host().querySelector('button.oc-btn--go'))).toBe('Volver al juego');
   });
 
   it('el resto de estados conserva su tablero y sus acciones', () => {
@@ -341,7 +341,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
       expect((document.activeElement as HTMLElement).tagName).not.toBe('BUTTON');
     });
 
-    it('en pausa el foco sigue en «Reanudar este intento»: lo primero es poder volver', async () => {
+    it('en pausa el foco sigue en «Volver al juego»: lo primero es poder volver', async () => {
       render('PAUSED');
       await fixture.whenStable();
       expect(document.activeElement).toBe(host().querySelector('button.oc-btn--go'));
@@ -407,7 +407,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
       expect(text(host().querySelector('#outcome-title'))).toBe('Tu caso está en pausa');
       expect(component.pauseMessage)
         .toBe('La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.');
-      expect(text(host().querySelector('button.oc-btn--go'))).toBe('Reanudar este intento');
+      expect(text(host().querySelector('button.oc-btn--go'))).toBe('Volver al juego');
     });
   });
 

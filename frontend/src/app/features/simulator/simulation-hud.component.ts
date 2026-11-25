@@ -323,6 +323,8 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
     @media (max-height: 520px), (pointer: coarse) and (orientation: landscape) {
       /* Compacto: el grupo de la esquina mide lo que sus teclas de 44 px y su marco; el caso se va. */
       .hud-strip { padding: 0; }
+      [data-hud-places] .hud-action__texto { display: inline; }
+      .hud-action.hud-action--texto[data-hud-places] { width: auto; padding: 0 8px; }
       .hud-case { display: none; }
       .settings-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(560px, calc(100vw - 16px)); }
       .settings-menu__header { grid-column: 1 / -1; }

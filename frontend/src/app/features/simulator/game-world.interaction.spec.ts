@@ -141,6 +141,31 @@ function crearEscena(player = { x: 480, y: 430 }): Harness {
 
 const move = (h: Harness, x: number, y: number) => { h.scene.player.x = x; h.scene.player.y = y; h.scene.updateNearestInteraction(true); };
 
+describe('herramienta recogida', () => {
+  it('retira la acción cercana al recibir inventario aunque falte cargar arte', () => {
+    const h = crearEscena({ x: 318, y: 428 });
+    const kit = h.scene.markerData.get('tool-pap')!;
+    kit.toolCode = 'PAP';
+    h.scene.nearestKey = kit.key;
+    const scene = h.scene as unknown as { setWorld(world: SimulationWorldState): void; renderWorld: () => void };
+    scene.renderWorld = vi.fn();
+    scene.setWorld({ ...h.scene.world, inventory: ['PAP'] });
+    expect(h.callbacks.onProximity).toHaveBeenLastCalledWith(null);
+  });
+
+  it('no vuelve a interactuar aunque el marcador anterior siga durante la carga de arte', () => {
+    const h = crearEscena({ x: 318, y: 428 });
+    const kit = h.scene.markerData.get('tool-pap')!;
+    kit.toolCode = 'PAP';
+    h.scene.nearestKey = kit.key;
+    h.scene.world = { ...h.scene.world, inventory: ['PAP'] };
+    h.scene.interactNearest();
+    expect(h.callbacks.onInteract).not.toHaveBeenCalled();
+    h.scene.updateNearestInteraction(true);
+    expect(h.scene.nearestKey).not.toBe(kit.key);
+  });
+});
+
 describe('DataDrivenWorldScene: proximidad unificada de personas y objetos', () => {
   it('sin nada cerca no se ofrece nada y no se avisa', () => {
     const h = crearEscena();

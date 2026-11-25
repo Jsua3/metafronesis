@@ -303,7 +303,7 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
 
       component.openInteraction(exit());
 
-      expect(component.stepsNotice()).toBe('Aléjate de la puerta para poder volver a cruzarla: da 3 pasos más hacia la izquierda.');
+      expect(component.stepsNotice()).toBe('Aléjate de la puerta en cualquier dirección posible para poder volver a cruzarla.');
       expect(component.doorNotice()).toBe('');
       expect(component.inputBlocked()).toBe(false);
       expect(sim['enterRoom']).not.toHaveBeenCalled();
@@ -319,7 +319,7 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
       announce.mockClear();
 
       component.rememberPosition(800, 440);   // a 38 px
-      expect(component.stepsNotice()).toContain('da 2 pasos más hacia la izquierda');
+      expect(component.stepsNotice()).toContain('cualquier dirección posible');
       expect(announce).not.toHaveBeenCalled();
 
       component.rememberPosition(760, 440);   // a 78 px: ya está lejos

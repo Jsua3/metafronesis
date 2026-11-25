@@ -1,3 +1,4 @@
+import { DOOR_REARM_DISTANCE } from './door-rearm.util';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, NgZone, OnChanges, OnDestroy, SimpleChanges, ViewChild, computed, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
@@ -297,7 +298,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    *  alejarse bien (≥72). Evita el rebote cuando el punto de entrada de una sala
    *  queda cerca de la puerta de regreso (el armado inmediato disparaba de vuelta). */
   private readonly doorTriggerDist = 30;
-  private readonly doorRearmDist = 72;
+  private readonly doorRearmDist = DOOR_REARM_DISTANCE;
   private readonly tiledExits   = new Map<string, { x: number; y: number; w: number; h: number }>();
   private readonly npcMarkers   = new Map<string, Phaser.GameObjects.Container>();
   private readonly markers    = new Map<string, Phaser.GameObjects.Container>();
@@ -3387,6 +3388,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   private isInteractive(o: MapObjectState): boolean {
+    if (o.type === 'TOOL' && o.toolCode && this.world?.inventory?.includes(o.toolCode)) return false;
     return o.type === 'EXIT' || o.type === 'TOOL' || o.type === 'ROUTE' || o.type === 'NOTE' || o.type === 'RESOURCE'
       || o.decisionOptionId != null
       || (o.toolCode != null && o.toolCode !== '')
@@ -3788,7 +3790,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
     for (const [key, marker] of this.markers) {
       const obj = this.markerData.get(key);
-      if (!obj) continue;
+      if (!obj || (obj.type === 'TOOL' && obj.toolCode && this.world.inventory?.includes(obj.toolCode))) continue;
       // Un mueble (PROP) y lo que no tiene comportamiento se dibujan, pero no entran en la prioridad de interacción.
       if (!participatesInInteraction(obj)) continue;
       const c = this.candidateAt(list.length);
@@ -3882,6 +3884,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const obj = this.markerData.get(key);
     const marker = this.markers.get(key);
     if (obj && marker) {
+      if (obj.type === 'TOOL' && obj.toolCode && this.world?.inventory?.includes(obj.toolCode)) return null;
       return { ...obj, label: getSceneDisplayLabel(obj, mapKey), x: marker.x, y: marker.y };
     }
     const zone = getSceneAmbientZones(mapKey).find(z => z.key === key);
@@ -4262,6 +4265,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
   readonly renderedScenarioKey = signal<string | null>(null);
   /** Progreso real de la precarga de Phaser (0-100). */
   readonly loadPercent = signal(0);
+  readonly loadProgress = output<number>();
   /** true cuando terminó la precarga inicial (con o sin fallos). */
   readonly assetsReady = signal(false);
   /** Faltó un mapa o tileset: la sala se ve en paneles planos. */
@@ -4600,6 +4604,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         onWalkCancelled: () => this.zone.run(() => this.walkCancelled.emit()),
         onLoadProgress: percent => this.zone.run(() => {
           this.loadPercent.set(percent);
+          this.loadProgress.emit(percent);
           // Una carga que avanza no está colgada: el plazo cuenta desde el último avance, no desde el arranque.
           if (!this.renderReady()) this.armBootWatchdog();
         }),
@@ -4613,6 +4618,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         },
         onLoadComplete: failures => this.zone.run(() => {
           this.loadPercent.set(100);
+          this.loadProgress.emit(100);
           this.assetsReady.set(true);
           this.criticalLoadFailed.set(failures.length > 0);
           if (failures.length > 0) console.warn('[GameWorld] Recursos esenciales sin cargar:', failures);

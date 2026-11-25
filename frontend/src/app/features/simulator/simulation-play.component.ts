@@ -214,14 +214,14 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       <!-- UN solo indicador de arranque (F6-1), del intento al primer cuadro del mundo: la región de estado siempre
            está presente y el indicador aparece a los 150 ms (loadingPhase). Cubre solo la zona del mundo: con el intento
            ya cargado, la cabecera y «Salida segura» siguen a la vista (REGLA-004). -->
-      <p class="sr-only" role="status">{{ bootVisible() ? bootLabel() : '' }}</p>
+      <p class="sr-only" role="status">{{ bootLoading() ? bootLabel() + (umbralFase() === 'escena' && worldLoadPercent() !== null ? ' ' + worldLoadPercent() + ' %' : '') : '' }}</p>
       <!-- El umbral (DISENO §4.4, DP-09): la ÚNICA pantalla entre la ficha y el mundo. Reemplaza el indicador de arranque y
            queda como velo opaco hasta que el mundo está dibujado y la persona pulsa Continuar; las tarjetas de entrada se
            posan sobre su mitad de abajo. Mientras se ve, la barra, el mundo y el pie quedan inertes (.capas-del-mundo). -->
       @if (umbralVisible() || revelando()) {
         <app-umbral-caso [titulo]="umbralTitulo()" [portada]="umbralDatos().portada" [fase]="umbralFase()"
           [lento]="umbralLento()" [conTarjeta]="umbralConTarjeta()" [salida]="umbralSalida()" [pausando]="pausing()"
-          [arrancando]="bootVisible()" [modo]="mode()" [saliendo]="!umbralVisible()"
+          [arrancando]="bootVisible()" [porcentaje]="worldLoadPercent()" [modo]="mode()" [saliendo]="!umbralVisible()"
           (volver)="volverDesdeUmbral()" (salidaSegura)="pauseFromOverlay()" />
       }
       @if (rehearsalGone()) {
@@ -467,7 +467,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 [nextTargetKey]="guide().siguienteLugar?.key ?? null"
                 [doorStates]="doorStates()" [doorMessages]="doorMessages()"
                 [dimmedKeys]="dimmedKeys()" [compact]="compactMode()"
-                [showLoader]="false" (worldReady)="onWorldReady()" (patientVisual)="patientVisual.set($event)"
+                [showLoader]="false" (loadProgress)="worldLoadPercent.set($event)" (worldReady)="onWorldReady()" (patientVisual)="patientVisual.set($event)"
                 (proximity)="nearbyInteraction.set($event); reactions?.onProximity($event?.key ?? null)" (proximityAlso)="nearbyAlso.set($event)"
                 (nothingNearby)="showNothingNearby()" (interact)="openInteraction($event)"
                 (npcInteract)="openNpcDialogue($event)" (walkEnded)="onWalkEnded($event)" (walkCancelled)="cancelPendingInteraction()"
@@ -1238,8 +1238,10 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       /* Pie de altura fija de una sola fila: sin teclas ni leyenda, y el mundo no cambia de tamaño al acercarte a algo. */
       .bottom-zone { flex-wrap: nowrap; align-items: center; height: 56px; padding: 4px 12px; gap: 8px; }
       /* Las cinco herramientas conservan su sitio; la barra cede (elipsis) cuando el motivo de una puerta es largo. */
-      .tool-dock { flex: 0 0 auto; }
-      .context-bar { flex: 1 1 0; order: 0; height: 100%; justify-content: flex-end; }
+      .tool-dock { flex: 0 1 220px; min-width: 70px; overflow: hidden; }
+      .top-bar__hueco { display: none; }
+      .main-zone { margin-top: 64px; margin-bottom: 64px; }
+      .context-bar { min-width: 0; flex: 1 1 0; order: 0; height: 100%; justify-content: flex-end; }
       .context-bar__interaction { min-height: 44px; padding: 3px 10px; }
       /* El secundario pierde el prefijo visible («También:») para que quepa el verbo; su nombre accesible lo conserva. */
       .context-bar__interaction--secondary { flex-basis: 30%; min-width: 110px; }
@@ -1483,6 +1485,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   });
   /** El mundo pintó su primer cuadro (`GameWorldComponent.worldReady`): hasta entonces hay UN indicador de carga. */
   readonly worldRendered = signal(false);
+  readonly worldLoadPercent = signal<number | null>(null);
   /** El error que se muestra es el del arranque del lienzo (plazo vencido): un primer cuadro tardío lo retira. */
   private bootFailureShown = false;
   /** Hay arranque en curso: el intento o el mundo se piden, o el mundo pedido todavía no pintó su primer cuadro. */
@@ -2537,6 +2540,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.worldStarted.set(true);
     // Un arranque nuevo (otro intento, otro consentimiento) muestra el indicador hasta SU primer cuadro.
     this.worldRendered.set(false);
+    this.worldLoadPercent.set(null);
     this.loading.set(true);
     this.audioDirector.init();
     this.musicMuted.set(this.audioDirector.isMusicMuted());

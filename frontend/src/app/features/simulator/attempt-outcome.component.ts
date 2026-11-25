@@ -57,8 +57,8 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
           @if (pauseNote()) { <p class="oc-pause-note" role="status">{{ pauseNote() }}</p> }
           @if (positionNote()) { <p class="oc-pause-note" role="status">{{ positionNote() }}</p> }
           <div class="oc-actions oc-actions--pause">
-            <!-- Pausa reanudable real: mismo intento, sin crear uno nuevo. -->
-            <button type="button" class="oc-btn oc-btn--go u-ficha u-ficha--primaria" cdkFocusInitial (click)="resume.emit()">Reanudar este intento</button>
+            <!-- BORRADOR: texto pendiente de Psicología. Pausa reanudable real: mismo intento. -->
+            <button type="button" class="oc-btn oc-btn--go u-ficha u-ficha--primaria" cdkFocusInitial (click)="resume.emit()">Volver al juego</button>
             @if (mode() === 'rehearsal') {
               <a class="oc-btn oc-btn--line u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
             } @else {
@@ -469,7 +469,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
     }
     .outcome--pause .oc-head__copy h3 { font-family: var(--pixel-f-texto); font-weight: 700; color: var(--pixel-tinta); }
     .outcome--pause .oc-pause-copy { color: var(--pixel-tinta); }
-    .outcome--pause .oc-actions--pause { align-items: center; gap: calc(4 * var(--pixel-px)); }
+    .outcome--pause .oc-actions--pause { align-items: center; gap: max(8px, calc(4 * var(--pixel-px))); }
     .outcome--pause .oc-btn, .outcome--pause .u-ficha { padding: 0 calc(8 * var(--pixel-px)) 1px; }
     .outcome--pause .oc-support {
       padding: calc(3 * var(--pixel-px)) calc(5 * var(--pixel-px)) calc(4 * var(--pixel-px)); border-radius: 0;

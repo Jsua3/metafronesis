@@ -138,10 +138,10 @@ let nextHelpId = 0;
     }
     .help-card__lines { display: grid; gap: 6px; }
     .help-card__lines p { margin: 0; font-size: .82rem; line-height: 1.45; }
-    .help-card__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .help-card__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
     /* Tarjeta de controles (P8): cuatro filas «tecla — qué hace». */
-    .help-welcome { gap: 10px; max-height: 100%; overflow-y: auto; }
-    .help-welcome__rows { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .help-welcome { display: flex; flex-direction: column; gap: 10px; min-height: 0; max-height: 100%; overflow: hidden; }
+    .help-welcome__rows { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .help-welcome__row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 10px; align-items: start; }
     .help-welcome__keys {
       justify-self: start; box-sizing: border-box; padding: 3px 8px; border: 1px solid rgba(182,156,255,.55); border-radius: 6px;

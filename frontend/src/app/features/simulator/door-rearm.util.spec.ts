@@ -35,9 +35,16 @@ describe('doorRearmProgress', () => {
     expect(doorRearmProgress({ x: 410, y: 300 }, [lejana, door])?.toward).toBe('hacia la derecha');
   });
 
+  it('no pide una dirección que podría estar bloqueada por una pared', () => {
+    const message = doorRearmMessage({ x: 400, y: 250 }, [door])!;
+    expect(message).toContain('cualquier dirección');
+    expect(message).not.toContain('hacia arriba');
+    expect(doorRearmMessage({ x: 460, y: 250 }, [door])).toBeNull();
+  });
+
   it('el mensaje es el texto de orientación (una sola fuente) y es null cuando no falta nada', () => {
     expect(doorRearmMessage({ x: 390, y: 300 }, [door]))
-      .toBe('Aléjate de la puerta para poder volver a cruzarla: da 3 pasos más hacia la izquierda.');
+      .toBe('Aléjate de la puerta en cualquier dirección posible para poder volver a cruzarla.');
     expect(doorRearmMessage({ x: 900, y: 300 }, [door])).toBeNull();
   });
 });
