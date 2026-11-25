@@ -19,6 +19,11 @@
   --l-relleno: color-mix(in oklab, var(--ds-text-1) 5%, transparent);
   --l-tinte: color-mix(in oklab, var(--l-acento) 16%, transparent);
   --l-tinte-filo: color-mix(in oklab, var(--l-acento) 34%, transparent);
+  // Etiqueta (antetítulo en píldora): tinta y fondo OPACOS. Con `--l-tinte` (translúcido) el fondo real dependía de lo
+  // que hubiera detrás (la luz ambiental violeta del portal, un doodle, una ilustración) y el contraste de un texto de
+  // 12 px bajaba de 4,5:1 justo donde axe lo medía (arriba a la izquierda). Medido en `etiqueta.contract.spec.ts`.
+  --l-etiqueta-tinta: var(--ds-primary-hover);
+  --l-etiqueta-fondo: color-mix(in oklab, var(--l-acento) 16%, var(--ds-surface-1));
   --l-trama: color-mix(in oklab, var(--ds-text-1) 4.5%, transparent);
   --l-sombra:
     0 1px 1px color-mix(in oklab, black 22%, transparent),
@@ -65,6 +70,10 @@
   --l-relleno: color-mix(in oklab, var(--ds-text-1) 3.5%, transparent);
   --l-tinte: color-mix(in oklab, var(--l-acento) 10%, transparent);
   --l-tinte-filo: color-mix(in oklab, var(--l-acento) 26%, transparent);
+  // Piel clara: la tinta es el violeta hondo de la acción (#4A30B8, ≈ 8:1 sobre blanco), no el de marca (#5B3FD1), que
+  // sobre un fondo teñido se queda en ≈ 5:1.
+  --l-etiqueta-tinta: var(--ds-primary-hover);
+  --l-etiqueta-fondo: color-mix(in oklab, var(--l-acento) 10%, var(--ds-surface-1));
   --l-trama: color-mix(in oklab, var(--ds-text-1) 6%, transparent);
   --l-sombra:
     0 1px 2px color-mix(in oklab, var(--ds-text-1) 6%, transparent),

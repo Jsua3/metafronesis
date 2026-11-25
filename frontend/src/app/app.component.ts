@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { LiveRegionAnnouncer } from './core/a11y/live-announcer.service';
+import { RouteFocusService } from './core/a11y/route-focus.service';
 import { readRouteChrome } from './shared/layout/route-chrome';
 import { UiToastHost } from './shared/ui/toast/ui-toast-host';
 
@@ -30,6 +31,8 @@ export class AppComponent {
     // Las regiones vivas (polite y assertive) tienen que existir ANTES de que alguien anuncie: una región que nace con
     // su texto no se lee. Se monta aquí, fuera del @defer del anfitrión de avisos, y no depende de ningún componente.
     inject(LiveRegionAnnouncer);
+    // El foco y el anuncio de cada cambio de pantalla (al `h1`, no al `<body>`): vive desde el arranque, no en una ruta.
+    inject(RouteFocusService);
   }
 
   private readonly router = inject(Router);

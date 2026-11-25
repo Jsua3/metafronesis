@@ -75,9 +75,11 @@
   margin: 0 0 var(--ds-space-1);
   padding: var(--ds-space-1) var(--ds-space-3);
   border-radius: var(--ds-radius-pill);
-  background: var(--l-tinte, var(--ds-primary-subtle));
+  // Fondo y tinta opacos y pareados (`_materiales.scss`): el contraste no depende de lo que haya detrás de la píldora.
+  max-inline-size: 100%;
+  background: var(--l-etiqueta-fondo, var(--ds-primary-subtle));
   box-shadow: inset 0 0 0 1px var(--l-tinte-filo, transparent);
-  color: var(--l-acento-tinta, var(--ds-primary));
+  color: var(--l-etiqueta-tinta, var(--ds-primary));
   font-size: var(--ds-type-caption-size);
   font-weight: var(--ds-type-caption-weight);
   letter-spacing: 0.06em;

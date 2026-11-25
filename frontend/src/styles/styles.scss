@@ -336,8 +336,13 @@ code {
 .psy-skip-link:focus,
 .skip-link:focus {
   top: 16px;
-  outline: 3px solid var(--psy-focus);
-  outline-offset: 3px;
+  // Doble contorno sobre el fondo de la píldora (el primario): blanco por dentro y una banda del primario por fuera, así
+  // se ve sobre cualquier página (clara, oscura o con vidrio detrás). No usa `--psy-focus`: ese vale lo mismo que el fondo.
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 2px var(--psy-blue-deep),
+    0 0 0 7px var(--psy-blue-deep);
 }
 
 /* Acuse de pulsación (plan visual: todo lo pulsable lo tiene). Sin transición: entra y sale en el acto. */
@@ -346,9 +351,11 @@ code {
   transform: translateX(-50%) scale(0.97);
 }
 
-/* Destino de los enlaces de salto: recibe el foco por script, sin contorno de control. */
+/* Destino de los enlaces de salto y de la navegación (RouteFocusService): recibe el foco por script, sin contorno de
+   control; lo que se lee es el encabezado, no un recuadro alrededor. */
 main[tabindex="-1"]:focus,
-#main-content:focus {
+#main-content:focus,
+h1[tabindex="-1"]:focus {
   outline: none;
   box-shadow: none;
 }

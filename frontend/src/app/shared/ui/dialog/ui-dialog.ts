@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { encabezadoPrincipal, enfocarPorPrograma, focoPerdido } from '../../../core/a11y/foco.util';
 import { TemaService } from '../../../core/tema/tema.service';
 import { uniqueUiId } from '../button/click-guard';
 import { UiButton } from '../button/ui-button';
@@ -275,6 +276,9 @@ export class UiDialog {
     const priorityFocus = !options.autoFocus && !extra.autoFocus;
     // La piel se decide ANTES de abrir: después el CDK ya movió el foco a la capa nueva y se perdería el disparador.
     const fuente = this.fuentePiel(options);
+    // Quién tenía el foco al abrir: a él vuelve al cerrar (el CDK lo restaura, salvo que ya no exista).
+    const disparador = options.origen instanceof HTMLElement ? options.origen
+      : (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const leaveMs = (extra.panelClass as string[] | undefined)?.includes('ui-sheet-pane') ? UI_SHEET_LEAVE_MS : UI_DIALOG_LEAVE_MS;
     const ref: DialogRef<R, C> = this.dialog.open<R, D, C>(component, {
       data: options.data,
@@ -306,9 +310,25 @@ export class UiDialog {
       ...extra,
     });
     this.vestir(ref, fuente);
+    if (options.restoreFocus !== false) this.garantizarFocoAlCerrar(ref, disparador);
     // Después del foco del CDK (que se registra al abrir): el foco por prioridad.
     if (priorityFocus) afterNextRender(() => focusByPriority(ref.overlayRef.overlayElement), { injector: this.injector });
     return ref;
+  }
+
+  /**
+   * Red de seguridad del retorno de foco (WCAG 2.4.3): el CDK devuelve el foco al disparador, pero si este ya no existe
+   * (la fila se borró, el menú que lo abrió se cerró, la pantalla cambió) el foco cae en `<body>` y quien navega con
+   * teclado empieza otra vez desde arriba. Entonces va al encabezado de la pantalla, que es donde se está.
+   */
+  private garantizarFocoAlCerrar<R, C>(ref: DialogRef<R, C>, disparador: HTMLElement | null): void {
+    ref.closed.subscribe(() => {
+      afterNextRender(() => {
+        if (!focoPerdido()) return;
+        if (disparador?.isConnected && !disparador.closest('[inert], [hidden]') && enfocarPorPrograma(disparador)) return;
+        enfocarPorPrograma(encabezadoPrincipal());
+      }, { injector: this.injector });
+    });
   }
 
   /**
