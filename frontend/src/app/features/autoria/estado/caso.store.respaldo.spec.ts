@@ -33,6 +33,15 @@ const sala = (store: CasoStore, id: string) => caso(store).salas.find((s) => s.i
 const escenaDe = (store: CasoStore, salaId: string) => caso(store).escenas.find((e) => e.salaId === salaId)!;
 
 describe('S2 · no se pierde lo escrito', () => {
+  it('mantiene hallazgos de dos árboles distintos de una escena', async () => {
+    const { store } = await abrir();
+    const id = Number(escenaDe(store, 'consultorio').id);
+    const hallazgos = [12, 13].map(arbol => ({ code: 'CONTENT_PLACEHOLDER', severity: 'error' as const, message: 'Relleno', path: `nodes/${id}/dialogue/${arbol}/1` }));
+    store.registrarRevision(hallazgos);
+    expect(store.totalPendientes()).toBe(2);
+    expect(store.faltas().length).toBe(2);
+  });
+
   it('un conflicto lista COMPLETO todo lo que se escribió, sin recortar, y lo estructural en palabras del docente', async () => {
     const { servidor, store } = await abrir();
     const origen = escenaDe(store, 'consultorio');
@@ -81,6 +90,26 @@ describe('S2 · no se pierde lo escrito', () => {
 });
 
 describe('S1 · salir sin perder nada', () => {
+  it('conserva el respaldo si el destino no existe o ya tiene cuatro respuestas', async () => {
+    const { store, servidor } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const id = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, id, { texto: 'Copia pendiente' });
+    await store.sincronizado();
+    servidor.otraSesionEscribe();
+    await store.cargar(CASO, true);
+    const borrador = store.borradoresPendientes()[0];
+    const destino = escenaDe(store, 'pasillo');
+    while (escenaDe(store, 'pasillo').respuestas.length < 4) store.agregarRespuesta(destino.id);
+    store.recuperarBorrador(borrador, destino.id);
+    store.recuperarBorrador(borrador, 'eliminada');
+    expect(escenaDe(store, 'pasillo').respuestas.length).toBe(4);
+    expect(store.borradoresPendientes()).toContain(borrador);
+    expect(leerBorradores(7, String(CASO)).some(b => b.respuesta.texto === 'Copia pendiente')).toBe(true);
+    store.recuperarBorrador(borrador, origen.id);
+    expect(store.borradoresPendientes()).not.toContain(borrador);
+  });
+
   it('guarda el texto en la sesión del usuario y no en almacenamiento persistente', async () => {
     sessionStorage.clear();
     const { store } = await abrir();

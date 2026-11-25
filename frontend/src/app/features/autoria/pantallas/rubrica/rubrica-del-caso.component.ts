@@ -130,9 +130,7 @@ export class RubricaDelCasoComponent {
       if (this.versionId() === id) this.vista.set(rubrica ? tipoDeRubrica(rubrica, id) : { tipo: 'sin-rubrica' });
     } catch (error) {
       if (this.versionId() !== id) return;
-      // 404 = el caso no tiene ninguna (ni la predeterminada): es el estado vacío, no un error.
-      if ((error as { status?: number }).status === 404) this.vista.set({ tipo: 'sin-rubrica' });
-      else this.vista.set({ tipo: 'error', mensaje: apiErrorMessage(error, 'No pudimos leer la rúbrica del caso.') ?? 'No pudimos leer la rúbrica del caso.' });
+      this.vista.set({ tipo: 'error', mensaje: apiErrorMessage(error, 'No pudimos leer la rúbrica del caso.') ?? 'No pudimos leer la rúbrica del caso.' });
     }
   }
 

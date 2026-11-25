@@ -71,13 +71,17 @@ interface Grupo {
       @for (grupo of rellenos(); track grupo.id) {
         <section class="pp__grupo">
           <h3 class="pp__etapa">Escena {{ grupo.numero }} · {{ grupo.titulo }}: {{ grupo.items.length }} {{ grupo.items.length === 1 ? 'texto de muestra por escribir' : 'textos de muestra por escribir' }}</h3>
-          <ul>@for (item of grupo.items; track $index) { <li>{{ item.detalle }}</li> }</ul>
-          <button ui-button type="button" variant="ghost" size="sm" (click)="ir(grupo.items[0].pendiente)">Ir</button>
+          <ul>@for (item of grupo.items; track $index) { <li>{{ item.detalle }} <button ui-button type="button" variant="ghost" size="sm" (click)="ir(item.pendiente)">Ir</button></li> }</ul>
         </section>
       }
-      @if (sugerencias().length) {
+      @if (sugerencias().length || rellenosSugeridos().length) {
         <details class="pp__sugerencias">
-          <summary>Sugerencias ({{ sugerencias().length }}): no impiden enviar</summary>
+          <summary>Sugerencias ({{ sugerencias().length + cantidadRellenosSugeridos() }}): no impiden enviar</summary>
+          @for (grupo of rellenosSugeridos(); track grupo.id) {
+            <section class="pp__grupo"><h3 class="pp__etapa">Escena {{ grupo.numero }} · {{ grupo.titulo }}: {{ grupo.items.length }} {{ grupo.items.length === 1 ? 'texto de muestra' : 'textos de muestra' }}</h3>
+              <ul>@for (item of grupo.items; track $index) { <li>{{ item.detalle }} <button ui-button type="button" variant="ghost" size="sm" (click)="ir(item.pendiente)">Ir</button></li> }</ul>
+            </section>
+          }
           <ul class="pp__lista">
             @for (p of sugerencias(); track $index) {
               <li class="pp__item pp__item--sugerencia">
@@ -133,9 +137,13 @@ export class PanelPendientesComponent {
 
   protected readonly sugerencias = computed(() => this.progreso.pendientes().filter((p) => p.tipo === 'sugerencia' && p.codigo !== 'CONTENT_PLACEHOLDER'));
 
-  protected readonly rellenos = computed(() => {
+  protected readonly rellenos = computed(() => this.agruparRellenos(false));
+  protected readonly rellenosSugeridos = computed(() => this.agruparRellenos(true));
+  protected readonly cantidadRellenosSugeridos = computed(() => this.rellenosSugeridos().reduce((total, grupo) => total + grupo.items.length, 0));
+
+  private agruparRellenos(sugeridos: boolean) {
     const escenas = this.progreso.escenas();
-    const pendientes = this.progreso.pendientes().filter(p => p.codigo === 'CONTENT_PLACEHOLDER');
+    const pendientes = this.progreso.pendientes().filter(p => p.codigo === 'CONTENT_PLACEHOLDER' && (p.tipo === 'sugerencia') === sugeridos);
     const ids = [...new Set(pendientes.map(p => p.escenaId))];
     return ids.map(id => {
       const indice = escenas.findIndex(e => e.id === id);
@@ -147,7 +155,7 @@ export class PanelPendientesComponent {
       });
       return { id: id ?? 'sin-escena', numero: indice + 1 || '?', titulo: escena?.titulo ?? 'Escena sin identificar', items };
     });
-  });
+  }
 
   protected async irEnviar(): Promise<void> {
     this.ref?.close();

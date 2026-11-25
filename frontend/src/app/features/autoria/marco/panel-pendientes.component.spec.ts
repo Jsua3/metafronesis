@@ -45,7 +45,8 @@ describe('PanelPendientesComponent', () => {
     raiz.querySelector<HTMLButtonElement>('header button[data-accion="ver-pendientes"]')!.click();
     await listo();
     const hoja = document.querySelector<HTMLElement>('app-panel-pendientes')!;
-    expect(hoja.textContent).toContain('2 textos de muestra por escribir');
+    expect(hoja.querySelector('.pp__sugerencias')?.textContent).toContain('2 textos de muestra');
+    expect(hoja.querySelectorAll('.pp__grupo:not(.pp__sugerencias .pp__grupo)').length).toBe(0);
     expect(hoja.textContent).toContain('Respuesta 1 \u00b7 texto');
     expect(hoja.textContent).toContain('Respuesta 1 \u00b7 retroalimentaci\u00f3n');
   });

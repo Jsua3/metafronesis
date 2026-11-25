@@ -143,7 +143,10 @@ class RubricaVersionView(APIView):
             from django.http import Http404
             raise Http404
         rubrica = rubrica_para_revision(version.pk)
-        if rubrica is None or not gestion_rubricas.visibles(request.user).filter(pk=rubrica.pk).exists():
+        if rubrica is None:
+            from shared.exceptions import ApiError
+            raise ApiError("RUBRIC_NOT_ASSIGNED", "El caso no tiene rúbrica asignada.", 404)
+        if not gestion_rubricas.visibles(request.user).filter(pk=rubrica.pk).exists():
             from django.http import Http404
             raise Http404
         return api_ok(gestion_rubricas.resumen(rubrica, request.user, True))

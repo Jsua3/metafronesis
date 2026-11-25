@@ -1,3 +1,4 @@
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -334,6 +335,8 @@ export class RevisionComponent {
   }
 
   /** «Llévame ahí»: abre la pantalla de lo que falta y, si es algo concreto (una respuesta, un hito, un final…), le da el foco. */
+  private readonly avisosNavegacion = inject(NotificationService);
+
   protected async llevar(f: Falta): Promise<void> {
     if (f.ir.accionId) await this.guia.mostrar(f.ir.accionId, 'foco');
     const destino = this.rutas.a(f.ir.ruta);
@@ -341,6 +344,7 @@ export class RevisionComponent {
     // La lista de verificación vive en el Inspector: si estaba oculto, se muestra para poder llegar a ella.
     if (f.ir.ancla === 'lista-verificacion') this.estudio?.alternar('inspector', true);
     if (f.ir.ancla) await this.enfocar(f.ir.ancla);
+    if (f.ir.aviso) this.avisosNavegacion.info(f.ir.aviso);
   }
 
   /** ↑/↓ entre las filas de problemas (como en el panel de un IDE); Inicio/Fin a la primera y a la última. */

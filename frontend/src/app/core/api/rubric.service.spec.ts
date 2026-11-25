@@ -152,8 +152,12 @@ describe('RubricService: lecturas y alta sobre las rutas de metafronesis', () =>
   it('trata una rubrica ausente como estado vacio y conserva otros errores', () => {
     let valor: RubricAdmin | null | undefined;
     service.caseVersionRubric(9).subscribe(r => valor = r);
-    http.expectOne('/api/rubrics/case-versions/9').flush({}, { status: 404, statusText: 'Not Found' });
+    http.expectOne('/api/rubrics/case-versions/9').flush({ code: 'RUBRIC_NOT_ASSIGNED' }, { status: 404, statusText: 'Not Found' });
     expect(valor).toBeNull();
+    let codigo = '';
+    service.caseVersionRubric(9).subscribe({ error: e => codigo = e.error.code });
+    http.expectOne('/api/rubrics/case-versions/9').flush({ code: 'NOT_FOUND' }, { status: 404, statusText: 'Not Found' });
+    expect(codigo).toBe('NOT_FOUND');
     let estado = 0;
     service.caseVersionRubric(9).subscribe({ error: e => estado = e.status });
     http.expectOne('/api/rubrics/case-versions/9').flush({}, { status: 500, statusText: 'Error' });

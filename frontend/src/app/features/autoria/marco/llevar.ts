@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
 import { GuiaService } from '../guia/guia.service';
 import { RutasAutoria } from '../rutas';
 
@@ -10,6 +11,7 @@ export interface Destino {
   ruta: string;
   accionId?: string;
   ancla?: string;
+  aviso?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export function injectLlevar(): (destino: Destino) => Promise<void> {
   const router = inject(Router);
   const rutas = inject(RutasAutoria);
   const guia = inject(GuiaService);
+  const avisos = inject(NotificationService);
   return async (destino) => {
     if (destino.accionId) await guia.mostrar(destino.accionId, 'foco');
     if (destino.ruta) {
@@ -28,6 +31,7 @@ export function injectLlevar(): (destino: Destino) => Promise<void> {
       if (router.url.split('?')[0] !== direccion) await router.navigateByUrl(direccion);
     }
     if (destino.ancla) await enfocar(destino.ancla);
+    if (destino.aviso) avisos.info(destino.aviso);
   };
 }
 

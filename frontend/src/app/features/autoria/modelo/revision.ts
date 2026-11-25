@@ -16,7 +16,7 @@ export interface Falta {
    * A dónde lleva «Llévame ahí»: una ruta y, si hace falta, la acción que muestra la guía o el elemento concreto (`ancla`)
    * al que va el foco al llegar: una respuesta, un hito, un final, el aviso de una escena…
    */
-  ir: { ruta: string; accionId?: string; ancla?: string };
+  ir: { ruta: string; accionId?: string; ancla?: string; aviso?: string };
 }
 
 /** Las seis reglas de publicación del modelo, más las dos que cuelgan de los finales. */
@@ -315,10 +315,14 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'respuestas-escena' } : {}) }));
         break;
       case 'CONTENT_PLACEHOLDER': {
-        const match = h.path?.match(/^nodes\/\d+\/(narrative|dialogue\/(\d+))$/);
+        const match = h.path?.match(/^nodes\/\d+\/(narrative|dialogue\/(?:(\d+)\/)?(\d+))$/);
         const localId = h.nodeId !== undefined ? String(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : '';
         const lineas = caso.escenas.find(e => e.id === localId)?.lineas ?? [];
-        const linea = match?.[2] ? lineas.find(l => l.id.endsWith(`:${match[2]}`)) : undefined;
+        const linea = match?.[3] ? lineas.find(l => match[2] ? l.id === `${match[2]}:${match[3]}` : l.id.endsWith(`:${match[3]}`)) : undefined;
+        if (escena && match?.[2] && !linea) {
+          faltas.push(falta({ ruta: escena, ancla: 'narracion-escena', aviso: h.message }));
+          break;
+        }
         if (escena && match && (match[1] === 'narrative' || linea)) {
           faltas.push(falta({ ruta: escena, ancla: linea ? `linea-${linea.id}` : 'narracion-escena' }));
           break;

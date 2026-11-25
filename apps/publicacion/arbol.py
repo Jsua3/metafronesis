@@ -86,7 +86,7 @@ class CasoCompuesto(ComponenteDelCaso):
         for linea in DialogueLine.objects.filter(dialogue_tree__scene_map__case_version=self.version).select_related('dialogue_tree__scene_map'):
             if es_relleno(linea.text):
                 nodo = linea.dialogue_tree.scene_map.node_id
-                problemas.append(Problema('CONTENT_PLACEHOLDER', f'nodes/{nodo}/dialogue/{linea.display_order}', 'Escribe el diálogo: todavía tiene texto de relleno.'))
+                problemas.append(Problema('CONTENT_PLACEHOLDER', f'nodes/{nodo}/dialogue/{linea.dialogue_tree_id}/{linea.display_order}', f'Escribe el diálogo en la rama «{linea.dialogue_tree.tree_key}»: todavía tiene texto de relleno.'))
         return problemas + [p for hijo in self.hijos for p in hijo.problemas()]
 
 

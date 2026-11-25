@@ -85,7 +85,11 @@
         @for (b of store.borradoresPendientes(); track b.respuesta.id) {
           @if (b.escenaId === e.id || !store.existeEscena(b.escenaId)) {
             <p class="nota nota--aviso" role="status">Tienes texto sin guardar de una respuesta {{ b.escenaId === e.id ? 'de esta escena' : 'de una escena que ya no existe' }} (de {{ b.guardado | date:'HH:mm' }}).
-              <button type="button" (click)="store.recuperarBorrador(b, e.id)">Recuperar</button> &middot;
+              @if (!enElTopeDeRespuestas(e)) { <button type="button" (click)="store.recuperarBorrador(b, e.id)">Recuperar aquí</button> &middot; }
+              @else { Esta escena ya tiene cuatro respuestas. Libera un lugar o elige otra escena con espacio. }
+              @for (otra of store.caso()!.escenas; track otra.id) {
+                @if (otra.id !== e.id && !enElTopeDeRespuestas(otra)) { <button type="button" (click)="store.recuperarBorrador(b, otra.id)">Recuperar en {{ otra.titulo }}</button> &middot; }
+              }
               <button type="button" (click)="store.descartarBorrador(b)">Descartar</button>
             </p>
           }

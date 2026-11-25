@@ -377,6 +377,16 @@ it('ubica la marca de IA y el texto largo cuando llegan sus identificadores', as
 
 
 describe('rutas de relleno de la compuerta', () => {
+  it('distingue el guion de otra rama con el mismo orden', () => {
+    const caso = structuredClone(CASO_HOSPITAL);
+    caso.escenas[0].id = '7';
+    caso.escenas[0].lineas = [{ id: '12:1', personajeId: '', texto: 'Lorem', expresion: 'neutral', marcaIa: false }];
+    const hallazgos = ['12', '13'].map(id => ({ code: 'CONTENT_PLACEHOLDER', severity: 'error' as const, message: `Rama ${id}`, nodeId: 7, path: `nodes/7/dialogue/${id}/1` }));
+    const faltas = faltasDelServidor(hallazgos, caso, { respuestaDeOpcion: () => undefined, faltasLocales: [] });
+    expect(faltas.map(f => f.ir.ancla)).toEqual(['linea-12:1', 'narracion-escena']);
+    expect(faltas[1].mensaje).toBe('Rama 13');
+  });
+
   it('lleva a la narración y a cada línea concreta', () => {
     const caso = structuredClone(CASO_HOSPITAL);
     const escena = caso.escenas[0];

@@ -20,7 +20,7 @@ import { pesoEnPalabras, tipoDeRubrica } from './rubrica-del-caso.modelo';
  */
 
 const CASO = 41;
-const no404 = () => throwError(() => new HttpErrorResponse({ status: 404, error: { message: 'Rubrica no encontrada' } }));
+const no404 = () => of(null);
 
 function rubrica(parcial: Partial<RubricAdmin> = {}): RubricAdmin {
   return {
@@ -241,6 +241,12 @@ describe('RubricaDelCasoComponent (E5)', () => {
     const { raiz } = await montar({ estado: 'IN_REVIEW' });
     expect(raiz.querySelector('section.vacio')).not.toBeNull();
     expect(raiz.querySelectorAll('section.vacio button')).toHaveLength(0);
+  });
+
+  it('un 404 diferente de ausencia muestra el mensaje de error', async () => {
+    const { raiz } = await montar({ rubricas: { caseVersionRubric: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 404, error: { code: 'NOT_FOUND', message: 'No disponible.' } }))) } });
+    expect(raiz.querySelector('section.vacio')).toBeNull();
+    expect(raiz.textContent).toContain('No disponible.');
   });
 
   it('un error al leer la rúbrica se dice y se puede reintentar', async () => {

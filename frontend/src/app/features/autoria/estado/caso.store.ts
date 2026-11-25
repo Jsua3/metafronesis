@@ -205,10 +205,10 @@ export class CasoStore {
 
   recuperarBorrador(borrador: Borrador, escenaId: string): void {
     const caso = this.estado();
-    if (!caso || this.soloLectura() || !caso.escenas.some(e => e.id === escenaId)) return;
+    if (!caso || this.soloLectura() || !caso.escenas.some(e => e.id === escenaId && e.respuestas.length < 4)) return;
     const respuesta = { ...structuredClone(borrador.respuesta), id: nuevoId('respuesta'), destinoId: null };
-    this.descartarBorrador(borrador);
-    this.ejecutar({ nombre: 'la respuesta recuperada', aplicar: c => { c.escenas.find(e => e.id === escenaId)?.respuestas.push(respuesta); } });
+    this.ejecutar({ nombre: 'la respuesta recuperada', aplicar: c => { c.escenas.find(e => e.id === escenaId)!.respuestas.push(respuesta); } });
+    if (this.respaldoLocalDisponible()) this.descartarBorrador(borrador);
     this.respuestasRecuperadas.update(ids => new Set([...ids, respuesta.id]));
   }
   private readonly injector = inject(Injector);

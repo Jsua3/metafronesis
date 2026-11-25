@@ -166,4 +166,19 @@ def test_relleno_identifica_narracion_y_cada_linea(caso):
     for orden in (1, 2):
         DialogueLine.objects.create(dialogue_tree=arbol, display_order=orden, speaker_name='A', text='Lorem ipsum')
     rutas = {p.where for p in arbol_de(caso['version']).problemas() if p.code == 'CONTENT_PLACEHOLDER'}
-    assert {f'nodes/{nodo.pk}/narrative', f'nodes/{nodo.pk}/dialogue/1', f'nodes/{nodo.pk}/dialogue/2'} <= rutas
+    assert {f'nodes/{nodo.pk}/narrative', f'nodes/{nodo.pk}/dialogue/{arbol.pk}/1', f'nodes/{nodo.pk}/dialogue/{arbol.pk}/2'} <= rutas
+
+
+def test_relleno_en_dos_arboles_tiene_rutas_distintas(caso, django_assert_max_num_queries):
+    from apps.publicacion.arbol import arbol_de
+    from apps.simulation.models.world import SceneMap, DialogueTree, DialogueLine
+    nodo = caso['inicio']
+    mapa = SceneMap.objects.create(case_version=caso['version'], node=nodo, map_key='inicio', title='Inicio')
+    arboles = [DialogueTree.objects.create(scene_map=mapa, tree_key=clave, speaker_name='A') for clave in ('guion-inicio', 'secundaria')]
+    for arbol in arboles:
+        DialogueLine.objects.create(dialogue_tree=arbol, display_order=1, speaker_name='A', text='Lorem ipsum')
+    with django_assert_max_num_queries(4):
+        problemas = arbol_de(caso['version']).problemas()
+    rellenos = [p for p in problemas if p.code == 'CONTENT_PLACEHOLDER']
+    assert {p.where for p in rellenos} == {f'nodes/{nodo.pk}/dialogue/{a.pk}/1' for a in arboles}
+    assert any('secundaria' in p.message for p in rellenos)
