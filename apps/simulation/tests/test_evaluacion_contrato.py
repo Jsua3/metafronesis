@@ -40,3 +40,20 @@ def test_retro_mas_reciente_ignora_fechas_de_actualizacion_nulas(scene, intento)
     RubricEvaluation.objects.create(attempt=intento, rubric=rubric, instructor=scene["stranger"], origin="DOCENTE", comment="Anterior")
     registrar_retroalimentacion_docente(intento, scene["teacher"], "Reciente")
     assert retroalimentacion_docente_de(intento) == "Reciente"
+
+
+def test_retro_avisa_solo_la_primera_vez(scene, intento, django_capture_on_commit_callbacks):
+    from shared.eventos import retroalimentacion_registrada
+    rubric = Rubric.objects.create(name="Rúbrica", created_by=scene["teacher"])
+    SimulationRubricAssignment.objects.create(case_version=scene["version"], rubric=rubric)
+    avisos = []
+    receptor = lambda sender, **kwargs: avisos.append(kwargs["intento"].pk)
+    retroalimentacion_registrada.connect(receptor, weak=False)
+    try:
+        with django_capture_on_commit_callbacks(execute=True):
+            registrar_retroalimentacion_docente(intento, scene["teacher"], "Primera")
+        with django_capture_on_commit_callbacks(execute=True):
+            registrar_retroalimentacion_docente(intento, scene["teacher"], "Corregida")
+    finally:
+        retroalimentacion_registrada.disconnect(receptor)
+    assert avisos == [intento.pk]

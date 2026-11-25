@@ -48,7 +48,7 @@ def construir(intento):
 
 def leer(usuario, identificador):
     """El estado del intento propio, bajo el mismo cerrojo de lectura que las rutas del mundo."""
-    return world._ejecutar(usuario, identificador, construir)
+    return world._ejecutar(usuario, identificador, construir, solo_lectura=True)
 
 
 def _consecuencia(opcion):

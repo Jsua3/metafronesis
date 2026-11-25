@@ -163,6 +163,10 @@ Para cada intento abierto en juego (`IN_PROGRESS`) de los convocados, de esa ver
 
 `cerrar_sesiones_vencidas` (comando existente) recorre las sesiones no terminadas con `fin` vencido y aplica `estado_actual().cerrar_automatico(sesion)` con los mismos pasos 3 a 5 de `transicionar`, sin usuario (auditoría `SESION_CIERRE_AUTOMATICO`). Se mantiene el margen actual de un día tras `fin` para el cierre automático; el ingreso ya se bloquea en `fin` porque la ventana de la asignación termina ahí.
 
+### 4.6 Recordatorio previo
+
+`recordar_sesiones` (con `--dry-run`) debe correr cada pocos minutos, igual que `cerrar_sesiones_vencidas`. Envía una vez, a los convocados activos de las sesiones PROGRAMADA que empiezan en `SIEP_SESION_RECORDATORIO_MIN` minutos o menos (por defecto 30), y marca `Sesion.recordatorio_enviado_en`; si el docente cambia `inicio` o `fin`, la marca se borra y el recordatorio sale con el nuevo horario. Auditoría `SESION_RECORDATORIO`.
+
 ## 5. Frontend (Angular)
 
 ### Menú y rutas

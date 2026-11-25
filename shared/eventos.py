@@ -16,5 +16,9 @@ intento_calificado = Signal()
 #: ``simulation`` cuando el docente registra la retroalimentación general. Argumentos: ``intento`` y ``docente``.
 retroalimentacion_registrada = Signal()
 
+#: ``sesiones`` poco antes de que empiece una sesión programada. Argumentos: ``sesion`` y ``estudiantes`` (convocados
+#: activos).
+sesion_por_comenzar = Signal()
+
 #: ``sesiones`` al cancelar una sesión. Argumentos: ``sesion`` y ``estudiantes`` (convocados activos).
 sesion_cancelada = Signal()

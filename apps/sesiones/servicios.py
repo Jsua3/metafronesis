@@ -157,6 +157,7 @@ def crear(usuario, datos):
 def editar(usuario, pk, cambios):
     sesion = obtener(usuario, pk, lock=True)
     sesion.estado_actual().exigir_edicion()
+    horario_antes = (sesion.inicio, sesion.fin)
     if "caseVersionId" in cambios:
         sesion.case_version = _version_de_biblioteca(cambios["caseVersionId"])
     for clave, campo in _CAMPOS.items():
@@ -170,6 +171,8 @@ def editar(usuario, pk, cambios):
     if cambia_grupo:
         sesion.grupo = _grupo_propio(usuario, cambios["grupoId"])
         _exigir_miembros(sesion.grupo)
+    if (sesion.inicio, sesion.fin) != horario_antes:
+        sesion.recordatorio_enviado_en = None  # con otro horario, el recordatorio vuelve a salir a su hora
     sesion.save()
     if cambia_grupo:
         convocatorias.rehacer(sesion)
