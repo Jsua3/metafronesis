@@ -95,6 +95,19 @@ describe('GroupAssignmentsComponent', () => {
     expect(text(items()[1].querySelector('.ga-window'))).toMatch(/Abre el .* · Cierra el .*\./);
   });
 
+  it('muestra el avance por personas y enlaza al grupo y caso', async () => {
+    await render({ api: { list: () => of([row({ progress: { students: 7, completed: 3, inProgress: 2 } })]) } });
+    expect(text(items()[0])).toContain('3 de 7 estudiantes terminaron · 2 en curso');
+    expect(items()[0].querySelector('a[href*="trazabilidad"]')?.getAttribute('href')).toContain('grupo=3&caseVersionId=12');
+  });
+
+  it('abre el diálogo al recibir la petición desde la cabecera', async () => {
+    await render();
+    fixture.componentRef.setInput('solicitudAsignar', 1);
+    await fixture.whenStable();
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
   it('un caso cerrado se rotula «Ya cerró» y uno en pausa «En pausa», aunque su ventana esté abierta', async () => {
     await render({ api: { list: vi.fn(() => of([row({ id: 5, state: 'CLOSED' }), row({ id: 6, caseVersionId: 13, state: 'OPEN', active: false })])) } });
     expect(items().map(item => text(item.querySelector('ui-badge')))).toEqual(['Ya cerró', 'En pausa']);

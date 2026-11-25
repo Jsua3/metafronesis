@@ -107,6 +107,20 @@ describe('pantalla Reportes (F7-3)', () => {
 
   // req: RNF-04, BLOQUE-H
   describe('estados', () => {
+    it('distingue la carga y el error de casos y permite reintentar sin recargar grupos', async () => {
+      const pending = new Subject<SimulationCaseSummary[]>();
+      let calls = 0;
+      await render({ casos: () => ++calls === 1 ? pending : of([]) }, { stable: false });
+      expect(text(host())).toContain('Cargando casos');
+      pending.error(new Error('falló'));
+      fixture.detectChanges();
+      expect(text(host())).toContain('No fue posible cargar los casos');
+      const error = host().querySelector('[data-error-casos]')!;
+      (error.querySelector('button') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(calls).toBe(2);
+      expect(text(host())).toContain('Aún no hay casos publicados');
+    });
     it('un solo h1 y la región de estado siempre presente', async () => {
       await render();
       expect(host().querySelectorAll('h1')).toHaveLength(1);

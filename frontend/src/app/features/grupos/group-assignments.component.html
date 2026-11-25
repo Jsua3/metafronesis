@@ -45,6 +45,12 @@
                 }
                 <span class="ga-window">{{ row.window }}</span>
                 <span class="ga-sequence">{{ row.sequence }}</span>
+                @if (row.assignment.progress; as avance) {
+                  <span>{{ avance.completed }} de {{ avance.students }} estudiantes terminaron · {{ avance.inProgress }} en curso</span>
+                } @else {
+                  <span>Avance no disponible. Vuelve a abrir el grupo para actualizarlo.</span>
+                }
+                <a ui-button variant="ghost" routerLink="/portal/docente/trazabilidad" [queryParams]="{ grupo: grupoId(), caseVersionId: row.assignment.caseVersionId }">Ver intentos de {{ row.title }}</a>
               </span>
               <ui-badge class="ga-item__state" [tone]="row.tone">{{ row.label }}</ui-badge>
               <span class="ga-item__actions">

@@ -36,7 +36,7 @@ def _fila(intento):
     }
 
 
-def listar(docente, case_version_id=None, grupo_id=None):
+def intentos_filtrados(docente, case_version_id=None, grupo_id=None):
     intentos = _intentos(docente)
     if grupo_id is not None:
         grupos = Grupo.objects.filter(pk=grupo_id, activo=True)
@@ -48,7 +48,11 @@ def listar(docente, case_version_id=None, grupo_id=None):
         intentos = intentos.filter(student_id__in=miembros)
     if case_version_id is not None:
         intentos = intentos.filter(case_version_id=case_version_id)
-    return [_fila(intento) for intento in intentos.order_by("-started_at", "pk")]
+    return intentos
+
+
+def listar(docente, case_version_id=None, grupo_id=None):
+    return [_fila(intento) for intento in intentos_filtrados(docente, case_version_id, grupo_id).order_by("-started_at", "pk")]
 
 
 def detalle(docente, attempt_id):

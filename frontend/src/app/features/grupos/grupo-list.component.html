@@ -64,6 +64,8 @@
               <p class="gl-hint">Código {{ grupo.codigo }} · {{ detalleConteo() }}</p>
             </div>
             <div class="gl-detail__actions">
+              <button ui-button type="button" icon="person_add" (click)="agregarEstudiante(grupo)">Invitar estudiantes</button>
+              <button ui-button type="button" variant="secondary" icon="assignment_add" (click)="irAAsignar()">Asignar un caso</button>
               <ui-menu iconOnly [label]="'Más acciones de «' + grupo.nombre + '»'" [items]="rowActions"
                 (itemSelected)="accionDeFila(grupo, $event)" />
             </div>
@@ -78,11 +80,11 @@
                 </div>
 
                 @if (grupoSeleccionado() === grupo.id) {
-                  <form class="gl-add" [formGroup]="estudianteForm" novalidate (ngSubmit)="confirmarAgregar()">
+                  <form class="gl-add" aria-live="polite" [formGroup]="estudianteForm" novalidate (ngSubmit)="confirmarAgregar()">
                     <ui-field label="Correo del estudiante" required
                       hint="Recibe una invitación y entra al grupo cuando la acepta."
                       [error]="fieldError(estudianteForm.controls.email, 'Escribe un correo válido.')">
-                      <input uiControl type="email" formControlName="email" autocomplete="off">
+                      <input uiControl type="email" formControlName="email" autocomplete="off" (blur)="estudianteForm.controls.email.markAsTouched()">
                     </ui-field>
                     <div class="gl-actions">
                       <button ui-button type="submit" icon="person_add" [loading]="agregandoEstudiante()">
@@ -142,8 +144,8 @@
             </ng-template>
 
 <ng-template uiTab="casos" label="Casos asignados">
-              <app-group-assignments [grupoId]="grupo.id" [cases]="casosDisponibles()" [casesStatus]="casosEstado()"
-                (assignedChange)="casosAsignadosTotal.set($event)" (retryCases)="cargarCasos()" />
+              <app-group-assignments [grupoId]="grupo.id" [cases]="casosDisponibles()" [casesStatus]="casosEstado()" [solicitudAsignar]="solicitudAsignar()"
+                (assignedChange)="casosAsignadosTotal.set($event)" (retryCases)="cargarCasos()" (solicitudAtendida)="solicitudAsignar.set(0)" />
             </ng-template>
 
             <ng-template uiTab="invitaciones" [label]="etiquetaInvitaciones()">

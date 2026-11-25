@@ -10,15 +10,17 @@ grupo; ``assignment.list``: el docente dueño o el ADMIN). Una asignación de un
 confirma (404), como una rúbrica ajena (R3).
 """
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Exists, OuterRef, Q, Subquery
+from django.db.models.functions import JSONObject
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 
-from apps.simulation.models import CaseVersion
+from apps.simulation.models import CaseVersion, SimulationAttempt
 from shared import policies
 from shared.exceptions import ApiError
 
 from .assignments import assignment_state, format_window_value, parse_window_value
-from .models import CaseAssignment, Grupo
+from .models import CaseAssignment, Grupo, GrupoEstudiante, MembershipStatus
 from .secuencia import clave_secuencia
 from apps.simulation.services.audit_service import auditable
 from shared.policies import ADMIN
@@ -53,6 +55,8 @@ def assignment_dto(assignment, now=None):
         data["opensAt"] = format_window_value(assignment.opens_at)
     if assignment.closes_at is not None:
         data["closesAt"] = format_window_value(assignment.closes_at)
+    if hasattr(assignment, "progress") and assignment.grupo_id is not None:
+        data["progress"] = assignment.progress or {"students": 0, "completed": 0, "inProgress": 0}
     return data
 
 
@@ -204,7 +208,20 @@ def create_assignment(actor, payload):
 
 def list_assignments(actor, group_id=None, case_version_id=None):
     """Las asignaciones que el actor puede listar: las de un grupo suyo (el ADMIN, todas)."""
-    queryset = CaseAssignment.objects.select_related("grupo", "case_version__simulation_case")
+    # Una sola consulta para todas las asignaciones: los EXISTS cuentan personas, no intentos.
+    # Si alguien terminó y después volvió a empezar, prevalece «terminó».
+    attempts = SimulationAttempt.objects.filter(
+        student_id=OuterRef("estudiante_id"), case_version_id=OuterRef(OuterRef("case_version_id"))
+    )
+    members = (GrupoEstudiante.objects.filter(grupo_id=OuterRef("grupo_id"), status=MembershipStatus.ACTIVE)
+        .annotate(done=Exists(attempts.filter(status="COMPLETED")),
+                  ongoing=Exists(attempts.filter(status__in=("IN_PROGRESS", "PAUSED"))))
+        .order_by().values("grupo_id")
+        .annotate(total=Count("estudiante_id"), completed=Count("estudiante_id", filter=Q(done=True)),
+                  in_progress=Count("estudiante_id", filter=Q(done=False, ongoing=True)))
+        .annotate(result=JSONObject(students="total", completed="completed", inProgress="in_progress"))
+        .values("result")[:1])
+    queryset = CaseAssignment.objects.select_related("grupo", "case_version__simulation_case").annotate(progress=Subquery(members))
     if group_id is not None:
         grupo = Grupo.objects.filter(pk=group_id).first()
         if grupo is None or not policies.can(actor, "assignment", "list", owner_id=grupo.profesor_id):

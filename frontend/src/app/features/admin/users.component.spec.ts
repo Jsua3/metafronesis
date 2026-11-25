@@ -70,6 +70,31 @@ describe('pantalla Usuarios (F7-6)', () => {
     fixture.detectChanges();
   }
 
+  it('permite conceder y retirar el permiso de crear casos desde el menú del docente', async () => {
+    await render();
+    expect(component().rowActions(beto).map(item => item.label)).toContain('Permitir crear casos');
+    component().rowAction(beto, 'autoria');
+    expect(service['permisoAutoria']).toHaveBeenCalledWith(6, true);
+    expect(component().rowActions({ ...beto, permisoAutoria: true }).map(item => item.label)).toContain('Retirar permiso de crear casos');
+    expect(component().rowActions(ana).map(item => item.value)).not.toContain('autoria');
+  });
+  it('explica las dos listas vacías y permite pasar de una a otra', async () => {
+    await render({ users: () => of([]), requests: () => of([]) });
+    component().cambiarVista('por-aprobar');
+    fixture.detectChanges();
+    expect(text(host())).toContain('Las solicitudes de acceso llegan a «Solicitudes»');
+    labelled('Ver solicitudes')!.click();
+    fixture.detectChanges();
+    expect(text(host())).toContain('Las cuentas importadas pendientes están en «Por aprobar»');
+  });
+  it('el filtro de estudiantes pendientes y la pestaña cuentan las mismas cuentas', async () => {
+    await render({ users: () => of([{ ...ana, pendingApproval: true }, { ...beto, pendingApproval: true }, ana]) });
+    component().rol.set('ESTUDIANTE');
+    component().estadoFiltro.set('pendiente');
+    expect(component().filtrados().map(u => u.id)).toEqual([ana.id]);
+    expect(component().pendingUsers().filter(u => u.role === 'ESTUDIANTE').map(u => u.id)).toEqual([ana.id]);
+    expect(component().pendientes().cuentas).toBe(2);
+  });
   it('muestra y cambia el permiso del profesor', async () => {
     await render();
     expect(text(rows()[1])).toContain('Permiso de autoría: No');
@@ -86,6 +111,16 @@ describe('pantalla Usuarios (F7-6)', () => {
     expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { vista: 'por-aprobar' }, queryParamsHandling: 'merge' }));
   });
 
+  it('muestra cuentas por bloques, permite cargar más y conserva el total', async () => {
+    const usuarios = Array.from({ length: 60 }, (_, i) => ({ ...ana, id: i + 1, nombre: `Persona ${String(i).padStart(2, '0')}` }));
+    await render({ users: () => of(usuarios) });
+    expect(rows()).toHaveLength(25);
+    expect(text(host())).toContain('Mostrando 25 de 60 cuentas');
+    labelled('Mostrar más cuentas')!.click();
+    fixture.detectChanges();
+    expect(rows()).toHaveLength(50);
+    expect(text(host())).toContain('Mostrando 50 de 60 cuentas');
+  });
   it('filtra por búsqueda y rol y conserva el recuento', async () => {
     await render();
     component().busqueda.set('beto');

@@ -12,6 +12,12 @@ export interface AccessDecision {
   readonly reason?: AccessReasonEnum;
 }
 
+export interface AssignmentProgress {
+  readonly students: number;
+  readonly completed: number;
+  readonly inProgress: number;
+}
+
 export type AccessReasonEnum = 'NOT_ASSIGNED' | 'NOT_YET_OPEN' | 'CLOSED' | 'LOCKED_BY_SEQUENCE';
 
 export type ActivationEnum = 'CALM' | 'TENSE' | 'CRISIS';
@@ -148,6 +154,8 @@ export interface Assignment {
   readonly id: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
   readonly opensAt?: string;
+  /** Avance de miembros activos; disponible en el listado de asignaciones del grupo. */
+  readonly progress?: AssignmentProgress;
   /** Su lugar en la secuencia de casos. */
   readonly sortOrder: number;
   /** Dónde está la ventana hoy. */

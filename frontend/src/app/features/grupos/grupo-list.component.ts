@@ -175,6 +175,7 @@ export class GrupoListComponent implements OnInit {
   error = signal('');
   /** Pestaña abierta del detalle (se conserva al pasar de un grupo a otro). */
   pestana = signal<string | undefined>('estudiantes');
+  readonly solicitudAsignar = signal(0);
   /** La hoja de importación está abierta: el aviso se lee dentro de ella y no se repite en el detalle. */
   importacionAbierta = signal(false);
 
@@ -493,7 +494,14 @@ export class GrupoListComponent implements OnInit {
 
   }
 
+  irAAsignar(): void {
+    this.pestana.set('casos');
+    this.cargarCasos(true);
+    this.solicitudAsignar.update(n => n + 1);
+  }
+
   agregarEstudiante(grupo: Grupo) {
+    this.pestana.set('estudiantes');
     this.abrirGrupo(grupo);
     this.grupoSeleccionado.set(grupo.id);
     this.busquedaEstudiante.set('');
@@ -507,7 +515,10 @@ export class GrupoListComponent implements OnInit {
 
   /** Abre el detalle de un grupo; el conteo de casos asignados del grupo anterior no se arrastra al nuevo. */
   private abrirGrupo(grupo: Grupo) {
-    if (this.grupoActivo()?.id !== grupo.id) this.casosAsignadosTotal.set(null);
+    if (this.grupoActivo()?.id !== grupo.id) {
+      this.casosAsignadosTotal.set(null);
+      this.solicitudAsignar.set(0);
+    }
     this.grupoActivo.set(grupo);
   }
 

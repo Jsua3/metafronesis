@@ -1,4 +1,4 @@
-﻿import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
@@ -235,7 +235,7 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
     it('el detalle no ofrece reportes retirados y conserva el menú de acciones', async () => {
       await render();
       const detail = host().querySelector('.gl-detail')!;
-      expect(detail.querySelector('.gl-detail__actions a')).toBeNull();
+      expect(detail.querySelector('.gl-detail__actions a[href*="reportes"]')).toBeNull();
 
       expect(detail.querySelectorAll('.gl-detail__head ui-menu')).toHaveLength(1);
       expect(detail.querySelector('.gl-detail__head ui-menu button')?.getAttribute('aria-label')).toBe('Más acciones de «Cohorte A»');
@@ -420,6 +420,26 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
     });
   });
 
+  it('ofrece invitar y asignar desde la cabecera del grupo y valida el correo al salir', async () => {
+    await render();
+    await openDetail();
+    const actions = [...host().querySelectorAll<HTMLButtonElement>('.gl-detail__actions button')];
+    const invite = actions.find(b => text(b).includes('Invitar estudiantes'));
+    const assign = actions.find(b => text(b).includes('Asignar un caso'));
+    expect(invite).toBeDefined();
+    expect(assign).toBeDefined();
+    invite!.click();
+    fixture.detectChanges();
+    const email = host().querySelector<HTMLInputElement>('.gl-add input[type=email]')!;
+    email.value = 'correo-incompleto';
+    email.dispatchEvent(new Event('input'));
+    email.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(text(host().querySelector('.gl-add'))).toContain('Escribe un correo válido.');
+    assign!.click();
+    fixture.detectChanges();
+    expect(component().pestana()).toBe('casos');
+  });
   // E2-10 (C5, decisión 22): el docente INVITA y el estudiante acepta; de quien no ha aceptado el servidor solo devuelve
   // el correo. `totalEstudiantes` cuenta las membresías activas y `totalInvitados` las pendientes.
   // req: SIEP-RF-04, D-14, RNF-04

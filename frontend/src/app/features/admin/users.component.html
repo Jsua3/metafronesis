@@ -28,8 +28,13 @@
       <p class="us-hint">Personas que pidieron cuenta desde el acceso, con el rol que solicitan.</p>
       @if (requestsError()) {
         <ui-error-state kind="server" [message]="requestsErrorTexto()" (retry)="loadAccessRequests()" />
+      } @else if (!solicitudesCargadas()) {
+        <p class="us-hint" role="status">Cargando solicitudes…</p>
       } @else {
-        @if (!accessRequests().length) { <ui-empty-state kind="first-use" title="No hay solicitudes pendientes" /> }
+        @if (!accessRequests().length) {
+          <ui-empty-state kind="first-use" title="No hay solicitudes pendientes" description="Aquí llegan las solicitudes de acceso enviadas desde el ingreso. Las cuentas importadas pendientes están en «Por aprobar»." />
+          <button ui-button type="button" variant="secondary" (click)="cambiarVista('por-aprobar')">Ver cuentas por aprobar</button>
+        }
         <ul class="us-request-list">
           @for (request of accessRequests(); track request.id) {
             <li class="us-request">
@@ -60,7 +65,8 @@
       <ui-error-state kind="server" [message]="error()" (retry)="load()" />
     } @else {
       @if (!pendingUsers().length) {
-        <ui-empty-state kind="first-use" title="No hay cuentas por aprobar" description="Las cuentas que se crean al importar estudiantes aparecen aquí hasta que las apruebes." />
+        <ui-empty-state kind="first-use" title="No hay cuentas por aprobar" description="Las cuentas que se crean al importar estudiantes aparecen aquí hasta que las apruebes. Las solicitudes de acceso llegan a «Solicitudes»." />
+        <button ui-button type="button" variant="secondary" (click)="cambiarVista('solicitudes')">Ver solicitudes</button>
       } @else {
         <ui-card class="us-pending__card">
           <p class="us-hint">{{ pendingText() }}</p>
@@ -115,7 +121,7 @@
     <!-- La casilla maestra vive fuera de la tabla: en la vista apilada la cabecera queda solo para lectores de pantalla y
          una casilla enfocable ahí dentro no tendría foco visible. -->
     <label class="us-check us-master"><input type="checkbox" [checked]="todosVisibles()" [indeterminate]="algunosVisibles()"
-      (change)="seleccionarVisibles($any($event.target).checked)"> Seleccionar las {{ filtrados().length }} visibles</label>
+      (change)="seleccionarVisibles($any($event.target).checked)"> Seleccionar las {{ usuariosVisibles().length }} visibles</label>
   }
   <ui-table label="Tabla de usuarios" density="compact" apilar [state]="state()">
     <table ui-table>
@@ -130,7 +136,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (user of filtrados(); track user.id) {
+        @for (user of usuariosVisibles(); track user.id) {
           <tr uiRow [selected]="selectedUser()?.id === user.id" [class.us-fila--marcada]="seleccion().includes(user.id)">
             <td class="us-sel"><label class="us-check"><input type="checkbox" [attr.aria-label]="'Seleccionar a ' + user.nombre + ' ' + user.apellido" [checked]="seleccion().includes(user.id)" (change)="seleccionar(user.id, $any($event.target).checked)"><span class="us-check__txt" aria-hidden="true">Seleccionar</span></label></td>
             <th scope="row" class="us-name" data-celda="principal">{{ user.nombre }} {{ user.apellido }}</th>
@@ -164,6 +170,10 @@
       <ui-error-state uiTableError kind="server" [message]="error()" (retry)="load()" />
     }
   </ui-table>
+  <p role="status" aria-live="polite">Mostrando {{ usuariosVisibles().length }} de {{ filtrados().length }} cuentas que coinciden.</p>
+  @if (usuariosVisibles().length < filtrados().length) {
+    <button ui-button type="button" variant="secondary" (click)="limiteVisible.set(limiteVisible() + 25)">Mostrar más cuentas</button>
+  }
 </ui-section>
 
 }

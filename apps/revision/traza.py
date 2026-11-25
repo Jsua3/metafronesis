@@ -21,8 +21,8 @@ def _estado(intento):
     return "NO_APLICA"
 
 
-def recientes(docente):
-    intentos = consultas._intentos(docente).filter(case_version__simulation_case__active=True).select_related("case_version__simulation_case").order_by("-started_at", "-pk")[:20]
+def recientes(docente, case_version_id=None, grupo_id=None):
+    intentos = consultas.intentos_filtrados(docente, case_version_id, grupo_id).filter(case_version__simulation_case__active=True).select_related("case_version__simulation_case").order_by("-started_at", "-pk")[:20]
     return [{"attemptId": str(intento.pk), "studentAlias": IdentityPresenter.alias_for(intento.student_id, docente), "caseTitle": intento.case_version.simulation_case.title, "status": intento.status, "startedAt": _fecha(intento.started_at), "caseVersionId": intento.case_version_id, "endedAt": _fecha(intento.ended_at), "evaluationStatus": _estado(intento)} for intento in intentos]
 
 

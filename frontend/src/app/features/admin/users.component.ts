@@ -149,8 +149,10 @@ export class UsersComponent implements OnInit {
         this.orden() === 'estado' ? estado(a).localeCompare(estado(b), 'es') : 0) ||
         `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`, 'es'));
   });
-  readonly todosVisibles = computed(() => this.filtrados().length > 0 && this.filtrados().every(u => this.seleccion().includes(u.id)));
-  readonly algunosVisibles = computed(() => this.filtrados().some(u => this.seleccion().includes(u.id)) && !this.todosVisibles());
+  readonly limiteVisible = signal(25);
+  readonly usuariosVisibles = computed(() => this.filtrados().slice(0, this.limiteVisible()));
+  readonly todosVisibles = computed(() => this.usuariosVisibles().length > 0 && this.usuariosVisibles().every(u => this.seleccion().includes(u.id)));
+  readonly algunosVisibles = computed(() => this.usuariosVisibles().some(u => this.seleccion().includes(u.id)) && !this.todosVisibles());
 
   constructor() {
     // La insignia de «Usuarios» en el menú dice lo mismo que el resumen y las pestañas de esta pantalla: la misma cifra.
@@ -176,7 +178,7 @@ export class UsersComponent implements OnInit {
     destino.update(ids => marcado ? [...new Set([...ids, id])] : ids.filter(x => x !== id));
   }
   seleccionarVisibles(marcado: boolean, pendientes = false): void {
-    const lista = pendientes ? this.pendingUsers() : this.filtrados();
+    const lista = pendientes ? this.pendingUsers() : this.usuariosVisibles();
     for (const usuario of lista) this.seleccionar(usuario.id, marcado, pendientes);
   }
 
@@ -239,7 +241,7 @@ export class UsersComponent implements OnInit {
   readonly users = signal<AdminUser[]>([]);
   readonly accessRequests = signal<AccessRequest[]>([]);
   /** Las solicitudes ya respondieron (con una lista o con un error): antes de eso no hay cifra que decir. */
-  private readonly solicitudesCargadas = signal(false);
+  readonly solicitudesCargadas = signal(false);
   private readonly usuariosCargados = signal(false);
   /** Las solicitudes no pudieron cargarse (distinto de «no hay solicitudes»). */
   readonly requestsError = signal(false);
@@ -539,8 +541,9 @@ export class UsersComponent implements OnInit {
 
   rowActions(user: AdminUser): UiMenuItem[] {
     // E2-9: «Activar» una pendiente sería aprobarla; se dice así (y manda el correo con la contraseña temporal).
-    if (user.pendingApproval) return [{ value: 'aprobar', label: 'Aprobar cuenta', icon: 'task_alt' }];
-    return [{
+    const autoria: UiMenuItem[] = user.role === 'PROFESOR' ? [{ value: 'autoria', label: user.permisoAutoria ? 'Retirar permiso de crear casos' : 'Permitir crear casos', icon: 'edit' }] : [];
+    if (user.pendingApproval) return [{ value: 'aprobar', label: 'Aprobar cuenta', icon: 'task_alt' }, ...autoria];
+    return [...autoria, {
       value: 'estado',
       label: user.activo ? 'Desactivar usuario' : 'Activar usuario',
       icon: user.activo ? 'block' : 'check_circle',
@@ -549,6 +552,7 @@ export class UsersComponent implements OnInit {
   }
 
   rowAction(user: AdminUser, action: string | undefined): void {
+    if (action === 'autoria') this.cambiarPermiso(user);
     if (action === 'estado') void this.toggleStatus(user);
     if (action === 'aprobar') void this.approveUser(user);
   }

@@ -13,27 +13,34 @@
   <ui-card class="rg-filter">
 
     @if (loadFiltersError()) {
-      <ui-error-state kind="server" [message]="loadFiltersError()" (retry)="cargarFiltros()" />
+      <ui-error-state kind="server" [message]="loadFiltersError()" (retry)="cargarGrupos()" />
     }
 
     <form [formGroup]="form" class="rg-form" novalidate (ngSubmit)="generar()">
       <ui-field label="Grupo" required hint="Elige la cohorte: el reporte se genera al elegirla.">
-        <select uiControl formControlName="grupoId">
+        <select uiControl formControlName="grupoId" [attr.aria-busy]="loadingFilters()">
           <option [ngValue]="null">Selecciona un grupo</option>
           @for (grupo of grupos(); track grupo.id) {
             <option [ngValue]="grupo.id">{{ grupo.nombre }} · {{ grupo.codigo }}</option>
           }
         </select>
       </ui-field>
+      @if (loadingFilters()) { <p role="status" aria-live="polite">Cargando grupos…</p> }
 
       <ui-field label="Caso de simulación" hint="El reporte muestra los intentos de este caso.">
-        <select uiControl formControlName="caseVersionId">
+        <select uiControl formControlName="caseVersionId" [attr.aria-busy]="loadingCasos()">
           <option [ngValue]="null">Elige un caso</option>
           @for (caso of casos(); track caso.caseVersionId) {
             <option [ngValue]="caso.caseVersionId">{{ caso.title }} · v{{ caso.semanticVersion }}</option>
           }
         </select>
       </ui-field>
+      <div aria-live="polite">
+        @if (loadingCasos()) { <p>Cargando casos…</p> }
+        @else if (errorCasos()) {
+          <div data-error-casos><ui-error-state kind="server" [message]="errorCasos()" (retry)="cargarCasos()" /></div>
+        } @else if (!casos().length) { <p>Aún no hay casos publicados disponibles para consultar.</p> }
+      </div>
 
       <div class="rg-actions">
         <button ui-button type="button" variant="secondary" icon="refresh" (click)="limpiar()"

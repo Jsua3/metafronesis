@@ -84,6 +84,8 @@ export class ReporteGrupoComponent {
   readonly casos = signal<SimulationCaseSummary[]>([]);
   readonly reporte = signal<ReporteGrupo | null>(null);
   readonly loadingFilters = signal(false);
+  readonly loadingCasos = signal(false);
+  readonly errorCasos = signal('');
   readonly loading = signal(false);
   readonly exporting = signal(false);
   readonly selectedGrupoId = signal<number | null>(null);
@@ -152,6 +154,11 @@ export class ReporteGrupoComponent {
   }
 
   cargarFiltros() {
+    this.cargarGrupos();
+    this.cargarCasos();
+  }
+
+  cargarGrupos() {
     this.loadingFilters.set(true);
     this.loadFiltersError.set('');
     this.grupoService.listar().subscribe({
@@ -165,13 +172,22 @@ export class ReporteGrupoComponent {
         this.loadingFilters.set(false);
       }
     });
+  }
+
+  cargarCasos() {
+    this.loadingCasos.set(true);
+    this.errorCasos.set('');
     this.casosApi.listPublished().subscribe({
       next: casos => {
         this.casos.set(casos);
         this.casosCargados = true;
+        this.loadingCasos.set(false);
         if (this.selectedGrupoId() !== null && this.selectedCaseVersionId() === null) this.generar();
       },
-      error: () => this.loadFiltersError.update(msg => msg || 'No fue posible cargar los casos de simulación.')
+      error: () => {
+        this.loadingCasos.set(false);
+        this.errorCasos.set('No fue posible cargar los casos de simulación.');
+      }
     });
   }
 

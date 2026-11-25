@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.db import transaction
 from rest_framework import serializers, status
 from rest_framework.views import APIView
@@ -62,10 +62,10 @@ class RetroalimentacionView(APIView):
 class IntentosRecientesView(APIView):
     permission_classes = [policy_permission("attempt", "review")]
 
-    @extend_schema(responses={200: envelope_of(IntentoRecienteSerializer, many=True), **error_responses(401, 403)})
+    @extend_schema(parameters=[OpenApiParameter('groupId', int), OpenApiParameter('caseVersionId', int)], responses={200: envelope_of(IntentoRecienteSerializer, many=True), **error_responses(400, 401, 403, 404)})
     def get(self, request):
         from . import traza
-        filas = traza.recientes(request.user)
+        filas = traza.recientes(request.user, _entero(request, "caseVersionId"), _entero(request, "groupId"))
         audit_service.record("INSTRUCTOR_ATTEMPTS_VIEWED", "ATTEMPT", None, {"count": len(filas)})
         return api_ok(filas)
 

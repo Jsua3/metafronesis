@@ -128,7 +128,8 @@ export class InstructorTraceComponent implements OnInit, CanLeave {
   private readonly instructorApi = inject(InstructorApi);
   private readonly dialog = inject(UiDialog);
   private readonly notify = inject(NotificationService);
-  private readonly route = inject(ActivatedRoute, { optional: true });
+  protected readonly route = inject(ActivatedRoute, { optional: true });
+  protected readonly filtroGrupoCaso = !!this.route?.snapshot.queryParamMap.get('grupo') && !!this.route?.snapshot.queryParamMap.get('caseVersionId');
   private readonly destroyRef = inject(DestroyRef);
 
   /**
@@ -389,7 +390,11 @@ export class InstructorTraceComponent implements OnInit, CanLeave {
   loadAttempts() {
     this.loadingAttempts.set(true);
     this.attemptsError.set('');
-    this.instructorApi.recentAttempts().subscribe({
+    const groupId = Number(this.route?.snapshot.queryParamMap.get('grupo'));
+    const caseVersionId = Number(this.route?.snapshot.queryParamMap.get('caseVersionId'));
+    const filter = Number.isInteger(groupId) && groupId > 0 && Number.isInteger(caseVersionId) && caseVersionId > 0
+      ? { groupId, caseVersionId } : undefined;
+    (filter ? this.instructorApi.recentAttempts(filter) : this.instructorApi.recentAttempts()).subscribe({
       next: attempts => {
         attempts = attempts ?? [];
         this.attempts.set(attempts);

@@ -34,6 +34,12 @@ class AssignmentTargetSerializer(serializers.Serializer):
     studentId = serializers.IntegerField(required=False, help_text="Solo si `type` es `STUDENT`.")
 
 
+class AssignmentProgressSerializer(serializers.Serializer):
+    students = serializers.IntegerField(help_text="Membresías activas del grupo.")
+    completed = serializers.IntegerField(help_text="Estudiantes que terminaron esta versión al menos una vez.")
+    inProgress = serializers.IntegerField(help_text="Estudiantes con intento abierto que aún no la terminaron.")
+
+
 class AssignmentSerializer(serializers.Serializer):
     """Una versión de caso asignada, con su ventana de apertura y cierre (C7)."""
 
@@ -45,6 +51,7 @@ class AssignmentSerializer(serializers.Serializer):
     active = serializers.BooleanField(help_text="Una asignación en pausa no habilita nada.")
     sortOrder = serializers.IntegerField(help_text="Su lugar en la secuencia de casos.")
     caseTitle = serializers.CharField(help_text="El título del caso, para nombrar la asignación sin otra consulta.")
+    progress = AssignmentProgressSerializer(required=False, help_text="Solo en el listado de asignaciones de grupo.")
     opensAt = serializers.DateTimeField(required=False, help_text=f"Si no hay fecha, no viaja. {WINDOW}")
     closesAt = serializers.DateTimeField(required=False, help_text=f"Si no hay fecha, no viaja. {WINDOW}")
 

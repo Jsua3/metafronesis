@@ -77,6 +77,9 @@ export class GroupAssignmentsComponent {
   readonly cases = input<SimulationCaseSummary[]>([]);
   /** Si los casos publicados ya llegaron: «sin casos que asignar» solo es verdad cuando se pudieron leer. */
   readonly casesStatus = input<'loading' | 'ready' | 'failed'>('ready');
+  readonly solicitudAsignar = input(0);
+  readonly solicitudAtendida = output<void>();
+  private ultimaSolicitud = 0;
   /** Cuántos casos tiene asignados el grupo, cuando termina de cargar y cada vez que cambian: el detalle del grupo los cuenta. */
   readonly assignedChange = output<number>();
   /** «Reintentar» tras fallar la carga de los casos publicados: esa lista la trae quien contiene este componente. */
@@ -155,6 +158,19 @@ export class GroupAssignmentsComponent {
       // Solo un grupo que terminó de cargar tiene un conteo que decir (ni el del anterior ni el de una carga fallida).
       if (!this.loading() && !this.error()) untracked(() => this.assignedChange.emit(count));
     });
+    effect(() => {
+      const solicitud = this.solicitudAsignar();
+      const loading = this.loading();
+      const status = this.casesStatus();
+      const error = this.error();
+      if (!solicitud) { this.ultimaSolicitud = 0; return; }
+      if (solicitud === this.ultimaSolicitud || loading || status === 'loading') return;
+      this.ultimaSolicitud = solicitud;
+      untracked(() => {
+        this.solicitudAtendida.emit();
+        if (!error && status === 'ready') void this.assign();
+      });
+    });
     inject(DestroyRef).onDestroy(() => this.loadSubscription?.unsubscribe());
   }
 
@@ -180,15 +196,22 @@ export class GroupAssignmentsComponent {
   protected async assign(): Promise<void> {
     const options = this.assignable();
     if (!options.length || this.busy()) return;
+    const groupId = this.grupoId();
     const ref = this.dialog.open<AssignmentDialogResult | undefined, AssignmentDialogData>(AssignmentDialogComponent, {
       // Las asignaciones de hoy, con su nombre: el diálogo dice tras qué caso lo harán los estudiantes (RN-04).
       data: { mode: 'create', cases: options, groupAssignments: this.assignments().map(item => ({ ...item, caseTitle: this.titles().get(item.caseVersionId) ?? item.caseTitle })) },
     });
     const result = await firstValueFrom(ref.closed, { defaultValue: undefined });
-    if (!result || result.caseVersionId === undefined) return;
+    if (!result || result.caseVersionId === undefined || this.grupoId() !== groupId) return;
     this.run(
-      this.service.create({ caseVersionId: result.caseVersionId, target: { type: 'GROUP', groupId: this.grupoId() }, opensAt: result.opensAt, closesAt: result.closesAt }),
-      created => this.assignments.update(rows => enSecuencia([...rows, created])),
+      this.service.create({ caseVersionId: result.caseVersionId, target: { type: 'GROUP', groupId }, opensAt: result.opensAt, closesAt: result.closesAt }),
+      created => {
+        this.assignments.update(rows => enSecuencia([...rows, created]));
+        this.service.list(groupId).subscribe({ next: fresh => {
+          if (this.grupoId() !== groupId) return;
+          this.assignments.update(rows => rows.map(item => ({ ...item, progress: fresh.find(row => row.id === item.id)?.progress ?? item.progress })));
+        }, error: () => { /* La fila indica que el avance aún no está disponible. */ } });
+      },
       result.despuesDe === undefined ? 'Caso asignado al grupo.' : `Caso asignado al grupo. ${fraseDeSecuencia(result.despuesDe, !!result.opensAt && Date.parse(result.opensAt) > Date.now())}`,
       'No fue posible asignar el caso al grupo.',
     );
@@ -264,7 +287,7 @@ export class GroupAssignmentsComponent {
     this.service.reorder(groupId, next.map(item => item.id), ordered.map(item => item.id)).subscribe({
       next: saved => {
         if (this.grupoId() === groupId) {
-          this.assignments.set(enSecuencia(saved));
+          this.assignments.set(enSecuencia(saved.map(item => ({ ...item, progress: item.progress ?? before.find(old => old.id === item.id)?.progress }))));
           this.announcer.announce(`«${row.title}» ahora es el caso ${to + 1} de ${next.length}.`, 'polite');
           afterNextRender(() => this.host.querySelector<HTMLElement>(`[data-ga-move="${row.assignment.id}-${direction}"]`)?.focus(), { injector: this.injector });
         }
@@ -282,7 +305,7 @@ export class GroupAssignmentsComponent {
   }
 
   private replace(updated: Assignment): void {
-    this.assignments.update(rows => rows.map(item => (item.id === updated.id ? updated : item)));
+    this.assignments.update(rows => rows.map(item => (item.id === updated.id ? { ...updated, progress: updated.progress ?? item.progress } : item)));
   }
 
   /**
