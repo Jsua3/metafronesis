@@ -30,12 +30,19 @@ def pendientes(ahora=None):
 
 
 @auditable("SESION_RECORDATORIO", "SESION")
+def _auditar(sesion_id):
+    """Solo deja la huella de auditoría; se llama únicamente cuando el correo salió."""
+
+
 @transaction.atomic
 def enviar(sesion_id):
+    """Devuelve ``True`` si envió el recordatorio y ``False`` si no había nada que enviar."""
     ahora = timezone.now()
     sesion = Sesion.objects.select_for_update().select_related("case_version__simulation_case").get(pk=sesion_id)
     if sesion.estado != EstadoSesion.PROGRAMADA or sesion.recordatorio_enviado_en is not None or not _en_ventana(sesion, ahora):
-        return
+        return False
     sesion_por_comenzar.send(sender=Sesion, sesion=sesion, estudiantes=[c.estudiante for c in convocados(sesion)])
     sesion.recordatorio_enviado_en = ahora
     sesion.save(update_fields=["recordatorio_enviado_en"])
+    transaction.on_commit(lambda: _auditar(sesion_id))
+    return True

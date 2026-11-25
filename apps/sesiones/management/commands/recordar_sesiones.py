@@ -11,7 +11,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ids = list(recordatorio.pendientes().values_list("pk", flat=True))
-        if not options["dry_run"]:
-            for sesion_id in ids:
-                recordatorio.enviar(sesion_id)
-        self.stdout.write(f"Sesiones por recordar: {len(ids)}")
+        enviados = 0 if options["dry_run"] else sum(1 for sesion_id in ids if recordatorio.enviar(sesion_id))
+        self.stdout.write(f"Sesiones por recordar: {len(ids)}; recordatorios enviados: {enviados}")

@@ -89,3 +89,20 @@ def test_comando_dry_run_no_envia_y_normal_si(crear_sesion):
     assert mail.outbox == [] and "1" in salida.getvalue()
     call_command("recordar_sesiones", stdout=StringIO())
     assert len(mail.outbox) == 2
+
+
+def test_enviar_devuelve_si_envio_y_audita_solo_entonces(crear_sesion, django_capture_on_commit_callbacks):
+    from apps.simulation.models import AuditLog
+    sesion = en(10, crear_sesion)
+    with django_capture_on_commit_callbacks(execute=True):
+        assert recordatorio.enviar(sesion.pk) is True
+        assert recordatorio.enviar(sesion.pk) is False
+    assert AuditLog.objects.filter(action="SESION_RECORDATORIO", resource_id=str(sesion.pk)).count() == 1
+
+
+def test_enviar_el_mismo_horario_no_rearma(crear_sesion, docente):
+    sesion = en(10, crear_sesion)
+    correr()
+    servicios.editar(docente, sesion.pk, {"inicio": sesion.inicio, "fin": sesion.fin, "lugar": "Aula 3"})
+    correr()
+    assert len(mail.outbox) == 2
