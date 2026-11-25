@@ -1,8 +1,8 @@
 import { MS_POR_CARACTER, pausaTras, tramos } from './ritmo-texto';
 
 describe('ritmo del texto del diálogo', () => {
-  it('escribe a 30 caracteres por segundo', () => {
-    expect(MS_POR_CARACTER).toBe(33);
+  it('escribe a 50 caracteres por segundo', () => {
+    expect(MS_POR_CARACTER).toBe(20);
     expect(pausaTras('a', 'b')).toBe(0);
   });
 

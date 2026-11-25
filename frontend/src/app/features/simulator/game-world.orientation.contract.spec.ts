@@ -1,7 +1,9 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const source = readFileSync(join(__dirname, 'game-world.component.ts'), 'utf-8');
+// Los fines de línea se normalizan (como en `simulation-play.orientation.contract.spec.ts`): con `core.autocrlf=true` el árbol sale en
+// CRLF y los cortes de abajo buscan `\n`; sin esto cinco de estos contratos fallaban en Windows sin que el código estuviera mal.
+const source = readFileSync(join(__dirname, 'game-world.component.ts'), 'utf-8').replace(/\r\n/g, '\n');
 
 /** Cuerpo de un método de la escena: desde su firma hasta la siguiente declaración al mismo nivel. */
 function bodyOf(signature: RegExp, until: RegExp): string {
@@ -111,15 +113,17 @@ describe('game-world: ratón (F6-7, VD-5)', () => {
   // req: BLOQUE-H, RNF-04 (revisión de F6)
   it('el clic vuelve a decidir qué hay bajo el puntero: con el cursor quieto el objetivo marcado puede estar viejo', () => {
     const handler = bodyOf(/\n  private handlePointerDown\(pointer: Phaser\.Input\.Pointer\): void \{/, /\n  \}\n/);
-    expect(handler).toContain('const key = this.hoverTargetAt(pointer);');
+    // P9: con dedo se decide con la caja de toque (`tapTargetAt`); con ratón, igual que antes.
+    expect(handler).toContain('const key = pointer.wasTouch ? this.tapTargetAt(pointer) : this.hoverTargetAt(pointer);');
     expect(handler).toContain('this.setHover(key);');
     expect(handler).not.toContain('this.hoverKey');
   });
 
   // req: BLOQUE-H, RNF-04 (VD-5)
-  it('el clic con puntero fino camina; con dedo, capa abierta o botón secundario no', () => {
+  it('el clic y el toque caminan; con una capa abierta o con un botón secundario no (P9: el dedo también lleva)', () => {
     const handler = bodyOf(/\n  private handlePointerDown\(pointer: Phaser\.Input\.Pointer\): void \{/, /\n  \}\n/);
-    expect(handler).toContain('pointer.wasTouch || this.motionPaused');
+    expect(handler).toContain('if (this.motionPaused || !this.player || !this.world) return;');
+    expect(handler).not.toMatch(/if \(pointer\.wasTouch \|\|/);
     expect(handler).toMatch(/pointer\.button !== 0/);
     // Sobre algo señalado camina hasta su alcance de interacción; en el suelo, hasta el punto clicado.
     expect(handler).toContain('startWalk({ x: aimed.x, y: aimed.y, radius: aimed.reach })');
@@ -230,5 +234,31 @@ describe('game-world: señales iguales para todos (límite 1 de producto)', () =
     expect(source).toContain('[attr.aria-label]="worldLabel()"');
     expect(source).not.toMatch(/\n\s+aria-label="Mapa explorable/);
     expect(source).toMatch(/protected readonly worldLabel = computed\(\(\) => \(this\.shortcuts\(\)\s*\? 'Mapa explorable de la simulación\. Usa WASD o flechas para moverte, E para interactuar\.'\s*: 'Mapa explorable de la simulación\. Usa las flechas para moverte, Enter para interactuar\.'/);
+  });
+});
+
+describe('game-world: orientarse en el juego (P9)', () => {
+  it('la llegada de una caminata pedida con un clic interactúa, y solo si llegó', () => {
+    const update = bodyOf(/\n  override update\(time: number, delta: number\) \{/, /\n  setWorld\(/);
+    expect(update).toMatch(/this\.finishWalkGoal\(tick\.arrived \? 'arrived' : 'blocked'\);\s*this\.finishWalkInteract\(tick\.arrived\);/);
+    const finish = bodyOf(/\n  private finishWalkInteract\(arrived: boolean\): void \{/, /\n  \}\n/);
+    expect(finish).toContain('if (!arrived || key === null || !this.player) return;');
+    expect(finish).toContain('this.interactNearest();');
+  });
+
+  it('el anillo de cercanía y la frase de E salen de nearestKey: el mismo candidato sobre el que actúan E y «Interactuar»', () => {
+    const ring = bodyOf(/\n  private syncNearRing\(\): void \{/, /\n  \/\*\*/);
+    expect(ring).toContain('const key = this.nearestKey;');
+    expect(ring).not.toMatch(/tweens\.add|this\.tweens/);
+    expect(bodyOf(/\n  private proximityPromptText\(key: string\): string \| null \{/, /\n  \/\*\*/)).toContain('interactionVerb(obj,');
+    // Se repinta solo cuando cambia algo (con el resto de lo que pinta el estado), nunca desde update().
+    expect(bodyOf(/\n  private refreshMarkerStates\(\) \{/, /\n  \/\*\* El canvas cambió/)).toMatch(/this\.syncNearRing\(\);\s*this\.syncMarkerPrompt\(\);/);
+    const update = bodyOf(/\n  override update\(time: number, delta: number\) \{/, /\n  setWorld\(/);
+    expect(update).not.toMatch(/syncNearRing|syncMarkerPrompt|proximityPromptText|syncStepMark/);
+  });
+
+  it('el siguiente paso de la ficha es el único destino del mundo y su señal no depende de lo clínico', () => {
+    const body = bodyOf(/\n  private syncStepMark\(/, /\n  private stepMarkLift/);
+    expect(body).not.toMatch(/classification|prohibitedConduct|isRecommended|isProhibited|decisionOptionId|tweens/);
   });
 });

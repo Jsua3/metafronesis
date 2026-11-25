@@ -282,3 +282,5 @@
   .ce-option:active { scale: 1; }
 }
 @media (forced-colors: active) { .ce-option:has(.ce-radio:checked) { outline: 2px solid CanvasText; } }
+
+.ce-view-picker .ce-option:has(.ce-radio:checked) span::before { content: "\2713  "; font-weight: 700; }

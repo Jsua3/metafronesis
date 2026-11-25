@@ -12,7 +12,7 @@ import { SimulationCaseSummary } from '../../core/models/simulation.model';
 import { UiBadge, UiBadgeTone } from '../../shared/ui/badge/ui-badge';
 import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiCard } from '../../shared/ui/card/ui-card';
-import { statusLabel } from '../../shared/ui/labels';
+import { autorLabel, editadoPorLabel, statusLabel } from '../../shared/ui/labels';
 import { UiCabeceraIlustrada } from '../../shared/ui/cabecera-ilustrada/ui-cabecera-ilustrada';
 import { UiFiltros } from '../../shared/ui/filtros/ui-filtros';
 import { UiSegmentado } from '../../shared/ui/segmentado/ui-segmentado';
@@ -27,6 +27,10 @@ import { UiErrorState } from '../../shared/ui/state/ui-error-state';
  * Hub de edición de casos (plan visual F7-7): estados de la lista de a uno (esqueleto, error con «Reintentar», primer
  * uso con su acción) y el estado de cada caso con su etiqueta humana («Borrador», no `DRAFT`). Todo caso nuevo empieza
  * eligiendo un lugar (`casos/nuevo`): ya no hay formulario de caso en blanco.
+ *
+ * Autoría compartida: cada tarjeta dice el autor del caso y, si los hay, quiénes más lo editaron. En una versión publicada
+ * de un caso ajeno no se edita: se ofrece «Crear nueva versión», que la clona en un borrador propio y lo abre en el
+ * editor. Lo que se puede hacer con cada versión lo dice el servidor (`puedeEditar`, `puedeCrearVersion`).
  */
 @Component({
   selector: 'app-case-authoring-hub',
@@ -45,6 +49,7 @@ export class CaseAuthoringHubComponent implements OnInit {
   private readonly auth = inject(AuthService);
 
   readonly statusLabel = statusLabel;
+  readonly autorLabel = autorLabel;
   readonly filtro = signal('ALL');
   readonly busqueda = signal('');
   readonly opciones = computed(() => [
@@ -56,12 +61,12 @@ export class CaseAuthoringHubComponent implements OnInit {
     return this.cases().filter(c => (this.filtro() === 'ALL' || c.status === this.filtro()) &&
       c.title.toLocaleLowerCase('es').includes(texto));
   });
-  // Sin caseId no se agrupa: nunca se mezclan casos antiguos por accidente.
+  // Sin caseId no se agrupa: nunca se mezclan casos antiguos por accidente. Con la autoría compartida también el docente
+  // ve varias versiones de un mismo caso (la publicada de otro y su borrador), así que se agrupan para todos.
   readonly grupos = computed(() => {
     const grupos = new Map<string, SimulationCaseSummary[]>();
-    const admin = this.auth.currentUser()?.role === 'ADMIN';
     for (const caso of this.filtrados()) {
-      const clave = admin && caso.caseId != null ? `caso-${caso.caseId}` : `version-${caso.caseVersionId}`;
+      const clave = caso.caseId != null ? `caso-${caso.caseId}` : `version-${caso.caseVersionId}`;
       grupos.set(clave, [...(grupos.get(clave) ?? []), caso]);
     }
     return [...grupos.values()].map(versiones => versiones.sort((a, b) =>
@@ -125,6 +130,44 @@ export class CaseAuthoringHubComponent implements OnInit {
     } finally {
       this.tutorialAbriendo.set(false);
     }
+  }
+
+  /** «Editado por: Beto, Carla» de la tarjeta; vacío si nadie más que el autor creó una versión. */
+  editadoPor(item: SimulationCaseSummary): string {
+    return editadoPorLabel(item.editadoPor?.map(p => p.nombre));
+  }
+
+  /**
+   * Una versión de un caso ajeno que quien mira puede clonar: la tarjeta ofrece «Crear nueva versión» en vez de abrirla
+   * para editar. Las del propio caso siguen con su acción de siempre (el editor ofrece ahí crear la versión).
+   */
+  creaVersion(item: SimulationCaseSummary): boolean {
+    const yo = this.auth.currentUser()?.id;
+    return !item.puedeEditar && item.puedeCrearVersion === true && item.autor != null && item.autor.id !== yo;
+  }
+
+  /** La versión que se está clonando (deshabilita los botones mientras tanto). */
+  readonly creandoVersion = signal<number | null>(null);
+  /** Por qué no se pudo crear la versión nueva (se muestra sobre la lista). */
+  readonly errorVersion = signal('');
+
+  /** Clona la versión en un borrador propio del mismo caso y lo abre en el editor. */
+  crearVersion(item: SimulationCaseSummary): void {
+    if (this.creandoVersion() !== null) return;
+    this.creandoVersion.set(item.caseVersionId);
+    this.errorVersion.set('');
+    this.authoringApi.cloneCaseVersion(item.caseVersionId).subscribe({
+      next: vista => {
+        this.creandoVersion.set(null);
+        void this.router.navigate(['/portal/casos', vista.caseVersionId, 'editor']);
+      },
+      error: (e: unknown) => {
+        this.creandoVersion.set(null);
+        const mensaje = (e as { error?: { message?: unknown } } | null)?.error?.message;
+        // BORRADOR: texto pendiente de Psicología (VD-23).
+        this.errorVersion.set(typeof mensaje === 'string' && mensaje ? mensaje : 'No se pudo crear la versión nueva del caso. Vuelve a intentarlo.');
+      },
+    });
   }
 
   statusTone(status: string | null | undefined): UiBadgeTone {

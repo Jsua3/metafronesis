@@ -1,4 +1,4 @@
-import { ALTO_SALA, PlanoDelLugar, dibujarPlano, normalizarLayout, textoDeLaSala, textoDelPlano } from './plano';
+import { ALTO_SALA, PlanoDelLugar, destinoDelPlano, dibujarPlano, normalizarLayout, textoDeLaSala, textoDelDestino, textoDelPlano } from './plano';
 import { LAYOUT_HOSPITAL } from './plano-ejemplo.testing';
 
 const hospital = (): PlanoDelLugar => normalizarLayout(LAYOUT_HOSPITAL)!;
@@ -128,5 +128,58 @@ describe('normalizarLayout para el editor (P4)', () => {
     const plano = normalizarLayout({ rooms: [{ key: 'a', plan: { x: 0, y: 0 } }, { key: 'b', plan: { x: 1200, y: 0 } }],
       doors: [{ key: 'a-b', from: 'a', to: 'b', wall: 'derecha', pos: 100 }, { from: 'b', to: 'a', wall: 'izquierda', pos: 100 }] })!;
     expect(plano.puertas.map(p => p.clave)).toEqual(['a-b', undefined]);
+  });
+});
+
+describe('plano: el siguiente paso (P9)', () => {
+  const persona = { key: 'npc:vigilante', label: 'Vigilante', tipo: 'persona' as const };
+  const puerta = { key: 'a-triaje', label: 'Triaje', tipo: 'puerta' as const };
+
+  it('una persona o una herramienta se marcan en la sala actual; sin paso o sin sala conocida, no hay destino', () => {
+    expect(destinoDelPlano(hospital(), 'pasillo', persona)).toEqual({ tipo: 'persona', etiqueta: 'Vigilante', sala: 'pasillo' });
+    expect(destinoDelPlano(hospital(), 'pasillo', null)).toBeNull();
+    expect(destinoDelPlano(hospital(), 'sala-que-no-existe', persona)).toBeNull();
+    expect(destinoDelPlano(hospital(), '', persona)).toBeNull();
+  });
+
+  it('una puerta se marca ella y la sala a la que lleva; una puerta que el plano no conoce, solo su sala', () => {
+    expect(destinoDelPlano(hospital(), 'pasillo', puerta)).toEqual({ tipo: 'puerta', etiqueta: 'Triaje', sala: 'pasillo', puerta: 'a-triaje', haciaSala: 'triaje' });
+    expect(destinoDelPlano(hospital(), 'pasillo', { ...puerta, key: 'puerta-fantasma' })).toEqual({ tipo: 'puerta', etiqueta: 'Triaje', sala: 'pasillo' });
+  });
+
+  it('dibujarPlano marca la sala de la persona y, con una puerta, la sala de llegada y la muesca de esa puerta (y solo esa)', () => {
+    const conPersona = dibujarPlano(hospital(), 'pasillo', NADA, destinoDelPlano(hospital(), 'pasillo', persona));
+    expect(conPersona.salas.filter(s => s.destino).map(s => s.clave)).toEqual(['pasillo']);
+    expect(conPersona.salas.flatMap(s => s.puertas).some(p => p.esDestino)).toBe(false);
+
+    const conPuerta = dibujarPlano(hospital(), 'pasillo', NADA, destinoDelPlano(hospital(), 'pasillo', puerta));
+    expect(conPuerta.salas.filter(s => s.destino).map(s => s.clave)).toEqual(['triaje']);
+    const marcadas = conPuerta.salas.flatMap(s => s.puertas.filter(p => p.esDestino));
+    expect(marcadas).toHaveLength(1);
+    expect(marcadas[0]).toMatchObject({ muro: 'fondo', destino: 'triaje' });
+  });
+
+  it('sin destino el dibujo es el de siempre: ninguna sala ni puerta marcada', () => {
+    const dibujo = dibujarPlano(hospital(), 'pasillo', NADA);
+    expect(dibujo.salas.some(s => s.destino)).toBe(false);
+    expect(dibujo.salas.flatMap(s => s.puertas).some(p => p.esDestino)).toBe(false);
+  });
+
+  it('el texto dice el siguiente paso con el nombre de la persona o de la puerta, sin nombrar una sala sin visitar', () => {
+    expect(textoDelDestino({ tipo: 'persona', etiqueta: 'Vigilante', sala: 'pasillo' })).toBe('Siguiente paso: habla con Vigilante, en esta sala.');
+    expect(textoDelDestino({ tipo: 'herramienta', etiqueta: 'Kit PAP', sala: 'pasillo' })).toBe('Siguiente paso: recoge la herramienta «Kit PAP», en esta sala.');
+    const d = destinoDelPlano(hospital(), 'pasillo', puerta)!;
+    expect(textoDelDestino(d)).toBe('Siguiente paso: pasa por la puerta «Triaje».');
+    // La lista del plano completo no da el nombre de una sala sin visitar (Triaje lo está), y tampoco con el siguiente paso.
+    const lineas = textoDelPlano(hospital(), 'pasillo', NADA, d);
+    const triaje = lineas[hospital().salas.findIndex(s => s.clave === 'triaje')];
+    expect(triaje).toMatch(/^Sala sin visitar\./);
+    expect(triaje).toContain('Siguiente paso');
+  });
+
+  it('el nombre accesible del minimapa suma el siguiente paso; sin él, es el de siempre', () => {
+    const d = destinoDelPlano(hospital(), 'pasillo', persona)!;
+    expect(textoDeLaSala(hospital(), 'pasillo', d)).toBe(`${textoDeLaSala(hospital(), 'pasillo')} Siguiente paso: habla con Vigilante, en esta sala.`);
+    expect(textoDeLaSala(hospital(), 'pasillo', null)).toBe(textoDeLaSala(hospital(), 'pasillo'));
   });
 });

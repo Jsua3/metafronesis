@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../../core/a11y/reduced-motion';
 import { addAriaReferencedId, removeAriaReferencedId } from '@angular/cdk/a11y';
 import { DIALOG_DATA, Dialog, DialogConfig, DialogRef } from '@angular/cdk/dialog';
 import { createGlobalPositionStrategy } from '@angular/cdk/overlay';
@@ -8,6 +9,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { encabezadoPrincipal, enfocarPorPrograma, focoPerdido } from '../../../core/a11y/foco.util';
 import { TemaService } from '../../../core/tema/tema.service';
 import { uniqueUiId } from '../button/click-guard';
 import { UiButton } from '../button/ui-button';
@@ -232,6 +234,7 @@ export class UiConsequenceDialog {
 export class UiDialog {
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly tema = inject(TemaService);
 
   open<R = unknown, D = unknown, C = unknown>(component: ComponentType<C>, options: UiDialogOptions<D> = {}): DialogRef<R, C> {
@@ -269,12 +272,15 @@ export class UiDialog {
   }
 
   private launch<R, D, C>(component: ComponentType<C>, options: UiDialogOptions<D>, extra: Partial<DialogConfig<D, DialogRef<R, C>>>): DialogRef<R, C> {
-    const reduceMotion = typeof matchMedia !== 'function' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduceMotion = reducedMotionQuery()?.matches ?? true;
     let leaving = false;
     let mayClose = reduceMotion;
     const priorityFocus = !options.autoFocus && !extra.autoFocus;
     // La piel se decide ANTES de abrir: después el CDK ya movió el foco a la capa nueva y se perdería el disparador.
     const fuente = this.fuentePiel(options);
+    // Quién tenía el foco al abrir: a él vuelve al cerrar (el CDK lo restaura, salvo que ya no exista).
+    const disparador = options.origen instanceof HTMLElement ? options.origen
+      : (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const leaveMs = (extra.panelClass as string[] | undefined)?.includes('ui-sheet-pane') ? UI_SHEET_LEAVE_MS : UI_DIALOG_LEAVE_MS;
     const ref: DialogRef<R, C> = this.dialog.open<R, D, C>(component, {
       data: options.data,
@@ -306,9 +312,27 @@ export class UiDialog {
       ...extra,
     });
     this.vestir(ref, fuente);
+    if (options.restoreFocus !== false) this.garantizarFocoAlCerrar(ref, disparador);
     // Después del foco del CDK (que se registra al abrir): el foco por prioridad.
     if (priorityFocus) afterNextRender(() => focusByPriority(ref.overlayRef.overlayElement), { injector: this.injector });
     return ref;
+  }
+
+  /**
+   * Red de seguridad del retorno de foco (WCAG 2.4.3): el CDK devuelve el foco al disparador, pero si este ya no existe
+   * (la fila se borró, el menú que lo abrió se cerró, la pantalla cambió) el foco cae en `<body>` y quien navega con
+   * teclado empieza otra vez desde arriba. Entonces va al encabezado de la pantalla, que es donde se está.
+   */
+  private garantizarFocoAlCerrar<R, C>(ref: DialogRef<R, C>, disparador: HTMLElement | null): void {
+    ref.closed.subscribe(() => {
+      // Al destruirse la aplicación el CDK cierra los diálogos abiertos: ya no hay pantalla a la que devolver el foco.
+      if (this.destroyRef.destroyed) return;
+      afterNextRender(() => {
+        if (!focoPerdido()) return;
+        if (disparador?.isConnected && !disparador.closest('[inert], [hidden]') && enfocarPorPrograma(disparador)) return;
+        enfocarPorPrograma(encabezadoPrincipal());
+      }, { injector: this.injector });
+    });
   }
 
   /**

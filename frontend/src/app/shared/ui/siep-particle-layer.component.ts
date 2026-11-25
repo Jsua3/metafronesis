@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../core/a11y/reduced-motion';
 import {
   AfterViewInit,
   Component,
@@ -76,7 +77,7 @@ export class SiepParticleLayerComponent implements AfterViewInit, OnDestroy {
   };
 
   ngAfterViewInit(): void {
-    this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.motionQuery = reducedMotionQuery()!;
     this.reducedMotion = this.motionQuery.matches;
     this.motionQuery.addEventListener('change', this.onMotionChange);
     const canvas = this.canvasRef.nativeElement;

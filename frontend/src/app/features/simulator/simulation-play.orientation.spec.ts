@@ -148,6 +148,46 @@ describe('SimulationPlayComponent: orientación integrada', () => {
 
   const tick = (ms = 0) => { vi.advanceTimersByTime(ms); TestBed.tick(); };
 
+  it('la lista y la ficha caminan y abren la conversación de una persona', () => {
+    startInUrgencias();
+    (component as any).gameWorld = { walkToKey: vi.fn(() => true) };
+    const open = vi.spyOn(component, 'openInteraction').mockImplementation(() => {});
+    component.choosePlace({ key: 'familia-crisis', label: 'Familia en crisis', kind: 'person' });
+    component.onWalkEnded({ key: 'familia-crisis', label: 'Familia en crisis', outcome: 'arrived' });
+    expect(open).toHaveBeenCalledWith(expect.objectContaining({ key: 'familia-crisis', type: 'PERSON' }));
+    component.guide.set({ objetivo: '', enEstaSala: [], quedaPorConocer: true, siguiente: 'Habla con Familia', hechos: 0, total: 1, siguienteLugar: { key: 'familia-crisis', label: 'Familia en crisis', tipo: 'persona' } });
+    component.goToStep('familia-crisis');
+    component.onWalkEnded({ key: 'familia-crisis', label: 'Familia en crisis', outcome: 'arrived' });
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
+  it('distingue el siguiente paso de las acciones opcionales por clave', () => {
+    startInUrgencias();
+    component.guide.set({ objetivo: '', enEstaSala: [], quedaPorConocer: true, siguiente: 'Habla con Familia', hechos: 0, total: 1, siguienteLugar: { key: 'familia-crisis', label: 'Familia', tipo: 'persona' } });
+    expect((component as any).actionStepLabel('familia-crisis')).toBe('Siguiente paso');
+    expect((component as any).actionStepLabel('tool-pap')).toBe('Opcional: puede servirte más adelante');
+  });
+
+  it('una persona del escenario se abre al llegar y no si el recorrido se bloquea', () => {
+    startInUrgencias();
+    (component as any).gameWorld = { walkToKey: vi.fn(() => true) };
+    const open = vi.spyOn(component, 'openInteraction').mockImplementation(() => {});
+    const place = { key: 'npc:abuela', label: 'Abuela', kind: 'person' as const };
+    component.choosePlace(place);
+    component.onWalkEnded({ key: place.key, label: place.label, outcome: 'blocked' });
+    expect(open).not.toHaveBeenCalled();
+    component.choosePlace(place);
+    component.onWalkEnded({ key: place.key, label: place.label, outcome: 'arrived' });
+    expect(open).toHaveBeenCalledWith(expect.objectContaining({ key: place.key, label: place.label, type: 'PERSON' }));
+  });
+
+  it('explica visiblemente cuando el destino no está disponible en la sala', () => {
+    startInUrgencias();
+    component.choosePlace({ key: 'ausente', label: 'Abuela', kind: 'person' });
+    expect(component.softNotice()).toContain('No se pudo llegar a Abuela');
+    expect(component.softNotice()).toContain('Camina con las flechas');
+  });
+
   describe('T9.4: puertas con una sola fuente', () => {
     const exit = () => urgenciasObjects().find(o => o.key === 'puerta-sala-escucha')!;
 
@@ -399,16 +439,16 @@ describe('SimulationPlayComponent: orientación integrada', () => {
       expect(component.contextAction()?.verb.text).toBe('Hablar con Familia en crisis');
     });
 
-    it('con una petición en curso o un diálogo abierto la barra vuelve a «Ahora: …»', () => {
+    it('conserva la barra durante una petición o un diálogo', () => {
       startInUrgencias();
       component.nearbyInteraction.set(urgenciasObjects().find(o => o.key === 'familia-crisis')!);
       expect(component.contextAction()).not.toBeNull();
 
       component.busy.set(true);
-      expect(component.contextAction()).toBeNull();
+      expect(component.contextAction()).not.toBeNull();
       component.busy.set(false);
       component.dialogue.set({ key: 'd', speakerName: 'A', portraitKey: null, emotion: 'neutral', lines: [], choices: [] } as unknown as DialogueState);
-      expect(component.contextAction()).toBeNull();
+      expect(component.contextAction()).not.toBeNull();
     });
 
     it('URGENTE: pulsar el botón junto a una persona abre su diálogo y no pide `npc:…` al servidor', () => {
@@ -457,15 +497,15 @@ describe('SimulationPlayComponent: orientación integrada', () => {
       expect(sim['openInteraction']).not.toHaveBeenCalled();
     });
 
-    it('E sin nada cerca: el mundo avisa y la barra dice, 2,5 s y sin sonido, que no hay nada al alcance', () => {
+    it('E sin nada cerca: el mundo avisa y la barra dice, 4,5 s y sin sonido, qué hacer (acercarse o usar «Ir a…»)', () => {
       startInUrgencias();
 
       component.showNothingNearby();
 
-      expect(component.nothingNearbyNote()).toBe('No hay nada a tu alcance. Acércate a una persona o un objeto.');
+      expect(component.nothingNearbyNote()).toBe('No hay nada cerca: acércate a una persona o un objeto, o usa «Ir a…».');
       expect(audio['playSfx']).not.toHaveBeenCalled();
-      vi.advanceTimersByTime(2400);
-      expect(component.nothingNearbyNote()).toBe('No hay nada a tu alcance. Acércate a una persona o un objeto.');
+      vi.advanceTimersByTime(4400);
+      expect(component.nothingNearbyNote()).toBe('No hay nada cerca: acércate a una persona o un objeto, o usa «Ir a…».');
       vi.advanceTimersByTime(200);
       expect(component.nothingNearbyNote()).toBe('');
     });
@@ -578,6 +618,7 @@ describe('SimulationPlayComponent: orientación integrada', () => {
 
     it('Esc cierra primero la ayuda y no pausa; el siguiente Esc sí pausa', () => {
       playing();
+      component.markHelpCardSeen();   // quien abre la ayuda ya vio la tarjeta de controles (openHelp la da por vista)
       component.helpOpen.set(true);
 
       const first = esc();
@@ -589,11 +630,17 @@ describe('SimulationPlayComponent: orientación integrada', () => {
       expect(sim['safeExit']).toHaveBeenCalledTimes(1);
     });
 
-    it('con la tarjeta visible (no modal) Esc pausa directamente: la tarjeta no consume Esc', () => {
+    it('con la tarjeta de controles visible Esc la cierra y NO pausa; el siguiente Esc sí pausa (P8)', () => {
       playing();
+      expect(component.controlsVisible()).toBe(true);
+
+      const first = esc();
+      expect(first.defaultPrevented).toBe(true);
+      expect(component.controlsVisible()).toBe(false);
+      expect(component.helpCardSeen()).toBe(true);
+      expect(sim['safeExit']).not.toHaveBeenCalled();
 
       esc();
-
       expect(sim['safeExit']).toHaveBeenCalledTimes(1);
     });
 

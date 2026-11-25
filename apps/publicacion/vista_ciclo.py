@@ -1,5 +1,5 @@
 """Lectura del ciclo de vida de una versión: estado, transiciones que la persona puede aplicar, lista y última revisión."""
-from apps.autoria import editor
+from apps.autoria import autoria, editor
 from apps.simulation.models import CaseReview, CaseVersionStatus
 from shared.policies import can
 from .arbol import arbol_de
@@ -19,10 +19,16 @@ REGLAS = {
 }
 
 
+#: Las transiciones con dueño propio en la autoría compartida (``autoria.py``): enviar es de quien creó el borrador,
+#: archivar del autor del caso y clonar de quien puede crear una versión nueva.
+_PROPIAS = {"submit": autoria.puede_enviar, "archive": autoria.puede_archivar, "clone": autoria.puede_crear_version}
+
+
 def transiciones_permitidas(usuario, version) -> list[str]:
     dueno = version.simulation_case.created_by_id
     return [accion for accion, (estados, politica) in REGLAS.items()
-            if version.status in estados and can(usuario, "case", politica, owner_id=dueno)]
+            if version.status in estados and (_PROPIAS[accion](usuario, version) if accion in _PROPIAS
+                                              else can(usuario, "case", politica, owner_id=dueno))]
 
 
 def _nombre(usuario):

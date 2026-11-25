@@ -4,14 +4,17 @@ from apps.simulation.models import CaseVersion, CaseVersionStatus
 from apps.users.permisos import exigir_autoria
 from shared.exceptions import ApiError
 from shared.policies import ADMIN, PROFESOR
+from . import autoria
 
 
 def versiones_visibles(usuario):
+    """Lo que ve cada rol (autoría compartida, ``autoria.py``): el ADMIN todo; el PROFESOR sus casos (menos los borradores
+    ajenos), las versiones que creó en casos ajenos y las publicadas de cualquier caso."""
     versiones = CaseVersion.objects.select_related("simulation_case")
     if usuario.role == ADMIN:
         return versiones
     if usuario.role == PROFESOR:
-        return versiones.filter(simulation_case__created_by=usuario)
+        return versiones.filter(autoria.filtro_visibles(usuario))
     return versiones.none()
 
 
@@ -23,6 +26,9 @@ def version_editable(usuario, case_version_id: int) -> CaseVersion:
         raise Http404 from None
     if version.status != CaseVersionStatus.DRAFT:
         raise ApiError("VERSION_NOT_EDITABLE", "La versión no es editable.", 409)
+    if not autoria.puede_editar(usuario, version):
+        # Un borrador es de quien lo creó: el ajeno ni siquiera se ve (``versiones_visibles``); esto es la segunda llave.
+        raise Http404
     return version
 
 

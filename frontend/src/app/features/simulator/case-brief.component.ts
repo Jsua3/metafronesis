@@ -280,6 +280,8 @@ export class CaseBriefComponent {
     if (this.entrando()) return;
     this.ultimaEntrada = () => void this.entrar(tipo, navegar);
     this.entrando.set(tipo);
+    // BORRADOR: texto pendiente de Psicología.
+    this.announcer.announce('Preparando el caso…', 'polite');
     this.errorEntrada.set(null);
     try {
       // Sin `recordForCase` (un registro de pruebas o antiguo) se entra igual: el juego pide el aviso como red de seguridad.

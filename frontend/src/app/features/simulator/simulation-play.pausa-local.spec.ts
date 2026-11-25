@@ -144,13 +144,13 @@ describe('SimulationPlayComponent: ronda V3 de robustez', () => {
       expect(component.actionError()).toBe('');
     });
 
-    it('no espera a ninguna petición: con la respuesta colgada ya está en pausa y sin nota (todavía no falló)', () => {
+    it('no espera a ninguna petición: con la respuesta colgada informa que está guardando', () => {
       sim['safeExit'].mockReturnValue(NEVER);
 
       component.pauseFromOverlay();
 
       expect(component.attempt()?.status).toBe('PAUSED');
-      expect(component.pauseNote()).toBeNull();
+      expect(component.pauseNote()).toBe('Guardando la pausa…');
       expect(component.busy()).toBe(false);
     });
 
@@ -561,7 +561,7 @@ describe('SimulationPlayComponent: ronda V3 de robustez', () => {
 
         expect(sim['chooseDecision']).toHaveBeenCalledTimes(2);
         expect(sim['chooseDecision'].mock.calls[1][2]).toBe(sim['chooseDecision'].mock.calls[0][2]);
-        expect(component.softNotice()).toBe(DRAFT_COPY.decisionResentOnline.text);
+        expect(component.softNotice()).toBe(`${DRAFT_COPY.decisionResentOnline.text} Tu decisión se guardó.`);
         expect(component.attempt()?.currentNode.id).toBe(2);
       });
 

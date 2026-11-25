@@ -47,6 +47,7 @@ PUBLIC_ROUTE_REASONS: dict[str, str] = {
     "api/auth/code-login": "entrar con c?digo de convocatoria",
     "api/auth/google": "entrar con una cuenta de Google",
     "api/auth/google/config": "configuración pública del acceso con Google",
+    "api/auth/demo/config": "si el acceso de demostración está disponible (solo desarrollo; en producción siempre responde que no)",
     "api/auth/access-request": "pedir una cuenta, que aprueba el ADMIN",
     "api/auth/password-reset": "pedir por correo el enlace para restablecer la contraseña olvidada",
     "api/auth/password-reset/check": "comprobar si el enlace para restablecer la contraseña sigue sirviendo",

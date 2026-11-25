@@ -25,7 +25,7 @@ describe('login: sesión expirada y regreso', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([{ path: '**', component: Screen }]),
-        { provide: AuthService, useValue: { login, googleConfig: () => of({ enabled: false }) } },
+        { provide: AuthService, useValue: { login, demoConfig: () => of({ enabled: false }), googleConfig: () => of({ enabled: false }) } },
         { provide: UiDialog, useValue: { sheet: vi.fn() } },
       ],
     });

@@ -29,6 +29,8 @@ export function pickHoverTarget(
   pointer: WalkPoint,
   candidates: readonly HoverCandidate[],
   examined: ReadonlySet<string>,
+  /** Margen que se suma a la caja de puntería por todos lados (px de mundo): el toque de un dedo (P9). */
+  slop = 0,
 ): string | null {
   let best: string | null = null;
   let bestDistance = Infinity;
@@ -36,7 +38,7 @@ export function pickHoverTarget(
     if (candidate.playerDistance > REVEAL_RADIUS && !examined.has(candidate.key)) continue;
     const dx = pointer.x - candidate.x;
     const dy = pointer.y - candidate.y;
-    if (Math.abs(dx) > HOVER_HIT.halfWidth || dy < -HOVER_HIT.above || dy > HOVER_HIT.below) continue;
+    if (Math.abs(dx) > HOVER_HIT.halfWidth + slop || dy < -HOVER_HIT.above - slop || dy > HOVER_HIT.below + slop) continue;
     // Distancia al centro de la caja: entre dos actores solapados gana el que el puntero tiene más cerca.
     const distance = Math.hypot(dx, dy + (HOVER_HIT.above - HOVER_HIT.below) / 2);
     if (distance < bestDistance) {

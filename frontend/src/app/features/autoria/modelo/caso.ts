@@ -293,6 +293,10 @@ export interface CasoBorrador {
   lista?: ListaVerificacion;
   /** El estado del caso en el servidor; ausente en un borrador que aún no está allí. */
   estado?: EstadoCaso;
+  /** Quien creó el caso (autoría compartida); ausente en un borrador que aún no está en el servidor. */
+  autor?: string;
+  /** Quienes, sin ser el autor, crearon alguna versión del caso, en el orden de su primera versión. */
+  editadoPor?: string[];
   /** Quien edita ya probó este caso hasta un final (el ensayo); ausente = no. */
   probadoHastaElFinal?: boolean;
   /** Las herramientas del caso (para avisar de las que ningún objeto entrega); ausente si el servidor no las trae. */

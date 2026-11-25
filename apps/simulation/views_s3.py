@@ -102,6 +102,6 @@ class Evaluation(APIView):
     def get(self, request, pk):
         from .models import AttemptEvaluation
 
-        attempt = attempt_api.owned(request.user, pk)
+        attempt = attempt_api.owned(request.user, pk, solo_lectura=True)
         evaluation = get_object_or_404(AttemptEvaluation, attempt=attempt)
         return Response(evaluation.snapshot)

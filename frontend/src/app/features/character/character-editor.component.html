@@ -31,6 +31,17 @@
         </figure>
         <button class="ce-turn" type="button" aria-label="Girar a la derecha" (click)="girar(1)"><span aria-hidden="true">→</span></button>
       </div>
+      <fieldset class="ce-group ce-group--inline ce-view-picker">
+        <legend>Vista del personaje</legend>
+        <div class="ce-opts ce-views">
+          @for (view of views; track view.id; let i = $index) {
+            <label class="ce-option">
+              <input type="radio" class="ce-radio" name="ce-vista" [checked]="viewIndex() === i" (change)="viewIndex.set(i)" />
+              <span>{{ view.label }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
       <ui-segmentado etiqueta="Movimiento" [opciones]="movimientos" [valor]="motion()" (valorChange)="elegirMovimiento($event)" />
       <p class="ce-help">Así te verán en el simulador. No afecta tu evaluación.</p>
       <p class="ds-sr-only">{{ summary() }}</p>

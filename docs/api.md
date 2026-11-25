@@ -50,6 +50,39 @@ En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por d
 | GET | /schema/ | SpectacularAPIView tras _docs_gate | Cerrado 404 por flag; si habilitado JWT y user/manage | OpenAPI; sin serializer de aplicación | psychosim; S1; psychosim/urls.py:120 |
 | GET | /swagger-ui.html | SpectacularSwaggerView tras _docs_gate | Cerrado 404 por flag; si habilitado JWT y user/manage | HTML de Swagger; — | psychosim; S1; psychosim/urls.py:128 |
 
+## Sesiones del docente
+
+Permiso de todas las rutas: `assignment/manage` (PROFESOR sobre sus propias sesiones; una sesión ajena responde 404). Las respuestas usan el sobre `{success, data}`; los errores de estado responden 409 `INVALID_TRANSITION` y los de campo 400 con `field`.
+
+| Método | Ruta | Cuerpo | Respuesta | Auditoría |
+|---|---|---|---|---|
+| GET | /api/sesiones?estado= | `estado` admite varios valores separados por coma | Lista de sesiones: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn` | EXENTO |
+| POST | /api/sesiones | `{grupoId, caseVersionId, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` | 201, sesión con detalle (los campos de la lista más `convocados`) | SESION_CREADA |
+| GET | /api/sesiones/casos | — | Casos de la biblioteca: `caseVersionId, titulo, version, autor, editadoPor, tiempoEstimadoMin, descripcion` (sin el contenido del caso). `autor` es el nombre de quien creó el caso; `editadoPor`, la lista de nombres de quienes, sin ser el autor, crearon alguna versión suya (en el orden de su primera versión; `[]` si nadie más) | EXENTO |
+| GET | /api/sesiones/<id> | — | Sesión con `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento, puedeRepetir}]` | EXENTO |
+| PATCH | /api/sesiones/<id> | Los campos de crear, todos opcionales | Sesión con detalle | SESION_EDITADA |
+| POST | /api/sesiones/<id>/iniciar, pausar, reanudar, finalizar, cancelar | Sin cuerpo | Sesión con detalle | SESION_INICIADA, SESION_PAUSADA, SESION_REANUDADA, SESION_FINALIZADA, SESION_CANCELADA |
+| POST | /api/sesiones/<id>/sincronizar | Sin cuerpo | `{agregados: n}` | CONVOCADOS_SINCRONIZADOS |
+| DELETE | /api/sesiones/<id>/convocados/<estudiante_id> | — | Mensaje de confirmación | CONVOCADO_RETIRADO |
+| POST | /api/sesiones/<id>/convocados/<estudiante_id>/repeticion | `{motivo}` | 201 `{id}` | REPETICION_AUTORIZADA |
+
+`acciones` es la lista de lo que el estado actual permite (`iniciar`, `pausar`, `reanudar`, `finalizar`, `cancelar`, `editar`, `gestionarConvocados`); el cliente solo muestra esas.
+
+La ruta `POST /api/sesiones/<id>/convocados` (convocar por correos) se eliminó: los convocados salen de los miembros activos del grupo de la sesión.
+
+## Autoría compartida de casos
+
+La regla está en `apps/autoria/autoria.py` y en `docs/diseno/2026-11-24-autoria-compartida.md`. Las rutas no cambian; cambian quién ve y puede qué, y las respuestas ganan campos.
+
+| Método | Ruta | Qué cambia |
+|---|---|---|
+| GET | /api/authoring/cases | El PROFESOR ve las versiones de sus casos (menos los borradores que creó otra persona), las versiones que él creó en casos ajenos y las **publicadas** de cualquier caso; el ADMIN, todo. Cada fila suma a `{versionId, status, revision, brief}`: `caseId`, `semanticVersion`, `autor: {id, nombre}` (quien creó el caso; no cambia), `editadoPor: [{id, nombre}]` (quienes, sin ser el autor, crearon alguna versión, en el orden de su primera versión), `puedeEditar` (un borrador que creó quien pide, o cualquiera para el ADMIN) y `puedeCrearVersion` (puede clonarla: una publicada de cualquier caso con permiso de autoría, o una archivada del propio caso). |
+| GET | /api/authoring/cases/<id>/editor | Suma `autor` y `editadoPor` con la misma forma. Una publicada ajena se abre (solo lectura); un borrador ajeno responde 404. |
+| PUT/POST/DELETE | rutas de edición del borrador (`brief`, `nodes`, `decisions`, `world`, `checklist`, …) | Solo quien creó el borrador (o el ADMIN). Un borrador ajeno responde 404, también para el autor del caso. |
+| POST | /api/authoring/cases/<id>/clone-version | De una publicada de cualquier caso (en uno ajeno hace falta el permiso de autoría: si no, 403 `AUTHORING_NOT_ALLOWED`) o de una archivada del caso propio. El borrador nuevo es de quien clona (`created_by`, `cloned_from` = la original) y su versión semántica es la menor siguiente a la **mayor** del caso (`M.m+1.0`), así dos docentes que clonan la misma publicada reciben números distintos. |
+| GET, POST | /api/authoring/cases/<id>/lifecycle | `submit` (y la transición `submit` de `allowedTransitions`) es de quien creó la versión; `archive`, del autor del caso; `clone` aparece en una publicada ajena. Al devolver a borrador (`reject`), la revisión queda pedida por quien creó la versión (`review.requestedBy`). |
+| POST | /api/authoring/cases/<id>/publish | Sin cambios (solo ADMIN). Publicar la versión de otro docente no cambia el autor del caso. |
+
 ## Rutas referenciadas pero no incluidas como endpoints del corte
 
 psychosim/urls.py:95 incluye apps.simulation.urls y :102/:104 incluyen URLs de autoría; esos URLConfs no figuran en el manifiesto del corte. Por tanto no se listan sus rutas. En el código completo, podrían resultar accesibles; qué rutas nuevas se activarán en S3/S4 queda **sin verificar** hasta decidir los URLConfs del repo nuevo. Tampoco se listan reportes/rubrics/authoring completos: su código no forma parte del alcance declarado.

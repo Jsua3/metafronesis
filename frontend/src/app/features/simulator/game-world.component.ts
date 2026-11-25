@@ -1,3 +1,4 @@
+import { DOOR_REARM_DISTANCE } from './door-rearm.util';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, NgZone, OnChanges, OnDestroy, SimpleChanges, ViewChild, computed, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
@@ -175,6 +176,7 @@ interface WorldCallbacks {
   onCamera?: (camera: CameraReport) => void;
   /** Terminó una caminata pedida con «Ir a…» (F6-11): llegó, o no pudo (muro, mueble, servidor). */
   onWalkEnded?:  (key: string, label: string, outcome: 'arrived' | 'blocked') => void;
+  onWalkCancelled?: () => void;
   /** Progreso de la precarga, 0-100 (solo la carga inicial). */
   onLoadProgress: (percent: number) => void;
   /**
@@ -247,6 +249,22 @@ const NO_PROXIMITY_REPORT = JSON.stringify({ playing: null, frames: {} });
 /** Anillo estático bajo el siguiente destino del proceso: trazo claro con halo oscuro (contraste en cualquier piso). */
 const RING_COLOR = 0xcdbcff;
 const RING_HALO_COLOR = 0x0b0f1a;
+/**
+ * Anillo de cercanía (P9): blanco, más ancho, de trazo grueso y con relleno tenue. No se parece al anillo lila del siguiente
+ * paso ni por color ni por forma (el relleno y el grosor lo distinguen sin depender del tono): dice «ya estás lo bastante
+ * cerca; E actúa sobre esto».
+ */
+const NEAR_RING_COLOR = 0xffffff;
+/** Marca del siguiente paso (P9): una flecha estática a la izquierda del destino y a qué altura del suelo (px del mundo). */
+const STEP_MARK_GLYPH = '▶';
+const STEP_MARK_SIDE_PX = 22;
+const STEP_MARK_LIFT: Readonly<{ person: number; door: number; object: number }> = { person: 46, door: 52, object: 26 };
+/** Margen (px del mundo) que un rótulo deja al borde de la vista y del indicador de destino fuera de cuadro (P9). */
+const VIEW_EDGE_MARGIN_PX = 6;
+/** Largo máximo del nombre en el indicador del borde: «◀ Vigilante». */
+const EDGE_NAME_MAX = 14;
+/** Margen extra de puntería con el dedo (px del mundo): un toque es menos preciso que un clic. */
+const TAP_SLOP_PX = 14;
 
 /** Mismas claves en el mismo orden (listas de a lo sumo cuatro): decide si hay que repintar. */
 function sameKeys(a: readonly string[], b: readonly string[]): boolean {
@@ -280,7 +298,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    *  alejarse bien (≥72). Evita el rebote cuando el punto de entrada de una sala
    *  queda cerca de la puerta de regreso (el armado inmediato disparaba de vuelta). */
   private readonly doorTriggerDist = 30;
-  private readonly doorRearmDist = 72;
+  private readonly doorRearmDist = DOOR_REARM_DISTANCE;
   private readonly tiledExits   = new Map<string, { x: number; y: number; w: number; h: number }>();
   private readonly npcMarkers   = new Map<string, Phaser.GameObjects.Container>();
   private readonly markers    = new Map<string, Phaser.GameObjects.Container>();
@@ -348,6 +366,24 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    */
   private walkWaitsForResume = false;
   private targetRing?: { halo: Phaser.GameObjects.Ellipse; ring: Phaser.GameObjects.Ellipse };
+  /** Flecha del siguiente paso (P9): estática, junto al destino; la mueve con él `updateNearestInteraction` si camina. */
+  private stepMark?: Phaser.GameObjects.Text;
+  /** Anillo de cercanía (P9): bajo el candidato principal, el mismo sobre el que actúan E y «Interactuar». */
+  private nearRing?: { halo: Phaser.GameObjects.Ellipse; ring: Phaser.GameObjects.Ellipse };
+  /** «E · Revisar …» junto a un marcador cercano (P9); las personas usan su propia pista y las puertas su rótulo. */
+  private markerPrompt?: Phaser.GameObjects.Text;
+  /** Indicador de borde (P9): hacia dónde queda el siguiente paso cuando está fuera de la vista. Una sola pieza, reposicionada. */
+  private edgeArrow?: Phaser.GameObjects.Text;
+  /** La frase de un marcador cercano está en uso (el rótulo de su dueño puede ocultarla si queda fuera de la vista). */
+  private markerPromptOn = false;
+  /** Qué dice y hacia dónde apunta ahora (clave|lado): el texto y el ancla solo se reescriben cuando cambia. */
+  private edgeState = '';
+  /** Posición de trabajo del destino (sin asignar por cuadro) y los bordes de la vista con los que se recortaron los rótulos. */
+  private readonly edgeXY = { x: 0, y: 0 };
+  private labelViewLeft = NaN;
+  private labelViewRight = NaN;
+  /** Clic o toque sobre una persona u objeto (P9): al llegar, interactúa con él. Lo reemplaza cualquier otra caminata pedida. */
+  private walkInteractKey: string | null = null;
   /** Escala de los rótulos para medir ≥ 12 px de pantalla; se recalcula al cambiar el tamaño del canvas. */
   private labelScale = 1;
   /** Ancho de ajuste de línea de los rótulos de objetos (coordenadas locales del texto). */
@@ -635,9 +671,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
           const tick = tickWalk(this.walk, { x: this.player.x, y: this.player.y }, delta);
           this.walk = tick.state;
           input = tick.input;
-          if (tick.arrived || tick.gaveUp) this.finishWalkGoal(tick.arrived ? 'arrived' : 'blocked');
+          if (tick.arrived || tick.gaveUp) {
+            this.finishWalkGoal(tick.arrived ? 'arrived' : 'blocked');
+            this.finishWalkInteract(tick.arrived);
+          }
         } else {
+          if (this.walkGoal) this.callbacks.onWalkCancelled?.();
           this.walkGoal = null; // lo soltaron las teclas o una capa: nadie espera un aviso de llegada
+          this.walkInteractKey = null;
         }
       }
     }
@@ -776,7 +817,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     // pierde la entrada (entryX/entryY) que enter_room persistió en world.player.
     // La primera hidratación también nace desarmada: una recarga puede restaurar
     // al jugador junto a la puerta de regreso antes de resolver ScenarioConfig.
-    if (!this.world || this.world.map.key !== world.map.key) {
+    const roomChanged = !this.world || this.world.map.key !== world.map.key;
+    const previousPrimary = !roomChanged && this.nearestKey ? this.proximityObjectFor(this.nearestKey) : null;
+    const previousSecondary = !roomChanged && this.alsoKey ? this.proximityObjectFor(this.alsoKey) : null;
+    if (roomChanged) {
+      if (this.walkGoal) this.callbacks.onWalkCancelled?.();
       this.currentRoomKey = '';
       // La caminata del ratón y el destino de «Ir a…» eran de la sala anterior: en el render heredado (casos del
       // editor, sin ScenarioConfig) nada más los suelta y el jugador caminaría solo hacia coordenadas ajenas.
@@ -787,11 +832,21 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.dbDoorArmed = false;
     }
     this.world = world;
-    this.nearestKey = null;
-    this.alsoKey = null;
-    this.callbacks.onProximity(null);
-    this.callbacks.onProximityAlso(null);
-    if (this.ready) this.renderWorld();
+    if (roomChanged) {
+      this.nearestKey = null;
+      this.alsoKey = null;
+      this.callbacks.onProximity(null);
+      this.callbacks.onProximityAlso(null);
+    }
+    if (this.ready) {
+      this.renderWorld();
+      if (!roomChanged) {
+        const primary = this.nearestKey ? this.proximityObjectFor(this.nearestKey) : null;
+        const secondary = this.alsoKey ? this.proximityObjectFor(this.alsoKey) : null;
+        if (JSON.stringify(previousPrimary) !== JSON.stringify(primary)) this.callbacks.onProximity(primary);
+        if (JSON.stringify(previousSecondary) !== JSON.stringify(secondary)) this.callbacks.onProximityAlso(secondary);
+      }
+    }
   }
 
   setScenarioConfig(config: ScenarioConfig | null) {
@@ -878,6 +933,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   nudge(direction: 'up' | 'down' | 'left' | 'right') {
     if (!this.player) return;
+    if (this.walkGoal) this.callbacks.onWalkCancelled?.();
     this.walk = NO_WALK; // un paso de la cruceta manda sobre el destino del ratón
     this.walkGoal = null;
     // Mismo contrato que WASD (player-motion.util): sub-pasos con colisión y
@@ -974,8 +1030,23 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    */
   private hoverTargetAt(pointer: Phaser.Input.Pointer): string | null {
     if (pointer.wasTouch || this.motionPaused || !this.player || !this.world) return null;
-    const px = this.player.x;
-    const py = this.player.y;
+    return pickHoverTarget({ x: pointer.worldX, y: pointer.worldY }, this.hoverCandidates(), this.examinedKeys);
+  }
+
+  /**
+   * Lo mismo para un TOQUE (P9): sin «pasar por encima» no hay contorno, pero tocar una persona u objeto ya camina hasta
+   * ella e interactúa. La caja de puntería es algo mayor (un dedo no apunta como un cursor) y la regla de qué es elegible
+   * es la misma: solo lo que el jugador ya podría saber.
+   */
+  private tapTargetAt(pointer: Phaser.Input.Pointer): string | null {
+    if (this.motionPaused || !this.player || !this.world) return null;
+    return pickHoverTarget({ x: pointer.worldX, y: pointer.worldY }, this.hoverCandidates(), this.examinedKeys, TAP_SLOP_PX);
+  }
+
+  /** Los elegibles con los que apuntar (marcadores interactivos y personas) y su distancia al jugador; solo al apuntar, nunca por cuadro. */
+  private hoverCandidates(): HoverCandidate[] {
+    const px = this.player!.x;
+    const py = this.player!.y;
     const candidates: HoverCandidate[] = [];
     this.markers.forEach((marker, key) => {
       const obj = this.markerData.get(key);
@@ -991,7 +1062,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
         playerDistance: Math.hypot(px - container.x, py - container.y),
       });
     });
-    return pickHoverTarget({ x: pointer.worldX, y: pointer.worldY }, candidates, this.examinedKeys);
+    return candidates;
   }
 
   private setHover(key: string | null): void {
@@ -1058,31 +1129,63 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const anchor = this.player ? this.hoverAnchor(key) : null;
     if (!anchor) return false;
     this.walkGoal = { key, label: anchor.label };
+    this.walkInteractKey = null;   // «Ir a…» solo lleva: al llegar se anuncia, no se interactúa
     this.walkWaitsForResume = this.motionPaused;
     this.walk = startWalk({ x: anchor.x, y: anchor.y, radius: anchor.reach });
     return true;
   }
 
+  /**
+   * Terminó una caminata pedida con un clic o un toque (P9): si apuntaba a una persona u objeto y llegó, interactúa. Lo
+   * apuntado pasa a ser el candidato principal antes de actuar: así lo que se resalta, lo que ofrece la barra, lo que hace
+   * E y lo que se abre son siempre lo mismo. Si se rindió (muro, atasco), no hace nada.
+   */
+  private finishWalkInteract(arrived: boolean): void {
+    const key = this.walkInteractKey;
+    this.walkInteractKey = null;
+    if (!arrived || key === null || !this.player) return;
+    const obj = this.proximityObjectFor(key);
+    if (!obj) return;
+    if (this.nearestKey !== key) {
+      this.nearestKey = key;
+      this.callbacks.onProximity(obj);
+      this.refreshMarkerStates();
+    }
+    this.interactNearest();
+  }
+
   private finishWalkGoal(outcome: 'arrived' | 'blocked'): void {
     const goal = this.walkGoal;
     this.walkGoal = null;
+    if (goal && outcome === 'arrived') {
+      const obj = this.proximityObjectFor(goal.key);
+      if (obj) {
+        this.nearestKey = goal.key;
+        this.callbacks.onProximity(obj);
+        this.refreshMarkerStates();
+      }
+    }
     if (goal) this.callbacks.onWalkEnded?.(goal.key, goal.label, outcome);
   }
 
   /**
-   * Clic con el puntero fino (F6-7, VD-5): el jugador camina hasta ahí; sobre algo señalado, hasta su alcance de
-   * interacción (la barra de contexto ofrece entonces la acción de siempre). Con dedo, con una capa abierta o con
-   * un botón que no es el principal no camina. La caminata la aplica `update()` con el movimiento del teclado.
+   * Clic con el ratón o toque con el dedo (F6-7, VD-5; P9): el jugador camina hasta ahí; sobre una persona u objeto
+   * señalado camina hasta su alcance de interacción e INTERACTÚA al llegar (la barra de contexto y la tecla E ya apuntaban
+   * a él: es lo mismo que pulsarla). Con una capa abierta o con un botón que no es el principal no camina. La caminata la
+   * aplica `update()` con el movimiento del teclado y la abandona si se pulsa una tecla o se atasca. Con el dedo no hay
+   * contorno ni cursor (no hay «pasar por encima»).
    */
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
-    if (pointer.wasTouch || this.motionPaused || !this.player || !this.world) return;
+    if (this.motionPaused || !this.player || !this.world) return;
     if (pointer.button !== 0) return;
     // Se vuelve a decidir qué hay bajo el puntero (el último movimiento pudo quedar atrás: cámara o persona en marcha).
-    const key = this.hoverTargetAt(pointer);
-    this.setHover(key);
+    const key = pointer.wasTouch ? this.tapTargetAt(pointer) : this.hoverTargetAt(pointer);
+    if (!pointer.wasTouch) this.setHover(key);
     const aimed = key === null ? null : this.hoverAnchor(key);
+    if (this.walkGoal) this.callbacks.onWalkCancelled?.();
     this.walkGoal = null;
     this.walkWaitsForResume = false;
+    this.walkInteractKey = aimed ? key : null;
     this.walk = aimed
       ? startWalk({ x: aimed.x, y: aimed.y, radius: aimed.reach })
       : startWalk({ x: pointer.worldX, y: pointer.worldY, radius: WALK_GROUND_RADIUS_PX });
@@ -1301,6 +1404,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     cam.centerOn(next.centro.x, next.centro.y);
     this.applyCanvasScale(escala);
     this.scaleLabelsForZoom(next.zoom);
+    this.syncEdgeArrow();
+    this.refitLabelsToView();
     if (escala === 1 && base !== this.camSettledZoom) {
       this.camSettledZoom = base;
       this.onCameraZoomSettled();
@@ -1344,6 +1449,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.labelScale = next;
     this.markerLabels.forEach(label => label.setScale(next));
     this.hoverLabel?.setScale(next);
+    this.markerPrompt?.setScale(next);
     this.keyPersonIndicator?.container.setScale(next);
     this.doorHints.forEach(hint => { hint.setScale(next); this.placeDoorHint(hint); });
     this.npcMarkers.forEach(container => {
@@ -2393,8 +2499,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       backgroundColor: WORLD_LABEL_PLATE, padding: { x: 4, y: 2 }, align: 'center',
     }).setOrigin(0.5, 1).setAlpha(0).setScale(this.labelScale).setDepth(LABEL_DEPTH);
     const hint = this.add.text(pos.x, pos.y + offsetY, this.npcHintGlyph(), {
-      fontFamily: WORLD_FONT_FAMILY, fontSize: `${LABEL_BASE_FONT_PX}px`, color: '#4fa3a5',
-      fontStyle: 'bold', align: 'center',
+      fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: `${LABEL_BASE_FONT_PX}px`, color: WORLD_LABEL_INK,
+      backgroundColor: WORLD_LABEL_PLATE, padding: { x: 4, y: 2 }, fontStyle: 'bold', align: 'center',
     }).setOrigin(0.5, 1).setAlpha(0).setScale(this.labelScale).setDepth(LABEL_DEPTH);
     hint.setY(label.y - label.displayHeight - 2);
     return { label, hint };
@@ -2415,8 +2521,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const hint = bag['__hintSprite'] as Phaser.GameObjects.Text | undefined;
       const offsetY = (bag['__labelOffsetY'] as number | undefined) ?? 0;
       if (!label) return;
-      if (label.x !== container.x || label.y !== container.y + offsetY) label.setPosition(container.x, container.y + offsetY);
-      hint?.setPosition(container.x, label.y - label.displayHeight - 2);
+      const lx = this.fitLabelX(label, container.x);
+      if (label.x !== lx || label.y !== container.y + offsetY) label.setPosition(lx, container.y + offsetY);
+      hint?.setPosition(label.x, label.y - label.displayHeight - 2).setVisible(label.visible);
       return;
     }
     const marker = this.markers.get(key);
@@ -2429,7 +2536,110 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const pies = (moving ? marker.y : obj.y) + markerFeetOffsetY(obj);
     const y = yDelRotulo(x, pies, label.displayWidth, label.displayHeight,
       obj.type === 'PERSON' ? ALTO_DE_PERSONA_PX : 0, this.cajasOcupadas(key));
-    if (label.x !== x || label.y !== y) label.setPosition(x, y);
+    const lx = this.fitLabelX(label, x);
+    if (label.x !== lx || label.y !== y) label.setPosition(lx, y);
+    if (key === this.nearestKey) this.placeMarkerPrompt(key);
+  }
+
+  /**
+   * Un rótulo centrado sobre su dueño no se sale de la vista (P9: «Vigilante» salía cortado en el borde izquierdo): la
+   * posición se recorta al rectángulo visible con un margen y, si su dueño ya está FUERA de la vista, el rótulo se oculta
+   * (el indicador del borde dice hacia dónde queda). Devuelve la x a usar. Sin cámara (escena sin arrancar) no toca nada.
+   */
+  private fitLabelX(label: Phaser.GameObjects.Text, ownerX: number): number {
+    const view = this.cameras?.main?.worldView;
+    if (!view || !(view.width > 0)) return ownerX;
+    const inside = ownerX >= view.x && ownerX <= view.right;
+    label.setVisible(inside);
+    if (!inside) return ownerX;
+    const half = label.displayWidth / 2 + VIEW_EDGE_MARGIN_PX;
+    const min = view.x + half;
+    const max = view.right - half;
+    return min > max ? (view.x + view.right) / 2 : Math.min(max, Math.max(min, ownerX));
+  }
+
+  /**
+   * La cámara se movió: los rótulos visibles se vuelven a recortar a la nueva vista. Solo cuando cambian los bordes de la
+   * vista y solo con rótulos a la vista (a lo sumo tres): `placeLabel` ya sabe dónde va cada uno.
+   */
+  private refitLabelsToView(): void {
+    const view = this.cameras?.main?.worldView;
+    if (!view || (view.x === this.labelViewLeft && view.right === this.labelViewRight)) return;
+    this.labelViewLeft = view.x;
+    this.labelViewRight = view.right;
+    for (let i = 0; i < this.revealed.length; i++) this.placeLabel(this.revealed[i]);
+    const near = this.nearestKey;
+    if (near !== null && !this.revealed.includes(near)) this.placeLabel(near);
+  }
+
+  /** Pone (x, y) del destino en `edgeXY` sin asignar nada; false si no está en la sala. */
+  private targetPointInto(key: string): boolean {
+    if (key.startsWith(NPC_KEY_PREFIX)) {
+      const npc = this.npcMarkers.get(key.slice(NPC_KEY_PREFIX.length));
+      if (!npc) return false;
+      this.edgeXY.x = npc.x; this.edgeXY.y = npc.y;
+      return true;
+    }
+    const obj = this.markerData.get(key);
+    if (!obj || !this.markers.has(key)) return false;
+    this.edgeXY.x = obj.x; this.edgeXY.y = obj.y + markerFeetOffsetY(obj);
+    return true;
+  }
+
+  /**
+   * Indicador de borde (P9): cuando el siguiente paso queda fuera de la vista de la cámara, una flecha con su nombre corto
+   * («◀ Vigilante») en el borde por donde hay que ir; al entrar en cuadro se oculta. Es UNA pieza creada la primera vez que
+   * hace falta; por cuadro solo se hacen cuentas y, si cambió, se reposiciona. El texto y el ancla se reescriben solo cuando
+   * cambia el destino o el lado. Es de lienzo: el lector de pantalla no lo recibe (lo que dice y a dónde ir está en la ficha
+   * y en el plano), así que no se repite en cada movimiento.
+   */
+  private syncEdgeArrow(): void {
+    const key = this.nextTargetKey;
+    const view = this.cameras?.main?.worldView;
+    if (key === null || this.dimmedKeys.has(key) || !view || !(view.width > 0) || !this.targetPointInto(key)) {
+      this.edgeArrow?.setVisible(false);
+      return;
+    }
+    const tx = this.edgeXY.x, ty = this.edgeXY.y - 30;   // hacia el cuerpo, no hacia los pies
+    if (tx >= view.x && tx <= view.right && ty >= view.y && ty <= view.bottom) {
+      this.edgeArrow?.setVisible(false);
+      return;
+    }
+    const cx = view.x + view.width / 2, cy = view.y + view.height / 2;
+    const horizontal = Math.abs(tx - cx) * view.height >= Math.abs(ty - cy) * view.width;
+    const side = horizontal ? (tx < cx ? 'L' : 'R') : (ty < cy ? 'U' : 'D');
+    if (!this.edgeArrow || !this.edgeArrow.scene) {
+      this.edgeArrow = this.add.text(0, 0, '', {
+        fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: `${LABEL_BASE_FONT_PX}px`, color: '#cdbcff', fontStyle: 'bold',
+        backgroundColor: WORLD_LABEL_PLATE, padding: { x: 5, y: 3 }, align: 'center',
+      }).setDepth(LABEL_DEPTH);
+      this.edgeState = '';
+    }
+    const arrow = this.edgeArrow;
+    const estado = `${key}|${side}`;
+    if (estado !== this.edgeState) {
+      this.edgeState = estado;
+      const name = this.edgeName(key);
+      arrow.setText(side === 'L' ? `◀ ${name}` : side === 'R' ? `${name} ▶` : side === 'U' ? `▲ ${name}` : `▼ ${name}`);
+      arrow.setOrigin(side === 'L' ? 0 : side === 'R' ? 1 : 0.5, side === 'U' ? 0 : side === 'D' ? 1 : 0.5);
+    }
+    arrow.setScale(this.labelScale);
+    const m = VIEW_EDGE_MARGIN_PX;
+    const w = arrow.displayWidth, h = arrow.displayHeight;
+    const x = side === 'L' ? view.x + m : side === 'R' ? view.right - m
+      : Math.min(view.right - w / 2 - m, Math.max(view.x + w / 2 + m, tx));
+    const y = side === 'U' ? view.y + m : side === 'D' ? view.bottom - m
+      : Math.min(view.bottom - h / 2 - m, Math.max(view.y + h / 2 + m, ty));
+    if (arrow.x !== x || arrow.y !== y) arrow.setPosition(x, y);
+    arrow.setVisible(true);
+  }
+
+  /** El nombre corto del destino para el borde: el de su rótulo, recortado. Solo al cambiar de destino o de lado. */
+  private edgeName(key: string): string {
+    const full = key.startsWith(NPC_KEY_PREFIX)
+      ? this.npcConfigFor(key)?.displayName ?? ''
+      : getSceneDisplayLabel(this.markerData.get(key) ?? ({} as MapObjectState), this.world?.map.key);
+    return full.length > EDGE_NAME_MAX ? `${full.slice(0, EDGE_NAME_MAX - 1)}…` : full;
   }
 
   /** P2: los cuerpos de las demás personas y los rótulos visibles de los demás, para que un rótulo no los pise. */
@@ -3040,6 +3250,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (!feet) {
       this.targetRing?.halo.setVisible(false);
       this.targetRing?.ring.setVisible(false);
+      this.stepMark?.setVisible(false);
       return;
     }
     if (!this.targetRing || !this.targetRing.ring.scene) {
@@ -3055,11 +3266,117 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     }
     halo.setVisible(true);
     ring.setVisible(true);
+    this.syncStepMark(key!, feet);
+  }
+
+  /**
+   * La flecha del siguiente paso (P9): una forma estática (▶) a la izquierda del destino y a media altura de su cuerpo, con
+   * halo oscuro; no tapa su nombre ni la cabeza (el rótulo va encima) y no se anima. Se crea una vez por sala.
+   */
+  private syncStepMark(key: string, feet: { x: number; y: number }): void {
+    if (!this.stepMark || !this.stepMark.scene) {
+      this.stepMark = this.add.text(0, 0, STEP_MARK_GLYPH, {
+        fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: '14px', color: '#cdbcff', fontStyle: 'bold',
+        stroke: '#0b0f1a', strokeThickness: 4,
+      }).setOrigin(1, 0.5).setDepth(LABEL_DEPTH);
+    }
+    const lift = this.stepMarkLift(key);
+    this.stepMark.setPosition(feet.x - STEP_MARK_SIDE_PX, feet.y - lift).setVisible(true);
+  }
+
+  /** A qué altura de sus pies va la flecha: más arriba para una persona o una puerta que para un objeto bajo. */
+  private stepMarkLift(key: string): number {
+    if (key.startsWith(NPC_KEY_PREFIX)) return STEP_MARK_LIFT.person;
+    const type = this.markerData.get(key)?.type;
+    return type === 'PERSON' ? STEP_MARK_LIFT.person : type === 'EXIT' ? STEP_MARK_LIFT.door : STEP_MARK_LIFT.object;
+  }
+
+  /**
+   * Anillo de cercanía (P9): bajo el candidato principal (`nearestKey`), el mismo sobre el que actúan E y «Interactuar», con
+   * trazo grueso y relleno tenue. Se crea una vez; aparece al entrar en el radio de interacción y se va al salir. Sin
+   * animación. Lo atenuado (decisiones de otras etapas) no lleva anillo, como el del destino.
+   */
+  private syncNearRing(): void {
+    const key = this.nearestKey;
+    const feet = key !== null && !this.dimmedKeys.has(key) ? this.feetOf(key) : null;
+    if (!feet) {
+      this.nearRing?.halo.setVisible(false);
+      this.nearRing?.ring.setVisible(false);
+      return;
+    }
+    if (!this.nearRing || !this.nearRing.ring.scene) {
+      const depth = DEPTH.ENVIRONMENT + 0.6;
+      const halo = this.add.ellipse(0, 0, 88, 34).setStrokeStyle(6, RING_HALO_COLOR, 0.85).setDepth(depth);
+      const ring = this.add.ellipse(0, 0, 84, 30, NEAR_RING_COLOR, 0.14).setStrokeStyle(3, NEAR_RING_COLOR, 1).setDepth(depth + 0.01);
+      this.nearRing = { halo, ring };
+    }
+    const { halo, ring } = this.nearRing;
+    if (ring.x !== feet.x || ring.y !== feet.y) {
+      halo.setPosition(feet.x, feet.y);
+      ring.setPosition(feet.x, feet.y);
+    }
+    halo.setVisible(true);
+    ring.setVisible(true);
+  }
+
+  /**
+   * «E · Hablar con Vigilante» (P9): lo que hace la tecla sobre el candidato principal, dicho junto a él. Es la misma frase
+   * que la barra de contexto y el contorno del ratón (`interactionVerb`); con puntero táctil o sin atajos, sin la tecla que
+   * no hay. Sin verbo (un mueble) no hay frase.
+   */
+  private proximityPromptText(key: string): string | null {
+    const obj = this.proximityObjectFor(key);
+    if (!obj) return null;
+    const state = obj.type === 'EXIT' ? this.doorStates[key] : undefined;
+    const verb = interactionVerb(obj, state ? { state, missing: [], stageLocked: false, message: null } : null);
+    if (!verb) return null;
+    const keyName = this.touchPointer() ? '' : this.shortcutsEnabled ? 'E · ' : 'Enter · ';
+    return `${keyName}${verb.text}${verb.locked ? ' · bloqueada' : ''}`;
+  }
+
+  /**
+   * La frase de un marcador cercano (objeto, herramienta o persona-marcador) bajo su rótulo. Las personas del escenario
+   * dicen la suya en su pista y las puertas en su rótulo con la tecla. Solo al cambiar el candidato, nunca por cuadro.
+   */
+  private syncMarkerPrompt(): void {
+    const key = this.nearestKey;
+    const type = key === null ? undefined : this.markerData.get(key)?.type;
+    const text = key !== null && type !== undefined && type !== 'EXIT' && this.markerLabels.has(key) ? this.proximityPromptText(key) : null;
+    this.markerPromptOn = text !== null;
+    if (text === null) {
+      this.markerPrompt?.setVisible(false);
+      return;
+    }
+    if (!this.markerPrompt || !this.markerPrompt.scene) {
+      this.markerPrompt = this.add.text(0, 0, text, {
+        fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: `${LABEL_BASE_FONT_PX}px`, color: WORLD_LABEL_INK, fontStyle: 'bold',
+        backgroundColor: WORLD_LABEL_PLATE, padding: { x: 4, y: 2 }, align: 'center',
+      }).setOrigin(0.5, 0).setScale(this.labelScale).setDepth(LABEL_DEPTH);
+    }
+    this.markerPrompt.setText(text).setScale(this.labelScale).setVisible(true);
+    this.placeMarkerPrompt(key!);
+  }
+
+  /** Bajo el rótulo de su marcador (que ya lo evita pisar a otros): un renglón más. */
+  private placeMarkerPrompt(key: string): void {
+    const prompt = this.markerPrompt;
+    const label = this.markerLabels.get(key);
+    if (!prompt || !label || key !== this.nearestKey) return;
+    const y = label.y + label.displayHeight + 2;
+    if (prompt.x !== label.x || prompt.y !== y) prompt.setPosition(label.x, y);
+    prompt.setVisible(this.markerPromptOn && label.visible !== false);
   }
 
   /** Reinicia lo que `children.removeAll` destruye al reconstruir la sala. */
   private resetOrientationVisuals(): void {
     this.targetRing = undefined;
+    this.stepMark = undefined;
+    this.nearRing = undefined;
+    this.markerPrompt = undefined;
+    this.edgeArrow = undefined;
+    this.edgeState = '';
+    this.labelViewLeft = this.labelViewRight = NaN;
+    this.walkInteractKey = null;
     this.revealed.length = 0;
     // El contorno y el verbo del puntero también los destruye `children.removeAll`: se vuelven a crear al usarlos.
     this.hoverOutline = undefined;
@@ -3071,6 +3388,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   private isInteractive(o: MapObjectState): boolean {
+    if (o.type === 'TOOL' && o.toolCode && this.world?.inventory?.includes(o.toolCode)) return false;
     return o.type === 'EXIT' || o.type === 'TOOL' || o.type === 'ROUTE' || o.type === 'NOTE' || o.type === 'RESOURCE'
       || o.decisionOptionId != null
       || (o.toolCode != null && o.toolCode !== '')
@@ -3466,12 +3784,13 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     list.length = 0;
     let anyInRange = false;
     let targetX = 0, targetY = 0, targetSeen = false;
+    let nearX = 0, nearY = 0, nearSeen = false;
     // Un objeto atenuado nunca es el destino: ni anillo ni rótulo fijo (lo atenuado no llama la atención).
     const target = this.nextTargetKey !== null && !this.dimmedKeys.has(this.nextTargetKey) ? this.nextTargetKey : null;
 
     for (const [key, marker] of this.markers) {
       const obj = this.markerData.get(key);
-      if (!obj) continue;
+      if (!obj || (obj.type === 'TOOL' && obj.toolCode && this.world.inventory?.includes(obj.toolCode))) continue;
       // Un mueble (PROP) y lo que no tiene comportamiento se dibujan, pero no entran en la prioridad de interacción.
       if (!participatesInInteraction(obj)) continue;
       const c = this.candidateAt(list.length);
@@ -3486,6 +3805,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       c.distance = Math.hypot(px - container.x, py - container.y); c.radius = NPC_INTERACT_RADIUS;
       if (c.distance <= c.radius) anyInRange = true;
       if (c.key === target) { targetSeen = true; targetX = container.x; targetY = container.y; }
+      if (c.key === this.nearestKey) { nearSeen = true; nearX = container.x; nearY = container.y; }
       list.push(c);
     }
     // Las zonas ambientales son sabor de último recurso: solo cuentan si nada más está a su alcance.
@@ -3514,6 +3834,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (targetSeen && ring && (ring.x !== targetX || ring.y !== targetY)) {
       this.targetRing!.halo.setPosition(targetX, targetY);
       ring.setPosition(targetX, targetY);
+    }
+    if (targetSeen && this.stepMark && (this.stepMark.x !== targetX - STEP_MARK_SIDE_PX || this.stepMark.y !== targetY - STEP_MARK_LIFT.person)) {
+      this.stepMark.setPosition(targetX - STEP_MARK_SIDE_PX, targetY - STEP_MARK_LIFT.person);
+    }
+    const near = this.nearRing?.ring;
+    if (nearSeen && near && (near.x !== nearX || near.y !== nearY)) {
+      this.nearRing!.halo.setPosition(nearX, nearY);
+      near.setPosition(nearX, nearY);
     }
 
     const primaryChanged = primaryKey !== this.nearestKey;
@@ -3556,6 +3884,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const obj = this.markerData.get(key);
     const marker = this.markers.get(key);
     if (obj && marker) {
+      if (obj.type === 'TOOL' && obj.toolCode && this.world?.inventory?.includes(obj.toolCode)) return null;
       return { ...obj, label: getSceneDisplayLabel(obj, mapKey), x: marker.x, y: marker.y };
     }
     const zone = getSceneAmbientZones(mapKey).find(z => z.key === key);
@@ -3571,6 +3900,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.syncProximityAnimations();
     const revealed = this.revealed;
     this.syncTargetRing();
+    this.syncNearRing();
+    this.syncMarkerPrompt();
     this.applyDoorStates();
     this.followLabels.length = 0;
     this.markers.forEach((m, key) => {
@@ -3598,7 +3929,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const shown = revealed.includes(candidateKey);
       (bag['__labelSprite'] as Phaser.GameObjects.Text | undefined)?.setAlpha(shown ? 1 : 0);
       const inRange = candidateKey === this.nearestKey || candidateKey === this.alsoKey;
-      (bag['__hintSprite'] as Phaser.GameObjects.Text | undefined)?.setAlpha(inRange ? 1 : 0);
+      const hint = bag['__hintSprite'] as Phaser.GameObjects.Text | undefined;
+      hint?.setAlpha(inRange ? 1 : 0);
+      // El principal dice qué hace E con él («E · Hablar con Vigilante»); el secundario conserva la flecha de siempre (P9).
+      if (inRange) hint?.setText((candidateKey === this.nearestKey ? this.proximityPromptText(candidateKey) : null) ?? this.npcHintGlyph());
       if (shown || inRange) {
         this.placeLabel(candidateKey);
         if (this.npcMovers.has(key)) this.followLabels.push(candidateKey);
@@ -3628,6 +3962,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.labelWrap = Math.min(140, (LABEL_MAX_SCREEN_WIDTH_PX * displayScale) / (zoom * next));
     this.markerLabels.forEach(label => label.setScale(next).setWordWrapWidth(this.labelWrap));
     this.hoverLabel?.setScale(next);
+    this.markerPrompt?.setScale(next);
     this.keyPersonIndicator?.container.setScale(next);
     this.doorHints.forEach(hint => { hint.setScale(next); this.placeDoorHint(hint); });
     this.npcMarkers.forEach(container => {
@@ -3924,11 +4259,13 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
   }
   /** Terminó la caminata pedida con «Ir a…» (F6-11): llegó o no pudo. */
   readonly walkEnded = output<{ key: string; label: string; outcome: 'arrived' | 'blocked' }>();
+  readonly walkCancelled = output<void>();
   readonly renderReady = signal(false);
   readonly renderedMapKey = signal<string | null>(null);
   readonly renderedScenarioKey = signal<string | null>(null);
   /** Progreso real de la precarga de Phaser (0-100). */
   readonly loadPercent = signal(0);
+  readonly loadProgress = output<number>();
   /** true cuando terminó la precarga inicial (con o sin fallos). */
   readonly assetsReady = signal(false);
   /** Faltó un mapa o tileset: la sala se ve en paneles planos. */
@@ -4264,8 +4601,10 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         onKeyPersonPosition: position => this.writeKeyPersonPosition(position),
         onCamera: camera => this.writeCamera(camera),
         onWalkEnded:   (key, label, outcome) => this.zone.run(() => this.walkEnded.emit({ key, label, outcome })),
+        onWalkCancelled: () => this.zone.run(() => this.walkCancelled.emit()),
         onLoadProgress: percent => this.zone.run(() => {
           this.loadPercent.set(percent);
+          this.loadProgress.emit(percent);
           // Una carga que avanza no está colgada: el plazo cuenta desde el último avance, no desde el arranque.
           if (!this.renderReady()) this.armBootWatchdog();
         }),
@@ -4279,6 +4618,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         },
         onLoadComplete: failures => this.zone.run(() => {
           this.loadPercent.set(100);
+          this.loadProgress.emit(100);
           this.assetsReady.set(true);
           this.criticalLoadFailed.set(failures.length > 0);
           if (failures.length > 0) console.warn('[GameWorld] Recursos esenciales sin cargar:', failures);
