@@ -32,7 +32,9 @@ describe('Controles de primera vez: contenido', () => {
 
   it('con teclado y atajos dice WASD, E, I y M; la línea de interactuar explica que el botón dice con qué', () => {
     const rows = controlsWelcomeRows({ modality: 'keyboard' });
-    expect(rows[0].keys).toContain('WASD');
+    expect(rows[0].keys).toBe('Clic');
+    expect(rows[0].text).toContain('Haz clic donde quieras ir');
+    expect(rows[0].text).toContain('WASD');
     expect(rows[1].keys).toContain('E');
     expect(rows[1].text).toContain('dice con qué vas a interactuar');
     expect(rows[2].keys).toBe('I');
@@ -97,7 +99,7 @@ describe('Controles de primera vez: tarjeta', () => {
     create();
     const rows = Array.from(host().querySelectorAll<HTMLElement>('[data-help-row]'));
     expect(rows.map(row => row.dataset['helpRow'])).toEqual(['moverte', 'interactuar', 'ir-a', 'plano']);
-    expect(rows[0].querySelector('kbd')?.textContent).toContain('WASD');
+    expect(rows[0].querySelector('kbd')?.textContent).toContain('Clic');
     expect(host().querySelector('.help-welcome__again')?.textContent).toContain('«Controles»');
   });
 

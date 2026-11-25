@@ -44,7 +44,7 @@ describe('orientation.config: textos', () => {
     expect(copy.now.nothingNearby).toBe('No hay nada cerca: acércate a una persona o un objeto, o usa «Ir a…».');
     expect(copy.notices.obtained('Kit PAP')).toBe('Obtuviste: Kit PAP. Ya está en tu barra de herramientas.');
     expect(copy.notices.registering).toBe('Registrando tu decisión…');
-    expect(copy.notices.decisionRegistered).toBe('Decisión registrada.');
+    expect(copy.notices.decisionRegistered).toBe('Tu decisión se guardó.');
     expect(copy.notices.supervision).toBe('Tu decisión quedó registrada en tu seguimiento formativo.');
     expect(copy.notices.errorNpc).toBe('No pudimos registrar la conversación. Acércate un poco más e inténtalo de nuevo.');
     expect(copy.notices.errorDecision).toBe('No pudimos registrar tu decisión. Inténtalo de nuevo.');

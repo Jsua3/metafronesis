@@ -224,6 +224,19 @@ describe('DialoguePanelComponent: a tu ritmo (P8)', () => {
       expect(component.isTypingComplete()).toBe(true);
     });
 
+    it('el ajuste visible completa la página, recuerda la preferencia y no avanza el diálogo', () => {
+      TestBed.inject(InstantTextSettings).set(false);
+      render(TRES_LINEAS);
+      const button = fixture.nativeElement.querySelector('.instant-setting') as HTMLButtonElement;
+      expect(button.getAttribute('aria-pressed')).toBe('false');
+      click(button);
+      fixture.detectChanges();
+      expect(component.isTypingComplete()).toBe(true);
+      expect(component.lineIndex()).toBe(0);
+      expect(button.getAttribute('aria-pressed')).toBe('true');
+      expect(localStorage.getItem('siep.texto-instantaneo.v1')).toBe('on');
+    });
+
     it('apagado, la máquina de escribir sigue siendo la de siempre', () => {
       TestBed.inject(InstantTextSettings).set(false);
 

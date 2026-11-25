@@ -213,7 +213,8 @@ export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly C
   const letters = options.singleKeyShortcuts !== false;
   if (touch) {
     return [
-      { id: 'moverte', keys: 'Cruz', title: 'Moverte', text: 'Mantén pulsada una flecha de la cruz de abajo a la izquierda.' },
+      // BORRADOR: texto pendiente de Psicología.
+      { id: 'moverte', keys: 'Toca', title: 'Moverte', text: 'Toca donde quieras ir; para hablar, pulsa el botón de la persona. También puedes usar la cruz.' },
       { id: 'interactuar', keys: 'Interactuar', title: 'Interactuar', text: 'Acércate a algo y toca «Interactuar»: el botón dice con qué vas a interactuar.' },
       { id: 'ir-a', keys: 'Ir a…', title: 'Ir directo', text: 'Toca «Ir a…» arriba, elige una persona o una puerta y tu personaje camina solo hasta ahí.' },
       { id: 'plano', keys: 'Mapa', title: 'Plano', text: 'Toca el mapa pequeño de arriba para ver el plano del lugar.' },
@@ -221,8 +222,9 @@ export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly C
   }
   return [
     {
-      id: 'moverte', keys: letters ? 'Flechas · WASD' : 'Flechas', title: 'Moverte',
-      text: letters ? 'Camina con las flechas o con WASD.' : 'Camina con las flechas.',
+      // BORRADOR: texto pendiente de Psicología.
+      id: 'moverte', keys: 'Clic', title: 'Moverte',
+      text: letters ? 'Haz clic donde quieras ir; para hablar, pulsa el botón de la persona. También puedes usar flechas o WASD.' : 'Haz clic donde quieras ir; para hablar, pulsa el botón de la persona. También puedes usar las flechas.',
     },
     {
       id: 'interactuar', keys: letters ? 'E · Enter' : 'Enter', title: 'Interactuar',

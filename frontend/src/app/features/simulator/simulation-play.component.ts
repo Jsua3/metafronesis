@@ -505,7 +505,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 }
               </header>
               <app-dialogue-panel class="dialogue-side" mode="side" [reduceMotion]="reduceMotion()"
-                [dialogue]="dialogue()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()"
+                [dialogue]="dialogue()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()"
                 [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
                 (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
                 (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -581,7 +581,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         </div>
 
         @if (viewMode() === 'dialogue-cinematic') {
-          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogue()" [avisoBreve]="softNotice()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()"
+          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogue()" [world]="world()" [avisoBreve]="softNotice()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()"
             [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
             (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
             (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -643,7 +643,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
 
         @if (!holdingOutcome() && !reactingToLast()) {
           <app-attempt-outcome [report]="game.completionReport" [status]="game.status"
-            [supportResources]="supportResources()" [pauseNote]="pauseNote()"
+            [supportResources]="supportResources()" [pauseNote]="pauseNote()" [positionNote]="pausePositionNote()"
             [mode]="mode()" [caseVersionId]="game.caseVersionId"
             [reviewAttemptId]="game.status === 'COMPLETED' && mode() !== 'rehearsal' ? game.attemptId : null"
             (retry)="startNewAttempt()" (resume)="resumeCurrentAttempt()" />
@@ -1795,6 +1795,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private lastPosition: { x: number; y: number } | null = null;
   private lastSyncedPosition: { x: number; y: number } | null = null;
   /** La posición sin guardar al pulsar «Salida segura»: viaja con la pausa, antes de ella (REGLA-004 y V4). */
+  readonly pausePositionNote = signal<string | null>(null);
   private positionForPause: { attemptId: string; mapKey: string; x: number; y: number } | null = null;
   private positionSaveHandle: number | null = null;
   /**
@@ -1835,9 +1836,9 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       if (this.resumeQueued && veredictoDeFalloDePausa(cause) === 'reintentar') this.showActionError(DRAFT_COPY.pauseResumeOffline.text);
     },
   });
-  private readonly pauseState = signal<'none' | 'pending' | 'failed'>('none');
+  private readonly pauseState = signal<'none' | 'saving' | 'pending' | 'failed'>('none');
   /** La línea discreta de la pantalla de pausa mientras el servidor aún no la registró (o si lo rechazó de forma permanente). */
-  readonly pauseNote = computed(() => ({ none: null, pending: DRAFT_COPY.pauseNotRegistered.text, failed: DRAFT_COPY.pausePermanentFail.text })[this.pauseState()]);
+  readonly pauseNote = computed(() => ({ none: null, saving: 'Guardando la pausa…', pending: DRAFT_COPY.pauseNotRegistered.text, failed: DRAFT_COPY.pausePermanentFail.text })[this.pauseState()]);
   /** Al reanudar: la consecuencia de la decisión que la pausa cortó, el aviso de una elección perdida y una decisión ya aplicada cuya respuesta se perdió (se reenvía, mismo `requestId`). */
   private consequenceOnResume: SimulationDecisionResult | null = null;
   private replayIntent: IntencionDeDecision | null = null;
@@ -2933,6 +2934,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
           // «Entraste a …» lo anuncia `announceRoomChange` al aplicar el mundo: una sola fuente para el cambio de sala
           // (por puerta o por decisión), así no se dice dos veces.
           this.applyWorldWithScenario(world);
+          // BORRADOR: texto pendiente de Psicología. Confirmado por el servidor.
+          this.showSoftNotice('Tu avance se guardó.');
         },
         error: err => this.onDoorFailed(game.attemptId, err),
       });
@@ -3272,9 +3275,12 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** El camino normal de la respuesta de una decisión: reacción del personaje y, tras ella, consecuencia y sala nueva. */
   private applyDecisionResult(game: SimulationAttemptState, updated: SimulationDecisionResult): void {
-    // El servidor ya la guardó: acuse corto, anunciado y sin bloquear nada (P8). Va antes de la reacción y de lo que sigue.
-    // Si ya hay un aviso más específico (p. ej. «Volvió la conexión: enviamos tu elección.»), ese manda.
-    if (!this.softNotice()) this.showSoftNotice(ORIENTATION_COPY.notices.decisionRegistered);
+    // Una segunda oportunidad no aplicó la primera respuesta: no se anuncia como decisión guardada.
+    // BORRADOR: texto pendiente de Psicología. El acuse se añade a otro aviso si todavía está visible.
+    if (!updated.retry) {
+      const previous = this.softNotice();
+      this.showSoftNotice(previous ? `${previous} ${ORIENTATION_COPY.notices.decisionRegistered}` : ORIENTATION_COPY.notices.decisionRegistered);
+    }
     this.trackStageChange(game, updated);
     this.attempt.set(updated);
     // La etiqueta nueva la dice la reacción en su paso (`afterReaction` la deja si no hubo): aquí solo el icono.
@@ -3580,6 +3586,9 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (!game || game.status !== 'IN_PROGRESS') return;
     if (this.showResumePrompt() || this.showContentWarning() || this.pausing()) return;
     this.pausing.set(true);
+    this.pausePositionNote.set(null);
+    // BORRADOR: texto pendiente de Psicología.
+    this.pauseState.set('saving');
     // Sonido discreto: la salida segura es seria, no alarmista.
     this.audioDirector.playSfx('ui_cancel');
     if (this.reacting()) this.cutReactionForPause();   // sin encuadre, gesto ni nota de supervisión sobre la pausa
@@ -3623,6 +3632,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
         const sinRed = esPlazoVencido(err) || (err instanceof HttpErrorResponse && err.status === 0);
         if (sinRed) return throwError(() => err);
         if (this.positionForPause === pending) this.positionForPause = null;
+        // BORRADOR: texto pendiente de Psicología. La pausa sigue, pero la posición fue rechazada.
+        this.pausePositionNote.set('No se guardó tu última posición. Al reanudar, vuelve al lugar donde estabas.');
         return of(null);
       }),
       defaultIfEmpty(null),
@@ -3634,6 +3645,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.endPausing();
     borrarMarcaDePausa(this.almacen, updated.attemptId);
     this.attempt.set(updated);
+    // BORRADOR: texto pendiente de Psicología. La respuesta confirma la pausa, no necesariamente la posición.
+    if (updated.status === 'PAUSED') this.announce('La pausa se guardó.');
     this.busy.set(true);
     this.worldReloadPending = true;
     this.loadWorld(updated);

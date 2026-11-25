@@ -53,8 +53,9 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
 
         @if (status() === 'PAUSED') {
           <!-- Pausa calmada: lo primero es poder volver; el tablero queda plegado y sin cifras en primer plano. -->
-          <p class="oc-pause-copy">{{ pauseMessage }}</p>
+          <p class="oc-pause-copy">{{ pauseNote() ? pausePendingMessage : pauseMessage }}</p>
           @if (pauseNote()) { <p class="oc-pause-note" role="status">{{ pauseNote() }}</p> }
+          @if (positionNote()) { <p class="oc-pause-note" role="status">{{ positionNote() }}</p> }
           <div class="oc-actions oc-actions--pause">
             <!-- Pausa reanudable real: mismo intento, sin crear uno nuevo. -->
             <button type="button" class="oc-btn oc-btn--go u-ficha u-ficha--primaria" cdkFocusInitial (click)="resume.emit()">Reanudar este intento</button>
@@ -585,6 +586,7 @@ export class AttemptOutcomeComponent {
   readonly supportResources = input<string[]>([]);
   /** Pausa local aún sin registrar en el servidor (sin conexión): la línea discreta que lo dice; `null` cuando ya quedó registrada. */
   readonly pauseNote = input<string | null>(null);
+  readonly positionNote = input<string | null>(null);
   /**
    * Intento cuyo reporte del dueño trae «Tus decisiones» (C2). Lo pasa quien llama solo al completar: sin id no hay
    * petición. Con el id, `decisionReview` sale del reporte congelado, no de la respuesta de la última decisión.
@@ -664,7 +666,9 @@ export class AttemptOutcomeComponent {
   }
 
   /** Texto tranquilizador de la pausa: sin penalización y sin cifras en primer plano. */
-  readonly pauseMessage = 'Tu avance quedó guardado exactamente donde estabas. No hay penalización: puedes retomarlo cuando quieras.';
+  // BORRADOR: texto pendiente de Psicología.
+  readonly pausePendingMessage = 'Tu caso está en pausa. Puedes volver cuando se registre la pausa.';
+  readonly pauseMessage = 'La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.';
 
   /** Título de la pantalla. La pausa siempre dice «pausa» (el e2e la localiza por su nombre accesible). */
   title(): string {

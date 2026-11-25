@@ -379,20 +379,27 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
 
       (component as any).applyDecisionResult(game, updated);
 
-      expect(component.softNotice()).toBe('Decisión registrada.');
+      expect(component.softNotice()).toBe('Tu decisión se guardó.');
       expect(component.inputBlocked()).toBe(false);
       tick(4300);
       expect(component.softNotice()).toBe('');
     });
 
-    it('si ya había un aviso más específico (reenvío tras volver la red), ese manda', () => {
+    it('el acuse acompaña al aviso de reenvío tras volver la red', () => {
       startInUrgencias();
       const game = component.attempt()!;
       (component as any).showSoftNotice('Volvió la conexión: enviamos tu elección.');
 
       (component as any).applyDecisionResult(game, makeAttempt('hospital-sala-escucha', { reaction: null }));
 
-      expect(component.softNotice()).toBe('Volvió la conexión: enviamos tu elección.');
+      expect(component.softNotice()).toBe('Volvió la conexión: enviamos tu elección. Tu decisión se guardó.');
+    });
+    it('una segunda oportunidad no anuncia que la primera respuesta fue aplicada', () => {
+      startInUrgencias();
+      const game = component.attempt()!;
+      const updated = makeAttempt('hospital-sala-escucha', { reaction: null, retry: { allowed: true, message: '' } });
+      (component as any).applyDecisionResult(game, updated);
+      expect(component.softNotice()).not.toContain('se guardó');
     });
   });
 });

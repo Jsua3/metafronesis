@@ -24,9 +24,11 @@ describe('paginas-texto: un parlamento largo se parte en páginas por frases (U1
     expect(partirEnPaginas(texto, () => true)).toEqual([texto]);
   });
 
-  it('una frase que no cabe ni sola va sola en su página: no se corta a media frase', () => {
-    const larga = 'Esta frase es más larga que cualquier página posible.';
-    expect(partirEnPaginas(`Hola. ${larga} Adiós.`, pagina => pagina.length <= 10)).toEqual(['Hola.', larga, 'Adiós.']);
+  it('una frase larga se divide por palabras sin perder texto', () => {
+    const texto = 'Hola. Esta frase es más larga que cualquier página posible. Adiós.';
+    const paginas = partirEnPaginas(texto, pagina => pagina.length <= 10);
+    expect(paginas.join(' ')).toBe(texto);
+    expect(paginas.every(pagina => pagina.length <= 10)).toBe(true);
   });
 
   it('las páginas unidas conservan todo el texto', () => {

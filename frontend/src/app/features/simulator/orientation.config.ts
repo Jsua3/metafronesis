@@ -42,7 +42,8 @@ export const ORIENTATION_COPY = {
     obtained: (label: string): string => `Obtuviste: ${label}. Ya está en tu barra de herramientas.`,
     registering: 'Registrando tu decisión…',
     /** Acuse corto y no bloqueante al elegir una opción: el servidor ya la guardó. */
-    decisionRegistered: 'Decisión registrada.',
+    // BORRADOR: texto pendiente de Psicología.
+    decisionRegistered: 'Tu decisión se guardó.',
     supervision: 'Tu decisión quedó registrada en tu seguimiento formativo.',
     errorNpc: 'No pudimos registrar la conversación. Acércate un poco más e inténtalo de nuevo.',
     errorTool: 'No pudimos usar la herramienta.',

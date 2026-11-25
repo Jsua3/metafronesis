@@ -103,7 +103,7 @@ describe('AttemptOutcomeComponent', () => {
 
   it('la pausa habla de reanudar y el cierre terminal no finge pausa (ETH-02 A)', () => {
     expect(component.eyebrow('PAUSED')).toBe('Pausa segura activa');
-    expect(component.headline('PAUSED')).toContain('retomarlo');
+    expect(component.headline('PAUSED')).toContain('retomar el caso');
     expect(component.eyebrow('SAFE_EXITED')).toBe('Salida segura registrada');
     expect(component.headline('SAFE_EXITED')).toContain('cerrado');
     expect(component.headline('SAFE_EXITED')).not.toMatch(/pausa/i);
@@ -208,7 +208,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   it('muestra el texto tranquilizador exacto y ninguna clave interna', () => {
     render('PAUSED');
     expect(text(host().querySelector('.oc-pause-copy')))
-      .toBe('Tu avance quedó guardado exactamente donde estabas. No hay penalización: puedes retomarlo cuando quieras.');
+      .toBe('La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.');
   });
 
   it('con la pausa aún sin registrar, una línea discreta con role="status" lo dice, justo bajo el texto tranquilizador; sin nota no hay línea', () => {
@@ -406,7 +406,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
       render('PAUSED');
       expect(text(host().querySelector('#outcome-title'))).toBe('Tu caso está en pausa');
       expect(component.pauseMessage)
-        .toBe('Tu avance quedó guardado exactamente donde estabas. No hay penalización: puedes retomarlo cuando quieras.');
+        .toBe('La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.');
       expect(text(host().querySelector('button.oc-btn--go'))).toBe('Reanudar este intento');
     });
   });
