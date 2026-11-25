@@ -12,7 +12,8 @@ import { UiToastHost } from './shared/ui/toast/ui-toast-host';
   imports: [RouterOutlet, UiToastHost],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <a class="psy-skip-link" href="#main-content" (click)="skipTo($event, 'main-content')">Saltar al contenido principal</a>
+    <a class="psy-skip-link" [attr.href]="isLoginRoute() ? '#acceso-titulo' : '#main-content'"
+      (click)="skipTo($event, isLoginRoute() ? 'acceso-titulo' : 'main-content')">{{ isLoginRoute() ? 'Saltar al formulario' : 'Saltar al contenido principal' }}</a>
     @if (isGameRoute()) {
       <!-- El destino siempre existe (#main-content, el contenedor del juego); se enfoca #game-area cuando el mundo ya está. -->
       <a class="psy-skip-link" href="#main-content" (click)="skipTo($event, 'game-area', 'main-content')">Saltar al juego</a>
@@ -42,6 +43,8 @@ export class AppComponent {
   );
 
   /** Solo dentro de un caso hay un «juego» al que saltar. */
+  readonly isLoginRoute = computed(() => /^\/login(?:[?#]|$)/.test(this.url()));
+
   readonly isGameRoute = computed(() => /\/portal\/simulador\/\d+/.test(this.url()));
 
   /** Pantalla a sangre del juego (la sala y el caso: `chrome: 'hidden'`): ahí los avisos van arriba a la izquierda. */

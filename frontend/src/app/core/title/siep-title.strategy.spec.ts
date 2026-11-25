@@ -21,9 +21,9 @@ describe('SiepTitleStrategy', () => {
     ],
   }));
 
-  it('antepone el nombre de la página a SIEP', async () => {
+  it('antepone el nombre de la página a Metafrónesis', async () => {
     await TestBed.inject(Router).navigateByUrl('/con-titulo');
-    expect(TestBed.inject(Title).getTitle()).toBe('Rúbricas · SIEP');
+    expect(TestBed.inject(Title).getTitle()).toBe('Rúbricas · Metafrónesis');
   });
 
   it('usa el título institucional si la ruta no define uno', async () => {

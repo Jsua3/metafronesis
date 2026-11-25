@@ -1,3 +1,4 @@
+import { APP_BRAND } from '../../core/config/brand.config';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -131,7 +132,7 @@ export class ResetPasswordComponent implements OnInit {
 
   // BORRADOR: textos nuevos, pendientes de la aprobación de Psicología
   protected readonly descripcion = computed(() =>
-    this.estado() === 'listo' ? 'Elige una contraseña nueva para tu cuenta.' : 'Recupera el acceso a tu cuenta de SIEP.');
+    this.estado() === 'listo' ? 'Elige una contraseña nueva para tu cuenta.' : `Recupera el acceso a tu cuenta de ${APP_BRAND.shortName}.`);
   protected readonly statusText = computed(() => {
     if (this.saving()) return 'Guardando tu nueva contraseña…';
     if (this.estado() === 'hecho') return 'Contraseña actualizada.';

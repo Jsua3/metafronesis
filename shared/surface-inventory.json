@@ -160,6 +160,16 @@
       "audit": "LOGIN_SUCCEEDED,LOGIN_FAILED,LOGIN_LOCKED"
     },
     {
+      "route": "api/auth/demo/config",
+      "method": "GET",
+      "exposure": "public",
+      "body": "none",
+      "throttle": [
+        "login_ip"
+      ],
+      "audit": null
+    },
+    {
       "route": "api/auth/google",
       "method": "POST",
       "exposure": "public",

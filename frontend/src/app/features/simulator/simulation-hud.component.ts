@@ -1,3 +1,4 @@
+import { APP_BRAND } from '../../core/config/brand.config';
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, HostListener, Renderer2, computed, effect, inject, input, output, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -29,7 +30,7 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
 
         <!-- Bloque U1, variante B (placas en las esquinas): el grupo de la derecha es la pestaña con el caso sobre una placa con
              la persona y las teclas. La etapa va en la pestaña de la ficha del objetivo y el lugar en la del plano. -->
-        <p class="hud-case u-rotulo u-rotulo--suave" [title]="game.caseTitle"><span class="u-rotulo__texto">SIEP · {{ tituloCorto(game.caseTitle) }}</span></p>
+        <p class="hud-case u-rotulo u-rotulo--suave" [title]="game.caseTitle"><span class="u-rotulo__texto">{{ brand.shortName }} · {{ tituloCorto(game.caseTitle) }}</span></p>
         <div class="hud-strip u-placa u-sombra">
           <div class="hud-zone hud-zone--right">
             <!-- La persona en palabras (sin cifras): su cara según el vínculo y la activación, su pulso y la frase del servidor. -->
@@ -323,6 +324,7 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
   `]
 })
 export class SimulationHudComponent {
+  readonly brand = APP_BRAND;
   /** La pestaña lleva el título sin su subtítulo («… — tres capítulos»): entero no cabía y salía cortado (B, V4). */
   protected readonly tituloCorto = (titulo: string): string => titulo.split(' — ')[0];
   readonly attempt = input<SimulationAttemptState | null>(null);
