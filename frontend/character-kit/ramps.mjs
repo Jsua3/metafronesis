@@ -53,6 +53,9 @@ export const LITERAL_DEFAULTS = {
   /** Labial rojo vino (rostro karen): luz y sombra de la rampa vinotinto. */
   labios: '#a95366',
   labiosSombra: '#7b3b4c',
+  /** Labios rosados naturales (rostro sara): tonos 1 y 2 de la rampa rosa. */
+  labiosRosa: '#d47b8b',
+  labiosRosaSombra: '#a95366',
   // accesorios
   gafas: '#302a3b',
   gafete: '#f1f2f4',

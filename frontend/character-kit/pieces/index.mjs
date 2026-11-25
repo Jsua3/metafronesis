@@ -9,6 +9,7 @@ import pantalon from './bottom/pantalon.mjs';
 import pantalonUniforme from './bottom/pantalon-uniforme.mjs';
 import karen from './face/karen.mjs';
 import maduro from './face/maduro.mjs';
+import sara from './face/sara.mjs';
 import sereno from './face/sereno.mjs';
 import afro from './hair/afro.mjs';
 import bobFlequillo from './hair/bob-flequillo.mjs';
@@ -56,6 +57,7 @@ export const PIECES = Object.freeze([
   // rostro
   karen,
   maduro,
+  sara,
   sereno,
   // arriba
   blazer,
