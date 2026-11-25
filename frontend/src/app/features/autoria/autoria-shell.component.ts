@@ -110,13 +110,13 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
           <div role="group" aria-label="Ayuda" class="barra-ayuda">
             <!-- «Buscar» y «Guía» se funden en una sola «Ayuda» (§4.1): abrían casi el mismo diálogo con las mismas acciones. Se
                  conservan las dos entradas de la guía (data-accion «buscar» y «guia») sobre este botón. -->
-            <button type="button" class="boton-barra" data-accion="buscar guia" title="Busca una acción o pregúntale a la guía"
-                    aria-haspopup="dialog" (click)="abrirBuscador('buscar', $event)">Ayuda</button>
+            <button type="button" class="boton-barra" data-accion="buscar guia" title="Ayuda: busca una acción o pregúntale a la guía"
+                    aria-label="Ayuda" aria-haspopup="dialog" (click)="abrirBuscador('buscar', $event)"><svg class="barra-ayuda__icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.7 2.2c-.8.5-1.2 1-1.2 2M12 17h.01" /></svg><span class="barra-ayuda__texto">Ayuda</span></button>
             @if (store.caso() && iaDisponible()) {
-              <button type="button" class="boton-barra" data-accion="pedir-a-la-ia aceptar-ia" title="Escribe o cambia el caso por ti; tú apruebas"
-                      [attr.aria-expanded]="iaAbierta() && !store.soloLectura()" aria-controls="panel-ia" [disabled]="store.soloLectura()"
+              <button type="button" class="boton-barra" data-accion="pedir-a-la-ia aceptar-ia" title="Asistente de IA: escribe o cambia el caso por ti; tú apruebas"
+                      aria-label="Asistente de IA" [attr.aria-expanded]="iaAbierta() && !store.soloLectura()" aria-controls="panel-ia" [disabled]="store.soloLectura()"
                       [attr.aria-describedby]="store.soloLectura() ? 'aviso-ia' : null" (click)="alternarIa()" #botonIa>
-                Asistente<span class="solo-lector"> de IA</span>
+                <svg class="barra-ayuda__icono" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" /></svg><span class="barra-ayuda__texto">Asistente<span class="solo-lector"> de IA</span></span>
               </button>
             }
           </div>
@@ -252,10 +252,17 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
       flex: 1 1 12rem; min-inline-size: 0;
     }
     @media (min-width: 64rem) { app-hilo-del-caso { flex: none; } }
+    @media (min-width: 75rem) { .caso-actual { min-inline-size: 11ch; } }
     .contexto-editor { padding: 0 0.75rem; font-weight: 700; color: var(--asb-cromo-tinta); white-space: nowrap; }
     /* A 390 px el rótulo no cabe junto a «‹ Casos» y la cuenta (se pisaba con el menú): el título de la página ya lo dice. */
     @media (max-width: 29.999rem) { .contexto-editor { display: none; } }
     .barra-ayuda { display: flex; flex-wrap: nowrap; gap: 0.125rem; }
+    .barra-ayuda__icono { display: none; width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    @media (min-width: 64rem) and (max-width: 99.999rem) {
+      .barra-ayuda__texto { display: none; }
+      .barra-ayuda__icono { display: block; }
+      .barra-ayuda .boton-barra { min-inline-size: 2.75rem; justify-content: center; padding-inline: 0.5rem; }
+    }
     @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { max-inline-size: 16rem; } }
 
     /* «Probar» es la acción de la barra: lleva el tinte de marca sobre el vidrio (sin filo), como la acción de una barra

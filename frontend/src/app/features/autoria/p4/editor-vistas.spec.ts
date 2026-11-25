@@ -11,7 +11,7 @@ describe('P4 · contrato visible del editor', () => {
     document.querySelectorAll('body > [ng-version]').forEach(n => n.remove());
   });
 
-  it('el título largo cede y las cinco etapas se compactan sin invadir las herramientas', async () => {
+  it('el título largo cede y las cinco etapas conservan sus nombres desde 1280 px', async () => {
     const { raiz, store, listo } = await abrirEditor('/portal/casos/41/editor');
     const caso = structuredClone(store.caso()!);
     caso.titulo = 'Violencia Familiar y Tentativa de Feminicidio — tres capítulos';
@@ -27,7 +27,9 @@ describe('P4 · contrato visible del editor', () => {
     expect(shell).toMatch(/flex: 1 1 12rem; min-inline-size: 0/);
     expect(barra).toMatch(/grid-template-columns: minmax\(0, 1fr\) auto/);
     expect(barra).toMatch(/justify-self: stretch/);
-    expect(hilo).toMatch(/max-width: 119\.999rem[\s\S]*?\.hilo__nombre \{ display: none; \}[\s\S]*?\.hilo__numero \{ display: inline; \}/);
+    expect(hilo).toMatch(/max-width: 74\.999rem[\s\S]*?\.hilo__nombre \{ display: none; \}[\s\S]*?\.hilo__numero \{ display: inline; \}/);
+    expect([...raiz.querySelectorAll('.hilo__nombre')].map(e => e.textContent?.trim())).toEqual(['Datos', 'Lugar', 'Historia', 'Evaluación', 'Enviar']);
+    expect(barra).toMatch(/max-width: 99\.999rem[\s\S]*?menu-agregar[\s\S]*?ui-button__label/);
   });
 
   it('barra, Evaluación y Enviar muestran el mismo total confirmado por servidor', async () => {
@@ -48,6 +50,7 @@ describe('P4 · contrato visible del editor', () => {
     await listo();
     expect(store.totalPendientes()).toBe(total);
     expect(raiz.querySelector('#fl')!.textContent).toBe(`Por resolver (${total})`);
+    expect(raiz.querySelector('app-estudio-barra-estado')!.textContent!.match(/por resolver/g)).toHaveLength(1);
     expect(raiz.querySelectorAll('section.por-resolver li.problema')).toHaveLength(total);
     expect(barra().textContent).toContain(`Pendientes: ${total}`);
   });

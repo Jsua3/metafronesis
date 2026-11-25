@@ -232,7 +232,6 @@
 
   <ng-template estudioRanura="estado">
     @if (!store.soloLectura()) {
-      <span class="est-dato">{{ store.revisionPendiente() ? 'Revisión pendiente' : faltas().length + ' por resolver' }}</span>
       <span class="est-dato">{{ sugeridas().length }} {{ sugeridas().length === 1 ? 'sugerencia' : 'sugerencias' }}</span>
     } @else {
       <span class="est-dato">{{ nombreEstado() }}</span>

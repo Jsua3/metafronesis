@@ -99,9 +99,11 @@ export function cifraDeEtapa(a: AvanceEtapa): string {
     }
     .hilo__menu { display: none; }
 
-    /* Por debajo de 120rem (medido: a 1600 px los cinco nombres se montaban 100 px sobre las herramientas) el nombre
-       cede y queda el número con su estado. */
-    @media (min-width: 64rem) and (max-width: 119.999rem) {
+    @media (min-width: 75rem) and (max-width: 99.999rem) {
+      .hilo__etapa { gap: 0.25rem; padding-inline: 0.375rem; }
+    }
+    /* Por debajo de 75rem los nombres ceden y quedan los números con su estado. */
+    @media (min-width: 64rem) and (max-width: 74.999rem) {
       .hilo__nombre { display: none; }
       .hilo__numero { display: inline; }
       .hilo__etapa { gap: 0.25rem; padding-inline: 0.375rem; }
