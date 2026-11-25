@@ -109,7 +109,11 @@
             <td class="us-sel"><label class="us-check"><input type="checkbox" [attr.aria-label]="'Seleccionar a ' + user.nombre + ' ' + user.apellido" [checked]="seleccion().includes(user.id)" (change)="seleccionar(user.id, $any($event.target).checked)"><span class="us-check__txt" aria-hidden="true">Seleccionar</span></label></td>
             <th scope="row" class="us-name" data-celda="principal">{{ user.nombre }} {{ user.apellido }}</th>
             <td><span class="us-email" [title]="user.email">{{ user.email }}</span></td>
-            <td>{{ roleLabel(user.role) }}</td>
+            <td>{{ roleLabel(user.role) }}
+              @if (user.role === 'PROFESOR') {
+                <button ui-button type="button" size="sm" variant="secondary" [disabled]="saving()" [attr.aria-pressed]="!!user.permisoAutoria" (click)="cambiarPermiso(user)">Permiso de autoría: {{ user.permisoAutoria ? 'Sí' : 'No' }}</button>
+              }
+            </td>
             @let badge = statusBadge(user);
             <td><ui-badge [tone]="badge.tone">{{ badge.label }}</ui-badge></td>
             <td class="us-actions" data-celda="acciones">

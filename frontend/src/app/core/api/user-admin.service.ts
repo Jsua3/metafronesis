@@ -7,6 +7,7 @@ export type UserRole = User['role'];
 
 export interface AdminUser extends User {
   activo: boolean;
+  permisoAutoria?: boolean;
   /** E2-9: cuenta creada por una importación que el administrador aún no aprueba. */
   pendingApproval?: boolean;
 }
@@ -66,6 +67,11 @@ export class UserAdminService {
   approve(userIds: number[]) {
     return this.http.post<ApiResponse<ApproveUsersResult>>(`${this.API}/approve`, { userIds })
       .pipe(map(response => response.data));
+  }
+
+  permisoAutoria(id: number, conceder: boolean) {
+    const url = `${this.API}/${id}/authoring-permission`;
+    return conceder ? this.http.put(url, {}) : this.http.delete(url);
   }
 
   updateStatus(id: number, activo: boolean) {

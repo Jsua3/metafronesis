@@ -461,7 +461,7 @@ class AdminUserListCreateView(APIView):
     permission_classes = [policy_permission("user", "manage")]
 
     def get(self, request):
-        users = User.objects.order_by("id")
+        users = User.objects.select_related("permiso_autoria").order_by("id")
         data = AdminUserSerializer(users, many=True).data
         audit_events.users_listed(len(data))  # S4-1 · datos personales de todas las cuentas
         return api_ok(data)

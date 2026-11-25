@@ -1,3 +1,4 @@
+import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import { ChangeDetectionStrategy, Component, Injector, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -32,7 +33,7 @@ import { UiErrorState } from '../../shared/ui/state/ui-error-state';
   selector: 'app-case-authoring-hub',
   standalone: true,
   imports: [
-    RouterLink, NgTemplateOutlet, UiFiltros, UiSegmentado, UiPortadaCaso,
+    AsignarDesdeCasoComponent, RouterLink, NgTemplateOutlet, UiFiltros, UiSegmentado, UiPortadaCaso,
     UiBadge, UiButton, UiCard, UiCabeceraIlustrada, UiSection, UiSkeleton,
     UiVacioIlustrado, UiErrorState,
   ],
@@ -163,8 +164,10 @@ export class CaseAuthoringHubComponent implements OnInit {
         this.cases.set(cases);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('No fue posible cargar los casos disponibles.');
+      error: (err: { status?: number; error?: { code?: string } }) => {
+        this.error.set(err?.status === 403 && err.error?.code === 'AUTHORING_NOT_ALLOWED'
+          ? 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.'
+          : 'No fue posible cargar los casos disponibles.');
         this.loading.set(false);
       },
     });

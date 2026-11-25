@@ -1,6 +1,8 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, signal } from '@angular/core';
 
+import { RouterLink } from '@angular/router';
+import { Grupo } from '../../core/api/grupo.service';
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { uniqueUiId } from '../../shared/ui/button/click-guard';
@@ -13,6 +15,8 @@ export interface AssignmentDialogData {
   mode: 'create' | 'edit';
   /** Casos publicados que todavía no están asignados al grupo (solo al asignar). */
   cases: SimulationCaseSummary[];
+  fixedCaseId?: number;
+  groups?: Grupo[];
   /** Al cambiar las fechas: la asignación y el título de su caso. */
   assignment?: Assignment;
   title?: string;
@@ -21,11 +25,12 @@ export interface AssignmentDialogData {
 /** Lo que la docente decidió: el caso (solo al asignar) y las dos fechas como instantes ISO; `null` = sin fecha. */
 export interface AssignmentDialogResult {
   caseVersionId?: number;
+  groupId?: number;
   opensAt: string | null;
   closesAt: string | null;
 }
 
-type DialogField = 'caseVersionId' | 'opensAt' | 'closesAt';
+type DialogField = 'groupId' | 'caseVersionId' | 'opensAt' | 'closesAt';
 
 /** Un control de fecha a medio escribir entrega valor vacío: sin este aviso se guardaría como «sin fecha». */
 const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrito para dejarla vacía.';
@@ -38,12 +43,12 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
  */
 @Component({
   selector: 'app-assignment-dialog',
-  imports: [UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
+  imports: [RouterLink, UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-dialog-frame [title]="title" [description]="description">
       <form class="ad-form" novalidate [id]="formId" (submit)="submit($event)">
-        @if (data.mode === 'create') {
+        @if (data.mode === 'create' && data.fixedCaseId == null) {
           <ui-field label="Caso" required [error]="errors().caseVersionId">
             <select uiControl [value]="caseVersionId()" (change)="caseVersionId.set(read($event))">
               <option value="">Elige un caso</option>
@@ -52,6 +57,19 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
               }
             </select>
           </ui-field>
+        }
+        @if (data.fixedCaseId != null) {
+          @if (data.groups?.length) {
+            <ui-field label="Grupo" required [error]="errors().groupId">
+              <select uiControl [value]="groupId()" (change)="groupId.set(read($event))">
+                <option value="">Elige un grupo</option>
+                @for (group of data.groups; track group.id) { <option [value]="group.id">{{ group.nombre }} - {{ group.totalEstudiantes }} estudiantes</option> }
+              </select>
+            </ui-field>
+          } @else {
+            <p>No tienes grupos todavía. Crea uno para asignar este caso.</p>
+            <a ui-button routerLink="/portal/grupos" (click)="ref.close()">Crear un grupo</a>
+          }
         }
         <ui-field label="Abre" hint="Déjalo vacío para que se abra desde ya." [error]="errors().opensAt">
           <input uiControl type="datetime-local" [value]="opensAt()" (input)="onDate('opensAt', $event)" />
@@ -63,7 +81,7 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
         <p class="ad-zone">La hora es la de tu navegador.</p>
       </form>
       <button ui-button uiDialogActions type="button" variant="secondary" (click)="ref.close()">Cancelar</button>
-      <button ui-button uiDialogActions type="submit" [attr.form]="formId">{{ confirmLabel }}</button>
+      <button ui-button uiDialogActions type="submit" [disabled]="data.fixedCaseId != null && !data.groups?.length" [attr.form]="formId">{{ confirmLabel }}</button>
     </ui-dialog-frame>
   `,
   styles: [`
@@ -86,6 +104,7 @@ export class AssignmentDialogComponent {
   protected readonly confirmLabel = this.data.mode === 'create' ? 'Asignar' : 'Guardar fechas';
 
   protected readonly caseVersionId = signal('');
+  protected readonly groupId = signal('');
   protected readonly opensAt = signal(fromWindowIso(this.data.assignment?.opensAt));
   protected readonly closesAt = signal(fromWindowIso(this.data.assignment?.closesAt));
   protected readonly errors = signal<Partial<Record<DialogField, string>>>({});
@@ -107,7 +126,8 @@ export class AssignmentDialogComponent {
   protected submit(event: Event): void {
     event.preventDefault();
     const errors: Partial<Record<DialogField, string>> = {};
-    if (this.data.mode === 'create' && !this.caseVersionId()) errors.caseVersionId = 'Elige un caso.';
+    if (this.data.fixedCaseId != null && !this.groupId()) errors.groupId = 'Elige un grupo.';
+    if (this.data.mode === 'create' && this.data.fixedCaseId == null && !this.caseVersionId()) errors.caseVersionId = 'Elige un caso.';
     if (this.incomplete.opensAt) errors.opensAt = INCOMPLETE_DATE;
     if (this.incomplete.closesAt) errors.closesAt = INCOMPLETE_DATE;
     const window = errors.opensAt || errors.closesAt ? null : windowError(this.opensAt(), this.closesAt());
@@ -119,7 +139,8 @@ export class AssignmentDialogComponent {
       return;
     }
     const result: AssignmentDialogResult = { opensAt: this.windowValue('opensAt'), closesAt: this.windowValue('closesAt') };
-    if (this.data.mode === 'create') result.caseVersionId = Number(this.caseVersionId());
+    if (this.data.mode === 'create') result.caseVersionId = this.data.fixedCaseId ?? Number(this.caseVersionId());
+    if (this.data.fixedCaseId != null) result.groupId = Number(this.groupId());
     this.ref.close(result);
   }
 

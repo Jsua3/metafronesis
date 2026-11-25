@@ -1,3 +1,4 @@
+import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked,
   viewChild,
@@ -56,7 +57,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
 @Component({
   selector: 'app-autoria-shell',
   imports: [
-    RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
+    AsignarDesdeCasoComponent, RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
     UiGlassBar, UiMenu, TemaSelectorComponent, HiloDelCasoComponent, RielDeEscenasComponent,
     EstudioMarcoComponent, ExploradorBibliotecaComponent, TutorialCapaComponent,
   ],
@@ -82,6 +83,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
         @if (store.caso(); as caso) {
           <p class="caso-actual" [attr.title]="caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
           <app-hilo-del-caso />
+          @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" /> }
         } @else {
           <span class="contexto-editor">Editor de casos</span>
         }

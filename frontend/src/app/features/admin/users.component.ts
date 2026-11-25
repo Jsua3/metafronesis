@@ -1,13 +1,14 @@
+import { ApproveTeachersDialogComponent } from './approve-teachers-dialog.component';
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { from, of } from 'rxjs';
+import { firstValueFrom, from, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth/auth.service';
 import { UiSegmentado } from '../../shared/ui/segmentado/ui-segmentado';
 import { UiFiltros } from '../../shared/ui/filtros/ui-filtros';
-import { catchError, concatMap, map, reduce } from 'rxjs/operators';
+import { catchError, concatMap, map, reduce, toArray } from 'rxjs/operators';
 import { APPROVE_BATCH_SIZE, AdminUser, ApproveUsersResult, UserAdminService, UserRole } from '../../core/api/user-admin.service';
 import { PASSWORD_MIN_LENGTH } from '../../core/auth/password-change';
 import { AccessRequest, AccessRequestAdminService } from '../../core/api/access-request-admin.service';
@@ -189,8 +190,8 @@ export class UsersComponent implements OnInit {
   async aprobarSeleccion(): Promise<void> {
     const ids = this.pendingUsers().filter(u => this.seleccionPendientes().includes(u.id)).map(u => u.id);
     if (!ids.length) return;
-    const confirmado = await this.confirmOnce({ title: 'Aprobar cuentas pendientes', message: `Se enviarán ${ids.length} correos con la contraseña temporal.`, confirmLabel: `Aprobar ${accounts(ids.length)}` });
-    if (confirmado) { this.seleccionPendientes.set([]); this.approveIds(ids); }
+    const decision = await this.confirmarAprobacion(ids);
+    if (decision !== undefined) { this.seleccionPendientes.set([]); this.approveIds(ids, decision); }
   }
 
   readonly roles: UserRole[] = ['ADMIN', 'PROFESOR', 'ESTUDIANTE'];
@@ -466,6 +467,20 @@ export class UsersComponent implements OnInit {
   }
 
   // ── Acciones de la fila ───────────────────────────────────────────────────────────────────────────────────────
+  cambiarPermiso(user: AdminUser): void {
+    if (this.saving()) return;
+    this.saving.set(true);
+    const permiso = !user.permisoAutoria;
+    this.service.permisoAutoria(user.id, permiso).subscribe({
+      next: () => {
+        this.users.update(users => users.map(u => u.id === user.id ? { ...u, permisoAutoria: permiso } : u));
+        this.notify.success(permiso ? 'Permiso de autoría concedido.' : 'Permiso de autoría retirado.');
+        this.saving.set(false);
+      },
+      error: () => { this.notify.error('No fue posible cambiar el permiso de autoría.'); this.saving.set(false); },
+    });
+  }
+
   rowActions(user: AdminUser): UiMenuItem[] {
     // E2-9: «Activar» una pendiente sería aprobarla; se dice así (y manda el correo con la contraseña temporal).
     if (user.pendingApproval) return [{ value: 'aprobar', label: 'Aprobar cuenta', icon: 'task_alt' }];
@@ -490,21 +505,27 @@ export class UsersComponent implements OnInit {
 
   async approvePending(): Promise<void> {
     const ids = this.pendingUsers().map(user => user.id);
-    const confirmed = await this.confirmOnce({
-      title: 'Aprobar cuentas pendientes',
-      message: `¿Aprobar ${accounts(ids.length)}? Cada persona recibirá por correo una contraseña temporal y deberá cambiarla al entrar.`,
-      confirmLabel: 'Aprobar',
-    });
-    if (confirmed) this.approveIds(ids);
+    const decision = await this.confirmarAprobacion(ids);
+    if (decision !== undefined) this.approveIds(ids, decision);
   }
 
   async approveUser(user: AdminUser): Promise<void> {
-    const confirmed = await this.confirmOnce({
-      title: 'Aprobar cuenta',
-      message: `¿Aprobar la cuenta de ${user.nombre} ${user.apellido}? Recibirá por correo una contraseña temporal y deberá cambiarla al entrar.`,
-      confirmLabel: 'Aprobar',
-    });
-    if (confirmed) this.approveIds([user.id]);
+    const decision = await this.confirmarAprobacion([user.id]);
+    if (decision !== undefined) this.approveIds([user.id], decision);
+  }
+
+  private async confirmarAprobacion(ids: number[]): Promise<boolean | undefined> {
+    if (this.saving() || this.confirmando || !ids.length) return undefined;
+    const persona = ids.length === 1 ? this.users().find(u => u.id === ids[0]) : undefined;
+    const message = persona ? `¿Aprobar la cuenta de ${persona.nombre} ${persona.apellido}? Recibirá una contraseña temporal por correo.` : `Se enviará una contraseña temporal por correo a cada cuenta aprobada.`;
+    if (!this.users().some(u => ids.includes(u.id) && u.role === 'PROFESOR')) {
+      return await this.confirmOnce({ title: persona ? 'Aprobar cuenta' : 'Aprobar cuentas pendientes', message, confirmLabel: persona ? 'Aprobar' : `Aprobar ${accounts(ids.length)}` }) ? false : undefined;
+    }
+    this.confirmando = true;
+    try {
+      const ref = this.dialog.open<boolean | undefined, string>(ApproveTeachersDialogComponent, { data: message });
+      return await firstValueFrom(ref.closed, { defaultValue: undefined });
+    } finally { this.confirmando = false; }
   }
 
   /** Una sola confirmación a la vez: un segundo gesto no abre otra ni repite la acción. */
@@ -519,15 +540,23 @@ export class UsersComponent implements OnInit {
   }
 
   /** Aprueba en lotes de 100 (el máximo del servidor), uno tras otro, y resume el total. */
-  private approveIds(ids: number[]): void {
+  private approveIds(ids: number[], darAutoria = false): void {
     if (this.saving() || !ids.length) return;
     this.saving.set(true);
     this.actionStatus.set('');
     this.resultadoLote.set('');
+    const docentes = new Set(this.users().filter(u => u.role === 'PROFESOR').map(u => u.id));
+    let fallosPermiso = 0;
     const batches: number[][] = [];
     for (let start = 0; start < ids.length; start += APPROVE_BATCH_SIZE) batches.push(ids.slice(start, start + APPROVE_BATCH_SIZE));
     from(batches).pipe(
       concatMap(batch => this.service.approve(batch)),
+      concatMap(part => {
+        const aprobados = darAutoria ? part.approvedIds.filter(id => docentes.has(id)) : [];
+        return from(aprobados).pipe(concatMap(id => this.service.permisoAutoria(id, true).pipe(
+          catchError(() => { fallosPermiso++; return of(null); }),
+        )), toArray(), map(() => part));
+      }),
       reduce((total, part) => ({
         approved: total.approved + part.approved,
         approvedIds: [...total.approvedIds, ...part.approvedIds],
@@ -537,9 +566,9 @@ export class UsersComponent implements OnInit {
       }), NO_APPROVALS),
     ).subscribe({
       next: total => {
-        const summary = approvalSummary(total);
+        const summary = approvalSummary(total) + (fallosPermiso ? ` No se pudo dar el permiso de autoría a ${fallosPermiso} docentes; inténtalo desde su fila.` : '');
         this.actionStatus.set(summary);
-        if (total.failed.length) this.notify.warning(summary);
+        if (total.failed.length || fallosPermiso) this.notify.warning(summary);
         else this.notify.success(summary);
       },
       error: (err: unknown) => {

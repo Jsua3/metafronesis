@@ -47,7 +47,7 @@ describe('pantalla Usuarios (F7-6)', () => {
   async function render(api: Partial<Api> = {}, { stable = true, vista = 'cuentas' } = {}) {
     service = {
       list: vi.fn(api.users ?? (() => of([ana, beto]))), create: vi.fn(), update: vi.fn(), updateStatus: vi.fn(),
-      approve: vi.fn(),
+      approve: vi.fn(), permisoAutoria: vi.fn(() => of({})),
     };
     requestsApi = { listPending: vi.fn(api.requests ?? (() => of([]))), updateStatus: vi.fn() };
     dialog = { sheet: vi.fn(() => ({ close: vi.fn() })), confirm: vi.fn(() => Promise.resolve(true)) };
@@ -68,6 +68,15 @@ describe('pantalla Usuarios (F7-6)', () => {
     else fixture.detectChanges();
     fixture.detectChanges();
   }
+
+  it('muestra y cambia el permiso del profesor', async () => {
+    await render();
+    expect(text(rows()[1])).toContain('Permiso de autoría: No');
+    component().cambiarPermiso(beto);
+    fixture.detectChanges();
+    expect(service['permisoAutoria']).toHaveBeenCalledWith(6, true);
+    expect(text(rows()[1])).toContain('Permiso de autoría: Sí');
+  });
 
   it('abre la vista indicada en la URL y actualiza la navegacion', async () => {
     await render({}, { vista: 'solicitudes' });
