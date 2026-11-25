@@ -269,13 +269,14 @@ describe('DatosComponent · los datos del caso se guardan solos', () => {
     expect(contexto().value).toBe('Mi versión del contexto.');
   });
 
-  it('un caso en revisión se lee pero no se cambia: campos de solo lectura, sin botones de cambio y una nota que lo explica', async () => {
+  it('un caso en revisión se lee pero no se cambia: campos de solo lectura, sin botones de cambio ni un segundo aviso', async () => {
     const { raiz, servidor, nombre, contexto, objetivo, escribir } = await montar({ estado: 'IN_REVIEW' });
     expect(nombre().readOnly).toBe(true);
     expect(contexto().readOnly).toBe(true);
     expect(objetivo(0)!.readOnly).toBe(true);
     expect(contexto().value).toBe('Una estudiante llega a Bienestar.');
-    expect(raiz.textContent).toContain('El caso ya no es un borrador: se puede leer, pero no cambiar.');
+    // La franja del editor ya dice que el caso se puede ver pero no editar: la pantalla no lo repite.
+    expect(raiz.textContent).not.toContain('se puede leer, pero no cambiar');
     for (const texto of ['Agregar objetivo', 'Quitar el objetivo 1', 'Agregar tema', 'Quitar el tema Violencia de pareja']) {
       expect([...raiz.querySelectorAll('button')].some((b) => b.textContent?.trim() === texto || b.getAttribute('aria-label') === texto), texto).toBe(false);
     }

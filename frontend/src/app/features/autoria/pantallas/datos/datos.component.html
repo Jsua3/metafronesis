@@ -10,10 +10,6 @@
         <p class="estado" role="status" data-estado-datos [attr.data-forma]="situacion().forma">{{ situacion().texto }}</p>
       </header>
 
-      @if (soloLectura()) {
-        <p class="nota-lectura" role="note">El caso ya no es un borrador: se puede leer, pero no cambiar.</p>
-      }
-
       <!-- Un formulario como un inspector: secciones plegables con su resumen a la vista, campos de 14 px con su rótulo arriba. -->
       <form class="formulario" novalidate (submit)="$event.preventDefault()">
         <app-estudio-seccion titulo="Identidad" [resumen]="nombre().trim() || 'Sin nombre'" [(abierta)]="abiertaIdentidad">
