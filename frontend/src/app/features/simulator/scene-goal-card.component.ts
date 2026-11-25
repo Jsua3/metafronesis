@@ -43,6 +43,11 @@ let nextGoalCardId = 0;
               <span class="goal-card__paso-cuenta">{{ cuentaDePasos() }}</span>
               <span class="goal-card__paso-texto">{{ paso }}</span>
             </p>
+            <!-- «Siguiente paso» conectado con «Ir a…» (P9): el mismo camino automático, sin abrir la lista. -->
+            @if (guia().siguienteLugar; as lugar) {
+              <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)"
+                [attr.aria-label]="goToStepLabel + ': ' + lugar.label">{{ goToStepLabel }} ▶</button>
+            }
           }
           @if (guia().enEstaSala.length) {
             <h3 class="goal-card__list-title">{{ copy.roomListTitle.text }}</h3>
@@ -105,6 +110,7 @@ let nextGoalCardId = 0;
     .goal-card__paso { display: grid; gap: var(--pixel-px); margin: 0; }
     .goal-card__paso-cuenta { font-family: var(--pixel-f-nombre); font-size: var(--pixel-letra-chica); font-weight: 700; letter-spacing: .04em; color: var(--luz); }
     .goal-card__paso-texto { font-weight: 600; line-height: 1.35; }
+    .goal-card__ir { justify-self: start; min-height: 44px; font-size: var(--pixel-letra-media); }
     /* Al cambiar el objetivo la ficha se vuelve a abrir con un pulso suave, una vez; nada con movimiento reducido. */
     .goal-card--pulso .goal-card__toggle { animation: goal-pulso 1.2s steps(6, jump-none) 1; }
     @keyframes goal-pulso { 50% { box-shadow: 0 0 0 calc(2 * var(--pixel-px)) var(--luz); } }
@@ -132,6 +138,9 @@ export class SceneGoalCardComponent {
   readonly opened = output<void>();
   /** La pista recibió 403 `CONSENT_REQUIRED`: la pantalla vuelve al aviso previo como con cualquier otra orden. */
   readonly consentRequired = output<void>();
+  /** Pidió ir al siguiente paso (P9): quien aloja la ficha camina hasta esa clave como con «Ir a…». */
+  readonly goToStep = output<string>();
+  protected readonly goToStepLabel = DRAFT_COPY.goToStepLabel.text;
 
   protected readonly open = signal(false);
   protected readonly everOpened = signal(false);
@@ -176,9 +185,13 @@ export class SceneGoalCardComponent {
     }
   }
 
-  /** La marca va en texto: una persona se «habla», un objeto se «revisa». */
+  /**
+   * La marca va en texto: una persona se «habla», un objeto se «revisa». Lo que falta lo dice con palabras (P9: «aún no» se
+   * leía como «no disponible»): la persona a la que apunta el siguiente paso es «tu siguiente paso»; las demás, «sin hablar todavía».
+   */
   protected mark(el: ElementoSala): string {
-    if (!el.visto) return DRAFT_COPY.roomMarkNotYet.text;
-    return el.tipo === 'persona' ? DRAFT_COPY.roomMarkTalked.text : DRAFT_COPY.roomMarkReviewed.text;
+    if (el.visto) return el.tipo === 'persona' ? DRAFT_COPY.roomMarkTalked.text : DRAFT_COPY.roomMarkReviewed.text;
+    if (el.tipo === 'persona') return el.key === this.guia().siguienteLugar?.key ? DRAFT_COPY.roomMarkNextStep.text : DRAFT_COPY.roomMarkUntalked.text;
+    return DRAFT_COPY.roomMarkNotYet.text;
   }
 }

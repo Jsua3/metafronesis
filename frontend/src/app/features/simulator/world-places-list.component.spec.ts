@@ -118,3 +118,17 @@ describe('WorldPlacesListComponent', () => {
     expect(closed).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('WorldPlacesListComponent: el siguiente paso (P9)', () => {
+  it('el lugar del siguiente paso lleva la etiqueta «Siguiente paso» en texto y va primero', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [WorldPlacesListComponent] });
+    const fixture = TestBed.createComponent(WorldPlacesListComponent);
+    writeInputSignal(fixture.componentInstance.places, [{ ...PLACES[1], siguiente: true }, PLACES[0]] as PlaceCandidate[]);
+    fixture.detectChanges();
+    const items = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.places__item'));
+    expect(items[0].textContent).toContain(PLACES[1].label);
+    expect(items[0].querySelector('[data-places-next]')!.textContent!.trim()).toBe('Siguiente paso');
+    expect(items[1].querySelector('[data-places-next]')).toBeNull();
+  });
+});

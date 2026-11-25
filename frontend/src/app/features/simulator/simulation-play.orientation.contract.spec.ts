@@ -127,7 +127,7 @@ describe('ficha del objetivo (T9.1)', () => {
 
   it('la ficha recibe la guía, el intento y el pliegue compacto (cardFolded), y refresca la sala al abrirse', () => {
     // V7: también el ajuste «Reducir movimiento» (sin pulso al cambiar el objetivo).
-    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(consentRequired\)="requireConsentAgain\(\)"/);
+    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
     expect(source).toContain('readonly cardFolded = computed(() => this.compactMode() || this.narrowScreen());');
   });
 
@@ -203,7 +203,7 @@ describe('el rótulo de la escena nueva no tapa la ficha del objetivo', () => {
   it('el minimapa va bajo el HUD, en la cabecera, y con las franjas de cine se va; el foco del plano sigue volviendo a su botón', () => {
     const canvas = source.slice(source.indexOf('<section #canvasZone'), source.indexOf('<app-reaction-director'));
     expect(canvas).not.toContain('<app-minimapa');
-    expect(source).toMatch(/@if \(world\(\) && !cinemaBars\(\)\) \{\s*(<!--[\s\S]*?-->\s*)?<app-minimapa \[plano\]="placePlan\(\)" \[actual\]="placeRoom\(\)" \[cercana\]="cameraSettings\.cercana\(\)"\s*\[lugar\]="world\(\)\?\.map\?\.title \?\? ''"/);
+    expect(source).toMatch(/@if \(world\(\) && !cinemaBars\(\)\) \{\s*(<!--[\s\S]*?-->\s*)?<app-minimapa \[plano\]="placePlan\(\)" \[actual\]="placeRoom\(\)" \[destino\]="placeTarget\(\)" \[cercana\]="cameraSettings\.cercana\(\)"\s*\[lugar\]="world\(\)\?\.map\?\.title \?\? ''"/);
     expect(source).toContain("document.querySelector<HTMLElement>('[data-minimapa-abrir]')");
   });
 });
@@ -297,7 +297,8 @@ describe('«Ir a…» (F6-11, VD-19)', () => {
   });
 
   it('solo se ofrecen personas, puertas y lo examinado (misma regla que el hover) y la llegada se anuncia', () => {
-    expect(source).toContain('selectPlaces(this.gameWorld?.places() ?? [], examined)');
+    // P9: el siguiente paso de la ficha va primero en la lista (y la lista sigue siendo la misma regla del hover).
+    expect(source).toContain('selectPlacesWithNext(this.gameWorld?.places() ?? [], examined, this.refreshGuide().siguienteLugar?.key ?? null)');
     expect(source).toContain('new Set(this.world()?.inspectedObjectKeys ?? [])');
     expect(source).toMatch(/onWalkEnded\(event: \{ key: string; label: string; outcome: 'arrived' \| 'blocked' \}\): void \{/);
     expect(source).toContain('DRAFT_COPY.placesArrived');
@@ -331,7 +332,8 @@ describe('texto de la pantalla de juego (F6-3)', () => {
 
 describe('enlaces con el mundo (T9.5, T9.9)', () => {
   it('el mundo recibe atenuados, puertas y modo compacto, y sus dos salidas nuevas están enlazadas', () => {
-    expect(worldTag).not.toContain('nextTargetKey');
+    // P9: el destino del anillo y de la flecha es el siguiente paso de la ficha del objetivo: una sola fuente para el texto, el mundo, el plano y «Ir a…».
+    expect(worldTag).toContain('[nextTargetKey]="guide().siguienteLugar?.key ?? null"');
     expect(worldTag).toContain('[dimmedKeys]="dimmedKeys()"');
     expect(worldTag).toContain('[doorStates]="doorStates()"');
     expect(worldTag).toContain('[compact]="compactMode()"');

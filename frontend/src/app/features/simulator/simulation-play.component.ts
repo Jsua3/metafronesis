@@ -63,8 +63,8 @@ import { salaDelMundo } from './sala/mundo-a-sala';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
 import { WorldPlacesListComponent } from './world-places-list.component';
 import { MinimapaComponent, PlanoCompletoComponent } from './plano/minimapa.component';
-import { normalizarLayout } from './plano/plano';
-import { PlaceCandidate, selectPlaces } from './world-places.util';
+import { destinoDelPlano, normalizarLayout } from './plano/plano';
+import { PlaceCandidate, selectPlacesWithNext } from './world-places.util';
 import { keyPersonAccessibleName, resolveKeyPerson } from './key-person.util';
 import { SimulationHudComponent } from './simulation-hud.component';
 import { ToolInventoryComponent } from './tool-inventory.component';
@@ -428,7 +428,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               (openControls)="openControls()" (openHelp)="openHelp()" (helpReset)="resetHelpCard()" />
             @if (world() && !cinemaBars()) {
               <!-- Minimapa (bloque M1, §5.3): abre el plano completo (también con M). Con las franjas de cine se va. -->
-              <app-minimapa [plano]="placePlan()" [actual]="placeRoom()" [cercana]="cameraSettings.cercana()"
+              <app-minimapa [plano]="placePlan()" [actual]="placeRoom()" [destino]="placeTarget()" [cercana]="cameraSettings.cercana()"
                 [lugar]="world()?.map?.title ?? ''"
                 (abrir)="openPlan()" (alternarCercana)="cameraSettings.toggleCercana()" />
             }
@@ -449,7 +449,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 }
                 <div class="objective-card__scroll">
                   <app-scene-goal-card [guia]="guide()" [hintAttempt]="hintAttempt()" [compact]="cardFolded()" [reduceMotion]="reduceMotion()"
-                    (opened)="refreshGuide()" (consentRequired)="requireConsentAgain()" />
+                    (opened)="refreshGuide()" (goToStep)="goToStep($event)" (consentRequired)="requireConsentAgain()" />
                 </div>
               </div>
             }
@@ -464,6 +464,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 [reduceMotion]="reduceMotion()"
                 [activation]="attempt()?.persona?.activation ?? 'CALM'"
                 [intensity]="attempt()?.currentNode?.intensity ?? 'MEDIUM'"
+                [nextTargetKey]="guide().siguienteLugar?.key ?? null"
                 [doorStates]="doorStates()" [doorMessages]="doorMessages()"
                 [dimmedKeys]="dimmedKeys()" [compact]="compactMode()"
                 [showLoader]="false" (worldReady)="onWorldReady()" (patientVisual)="patientVisual.set($event)"
@@ -616,7 +617,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         @if (planOpen() && placePlan(); as plano) {
           <!-- Plano del lugar (bloque M1): modal como «Ir a…»; el mundo queda en pausa y la cámara quieta. -->
           <div class="overlay-backdrop" aria-hidden="true" (click)="closePlan()"></div>
-          <app-plano-completo [plano]="plano" [actual]="placeRoom()" [pausing]="pausing()"
+          <app-plano-completo [plano]="plano" [actual]="placeRoom()" [destino]="placeTarget()" [pausing]="pausing()"
             (closed)="closePlan()" (safeExit)="pauseFromOverlay()" />
         }
         <app-journal-panel #journalPanel class="journal-layer" [open]="journalOpen()"
@@ -1390,6 +1391,11 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Plano del lugar (bloque M1): el `layout` del mundo validado; null en casos sin él (no hay minimapa). */
   readonly placePlan = computed(() => normalizarLayout(this.world()?.layout));
   readonly placeRoom = computed(() => this.placePlan()?.actual ?? '');
+  /** A dónde apunta el «Siguiente paso» en el plano (P9): la sala y, si es una puerta, la puerta. Lo mismo que el anillo del mundo y «Ir a…». */
+  readonly placeTarget = computed(() => {
+    const plano = this.placePlan();
+    return plano ? destinoDelPlano(plano, this.placeRoom(), this.guide().siguienteLugar) : null;
+  });
   readonly planOpen = signal(false);
   /** Franjas de cine (bloque M1, regla 7): en la decisión (diálogo con opciones) y durante la reacción. */
   readonly cinemaBars = computed(() => (this.dialogue()?.choices?.length ?? 0) > 0 || this.reacting());
@@ -4216,7 +4222,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** «Ir a…» (F6-11): abre la lista de lo que se puede alcanzar en la sala (personas, puertas y objetos ya examinados). */
   openPlaces(): void {
     const examined = new Set(this.world()?.inspectedObjectKeys ?? []);
-    this.placeOptions.set(selectPlaces(this.gameWorld?.places() ?? [], examined));
+    // El siguiente paso de la ficha va primero y con su etiqueta (P9): la lista y la ficha no se contradicen.
+    this.placeOptions.set(selectPlacesWithNext(this.gameWorld?.places() ?? [], examined, this.refreshGuide().siguienteLugar?.key ?? null));
     this.placesOpen.set(true);
   }
 
@@ -4265,6 +4272,13 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       this.loading.set(false);
       this.gameWorld?.retryLoad();
     });
+  }
+
+  /** «Ir allí» de la ficha del objetivo (P9): el mismo camino automático que «Ir a…», sin abrir la lista. */
+  goToStep(key: string): void {
+    if (this.inputBlocked()) return;
+    const label = this.guide().siguienteLugar?.label ?? '';
+    if (!this.gameWorld?.walkToKey(key)) this.announce(`${DRAFT_COPY.placesBlocked.text} ${label}`.trim());
   }
 
   /** Terminó la caminata de «Ir a…»: «Llegaste a …» o que no se pudo llegar (VD-19, borrador). */

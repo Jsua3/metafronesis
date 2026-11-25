@@ -547,8 +547,38 @@ export const DRAFT_COPY = {
     decision: 'DSL-2',
     owner: 'Psicología',
     review: 'validar',
-    where: 'Ficha del objetivo: marca de lo que aún no se ha visto',
-    text: 'aún no',
+    where: 'Ficha del objetivo: marca de un objeto que todavía no se revisó',
+    text: 'sin revisar todavía',
+  },
+  /** P9: «aún no» se leía como «no disponible»; ahora dice qué falta (hablar) y cuál es la siguiente persona. */
+  roomMarkUntalked: {
+    decision: 'DSL-2',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Ficha del objetivo: marca de una persona con la que todavía no se habló',
+    text: 'sin hablar todavía',
+  },
+  roomMarkNextStep: {
+    decision: 'DSL-2',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Ficha del objetivo: marca de la persona (u objeto) a la que apunta el siguiente paso',
+    text: 'tu siguiente paso',
+  },
+  /** P9: la etiqueta del siguiente paso en «Ir a…» y el botón de la ficha que camina hasta él. */
+  placesNextStep: {
+    decision: 'F6-11',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Lista «Ir a…»: etiqueta del lugar al que apunta el siguiente paso (va primero)',
+    text: 'Siguiente paso',
+  },
+  goToStepLabel: {
+    decision: 'F6-11',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Ficha del objetivo: botón que camina hasta el siguiente paso',
+    text: 'Ir allí',
   },
   hintAskLabel: {
     decision: 'DSL-2',

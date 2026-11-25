@@ -31,7 +31,9 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
           @for (place of places(); track place.key) {
             <li>
               <button type="button" class="places__item u-ficha" (click)="choose.emit(place)">
-                <span class="places__kind">{{ kindLabel(place.kind) }}</span>{{ ' ' }}<span class="places__name">{{ place.label }}</span>@if (place.note) {
+                <span class="places__kind">{{ kindLabel(place.kind) }}</span>{{ ' ' }}<span class="places__name">{{ place.label }}</span>@if (place.siguiente) {
+                  {{ ' ' }}<span class="places__next" data-places-next>{{ nextLabel }}</span>
+                }@if (place.note) {
                   {{ ' ' }}<span class="places__note">{{ place.note }}</span>
                 }
               </button>
@@ -113,6 +115,8 @@ const KIND_LABELS: Record<PlaceKind, string> = { person: 'Persona', door: 'Puert
     .places__name { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
     /* Aviso junto al nombre (persona a atender o lugar cerrado): texto, no solo color. */
     .places__note { font-weight: 400; font-size: var(--pixel-letra-media); color: var(--pixel-tinta-suave); }
+    /* El siguiente paso (P9): una etiqueta de texto en la letra de las pestañas, nunca solo color. */
+    .places__next { font-family: var(--pixel-f-nombre); font-weight: 700; font-size: var(--pixel-letra-chica); letter-spacing: .06em; text-transform: uppercase; color: var(--luz); }
     .places__foot { display: flex; align-items: center; justify-content: space-between; gap: calc(4 * var(--pixel-px)); flex-wrap: wrap; }
     @media (max-width: 560px) {
       /* Teléfono (V7): la lista entra sin desplazarse; las fichas bajan al piso del dedo (44 px) y los huecos se acortan. */
@@ -144,6 +148,7 @@ export class WorldPlacesListComponent {
 
   protected readonly copy = { title: DRAFT_COPY.placesDialog.title ?? 'Ir a…', hint: DRAFT_COPY.placesDialog.text };
   protected readonly emptyText = DRAFT_COPY.placesEmpty.text;
+  protected readonly nextLabel = DRAFT_COPY.placesNextStep.text;
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 

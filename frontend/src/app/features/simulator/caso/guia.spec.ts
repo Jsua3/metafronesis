@@ -32,7 +32,7 @@ it('una persona del mapa cuenta como vista si se habló con ella o si se inspecc
 
 it('sin nada en la sala no queda nada por conocer', () => {
   expect(armarGuia({ goal: '', lugares: [], inspeccionados: [], hablados: new Set() }))
-    .toEqual({ objetivo: '', enEstaSala: [], quedaPorConocer: false, siguiente: null, hechos: 0, total: 0 });
+    .toEqual({ objetivo: '', enEstaSala: [], quedaPorConocer: false, siguiente: null, hechos: 0, total: 0, siguienteLugar: null });
 });
 
 describe('el siguiente paso (V7, guía para las primeras testers)', () => {
@@ -95,4 +95,41 @@ it('el aviso de respuesta nueva solo sale con opciones nuevas en el MISMO nodo',
   // Sin nodo previo registrado (primera lectura) o sin lista previa: nada es nuevo ni se compara.
   expect(avisarOpcionNueva({ nodoAntes: null, nodoDespues: 1, antes: [1], despues: [1, 2] })).toBe(true);
   expect(avisarOpcionNueva({ nodoAntes: 1, nodoDespues: 1, antes: null, despues: [1, 2] })).toBe(false);
+});
+
+describe('a quién apunta el siguiente paso (P9): una sola fuente para el texto, el anillo del mundo, el plano y «Ir a…»', () => {
+  const PAP = { key: 'tool-pap', label: 'Kit PAP', recogida: false };
+
+  it('la siguiente persona sin hablar, con la clave que usa el mundo', () => {
+    const guia = armarGuia({ goal: 'x', lugares: LUGARES, inspeccionados: [], hablados: new Set(['enfermera']) });
+    expect(guia.siguiente).toBe('Habla con Familia');
+    expect(guia.siguienteLugar).toEqual({ key: 'familia', label: 'Familia', tipo: 'persona' });
+  });
+
+  it('una persona del escenario conserva su prefijo npc: (es la clave del mundo)', () => {
+    const guia = armarGuia({ goal: 'x', lugares: LUGARES, inspeccionados: [], hablados: new Set() });
+    expect(guia.siguienteLugar).toEqual({ key: 'npc:enfermera', label: 'Enfermera', tipo: 'persona' });
+  });
+
+  it('con las personas habladas, la herramienta; con todo hecho, la primera puerta abierta', () => {
+    const habladas = new Set(['enfermera', 'familia']);
+    expect(armarGuia({ goal: 'x', lugares: LUGARES, inspeccionados: [], hablados: habladas, herramientas: [PAP] }).siguienteLugar)
+      .toEqual({ key: 'tool-pap', label: 'Kit PAP', tipo: 'herramienta' });
+    expect(armarGuia({ goal: 'x', lugares: LUGARES, inspeccionados: [], hablados: habladas, herramientas: [{ ...PAP, recogida: true }] }).siguienteLugar)
+      .toEqual({ key: 'puerta-sala', label: 'Sala de escucha', tipo: 'puerta' });
+  });
+
+  it('sin nada que proponer (todo hecho y la única puerta cerrada) no apunta a nadie, y el texto y el lugar nunca se contradicen', () => {
+    const cerrada = LUGARES.map(l => l.kind === 'door' ? { ...l, note: 'cerrada' } : l);
+    const guia = armarGuia({ goal: 'x', lugares: cerrada, inspeccionados: [], hablados: new Set(['enfermera', 'familia']) });
+    expect(guia.siguiente).toBeNull();
+    expect(guia.siguienteLugar).toBeNull();
+    const con = armarGuia({ goal: 'x', lugares: LUGARES, inspeccionados: [], hablados: new Set(['enfermera']) });
+    expect(con.siguiente).toContain(con.siguienteLugar!.label);
+  });
+
+  it('nunca apunta a un objeto sin revisar (no se anuncia evidencia por descubrir)', () => {
+    const guia = armarGuia({ goal: 'x', lugares: LUGARES, inspeccionados: [], hablados: new Set(['enfermera', 'familia']) });
+    expect(guia.siguienteLugar?.key).not.toBe('carpeta');
+  });
 });

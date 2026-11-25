@@ -19,6 +19,7 @@ const GUIA: GuiaEscena = {
   siguiente: 'Habla con Familia',
   hechos: 1,
   total: 2,
+  siguienteLugar: { key: 'familia', label: 'Familia', tipo: 'persona' },
 };
 
 /**
@@ -106,9 +107,38 @@ describe('SceneGoalCardComponent', () => {
     const { el, abrir, abiertas } = montar({ guia: GUIA });
     abrir();
     const filas = [...el.querySelectorAll('li')].map(li => li.textContent!.replace(/\s+/g, ' ').trim());
-    expect(filas).toEqual(['Enfermera · ya hablaste', 'Familia · aún no', 'Historia clínica · ya revisaste']);
+    // P9: «aún no» se leía como «no disponible»; la persona del siguiente paso lo dice, y quien falta dice qué falta.
+    expect(filas).toEqual(['Enfermera · ya hablaste', 'Familia · tu siguiente paso', 'Historia clínica · ya revisaste']);
     expect(el.textContent).toContain('En esta sala');
     expect(abiertas()).toBe(1);
+  });
+
+  it('una persona sin hablar que no es el siguiente paso dice «sin hablar todavía», nunca «aún no»', () => {
+    const guia: GuiaEscena = { ...GUIA, siguienteLugar: { key: 'npc:enfermera', label: 'Enfermera', tipo: 'persona' } };
+    const { el, abrir } = montar({ guia });
+    abrir();
+    const filas = [...el.querySelectorAll('li')].map(li => li.textContent!.replace(/\s+/g, ' ').trim());
+    expect(filas[1]).toBe('Familia · sin hablar todavía');
+    expect(el.textContent).not.toContain('aún no');
+  });
+
+  describe('«Siguiente paso» conectado con «Ir a…» (P9)', () => {
+    it('el botón «Ir allí» emite la clave del siguiente paso y su nombre accesible dice a quién', () => {
+      const { fixture, el, abrir } = montar({ guia: GUIA });
+      const pedidas: string[] = [];
+      fixture.componentInstance.goToStep.subscribe(k => pedidas.push(k));
+      abrir();
+      const ir = el.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
+      expect(ir.getAttribute('aria-label')).toBe('Ir allí: Familia');
+      ir.click();
+      expect(pedidas).toEqual(['familia']);
+    });
+
+    it('sin nada a lo que apuntar no hay botón', () => {
+      const { el, abrir } = montar({ guia: { ...GUIA, siguiente: null, siguienteLugar: null } });
+      abrir();
+      expect(el.querySelector('[data-guia-ir]')).toBeNull();
+    });
   });
 
   it('abierta ofrece «Pedir una pista» con el intento', () => {

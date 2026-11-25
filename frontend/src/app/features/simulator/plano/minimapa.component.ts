@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, HostListener, Injector,
 import { SafeExitButtonComponent } from '../safe-exit-button.component';
 import { PixelIconoComponent } from '../pixel/pixel-icono.component';
 import { PlanoDelLugarComponent } from './plano-del-lugar.component';
-import { PlanoDelLugar, textoDeLaSala } from './plano';
+import { DestinoDelPlano, PlanoDelLugar, textoDeLaSala } from './plano';
 
 /** Ocultar el minimapa se recuerda por navegador, sin identificadores de persona. */
 export const MINIMAPA_STORAGE_KEY = 'siep.minimapa.v1';
@@ -35,7 +35,7 @@ function leerOculto(): boolean {
       }
       @if (!oculto()) {
         <button type="button" class="minimapa__abrir u-boton u-sombra" data-minimapa-abrir [attr.aria-label]="nombre()" (click)="abrir.emit()">
-          <app-plano-del-lugar aria-hidden="true" [plano]="p" [actual]="actual()" [visitadas]="visitadas()" modo="mini" />
+          <app-plano-del-lugar aria-hidden="true" [plano]="p" [actual]="actual()" [visitadas]="visitadas()" [destino]="destino()" modo="mini" />
         </button>
       }
       <button type="button" class="minimapa__alternar u-boton" data-minimapa-alternar (click)="alternar()">
@@ -66,6 +66,8 @@ export class MinimapaComponent {
   readonly lugar = input('');
   readonly actual = input('');
   readonly visitadas = input<ReadonlySet<string>>(new Set());
+  /** A dónde apunta el «Siguiente paso» (P9): se marca en el plano y se dice en el nombre accesible del botón. */
+  readonly destino = input<DestinoDelPlano | null>(null);
   /** La vista cercana está puesta (su botón lo anuncia con `aria-pressed`). */
   readonly cercana = input(false);
   readonly abrir = output<void>();
@@ -74,7 +76,7 @@ export class MinimapaComponent {
   protected readonly oculto = signal(leerOculto());
   protected readonly nombre = computed(() => {
     const plano = this.plano();
-    return plano ? `Abrir plano (M). ${textoDeLaSala(plano, this.actual())}` : '';
+    return plano ? `Abrir plano (M). ${textoDeLaSala(plano, this.actual(), this.destino())}` : '';
   });
 
   protected alternar(): void {
@@ -101,7 +103,7 @@ export class MinimapaComponent {
   template: `
     <section class="plano-dialogo u-placa" role="dialog" aria-modal="true" aria-labelledby="plano-titulo" cdkTrapFocus>
       <h2 id="plano-titulo">Plano del lugar</h2>
-      <app-plano-del-lugar class="plano-dialogo__plano" [plano]="plano()" [actual]="actual()" [visitadas]="visitadas()" modo="completo" />
+      <app-plano-del-lugar class="plano-dialogo__plano" [plano]="plano()" [actual]="actual()" [visitadas]="visitadas()" [destino]="destino()" modo="completo" />
       <footer class="plano-dialogo__pie">
         <app-safe-exit-button data-hide-key variante="placa" [pausing]="pausing()" (pause)="safeExit.emit()" />
         <button type="button" class="u-boton" data-plano-cerrar (click)="closed.emit()">Cerrar</button>
@@ -122,6 +124,8 @@ export class MinimapaComponent {
     /* El dibujo se encoge al alto que queda (su viewBox lo mantiene entero) y la lista de salas va debajo: el plano no
        se desplaza (V6). La barra solo queda de red si la lista sola no cupiera. */
     .plano-dialogo__plano { min-height: 0; grid-template-rows: minmax(0, 1fr) auto; overflow-y: auto; overscroll-behavior: contain; }
+    /* Pantallas de portátil (1366×768): el plano deja ver el mundo a los lados y arriba; con más alto, el tamaño de siempre (P9). */
+    @media (max-height: 800px) and (min-width: 561px) { .plano-dialogo { width: min(780px, 70vw); max-height: min(560px, 76vh); } }
     .plano-dialogo__pie { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-3); flex-wrap: wrap; }
   `],
 })
@@ -129,6 +133,8 @@ export class PlanoCompletoComponent {
   readonly plano = input.required<PlanoDelLugar>();
   readonly actual = input('');
   readonly visitadas = input<ReadonlySet<string>>(new Set());
+  /** A dónde apunta el «Siguiente paso» (P9): su sala (y puerta) se marcan en el dibujo y en la lista. */
+  readonly destino = input<DestinoDelPlano | null>(null);
   /** Hay una salida segura pedida que espera: el botón dice «Pausando…». */
   readonly pausing = input(false);
   readonly closed = output<void>();

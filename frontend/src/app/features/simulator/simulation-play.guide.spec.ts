@@ -177,7 +177,8 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     toggle.click();
     fixture.detectChanges();
     expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('Enfermera');
-    expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('aún no');
+    // P9: «aún no» ya no se dice; la única persona sin ver es el siguiente paso.
+    expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('tu siguiente paso');
   });
 
   it('con algo por conocer, la conversación con decisiones avisa «Puedes conocer más…»', () => {

@@ -26,7 +26,7 @@ import type { Mock } from 'vitest';
 interface FakeNode {
   x: number; y: number; scene: object; visible: boolean; alpha: number; scale: number;
   setScale: Mock; setAlpha: Mock; setVisible: Mock; setPosition: Mock;
-  setStrokeStyle: Mock; setDepth: Mock;
+  setStrokeStyle: Mock; setDepth: Mock; setOrigin: Mock; setText: Mock;
   [extra: string]: unknown;
 }
 
@@ -39,6 +39,8 @@ function node(x = 0, y = 0): FakeNode {
     setPosition: vi.fn((nx: number, ny: number) => { self.x = nx; self.y = ny; return self; }),
     setStrokeStyle: vi.fn(() => self),
     setDepth: vi.fn(() => self),
+    setOrigin: vi.fn(() => self),
+    setText: vi.fn((t: string) => { self['text'] = t; return self; }),
   };
   return self;
 }
@@ -53,7 +55,7 @@ interface SceneProbe {
   doorHints: Map<string, FakeNode>;
   npcMarkers: Map<string, FakeNode>;
   sound: { play: Mock };
-  add: { ellipse: Mock };
+  add: { ellipse: Mock; text: Mock };
   nearestKey: string | null;
   alsoKey: string | null;
   revealed: string[];
@@ -132,7 +134,7 @@ function crearEscena(player = { x: 480, y: 430 }): Harness {
   addNpc(npcConfig('enfermera-urgencias', 'Enfermera de urgencias', 560, 330));
   addNpc(npcConfig('psicologa-orientadora', 'Psicóloga hospitalaria', 780, 440));
   const ellipses: FakeNode[] = [];
-  scene.add = { ellipse: vi.fn(() => { const e = node(); ellipses.push(e); return e; }) };
+  scene.add = { ellipse: vi.fn(() => { const e = node(); ellipses.push(e); return e; }), text: vi.fn(() => node()) };
   nodes['#ellipses'] = ellipses as unknown as FakeNode;
   return { scene, callbacks, nodes };
 }
@@ -438,7 +440,287 @@ describe('DataDrivenWorldScene: los rótulos se dibujan sobre los actores y sigu
     expect(source).toMatch(/const marker = this\.add\.container\(object\.x, object\.y, \[markerShadow, pulse, main\]\);/);
     expect(source).not.toMatch(/this\.add\.container\([^)]*\[[^\]]*\blabel\b[^\]]*\]\)/);
     // Tres de rótulos (marcador, nombre y pista de una persona), dos del ratón (F6-7: contorno y verbo al pasar) y el
-    // chevrón con el nombre de la persona clave (P6).
-    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(6);
+    // chevrón con el nombre de la persona clave (P6), la flecha del siguiente paso y la frase «E · …» de un marcador cercano (P9).
+    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(8);
+  });
+});
+
+/** Lo privado que los casos de orientarse en el juego (P9) ejercitan, más allá de `SceneProbe`. */
+interface OrientacionProbe extends SceneProbe {
+  nearRing?: { halo: FakeNode; ring: FakeNode };
+  stepMark?: FakeNode;
+  markerPrompt?: FakeNode;
+  walk: { target: { x: number; y: number; radius: number } | null };
+  walkInteractKey: string | null;
+  walkGoal: { key: string; label: string } | null;
+  motionPaused: boolean;
+  examinedKeys: ReadonlySet<string>;
+  handlePointerDown(pointer: unknown): void;
+  finishWalkInteract(arrived: boolean): void;
+  walkToKey(key: string): boolean;
+  setShortcutsEnabled(enabled: boolean): void;
+}
+
+describe('DataDrivenWorldScene: proximidad visible (P9)', () => {
+  const orient = (h: Harness, over: Partial<{ nextTargetKey: string | null; doorStates: Record<string, 'open' | 'locked'>; dimmedKeys: ReadonlySet<string> }> = {}) =>
+    h.scene.setOrientation({ nextTargetKey: null, doorStates: {}, dimmedKeys: new Set(), ...over });
+  const probe = (h: Harness) => h.scene as unknown as OrientacionProbe;
+  const hintOf = (h: Harness, npc: string) => h.nodes[`npc:${npc}`]['__hintSprite'] as FakeNode;
+
+  it('al entrar en el radio de una persona aparece su anillo de cercanía y «E · Hablar con …» junto a ella', () => {
+    const h = crearEscena();
+    expect(probe(h).nearRing).toBeUndefined();
+    move(h, 559, 373); // 43 px de la enfermera
+    expect(h.scene.nearestKey).toBe('npc:enfermera-urgencias');
+    const ring = probe(h).nearRing!;
+    expect([ring.ring.x, ring.ring.y, ring.ring.visible]).toEqual([560, 330, true]);
+    expect(hintOf(h, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('E · Hablar con Enfermera de urgencias');
+    expect(hintOf(h, 'enfermera-urgencias').alpha).toBe(1);
+  });
+
+  it('al salir del radio el anillo y la frase desaparecen', () => {
+    const h = crearEscena();
+    move(h, 559, 373);
+    move(h, 480, 430);
+    expect(h.scene.nearestKey).toBeNull();
+    expect(probe(h).nearRing!.ring.visible).toBe(false);
+    expect(probe(h).nearRing!.halo.visible).toBe(false);
+    expect(hintOf(h, 'enfermera-urgencias').alpha).toBe(0);
+  });
+
+  it('el anillo de cercanía se crea una vez (anillo y halo) y sigue al candidato, aunque camine', () => {
+    const h = crearEscena();
+    const ellipses = h.nodes['#ellipses'] as unknown as FakeNode[];
+    move(h, 559, 373);
+    expect(ellipses).toHaveLength(2);
+    h.nodes['npc:enfermera-urgencias'].x = 566; h.nodes['npc:enfermera-urgencias'].y = 334;
+    move(h, 560, 376);
+    expect(ellipses).toHaveLength(2);
+    expect([probe(h).nearRing!.ring.x, probe(h).nearRing!.ring.y]).toEqual([566, 334]);
+  });
+
+  it('el anillo de cercanía no se parece al del siguiente paso: otro trazo, otro relleno, y conviven', () => {
+    const h = crearEscena();
+    orient(h, { nextTargetKey: 'npc:enfermera-urgencias' });
+    move(h, 559, 373);
+    const ellipses = h.nodes['#ellipses'] as unknown as FakeNode[];
+    expect(ellipses).toHaveLength(4);
+    expect(probe(h).nearRing!.ring).not.toBe(h.scene.targetRing!.ring);
+    const llamadas = h.scene.add.ellipse.mock.calls as number[][];
+    const [, , ancho, alto, relleno, opacidad] = llamadas[3];
+    expect([ancho, alto, relleno, opacidad]).toEqual([84, 30, 0xffffff, 0.14]);   // la cercanía lleva relleno tenue
+    expect(llamadas[1].length).toBe(4);                                          // el del siguiente paso, solo trazo
+  });
+
+  it('lo atenuado (otra etapa) no lleva anillo de cercanía', () => {
+    const h = crearEscena();
+    orient(h, { dimmedKeys: new Set(['zona-restringida']) });
+    move(h, 660, 330);
+    expect(h.scene.nearestKey).toBe('zona-restringida');
+    expect(probe(h).nearRing).toBeUndefined();
+  });
+
+  it('E y «Interactuar» actúan sobre ese mismo candidato resaltado', () => {
+    const h = crearEscena();
+    move(h, 559, 373);
+    const resaltado = probe(h).nearRing!.ring;
+    h.scene.interactNearest();
+    expect(h.callbacks.onNpcInteract).toHaveBeenCalledTimes(1);
+    expect((h.callbacks.onNpcInteract.mock.calls[0][0] as NpcConfig).key).toBe('enfermera-urgencias');
+    expect([resaltado.x, resaltado.y]).toEqual([560, 330]);
+  });
+
+  it('con puntero táctil o sin atajos la frase no menciona la tecla', () => {
+    const h = crearEscena();
+    probe(h).setShortcutsEnabled(false);
+    move(h, 559, 373);
+    expect(hintOf(h, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('Enter · Hablar con Enfermera de urgencias');
+    const t = crearEscena();
+    const original = window.matchMedia;
+    (window as unknown as { matchMedia: unknown }).matchMedia = vi.fn(() => ({ matches: true }));
+    try {
+      move(t, 559, 373);
+      expect(hintOf(t, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('Hablar con Enfermera de urgencias');
+    } finally {
+      (window as unknown as { matchMedia: unknown }).matchMedia = original;
+    }
+  });
+
+  it('un objeto cercano dice «E · Revisar …» bajo su rótulo, una sola vez, y lo retira al alejarse', () => {
+    const h = crearEscena();
+    (h.nodes['zona-restringida#label'] as FakeNode)['displayHeight'] = 14;
+    move(h, 660, 330);
+    const texts = h.scene.add.text.mock.calls as unknown[][];
+    expect(texts).toHaveLength(1);
+    expect(texts[0][2]).toBe('E · Revisar ZONA-RESTRINGIDA');
+    const prompt = probe(h).markerPrompt!;
+    expect([prompt.x, prompt.y]).toEqual([h.nodes['zona-restringida#label'].x, h.nodes['zona-restringida#label'].y + 14 + 2]);
+    expect(prompt.visible).toBe(true);
+    move(h, 661, 331);
+    expect(h.scene.add.text).toHaveBeenCalledTimes(1); // la misma pieza, sin crear otra
+    move(h, 480, 430);
+    expect(prompt.visible).toBe(false);
+  });
+
+  it('una herramienta dice «Recoger …»; una puerta no lleva esta frase (ya dice «E Pasar a … →» en su rótulo)', () => {
+    const h = crearEscena();
+    (h.nodes['tool-pap#label'] as FakeNode)['displayHeight'] = 14;
+    move(h, 330, 420);
+    expect((h.scene.add.text.mock.calls as unknown[][])[0][2]).toBe('E · Recoger TOOL-PAP');
+    const d = crearEscena();
+    move(d, 836, 424);
+    expect(d.scene.nearestKey).toBe('puerta-sala-escucha');
+    expect(d.scene.add.text).not.toHaveBeenCalled();
+  });
+
+  it('nada de esto usa tweens ni crea piezas por cuadro: moverse dentro del radio no vuelve a crear ni a repintar', () => {
+    const h = crearEscena();
+    (h.scene as unknown as { tweens: { add: Mock } }).tweens = { add: vi.fn() };
+    move(h, 559, 373);
+    const creadas = h.scene.add.ellipse.mock.calls.length + h.scene.add.text.mock.calls.length;
+    const textos = hintOf(h, 'enfermera-urgencias').setText.mock.calls.length;
+    for (let i = 0; i < 20; i++) move(h, 559 + (i % 3), 373);
+    expect(h.scene.add.ellipse.mock.calls.length + h.scene.add.text.mock.calls.length).toBe(creadas);
+    expect(hintOf(h, 'enfermera-urgencias').setText.mock.calls.length).toBe(textos);
+    expect((h.scene as unknown as { tweens: { add: Mock } }).tweens.add).not.toHaveBeenCalled();
+  });
+});
+
+describe('DataDrivenWorldScene: la flecha del siguiente paso (P9)', () => {
+  const orient = (h: Harness, nextTargetKey: string | null) =>
+    h.scene.setOrientation({ nextTargetKey, doorStates: {}, dimmedKeys: new Set() });
+  const flecha = (h: Harness) => (h.scene as unknown as OrientacionProbe).stepMark!;
+
+  it('el destino lleva una flecha estática junto a él (además del anillo) y se retira al cambiar a nada', () => {
+    const h = crearEscena();
+    orient(h, 'npc:enfermera-urgencias');
+    expect((h.scene.add.text.mock.calls as unknown[][])[0].slice(2, 3)).toEqual(['▶']);
+    expect([flecha(h).x, flecha(h).y, flecha(h).visible]).toEqual([560 - 22, 330 - 46, true]);
+    orient(h, null);
+    expect(flecha(h).visible).toBe(false);
+  });
+
+  it('según qué señala va a otra altura: una herramienta más baja que una persona', () => {
+    const h = crearEscena();
+    orient(h, 'tool-pap');
+    expect([flecha(h).x, flecha(h).y]).toEqual([318 - 22, 428 - 26]);
+    orient(h, 'puerta-sala-escucha');
+    expect(flecha(h).y).toBe(440 - 52);
+  });
+
+  it('se crea una sola vez y una persona que camina se la lleva', () => {
+    const h = crearEscena();
+    orient(h, 'npc:enfermera-urgencias');
+    orient(h, 'tool-pap');
+    orient(h, 'npc:enfermera-urgencias');
+    expect(h.scene.add.text).toHaveBeenCalledTimes(1);
+    h.nodes['npc:enfermera-urgencias'].x = 570; h.nodes['npc:enfermera-urgencias'].y = 335;
+    move(h, 559, 373);
+    expect([flecha(h).x, flecha(h).y]).toEqual([570 - 22, 335 - 46]);
+  });
+
+  it('un destino que no existe en la sala o está atenuado no inventa flecha', () => {
+    const h = crearEscena();
+    orient(h, 'tool-spikes');
+    expect(h.scene.add.text).not.toHaveBeenCalled();
+    h.scene.setOrientation({ nextTargetKey: 'zona-restringida', doorStates: {}, dimmedKeys: new Set(['zona-restringida']) });
+    expect(h.scene.add.text).not.toHaveBeenCalled();
+  });
+});
+
+describe('DataDrivenWorldScene: clic o toque para ir (P9)', () => {
+  const probe = (h: Harness) => h.scene as unknown as OrientacionProbe;
+  const pointer = (over: Partial<{ wasTouch: boolean; button: number; worldX: number; worldY: number }> = {}) =>
+    ({ wasTouch: false, button: 0, worldX: 0, worldY: 0, ...over });
+  const graficos = () => {
+    const g: Record<string, unknown> = { active: true };
+    for (const m of ['clear', 'lineStyle', 'strokeRect', 'setDepth', 'setVisible']) g[m] = vi.fn(() => g);
+    return g;
+  };
+  /** Una sala con el jugador a 70 px de la enfermera (dentro del radio de percepción) y el dibujo del contorno de mentira. */
+  function conRaton(): Harness {
+    const h = crearEscena({ x: 560, y: 400 });
+    (h.scene.add as unknown as { graphics: Mock }).graphics = vi.fn(graficos);
+    return h;
+  }
+
+  it('el clic en el suelo camina hasta ahí, sin interactuar al llegar', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 400, worldY: 420 }));
+    expect(probe(h).walk.target).toEqual({ x: 400, y: 420, radius: 6 });
+    expect(probe(h).walkInteractKey).toBeNull();
+  });
+
+  it('el clic en una persona camina hasta su alcance y recuerda que debe interactuar al llegar', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 560, worldY: 330 - 20 }));
+    expect(probe(h).walk.target).toEqual({ x: 560, y: 330, radius: 72 - 14 });
+    expect(probe(h).walkInteractKey).toBe('npc:enfermera-urgencias');
+  });
+
+  it('el toque del dedo también camina, con un margen de puntería mayor que el del ratón, y no dibuja contorno', () => {
+    const h = conRaton();
+    const casi = { worldX: 560 + 22 + 10, worldY: 330 - 20 };   // fuera de la caja del cursor, dentro de la del dedo
+    probe(h).handlePointerDown(pointer(casi));
+    expect(probe(h).walkInteractKey).toBeNull();               // un cursor lo falla: camina al suelo
+    probe(h).handlePointerDown(pointer({ ...casi, wasTouch: true }));
+    expect(probe(h).walkInteractKey).toBe('npc:enfermera-urgencias');
+    expect(probe(h).walk.target).toMatchObject({ x: 560, y: 330 });
+  });
+
+  it('con una capa abierta o con un botón que no es el principal no camina', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ button: 2, worldX: 400, worldY: 420 }));
+    expect(probe(h).walk.target).toBeNull();
+    probe(h).motionPaused = true;
+    probe(h).handlePointerDown(pointer({ wasTouch: true, worldX: 400, worldY: 420 }));
+    expect(probe(h).walk.target).toBeNull();
+  });
+
+  it('un clic en el suelo suelta lo que esperaba una persona', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 560, worldY: 330 - 20 }));
+    probe(h).handlePointerDown(pointer({ worldX: 300, worldY: 450 }));
+    expect(probe(h).walkInteractKey).toBeNull();
+  });
+
+  it('«Ir a…» solo lleva: no hereda la interacción de un clic anterior', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 560, worldY: 330 - 20 }));
+    expect(probe(h).walkToKey('puerta-sala-escucha')).toBe(true);
+    expect(probe(h).walkInteractKey).toBeNull();
+    expect(probe(h).walkGoal).toMatchObject({ key: 'puerta-sala-escucha' });
+  });
+
+  it('al llegar a lo clicado, interactúa con eso: pasa a ser el candidato principal y se abre su conversación', () => {
+    const h = conRaton();
+    move(h, 810, 440);                                   // la psicóloga es la principal
+    expect(h.scene.nearestKey).toBe('npc:psicologa-orientadora');
+    probe(h).walkInteractKey = 'puerta-sala-escucha';    // pero se clicó la puerta
+    probe(h).finishWalkInteract(true);
+    expect(h.scene.nearestKey).toBe('puerta-sala-escucha');
+    expect((h.callbacks.onProximity.mock.calls.at(-1)?.[0] as MapObjectState).key).toBe('puerta-sala-escucha');
+    expect((h.callbacks.onInteract.mock.calls.at(-1)?.[0] as MapObjectState).key).toBe('puerta-sala-escucha');
+    expect(probe(h).walkInteractKey).toBeNull();
+  });
+
+  it('al llegar a una persona abre su conversación; si se rindió (muro, atasco) no hace nada', () => {
+    const h = conRaton();
+    move(h, 559, 373);
+    probe(h).walkInteractKey = 'npc:enfermera-urgencias';
+    probe(h).finishWalkInteract(false);
+    expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
+    expect(probe(h).walkInteractKey).toBeNull();
+    probe(h).walkInteractKey = 'npc:enfermera-urgencias';
+    probe(h).finishWalkInteract(true);
+    expect((h.callbacks.onNpcInteract.mock.calls[0][0] as NpcConfig).key).toBe('enfermera-urgencias');
+  });
+
+  it('sin nada clicado, llegar no interactúa', () => {
+    const h = conRaton();
+    move(h, 559, 373);
+    probe(h).finishWalkInteract(true);
+    expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
+    expect(h.callbacks.onInteract).not.toHaveBeenCalled();
   });
 });

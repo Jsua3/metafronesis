@@ -25,7 +25,23 @@ export interface PuertaDelPlano { origen: string; destino: string; muro: Muro; p
 export interface PlanoDelLugar { actual: string | null; salas: SalaDelPlano[]; puertas: PuertaDelPlano[] }
 
 export type EstadoSala = 'actual' | 'visitada' | 'sin-visitar';
-export interface MarcaPuerta { x: number; y: number; muro: Muro; destino: string }
+export interface MarcaPuerta { x: number; y: number; muro: Muro; destino: string; esDestino?: boolean }
+
+/**
+ * A dónde apunta el «Siguiente paso» de la ficha del objetivo (P9), en términos del plano. El plano solo sabe de salas y
+ * puertas (nunca de lo que hay dentro, VD-19): una persona o una herramienta se marcan en la sala donde están (la actual,
+ * que es la única que la guía conoce) y una puerta, ella misma y la sala a la que lleva.
+ */
+export interface DestinoDelPlano {
+  tipo: 'persona' | 'herramienta' | 'puerta';
+  /** El nombre de la persona, de la herramienta o de la puerta tal como lo muestra la ficha. */
+  etiqueta: string;
+  /** Sala en la que está lo que se busca (o de la que sale la puerta). */
+  sala: string;
+  /** Solo en una puerta: su clave en el mundo y la sala a la que lleva (si está en el plano). */
+  puerta?: string;
+  haciaSala?: string;
+}
 export interface SalaDibujada {
   clave: string;
   /** null en una sala sin visitar: solo su contorno. */
@@ -36,6 +52,8 @@ export interface SalaDibujada {
   alto: number;
   estado: EstadoSala;
   puertas: MarcaPuerta[];
+  /** La sala del siguiente paso (P9): donde está la persona o la herramienta, o a la que lleva la puerta. */
+  destino: boolean;
 }
 export interface DibujoDelPlano { caja: { x: number; y: number; ancho: number; alto: number }; salas: SalaDibujada[] }
 
@@ -121,12 +139,32 @@ function visitadasDe(plano: PlanoDelLugar, actual: string, extra: ReadonlySet<st
   return new Set(plano.salas.filter(s => s.visitada || extra.has(s.clave) || s.clave === actual).map(s => s.clave));
 }
 
+/**
+ * El siguiente paso en el plano (P9): una persona o una herramienta quedan en la sala actual; una puerta, la que lleva a su
+ * clave en el plano de la sala actual. null si no hay paso o si la puerta no figura en el plano (se marca solo la sala).
+ */
+export function destinoDelPlano(
+  plano: PlanoDelLugar,
+  actual: string,
+  lugar: { key: string; label: string; tipo: DestinoDelPlano['tipo'] } | null,
+): DestinoDelPlano | null {
+  if (!lugar || actual === '' || !plano.salas.some(s => s.clave === actual)) return null;
+  const base: DestinoDelPlano = { tipo: lugar.tipo, etiqueta: lugar.label, sala: actual };
+  if (lugar.tipo !== 'puerta') return base;
+  const puerta = plano.puertas.find(p => p.origen === actual && p.clave === lugar.key);
+  if (!puerta) return base;
+  const llega = plano.salas.some(s => s.clave === puerta.destino);
+  return { ...base, puerta: lugar.key, ...(llega ? { haciaSala: puerta.destino } : {}) };
+}
+
 /** Rectángulos, estados y marcas de puerta, en px de plano (los de sala), con la caja que los contiene a todos. */
-export function dibujarPlano(plano: PlanoDelLugar, actual: string, visitadas: ReadonlySet<string>): DibujoDelPlano {
+export function dibujarPlano(plano: PlanoDelLugar, actual: string, visitadas: ReadonlySet<string>, destino: DestinoDelPlano | null = null): DibujoDelPlano {
   const vistas = visitadasDe(plano, actual, visitadas);
+  const claveDeLaSalaDestino = destino ? (destino.tipo === 'puerta' ? destino.haciaSala ?? null : destino.sala) : null;
   const salas = plano.salas.map((sala): SalaDibujada => {
     const estado: EstadoSala = sala.clave === actual ? 'actual' : vistas.has(sala.clave) ? 'visitada' : 'sin-visitar';
     return {
+      destino: sala.clave === claveDeLaSalaDestino,
       clave: sala.clave,
       titulo: estado === 'sin-visitar' ? null : sala.titulo,
       x: sala.x,
@@ -134,7 +172,10 @@ export function dibujarPlano(plano: PlanoDelLugar, actual: string, visitadas: Re
       ancho: sala.ancho,
       alto: ALTO_SALA,
       estado,
-      puertas: plano.puertas.filter(p => p.origen === sala.clave).map(p => marca(sala, p)),
+      puertas: plano.puertas.filter(p => p.origen === sala.clave).map(p => {
+        const m = marca(sala, p);
+        return destino?.puerta !== undefined && sala.clave === destino.sala && p.clave === destino.puerta ? { ...m, esDestino: true } : m;
+      }),
     };
   });
   const minX = Math.min(...salas.map(s => s.x)) - MARGEN_CAJA;
@@ -159,27 +200,46 @@ function textoDePuertas(plano: PlanoDelLugar, clave: string): string {
 }
 
 /**
+ * El siguiente paso dicho en palabras (P9), para el lector de pantalla y la lista del plano: «Siguiente paso: habla con
+ * Vigilante, en esta sala.». Una puerta se nombra con su propio rótulo y no con el título de la sala a la que lleva: el
+ * plano completo no da el nombre de las salas sin visitar.
+ */
+export function textoDelDestino(destino: DestinoDelPlano): string {
+  switch (destino.tipo) {
+    case 'persona': return `Siguiente paso: habla con ${destino.etiqueta}, en esta sala.`;
+    case 'herramienta': return `Siguiente paso: recoge la herramienta «${destino.etiqueta}», en esta sala.`;
+    case 'puerta': return `Siguiente paso: pasa por la puerta «${destino.etiqueta}».`;
+  }
+}
+
+/**
  * Alternativa en texto del minimapa: «Estás en: Pasillo. Puertas: Sala de espera, Enfermería y Sala de escucha.». Los
  * títulos van tal cual: vienen de la docente o de la IA, y deducir el artículo falla con nombres propios. Los destinos
- * de las puertas ya se ven en el aviso de cada puerta. '' si la sala no está en el plano.
+ * de las puertas ya se ven en el aviso de cada puerta. '' si la sala no está en el plano. Con `destino` suma el siguiente paso.
  */
-export function textoDeLaSala(plano: PlanoDelLugar, actual: string): string {
+export function textoDeLaSala(plano: PlanoDelLugar, actual: string, destino: DestinoDelPlano | null = null): string {
   const sala = plano.salas.find(s => s.clave === actual);
-  return sala ? `Estás en: ${sala.titulo}. ${textoDePuertas(plano, actual)}` : '';
+  if (!sala) return '';
+  const base = `Estás en: ${sala.titulo}. ${textoDePuertas(plano, actual)}`;
+  return destino ? `${base} ${textoDelDestino(destino)}` : base;
 }
 
 /** Una línea por sala para el plano completo; las no visitadas sin su nombre, igual que en el dibujo. */
-export function textoDelPlano(plano: PlanoDelLugar, actual: string, visitadas: ReadonlySet<string>): string[] {
+export function textoDelPlano(plano: PlanoDelLugar, actual: string, visitadas: ReadonlySet<string>, destino: DestinoDelPlano | null = null): string[] {
   const vistas = visitadasDe(plano, actual, visitadas);
   const titulos = new Map(plano.salas.map(s => [s.clave, s.titulo]));
+  // La sala del siguiente paso lo dice en su línea (P9): donde está lo que se busca, o la sala a la que lleva la puerta.
+  const claveDeLaSalaDestino = destino ? (destino.tipo === 'puerta' ? destino.haciaSala ?? destino.sala : destino.sala) : null;
+  const aviso = (clave: string) => destino && clave === claveDeLaSalaDestino ? ` ${textoDelDestino(destino)}` : '';
   return plano.salas.map(sala => {
-    if (sala.clave === actual) return `${sala.titulo}, estás aquí. ${textoDePuertas(plano, sala.clave)}`;
-    if (vistas.has(sala.clave)) return `${sala.titulo}, visitada. ${textoDePuertas(plano, sala.clave)}`;
+    if (sala.clave === actual) return `${sala.titulo}, estás aquí. ${textoDePuertas(plano, sala.clave)}${aviso(sala.clave)}`;
+    if (vistas.has(sala.clave)) return `${sala.titulo}, visitada. ${textoDePuertas(plano, sala.clave)}${aviso(sala.clave)}`;
     const desde: string[] = [];
     for (const puerta of plano.puertas) {
       const nombre = titulos.get(puerta.origen);
       if (puerta.destino === sala.clave && vistas.has(puerta.origen) && nombre && !desde.includes(nombre)) desde.push(nombre);
     }
-    return desde.length ? `Sala sin visitar. Se llega desde ${enumerar(desde)}.` : 'Sala sin visitar.';
+    const llegada = desde.length ? `Sala sin visitar. Se llega desde ${enumerar(desde)}.` : 'Sala sin visitar.';
+    return `${llegada}${aviso(sala.clave)}`;
   });
 }
