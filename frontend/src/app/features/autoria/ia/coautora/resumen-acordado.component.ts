@@ -212,7 +212,26 @@ export const NOMBRE_MOMENTO: Record<FichaAcordada['momento'], string> = { dia: '
     </section>
   `,
   styles: `
-    :host { display: block; }
+    :host { display: block; animation: resumen-entra 650ms var(--resorte-vivo) both; }
+    @keyframes resumen-entra { from { opacity: 0; translate: 0 16px; } }
+    /* Las secciones entran escalonadas, como si la IA las fuera poniendo sobre la mesa. */
+    .seccion { animation: seccion-entra 650ms var(--resorte-vivo) both; }
+    .seccion:nth-child(1) { animation-delay: 80ms; }
+    .seccion:nth-child(2) { animation-delay: 130ms; }
+    .seccion:nth-child(3) { animation-delay: 180ms; }
+    .seccion:nth-child(4) { animation-delay: 230ms; }
+    .seccion:nth-child(5) { animation-delay: 280ms; }
+    .seccion:nth-child(6) { animation-delay: 330ms; }
+    .seccion:nth-child(7) { animation-delay: 380ms; }
+    @keyframes seccion-entra { from { opacity: 0; translate: 0 12px; scale: 0.98; } }
+    .boton { transition: scale 380ms var(--resorte-vivo); }
+    .boton:active { scale: 0.95; }
+    .aceptar:not([aria-disabled='true']):hover { scale: 1.03; }
+    .cambio { animation: seccion-entra 650ms var(--resorte-vivo) both; }
+    @media (prefers-reduced-motion: reduce) {
+      :host, .seccion, .cambio { animation: none; }
+      .boton { transition: none; }
+    }
     .resumen { display: flex; flex-direction: column; gap: 12px; }
     .cabeza h3 { margin: 0; font-size: var(--autoria-texto-22); line-height: 1.3; }
     .cabeza h3:focus { outline: none; }

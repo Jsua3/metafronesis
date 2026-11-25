@@ -27,6 +27,8 @@ export const MAXIMO_DESCRIPCION = 2000;
   imports: [ConversacionCoautoraComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!-- Los doodles de la portada en el espacio vacío a la derecha de la conversación (decorativo; solo en pantallas anchas). -->
+    <div class="doodles" aria-hidden="true"><span class="capa"></span><span class="capa acento"></span></div>
     <section class="describir" aria-label="Describe tu caso" data-accion="describir-caso">
       @if (cargando()) {
         <p role="status" class="texto-secundario">Revisando si puedes generar un caso…</p>
@@ -105,7 +107,30 @@ export const MAXIMO_DESCRIPCION = 2000;
     </section>
   `,
   styles: `
+    :host { display: block; position: relative; isolation: isolate; }
     .describir, .formulario { display: flex; flex-direction: column; gap: 0.75rem; min-inline-size: 0; }
+    .describir { position: relative; z-index: 1; }
+    /* El mismo mosaico de la portada (assets/landing/doodles), con su base gris y su acento morado, en el espacio que queda a
+       la derecha de la columna de 48rem; se desvanece hacia el contenido para no competir con él. */
+    .doodles { position: absolute; z-index: 0; inset-block: -1.5rem 0; inset-inline: calc(48rem + 1.5rem) 0; pointer-events: none; }
+    .doodles .capa {
+      position: absolute; inset: 0;
+      -webkit-mask-image: url('/assets/landing/doodles/mosaico-base.svg'), linear-gradient(to right, transparent, #000 7rem);
+      mask-image: url('/assets/landing/doodles/mosaico-base.svg'), linear-gradient(to right, transparent, #000 7rem);
+      -webkit-mask-size: 1040px 1040px, 100% 100%;
+      mask-size: 1040px 1040px, 100% 100%;
+      -webkit-mask-repeat: repeat, no-repeat;
+      mask-repeat: repeat, no-repeat;
+      -webkit-mask-composite: source-in;
+      mask-composite: intersect;
+      background-color: color-mix(in oklab, var(--ds-text-1, currentColor) 10%, transparent);
+    }
+    .doodles .acento {
+      -webkit-mask-image: url('/assets/landing/doodles/mosaico-acento.svg'), linear-gradient(to right, transparent, #000 7rem);
+      mask-image: url('/assets/landing/doodles/mosaico-acento.svg'), linear-gradient(to right, transparent, #000 7rem);
+      background-color: color-mix(in oklab, var(--primario, #b69cff) 38%, transparent);
+    }
+    @media (max-width: 72rem) { .doodles { display: none; } }
     .formulario { max-inline-size: 48rem; }
     .campo { display: flex; flex-direction: column; gap: 0.25rem; }
     .campo label { font-weight: 700; font-size: var(--autoria-texto-16); }

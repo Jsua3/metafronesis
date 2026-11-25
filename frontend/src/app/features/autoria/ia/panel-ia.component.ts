@@ -44,7 +44,7 @@ export function contextoDeRuta(url: string): ContextoIa {
 @Component({
   selector: 'app-panel-ia',
   imports: [ConversacionCoautoraComponent],
-  host: { '[style]': 'posicion.estilos()' },
+  host: { '[style]': 'posicion.estilos()', '[class.arrastrando]': 'posicion.arrastrando()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <aside aria-labelledby="iat" class="panel" [attr.data-posicion]="posicion.modo()">
@@ -158,7 +158,30 @@ export function contextoDeRuta(url: string): ContextoIa {
     </aside>
   `,
   styles: `
+    /* Resortes (los mismos de resortes.ts): los heredan la conversación y sus tarjetas. */
+    :host {
+      --resorte-vivo: linear(0, 0.0181, 0.0958, 0.2108, 0.3444, 0.4825, 0.6145, 0.7336, 0.8356, 0.9187, 0.9829, 1.0296, 1.0607, 1.0787, 1.0862, 1.0859, 1.0799, 1.0704, 1.0591, 1.0471, 1.0355, 1.03, 1.0202, 1.0118, 1.0051, 1.0001, 0.9965, 0.9941, 0.9929, 0.9925, 0.9927, 0.9933, 0.9942, 0.9952, 0.9962, 0.9972, 0.9981, 0.9989, 0.9995, 0.9999, 1);
+      --resorte-firme: linear(0, 0.0278, 0.0747, 0.134, 0.2006, 0.2705, 0.3409, 0.4096, 0.4753, 0.5369, 0.5939, 0.6461, 0.6933, 0.7357, 0.7734, 0.8067, 0.8359, 0.8614, 0.8836, 0.9027, 0.919, 0.933, 0.9449, 0.955, 0.9634, 0.9705, 0.9764, 0.9813, 0.9853, 0.9886, 0.9912, 0.9934, 0.9951, 0.9965, 0.9976, 0.9984, 0.9991, 0.9996, 0.9999, 1);
+      transition: rotate 380ms var(--resorte-firme), scale 420ms var(--resorte-vivo), box-shadow 240ms ease;
+      transform-origin: 50% 0;
+    }
     :host(:not([hidden])) { display: block; }
+    /* Levantado mientras se arrastra: más sombra, y la inclinación y la escala que pone PosicionDelPanel. */
+    :host(.arrastrando) { box-shadow: 0 24px 60px rgb(0 0 0 / 0.45), 0 4px 12px rgb(0 0 0 / 0.25); }
+    /* Al abrirse (de oculto a visible) entra con un resorte: sube un poco, crece y aparece. */
+    .panel { animation: panel-entra 650ms var(--resorte-vivo) both; }
+    @keyframes panel-entra {
+      from { opacity: 0; translate: 0 14px; scale: 0.96; }
+      to { opacity: 1; translate: 0 0; scale: 1; }
+    }
+    .pestana { transition: background-color 200ms ease, color 200ms ease, scale 380ms var(--resorte-vivo); }
+    .pestana:active { scale: 0.96; }
+    .menu { animation: menu-entra 420ms var(--resorte-vivo) both; transform-origin: top right; }
+    @keyframes menu-entra { from { opacity: 0; scale: 0.9; translate: 0 -6px; } }
+    @media (prefers-reduced-motion: reduce) {
+      :host, .pestana { transition: none; }
+      .panel, .menu { animation: none; }
+    }
     .panel { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--superficie); border-left: 1px solid var(--linea); min-height: 100%; box-sizing: border-box; }
     .cabeza { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .cabeza.arrastrable { cursor: grab; touch-action: none; user-select: none; }

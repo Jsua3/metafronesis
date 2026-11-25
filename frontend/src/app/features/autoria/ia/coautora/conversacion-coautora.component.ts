@@ -109,10 +109,12 @@ interface ErrorVisible {
           </div>
         }
 
-        @if (preguntaVisible(); as p) {
+        <!-- Una tarjeta por pregunta (la clave es su número): cada pregunta nueva entra con su resorte. -->
+        @for (p of preguntaEnLista(); track p.numero + (p.previa ? '-cambio' : '')) {
           <app-tarjeta-pregunta [pregunta]="p" [tope]="a.topePreguntas" [ocupado]="!!trabajando()"
                                 (responder)="responder($event)" (saltar)="saltar()" (cancelar)="reabierta.set(null)" />
-        } @else if (a.status === 'summarized' && a.ficha) {
+        }
+        @if (!preguntaVisible() && a.status === 'summarized' && a.ficha) {
           <app-resumen-acordado [ficha]="a.ficha" [ocupado]="!!trabajando()"
                                 (aceptar)="aceptar()" (cambiar)="cambiar($event)" (corregir)="corregir($event)" />
         } @else if (a.status === 'accepted') {
@@ -137,7 +139,12 @@ interface ErrorVisible {
     </div>
   `,
   styles: `
-    :host { display: block; }
+    /* Resortes (los mismos de resortes.ts); dentro del panel de la IA ya vienen heredados. */
+    :host {
+      display: block;
+      --resorte-vivo: linear(0, 0.0181, 0.0958, 0.2108, 0.3444, 0.4825, 0.6145, 0.7336, 0.8356, 0.9187, 0.9829, 1.0296, 1.0607, 1.0787, 1.0862, 1.0859, 1.0799, 1.0704, 1.0591, 1.0471, 1.0355, 1.03, 1.0202, 1.0118, 1.0051, 1.0001, 0.9965, 0.9941, 0.9929, 0.9925, 0.9927, 0.9933, 0.9942, 0.9952, 0.9962, 0.9972, 0.9981, 0.9989, 0.9995, 0.9999, 1);
+      --resorte-firme: linear(0, 0.0278, 0.0747, 0.134, 0.2006, 0.2705, 0.3409, 0.4096, 0.4753, 0.5369, 0.5939, 0.6461, 0.6933, 0.7357, 0.7734, 0.8067, 0.8359, 0.8614, 0.8836, 0.9027, 0.919, 0.933, 0.9449, 0.955, 0.9634, 0.9705, 0.9764, 0.9813, 0.9853, 0.9886, 0.9912, 0.9934, 0.9951, 0.9965, 0.9976, 0.9984, 0.9991, 0.9996, 0.9999, 1);
+    }
     .conversacion-coautora { display: flex; flex-direction: column; gap: 12px; }
     .idea { display: flex; flex-direction: column; gap: 6px; }
     .etiqueta { font-weight: 700; font-size: var(--autoria-texto-16); }
@@ -158,6 +165,10 @@ interface ErrorVisible {
       align-self: flex-start; border: 1px solid var(--linea); border-end-start-radius: 4px;
       background: color-mix(in srgb, var(--primario) 6%, var(--superficie));
     }
+    .burbuja { animation: burbuja-entra 650ms var(--resorte-vivo) both; }
+    .burbuja.ia { transform-origin: left bottom; }
+    .burbuja.tu { transform-origin: right bottom; }
+    @keyframes burbuja-entra { from { opacity: 0; scale: 0.85; translate: 0 8px; } }
     .burbuja.tu { align-self: flex-end; border-end-end-radius: 4px; background: color-mix(in srgb, var(--primario) 22%, var(--superficie)); }
     .quien { display: block; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.02em; opacity: 0.8; }
     .cambiar { display: block; margin-block-start: 2px; padding: 0; min-block-size: 0; }
@@ -172,12 +183,15 @@ interface ErrorVisible {
       border: 1px solid var(--peligro); border-radius: var(--radio-control); background: var(--peligro-tinte);
     }
     .aviso-error p { margin: 0; font-size: var(--autoria-texto-16); }
+    .acordado { animation: burbuja-entra 650ms var(--resorte-vivo) both; }
+    .aviso-error { animation: sacudir 420ms var(--resorte-firme); }
+    @keyframes sacudir { 0% { translate: 0; } 25% { translate: -6px; } 50% { translate: 5px; } 75% { translate: -3px; } 100% { translate: 0; } }
     .acordado { padding: 12px 14px; border-radius: var(--radio-control); background: color-mix(in srgb, var(--primario) 18%, var(--superficie)); }
     .acordado p { margin: 0; font-size: var(--autoria-texto-16); line-height: 1.5; }
     .destacado { font-weight: 700; }
     .pie { display: flex; justify-content: flex-end; }
     .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    @media (prefers-reduced-motion: reduce) { .punto { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .punto, .burbuja, .acordado, .aviso-error { animation: none; } }
   `,
 })
 export class ConversacionCoautoraComponent implements OnInit {
@@ -215,6 +229,10 @@ export class ConversacionCoautoraComponent implements OnInit {
   protected readonly puedeCambiarRespuestas = computed(() => {
     const a = this.acuerdo();
     return !!a && !this.trabajando() && ['clarifying', 'ready', 'summarized'].includes(a.status) && this.reabierta() === null;
+  });
+  protected readonly preguntaEnLista = computed(() => {
+    const p = this.preguntaVisible();
+    return p ? [p] : [];
   });
   protected readonly preguntaVisible = computed<PreguntaVisible | null>(() => {
     const a = this.acuerdo();

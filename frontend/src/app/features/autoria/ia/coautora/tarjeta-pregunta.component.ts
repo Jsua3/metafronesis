@@ -49,7 +49,7 @@ const PROPIA = 3;
         <p class="porque">{{ p.porque }}</p>
         <div class="opciones">
           @for (opcion of p.opciones; track $index; let i = $index) {
-            <label class="opcion" [class.elegida]="elegida() === i">
+            <label class="opcion" [class.elegida]="elegida() === i" [style.--i]="i">
               <input type="radio" name="opcion" [value]="i" [checked]="elegida() === i" (change)="elegir(i)" />
               <span class="opcion-texto">{{ opcion }}</span>
               @if (i === p.recomendada) {
@@ -57,7 +57,7 @@ const PROPIA = 3;
               }
             </label>
           }
-          <label class="opcion propia" [class.elegida]="elegida() === propia">
+          <label class="opcion propia" [class.elegida]="elegida() === propia" [style.--i]="3">
             <input type="radio" name="opcion" [value]="propia" [checked]="elegida() === propia" (change)="elegir(propia)" />
             <span class="opcion-texto">Ninguna me convence: escribo la mía</span>
           </label>
@@ -86,7 +86,17 @@ const PROPIA = 3;
     </form>
   `,
   styles: `
-    :host { display: block; }
+    /* Entra con un resorte cada vez que llega una pregunta nueva (la conversación la recrea por número). */
+    :host { display: block; animation: tarjeta-entra 650ms var(--resorte-vivo) both; transform-origin: 50% 0; }
+    @keyframes tarjeta-entra { from { opacity: 0; translate: 0 16px; scale: 0.97; } }
+    /* Las opciones aparecen una tras otra. */
+    .opcion { animation: opcion-entra 650ms var(--resorte-vivo) both; animation-delay: calc(120ms + var(--i, 0) * 55ms); }
+    @keyframes opcion-entra { from { opacity: 0; translate: -10px 0; } }
+    .opcion:active { scale: 0.98; }
+    .boton { transition: scale 380ms var(--resorte-vivo); }
+    .boton:active { scale: 0.95; }
+    .paso { transition: background-color 400ms ease, scale 500ms var(--resorte-vivo); }
+    .paso.actual { scale: 1 1.6; }
     .tarjeta-pregunta {
       display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--linea);
       border-radius: var(--radio-control); background: var(--superficie);
@@ -106,7 +116,7 @@ const PROPIA = 3;
     .opcion {
       display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--borde-control);
       border-radius: var(--radio-control); cursor: pointer; font-size: var(--autoria-texto-16); line-height: 1.4;
-      transition: border-color 120ms ease, background-color 120ms ease;
+      transition: border-color 120ms ease, background-color 160ms ease, scale 380ms var(--resorte-vivo), box-shadow 200ms ease;
     }
     .opcion:hover { border-color: var(--primario); }
     .opcion.elegida {
@@ -126,7 +136,10 @@ const PROPIA = 3;
     /* No se llama «saltar»: esa clase global es el enlace «saltar al contenido», escondido fuera de la pantalla. */
     .a-un-lado { margin-inline-start: auto; }
     .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    @media (prefers-reduced-motion: reduce) { .opcion { transition: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      :host, .opcion { animation: none; }
+      .opcion, .boton, .paso { transition: none; }
+    }
   `,
 })
 export class TarjetaPreguntaComponent {
