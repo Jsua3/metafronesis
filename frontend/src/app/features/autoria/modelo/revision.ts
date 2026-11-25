@@ -282,6 +282,7 @@ export function faltasDelServidor(
     respuestaDeOpcion: (optionKey: string) => string | undefined;
     escenaDeNodo?: (nodeId: number) => string;
     faltasLocales: Falta[];
+    soloServidor?: boolean;
     /**
      * Las respuestas de la escena que ya están en el servidor, en el orden en que este las exporta (por su número). Quien llama
      * lo sabe aun de las creadas en esta visita; si falta, se toman las que traen el número del servidor como id.
@@ -304,7 +305,7 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: '/editor/rubrica' }));
         break;
       case 'CASE_NO_TIME':
-        faltas.push({ codigo: h.code, mensaje: 'Falta el tiempo estimado del caso', ir: { ruta: '/editor/datos', ancla: 'd-tiempo' } });
+        faltas.push(falta({ ruta: '/editor/datos', ancla: 'd-tiempo' }));
         break;
       case 'scene-without-recommended':
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'respuestas-escena' } : {}) }));
@@ -388,11 +389,11 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: '/revision', ancla: 'lista-verificacion' }));
         break;
       case 'AI_SUGGESTED_UNREVIEWED':
-        if (!hayIa) faltas.push(falta({ ruta: '/editor', accionId: 'aceptar-ia' }));
+        if (opciones.soloServidor || !hayIa) faltas.push(falta({ ruta: '/editor', accionId: 'aceptar-ia' }));
         break;
       default: {
         const cubierto = AVISO_QUE_CUBRE[h.code];
-        if (cubierto && avisosDeCaminos.has(cubierto)) break;
+        if (!opciones.soloServidor && cubierto && avisosDeCaminos.has(cubierto)) break;
         faltas.push(falta({ ruta: escena ?? '/editor' }));
       }
     }

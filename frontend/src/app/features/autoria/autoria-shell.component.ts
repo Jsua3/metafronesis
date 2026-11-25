@@ -104,7 +104,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
                    Axe pegaba la palabra con la cifra de la insignia y lo daba por distinto. -->
               <span class="solo-lector">{{ textoPendientes() }}</span>
               <span aria-hidden="true">Pendientes</span>
-              <span class="insignia" [class.insignia--cero]="!progreso.totalPendientes()" aria-hidden="true">{{ progreso.totalPendientes() }}</span>
+              <span class="insignia" [class.insignia--cero]="!progreso.totalPendientes()" aria-hidden="true">{{ store.revisionPendiente() ? '?' : progreso.totalPendientes() }}</span>
             </button>
           }
           <div role="group" aria-label="Ayuda" class="barra-ayuda">
@@ -187,13 +187,13 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
       }
       @if (store.caso()) {
         <button estudioEstadoInicio type="button" class="est-dato-boton" [class.estado-pendientes]="progreso.totalPendientes()"
-                aria-haspopup="dialog" (click)="abrirPendientes($event)">
+                [attr.title]="textoPendientes()" [attr.aria-label]="textoPendientes()" aria-haspopup="dialog" (click)="abrirPendientes($event)">
           <span class="marca-estado" aria-hidden="true" [attr.data-estado]="progreso.totalPendientes() ? 'con-pendientes' : 'lista'"></span>
-          {{ textoPendientes() }}
+          {{ store.revisionPendiente() ? 'Revisión pendiente' : progreso.totalPendientes() + ' por resolver' }}
         </button>
       }
       <!-- La pasarela: el siguiente paso, a la vista en todas las pantallas (antes solo en el Explorador de Historia). -->
-      @if (store.caso() && progreso.siguiente(); as paso) {
+      @if (store.caso() && !store.soloLectura() && progreso.siguiente(); as paso) {
         <button estudioEstadoInicio type="button" class="est-dato-boton est-siguiente" (click)="llevar(paso)">
           <span class="est-siguiente__rotulo">Siguiente:</span><span class="est-siguiente__texto">{{ paso.texto }}</span><span aria-hidden="true">→</span>
         </button>
@@ -417,7 +417,7 @@ export class AutoriaShellComponent implements CanLeave {
   /** «Pendientes: 2 por corregir», lo que oye el lector y dice el globo del botón. */
   protected readonly textoPendientes = computed(() => {
     const n = this.progreso.totalPendientes();
-    return `Pendientes: ${n} por resolver antes de enviar${this.store.revisionPendiente() ? ' · falta completar la revisión' : ''}`;
+    return this.store.revisionPendiente() ? 'Pendientes: falta completar la revisión' : `Pendientes: ${n} por resolver antes de enviar`;
   });
   /**
    * Las pantallas no se pueden cambiar si el caso ya no es un borrador. Siguen vivos los

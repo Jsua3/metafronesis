@@ -6,6 +6,7 @@ import { UiDialogFrame } from '../../../shared/ui/dialog/ui-dialog';
 import { ETAPAS, type Etapa, type Pendiente } from '../modelo/pendientes';
 import { injectLlevar } from './llevar';
 import { ProgresoDelCaso } from './progreso.service';
+import { CasoStore } from '../estado/caso.store';
 
 const NOMBRE_ETAPA: Record<Etapa, string> = {
   datos: 'Datos del caso', lugar: 'Lugar y salas', historia: 'Historia: escenas y guion', evaluacion: 'Evaluación', enviar: 'Enviar a revisión',
@@ -33,7 +34,7 @@ interface Grupo {
   template: `
     <ui-dialog-frame title="Pendientes del caso" [description]="resumen()">
       @if (grupos().length === 0) {
-        <p class="pp__vacio">Nada pendiente. Cuando quieras, prueba el caso y envíalo a Psicología.</p>
+        <p class="pp__vacio">@if (store.revisionPendiente()) { Falta completar la revisión. } @else { Nada pendiente. Cuando quieras, prueba el caso y envíalo a Psicología. }</p>
       }
       @for (g of grupos(); track g.etapa) {
         <section class="pp__grupo" [attr.aria-labelledby]="'pp-' + g.etapa">
@@ -106,6 +107,7 @@ interface Grupo {
 })
 export class PanelPendientesComponent {
   private readonly progreso = inject(ProgresoDelCaso);
+  protected readonly store = inject(CasoStore);
   private readonly ref = inject(DialogRef, { optional: true });
   private readonly llevar = injectLlevar();
 
@@ -122,6 +124,7 @@ export class PanelPendientesComponent {
   protected readonly sugerencias = computed(() => this.progreso.pendientes().filter((p) => p.tipo === 'sugerencia'));
 
   protected readonly resumen = computed(() => {
+    if (this.store.revisionPendiente()) return 'Falta completar la revisión con el servidor.';
     const corregir = this.progreso.porCorregir().length;
     const escribir = this.progreso.pendientes().filter((p) => p.tipo === 'por-escribir').length;
     const partes = [corregir === 1 ? '1 por corregir' : `${corregir} por corregir`];

@@ -24,8 +24,8 @@ export interface Pendiente extends Falta {
 }
 
 /** Una escena «por escribir»: sin una sola línea y sin una sola respuesta. */
-export function estaVacia(escena: Pick<Escena, 'lineas' | 'respuestas'>): boolean {
-  return escena.lineas.length === 0 && escena.respuestas.length === 0;
+export function estaVacia(escena: Pick<Escena, 'lineas' | 'respuestas' | 'narracion'>): boolean {
+  return !escena.narracion.trim() && escena.lineas.length === 0 && escena.respuestas.length === 0;
 }
 
 const escenaDeRuta = (ruta: string): string | null => /\/escena\/([^/?]+)/.exec(ruta)?.[1] ?? null;
@@ -60,7 +60,7 @@ export function clasificarPendientes(caso: CasoBorrador, todasLasFaltas: Falta[]
 
   const faltas = todasLasFaltas.map((f, i): Pendiente => {
     // `puedeEnviar` arma su lista empezando por los avisos de caminos, en el mismo orden: la i-ésima falta es el i-ésimo aviso.
-    const aviso = i < avisos.length ? avisos[i] : undefined;
+    const aviso = avisos.find(a => a.mensaje === f.mensaje);
     const escenaId = aviso?.escenaId ?? escenaDeRuta(f.ir.ruta);
     const porEscribir =
       (aviso?.tipo === 'sin-salida' && aviso.escenaId !== null && vacias.has(aviso.escenaId))

@@ -198,6 +198,7 @@ describe('EvaluacionComponent · Pasos profesionales (E5)', () => {
 
   it('un paso que nadie puede cumplir avisa que es por corregir; con escenas por escribir no es un aviso', async () => {
     const porEscribir = casoBase();
+    porEscribir.escenas[1].narracion = '';
     porEscribir.escenas[1].respuestas = []; // el consultorio todavía sin escribir: el paso es trabajo por hacer, no un error
     const { raiz, store, listo } = await montar(porEscribir);
     expect(raiz.querySelector('#hito-informar_derechos .paso__aviso')).toBeNull();

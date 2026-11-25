@@ -23,6 +23,20 @@ async function abrir() {
 describe('P4 · el editor dice la verdad', () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it('un borrador sin revisión orienta hacia lo que falta sin contarlo como bloqueo confirmado', async () => {
+    const { store } = await abrir();
+    const caso = structuredClone(store.caso()!);
+    caso.escenas[0].narracion = '';
+    caso.escenas[0].lineas = [];
+    caso.escenas[0].respuestas = [];
+    store.fijar(caso);
+    const progreso = TestBed.inject(ProgresoDelCaso);
+    expect(store.revisionPendiente()).toBe(true);
+    expect(store.totalPendientes()).toBe(0);
+    expect(progreso.siguiente()).toMatchObject({ ruta: `/editor/escena/${caso.escenas[0].id}`, texto: expect.stringContaining('Escribe la escena') });
+    expect(store.pendientes().some(p => p.tipo === 'sugerencia')).toBe(true);
+  });
+
   it.each([
     'Respuesta 1 de la persona profesional.', '  RESPUESTA  23 DE LA PERSONA PROFESIONAL… ',
     'Esta respuesta tiene consecuencias en el vínculo con la persona consultante.',
@@ -47,6 +61,18 @@ describe('P4 · el editor dice la verdad', () => {
     expect(progreso.totalPendientes()).toBe(locales);
   });
 
+  it('la compuerta conserva cada bloqueo y su mensaje aunque comparta codigo', async () => {
+    const { store } = await abrir();
+    const hallazgos = [
+      { code: 'NODE_FEW_OPTIONS', severity: 'error' as const, message: 'Primera escena.', nodeId: 1 },
+      { code: 'NODE_FEW_OPTIONS', severity: 'error' as const, message: 'Segunda escena.', nodeId: 2 },
+    ];
+    store.registrarRevision(hallazgos);
+    expect(store.faltas().map(f => f.mensaje)).toEqual(hallazgos.map(h => h.message));
+    expect(store.totalPendientes()).toBe(2);
+    expect(TestBed.inject(ProgresoDelCaso).pendientes().filter(p => p.tipo !== 'sugerencia')).toHaveLength(2);
+  });
+
   it('el relleno aceptado sigue pendiente y lleva a la respuesta exacta; corregirlo elimina esas faltas', async () => {
     const { store, escena } = await abrir();
     const r = store.agregarRespuesta(escena);
@@ -57,9 +83,9 @@ describe('P4 · el editor dice la verdad', () => {
     await store.sincronizado();
     const relleno = store.pendientes().filter(p => p.codigo === 'CONTENT_PLACEHOLDER');
     expect(relleno).toHaveLength(2);
-    expect(relleno.every(p => p.tipo === 'por-escribir' && p.ir.ruta === `/editor/escena/${escena}` && p.ir.ancla === `respuesta-${r}`)).toBe(true);
+    expect(relleno.every(p => p.tipo === 'sugerencia' && p.ir.ruta === `/editor/escena/${escena}` && p.ir.ancla === `respuesta-${r}`)).toBe(true);
     store.editarRespuesta(escena, r, { texto: '¿Quieres que busquemos apoyo juntas?', retroalimentacion: 'Pide su consentimiento antes de contactar a alguien.' });
-    expect(store.faltas().filter(p => p.codigo === 'CONTENT_PLACEHOLDER')).toEqual([]);
+    expect(store.pendientes().filter(p => p.codigo === 'CONTENT_PLACEHOLDER')).toEqual([]);
     await store.sincronizado();
   });
 

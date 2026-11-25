@@ -9,13 +9,14 @@ describe('P4 · contrato visible del editor', () => {
     document.querySelectorAll('body > [ng-version]').forEach(n => n.remove());
   });
 
-  it('barra, Evaluación y Enviar muestran el mismo total incluyendo escribir y servidor', async () => {
+  it('barra, Evaluación y Enviar muestran el mismo total confirmado por servidor', async () => {
     const { raiz, store, servidor, harness, listo } = await abrirEditor('/portal/casos/41/editor');
     servidor.hallazgos = [{ code: 'CASE_NO_TIME', severity: 'error', message: 'Falta tiempo.' }];
     await store.revisarConServidor();
     await listo();
     const total = store.totalPendientes();
-    expect(total).toBeGreaterThan(TestBed.inject(ProgresoDelCaso).porCorregir().length);
+    expect(total).toBe(1);
+    expect(store.pendientes().some(p => p.tipo === 'sugerencia')).toBe(true);
     const barra = () => raiz.querySelector('header button[data-accion="ver-pendientes"]')!;
     expect(barra().textContent).toContain(`Pendientes: ${total} por resolver antes de enviar`);
     await harness.navigateByUrl('/portal/casos/41/editor/evaluacion');
@@ -28,6 +29,30 @@ describe('P4 · contrato visible del editor', () => {
     expect(raiz.querySelector('#fl')!.textContent).toBe(`Por resolver (${total})`);
     expect(raiz.querySelectorAll('section.por-resolver li.problema')).toHaveLength(total);
     expect(barra().textContent).toContain(`Pendientes: ${total}`);
+  });
+
+  it('la compuerta manda con un final narrado y una sala de escucha sin respuestas ni conexión', async () => {
+    const { raiz, store, servidor, harness, listo } = await abrirEditor('/portal/casos/41/editor');
+    const caso = structuredClone(store.caso()!);
+    const final = caso.escenas[0];
+    final.esFinal = true; final.narracion = 'La intervenci?n ha terminado y la persona recibe acompa?amiento.';
+    final.lineas = []; final.respuestas = [];
+    const escucha = caso.escenas[1];
+    escucha.esFinal = false; escucha.narracion = 'En esta sala la persona puede escuchar con tranquilidad.';
+    escucha.lineas = []; escucha.respuestas = [];
+    caso.inicioId = final.id;
+    servidor.hallazgos = [];
+    store.fijar(caso);
+    await listo();
+    store.registrarRevision([]);
+    await listo();
+    expect(store.totalPendientes()).toBe(0);
+    expect(TestBed.inject(ProgresoDelCaso).avance().find(e => e.etapa === 'historia')?.detalle).toContain('2 de 2');
+    expect(raiz.querySelector('header button[data-accion="ver-pendientes"]')!.textContent).toContain('Pendientes: 0 por resolver');
+    await harness.navigateByUrl('/portal/casos/41/editor/revision');
+    await listo();
+    expect(raiz.querySelector('#fl')!.textContent).toBe('Por resolver (0)');
+    expect(store.pendientes().filter(p => p.tipo !== 'sugerencia')).toHaveLength(0);
   });
 
   it('una escena con relleno no tiene marca de completa y el título largo conserva su nombre accesible', async () => {

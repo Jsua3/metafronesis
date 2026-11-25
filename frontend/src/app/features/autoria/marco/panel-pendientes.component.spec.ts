@@ -19,17 +19,18 @@ describe('PanelPendientesComponent', () => {
     await listo();
 
     const boton = raiz.querySelector<HTMLButtonElement>('header button[data-accion="ver-pendientes"]')!;
-    expect(boton.querySelector('.solo-lector')!.textContent).toMatch(/^Pendientes: \d+ por resolver antes de enviar/);
+    expect(boton.querySelector('.solo-lector')!.textContent).toContain('falta completar la revisión');
     boton.click();
     await listo();
 
     const hoja = document.querySelector<HTMLElement>('.ui-sheet-pane app-panel-pendientes')!;
     expect(hoja).not.toBeNull();
     expect(hoja.querySelector('h2')!.textContent).toBe('Pendientes del caso');
-    const historia = hoja.querySelector('#pp-historia')!;
-    expect(historia.textContent).toBe('Historia: escenas y guion');
+    const sugerencias = hoja.querySelector<HTMLDetailsElement>('.pp__sugerencias')!;
+    expect(sugerencias.textContent).toContain('no impiden enviar');
+    sugerencias.open = true;
     const llevar = [...hoja.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.getAttribute('aria-label')?.includes('no lleva a ninguna escena'))!;
-    expect(llevar.textContent!.trim()).toBe('Llévame ahí');
+    expect(llevar.textContent!.trim()).toBe('Ir');
     llevar.click();
     await listo();
     await new Promise((res) => setTimeout(res, 50));

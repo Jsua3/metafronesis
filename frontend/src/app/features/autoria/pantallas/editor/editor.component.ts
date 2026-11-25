@@ -91,7 +91,7 @@ import { RutasAutoria } from '../../rutas';
                 </p>
               }
               @if (avisosDeElegida().length) {
-                <app-estudio-seccion titulo="Por corregir" [resumen]="'' + avisosDeElegida().length">
+                <app-estudio-seccion titulo="Para revisar" [resumen]="'' + avisosDeElegida().length">
                   <ul class="elegida__avisos">
                     @for (a of avisosDeElegida(); track $index) {
                       <li>
@@ -335,8 +335,8 @@ export class EditorComponent {
    * el i-ésimo pendiente es el i-ésimo aviso.
    */
   protected readonly avisosMapa = computed<Aviso[]>(() => {
-    const pendientes = this.progreso.pendientes();
-    return this.todosLosAvisos().filter((_, i) => pendientes[i]?.tipo === 'por-corregir');
+    const pendientes = this.store.guiaLocal();
+    return this.todosLosAvisos().filter(aviso => pendientes.some(p => p.mensaje === aviso.mensaje && p.tipo === 'por-corregir'));
   });
   /** Hay caminos sin terminar que todavía no son un error (escenas por escribir). */
   protected readonly caminosPorEscribir = computed(() => this.todosLosAvisos().length > this.avisosMapa().length);

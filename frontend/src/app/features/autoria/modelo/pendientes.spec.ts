@@ -6,7 +6,11 @@ import { puedeEnviar } from './revision';
 import { universidad } from '../testing/universidad';
 
 /** Un caso recién creado: tres escenas vacías, una por sala, con los seis pasos profesionales del lugar. */
-const casoNuevo = (): CasoBorrador => copiarEscenarioAlCaso(universidad, ['entrada', 'pasillo', 'aula'], 'Primera escucha');
+const casoNuevo = (): CasoBorrador => {
+  const caso = copiarEscenarioAlCaso(universidad, ['entrada', 'pasillo', 'aula'], 'Primera escucha');
+  caso.escenas.forEach(e => e.narracion = '');
+  return caso;
+};
 
 /** El mismo caso con la primera escena escrita a medias: una respuesta clasificada que no lleva a ninguna parte. */
 function conRespuestaSinDestino(): CasoBorrador {

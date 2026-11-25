@@ -37,7 +37,7 @@ export class ProgresoDelCaso {
     const caso = this.store.caso();
     if (!caso) return null;
     const avisoDeGuardado = this.store.conflicto() !== null || this.store.error() !== null || this.store.descartado().length > 0;
-    return siguientePaso(caso, { avisoDeGuardado }, this.pendientes());
+    return siguientePaso(caso, { avisoDeGuardado }, [...this.store.guiaLocal(), ...this.pendientes()]);
   });
 
   readonly etapaActual = computed(() => etapaDeDireccion(this.direccion()));

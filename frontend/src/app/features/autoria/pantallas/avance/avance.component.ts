@@ -368,7 +368,7 @@ export class AvanceComponent implements OnInit, OnDestroy {
     const id = this.g()?.caseVersionId;
     if (this.g()?.status === 'imported') {
       if (this.store.caso()?.id !== String(id)) return 'Abre el editor para revisar los pendientes antes de enviar.';
-      return `${this.store.totalPendientes()} por resolver antes de enviar el caso.${this.store.revisionPendiente() ? ' Falta completar la revisión.' : ''}`;
+      return this.store.revisionPendiente() ? 'Falta completar la revisión.' : `${this.store.totalPendientes()} por resolver antes de enviar el caso.`;
     }
     const n = this.g()?.issues.length ?? 0;
     // BORRADOR: textos nuevos, pendientes de la aprobación de Psicología

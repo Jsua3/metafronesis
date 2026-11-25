@@ -68,7 +68,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
               <h1>Pasos profesionales</h1>
               <p class="bajada">Lo que el estudiante tiene que hacer en el caso. Marca qué respuestas cumplen cada paso: es lo mismo que marcarlo en la ficha de la respuesta.</p>
             </div>
-            <p role="status">{{ store.totalPendientes() }} por resolver antes de enviar el caso. @if (store.revisionPendiente()) { Falta completar la revisión. }</p>
+            <p role="status">@if (store.revisionPendiente()) { Falta completar la revisión. } @else { {{ store.totalPendientes() }} por resolver antes de enviar el caso. }</p>
       <app-pestanas-evaluacion actual="pasos" />
           </div>
 
@@ -193,7 +193,7 @@ export class EvaluacionComponent {
     }
     const titulos = new Map(this.escenas().map((e) => [e.escenaId, e.titulo]));
     const inalcanzables = new Set(hitosInalcanzables(caso).map((h) => h.clave));
-    const corregir = new Set(this.progreso.pendientes()
+    const corregir = new Set([...this.store.guiaLocal(), ...this.progreso.pendientes()]
       .filter((p) => p.tipo === 'por-corregir' && p.codigo === 'milestone-unreachable').map((p) => p.ir.ancla));
     const vistas = caso.hitos.map((hito, i) => {
       const respuestas: RespuestaDelPaso[] = dondeSeCumple(caso, hito.clave).map((d) => ({

@@ -129,34 +129,21 @@ describe('RevisionComponent · la compuerta de publicación en lenguaje del doce
     destino.remove();
   });
 
-  it('una escena con respuestas en una sala sin personas bloquea el envío y «Llévame ahí» abre la sala', async () => {
+  it('una sala sin personas es una sugerencia hasta que el servidor confirme un bloqueo', async () => {
     const { raiz, store, enviar, listo } = await montar();
     // El consultorio se queda sin su única persona (el caso ya trae una respuesta en esa escena).
     const caso = structuredClone(store.caso()!);
     caso.salas.find((x) => x.id === 'consultorio')!.personajes = [];
     store.fijar(caso);
     await listo();
-    // Lo que el editor ve por su cuenta no se lista aquí (vive en la hoja «Pendientes»): se resume por etapa y bloquea el envío.
-    expect(raiz.querySelectorAll('section.por-resolver li.problema')).toHaveLength(1);
-    expect(raiz.querySelector('[data-etapa="lugar"] .etapa__estado')!.textContent!.trim()).toBe('1 por corregir');
-    expect(raiz.querySelector('[data-etapa="datos"] .etapa__estado')!.textContent!.trim()).toBe('Listo');
-    expect(raiz.querySelector('section.por-resolver h2')!.textContent).toContain('Por resolver (1)');
+    expect(store.revisionPendiente()).toBe(true);
+    expect(store.totalPendientes()).toBe(0);
     expect(enviar().getAttribute('aria-disabled')).toBe('true');
-    // Como en el panel de problemas de un IDE, el problema sale en su etapa, y la fila entera lleva a él (CU-04 · editar el caso).
-    const fila = raiz.querySelector<HTMLButtonElement>('.etapa:has([data-etapa="lugar"]) li.problema button.fila-problema')!;
-    expect(fila.textContent).toContain('tiene respuestas pero en su sala no hay nadie con quien hablar');
-    const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
-    fila.click();
-    await new Promise((r) => setTimeout(r, 60));
-    expect(navegar.mock.calls.some(([url]) => String(url).includes(`/portal/casos/${store.caso()!.id}/editor/sala/`)), 'lleva a la sala').toBe(true);
-    navegar.mockRestore();
-    // «Ver pendientes» abre la hoja, que sí lleva a la sala (su prueba está en panel-pendientes.component.spec.ts).
-    raiz.querySelector<HTMLButtonElement>('[data-etapa="lugar"] button')!.click();
+    expect(store.pendientes().some(p => p.tipo === 'sugerencia' && p.ir.ruta.includes('/sala/'))).toBe(true);
+    store.registrarRevision([]);
     await listo();
-    const hoja = document.querySelector('app-panel-pendientes')!;
-    expect(hoja, 'se abre la hoja de pendientes').not.toBeNull();
-    expect(hoja.textContent).toContain('tiene respuestas pero en su sala no hay nadie con quien hablar');
-    expect(store.caso()).toBeTruthy();
+    expect(raiz.querySelector('section.por-resolver h2')!.textContent).toContain('Por resolver (0)');
+    expect(enviar().getAttribute('aria-disabled')).not.toBe('true');
   });
 
   it('un bloqueo de la compuerta que no es de un hallazgo (la lista de verificación) se muestra y no deja enviar', async () => {
@@ -321,7 +308,7 @@ describe('RevisionComponent · lista de verificación ética y académica', () =
   it('con ítems obligatorios sin marcar lo lista en «Por resolver», no deja enviar y «Llévame ahí» lleva a la lista', async () => {
     const { raiz, enviar, store, listo } = await montar({ marcados: [] });
     const falta = raiz.querySelector('section.por-resolver li.falta')!;
-    expect(falta.querySelector('p')!.textContent).toBe('Falta completar la lista de verificación: marca todos los ítems obligatorios.');
+    expect(falta.querySelector('p')!.textContent).toBe('El checklist ético y académico debe estar al 100% antes de enviar el caso a revisión.');
     expect(enviar().getAttribute('aria-disabled')).toBe('true');
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     falta.querySelector<HTMLButtonElement>('button')!.click();
@@ -368,7 +355,7 @@ describe('RevisionComponent · lista de verificación ética y académica', () =
     await store.sincronizado();
     await new Promise((r) => setTimeout(r, 20));
     await listo();
-    expect(raiz.querySelector('section.por-resolver')!.textContent).toContain('Falta completar la lista de verificación');
+    expect(raiz.querySelector('section.por-resolver')!.textContent).toContain('El checklist ético y académico debe estar al 100%');
   });
 });
 
@@ -514,13 +501,13 @@ describe('Pendiente de tiempo estimado', () => {
   afterEach(() => document.querySelectorAll('body > app-revision, body > [ng-version]').forEach((n) => n.remove()));
   it('muestra el aviso y dirige a Datos con foco en el tiempo', async () => {
     const { raiz, listo } = await montar({ hallazgos: [issue('CASE_NO_TIME', 'mensaje del servidor')] });
-    expect(raiz.textContent).toContain('Falta el tiempo estimado del caso');
+    expect(raiz.textContent).toContain('mensaje del servidor');
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const campo = document.createElement('input');
     campo.id = 'd-tiempo';
     document.body.appendChild(campo);
-    const boton = [...raiz.querySelectorAll<HTMLButtonElement>('button')].find(b => b.getAttribute('aria-label')?.includes('Falta el tiempo estimado'))!;
+    const boton = [...raiz.querySelectorAll<HTMLButtonElement>('button')].find(b => b.getAttribute('aria-label')?.includes('mensaje del servidor'))!;
     boton.click();
     await listo();
     expect(navegar).toHaveBeenCalledWith('/portal/casos/41/editor/datos');

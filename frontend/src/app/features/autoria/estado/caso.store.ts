@@ -195,21 +195,34 @@ export class CasoStore {
   private readonly hallazgosRevision = signal<ValidationIssue[]>([]);
   readonly revisionPendiente = signal(true);
   readonly faltasLocales = computed(() => this.caso() ? puedeEnviar(this.caso()!).faltas : []);
+  /** Orientación inmediata para escribir, sin atribuirla a la revisión del servidor. */
+  readonly guiaLocal = computed(() => this.caso() ? clasificarPendientes(this.caso()!, this.faltasLocales()) : []);
   /** Única lista de bloqueos: incluye lo que falta escribir y lo que exige el servidor. */
   readonly faltas = computed(() => {
     const caso = this.caso();
     if (!caso) return [];
-    const locales = this.faltasLocales();
+    // Solo la compuerta determina bloqueos. Una revisi?n anterior no describe los cambios actuales.
+    if (this.revisionPendiente()) return [];
     const unicos = new Map(this.hallazgosRevision().map(h => [JSON.stringify([h.code, h.nodeId, h.optionKey, h.path, h.message]), h]));
-    return [...locales, ...faltasDelServidor([...unicos.values()], caso, {
-      faltasLocales: locales, escenaDeNodo: id => this.sesion?.idLocalDeNodo(id) ?? String(id), respuestaDeOpcion: clave => this.respuestaDeOpcion(clave),
+    return faltasDelServidor([...unicos.values()], caso, {
+      faltasLocales: [], soloServidor: true, escenaDeNodo: id => this.sesion?.idLocalDeNodo(id) ?? String(id), respuestaDeOpcion: clave => this.respuestaDeOpcion(clave),
       respuestasGuardadas: id => this.respuestasGuardadasDe(id),
-    })];
+    });
   });
-  readonly pendientes = computed(() => this.caso() ? clasificarPendientes(this.caso()!, this.faltas()) : []);
+  readonly pendientes = computed(() => {
+    const caso = this.caso();
+    if (!caso) return [];
+    const confirmadas = this.faltas();
+    const claves = new Set(confirmadas.map(f => JSON.stringify([f.codigo, f.ir.ruta, f.ir.ancla])));
+    const sugerenciasLocales = this.guiaLocal().filter(f => f.tipo !== 'sugerencia' && !claves.has(JSON.stringify([f.codigo, f.ir.ruta, f.ir.ancla])))
+      .map(f => ({ ...f, tipo: 'sugerencia' as const }));
+    return [...clasificarPendientes(caso, confirmadas), ...sugerenciasLocales];
+  });
   readonly totalPendientes = computed(() => this.faltas().length);
   registrarRevision(hallazgos: ValidationIssue[], ciclo?: CaseLifecycle): void {
     hallazgos = hallazgos.map(h => {
+      const nodo = /^nodes\/(\d+)/.exec(h.path ?? '')?.[1];
+      if (nodo && h.nodeId === undefined) h = { ...h, nodeId: Number(nodo) };
       const id = /^options\/(\d+)/.exec(h.path ?? '')?.[1];
       const opcion = id ? this.sesion?.vista.decisions.find(d => d.id === Number(id)) : undefined;
       return opcion ? { ...h, nodeId: opcion.sourceNodeId, optionKey: opcion.optionKey } : h;

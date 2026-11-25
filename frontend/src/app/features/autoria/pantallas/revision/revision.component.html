@@ -36,7 +36,7 @@
         <!-- «Problemas», como en un IDE: agrupados por etapa, una fila por problema; la fila entera lleva a él (Enter o clic). -->
         <section aria-labelledby="fl" class="panel por-resolver" (keydown)="moverEntreFilas($event)">
           <div class="panel__cab">
-            <h2 id="fl">Por resolver ({{ faltas().length }})</h2>
+            <h2 id="fl">{{ store.revisionPendiente() ? 'Revisión pendiente' : 'Por resolver (' + faltas().length + ')' }}</h2>
           </div>
           @if (consultando()) {
             <p class="comprobando" role="status"><span class="comprobando__barra" aria-hidden="true"></span>Comprobando el caso…</p>
@@ -232,7 +232,7 @@
 
   <ng-template estudioRanura="estado">
     @if (!store.soloLectura()) {
-      <span class="est-dato">{{ faltas().length }} por resolver</span>
+      <span class="est-dato">{{ store.revisionPendiente() ? 'Revisión pendiente' : faltas().length + ' por resolver' }}</span>
       <span class="est-dato">{{ sugeridas().length }} {{ sugeridas().length === 1 ? 'sugerencia' : 'sugerencias' }}</span>
     } @else {
       <span class="est-dato">{{ nombreEstado() }}</span>
