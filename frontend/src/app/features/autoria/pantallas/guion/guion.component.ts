@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, input, linkedSignal, signal, untracked,
 } from '@angular/core';
@@ -41,7 +42,7 @@ const INTENSIDADES: IntensidadEscena[] = ['LOW', 'MEDIUM', 'HIGH'];
 @Component({
   selector: 'app-guion',
   imports: [
-    AutoAltoDirective, ComentariosComponent, GuiaDeRedaccionComponent, LineaComponent, ObjetivoPistasComponent, RespuestaComponent,
+    DatePipe, AutoAltoDirective, ComentariosComponent, GuiaDeRedaccionComponent, LineaComponent, ObjetivoPistasComponent, RespuestaComponent,
     RouterLink, UiMenu, VistaEstudianteComponent, CamaraEscenaComponent, EstudioRanuraDirective, EstudioSeccionComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -50,7 +50,7 @@ class EscenaCompuesta(ComponenteDelCaso):
         problemas = []
         lugar = f'nodes/{self.escena.pk}'
         if es_relleno(self.escena.narrative):
-            problemas.append(Problema('CONTENT_PLACEHOLDER', lugar, 'Escribe la narración: todavía tiene texto de relleno.'))
+            problemas.append(Problema('CONTENT_PLACEHOLDER', f'{lugar}/narrative', 'Escribe la narración: todavía tiene texto de relleno.'))
         if not self.escena.terminal_node and (self.hijos or self.alcanzable_por_decisiones):
             if not (self.escena.decision_prompt or '').strip():
                 problemas.append(Problema('NODE_NO_QUESTION', lugar, 'La escena necesita una pregunta.'))
@@ -86,7 +86,7 @@ class CasoCompuesto(ComponenteDelCaso):
         for linea in DialogueLine.objects.filter(dialogue_tree__scene_map__case_version=self.version).select_related('dialogue_tree__scene_map'):
             if es_relleno(linea.text):
                 nodo = linea.dialogue_tree.scene_map.node_id
-                problemas.append(Problema('CONTENT_PLACEHOLDER', f'nodes/{nodo}', 'Escribe el diálogo: todavía tiene texto de relleno.'))
+                problemas.append(Problema('CONTENT_PLACEHOLDER', f'nodes/{nodo}/dialogue/{linea.display_order}', 'Escribe el diálogo: todavía tiene texto de relleno.'))
         return problemas + [p for hijo in self.hijos for p in hijo.problemas()]
 
 

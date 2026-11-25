@@ -138,8 +138,8 @@ class RubricaVersionView(APIView):
         from apps.simulation.services import gestion_rubricas
         from shared import policies
 
-        version = get_object_or_404(CaseVersion, pk=case_version_id)
-        if not policies.can(request.user, "case", "author", owner_id=version.created_by_id):
+        version = get_object_or_404(CaseVersion.objects.select_related("simulation_case"), pk=case_version_id)
+        if not policies.can(request.user, "case", "author", owner_id=version.simulation_case.created_by_id):
             from django.http import Http404
             raise Http404
         rubrica = rubrica_para_revision(version.pk)

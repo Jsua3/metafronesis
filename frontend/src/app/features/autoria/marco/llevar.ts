@@ -40,7 +40,7 @@ async function enfocar(id: string): Promise<void> {
       for (let padre = el.parentElement; padre; padre = padre.parentElement) {
         if (padre instanceof HTMLDetailsElement) padre.open = true;
       }
-      const control = el.matches('a[href], button, input, select, textarea, [tabindex]')
+      const control = id.startsWith('linea-') ? el.querySelector<HTMLElement>('textarea') ?? el : el.matches('a[href], button, input, select, textarea, [tabindex]')
         ? el : el.querySelector<HTMLElement>('textarea:not([disabled]), input:not([disabled]), select:not([disabled]), button:not([disabled])') ?? el;
       if (!control.matches('a[href], button, input, select, textarea, [tabindex]')) control.setAttribute('tabindex', '-1');
       control.scrollIntoView?.({ block: 'center', behavior: 'auto' });

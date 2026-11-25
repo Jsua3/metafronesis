@@ -2,11 +2,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { AuthoringApi } from '../../../core/api/authoring.api';
 import type { CasoBorrador } from '../modelo/caso';
 import { casoCopiadoDeLugar } from '../testing/caso-api';
 import { ServidorFalso } from '../testing/servidor-falso';
 import { universidad } from '../testing/universidad';
+import { leerBorradores, escribirBorradores } from './borradores-respuesta';
 import { CasoStore, mensajeDeFallo } from './caso.store';
 
 /**
@@ -14,12 +16,12 @@ import { CasoStore, mensajeDeFallo } from './caso.store';
  * con la verdad (S3), deshacer lo aplicado por el asistente (S9) y mensajes en palabras del docente (S10).
  */
 const CASO = 41;
-beforeEach(() => localStorage.clear());
+beforeEach(() => { localStorage.clear(); sessionStorage.clear(); });
 
 async function abrir() {
   TestBed.resetTestingModule();
   const servidor = new ServidorFalso(casoCopiadoDeLugar(universidad, ['consultorio', 'pasillo'], { caseVersionId: CASO, revision: 3 }), universidad);
-  TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthoringApi, useValue: servidor.autoria }] });
+  TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthoringApi, useValue: servidor.autoria }, { provide: AuthService, useValue: { currentUser: () => ({ id: 7 }) } }] });
   const store = TestBed.inject(CasoStore);
   await store.cargar(CASO);
   servidor.llamadas.length = 0;
@@ -79,37 +81,103 @@ describe('S2 · no se pierde lo escrito', () => {
 });
 
 describe('S1 · salir sin perder nada', () => {
-  it('recupera la respuesta sin destino al volver y limpia la copia al guardarla', async () => {
-    localStorage.clear();
+  it('guarda el texto en la sesi?n del usuario y no en almacenamiento persistente', async () => {
+    sessionStorage.clear();
+    const { store } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const id = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, id, { texto: 'Contenido privado' });
+    expect(Object.keys(sessionStorage).some(k => k.includes('autoria-respuestas:7:41:') && sessionStorage.getItem(k)?.includes('Contenido privado'))).toBe(true);
+    expect(Object.values(localStorage).some(v => v.includes('Contenido privado'))).toBe(false);
+  });
+
+  it('ofrece la respuesta ausente y la recupera como una copia nueva', async () => {
     const { store, servidor } = await abrir();
     const origen = escenaDe(store, 'consultorio');
     const r = store.agregarRespuesta(origen.id);
     store.editarRespuesta(origen.id, r, { texto: 'Escucho', clase: 'ACCEPTABLE', retroalimentacion: 'Seguimos.' });
     await store.sincronizado();
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthoringApi, useValue: servidor.autoria }] });
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthoringApi, useValue: servidor.autoria }, { provide: AuthService, useValue: { currentUser: () => ({ id: 7 }) } }] });
     const nuevo = TestBed.inject(CasoStore);
     await nuevo.cargar(CASO);
-    const recuperada = escenaDe(nuevo, 'consultorio').respuestas.find(x => x.id === r)!;
-    expect(recuperada.texto).toBe('Escucho');
-    expect(nuevo.respuestasRecuperadas().has(r)).toBe(true);
-    nuevo.conectar(r, escenaDe(nuevo, 'pasillo').id);
+    expect(escenaDe(nuevo, 'consultorio').respuestas.find(x => x.id === r)).toBeUndefined();
+    const pendiente = nuevo.borradoresPendientes()[0];
+    expect(pendiente.respuesta.texto).toBe('Escucho');
+    nuevo.recuperarBorrador(pendiente, origen.id);
+    const recuperada = escenaDe(nuevo, 'consultorio').respuestas.find(x => x.texto === 'Escucho')!;
+    expect(recuperada.id).not.toBe(r);
+    expect(nuevo.respuestasRecuperadas().has(recuperada.id)).toBe(true);
+    nuevo.conectar(recuperada.id, escenaDe(nuevo, 'pasillo').id);
     await nuevo.sincronizado();
-    expect(localStorage.getItem(`autoria-respuestas:${CASO}`)).toBeNull();
-    localStorage.clear();
+    expect(leerBorradores(7, String(CASO))).toEqual([]);
   });
 
   it('elimina la copia local al descartar una respuesta', async () => {
-    localStorage.clear();
     const { store } = await abrir();
     const origen = escenaDe(store, 'consultorio');
     const r = store.agregarRespuesta(origen.id);
     store.editarRespuesta(origen.id, r, { texto: 'Sin destino' });
-    expect(localStorage.getItem(`autoria-respuestas:${CASO}`)).toContain('Sin destino');
+    expect(leerBorradores(7, String(CASO))[0].respuesta.texto).toBe('Sin destino');
     store.borrarRespuesta(origen.id, r);
-    expect(localStorage.getItem(`autoria-respuestas:${CASO}`)).toBeNull();
+    expect(leerBorradores(7, String(CASO))).toEqual([]);
     await store.sincronizado();
-    localStorage.clear();
+  });
+
+  it('a?sla por usuario y elimina los respaldos vencidos', async () => {
+    const { store } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const r = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, r, { texto: 'Privado' });
+    const b = leerBorradores(7, String(CASO))[0];
+    expect(leerBorradores(8, String(CASO))).toEqual([]);
+    escribirBorradores(7, String(CASO), [{ ...b, guardado: Date.now() - 12 * 60 * 60 * 1000 }]);
+    expect(leerBorradores(7, String(CASO))).toEqual([]);
+  });
+
+  it('si la revision coincide y la respuesta existe, restaura su texto en la misma respuesta', async () => {
+    const { store } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const id = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, id, { texto: 'Copia local' });
+    await store.sincronizado();
+    const b = leerBorradores(7, String(CASO))[0];
+    const actual = structuredClone(store.caso()!);
+    const respuesta = actual.escenas.find(e => e.id === origen.id)!.respuestas.find(r => r.id === id)!;
+    respuesta.texto = 'Texto confirmado';
+    const acceso = store as unknown as { sesion: unknown; empezarCon: (c: CasoBorrador, s: unknown) => void };
+    acceso.empezarCon(actual, acceso.sesion);
+    expect(escenaDe(store, 'consultorio').respuestas.find(r => r.id === id)?.texto).toBe('Copia local');
+    expect(store.borradoresPendientes()).toEqual([]);
+    expect(b.revision).toBe(actual.revision);
+  });
+
+  it('si el caso cambio, ofrece la copia sin mezclarla', async () => {
+    const { store, servidor } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const r = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, r, { texto: 'Anterior' });
+    await store.sincronizado();
+    servidor.otraSesionEscribe();
+    await store.cargar(CASO, true);
+    expect(escenaDe(store, 'consultorio').respuestas.some(x => x.texto === 'Anterior')).toBe(false);
+    expect(store.borradoresPendientes().length).toBe(1);
+    store.descartarBorrador(store.borradoresPendientes()[0]);
+    expect(leerBorradores(7, String(CASO))).toEqual([]);
+  });
+
+  it('no incorpora ni ofrece respaldos si el caso es de solo lectura', async () => {
+    const { store, servidor } = await abrir();
+    const origen = escenaDe(store, 'consultorio');
+    const id = store.agregarRespuesta(origen.id);
+    store.editarRespuesta(origen.id, id, { texto: 'Privado' });
+    await store.sincronizado();
+    servidor.editor.status = 'PUBLISHED';
+    await store.cargar(CASO, true);
+    expect(store.soloLectura()).toBe(true);
+    expect(store.borradoresPendientes()).toEqual([]);
+    expect(escenaDe(store, 'consultorio').respuestas.some(r => r.texto === 'Privado')).toBe(false);
+    expect(leerBorradores(7, String(CASO)).length).toBe(1);
   });
 
   it('hay algo sin guardar con cambios viajando, con un conflicto o con respuestas que solo están en pantalla', async () => {

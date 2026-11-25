@@ -82,6 +82,14 @@
             <button type="button" class="boton-ver-todo" [attr.aria-pressed]="verTodo()" (click)="verTodo.set(!verTodo())">Ver todo abierto</button>
           }
         </div>
+        @for (b of store.borradoresPendientes(); track b.respuesta.id) {
+          @if (b.escenaId === e.id || !store.existeEscena(b.escenaId)) {
+            <p class="nota nota--aviso" role="status">Tienes texto sin guardar de una respuesta {{ b.escenaId === e.id ? 'de esta escena' : 'de una escena que ya no existe' }} (de {{ b.guardado | date:'HH:mm' }}).
+              <button type="button" (click)="store.recuperarBorrador(b, e.id)">Recuperar</button> &middot;
+              <button type="button" (click)="store.descartarBorrador(b)">Descartar</button>
+            </p>
+          }
+        }
         <ol class="lista respuestas">
           @for (r of e.respuestas; track r.id; let i = $index) {
             <li class="respuesta" [id]="'respuesta-' + r.id" tabindex="-1">

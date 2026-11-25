@@ -116,3 +116,19 @@ def test_lectura_de_rubrica_propia_de_la_version(datos):
     respuesta = datos["cliente"].get(f"/api/rubrics/case-versions/{datos['version'].pk}")
     assert respuesta.status_code == 200
     assert respuesta.data["data"]["id"] == rubrica.pk
+
+
+def test_dueno_lee_rubrica_de_version_clonada_por_admin(datos):
+    cliente, version = datos["cliente"], datos["version"]
+    rubrica = Rubric.objects.create(name="Propia", created_by=datos["docente"])
+    SimulationRubricAssignment.objects.create(case_version=version, rubric=rubrica, assigned_by=datos["docente"])
+    version.status = "PUBLISHED"
+    version.save(update_fields=["status"])
+    cliente.force_authenticate(datos["admin"])
+    clon = cliente.post(f"/api/authoring/cases/{version.pk}/clone-version", {}, format="json")
+    assert clon.status_code == 201
+    ruta = f"/api/rubrics/case-versions/{clon.data['data']['versionId']}"
+    cliente.force_authenticate(datos["docente"])
+    assert cliente.get(ruta).status_code == 200
+    cliente.force_authenticate(datos["otro"])
+    assert cliente.get(ruta).status_code == 404

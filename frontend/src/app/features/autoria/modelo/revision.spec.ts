@@ -374,3 +374,18 @@ it('ubica la marca de IA y el texto largo cuando llegan sus identificadores', as
     { respuestaDeOpcion: () => undefined, faltasLocales: [], soloServidor: true });
   expect(ia.ir.ancla).toBe('linea-l1');
 });
+
+
+describe('rutas de relleno de la compuerta', () => {
+  it('lleva a la narraci?n y a cada l?nea concreta', () => {
+    const caso = structuredClone(CASO_HOSPITAL);
+    const escena = caso.escenas[0];
+    escena.id = '7';
+    escena.lineas = [{ id: '12:1', personajeId: '', texto: 'Lorem ipsum', expresion: 'neutral', marcaIa: false },
+      { id: '12:2', personajeId: '', texto: 'Lorem ipsum', expresion: 'neutral', marcaIa: false }];
+    const hallazgos = ['narrative', 'dialogue/1', 'dialogue/2'].map(path => ({ code: 'CONTENT_PLACEHOLDER', severity: 'error' as const,
+      message: 'Relleno', nodeId: 7, path: `nodes/7/${path}` }));
+    const faltas = faltasDelServidor(hallazgos, caso, { respuestaDeOpcion: () => undefined, faltasLocales: [] });
+    expect(faltas.map(f => f.ir.ancla)).toEqual(['narracion-escena', 'linea-12:1', 'linea-12:2']);
+  });
+});

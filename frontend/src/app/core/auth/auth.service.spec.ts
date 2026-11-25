@@ -41,6 +41,16 @@ describe('AuthService: cambio de contraseña obligatorio (E2-9)', () => {
   const summary = (mustChangePassword: boolean) =>
     ({ id: 7, nombre: 'Ana', apellido: 'Ríos', email: 'ana@cue.edu.co', role: 'ESTUDIANTE', mustChangePassword });
 
+  it('al cerrar sesi?n elimina todos los respaldos del editor', () => {
+    sessionStorage.setItem('autoria-respuestas:7:41:escena', 'privado');
+    sessionStorage.setItem('otra-clave', 'conservar');
+    vi.spyOn(service, 'redirectToLogin').mockImplementation(() => {});
+    service.logout();
+    expect(sessionStorage.getItem('autoria-respuestas:7:41:escena')).toBeNull();
+    expect(sessionStorage.getItem('otra-clave')).toBe('conservar');
+    sessionStorage.removeItem('otra-clave');
+  });
+
   it('el acceso conserva `mustChangePassword` de la respuesta', async () => {
     const done = firstValueFrom(service.login('ana@cue.edu.co', 'Temporal-123'));
     http.expectOne('/api/auth/login').flush({ success: true, message: null, data: { token: token(), user: summary(true) } });

@@ -488,7 +488,7 @@ export class AuthoringApi {
       `${this.API}/${caseVersionId}/validate`, {})
       .pipe(map((response): CaseValidation => {
         const issues = response.data.problems.map((p): ValidationIssue => {
-          const nodo = /^nodes\/(\d+)$/.exec(p.where);
+          const nodo = /^nodes\/(\d+)(?:\/|$)/.exec(p.where);
           return { code: p.code, severity: 'error', message: p.message, path: p.where, ...(nodo ? { nodeId: Number(nodo[1]) } : {}) };
         });
         return { issues, canPublish: response.data.valid };

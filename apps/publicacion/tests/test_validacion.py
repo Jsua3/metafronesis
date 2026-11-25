@@ -153,3 +153,17 @@ def test_nodo_no_alcanzable_con_una_opcion_bloquea(caso):
     DecisionOption.objects.create(case_version=caso['version'], source_node=nodo, target_node=caso['fin'],
                                   option_key='aislada', text='Opción', response_class='ACCEPTABLE', feedback_text='Justificación')
     assert {'NODE_NO_QUESTION', 'NODE_FEW_OPTIONS', 'NODE_NO_RECOMMENDED'} <= codigos(caso)
+
+
+def test_relleno_identifica_narracion_y_cada_linea(caso):
+    from apps.publicacion.arbol import arbol_de
+    from apps.simulation.models.world import SceneMap, DialogueTree, DialogueLine
+    nodo = caso['inicio']
+    nodo.narrative = 'Lorem ipsum'
+    nodo.save(update_fields=['narrative'])
+    mapa = SceneMap.objects.create(case_version=caso['version'], node=nodo, map_key='inicio', title='Inicio')
+    arbol = DialogueTree.objects.create(scene_map=mapa, tree_key='guion-inicio', speaker_name='A')
+    for orden in (1, 2):
+        DialogueLine.objects.create(dialogue_tree=arbol, display_order=orden, speaker_name='A', text='Lorem ipsum')
+    rutas = {p.where for p in arbol_de(caso['version']).problemas() if p.code == 'CONTENT_PLACEHOLDER'}
+    assert {f'nodes/{nodo.pk}/narrative', f'nodes/{nodo.pk}/dialogue/1', f'nodes/{nodo.pk}/dialogue/2'} <= rutas

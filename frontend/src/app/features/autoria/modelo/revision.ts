@@ -314,7 +314,19 @@ export function faltasDelServidor(
       case 'scene-without-recommended':
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'respuestas-escena' } : {}) }));
         break;
-      case 'CONTENT_PLACEHOLDER':
+      case 'CONTENT_PLACEHOLDER': {
+        const match = h.path?.match(/^nodes\/\d+\/(narrative|dialogue\/(\d+))$/);
+        const localId = h.nodeId !== undefined ? String(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : '';
+        const lineas = caso.escenas.find(e => e.id === localId)?.lineas ?? [];
+        const linea = match?.[2] ? lineas.find(l => l.id.endsWith(`:${match[2]}`)) : undefined;
+        if (escena && match && (match[1] === 'narrative' || linea)) {
+          faltas.push(falta({ ruta: escena, ancla: linea ? `linea-${linea.id}` : 'narracion-escena' }));
+          break;
+        }
+        const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;
+        faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: respuesta ? `respuesta-${respuesta}` : 'respuestas-escena' } : {}) }));
+        break;
+      }
       case 'OPTION_NO_JUSTIFICATION':
       case 'contraindicated-without-reason': {
         const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;

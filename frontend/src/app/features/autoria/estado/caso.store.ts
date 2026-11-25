@@ -3,6 +3,7 @@ import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { revisionConflictOf } from '../../../core/api/revision-conflict.util';
 import type { CaseLifecycle, RubricAdoptRequest, ValidationIssue } from '../../../core/models/simulation.model';
 import { AutoriaApiService } from '../api/autoria-api.service';
@@ -32,7 +33,7 @@ import { Historial } from './historial';
 import * as persistir from './persistir';
 import { casoLeidoDelServidor, firmaDelCaso } from './releer';
 import { SesionServidor } from './sesion-servidor';
-import { escribirBorradores, leerBorradores } from './borradores-respuesta';
+import { type Borrador, escribirBorradores, leerBorradores } from './borradores-respuesta';
 
 export type TipoElemento = 'mueble' | 'objeto' | 'personaje';
 
@@ -166,22 +167,49 @@ export class CasoStore {
   readonly respuestasRecuperadas = signal<ReadonlySet<string>>(new Set());
   readonly respaldoLocalDisponible = signal(true);
 
+  readonly borradoresPendientes = signal<Borrador[]>([]);
+  private usuario(): number | null {
+    try { return this.injector.get(AuthService).currentUser()?.id ?? null; } catch { return null; }
+  }
+
   private respaldarRespuestas(caso: CasoBorrador): void {
-    if (!this.sesion) return;
-    const anteriores = leerBorradores(caso.id);
+    const usuario = this.usuario();
+    if (!this.sesion || usuario === null) return;
+    const anteriores = leerBorradores(usuario, caso.id);
     for (const escena of caso.escenas) for (const respuesta of escena.respuestas) {
-      if (respuesta.destinoId) continue;
+      if (respuesta.destinoId || this.borradoresPendientes().some(b => b.escenaId === escena.id && b.respuesta.id === respuesta.id)) continue;
       const indice = anteriores.findIndex(b => b.escenaId === escena.id && b.respuesta.id === respuesta.id);
-      const borrador = { escenaId: escena.id, respuesta: structuredClone(respuesta) };
+      const borrador = { escenaId: escena.id, respuesta: structuredClone(respuesta), revision: this.sesion.revision, guardado: Date.now() };
       if (indice < 0) anteriores.push(borrador); else anteriores[indice] = borrador;
     }
-    this.respaldoLocalDisponible.set(escribirBorradores(caso.id, anteriores));
+    this.respaldoLocalDisponible.set(escribirBorradores(usuario, caso.id, anteriores));
   }
 
   private limpiarBorrador(caso: CasoBorrador, escenaId: string, respuestaId: string): void {
-    const anteriores = leerBorradores(caso.id);
-    this.respaldoLocalDisponible.set(escribirBorradores(caso.id, anteriores.filter(b => b.escenaId !== escenaId || b.respuesta.id !== respuestaId)));
+    const usuario = this.usuario();
+    if (usuario !== null) {
+      const anteriores = leerBorradores(usuario, caso.id);
+      this.respaldoLocalDisponible.set(escribirBorradores(usuario, caso.id, anteriores.filter(b => b.escenaId !== escenaId || b.respuesta.id !== respuestaId)));
+    }
     this.respuestasRecuperadas.update(ids => { const nuevos = new Set(ids); nuevos.delete(respuestaId); return nuevos; });
+  }
+
+  existeEscena(id: string): boolean { return this.estado()?.escenas.some(e => e.id === id) ?? false; }
+
+  descartarBorrador(borrador: Borrador): void {
+    const caso = this.estado();
+    if (!caso || this.soloLectura()) return;
+    this.limpiarBorrador(caso, borrador.escenaId, borrador.respuesta.id);
+    this.borradoresPendientes.update(lista => lista.filter(b => b !== borrador));
+  }
+
+  recuperarBorrador(borrador: Borrador, escenaId: string): void {
+    const caso = this.estado();
+    if (!caso || this.soloLectura() || !caso.escenas.some(e => e.id === escenaId)) return;
+    const respuesta = { ...structuredClone(borrador.respuesta), id: nuevoId('respuesta'), destinoId: null };
+    this.descartarBorrador(borrador);
+    this.ejecutar({ nombre: 'la respuesta recuperada', aplicar: c => { c.escenas.find(e => e.id === escenaId)?.respuestas.push(respuesta); } });
+    this.respuestasRecuperadas.update(ids => new Set([...ids, respuesta.id]));
   }
   private readonly injector = inject(Injector);
   /**
@@ -441,18 +469,20 @@ export class CasoStore {
 
   private empezarCon(caso: CasoBorrador | null, sesion: SesionServidor | null): void {
     const recuperadas = new Set<string>();
-    if (caso && sesion) {
+    const pendientes: Borrador[] = [];
+    const usuario = this.usuario();
+    if (caso && sesion && usuario !== null && (caso.estado === undefined || caso.estado === 'DRAFT')) {
       caso = structuredClone(caso);
-      for (const borrador of leerBorradores(caso.id)) {
+      for (const borrador of leerBorradores(usuario, caso.id)) {
         const escena = caso.escenas.find(e => e.id === borrador.escenaId);
-        if (!escena) continue;
-        const indice = escena.respuestas.findIndex(r => r.id === borrador.respuesta.id);
-        if (indice >= 0 && escena.respuestas[indice].destinoId) continue;
-        if (indice < 0) escena.respuestas.push(borrador.respuesta);
-        else escena.respuestas[indice] = borrador.respuesta;
-        recuperadas.add(borrador.respuesta.id);
+        const indice = escena?.respuestas.findIndex(r => r.id === borrador.respuesta.id) ?? -1;
+        if (escena && indice >= 0 && !escena.respuestas[indice].destinoId && borrador.revision === sesion.revision) {
+          escena.respuestas[indice] = borrador.respuesta;
+          recuperadas.add(borrador.respuesta.id);
+        } else pendientes.push(borrador);
       }
     }
+    this.borradoresPendientes.set(pendientes);
     this.respuestasRecuperadas.set(recuperadas);
     this.avisoEnsayo.set(null);
     this.hallazgosRevision.set([]);

@@ -186,12 +186,14 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       api.validateCase(9).subscribe(v => (validacion = v));
       http.expectOne('/api/authoring/cases/9/validate').flush({ data: { valid: false, problems: [
         { code: 'NODE_NO_QUESTION', where: 'nodes/12', message: 'La escena necesita una pregunta.' },
+        { code: 'CONTENT_PLACEHOLDER', where: 'nodes/12/dialogue/2', message: 'Relleno' },
         { code: 'CASE_NO_START', where: 'case', message: 'El caso necesita una escena inicial.' },
       ] } });
       expect(validacion).toEqual({
         canPublish: false,
         issues: [
           { code: 'NODE_NO_QUESTION', severity: 'error', message: 'La escena necesita una pregunta.', path: 'nodes/12', nodeId: 12 },
+          { code: 'CONTENT_PLACEHOLDER', severity: 'error', message: 'Relleno', path: 'nodes/12/dialogue/2', nodeId: 12 },
           { code: 'CASE_NO_START', severity: 'error', message: 'El caso necesita una escena inicial.', path: 'case' },
         ],
       });
