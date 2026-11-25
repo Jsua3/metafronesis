@@ -23,7 +23,7 @@ def datos(settings):
     caso = SimpleNamespace(title="Caso de prueba", created_by=docente)
     version = SimpleNamespace(simulation_case=caso)
     sesion = SimpleNamespace(case_version=version, mensaje="Mensaje de prueba", creada_por=docente,
-                             espacio_academico="Psicología", lugar="Aula 1", inicio=datetime(2026, 5, 4, 8, 0))
+                             lugar="Aula 1", inicio=datetime(2026, 5, 4, 8, 0))
     convocatoria = SimpleNamespace(estudiante=estudiante)
     intento = SimpleNamespace(student=estudiante, case_version=version)
     return SimpleNamespace(**locals())

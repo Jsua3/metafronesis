@@ -20,7 +20,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-35", "SIEP-37", "SIEP
 def datos(grupo, version):
     ahora = timezone.now()
     return {
-        "grupoId": grupo.pk, "caseVersionId": version.pk, "espacioAcademico": "Psicología clínica",
+        "grupoId": grupo.pk, "caseVersionId": version.pk,
         "inicio": ahora - timedelta(minutes=5), "fin": ahora + timedelta(minutes=55), "tiempoMaximoMin": 30,
         "lugar": "Aula 3", "mensaje": "Traigan audífonos",
     }

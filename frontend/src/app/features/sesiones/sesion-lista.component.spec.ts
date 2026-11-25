@@ -8,7 +8,7 @@ import { SesionListaComponent } from './sesion-lista.component';
 
 const fila: SesionResumen = {
   id: 4, estado: 'EN_CURSO', acciones: ['pausar', 'finalizar', 'gestionarConvocados'], grupo: { id: 2, nombre: 'Psicología 1' },
-  caso: { caseVersionId: 9, titulo: 'La casa de Sofía' }, espacioAcademico: 'Clínica', inicio: '2026-11-25T08:00:00',
+  caso: { caseVersionId: 9, titulo: 'La casa de Sofía' }, inicio: '2026-11-25T08:00:00',
   fin: '2026-11-25T10:00:00', tiempoMaximoMin: 30, lugar: '', mensaje: '', totalConvocados: 12,
   iniciadaEn: '2026-11-25T08:01:00', finalizadaEn: null, canceladaEn: null,
 };
