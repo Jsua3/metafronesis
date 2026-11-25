@@ -129,7 +129,7 @@ def sesion_reporte(datos):
 
     ahora = timezone.now()
     sesion = Sesion.objects.create(
-        case_version=datos['version'], espacio_academico='Curso',
+        case_version=datos['version'],
         inicio=ahora - timedelta(hours=1), fin=ahora + timedelta(hours=1),
         tiempo_maximo_min=30, creada_por=datos['docente'],
     )

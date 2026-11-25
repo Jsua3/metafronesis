@@ -46,9 +46,6 @@ type Campo = keyof SesionDatos;
             }
           </select>
         </ui-field>
-        <ui-field label="Espacio académico" required [error]="errores().espacioAcademico">
-          <input uiControl name="espacioAcademico" maxlength="255" [value]="espacioAcademico()" (input)="espacioAcademico.set(leer($event))" />
-        </ui-field>
         <div class="sd-par">
           <ui-field label="Inicio" required [error]="errores().inicio">
             <input uiControl type="datetime-local" name="inicio" [value]="inicio()" (input)="inicio.set(leer($event))" />
@@ -106,7 +103,6 @@ export class SesionDialogComponent {
 
   protected readonly grupoId = signal(this.actual?.grupo ? String(this.actual.grupo.id) : '');
   protected readonly caseVersionId = signal(this.actual ? String(this.actual.caso.caseVersionId) : '');
-  protected readonly espacioAcademico = signal(this.actual?.espacioAcademico ?? '');
   protected readonly inicio = signal(fromWindowIso(this.actual?.inicio));
   protected readonly fin = signal(fromWindowIso(this.actual?.fin));
   protected readonly tiempoMaximoMin = signal(this.actual ? String(this.actual.tiempoMaximoMin) : '');
@@ -132,7 +128,6 @@ export class SesionDialogComponent {
     const errores: Partial<Record<Campo, string>> = {};
     if (!this.grupoId()) errores.grupoId = 'Elige un grupo.';
     if (!this.caseVersionId()) errores.caseVersionId = 'Elige un caso.';
-    if (!this.espacioAcademico().trim()) errores.espacioAcademico = 'Escribe el espacio académico.';
     if (!this.inicio()) errores.inicio = 'Escribe la fecha y la hora de inicio.';
     if (!this.fin()) errores.fin = 'Escribe la fecha y la hora de fin.';
     else if (this.inicio() && this.fin() <= this.inicio()) errores.fin = 'El fin debe ser posterior al inicio.';
@@ -155,7 +150,7 @@ export class SesionDialogComponent {
     if (Object.keys(errores).length) return this.mostrar(errores);
     const datos: SesionDatos = {
       grupoId: Number(this.grupoId()), caseVersionId: Number(this.caseVersionId()),
-      espacioAcademico: this.espacioAcademico().trim(), inicio: toWindowIso(this.inicio())!, fin: toWindowIso(this.fin())!,
+      inicio: toWindowIso(this.inicio())!, fin: toWindowIso(this.fin())!,
       tiempoMaximoMin: Number(this.tiempoMaximoMin()), lugar: this.lugar().trim(), mensaje: this.mensaje().trim(),
     };
     this.guardando.set(true);
@@ -167,7 +162,7 @@ export class SesionDialogComponent {
         const cuerpo = err instanceof HttpErrorResponse ? (err.error as { field?: string } | null) : null;
         // BORRADOR: texto pendiente de Psicología (VD-23).
         const texto = apiErrorMessage(err, 'No pudimos guardar la sesión.');
-        if (texto) this.mostrar({ [(cuerpo?.field as Campo) ?? 'espacioAcademico']: texto });
+        if (texto) this.mostrar({ [(cuerpo?.field as Campo) ?? 'grupoId']: texto });
       },
     });
   }

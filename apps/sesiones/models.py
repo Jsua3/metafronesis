@@ -23,7 +23,6 @@ class Sesion(models.Model):
     case_version = models.ForeignKey("simulation.CaseVersion", on_delete=models.PROTECT)
     # ``null`` solo por las sesiones anteriores a los grupos; la API lo exige.
     grupo = models.ForeignKey("grupos.Grupo", on_delete=models.PROTECT, null=True, blank=True, related_name="sesiones")
-    espacio_academico = models.CharField(max_length=255)
     inicio = models.DateTimeField()
     fin = models.DateTimeField()
     tiempo_maximo_min = models.PositiveIntegerField()

@@ -67,7 +67,7 @@ DATA_INVENTORY: dict[str, dict] = {
         "default": None,
         "columns": {
             "id": TECHNICAL, "case_version_id": TECHNICAL,
-            "espacio_academico": PUBLIC, "inicio": TECHNICAL, "fin": TECHNICAL,
+            "inicio": TECHNICAL, "fin": TECHNICAL,
             "tiempo_maximo_min": TECHNICAL, "lugar": PUBLIC,
             "mensaje": (PERSONAL, "texto libre del docente que puede nombrar personas"),
             "estado": TECHNICAL, "creada_por_id": (PERSONAL, "docente que programó la sesión"),

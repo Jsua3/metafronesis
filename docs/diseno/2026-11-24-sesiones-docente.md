@@ -14,6 +14,7 @@ Se extiende la app existente `apps/sesiones` (SIEP-35, SIEP-37, SIEP-42): se con
 |---|---|
 | Base | Extender `apps/sesiones`, no crear otra app. |
 | Estados | 5: `PROGRAMADA`, `EN_CURSO`, `PAUSADA`, `FINALIZADA`, `CANCELADA`. |
+| Espacio académico | Las sesiones no tienen espacio académico (decisión del producto): ni campo, ni validación, ni línea en la convocatoria. |
 | Grupo | Foto del grupo al crear: se convoca a los miembros `ACTIVE`; luego «Sincronizar con el grupo» suma a los nuevos. |
 | Ingreso del estudiante | Con su cuenta normal; el caso aparece en «Casos» solo mientras la sesión está en curso. No se emiten códigos. |
 | Casos | Todos los publicados, activos y validados, de cualquier autor. |
@@ -85,14 +86,16 @@ Todos los errores de ingreso son HTTP 409. Los textos son borrador pendiente de 
 
 Migraciones: `0003` con los campos y la restricción, y una operación de datos que cambia `SIN_INICIAR` por `PROGRAMADA` (con reversa).
 
+`0004_quitar_espacio_academico` elimina la columna `espacio_academico`.
+
 ### Rutas
 
 Permiso de todas: `policy_permission("assignment", "manage")` (PROFESOR sobre lo propio). Todas se registran en `apps/sesiones/superficie.py` (auditoría por ruta), en los límites del proyecto si aplica, en `docs/api.md` y en el inventario `shared/surface-inventory.json` (regenerado).
 
 | Método y ruta | Cuerpo / respuesta | Auditoría |
 |---|---|---|
-| `GET /api/sesiones?estado=` | Lista propia: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn`. `estado` admite varios valores separados por coma. | EXENTO (lectura propia) |
-| `POST /api/sesiones` | `{grupoId, caseVersionId, espacioAcademico, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` → la sesión con su detalle. | `SESION_CREADA` |
+| `GET /api/sesiones?estado=` | Lista propia: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn`. `estado` admite varios valores separados por coma. | EXENTO (lectura propia) |
+| `POST /api/sesiones` | `{grupoId, caseVersionId, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` → la sesión con su detalle. | `SESION_CREADA` |
 | `GET /api/sesiones/<id>` | Lo de la lista + `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento: SIN_EMPEZAR|JUGANDO|EN_PAUSA|TERMINADO|INCOMPLETO, puedeRepetir}]`. | EXENTO (lectura propia) |
 | `PATCH /api/sesiones/<id>` | Los mismos campos de crear, todos opcionales. Solo si `puede_editar()`. Si cambia `grupoId`, se rehace la lista de convocados con los miembros activos del grupo nuevo. | `SESION_EDITADA` |
 | `POST /api/sesiones/<id>/iniciar` · `pausar` · `reanudar` · `finalizar` · `cancelar` | Sin cuerpo → la sesión. 409 `INVALID_TRANSITION` si el estado no lo permite. | `SESION_INICIADA`, `SESION_PAUSADA`, `SESION_REANUDADA`, `SESION_FINALIZADA`, `SESION_CANCELADA` |
@@ -119,7 +122,7 @@ Se **elimina** `POST /api/sesiones/<id>/convocados` (convocar por correos), reem
 
 ### Notificaciones (`apps/notificaciones/receptores.py`)
 
-- Convocado: «Convocatoria a una sesión» con caso, espacio académico, fecha y hora, lugar, mensaje del docente y enlace a `SIEP_PUBLIC_URL`. **Sin código.**
+- Convocado: «Convocatoria a una sesión» con caso, fecha y hora, lugar, mensaje del docente y enlace a `SIEP_PUBLIC_URL`. **Sin código.**
 - Retirado: se mantiene el aviso actual.
 - Sesión cancelada: «Sesión cancelada» a los convocados activos (nuevo evento `sesion_cancelada` en `shared/eventos.py`).
 - Las señales `convocatoria_emitida` y `convocados_cambiaron` dejan de llevar `codigos`.
@@ -176,11 +179,11 @@ Para cada intento abierto en juego (`IN_PROGRESS`) de los convocados, de esa ver
 
 ### Lista
 
-Filtro segmentado: Próximas (`PROGRAMADA`), En curso (`EN_CURSO,PAUSADA`), Terminadas (`FINALIZADA,CANCELADA`), Todas. Filas con título del caso y espacio académico, grupo, fecha y hora, distintivo de estado y número de convocados. Botón «Nueva sesión». Estado vacío ilustrado que invita a crear la primera. Se usan los componentes de `shared/ui` (tabla, segmentado, badge, vacío ilustrado, page-header).
+Filtro segmentado: Próximas (`PROGRAMADA`), En curso (`EN_CURSO,PAUSADA`), Terminadas (`FINALIZADA,CANCELADA`), Todas. Filas con título del caso, grupo, fecha y hora, distintivo de estado y número de convocados. Botón «Nueva sesión». Estado vacío ilustrado que invita a crear la primera. Se usan los componentes de `shared/ui` (tabla, segmentado, badge, vacío ilustrado, page-header).
 
 ### Diálogo crear y editar
 
-Grupo (grupos activos con su número de miembros activos), caso (selector sobre `GET /api/sesiones/casos` con título, versión y autor; el tope del tiempo máximo sale de su tiempo estimado), espacio académico, fecha, hora de inicio y de fin, tiempo máximo (tope = tiempo estimado del caso elegido), lugar y mensaje. Los errores del servidor se muestran en su campo. «Editar» solo aparece si `acciones` incluye `editar`.
+Grupo (grupos activos con su número de miembros activos), caso (selector sobre `GET /api/sesiones/casos` con título, versión y autor; el tope del tiempo máximo sale de su tiempo estimado), fecha, hora de inicio y de fin, tiempo máximo (tope = tiempo estimado del caso elegido), lugar y mensaje. Los errores del servidor se muestran en su campo. «Editar» solo aparece si `acciones` incluye `editar`.
 
 ### Detalle
 
