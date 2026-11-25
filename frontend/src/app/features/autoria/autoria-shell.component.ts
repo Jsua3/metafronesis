@@ -83,7 +83,6 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
         @if (store.caso(); as caso) {
           <p class="caso-actual" [attr.title]="caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
           <app-hilo-del-caso />
-          @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" [titulo]="caso.titulo" [compacto]="true" /> }
         } @else {
           <span class="contexto-editor">Editor de casos</span>
         }
@@ -95,6 +94,10 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
             <!-- La pasarela (pedido del usuario, 2026-11-22): todo lo que se puede agregar al caso, desde cualquier pantalla.
                  «Escena nueva» la crea después de la actual y abre su guion; lo demás lleva a su control con el foco puesto. -->
             <ui-menu class="menu-agregar" label="Agregar" icon="add" align="start" [items]="opcionesAgregar()" (itemSelected)="agregar($event)" />
+          }
+          <!-- «Asignar» es una acción, no parte del «dónde estoy»: va con las herramientas, antes de «Probar» (SIEP-259). -->
+          @if (store.caso(); as caso) {
+            @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" [titulo]="caso.titulo" [compacto]="true" /> }
           }
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
