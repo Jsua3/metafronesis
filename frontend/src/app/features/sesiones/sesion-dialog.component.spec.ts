@@ -63,6 +63,27 @@ describe('SesionDialogComponent', () => {
     expect(input('[name=caseVersionId]').textContent).toContain('La casa de Sofía');
   });
 
+  it('al crear propone la próxima hora en punto y una hora de duración, y el fin sigue al inicio', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 26, 9, 20));
+    try {
+      await montar({ modo: 'crear' });
+      expect(input('[name=inicio]').value).toBe('2026-11-26T10:00');
+      expect(input('[name=fin]').value).toBe('2026-11-26T11:00');
+      expect(el().textContent).toContain('Ejemplo:');
+      // Mover el inicio arrastra el fin propuesto; un fin escrito a mano ya no se toca.
+      escribir('[name=inicio]', '2026-11-27T14:00');
+      fixture.detectChanges();
+      expect(input('[name=fin]').value).toBe('2026-11-27T15:00');
+      escribir('[name=fin]', '2026-11-27T16:30');
+      escribir('[name=inicio]', '2026-11-27T13:00');
+      fixture.detectChanges();
+      expect(input('[name=fin]').value).toBe('2026-11-27T16:30');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('valida antes de enviar', async () => {
     await montar({ modo: 'crear' });
     el().querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
