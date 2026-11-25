@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../../core/a11y/reduced-motion';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, afterNextRender, booleanAttribute, inject,
   input,
@@ -390,7 +391,7 @@ export class DoodlesComponent {
       if (!defs || !capaLuz) return;
 
       const fino = matchMedia('(hover: hover) and (pointer: fine)');
-      const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+      const quieto = reducedMotionQuery()!;
       // Con colores forzados el CSS oculta los doodles: sin esta guarda el JS seguiría escuchando el ratón, cargando el
       // mosaico y creando figuras que nadie ve.
       const forzado = matchMedia('(forced-colors: active)');

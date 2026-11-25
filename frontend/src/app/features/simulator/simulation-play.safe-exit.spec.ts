@@ -15,7 +15,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { EMPTY, Subject, of } from 'rxjs';
+import { EMPTY, Subject, of, throwError } from 'rxjs';
 
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -351,6 +351,16 @@ describe('SimulationPlayComponent: salida segura (correcciones de la revisión)'
       expect(sim['safeExit']).not.toHaveBeenCalled();
       sync.next({ attemptId: 'attempt-1', status: 'IN_PROGRESS', map: { key: 'hospital-urgencias' }, player: { x: 120, y: 340 } });
       expect(sim['safeExit']).toHaveBeenCalledTimes(1);
+    });
+
+    it('si el servidor rechaza la posición, registra la pausa e informa de la posición no guardada', () => {
+      sim['updateWorldState'].mockReturnValue(throwError(() => new Error('rechazada')));
+      sim['safeExit'].mockReturnValue(of(paused()));
+      (component as unknown as { lastPosition: { x: number; y: number } }).lastPosition = { x: 120, y: 340 };
+      component.world.set({ map: { key: 'hospital-urgencias' }, objects: [], tools: [], inventory: [], flags: {} } as never);
+      component.pauseFromOverlay();
+      expect(sim['safeExit']).toHaveBeenCalledTimes(1);
+      expect(component.pausePositionNote()).toContain('No se guardó tu última posición');
     });
 
     it('la respuesta de una decisión que llega con la pausa puesta no saca a la persona de ella (adopta el estado, sigue PAUSED)', () => {

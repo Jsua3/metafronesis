@@ -25,7 +25,7 @@ import type { Mock } from 'vitest';
 interface FakeNode {
   x: number; y: number; scene: object; visible: boolean; alpha: number; scale: number;
   setScale: Mock; setAlpha: Mock; setVisible: Mock; setPosition: Mock;
-  setStrokeStyle: Mock; setDepth: Mock;
+  setStrokeStyle: Mock; setDepth: Mock; setOrigin: Mock; setText: Mock;
   [extra: string]: unknown;
 }
 
@@ -38,6 +38,8 @@ function node(x = 0, y = 0): FakeNode {
     setPosition: vi.fn((nx: number, ny: number) => { self.x = nx; self.y = ny; return self; }),
     setStrokeStyle: vi.fn(() => self),
     setDepth: vi.fn(() => self),
+    setOrigin: vi.fn(() => self),
+    setText: vi.fn((t: string) => { self['text'] = t; return self; }),
   };
   return self;
 }
@@ -124,7 +126,7 @@ function crearEscena(objects: MapObjectState[], artManifest: BibliotecaManifest 
     }
   }
   const loaded = new Set<string>();
-  scene.add = { ellipse: vi.fn(() => node()), sprite: vi.fn(() => fakeSprite()), image: vi.fn(() => ({ texture: { key: 'x' }, width: 32, height: 32 })) };
+  scene.add = { ellipse: vi.fn(() => node()), text: vi.fn(() => node()), sprite: vi.fn(() => fakeSprite()), image: vi.fn(() => ({ texture: { key: 'x' }, width: 32, height: 32 })) };
   scene.anims = {
     exists: vi.fn(() => false),
     create: vi.fn(),

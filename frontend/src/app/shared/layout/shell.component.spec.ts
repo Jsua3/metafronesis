@@ -88,7 +88,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
   it('el docente pliega Rúbricas; Inicio, Revisión y Grupos quedan a la vista (DISENO §3.2)', async () => {
     currentUser.set(user('PROFESOR'));
     await fixture.whenStable();
-    expect(labels()).toEqual(['Inicio', 'Revisión', 'Casos', 'Grupos', 'Reportes', 'Rúbricas']);
+    expect(labels()).toEqual(['Inicio', 'Revisión', 'Casos', 'Sesiones', 'Grupos', 'Reportes', 'Rúbricas']);
     expect(folded()).toEqual(['Reportes', 'Rúbricas']);
   });
 

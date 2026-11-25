@@ -147,6 +147,19 @@ export const routes: Routes = [
         loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
       },
       {
+        path: 'sesiones',
+        title: 'Sesiones',
+        canActivate: [roleGuard(...rolesFor('sesiones'))],
+        loadComponent: () => import('./features/sesiones/sesiones-page.component').then(m => m.SesionesPageComponent)
+      },
+      {
+        // El detalle tiene ruta propia (atrás funciona); el mismo componente lee `sesionId`.
+        path: 'sesiones/:sesionId',
+        title: 'Sesión',
+        canActivate: [roleGuard(...rolesFor('sesiones'))],
+        loadComponent: () => import('./features/sesiones/sesiones-page.component').then(m => m.SesionesPageComponent)
+      },
+      {
         path: 'casos',
         title: 'Casos',
         canActivate: [roleGuard(...rolesFor('casos'))],

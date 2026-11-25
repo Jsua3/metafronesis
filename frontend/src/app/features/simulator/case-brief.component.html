@@ -187,11 +187,11 @@
   @if (intentoAbierto()) {
     <button ui-button type="button" variant="primary" [size]="amplio() ? 'lg' : 'md'" icon="play_arrow" class="ficha__boton"
       [loading]="entrando() === 'continuar'" [disabledReason]="entrando() && entrando() !== 'continuar' ? 'Entrando al caso' : null"
-      (click)="continuar()">Continuar donde quedaste</button>
+      (click)="continuar()">Continuar donde quedaste @if (entrando() === 'continuar') { <span aria-hidden="true">· Preparando el caso…</span> }</button>
   } @else {
     <button ui-button type="button" variant="primary" [size]="amplio() ? 'lg' : 'md'" icon="play_arrow" class="ficha__boton"
       [loading]="entrando() === 'comenzar'" [disabledReason]="startBlockedReason()"
-      (click)="comenzar()">Comenzar</button>
+      (click)="comenzar()">Comenzar @if (entrando() === 'comenzar') { <span aria-hidden="true">· Preparando el caso…</span> }</button>
   }
 </ng-template>
 

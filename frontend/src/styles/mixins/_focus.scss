@@ -1,8 +1,15 @@
 // Anillo de foco del lenguaje visual (plan visual §2.3 y F1-5): 3 px del color de foco de la piel, separado
 // 2 px por un halo del color de la superficie, sin radio propio (el contorno sigue la forma del control: un
 // radio fijo de 2 px recortaba las píldoras). Bajo forced-colors el token de foco ya vale Highlight.
+//
+// Doble contorno (P10): el halo también RODEA el anillo (2 px por fuera). Sobre vidrio, un fondo que cambia con lo que
+// hay detrás o una superficie del color del foco, el anillo solo podía confundirse con el fondo por uno de sus lados; con
+// el halo a los dos, siempre hay un borde que contrasta (WCAG 2.4.11 y 1.4.11). El segundo sombreado (7 px) queda
+// debajo del contorno, que se pinta encima: solo asoman sus últimos 2 px.
 @mixin ds-focus-ring {
   outline: 3px solid var(--ds-focus);
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--ds-focus-halo);
+  box-shadow:
+    0 0 0 2px var(--ds-focus-halo),
+    0 0 0 7px var(--ds-focus-halo);
 }

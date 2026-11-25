@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../core/a11y/reduced-motion';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, afterNextRender, effect, inject, input,
   viewChild,
@@ -88,7 +89,7 @@ export class RielLetrasComponent {
       if (typeof matchMedia !== 'function' || typeof requestAnimationFrame !== 'function') return;
       const riel = this.rielRef().nativeElement;
       const enComputador = matchMedia('(min-width: 1100px)');
-      const reducir = matchMedia('(prefers-reduced-motion: reduce)');
+      const reducir = reducedMotionQuery()!;
       const ajustar = () => {
         if (enComputador.matches && !this.vivo) this.vivo = this.crear(riel, reducir);
         else if (!enComputador.matches && this.vivo) { this.vivo.quitar(); this.vivo = null; }

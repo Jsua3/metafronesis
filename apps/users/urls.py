@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .demo_config import DemoConfigView
 from .views import (
     AccessRequestCreateView,
     ChangePasswordView,
@@ -15,6 +16,7 @@ from .views import (
 
 urlpatterns = [
     path("login", LoginView.as_view()),
+    path("demo/config", DemoConfigView.as_view()),
     path("code-login", CodeLoginView.as_view()),
     path("google", GoogleLoginView.as_view()),
     path("google/config", GoogleConfigView.as_view()),

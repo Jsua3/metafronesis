@@ -28,6 +28,6 @@ describe('lobby: kit, píxeles físicos y zoom entero (spec §8.2-8.3)', () => {
 
   it('los rótulos fijos viven en el DOM (el zoom de cámara no los saca de la vista)', () => {
     expect(source).not.toMatch(/setScrollFactor\(0\)/);
-    expect(source).toContain('<div class="lobby-sign" aria-hidden="true">CLÍNICA · SIEP</div>');
+    expect(source).toContain('<div class="lobby-sign" aria-hidden="true">CLÍNICA · {{ brand.shortName }}</div>');
   });
 });

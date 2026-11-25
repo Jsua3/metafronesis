@@ -344,6 +344,17 @@ variables ya no existen: vuelve a definirlas como en el paso 3, con `$PROYECTO` 
 (`gcloud projects list`), y recupera `$NUM`, `$CONN`, `$SA_RUN`, `$HOST_APP`, `$SECRETOS` y `$VARS` con sus mismos
 comandos (y `Set-Variables` con los dos hosts).
 
+### Tareas programadas de las sesiones
+
+Dos comandos de Django deben correr periódicamente (Cloud Scheduler que dispare un Cloud Run job con la misma imagen y las mismas variables del servicio):
+
+| Comando | Frecuencia sugerida | Para qué |
+|---|---|---|
+| `python manage.py recordar_sesiones` | cada 5 minutos | Correo de recordatorio 30 minutos antes de una sesión (`SIEP_SESION_RECORDATORIO_MIN`) |
+| `python manage.py cerrar_sesiones_vencidas` | cada hora | Finaliza las sesiones vencidas y cierra sus intentos |
+
+Ambos aceptan `--dry-run` para solo contar. Sin `recordar_sesiones` no sale ningún recordatorio.
+
 ## 13. Problemas comunes
 
 | Síntoma | Causa probable | Qué hacer |

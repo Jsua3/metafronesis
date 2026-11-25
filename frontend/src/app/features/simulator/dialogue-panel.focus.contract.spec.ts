@@ -10,9 +10,8 @@ import { join } from 'node:path';
 const source = readFileSync(join(__dirname, 'dialogue-panel.component.ts'), 'utf-8');
 
 describe('dialogue-panel: foco inicial', () => {
-  it('marca como foco inicial cada botón de avance y el grupo de opciones', () => {
-    const marked = source.match(/class="close-btn" ui-button variant="primary" cdkFocusInitial/g) ?? [];
-    expect(marked).toHaveLength(3);
+  it('marca el botón estable o el grupo de opciones como foco inicial', () => {
+    expect(source).toContain('[attr.cdkFocusInitial]="choicesVisible() ? null : \'\'"');
     expect(source).toMatch(/class="choices"[^>]*cdkFocusInitial/);
   });
 

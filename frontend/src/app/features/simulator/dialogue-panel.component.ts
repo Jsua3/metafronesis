@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { AfterRenderRef, AfterViewChecked, Component, DestroyRef, ElementRef, HostListener, Injector, OnDestroy, afterNextRender, computed, effect, inject, input, output, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
+import { InstantTextSettings } from '../../core/a11y/instant-text-settings.service';
 import { ShortcutSettings } from '../../core/a11y/shortcut-settings.service';
-import { DialogueChoiceState, DialogueState, MapObjectState, Persona } from '../../core/models/simulation.model';
+import { DialogueChoiceState, DialogueState, MapObjectState, Persona, SimulationWorldState } from '../../core/models/simulation.model';
 import { KitService } from '../character/kit/kit.service';
 import type { CharacterVisual } from '../character/kit/character-visual.resolver';
 import type { PortraitState } from '../character/kit/kit-engine';
@@ -36,8 +37,6 @@ const CHOICE_ACTIVATION_GUARD_MS = 500;
 const medirVentana = () => typeof window === 'undefined'
   ? { ancho: 1366, alto: 768 }
   : { ancho: window.innerWidth, alto: window.innerHeight };
-/** Texto de la línea informativa de una conversación que pertenece a otra etapa. */
-const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
 
 @Component({
   selector: 'app-dialogue-panel',
@@ -112,7 +111,9 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                 }
               </div>
 
-              <div class="placa-habla">
+              <!-- Clic sobre el texto: muestra la línea entera si aún se escribe y, si ya está completa, avanza (como Enter y
+                   Espacio). Quien usa teclado ya tiene esas teclas; este clic es para ratón y toque, y no sustituye a los botones. -->
+              <div class="placa-habla" (click)="onTextClick($event)">
                 @if (estadoPersona(d); as e) {
                   <!-- El pulso nace de nuevo con cada estado y late unos 4 s (U1: nada se mueve sin fin). -->
                   <p class="persona-state">@for (activacion of [e.activation]; track activacion) {<i class="pulso" [attr.data-activation]="activacion" aria-hidden="true"></i>}{{ e.texto }}</p>
@@ -127,32 +128,18 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                   <p class="stale-note" role="note">{{ note }}</p>
                 }
 
+                <!-- BORRADOR: texto pendiente de Psicología. -->
+                <button type="button" class="instant-setting" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
                 <div class="placa-pie">
                   @if (paginas().length > 1) {
                     <!-- Parlamento en páginas (V5): cuántas van y cuántas son, a la izquierda y antes de todo botón (al lado
                          de «Saltar» quedaba tapado; V6). El lector tiene el texto entero arriba. -->
                     <span class="placa-pagina" aria-hidden="true">{{ cuentaDePaginas() }}</span>
                   }
-                  @if (!isTypingComplete()) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="skipTypewriter()"
-                      aria-label="Saltar animación de texto">
-                      Saltar <span aria-hidden="true">▶</span>
-                    </button>
-                  }
-                  @if (isTypingComplete() && !esFinal()) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="advanceLine()"
-                      aria-label="Mostrar siguiente intervención">
-                      Siguiente <span aria-hidden="true">▶</span>
-                    </button>
-                  }
-                  @if (isTypingComplete() && esFinal() && !hasChoices(d)) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="close.emit()">
-                      Continuar <span aria-hidden="true">▶</span>
-                    </button>
-                  }
+                  <button type="button" class="close-btn" ui-button variant="primary" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
+                    (click)="continuarDialogo()">
+                    Continuar <span aria-hidden="true">▶</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -181,7 +168,8 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                     [class.choice-btn--chosen]="chosenKey() === choice.key"
                     [class.choice-btn--unavailable]="choice.toolMissing"
                     [style.--stagger]="i"
-                    [attr.aria-label]="letra(i) + '. ' + (etiqueta ? etiqueta + ': ' : '') + choice.text + (choice.toolMissing ? '. ' + toolMissingHint : '')"
+                    [attr.aria-label]="letra(i) + '. ' + (etiqueta ? etiqueta + ': ' : '') + choice.text"
+                    [attr.aria-describedby]="choice.toolMissing ? 'choice-hint-' + i : null"
                     [attr.aria-disabled]="choice.toolMissing ? 'true' : null"
                     (focus)="onChoiceFocus($event)"
                     (click)="onChoiceClick($event, choice)">
@@ -192,7 +180,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                       }
                       <span class="choice-btn__label">{{ choice.text }}</span>
                       @if (choice.toolMissing) {
-                        {{ ' ' }}<span class="choice-btn__hint" [id]="'choice-hint-' + i">{{ toolMissingHint }}</span>
+                        {{ ' ' }}<span class="choice-btn__hint" aria-hidden="true" [id]="'choice-hint-' + i">{{ missingHint(choice) }}</span>
                       }
                     </span>
                     <i class="choice-btn__cursor" aria-hidden="true"></i>
@@ -336,11 +324,6 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       /* El cursor de la ficha enfocada asoma a la izquierda y la ficha pulsada baja un punto: caben sin recortarse. */
       padding-top: var(--px);
       padding-bottom: calc(2 * var(--px));
-    }
-    /* Con poco alto (1366 x 768, teléfono), la pista de teclado le cede su renglón a las fichas: la letra va en cada ficha
-       y «Esc» en «Volver al mapa». */
-    @media (max-height: 900px), (max-width: 560px) {
-      .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body > .keyboard-hint:last-child { display: none; }
     }
     /* Si la lista se acota, bajo ella se dice qué fichas quedan abajo (el panel pone data-mas al acotarla). */
     .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body[data-mas]::after {
@@ -544,7 +527,10 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
     }
     .pulso[data-activation="CALM"] { background-image: var(--pulso-CALM); animation-duration: 2s; animation-iteration-count: 2; }
     .pulso[data-activation="CRISIS"] { background-image: var(--pulso-CRISIS); animation-duration: .5s; animation-iteration-count: 8; }
+    .instant-setting { font: inherit; font-size: .82em; color: #ffdfab; background: #302942; border: 1px solid #cbb38d; border-radius: 4px; padding: 6px 10px; cursor: pointer; }
+    .instant-setting:focus-visible { outline: 3px solid #ffdfab; outline-offset: 2px; }
     .dialogue-text {
+      line-height: 1.6;
       margin: 0;
       min-height: 4.35em;
       white-space: pre-line;
@@ -782,7 +768,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       line-height: 1.45;
     }
     /* La pista de teclado solo existe donde hay teclado y puntero fino. */
-    .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: .78em; color: #c3bccf; }
+    .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: max(14px, .9em); color: #f2ecdf; }
     @media (hover: hover) and (pointer: fine) {
       .keyboard-hint { display: block; }
     }
@@ -875,6 +861,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   readonly mode        = input<'cinematic' | 'side'>('cinematic');
   /** El aviso breve de la pantalla (VD-29) mientras el cuadro está sobre el mundo: el cuadro le da su sitio. */
   readonly avisoBreve  = input<string>('');
+  readonly nextStep = input<string | null>(null);
   /** Movimiento reducido del juego (interruptor del HUD o preferencia del sistema): la línea aparece completa, sin máquina de escribir. */
   readonly reduceMotion = input(false);
   /**
@@ -887,8 +874,23 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
    * previa del editor no tiene intento— no hay pistas.
    */
   readonly hintAttempt = input<HintAttemptRef | null>(null);
-  /** Aviso de una opción de herramienta sin la herramienta: se ve y forma parte de su nombre accesible (WCAG 2.5.3). */
-  protected readonly toolMissingHint = 'Aún no tienes esta herramienta. Recógela en la sala.';
+  readonly world = input<SimulationWorldState | null>(null);
+  // BORRADOR: texto pendiente de Psicología. Solo se nombra una ubicación confirmada por el mundo.
+  protected missingHint(choice: DialogueChoiceState): string {
+    const world = this.world();
+    const code = choice.requiredToolCode;
+    const object = world?.objects?.find(item => item.type === 'TOOL' && item.toolCode === code);
+    const label = world?.tools?.find(tool => tool.code === code)?.label || object?.label || code;
+    const room = object ? world?.map?.title : null;
+    if (label && room) return `Necesitas ${label}. La encuentras en ${room}.`;
+    if (label) return `Necesitas ${label}. Busca esta herramienta al explorar las salas.`;
+    return 'Necesitas una herramienta. Búscala al explorar las salas.';
+  }
+  protected toggleInstant(event: Event): void {
+    event.stopPropagation();
+    this.instantText.toggle();
+    if (this.instantText.enabled() && !this.isTypingComplete()) this.skipTypewriter(false);
+  }
   readonly releaseToken = input(0);
   /** Línea con la que arranca la conversación reabierta tras recargar (R1): solo vale para la conversación de esa clave. */
   readonly startAt = input<{ key: string; line: number } | null>(null);
@@ -918,6 +920,8 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   /** Vocabulario educativo en borrador (VD-24): el chip de la cabecera sale del registro de borradores. */
   protected readonly decisionLabel = DRAFT_COPY.decisionLabel.text;
   private readonly shortcuts = inject(ShortcutSettings);
+  /** «Texto instantáneo» (ajustes del juego, P8): sin máquina de escribir, además de con «reducir movimiento». */
+  private readonly instantText = inject(InstantTextSettings);
   /** Pausa reanudable pedida desde el panel (REGLA-004): el anfitrión llama a la salida segura real. */
   readonly safeExit = output<void>();
   readonly execute = output<number>();
@@ -972,6 +976,12 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   private readonly failedPortrait = signal<string | null>(null);
 
   private typewriterHandle: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * La persona ya saltó la animación de ESTA línea (Saltar, Enter, Espacio o clic): el resto de sus páginas aparece de
+   * golpe. Sin esto, el reparto en páginas (que llega un cuadro después de abrir la línea) volvía a empezar la máquina de
+   * escribir sobre un texto ya mostrado y «Saltar» parecía no responder.
+   */
+  private saltada = false;
   private confirmHandle: ReturnType<typeof setTimeout> | null = null;
   /** Instante en que aparecieron las opciones: base de la guarda contra la decisión accidental. */
   private choicesShownAt = 0;
@@ -1157,10 +1167,10 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     return d.notice || d.choices.find(choice => choice.evidenceWarning)?.evidenceWarning || null;
   }
 
-  /** Línea informativa de «otro momento»; no se repite si la conversación ya la trae como línea. */
+  /** BORRADOR: texto pendiente de Psicología. No presume que ya se habló con la persona. */
   staleNote(d: DialogueState): string | null {
     if (!d.stale) return null;
-    return d.lines.some(line => line.text.includes(STALE_NOTE)) ? null : STALE_NOTE;
+    return `${DRAFT_COPY.noStepNow.text}${this.nextStep() ? ` Ahora te toca: ${this.nextStep()}.` : ''}`;
   }
 
   /** Etiqueta de la ficha de herramienta, solo cuando conviven herramientas y decisiones (sin reordenar). Las decisiones
@@ -1444,13 +1454,33 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.startTypewriter(d.lines[nextIndex]?.text ?? '');
   }
 
+  continuarDialogo(): void {
+    if (!this.isTypingComplete()) this.skipTypewriter();
+    else if (!this.esFinal()) this.advanceLine();
+    else if (!this.hasChoices(this.dialogue()!)) this.close.emit();
+    else this.requestDialogueFocus();
+  }
+
+  /**
+   * Clic o toque sobre el texto de la línea: muestra todo al instante si aún se escribe y, si ya está completo, pasa a la
+   * página o línea siguiente. No hace nada sobre botones ni enlaces (tienen su propia acción), mientras se selecciona texto
+   * para copiarlo, ni en la última página (cerrar o elegir se hace con su botón o su tecla, no por un clic de más).
+   */
+  protected onTextClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement | null)?.closest?.('button, a, app-scene-hint')) return;
+    if (typeof window.getSelection === 'function' && window.getSelection()?.toString()) return;
+    if (!this.isTypingComplete()) this.skipTypewriter();
+    else if (!this.esFinal()) this.advanceLine();
+  }
+
   /** Skip typewriter animation — shows the active intervention immediately. */
-  skipTypewriter(): void {
+  skipTypewriter(moveFocus = true): void {
     if (this.isTypingComplete()) return;
+    this.saltada = true;
     this.stopTypewriter();
     this.displayedText.set(this.textoPagina());
     this.isTypingComplete.set(true);
-    this.requestDialogueFocus();
+    if (moveFocus) this.requestDialogueFocus();
   }
 
   fullText(): string {
@@ -1459,6 +1489,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /** Empieza una línea: una sola página con todo el texto y, ya maquetada, se parte si no cabe en la placa (V5). */
   private startTypewriter(text: string) {
+    this.saltada = false;
     this.paginas.set([text]);
     this.pagina.set(0);
     this.escribir(text);
@@ -1501,21 +1532,21 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       const placa = parrafo.closest<HTMLElement>('.placa-cuerpo');
       const desborde = () => Math.max(banda.scrollHeight - banda.clientHeight, placa ? placa.scrollHeight - placa.clientHeight : 0);
       const sobra = desborde();
-      if (sobra <= 1) return;
+
       // Solo cuenta lo que desborda POR el texto: con el párrafo plegado, lo que siga desbordando (el retrato, la fila, una
       // banda que aún entra) no es suyo y no se le resta (V6, CI de living-world.e2e.ts:101).
       const estilo = parrafo.style.cssText;
       parrafo.style.cssText += ';height:0;min-height:0;overflow:hidden';
       const culpa = sobra - desborde();
       parrafo.style.cssText = estilo;
-      if (culpa <= 1) return;
+
       const renglon = parseFloat(getComputedStyle(parrafo).lineHeight) || 24;
       // La sonda mide solo el texto, sin el alto mínimo que reserva el párrafo (4,35em): con ese mínimo ninguna página
       // «cabía» en el tope y cada frase salía sola en su página. Cuánto cabe y cómo se llena cada página, en paginarSiNoCabe.
       const sonda = parrafo.cloneNode(false) as HTMLElement;
       sonda.style.cssText = `position:absolute;visibility:hidden;left:0;top:0;min-height:0;width:${parrafo.clientWidth}px`;
       parrafo.parentElement!.appendChild(sonda);
-      const paginas = paginarSiNoCabe(text, parrafo.offsetHeight - culpa, renglon, pagina => {
+      const paginas = paginarSiNoCabe(text, Math.min(parrafo.offsetHeight - culpa, 6 * renglon), renglon, pagina => {
         sonda.textContent = pagina;
         return sonda.offsetHeight;
       });
@@ -1532,7 +1563,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   private escribir(text: string) {
     this.settled = false;
     // `untracked`: el efecto del constructor llama aquí y no debe reiniciar el diálogo cuando cambia el interruptor.
-    if (untracked(() => this.reduceMotion())) {
+    if (this.saltada || untracked(() => this.reduceMotion() || this.instantText.enabled())) {
       this.displayedText.set(text);
       this.isTypingComplete.set(true);
       this.requestDialogueFocus();
@@ -1541,7 +1572,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.displayedText.set('');
     this.isTypingComplete.set(false);
     this.requestDialogueFocus();
-    // Ritmo de la línea (caso/ritmo-texto): 30 caracteres por segundo y una pausa breve en la puntuación.
+    // Ritmo de la línea (caso/ritmo-texto): 50 caracteres por segundo y una pausa breve en la puntuación.
     let pos = 0;
     const paso = () => {
       pos++;

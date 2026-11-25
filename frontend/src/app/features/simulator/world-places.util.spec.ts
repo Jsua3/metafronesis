@@ -1,4 +1,4 @@
-import { PlaceCandidate, selectPlaces } from './world-places.util';
+import { PlaceCandidate, selectPlaces, selectPlacesWithNext } from './world-places.util';
 
 /**
  * Qué ofrece «Ir a…» (plan visual F6-11; VD-19, borrador de Psicología): las personas y las puertas de la sala y los
@@ -48,5 +48,32 @@ describe('world-places: orden y limpieza', () => {
 
   it('el rótulo se entrega sin espacios sobrantes', () => {
     expect(selectPlaces([person('p1', '  Familia en crisis  ')], new Set())[0].label).toBe('Familia en crisis');
+  });
+});
+
+describe('world-places: el siguiente paso va primero (P9)', () => {
+  const candidatos = [person('npc:enfermera', 'Enfermera'), person('npc:vigilante', 'Vigilante'), door('puerta-sala', 'Sala de escucha'), object('carpeta', 'Carpeta')];
+
+  it('la persona del siguiente paso pasa al frente y lleva la marca; el resto conserva su orden', () => {
+    const places = selectPlacesWithNext(candidatos, new Set(), 'npc:vigilante');
+    expect(places.map(p => p.key)).toEqual(['npc:vigilante', 'npc:enfermera', 'puerta-sala']);
+    expect(places[0].siguiente).toBe(true);
+    expect(places.slice(1).some(p => p.siguiente)).toBe(false);
+  });
+
+  it('sin siguiente paso, o con uno que ya no está en la sala, la lista es la de siempre', () => {
+    expect(selectPlacesWithNext(candidatos, new Set(), null)).toEqual(selectPlaces(candidatos, new Set()));
+    expect(selectPlacesWithNext(candidatos, new Set(), 'npc:nadie')).toEqual(selectPlaces(candidatos, new Set()));
+  });
+
+  it('una herramienta del siguiente paso entra aunque no esté examinada (la ficha ya la nombra); otro objeto por descubrir, no', () => {
+    const lista = [...candidatos, object('tool-pap', 'Kit PAP')];
+    const places = selectPlacesWithNext(lista, new Set(), 'tool-pap');
+    expect(places[0]).toMatchObject({ key: 'tool-pap', label: 'Kit PAP', siguiente: true });
+    expect(places.map(p => p.key)).not.toContain('carpeta');
+  });
+
+  it('una puerta del siguiente paso también va primera', () => {
+    expect(selectPlacesWithNext(candidatos, new Set(), 'puerta-sala').map(p => p.key)).toEqual(['puerta-sala', 'npc:enfermera', 'npc:vigilante']);
   });
 });

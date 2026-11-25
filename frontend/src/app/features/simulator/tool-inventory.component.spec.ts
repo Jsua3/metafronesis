@@ -390,7 +390,8 @@ describe('ToolInventoryComponent: dock de herramientas (T7.3)', () => {
         expect(item.classList).toContain('u-ranura');
         expect(item.classList).toContain('u-sombra');
       }
-      expect(styles).not.toMatch(/@media \(max-height: 520px\)/);
+      expect(styles).toMatch(/@media \(max-height: 520px\)/);
+      expect(styles).toMatch(/width: 44px; height: 44px; min-height: 44px/);
       expect(styles).toMatch(/\.tool-name \{ display: none; \}/);
       expect(card('PAP').getAttribute('title')).toContain('Primeros Auxilios Psicológicos');
     });

@@ -10,7 +10,7 @@ from apps.simulation.services import case_rules
 from apps.simulation.services.audit_service import auditable
 from apps.users.permisos import exigir_autoria
 from shared.jsonutils import read_map, read_string_list
-from . import guardas
+from . import autoria, guardas
 
 ITEMS = (
     ("contentOriginal", "Contenido original — sin copiar personajes, mapas ni narrativa comercial.", "author"),
@@ -67,6 +67,7 @@ def vista(version):
     checklist, porcentaje = lista(version, nodos)
     return {
         "caseVersionId": version.pk, "revision": version.version, "title": version.simulation_case.title,
+        "autor": autoria.persona(version.simulation_case.created_by), "editadoPor": autoria.editores(version.simulation_case),
         "semanticVersion": version.semantic_version, "status": version.status, "context": version.narrative_context or "",
         "estimatedMinutes": version.estimated_minutes, "learningObjectives": read_string_list(version.learning_objectives), "contentWarnings": read_string_list(version.content_warnings), "rehearsedToEnd": False,
         "rules": {"milestones": [{"key": hito.key, "label": hito.label, "description": hito.description, "decisive": hito.decisive} for hito in reglas.milestones], "riskLevel": reglas.risk_level.value if reglas.risk_level else None, "endings": list(reglas.endings)},
