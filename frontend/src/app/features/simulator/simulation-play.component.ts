@@ -550,13 +550,15 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <button type="button" class="context-bar__interaction u-ficha u-sombra"
                 [class.context-bar__interaction--exit]="action.obj.type === 'EXIT'"
                 [class.context-bar__interaction--locked]="action.verb.locked"
-                (click)="requestInteraction(action.obj)" [attr.aria-label]="action.ariaLabel" [attr.title]="action.title">
+                (click)="requestInteraction(action.obj)" [attr.title]="action.title">
+                <!-- Sin aria-label: el nombre sale del contenido y empieza por lo que se lee en pantalla (WCAG 2.5.3); «Interactuar:»
+                     y «bloqueada:» van solo para lectores, así se oye lo mismo que anuncia la región viva (action.ariaLabel). -->
                 @if (!compactMode()) { <kbd class="u-tecla u-tecla--letra" aria-hidden="true">{{ shortcuts.enabled() ? 'E' : 'Enter' }}</kbd> }
                 @if (action.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                 <span class="context-bar__copy">
-                  <strong>{{ action.verb.text }}</strong>
+                  <span class="ds-sr-only">Interactuar: </span><strong>{{ action.verb.text }}</strong>
                   @if (action.verb.locked && action.verb.reason) {
-                    <span class="context-bar__reason">{{ action.verb.reason }}</span>
+                    <span class="ds-sr-only">, bloqueada: </span><span class="context-bar__reason">{{ action.verb.reason }}</span>
                   }
                 </span>
               </button>
