@@ -684,6 +684,78 @@
       "audit": "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED"
     },
     {
+      "route": "api/authoring/coauthor",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STARTED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_CANCELLED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de la conversación propia con la IA"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/accept",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_ACCEPTED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/answer",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/question",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/skip",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/summary",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/summary",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
       "route": "api/authoring/generations",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",

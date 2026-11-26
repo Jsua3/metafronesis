@@ -1,5 +1,6 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, output, signal, untracked, viewChild,
+  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, output, signal, untracked,
+  viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -7,6 +8,8 @@ import { filter, map } from 'rxjs';
 
 import { CasoStore } from '../estado/caso.store';
 import { type ContextoIa, IaService, MENSAJE_APAGADO, MENSAJE_SIN_CUPO } from './ia.service';
+import { ConversacionCoautoraComponent } from './coautora/conversacion-coautora.component';
+import { type ModoPosicion, PosicionDelPanel } from './posicion-del-panel';
 import { type Cambio, MENSAJE_PROPUESTA_INVALIDA, dependencias, describirCambio } from './propuestas';
 
 interface Turno {
@@ -31,20 +34,48 @@ export function contextoDeRuta(url: string): ContextoIa {
 }
 
 /**
- * Asistente de IA (tablero 29): el docente pide, la IA propone por partes y el docente marca
- * qué entra al caso. Nada se aplica sin «Aplicar lo marcado». Si el asistente está apagado o ya no tiene cupo, el panel lo dice
- * y el resto del editor sigue igual.
+ * Asistente de IA (tablero 29). Dos formas de trabajar (SIEP-269):
+ * - «Construir juntos»: la IA coautora aclara la idea con preguntas y acuerda una ficha (`ConversacionCoautoraComponent`).
+ * - «Pedir un cambio»: el docente pide, la IA propone por partes y el docente marca qué entra al caso. Nada se aplica sin
+ *   «Aplicar lo marcado».
+ * Si el asistente está apagado o ya no tiene cupo, el panel lo dice y el resto del editor sigue igual. En escritorio el panel
+ * se acopla a la izquierda, a la derecha o flota (`PosicionDelPanel`).
  */
 @Component({
   selector: 'app-panel-ia',
+  imports: [ConversacionCoautoraComponent],
+  host: { '[style]': 'posicion.estilos()', '[class.arrastrando]': 'posicion.arrastrando()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <aside aria-labelledby="iat" class="panel">
-      <div class="cabeza">
+    <aside aria-labelledby="iat" class="panel" [attr.data-posicion]="posicion.modo()">
+      <div class="cabeza" [class.arrastrable]="posicion.movible()" (pointerdown)="posicion.empezarArrastre($event)">
         <h2 id="iat" tabindex="-1">Asistente de IA</h2>
-        <button type="button" class="boton cuadrado" aria-label="Cerrar el asistente" (click)="cerrar.emit()">✕</button>
+        <div class="controles">
+          @if (posicion.movible()) {
+            <div class="mover">
+              <button type="button" class="boton cuadrado" aria-label="Mover el asistente" aria-haspopup="menu"
+                      [attr.aria-expanded]="menuPosicion()" (click)="menuPosicion.set(!menuPosicion())">⇔</button>
+              @if (menuPosicion()) {
+                <div class="menu" role="menu" aria-label="Dónde poner el asistente" (keydown.escape)="menuPosicion.set(false)">
+                  @for (o of opcionesDePosicion; track o.modo) {
+                    <button type="button" role="menuitemradio" class="menu-opcion" [attr.aria-checked]="posicion.modo() === o.modo"
+                            (click)="ponerEn(o.modo)">{{ o.nombre }}</button>
+                  }
+                </div>
+              }
+            </div>
+          }
+          <button type="button" class="boton cuadrado" aria-label="Cerrar el asistente" (click)="cerrar.emit()">✕</button>
+        </div>
       </div>
-      <p class="aviso-ia"><strong>La IA propone; tú decides.</strong> Las escenas, líneas, respuestas y finales que agregue quedan marcados hasta que los revises. Colocar y mover cosas en una sala se aplica sin marca.</p>
+      <div class="pestanas" role="tablist" aria-label="Cómo trabajar con la IA">
+        <button type="button" role="tab" id="tab-construir" aria-controls="tabpanel-ia" class="pestana"
+                [attr.aria-selected]="pestana() === 'construir'" [attr.tabindex]="pestana() === 'construir' ? 0 : -1"
+                (click)="pestana.set('construir')" (keydown.arrowright)="pestana.set('pedir')" (keydown.arrowleft)="pestana.set('pedir')">Construir juntos</button>
+        <button type="button" role="tab" id="tab-pedir" aria-controls="tabpanel-ia" class="pestana"
+                [attr.aria-selected]="pestana() === 'pedir'" [attr.tabindex]="pestana() === 'pedir' ? 0 : -1"
+                (click)="pestana.set('pedir')" (keydown.arrowright)="pestana.set('construir')" (keydown.arrowleft)="pestana.set('construir')">Pedir un cambio</button>
+      </div>
 
       @switch (ia.estado()) {
         @case ('apagado') {
@@ -69,6 +100,17 @@ export function contextoDeRuta(url: string): ContextoIa {
           }
         }
       }
+
+      <div id="tabpanel-ia" role="tabpanel" class="contenido" [attr.aria-labelledby]="pestana() === 'construir' ? 'tab-construir' : 'tab-pedir'">
+      @if (pestana() === 'construir') {
+        <p class="aviso-ia"><strong>Construyan el caso juntos.</strong> Cuéntale tu idea: la IA te hará unas preguntas y te mostrará lo que acordaron antes de tocar el caso.</p>
+        @for (cv of casoParaConversar(); track cv) {
+          <app-conversacion-coautora [destino]="{ caseVersionId: cv }" />
+        } @empty {
+          <p class="estado">Guarda el caso para conversar con la IA sobre él.</p>
+        }
+      } @else {
+      <p class="aviso-ia"><strong>La IA propone; tú decides.</strong> Las escenas, líneas, respuestas y finales que agregue quedan marcados hasta que los revises. Colocar y mover cosas en una sala se aplica sin marca.</p>
 
       <div role="log" aria-label="Conversación con el asistente" aria-live="polite" class="conversacion">
         @for (t of turnos(); track $index) {
@@ -111,12 +153,63 @@ export function contextoDeRuta(url: string): ContextoIa {
         <button type="submit" class="boton boton-secundario" [attr.aria-disabled]="pensando() || !borrador().trim() || !disponible()">Enviar</button>
         <p class="texto-secundario nota">Solo se envía el contenido del caso, que es ficticio, y tu petición. Nunca datos de estudiantes.</p>
       </form>
+      }
+      </div>
     </aside>
   `,
   styles: `
+    /* Resortes (los mismos de resortes.ts): los heredan la conversación y sus tarjetas. */
+    :host {
+      --resorte-vivo: linear(0, 0.0181, 0.0958, 0.2108, 0.3444, 0.4825, 0.6145, 0.7336, 0.8356, 0.9187, 0.9829, 1.0296, 1.0607, 1.0787, 1.0862, 1.0859, 1.0799, 1.0704, 1.0591, 1.0471, 1.0355, 1.03, 1.0202, 1.0118, 1.0051, 1.0001, 0.9965, 0.9941, 0.9929, 0.9925, 0.9927, 0.9933, 0.9942, 0.9952, 0.9962, 0.9972, 0.9981, 0.9989, 0.9995, 0.9999, 1);
+      --resorte-firme: linear(0, 0.0278, 0.0747, 0.134, 0.2006, 0.2705, 0.3409, 0.4096, 0.4753, 0.5369, 0.5939, 0.6461, 0.6933, 0.7357, 0.7734, 0.8067, 0.8359, 0.8614, 0.8836, 0.9027, 0.919, 0.933, 0.9449, 0.955, 0.9634, 0.9705, 0.9764, 0.9813, 0.9853, 0.9886, 0.9912, 0.9934, 0.9951, 0.9965, 0.9976, 0.9984, 0.9991, 0.9996, 0.9999, 1);
+      transition: rotate 380ms var(--resorte-firme), scale 420ms var(--resorte-vivo), box-shadow 240ms ease;
+      transform-origin: 50% 0;
+    }
     :host(:not([hidden])) { display: block; }
+    /* Levantado mientras se arrastra: más sombra, y la inclinación y la escala que pone PosicionDelPanel. */
+    :host(.arrastrando) { box-shadow: 0 24px 60px rgb(0 0 0 / 0.45), 0 4px 12px rgb(0 0 0 / 0.25); }
+    /* Al abrirse (de oculto a visible) entra con un resorte: sube un poco, crece y aparece. */
+    .panel { animation: panel-entra 650ms var(--resorte-vivo) both; }
+    @keyframes panel-entra {
+      from { opacity: 0; translate: 0 14px; scale: 0.96; }
+      to { opacity: 1; translate: 0 0; scale: 1; }
+    }
+    .pestana { transition: background-color 200ms ease, color 200ms ease, scale 380ms var(--resorte-vivo); }
+    .pestana:active { scale: 0.96; }
+    .menu { animation: menu-entra 420ms var(--resorte-vivo) both; transform-origin: top right; }
+    @keyframes menu-entra { from { opacity: 0; scale: 0.9; translate: 0 -6px; } }
+    @media (prefers-reduced-motion: reduce) {
+      :host, .pestana { transition: none; }
+      .panel, .menu { animation: none; }
+    }
     .panel { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--superficie); border-left: 1px solid var(--linea); min-height: 100%; box-sizing: border-box; }
     .cabeza { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cabeza.arrastrable { cursor: grab; touch-action: none; user-select: none; }
+    .cabeza.arrastrable:active { cursor: grabbing; }
+    .controles { display: flex; gap: 6px; align-items: center; }
+    .mover { position: relative; }
+    .menu {
+      position: absolute; z-index: 2; inset-block-start: calc(100% + 4px); inset-inline-end: 0; display: flex; flex-direction: column;
+      min-inline-size: max-content; padding: 4px; border: 1px solid var(--linea); border-radius: var(--radio-control);
+      background: var(--superficie); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+    }
+    .menu-opcion {
+      padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit;
+      font-size: var(--autoria-texto-16); text-align: start; cursor: pointer; white-space: nowrap;
+    }
+    .menu-opcion:hover, .menu-opcion:focus-visible { background: color-mix(in srgb, var(--primario) 12%, var(--superficie)); }
+    .menu-opcion[aria-checked='true'] { font-weight: 700; }
+    .menu-opcion[aria-checked='true']::before { content: '✓ '; }
+    .pestanas {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radio-control);
+      background: color-mix(in srgb, var(--primario) 8%, var(--superficie)); border: 1px solid var(--linea);
+    }
+    .pestana {
+      padding: 8px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; font-weight: 700;
+      font-size: var(--autoria-texto-16); cursor: pointer;
+    }
+    .pestana[aria-selected='true'] { background: var(--superficie); box-shadow: 0 1px 3px rgb(0 0 0 / 0.25); color: var(--primario); }
+    .contenido { display: flex; flex-direction: column; gap: 12px; }
     h2 { margin: 0; font-size: var(--autoria-texto-22); line-height: 30px; }
     h3 { margin: 0 0 8px; font-size: var(--autoria-texto-18); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .cuadrado { width: 48px; padding: 0; }
@@ -141,6 +234,13 @@ export class PanelIaComponent {
   readonly cerrar = output<void>();
 
   protected readonly ia = inject(IaService);
+  protected readonly posicion = new PosicionDelPanel(inject(ElementRef<HTMLElement>).nativeElement, inject(DestroyRef));
+  protected readonly menuPosicion = signal(false);
+  protected readonly opcionesDePosicion: { modo: ModoPosicion; nombre: string }[] = [
+    { modo: 'izquierda', nombre: 'Acoplado a la izquierda' },
+    { modo: 'derecha', nombre: 'Acoplado a la derecha' },
+    { modo: 'flotante', nombre: 'Flotante (puedes arrastrarlo)' },
+  ];
   protected readonly mensajeApagado = MENSAJE_APAGADO;
   protected readonly mensajeSinCupo = MENSAJE_SIN_CUPO;
   private readonly store = inject(CasoStore);
@@ -163,6 +263,18 @@ export class PanelIaComponent {
     { initialValue: this.router.url },
   );
   protected readonly hayMarcadas = computed(() => this.propuesta()?.seleccion.some(Boolean) ?? false);
+  /** El caso guardado sobre el que se conversa (una lista de uno, para que la conversación se rehaga al cambiar de caso). */
+  private readonly casoGuardado = computed(() => {
+    const id = Number(this.store.caso()?.id);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  });
+  protected readonly casoParaConversar = computed(() => {
+    const id = this.casoGuardado();
+    return id === null ? [] : [id];
+  });
+  /** Abre en «Construir juntos» si hay un caso guardado sobre el que conversar; si no, en «Pedir un cambio». Se vuelve a
+   *  decidir solo al cambiar de caso: editar el caso no cambia la pestaña elegida. */
+  protected readonly pestana = linkedSignal<'construir' | 'pedir'>(() => (this.casoGuardado() !== null ? 'construir' : 'pedir'));
 
   constructor() {
     // Con otro caso, la conversación y la propuesta de antes ya no valen, y se vuelve a preguntar si hay asistente.
@@ -177,6 +289,11 @@ export class PanelIaComponent {
         if (id !== null) void this.ia.comprobar();
       });
     });
+  }
+
+  protected ponerEn(modo: ModoPosicion): void {
+    this.posicion.poner(modo);
+    this.menuPosicion.set(false);
   }
 
   protected descripcion(c: Cambio, todos: Cambio[]): string {
