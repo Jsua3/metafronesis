@@ -105,7 +105,7 @@ export const DRAFT_COPY = {
     where: 'Lista «Ir a…»: título y ayuda',
     title: 'Ir a…',
     // BORRADOR: texto pendiente de Psicología.
-    text: 'Elige una persona para caminar y hablar, o un lugar para caminar hasta allí.',
+    text: 'Elige una persona para hablar, una puerta para pasar o un objeto para acercarte.',
   },
   /** Cuando la sala no ofrece nada a lo que ir todavía (F6-11, VD-19): dice por qué en vez de quedar vacía. */
   placesEmpty: {

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, HostListener, Injector,
 
 import { DRAFT_COPY } from './draft-copy';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
-import { actionForPlace, PlaceCandidate } from './world-places.util';
+import { actionForPlace, PlaceCandidate, walkingText } from './world-places.util';
 
 /**
  * «Ir a…» (plan visual F6-11; VD-19, borrador de Psicología): la lista de personas y puertas de la sala y de lo ya
@@ -28,12 +28,14 @@ import { actionForPlace, PlaceCandidate } from './world-places.util';
         <ul class="places__list">
           @for (place of places(); track place.key) {
             <li>
-              <button type="button" class="places__item u-ficha" (click)="choose.emit(place)">
+              <button type="button" class="places__item u-ficha" [attr.aria-disabled]="doorMessages()[place.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[place.key] ? reasonId(place.key) : null" (click)="choose.emit(place)">
                 <!-- BORRADOR: texto pendiente de Psicología. -->
-                <span class="places__name">{{ walkingKey() === place.key ? 'Yendo hacia ' + place.label + '… Pulsa para cancelar' : actionForPlace(place.kind, place.label) }}</span>@if (place.siguiente) {
+                <span class="places__name">{{ walkingKey() === place.key ? walkingText(place.kind, place.label) + '… Pulsa para cancelar' : actionForPlace(place.kind, place.label) }}</span>@if (place.siguiente) {
                   {{ ' ' }}<span class="places__next" data-places-next>{{ nextLabel }}</span>
                 }@else {
                   {{ ' ' }}<span class="places__note">Opcional: puede servirte más adelante</span>
+                }@if (doorMessages()[place.key]; as reason) {
+                  <span class="places__note" [id]="reasonId(place.key)">{{ reason }}</span>
                 }@if (place.note) {
                   {{ ' ' }}<span class="places__note">{{ place.note }}</span>
                 }
@@ -133,9 +135,12 @@ import { actionForPlace, PlaceCandidate } from './world-places.util';
 })
 export class WorldPlacesListComponent {
   protected readonly actionForPlace = actionForPlace;
+  protected readonly walkingText = walkingText;
   /** Lo que se ofrece (ya filtrado por `selectPlaces`: personas, puertas y objetos examinados). */
   readonly places = input<readonly PlaceCandidate[]>([]);
   readonly walkingKey = input<string | null>(null);
+  readonly doorMessages = input<Record<string, string>>({});
+  protected reasonId(key: string): string { return `places-door-reason-${key}`; }
   /** Hay una salida segura pedida que espera: el botón «Salida segura» dice «Pausando…». */
   readonly pausing = input(false);
   readonly choose = output<PlaceCandidate>();

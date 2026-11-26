@@ -166,10 +166,11 @@ describe('plano: el siguiente paso (P9)', () => {
   });
 
   it('el texto dice el siguiente paso con el nombre de la persona o de la puerta, sin nombrar una sala sin visitar', () => {
+    expect(textoDelDestino({ tipo: 'puerta', etiqueta: 'Sala de escucha', sala: 'pasillo' })).toBe('Siguiente paso: Pasar a Sala de escucha.');
     expect(textoDelDestino({ tipo: 'persona', etiqueta: 'Vigilante', sala: 'pasillo' })).toBe('Siguiente paso: habla con Vigilante, en esta sala.');
     expect(textoDelDestino({ tipo: 'herramienta', etiqueta: 'Kit PAP', sala: 'pasillo' })).toBe('Siguiente paso: recoge la herramienta «Kit PAP», en esta sala.');
     const d = destinoDelPlano(hospital(), 'pasillo', puerta)!;
-    expect(textoDelDestino(d)).toBe('Siguiente paso: pasa por la puerta «Triaje».');
+    expect(textoDelDestino(d)).toBe('Siguiente paso: Pasar a Triaje.');
     // La lista del plano completo no da el nombre de una sala sin visitar (Triaje lo está), y tampoco con el siguiente paso.
     const lineas = textoDelPlano(hospital(), 'pasillo', NADA, d);
     const triaje = lineas[hospital().salas.findIndex(s => s.clave === 'triaje')];

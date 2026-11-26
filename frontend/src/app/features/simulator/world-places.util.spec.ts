@@ -1,4 +1,4 @@
-import { PlaceCandidate, selectPlaces, selectPlacesWithNext } from './world-places.util';
+import { actionForPlace, PlaceCandidate, selectPlaces, selectPlacesWithNext, walkingText } from './world-places.util';
 
 /**
  * Qué ofrece «Ir a…» (plan visual F6-11; VD-19, borrador de Psicología): las personas y las puertas de la sala y los
@@ -75,5 +75,19 @@ describe('world-places: el siguiente paso va primero (P9)', () => {
 
   it('una puerta del siguiente paso también va primera', () => {
     expect(selectPlacesWithNext(candidatos, new Set(), 'puerta-sala').map(p => p.key)).toEqual(['puerta-sala', 'npc:enfermera', 'npc:vigilante']);
+  });
+});
+
+describe('world-places: una puerta, una acción con el mismo nombre en todas partes (G14a)', () => {
+  it('la puerta se llama «Pasar a …» sin duplicar el verbo de la etiqueta', () => {
+    expect(actionForPlace('door', 'Sala de escucha familiar')).toBe('Pasar a Sala de escucha familiar');
+    expect(actionForPlace('door', 'Volver al pasillo')).toBe('Volver al pasillo');
+    expect(actionForPlace('person', 'Gloria')).toBe('Hablar con Gloria');
+  });
+
+  it('mientras camina dice a qué va, no «Yendo hacia Pasar a…»', () => {
+    expect(walkingText('door', 'Sala de escucha familiar')).toBe('Yendo hacia la puerta para pasar a Sala de escucha familiar');
+    expect(walkingText('door', 'Volver al pasillo')).toBe('Yendo hacia la puerta para volver al pasillo');
+    expect(walkingText('person', 'Gloria')).toBe('Yendo hacia Gloria');
   });
 });

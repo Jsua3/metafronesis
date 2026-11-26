@@ -127,7 +127,7 @@ describe('ficha del objetivo (T9.1)', () => {
 
   it('la ficha recibe la guía, el intento y el pliegue compacto (cardFolded), y refresca la sala al abrirse', () => {
     // V7: también el ajuste «Reducir movimiento» (sin pulso al cambiar el objetivo).
-    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
+    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[doorMessages\]="doorMessages\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
     expect(source).toContain('readonly cardFolded = computed(() => this.compactMode() || this.narrowScreen());');
   });
 
@@ -293,7 +293,7 @@ describe('«Ir a…» (F6-11, VD-19)', () => {
     expect(source).toMatch(/this\.showCaseIntro\(\) \|\| this\.dialogue\(\) !== null \|\| this\.journalOpen\(\) \|\| this\.planOpen\(\)/);
     const chain = source.slice(source.indexOf('if (this.placesOpen())  {'));
     expect(chain.indexOf('if (this.placesOpen())')).toBeLessThan(chain.indexOf('if (this.helpOpen())'));
-    expect(source).toMatch(/<app-world-places-list \[places\]="placeOptions\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[pausing\]="pausing\(\)"\s*\(choose\)="choosePlace\(\$event\)" \(closed\)="closePlaces\(\)" \(safeExit\)="pauseFromOverlay\(\)" \/>/);
+    expect(source).toMatch(/<app-world-places-list \[places\]="placeOptions\(\)" \[doorMessages\]="doorMessages\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[pausing\]="pausing\(\)"\s*\(choose\)="choosePlace\(\$event\)" \(closed\)="closePlaces\(\)" \(safeExit\)="pauseFromOverlay\(\)" \/>/);
   });
 
   it('solo se ofrecen personas, puertas y lo examinado (misma regla que el hover) y la llegada se anuncia', () => {

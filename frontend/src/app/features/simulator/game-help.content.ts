@@ -216,7 +216,8 @@ export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly C
       // BORRADOR: texto pendiente de Psicología.
       { id: 'moverte', keys: 'Toca', title: 'Moverte', text: 'Toca donde quieras ir; para hablar, pulsa el botón de la persona. También puedes usar la cruz.' },
       { id: 'interactuar', keys: 'Interactuar', title: 'Interactuar', text: 'Acércate a algo y toca «Interactuar»: el botón dice con qué vas a interactuar.' },
-      { id: 'ir-a', keys: 'Ir a…', title: 'Ir directo', text: 'Toca «Ir a…» arriba, elige una persona o una puerta y tu personaje camina solo hasta ahí.' },
+      // BORRADOR: texto pendiente de Psicología.
+      { id: 'ir-a', keys: 'Ir a…', title: 'Ir directo', text: 'Toca «Ir a…» arriba, elige una persona o una puerta y tu personaje camina y habla con ella o cruza la puerta.' },
       { id: 'plano', keys: 'Mapa', title: 'Plano', text: 'Toca el mapa pequeño de arriba para ver el plano del lugar.' },
     ];
   }
@@ -233,8 +234,9 @@ export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly C
     {
       id: 'ir-a', keys: letters ? PLACES_SHORTCUT_KEY : 'Ir a…', title: 'Ir directo',
       text: letters
-        ? 'Con «Ir a…» (botón de arriba o tecla I) eliges una persona o una puerta y tu personaje camina solo hasta ahí.'
-        : 'Con el botón «Ir a…» de arriba eliges una persona o una puerta y tu personaje camina solo hasta ahí.',
+        // BORRADOR: texto pendiente de Psicología.
+        ? 'Con «Ir a…» (botón de arriba o tecla I) eliges una persona o una puerta y tu personaje camina y habla con ella o cruza la puerta.'
+        : 'Con el botón «Ir a…» de arriba eliges una persona o una puerta y tu personaje camina y habla con ella o cruza la puerta.',
     },
     {
       id: 'plano', keys: letters ? 'M' : 'Mapa', title: 'Plano',

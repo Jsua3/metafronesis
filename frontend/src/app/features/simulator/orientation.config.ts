@@ -57,7 +57,8 @@ export const ORIENTATION_COPY = {
      * Recién cruzada una puerta no se vuelve a cruzar hasta alejarse de ella (para que un evento residual no rebote a la
      * sala anterior). El aviso dice cuánto falta y hacia dónde; desaparece solo cuando ya se cumple.
      */
-    awayFromDoorGeneric: 'Aléjate un poco de la puerta para poder volver a cruzarla.',
+    // BORRADOR: texto pendiente de Psicología.
+    awayFromDoorGeneric: 'Da unos pasos lejos de la puerta para poder volver a cruzarla.',
     rearmed: 'Ya puedes cruzar la puerta.',
     awayFromDoor: (pasos: number, hacia: string): string =>
       `Aléjate de la puerta para poder volver a cruzarla: da ${pasos === 1 ? 'un paso más' : `${pasos} pasos más`} ${hacia}.`,

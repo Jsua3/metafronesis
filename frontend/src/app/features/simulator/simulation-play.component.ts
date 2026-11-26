@@ -65,7 +65,7 @@ import { SafeExitButtonComponent } from './safe-exit-button.component';
 import { WorldPlacesListComponent } from './world-places-list.component';
 import { MinimapaComponent, PlanoCompletoComponent } from './plano/minimapa.component';
 import { destinoDelPlano, normalizarLayout } from './plano/plano';
-import { PlaceCandidate, selectPlacesWithNext } from './world-places.util';
+import { PlaceCandidate, selectPlacesWithNext, walkingText } from './world-places.util';
 import { keyPersonAccessibleName, resolveKeyPerson } from './key-person.util';
 import { SimulationHudComponent } from './simulation-hud.component';
 import { ToolInventoryComponent } from './tool-inventory.component';
@@ -476,7 +476,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                   <p class="objective-card__etapa u-rotulo"><span class="u-rotulo__texto">{{ etapa }}</span></p>
                 }
                 <div class="objective-card__scroll">
-                  <app-scene-goal-card [guia]="guide()" [walkingKey]="pendingWalkInteraction()?.key ?? null" [hintAttempt]="hintAttempt()" [compact]="cardFolded()" [reduceMotion]="reduceMotion()"
+                  <app-scene-goal-card [guia]="guide()" [doorMessages]="doorMessages()" [walkingKey]="pendingWalkInteraction()?.key ?? null" [hintAttempt]="hintAttempt()" [compact]="cardFolded()" [reduceMotion]="reduceMotion()"
                     (opened)="refreshGuide()" (goToStep)="goToStep($event)" (consentRequired)="requireConsentAgain()" />
                 </div>
               </div>
@@ -583,7 +583,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <button type="button" class="context-bar__interaction u-ficha u-sombra"
                 [class.context-bar__interaction--exit]="action.obj.type === 'EXIT'"
                 [class.context-bar__interaction--locked]="action.verb.locked"
-                [attr.data-mundo-foco]="action.obj.key"
+                [attr.data-mundo-foco]="action.obj.key" [attr.aria-disabled]="action.verb.locked ? 'true' : null" [attr.aria-describedby]="action.verb.locked && action.verb.reason ? 'context-door-reason' : null"
                 (click)="requestInteraction(action.obj)" [attr.title]="action.title">
                 <!-- Sin aria-label: el nombre sale del contenido y empieza por lo que se lee en pantalla (WCAG 2.5.3); «Interactuar:»
                      y «bloqueada:» van solo para lectores, así se oye lo mismo que anuncia la región viva (action.ariaLabel). -->
@@ -594,18 +594,18 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                   <!-- BORRADOR: texto pendiente de Psicología. -->
                   <span class="context-bar__step">{{ actionStepLabel(action.obj.key) }}</span>
                   @if (action.verb.locked && action.verb.reason) {
-                    <span class="ds-sr-only">, bloqueada: </span><span class="context-bar__reason">{{ action.verb.reason }}</span>
+                    <span class="ds-sr-only">, bloqueada: </span><span class="context-bar__reason" id="context-door-reason">{{ action.verb.reason }}</span>
                   }
                 </span>
               </button>
               @if (contextAlso(); as also) {
                 <button type="button" class="context-bar__interaction context-bar__interaction--secondary u-ficha u-sombra"
                   [class.context-bar__interaction--locked]="also.verb.locked"
-                  [attr.data-mundo-foco]="also.obj.key"
+                  [attr.data-mundo-foco]="also.obj.key" [attr.aria-disabled]="also.verb.locked ? 'true' : null" [attr.aria-describedby]="also.verb.locked && also.verb.reason ? 'context-door-reason-secondary' : null"
                   (click)="requestInteraction(also.obj)" [attr.title]="also.title" [attr.aria-label]="'También: ' + (walkingLabel(also.obj) ?? also.verb.text) + (actionStepLabel(also.obj.key) ? '. ' + actionStepLabel(also.obj.key) : '')">
                   @if (also.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                   <span class="context-bar__also">También:</span>
-                  <strong>{{ walkingLabel(also.obj) ?? also.verb.text }}</strong><span class="context-bar__step">{{ actionStepLabel(also.obj.key) }}</span>
+                  <strong>{{ walkingLabel(also.obj) ?? also.verb.text }}</strong><span class="context-bar__step">{{ actionStepLabel(also.obj.key) }}</span>@if (also.verb.locked && also.verb.reason) { <span class="context-bar__reason" id="context-door-reason-secondary">{{ also.verb.reason }}</span> }
                 </button>
               }
             } @else {
@@ -651,7 +651,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         @if (placesOpen()) {
           <!-- «Ir a…» (F6-11): modal, con SU «Salida segura»; la cabecera, el mundo y el pie quedan inertes. -->
           <div class="overlay-backdrop" aria-hidden="true" (click)="closePlaces()"></div>
-          <app-world-places-list [places]="placeOptions()" [walkingKey]="pendingWalkInteraction()?.key ?? null" [pausing]="pausing()"
+          <app-world-places-list [places]="placeOptions()" [doorMessages]="doorMessages()" [walkingKey]="pendingWalkInteraction()?.key ?? null" [pausing]="pausing()"
             (choose)="choosePlace($event)" (closed)="closePlaces()" (safeExit)="pauseFromOverlay()" />
         }
         @if (planOpen() && placePlan(); as plano) {
@@ -4573,6 +4573,11 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Al hablar se conserva la lista para mostrar y cancelar el trayecto; los demás destinos cierran la lista. */
   choosePlace(place: PlaceCandidate): void {
     if (place.kind === 'person') { this.requestInteraction(this.personForPlace(place), true); return; }
+    if (place.kind === 'door') {
+      const door = this.world()?.objects.find(obj => obj.key === place.key && obj.type === 'EXIT');
+      if (door) this.requestInteraction(door, true);
+      return;
+    }
     if (this.pendingWalkInteraction()) this.stopPendingWalk();
     this.closePlaces();
     if (!this.gameWorld?.walkToKey(place.key)) {
@@ -4603,6 +4608,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.cancelPendingInteraction();
     const target = this.guide().siguienteLugar;
     const label = target?.label ?? '';
+    const door = this.world()?.objects.find(obj => obj.key === key && obj.type === 'EXIT');
+    if (door) { this.requestInteraction(door); return; }
     if (target?.key === key && target.tipo === 'persona') {
       this.requestInteraction(this.personForPlace({ key, label, kind: 'person' }));
       return;
@@ -4623,13 +4630,17 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   // BORRADOR: texto pendiente de Psicología.
   walkingLabel(obj: MapObjectState): string | null {
-    return this.pendingWalkInteraction()?.key === obj.key ? `Yendo hacia ${obj.label}… Pulsa para cancelar` : null;
+    return this.pendingWalkInteraction()?.key === obj.key ? `${walkingText(obj.type === 'EXIT' ? 'door' : 'object', obj.label)}… Pulsa para cancelar` : null;
   }
 
   requestInteraction(obj: MapObjectState, fromPlaces = false): void {
     if ((fromPlaces ? this.inputBlockedOutsidePlaces() : this.inputBlocked()) || this.busy()) return;
-    if (obj.type !== 'PERSON') { this.openInteraction(obj); return; }
+    if (obj.type !== 'PERSON' && obj.type !== 'EXIT') { this.openInteraction(obj); return; }
     if (this.pendingWalkInteraction()?.key === obj.key) { this.stopPendingWalk(); return; }
+    if (obj.type === 'EXIT' && this.doorStatusFor(obj)?.state === 'locked') {
+      this.showDoorNotice(this.doorStatusFor(obj)?.message ?? ORIENTATION_COPY.door.fallback);
+      return;
+    }
     if (this.nearbyInteraction()?.key === obj.key || this.nearbyAlso()?.key === obj.key || this.gameWorld?.isInReach?.(obj.key)) {
       this.gameWorld?.cancelWalk?.();
       this.cancelPendingInteraction();
@@ -4650,7 +4661,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       }
     } else if (this.pendingWalkInteraction()?.key === obj.key) {
       // BORRADOR: texto pendiente de Psicología. Una sola fuente de anuncio.
-      this.announce(`Yendo hacia ${obj.label}. Pulsa de nuevo para cancelar.`);
+      this.announce(`${walkingText(obj.type === 'EXIT' ? 'door' : 'object', obj.label)}. Pulsa de nuevo para cancelar.`);
     }
   }
 
