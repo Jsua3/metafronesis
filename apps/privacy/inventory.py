@@ -314,8 +314,21 @@ DATA_INVENTORY: dict[str, dict] = {
             "rules": PUBLIC,
             "last_edited_by": (PERSONAL, "última persona que editó la versión"),
             "edited_alone_since": TECHNICAL,
+            "cover_id": TECHNICAL,
+            "cover_pixel_art": TECHNICAL,
         },
         "exits": {"created_by": [], "last_edited_by": []},
+    },
+    "case_covers": {
+        "purpose": "Imagen de portada de una versión de caso, saneada y sin metadatos: contenido del caso que ven los estudiantes.",
+        "retention": "Mientras alguna versión la use; al quitarla o reemplazarla en el último borrador que la usa, se borra.",
+        "default": None,
+        "columns": {
+            "id": TECHNICAL,
+            "formato": TECHNICAL,
+            "contenido": PUBLIC,
+        },
+        "exits": {},
     },
     "case_reviews": {
         "purpose": "Revisiones de contenido de una versión antes de publicarla: quién la pidió, quién decidió y con qué nota.",
