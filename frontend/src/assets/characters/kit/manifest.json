@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "kitSha256": "f9d5543d7e52d611951f2e9d980a5ad873bb728127e01a4ae5a13c580cde9151",
+  "kitSha256": "0a2eac343ef0a125df5b10f5342748c54b88053cadf657ed4ccf78a7551f2585",
   "characters": {
     "abuela-familia": {
       "displayName": "Abuela de la niña",
@@ -1810,6 +1810,210 @@
           "width": 32,
           "height": 32,
           "pixelSha256": "18ca9b44bc9a893ae27e57bdf193ca7859c12c899b9118137e7311d525e42ff0"
+        }
+      }
+    },
+    "hermano-adolescente": {
+      "displayName": "Hermano adolescente",
+      "kind": "npc",
+      "complexion": "b",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 65,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 20
+        },
+        "left": {
+          "opaqueHeight": 65,
+          "headWidth": 20,
+          "torsoDepth": 15
+        },
+        "up-left": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 65,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 65,
+          "headWidth": 20,
+          "torsoDepth": 15
+        },
+        "down-right": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 20
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "hermano-adolescente/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "8437921e6f5a61a9c1edb684899ce4303aa5ea0ac31c8d261b5a5d5fd3b0a9ad"
+        },
+        "walk": {
+          "path": "hermano-adolescente/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "e5278aa3e8f89733b96c17c466450b490448ac5d48915cd430ce81105ec118df"
+        },
+        "portrait-neutral": {
+          "path": "hermano-adolescente/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "19236d860d147b444d82126db72a33e434a468ca98f83be7885eb4b976046c38"
+        },
+        "portrait-preocupada": {
+          "path": "hermano-adolescente/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "4d801968c62303f2cfc4e41542c287f450c9da064c762bb83bcab757e8d2284e"
+        },
+        "portrait-triste": {
+          "path": "hermano-adolescente/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "96e955757b87f27df3c9c6ad39df6887e0ef2c67aabe8cd403ae00471679b9e4"
+        },
+        "portrait-alegre": {
+          "path": "hermano-adolescente/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "d9f9a1b109a9f6c42c508789dcd96bc6a3a8ead4df7e724645f34dbde343c064"
+        },
+        "portrait-cautelosa": {
+          "path": "hermano-adolescente/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "33e3580e0c0fd5781d26c1e71a2f3324db5900cffda3f8c7bdc453f2dc6428c1"
+        },
+        "portrait-en-crisis": {
+          "path": "hermano-adolescente/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "851631c252926a4dfdb5edd481d445bc767025560dcf4604d66ce26db0746d94"
+        }
+      }
+    },
+    "hermano-mayor": {
+      "displayName": "Hermano mayor",
+      "kind": "npc",
+      "complexion": "b",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 20
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 18,
+          "torsoDepth": 15
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 18,
+          "torsoDepth": 15
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 20
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "hermano-mayor/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "88f8580b7b5ae24efee3a4df2bf5d27be3a3a494bb87fd4b14debe3a60a3ddce"
+        },
+        "walk": {
+          "path": "hermano-mayor/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "784ea84e547a20d03429a17d82880b8f6e130ddf76733bfdd11efad6e9cd5155"
+        },
+        "portrait-neutral": {
+          "path": "hermano-mayor/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "60e19442465aebc960dcf03fb01c1a4bc326adb132fdf1c1e4be4de65be104c0"
+        },
+        "portrait-preocupada": {
+          "path": "hermano-mayor/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "323d6e6a7946e0373606483f4e572d6e17fa6bf427189604c78e67763ab51a0b"
+        },
+        "portrait-triste": {
+          "path": "hermano-mayor/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "e5fbb61c58084285fd3bb853b17e0d0cfba9ac21e7b6ccfdb12a8581d0eb2043"
+        },
+        "portrait-alegre": {
+          "path": "hermano-mayor/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "6d56ace462aadbbe0c93a156e10503027021797a80e98099539ff039100c94eb"
+        },
+        "portrait-cautelosa": {
+          "path": "hermano-mayor/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "186ab0df347d19a10be54ff6b4a79bcdde2b49b7e8ff56afd4a33a53799df5fb"
+        },
+        "portrait-en-crisis": {
+          "path": "hermano-mayor/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "2b2847ca678e2ab314c04b47403850ae6b092900b3ee9fe42e4c768c386775ec"
         }
       }
     },
