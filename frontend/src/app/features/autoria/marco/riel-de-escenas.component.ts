@@ -1,3 +1,4 @@
+import { tieneRelleno } from '../modelo/relleno';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -135,7 +136,7 @@ interface FilaEscena {
       <select id="riel-escena" class="riel__select" (change)="irAEscena($any($event.target).value)">
         <option value="" [selected]="!progreso.escenaActual()">Todas las escenas y sus caminos</option>
         @for (f of filas(); track f.escena.id) {
-          <option [value]="f.escena.id" [selected]="progreso.escenaActual() === f.escena.id">Escena {{ f.numero }} de {{ filas().length }} · {{ f.escena.titulo }}{{ f.pendientes ? ' · ' + f.pendientes + ' por corregir' : f.estado === 'sin-empezar' ? ' · por escribir' : '' }}</option>
+          <option [value]="f.escena.id" [selected]="progreso.escenaActual() === f.escena.id">Escena {{ f.numero }} de {{ filas().length }} · {{ f.escena.titulo }}{{ f.estado === 'sin-empezar' ? ' · por escribir' : f.pendientes ? ' · ' + f.pendientes + ' por resolver en esta escena' : '' }}</option>
         }
       </select>
     </div>
@@ -292,13 +293,13 @@ export class RielDeEscenasComponent {
   protected readonly filas = computed<FilaEscena[]>(() => {
     const caso = this.store.caso();
     if (!caso) return [];
-    const pendientes = this.progreso.porCorregir();
+    const pendientes = this.progreso.pendientes().filter(p => p.tipo !== 'sugerencia');
     const salas = new Map(caso.salas.map((s) => [s.id, s]));
     return this.progreso.escenas().map((escena, i) => {
       const n = pendientes.filter((p) => p.escenaId === escena.id).length;
-      const vacia = estaVacia(escena);
-      const estado: EstadoEtapa = n ? 'con-pendientes' : vacia ? 'sin-empezar' : 'lista';
-      const textoEstado = n ? `Le falta ${n}` : vacia ? 'Sin escribir' : 'Completa';
+      const vacia = estaVacia(escena) || tieneRelleno(escena);
+      const estado: EstadoEtapa = vacia ? 'sin-empezar' : n ? 'con-pendientes' : 'lista';
+      const textoEstado = vacia ? 'Por escribir' : n ? `Le falta ${n}` : 'Completa';
       const inicio = caso.inicioId === escena.id;
       const ia = !!escena.marcaIa || escena.lineas.some((l) => l.marcaIa) || escena.respuestas.some((r) => r.marcaIa);
       const fondo = escena.salaId ? salas.get(escena.salaId)?.fondo : '';
@@ -326,7 +327,7 @@ export class RielDeEscenasComponent {
   /** «3 de 8 escritas». */
   protected readonly escritas = computed(() => {
     const filas = this.filas();
-    return `${filas.filter((f) => !estaVacia(f.escena)).length} de ${filas.length} escritas`;
+    return `${filas.filter((f) => !estaVacia(f.escena) && !tieneRelleno(f.escena)).length} de ${filas.length} escritas`;
   });
 
   protected readonly enCaminos = computed(() => /\/editor\/?$/.test(this.progreso.direccion().split(/[?#]/)[0]));

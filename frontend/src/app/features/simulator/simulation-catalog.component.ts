@@ -21,6 +21,7 @@ import { UiVacioIlustrado } from '../../shared/ui/vacio-ilustrado/ui-vacio-ilust
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { UiTable, UiTableRow, UiTableTable } from '../../shared/ui/table/ui-table';
 import { UiTooltip } from '../../shared/ui/tooltip/ui-tooltip';
+import { SinCasosEstudianteComponent } from '../dashboard/sin-casos-estudiante.component';
 import { attemptTone, formatDate } from '../dashboard/student-dashboard.util';
 import { blockedNotice } from './case-lock.util';
 import { CASOS_COPY } from './casos-copy';
@@ -37,6 +38,7 @@ interface TarjetaCaso {
   item: SimulationCaseSummary;
   estado: EstadoCaso;
   portada: string | null | undefined;
+  portadaPixelArt: boolean;
   /** Los intentos de este caso, del más reciente al más antiguo. */
   intentos: StudentAttemptSummary[];
   /** El intento que se revisa en la página de cierre, si ya hay uno terminado. */
@@ -47,9 +49,9 @@ interface TarjetaCaso {
 
 /**
  * Casos del estudiante: la biblioteca completa y el historial por caso (DISENO §4.2, DP-07). Es el destino de «Ver todos
- * tus casos» de Inicio. Cada tarjeta dice el estado en palabras y ofrece UNA acción: «Ver ficha» (sin empezar), «Continuar»
- * (lo abierto, directo al umbral con `?intento=continuar`), «Ver tu recorrido» (terminado, navega a la página de cierre) o,
- * bloqueado, el motivo en un botón deshabilitado. Los intentos de cada caso viven dentro de su tarjeta, sin la columna
+ * tus casos» de Inicio. Cada tarjeta dice el estado en palabras y ofrece UNA acción principal: «Empezar» (sin empezar; lleva a
+ * la ficha, donde se confirma), «Continuar» (lo abierto, directo al umbral con `?intento=continuar`), «Ver mi resultado»
+ * (terminado, navega a la página de cierre) o, bloqueado, el motivo en un botón deshabilitado. Los intentos de cada caso viven dentro de su tarjeta, sin la columna
  * «Caso» (era el mismo nombre en cada fila) ni la de duración (tiempo de reloj que engañaba, P6).
  *
  * El acceso sale de `CaseAccessCache` si está fresco. El historial tiene su propio error con «Reintentar», distinto de
@@ -59,7 +61,7 @@ interface TarjetaCaso {
 @Component({
   selector: 'app-simulation-catalog',
   imports: [
-    UiBadge, UiButton, UiCabeceraIlustrada, UiCard, UiErrorState, UiFiltros, UiPortadaCaso, UiVacioIlustrado, UiSegmentado, UiSkeleton,
+    UiBadge, UiButton, UiCabeceraIlustrada, UiCard, UiErrorState, UiFiltros, UiPortadaCaso, UiVacioIlustrado, UiSegmentado, UiSkeleton, SinCasosEstudianteComponent,
     UiTable, UiTableRow, UiTableTable, UiTooltip,
   ],
   templateUrl: './simulation-catalog.component.html',
@@ -84,6 +86,7 @@ export class SimulationCatalogComponent {
   protected readonly busqueda = signal('');
   /** El caso que se está abriendo: su portada lleva la transición de vistas hasta el umbral del juego (DP-10). */
   protected readonly entrando = signal<number | null>(null);
+  protected readonly errorEntrada = signal(false);
   /** ?bloqueado=<id> de la guardia: reactivo (la guardia puede redirigir a esta misma ruta y Angular la reutiliza). */
   private readonly query = toSignal(inject(ActivatedRoute).queryParamMap);
   private readonly blockedId = computed(() => Number(this.query()?.get('bloqueado')) || null);
@@ -139,6 +142,7 @@ export class SimulationCatalogComponent {
       item,
       estado: estadoCaso(entrada, intentos, catalogo),
       portada: entrada.portada ?? item.portada,
+      portadaPixelArt: (entrada.portada ? entrada.portadaPixelArt : item.portadaPixelArt) ?? true,
       intentos,
       recorrido: ultimoRecorrido(intentos),
       resaltado: this.blockedId() === item.caseVersionId,
@@ -297,12 +301,16 @@ export class SimulationCatalogComponent {
    * y la portada viajan en el estado de la navegación para que el umbral pinte desde el primer cuadro (DP-10).
    */
   protected openCase(card: TarjetaCaso, resume: boolean): void {
+    if (this.entrando() !== null) return;
     this.entrando.set(card.item.caseVersionId);
+    this.errorEntrada.set(false);
     const umbral = { titulo: card.item.title, portada: card.portada ?? null };
     void this.router.navigate(
       resume ? ['/portal/simulador', card.item.caseVersionId] : ['/portal/simulador', card.item.caseVersionId, 'ficha'],
       resume ? { queryParams: { intento: 'continuar' }, state: { umbral } } : { state: { umbral } },
-    );
+    // `false` = una guarda la desvió (p. ej. ?bloqueado=): eso lo explica la propia guarda; solo un error real es «conexión».
+    ).then(() => this.entrando.set(null))
+      .catch(() => { this.entrando.set(null); this.errorEntrada.set(true); });
   }
 
   /** Continuar un intento de la tabla de intentos (lo abierto de ese caso). */
@@ -314,7 +322,7 @@ export class SimulationCatalogComponent {
     void this.router.navigate(['/portal/casos', caseVersionId, 'editor']);
   }
 
-  /** «Ver tu recorrido»: la página de cierre del intento (DP-13), con URL estable. */
+  /** «Ver mi resultado»: la página de cierre del intento (DP-13), con URL estable. */
   protected openReport(attempt: StudentAttemptSummary): void {
     try { sessionStorage.setItem('siep.catalogo.retorno', String(attempt.caseVersionId)); } catch { /* almacenamiento bloqueado */ }
     void this.router.navigate(['/portal/simulador', attempt.caseVersionId, 'cierre', attempt.attemptId]);

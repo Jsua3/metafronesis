@@ -2,6 +2,7 @@ from django.http import Http404
 
 from apps.grupos.alcance import estudiantes_de
 from apps.grupos.models import Grupo, GrupoEstudiante, MembershipStatus
+from apps.simulation.assessment.evaluation import read_snapshot
 from apps.simulation.models import SimulationAttempt
 from apps.simulation.models.attempt import REGISTERED_DECISION_EVENT_TYPES
 from apps.simulation.models.rubric import EvaluationOrigin
@@ -36,7 +37,7 @@ def _fila(intento):
     }
 
 
-def listar(docente, case_version_id=None, grupo_id=None):
+def intentos_filtrados(docente, case_version_id=None, grupo_id=None):
     intentos = _intentos(docente)
     if grupo_id is not None:
         grupos = Grupo.objects.filter(pk=grupo_id, activo=True)
@@ -48,7 +49,11 @@ def listar(docente, case_version_id=None, grupo_id=None):
         intentos = intentos.filter(student_id__in=miembros)
     if case_version_id is not None:
         intentos = intentos.filter(case_version_id=case_version_id)
-    return [_fila(intento) for intento in intentos.order_by("-started_at", "pk")]
+    return intentos
+
+
+def listar(docente, case_version_id=None, grupo_id=None):
+    return [_fila(intento) for intento in intentos_filtrados(docente, case_version_id, grupo_id).order_by("-started_at", "pk")]
 
 
 def detalle(docente, attempt_id):
@@ -58,7 +63,7 @@ def detalle(docente, attempt_id):
     return {
         **_fila(intento),
         "decisions": [_decision(evento) for evento in eventos],
-        "evaluation": evaluacion.snapshot if evaluacion else None,
+        "evaluation": read_snapshot(intento, evaluacion) if evaluacion else None,
         "rubric": _rubrica(intento),
         "teacherFeedback": retroalimentacion_docente_de(intento),
     }

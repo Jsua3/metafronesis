@@ -1,6 +1,9 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 
+import { RouterLink } from '@angular/router';
+import { Observable, Subscription } from 'rxjs';
+import { Grupo } from '../../core/api/grupo.service';
 import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { uniqueUiId } from '../../shared/ui/button/click-guard';
@@ -8,24 +11,39 @@ import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiDialogActions, UiDialogFrame } from '../../shared/ui/dialog/ui-dialog';
 import { UiControl, UiField } from '../../shared/ui/field/ui-field';
 import { fromWindowIso, toWindowIso, windowError } from './assignment-window.util';
+import { fraseDeSecuencia, previaDelUltimo, tituloDe } from './secuencia.util';
 
 export interface AssignmentDialogData {
   mode: 'create' | 'edit';
   /** Casos publicados que todavía no están asignados al grupo (solo al asignar). */
   cases: SimulationCaseSummary[];
+  fixedCaseId?: number;
+  groups?: Grupo[];
   /** Al cambiar las fechas: la asignación y el título de su caso. */
   assignment?: Assignment;
   title?: string;
+  /** Al asignar desde la ficha del grupo: sus asignaciones de hoy; con ellas se dice cuándo harán el caso nuevo. */
+  groupAssignments?: Assignment[];
+  /** Al asignar desde el caso: pide las asignaciones del grupo elegido (el diálogo no conoce el servidor). */
+  loadGroupAssignments?: (groupId: number) => Observable<Assignment[]>;
 }
 
 /** Lo que la docente decidió: el caso (solo al asignar) y las dos fechas como instantes ISO; `null` = sin fecha. */
 export interface AssignmentDialogResult {
   caseVersionId?: number;
+  groupId?: number;
   opensAt: string | null;
   closesAt: string | null;
+  /**
+   * Lo que el diálogo le dijo a la docente sobre la secuencia: el caso que deben terminar antes (`string`), ninguno
+   * (`null`) o que no se pudo saber (ausente). Quien asigna lo repite en su confirmación.
+   */
+  despuesDe?: string | null;
 }
 
-type DialogField = 'caseVersionId' | 'opensAt' | 'closesAt';
+type SecuenciaEstado = { estado: 'idle' | 'loading' | 'error' } | { estado: 'ready'; previa: string | null };
+
+type DialogField = 'groupId' | 'caseVersionId' | 'opensAt' | 'closesAt';
 
 /** Un control de fecha a medio escribir entrega valor vacío: sin este aviso se guardaría como «sin fecha». */
 const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrito para dejarla vacía.';
@@ -38,12 +56,12 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
  */
 @Component({
   selector: 'app-assignment-dialog',
-  imports: [UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
+  imports: [RouterLink, UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-dialog-frame [title]="title" [description]="description">
       <form class="ad-form" novalidate [id]="formId" (submit)="submit($event)">
-        @if (data.mode === 'create') {
+        @if (data.mode === 'create' && data.fixedCaseId == null) {
           <ui-field label="Caso" required [error]="errors().caseVersionId">
             <select uiControl [value]="caseVersionId()" (change)="caseVersionId.set(read($event))">
               <option value="">Elige un caso</option>
@@ -53,6 +71,19 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
             </select>
           </ui-field>
         }
+        @if (data.fixedCaseId != null) {
+          @if (data.groups?.length) {
+            <ui-field label="Grupo" required [error]="errors().groupId">
+              <select uiControl [value]="groupId()" (change)="onGroup($event)">
+                <option value="">Elige un grupo</option>
+                @for (group of data.groups; track group.id) { <option [value]="group.id">{{ group.nombre }} - {{ group.totalEstudiantes }} estudiantes</option> }
+              </select>
+            </ui-field>
+          } @else {
+            <p>No tienes grupos todavía. Crea uno para asignar este caso.</p>
+            <a ui-button routerLink="/portal/grupos" (click)="ref.close()">Crear un grupo</a>
+          }
+        }
         <ui-field label="Abre" hint="Déjalo vacío para que se abra desde ya." [error]="errors().opensAt">
           <input uiControl type="datetime-local" [value]="opensAt()" (input)="onDate('opensAt', $event)" />
         </ui-field>
@@ -61,14 +92,27 @@ const INCOMPLETE_DATE = 'Escribe la fecha y la hora completas, o borra lo escrit
           <input uiControl type="datetime-local" [value]="closesAt()" (input)="onDate('closesAt', $event)" />
         </ui-field>
         <p class="ad-zone">La hora es la de tu navegador.</p>
+        @if (data.mode === 'create') {
+          <!-- Cuándo podrán empezarlo: el estudiante lo vio «Bloqueado» sin que la docente lo supiera (RN-04). -->
+          @switch (secuencia().estado) {
+            @case ('loading') { <p class="ad-secuencia" role="status">Revisando el orden de los casos del grupo…</p> }
+            @case ('error') { <p class="ad-secuencia" role="status">No pudimos revisar el orden del grupo. Lo verás en «Casos asignados» al asignar.</p> }
+            @case ('ready') {
+              <p class="ad-secuencia" role="status"><strong>Cuándo lo harán.</strong> {{ frase() }}
+                <span>Va después de los demás casos del grupo; puedes cambiar el orden en «Casos asignados».</span></p>
+            }
+          }
+        }
       </form>
       <button ui-button uiDialogActions type="button" variant="secondary" (click)="ref.close()">Cancelar</button>
-      <button ui-button uiDialogActions type="submit" [attr.form]="formId">{{ confirmLabel }}</button>
+      <button ui-button uiDialogActions type="submit" [disabledReason]="sinGrupos ? 'Crea un grupo primero: sin grupos no hay a quién asignar el caso.' : null" [attr.form]="formId">{{ confirmLabel }}</button>
     </ui-dialog-frame>
   `,
   styles: [`
     :host { display: block; }
     .ad-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-space-4); }
+    .ad-secuencia { display: grid; gap: var(--ds-space-1); margin: 0; padding: var(--ds-space-3); border-radius: var(--ds-radius-md); border: 1px solid var(--ds-border); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
+    .ad-secuencia span { color: var(--ds-text-2); }
     .ad-zone { margin: 0; color: var(--ds-text-2); font-size: var(--ds-type-body-s-size); line-height: var(--ds-type-body-s-line); }
   `],
 })
@@ -79,18 +123,62 @@ export class AssignmentDialogComponent {
   private readonly injector = inject(Injector);
 
   protected readonly formId = uniqueUiId('ad-form');
-  protected readonly title = this.data.mode === 'create' ? 'Asignar un caso al grupo' : `Fechas de «${this.data.title ?? 'el caso'}»`;
+  /** Se asigna desde el propio caso y la docente aún no tiene grupos: el botón dice por qué está apagado. */
+  protected readonly sinGrupos = this.data.fixedCaseId != null && !this.data.groups?.length;
+  protected readonly title = this.data.mode === 'create'
+    ? (this.data.fixedCaseId != null && this.data.title ? `Asignar «${this.data.title}» a un grupo` : 'Asignar un caso al grupo') : `Fechas de «${this.data.title ?? 'el caso'}»`;
   protected readonly description = this.data.mode === 'create'
     ? 'Los estudiantes del grupo verán el caso en su catálogo dentro de las fechas que elijas.'
     : 'El cambio vale desde ya para todo el grupo.';
   protected readonly confirmLabel = this.data.mode === 'create' ? 'Asignar' : 'Guardar fechas';
 
   protected readonly caseVersionId = signal('');
+  protected readonly groupId = signal('');
   protected readonly opensAt = signal(fromWindowIso(this.data.assignment?.opensAt));
   protected readonly closesAt = signal(fromWindowIso(this.data.assignment?.closesAt));
   protected readonly errors = signal<Partial<Record<DialogField, string>>>({});
+  /** Cuándo podrán empezar el caso: se sabe al elegir el grupo (o de entrada, si ya se está en la ficha del grupo). */
+  protected readonly secuencia = signal<SecuenciaEstado>(this.secuenciaInicial());
+  private readonly aperturaFutura = computed(() => {
+    const instante = Date.parse(this.opensAt());
+    return !Number.isNaN(instante) && instante > Date.now();
+  });
+  /** La frase de la secuencia; con una apertura programada dice además que no abrirá antes. */
+  protected readonly frase = computed(() => {
+    const actual = this.secuencia();
+    return actual.estado === 'ready' ? fraseDeSecuencia(actual.previa, this.aperturaFutura()) : '';
+  });
+  private cargaDeSecuencia: Subscription | null = null;
   /** El control de fecha tiene algo escrito que todavía no es una fecha (a medias): no es lo mismo que vacío. */
   private readonly incomplete = { opensAt: false, closesAt: false };
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.cargaDeSecuencia?.unsubscribe());
+  }
+
+  private secuenciaInicial(): SecuenciaEstado {
+    const actuales = this.data.groupAssignments;
+    return this.data.mode === 'create' && actuales ? { estado: 'ready', previa: this.previaDe(actuales) } : { estado: 'idle' };
+  }
+
+  private previaDe(asignaciones: Assignment[]): string | null {
+    const previa = previaDelUltimo(asignaciones);
+    return previa ? tituloDe(previa) : null;
+  }
+
+  /** Al elegir el grupo (asignando desde el caso) se pide su secuencia; elegir otro cancela la petición anterior. */
+  protected onGroup(event: Event): void {
+    const value = this.read(event);
+    this.groupId.set(value);
+    this.cargaDeSecuencia?.unsubscribe();
+    const cargar = this.data.loadGroupAssignments;
+    if (!value || !cargar) { this.secuencia.set({ estado: 'idle' }); return; }
+    this.secuencia.set({ estado: 'loading' });
+    this.cargaDeSecuencia = cargar(Number(value)).subscribe({
+      next: asignaciones => this.secuencia.set({ estado: 'ready', previa: this.previaDe(asignaciones) }),
+      error: () => this.secuencia.set({ estado: 'error' }),
+    });
+  }
 
   protected read(event: Event): string {
     return (event.target as HTMLInputElement | HTMLSelectElement).value;
@@ -107,7 +195,8 @@ export class AssignmentDialogComponent {
   protected submit(event: Event): void {
     event.preventDefault();
     const errors: Partial<Record<DialogField, string>> = {};
-    if (this.data.mode === 'create' && !this.caseVersionId()) errors.caseVersionId = 'Elige un caso.';
+    if (this.data.fixedCaseId != null && !this.groupId()) errors.groupId = 'Elige un grupo.';
+    if (this.data.mode === 'create' && this.data.fixedCaseId == null && !this.caseVersionId()) errors.caseVersionId = 'Elige un caso.';
     if (this.incomplete.opensAt) errors.opensAt = INCOMPLETE_DATE;
     if (this.incomplete.closesAt) errors.closesAt = INCOMPLETE_DATE;
     const window = errors.opensAt || errors.closesAt ? null : windowError(this.opensAt(), this.closesAt());
@@ -119,7 +208,12 @@ export class AssignmentDialogComponent {
       return;
     }
     const result: AssignmentDialogResult = { opensAt: this.windowValue('opensAt'), closesAt: this.windowValue('closesAt') };
-    if (this.data.mode === 'create') result.caseVersionId = Number(this.caseVersionId());
+    if (this.data.mode === 'create') result.caseVersionId = this.data.fixedCaseId ?? Number(this.caseVersionId());
+    if (this.data.fixedCaseId != null) result.groupId = Number(this.groupId());
+    if (this.data.mode === 'create') {
+      const actual = this.secuencia();
+      if (actual.estado === 'ready') result.despuesDe = actual.previa;
+    }
     this.ref.close(result);
   }
 

@@ -60,11 +60,31 @@ describe('WorldPlacesListComponent', () => {
   it('lista cada lugar con su tipo y en el orden recibido', () => {
     mount();
     expect(items().map(item => text(item))).toEqual([
-      'Persona Enfermera de urgencias',
-      'Persona Familia en crisis',
-      'Puerta Sala de escucha familiar',
-      'Objeto Historia clínica',
+      'Hablar con Enfermera de urgencias Opcional: puede servirte más adelante',
+      'Hablar con Familia en crisis Opcional: puede servirte más adelante',
+      'Ir a Sala de escucha familiar Opcional: puede servirte más adelante',
+      'Ir a Historia clínica Opcional: puede servirte más adelante',
     ]);
+  });
+
+  it('nombra la caminata a una puerta sin duplicar el verbo de la etiqueta', () => {
+    mount([{ key: 'puerta', label: 'Pasar a la sala de espera', kind: 'door' }]);
+    expect(text(items()[0])).toContain('Ir a la sala de espera');
+    expect(text(items()[0])).not.toContain('Ir a Pasar');
+  });
+
+  it('conserva los botones al recibir listas equivalentes', () => {
+    mount();
+    const initial = items();
+    const observer = new MutationObserver(() => {});
+    observer.observe(host().querySelector('.places__list')!, { childList: true, subtree: true });
+    for (let i = 0; i < 10; i++) {
+      writeInputSignal(component.places, PLACES.map(p => ({ ...p })));
+      fixture.detectChanges();
+    }
+    expect(items().every((button, i) => button === initial[i])).toBe(true);
+    expect(observer.takeRecords().flatMap(r => Array.from(r.removedNodes)).filter(n => n instanceof Element && (n.matches('button') || n.querySelector('button')))).toHaveLength(0);
+    observer.disconnect();
   });
 
   it('elegir un lugar lo emite', () => {
@@ -116,5 +136,19 @@ describe('WorldPlacesListComponent', () => {
     component.closed.subscribe(closed);
     host().querySelector<HTMLButtonElement>('.places__close')!.click();
     expect(closed).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('WorldPlacesListComponent: el siguiente paso (P9)', () => {
+  it('el lugar del siguiente paso lleva la etiqueta «Siguiente paso» en texto y va primero', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [WorldPlacesListComponent] });
+    const fixture = TestBed.createComponent(WorldPlacesListComponent);
+    writeInputSignal(fixture.componentInstance.places, [{ ...PLACES[1], siguiente: true }, PLACES[0]] as PlaceCandidate[]);
+    fixture.detectChanges();
+    const items = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.places__item'));
+    expect(items[0].textContent).toContain(PLACES[1].label);
+    expect(items[0].querySelector('[data-places-next]')!.textContent!.trim()).toBe('Siguiente paso');
+    expect(items[1].querySelector('[data-places-next]')).toBeNull();
   });
 });

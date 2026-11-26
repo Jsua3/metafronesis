@@ -32,10 +32,6 @@
     overflow: clip;
   }
   .bloque > app-estudio-seccion:last-child { border-block-end: 0; }
-  .nota-lectura {
-    margin: 0; padding: 0.5rem 0.75rem; border-radius: var(--l-radio-chico); background: var(--ds-primary-subtle);
-    color: var(--ds-text-1); font-size: var(--autoria-texto-14); font-weight: 600;
-  }
   @media (prefers-reduced-motion: no-preference) {
     .hoja { animation: hoja-entra var(--ds-dur-move) var(--ds-ease-out); }
   }

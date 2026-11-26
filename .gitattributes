@@ -1,0 +1,4 @@
+# Salida del kit de personajes: bytes exactos. kit:check compara kit.json y manifest.json
+# byte a byte, así que no puede haber conversión de fin de línea en checkouts con
+# core.autocrlf=true (Windows).
+frontend/src/assets/characters/kit/** -text

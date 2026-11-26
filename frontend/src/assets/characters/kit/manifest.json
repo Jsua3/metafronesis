@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "kitSha256": "f9d5543d7e52d611951f2e9d980a5ad873bb728127e01a4ae5a13c580cde9151",
+  "kitSha256": "099a17622814a1b302bc5afdfd5d7663a83a3b7471b42f488961a3246613bf8f",
   "characters": {
     "abuela-familia": {
       "displayName": "Abuela de la niña",
@@ -58,49 +58,49 @@
           "path": "abuela-familia/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "5b5748c77f53cf6f96bb4f4233293c9e7f6fdf15980fb0353b8395ea732760f4"
+          "pixelSha256": "3d2527b1f433a74cf0054ddad1e9e84f0c831566e6060001c73400351a076e77"
         },
         "walk": {
           "path": "abuela-familia/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "4314f049f1ab5fc71e4285d2e6cb1f59a7b8433f125df44547aa3a5b7f549edf"
+          "pixelSha256": "66cec585c36cd73ec1be854684f40cf5bb03e1032fa5bd35213b0999443243b6"
         },
         "portrait-neutral": {
           "path": "abuela-familia/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "fca4b3d1a0518ee878e54f3f718c8ae1963c9cef9fd44845f3596bb878ac45a6"
+          "pixelSha256": "4ed295dd84e05a23578762205f3f92b65f733527ae747620f30d595df3c9703a"
         },
         "portrait-preocupada": {
           "path": "abuela-familia/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "80f8bb9cd1fa1b2fa8c16c89401f5b188936a59790ed03cf1712269527ff4f60"
+          "pixelSha256": "09186769d029ee9ac38a14e3a8b5e126339c1d28e8e22c41670fa629dbcc9a7b"
         },
         "portrait-triste": {
           "path": "abuela-familia/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ef10a718908a8f0d2c23975de448422d993e40d708caaaf5158ef3ee0d08e65a"
+          "pixelSha256": "7ab9ee4cf856adca78cf39b84e8b7b311ee2b0063e7fba6313cb491b62720bb4"
         },
         "portrait-alegre": {
           "path": "abuela-familia/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "8191ed482de8fdf57a1f0abb29bf0157214f0e5e2289868228d5ee0eba0cd907"
+          "pixelSha256": "59678d48e4d9008107f02991718ab1d7cea2f3c4a63dba2f5617a48e8725e644"
         },
         "portrait-cautelosa": {
           "path": "abuela-familia/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ec956df46d5abc71c6e9136ad0cff62b0cbe3dab40892534caee09b61a78bb2a"
+          "pixelSha256": "0c29413654535f9d72ba430dbcf34f1dd733dccd83736594cf6cb82e9085a9a7"
         },
         "portrait-en-crisis": {
           "path": "abuela-familia/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "60dd5fa9b603c5c309f8d80e583d01fbe7cd7bcf811f6270a92b23763a0481be"
+          "pixelSha256": "4a567b0d6e8627f6b92cb887545b75053b3c58e157ac9f3e6cbbbb95c2e73e12"
         }
       }
     },
@@ -604,6 +604,108 @@
         }
       }
     },
+    "camillero": {
+      "displayName": "Camillero",
+      "kind": "npc",
+      "complexion": "b",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 20
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 18,
+          "torsoDepth": 15
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 18,
+          "torsoDepth": 15
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 20
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "camillero/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "8eaedb11fef635522898d736991689405c8e4b7ebf0ee4c3c3bf1784828e6912"
+        },
+        "walk": {
+          "path": "camillero/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "1aa072d43bf8912c50ce79e3b1446ca974fafe39140081ed5a1d43c68bcbcb31"
+        },
+        "portrait-neutral": {
+          "path": "camillero/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "86e3f3928a430a8bf672207b6996480efe22a48cf10c6f5cecf4461ee1b2c091"
+        },
+        "portrait-preocupada": {
+          "path": "camillero/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "46e241ca9531bff1806ae318aea7a82f14e554219fd5e3f0f3efcf8398604a43"
+        },
+        "portrait-triste": {
+          "path": "camillero/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "73004f54457935a57035948e75f8a63c86901a6c7569192af3788d5830fef296"
+        },
+        "portrait-alegre": {
+          "path": "camillero/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "8f7aa604352a48e775b7a18b10b414d6df4a00d19e38e91884c3381939fc4a4e"
+        },
+        "portrait-cautelosa": {
+          "path": "camillero/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "02d754efe93363f77fb91b1fcbc4a915224b1fcf69c3e9ff1588fc5753c968ad"
+        },
+        "portrait-en-crisis": {
+          "path": "camillero/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "c1948a99454af5df4ddc1b00038aa66ec6783544bc5a2aff6f01215eb18bf324"
+        }
+      }
+    },
     "comisaria-familia": {
       "displayName": "Comisaria de familia",
       "kind": "npc",
@@ -660,49 +762,49 @@
           "path": "comisaria-familia/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "f3d2e6329bb871c09c22d171c5f480ceb8eb7beda1c24cf50a495c098538e303"
+          "pixelSha256": "374cb08aa9c23495a278d59713ec9149832d53cd61611bf697b3bd01c09358ac"
         },
         "walk": {
           "path": "comisaria-familia/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "c8307a51a2de65d20f7b86dadefbfbf58f29c1b9a2ec98e9c404f4460cd2d851"
+          "pixelSha256": "9ae9e1011a2770756a15c292db6b3a5460badcc5bbb258653ee3ad55ff92e123"
         },
         "portrait-neutral": {
           "path": "comisaria-familia/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "97dff7b5bb248578f77a9c82ec00f4ad87e35c362a7977e0ba0cd5ca96094df8"
+          "pixelSha256": "6ac346022dcd2f15bd509ca61154f9800fd66ec52e76bd3697c6ef6ee1584272"
         },
         "portrait-preocupada": {
           "path": "comisaria-familia/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "01451f548277d1d1524f5ce9f4a26e97207a770430adad482c69f6560bd72d8d"
+          "pixelSha256": "93e20b9b20ee3490169fa6318ef4be88dd39e7b23f8d6255dd39f72d682833ab"
         },
         "portrait-triste": {
           "path": "comisaria-familia/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "26cec6b1a1228dc76da3a1f3e0bcd727548df56950478a9f3dea96f2a68f7d72"
+          "pixelSha256": "f801f0cdfae72aafb767969ce9c322ae45afaef32540ae4d223ce3a069f0fe7b"
         },
         "portrait-alegre": {
           "path": "comisaria-familia/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "d5fcc616bc003beaf77a609e11ac8de4361f070767cd13d96e2d93c36b58d12c"
+          "pixelSha256": "c6f36f25b9b627a553d636d2f8e62e4338153b8aa013428849b82cbb98837731"
         },
         "portrait-cautelosa": {
           "path": "comisaria-familia/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "dd864c70fc02db92f44443c7cf75fee5d0d02b1844efe4863a513410d1f59565"
+          "pixelSha256": "6b63a777749c03b8319135304c315a8f9ff0617aa343ad42a3fae1f53fcec417"
         },
         "portrait-en-crisis": {
           "path": "comisaria-familia/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ba9bf52ac6c609899307606c631195782e11712fc8f1e930c77cd60a4f86e282"
+          "pixelSha256": "1aa7e6174ccf7ad1304caa12e574e9d1ec4d968463f27ead2d972f88d5d08f90"
         }
       }
     },
@@ -1364,49 +1466,151 @@
           "path": "enfermera-urgencias/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "2bd4c923a63f0ae1c42e1dbd46d1fe4c4dfac910cf24c4f069dd94e144d3a5e2"
+          "pixelSha256": "ac531c96f0b2c3c633d1b0bd49633cf749918572b5379d855211a94f805085b4"
         },
         "walk": {
           "path": "enfermera-urgencias/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "8811195c9f76abc2dd9815dce32f422398fd8dd174fa53138b6c0f4bf46f8982"
+          "pixelSha256": "4d3658f44746b5d9a7907caff53ea44fe5e24e82ab10d017488045c857424535"
         },
         "portrait-neutral": {
           "path": "enfermera-urgencias/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "9bdbbded7b01c55cd1847258ca5cd674cfbdc3d89ba92e87f5d56e9055afcb39"
+          "pixelSha256": "9b7c1fb1cbe73dfcaccd7b4ba70d1577e963955b3bddb4ef4668aa15aed3968f"
         },
         "portrait-preocupada": {
           "path": "enfermera-urgencias/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "969268ced932340e6325ee94b99217dbbdfa7ba26fb4b90c7996d374d19833e3"
+          "pixelSha256": "55fd28b952b5abc1ecc17080ca7a2386a152ec97a39240661404bc5d756eff78"
         },
         "portrait-triste": {
           "path": "enfermera-urgencias/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "e181c7b4cef550a5dd112a04396402ed0da13eede57b743f10aaa7ca8ba3b86c"
+          "pixelSha256": "b81ba497931d39a3ea8956c52d1e35279a0bc233ba7761e649b38b1cde8b6c47"
         },
         "portrait-alegre": {
           "path": "enfermera-urgencias/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "abf2eba0570b08d1add691bb3dfdf1998a67009211c422c96cbb95a8f7a87651"
+          "pixelSha256": "0c46b3eec5c4827bf7785ecf934324639e1ef0a9e1498b99588fb8947fdb29ab"
         },
         "portrait-cautelosa": {
           "path": "enfermera-urgencias/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "b2e2e43eada89016b3d9a86429d6d55a4975c1a37a277df255e4dfd5362c8c79"
+          "pixelSha256": "6811a3e3d004c3b86bb24a9e945814f508e6adbbd705368489d3c0acffa27bad"
         },
         "portrait-en-crisis": {
           "path": "enfermera-urgencias/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "1424f9638a3e2395326d5442b42ac3b751bc8923ca8f219a1ff1fbc0ba3e5e8f"
+          "pixelSha256": "907137b082b09242b29bf06e0d0d8bf5291cb5e7e053bac580b9cfde4d77c2ec"
+        }
+      }
+    },
+    "esposo-fiebre": {
+      "displayName": "Señor con fiebre",
+      "kind": "figurante",
+      "complexion": "b",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 65,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 20
+        },
+        "left": {
+          "opaqueHeight": 65,
+          "headWidth": 20,
+          "torsoDepth": 15
+        },
+        "up-left": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 65,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 65,
+          "headWidth": 20,
+          "torsoDepth": 15
+        },
+        "down-right": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 20
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "esposo-fiebre/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "a9fe0baa6ba8b87a2813a070f4586ee9e0968c11a1b9e000c1789cf8303a969e"
+        },
+        "walk": {
+          "path": "esposo-fiebre/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "45a8a6504b80cc8615b10ddde62dbbfc15c0f140f74704c777b0a75151cf2b85"
+        },
+        "portrait-neutral": {
+          "path": "esposo-fiebre/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "6ec9799dbb7accb51d75a60df844ff276e8f4a2b10b457749b15871b89d0b4aa"
+        },
+        "portrait-preocupada": {
+          "path": "esposo-fiebre/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "79eaf526e0a3daa398967c657f251e8575f4b1b73aa49f3bc921c203604ee7d9"
+        },
+        "portrait-triste": {
+          "path": "esposo-fiebre/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "6eea418a53a4de5e65ef4420a7a169266e38dd0ceb9512db0216fb7fae42a2a6"
+        },
+        "portrait-alegre": {
+          "path": "esposo-fiebre/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "e268811a0bcc0f14d93b016946f530617eda2611a937bc6932f7ae3ff5efce6e"
+        },
+        "portrait-cautelosa": {
+          "path": "esposo-fiebre/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "11841dede591b23f00ea8ebe8ea02859d2591763403b1b30a248a259001b5f54"
+        },
+        "portrait-en-crisis": {
+          "path": "esposo-fiebre/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "4a73363f5b29ac36601d1541eae30db1662ab82d52172b854740305d7850afca"
         }
       }
     },
@@ -1813,6 +2017,210 @@
         }
       }
     },
+    "hermano-adolescente": {
+      "displayName": "Hermano adolescente",
+      "kind": "npc",
+      "complexion": "b",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 65,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 20
+        },
+        "left": {
+          "opaqueHeight": 65,
+          "headWidth": 20,
+          "torsoDepth": 15
+        },
+        "up-left": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 65,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 65,
+          "headWidth": 20,
+          "torsoDepth": 15
+        },
+        "down-right": {
+          "opaqueHeight": 65,
+          "headWidth": 22,
+          "shoulderWidth": 20
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "hermano-adolescente/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "8437921e6f5a61a9c1edb684899ce4303aa5ea0ac31c8d261b5a5d5fd3b0a9ad"
+        },
+        "walk": {
+          "path": "hermano-adolescente/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "e5278aa3e8f89733b96c17c466450b490448ac5d48915cd430ce81105ec118df"
+        },
+        "portrait-neutral": {
+          "path": "hermano-adolescente/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "19236d860d147b444d82126db72a33e434a468ca98f83be7885eb4b976046c38"
+        },
+        "portrait-preocupada": {
+          "path": "hermano-adolescente/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "4d801968c62303f2cfc4e41542c287f450c9da064c762bb83bcab757e8d2284e"
+        },
+        "portrait-triste": {
+          "path": "hermano-adolescente/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "96e955757b87f27df3c9c6ad39df6887e0ef2c67aabe8cd403ae00471679b9e4"
+        },
+        "portrait-alegre": {
+          "path": "hermano-adolescente/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "d9f9a1b109a9f6c42c508789dcd96bc6a3a8ead4df7e724645f34dbde343c064"
+        },
+        "portrait-cautelosa": {
+          "path": "hermano-adolescente/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "33e3580e0c0fd5781d26c1e71a2f3324db5900cffda3f8c7bdc453f2dc6428c1"
+        },
+        "portrait-en-crisis": {
+          "path": "hermano-adolescente/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "851631c252926a4dfdb5edd481d445bc767025560dcf4604d66ce26db0746d94"
+        }
+      }
+    },
+    "hermano-mayor": {
+      "displayName": "Hermano mayor",
+      "kind": "npc",
+      "complexion": "b",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 20
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 18,
+          "torsoDepth": 15
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 18,
+          "torsoDepth": 15
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 20
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "hermano-mayor/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "39cdf76ccc2c2c68538bc4da60ce3c35850e5f3b8472986a35fcd6b42f02fb18"
+        },
+        "walk": {
+          "path": "hermano-mayor/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "937024df20469cfd210e0cafb7e60a776bc42ccf90bac8d62ff6f626485157f9"
+        },
+        "portrait-neutral": {
+          "path": "hermano-mayor/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "713533d42531c7c9115d5149570939002803d156c5a69ac75366834b73bd5b3d"
+        },
+        "portrait-preocupada": {
+          "path": "hermano-mayor/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "6c2ea35221bfbbdd0d4ecea813d8549fcf24be579f07012cbad634f1471b02f6"
+        },
+        "portrait-triste": {
+          "path": "hermano-mayor/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "052d3e210fbabffbbb7b2b99753649290477458abeadfb18e2a20690f71dd869"
+        },
+        "portrait-alegre": {
+          "path": "hermano-mayor/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "869c9fa922ee792a1f11878bcf08a8c8cd526d77e42908f7ab57921ae96d9119"
+        },
+        "portrait-cautelosa": {
+          "path": "hermano-mayor/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "5d9269d4bde5c2cee0394fd1e8db21d17ec47caf7ebd4f4b95720dfe3b9faf4f"
+        },
+        "portrait-en-crisis": {
+          "path": "hermano-mayor/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "0742aa9e2730a0956549390c4b27757ccbd4b86cd4373a6db1a55aae96090ed9"
+        }
+      }
+    },
     "jorge": {
       "displayName": "Jorge",
       "kind": "jugable",
@@ -2007,6 +2415,206 @@
               "width": 32,
               "height": 32,
               "pixelSha256": "d242848a2c57b9aeffdec58ea39aace23acbd85b5cb46e02ce1ae131e9aeefd1"
+            }
+          }
+        }
+      }
+    },
+    "karen": {
+      "displayName": "Karen",
+      "kind": "jugable",
+      "complexion": "c",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL",
+        "nota": "Avatar hecho con permiso escrito de la persona representada (2026-11)"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "torsoDepth": 19
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "torsoDepth": 19
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "karen/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "f614d07827257436a9835584bb5e416d3ad6587566b0bcbb093de3411d7244f5"
+        },
+        "walk": {
+          "path": "karen/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "4c80890685290fe38cd5e29c0a61f9d75f7d1ca86f6df6d6af4c2cb9757d4623"
+        },
+        "portrait-neutral": {
+          "path": "karen/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "40975ebd84e48b755d87a9c7f063b316a52e099a4606dc7d83a576e7736bce22"
+        },
+        "portrait-preocupada": {
+          "path": "karen/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "7978d7ac6306e531003fdcf8218e9d6019bd55b0c5623bf6eebb348b55cd5c6c"
+        },
+        "portrait-triste": {
+          "path": "karen/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "837128f87c8f4e10d3a6dac2455ef8760b686b76a85883633df64e1f9e30fbcd"
+        },
+        "portrait-alegre": {
+          "path": "karen/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "a404928555d56918461a018371f0ef62ea7b1ef67a4e514bfb58ce74a8353fb1"
+        },
+        "portrait-cautelosa": {
+          "path": "karen/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "d478b612715931987bf52f0b5bd1959c5c1c849c6250ec0a5180e605175347ec"
+        },
+        "portrait-en-crisis": {
+          "path": "karen/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "75f2af16c25899ce0892d8467640831f7e166968c76dd612a640348248ecb5dd"
+        }
+      },
+      "variants": {
+        "bata": {
+          "geometry": {
+            "down": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 25
+            },
+            "down-left": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "left": {
+              "opaqueHeight": 64,
+              "headWidth": 20,
+              "torsoDepth": 19
+            },
+            "up-left": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "up": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 25
+            },
+            "up-right": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "right": {
+              "opaqueHeight": 64,
+              "headWidth": 20,
+              "torsoDepth": 19
+            },
+            "down-right": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            }
+          },
+          "retouched": [],
+          "files": {
+            "idle": {
+              "path": "karen/bata/idle.png",
+              "width": 192,
+              "height": 576,
+              "pixelSha256": "a23514536f93738dcb0a9a3c2a4010d42ab526f00635f9d81be477b2c5641345"
+            },
+            "walk": {
+              "path": "karen/bata/walk.png",
+              "width": 288,
+              "height": 576,
+              "pixelSha256": "f88d4e709a648d208e699136a71e20b766d7af082df919253ed754a82312a2b6"
+            },
+            "portrait-neutral": {
+              "path": "karen/bata/portrait-neutral.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "1a04fc524ead7517efda0ad52dff9e3ce364500f0e82093c346612b227c7032c"
+            },
+            "portrait-preocupada": {
+              "path": "karen/bata/portrait-preocupada.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "2f43ca9c98d99c23a5e4af38ee42078b0371dd80742744d3ecf61e9fb7719d15"
+            },
+            "portrait-triste": {
+              "path": "karen/bata/portrait-triste.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "0104c9e0ccd70ba25fb86056b19602982f595e455ec507d98c4f59d5f89708dc"
+            },
+            "portrait-alegre": {
+              "path": "karen/bata/portrait-alegre.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "823285563b7a612f05cc9451ac527cdee625966ad13f6b8b2d834799a340de97"
+            },
+            "portrait-cautelosa": {
+              "path": "karen/bata/portrait-cautelosa.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "d2878b2a103da308cf6446b6ef9851a31615a073690b263bf657e3da07a46646"
+            },
+            "portrait-en-crisis": {
+              "path": "karen/bata/portrait-en-crisis.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "0412b5b855ef4737c5506e0032cfb7792aba9ab8b89ab6cb7201ea69ae89c939"
             }
           }
         }
@@ -2267,49 +2875,151 @@
           "path": "madre-acompanante/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "e326f6906e8e59b57f4d20030514fb1a7e794a10887060781847b3c777a8d4b4"
+          "pixelSha256": "17070f02c107a6c72ff2894333b3f4d9671d5e0252562d1f3b1421c41fc9c3d8"
         },
         "walk": {
           "path": "madre-acompanante/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "f095f773c38c28a2c5e6f32d1a4d8cbcc90fae1840deb5949ebb1821ad5ba9ca"
+          "pixelSha256": "969f7cf291ae87490b0a47090f6bdb8814bc7a76a6b553d044db114c6be02df4"
         },
         "portrait-neutral": {
           "path": "madre-acompanante/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ff917609d123fedf9095372bdb4e4b866d31b1af9104d2108ace76c503a01cc7"
+          "pixelSha256": "8d124dd4a01fb366a9a7694b365a55f6d836e909b2725a17e86bf3facb031f7a"
         },
         "portrait-preocupada": {
           "path": "madre-acompanante/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "244354ad5b96635fc5e46ca67b14ed0c2fd2bf64d753ce9490687f226ffbe157"
+          "pixelSha256": "c1d6974fbcf3232929cdd0e0a50e8064d0100d51b1ef50a52320ada57c180b55"
         },
         "portrait-triste": {
           "path": "madre-acompanante/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "32ee66fc5dc80b291f5f16829d7efdf70747a9b5ffa410b04785a9c7241c1194"
+          "pixelSha256": "2a3e6639933f731412ba063639d6c4c38a12e2dcea8478ea668d2a4b57506dd1"
         },
         "portrait-alegre": {
           "path": "madre-acompanante/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "77a72f768a23bdd5930647d0e98ea0fc58ba5b60b6c3dddef4f1bf86539e1638"
+          "pixelSha256": "467a4b4c707daa22c194f5fee1f38669d8fc8259ce6632f07db3423694635b43"
         },
         "portrait-cautelosa": {
           "path": "madre-acompanante/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ee50f18e49012d28412ae1b204271c0ad3c7a70d981477efc30bedb61e936974"
+          "pixelSha256": "007f666e5ec3b680f746742e60373ef999b9c452533d1e57ee5b21bd54879168"
         },
         "portrait-en-crisis": {
           "path": "madre-acompanante/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "12f99cb1803d9d6674d043cf3ab401e41a44b571182f4e5ef25bae9036057344"
+          "pixelSha256": "1fa75861f92f51bbdf1101471bcefc8a5ffaf9ce97467e7c15f3fc0de64b7353"
+        }
+      }
+    },
+    "mama-comisaria": {
+      "displayName": "Señora con su hijo",
+      "kind": "npc",
+      "complexion": "a",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 23
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 18
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "torsoDepth": 14
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 18
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 19,
+          "shoulderWidth": 23
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 18
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "torsoDepth": 14
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "shoulderWidth": 18
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "mama-comisaria/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "42389ec493b92a4b348ec8cf4676e66cf50c995ea4aeac4591ebb629bacd89c2"
+        },
+        "walk": {
+          "path": "mama-comisaria/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "efd2b0f3a043fab74ee55e177c4327bbb2d11ab45a9175d54fd1c6d20aa88390"
+        },
+        "portrait-neutral": {
+          "path": "mama-comisaria/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "326c33e05f6c566395be236d70e2e91654b779f0e75998d116743e4e66d04bf2"
+        },
+        "portrait-preocupada": {
+          "path": "mama-comisaria/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "1da134bb137bae646a11df73fa575b8636b4b3b5a5f4cc7f2d1eac3cdd6c91ce"
+        },
+        "portrait-triste": {
+          "path": "mama-comisaria/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "67d526bd2796ca207a44582d5f4458af9831df9ca6b65f456c0b1d946128917d"
+        },
+        "portrait-alegre": {
+          "path": "mama-comisaria/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "20e576bf3a1725d143ee7ef8586324f37f60a83e17e8c8958c8317d3a1bdd149"
+        },
+        "portrait-cautelosa": {
+          "path": "mama-comisaria/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "3619dbf590991ebc0d42f97220543d88189f381a27e87786739827d9660896aa"
+        },
+        "portrait-en-crisis": {
+          "path": "mama-comisaria/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "eebae92a455a6e743c04569f419fc437d8d73e3970496c1281452f03c68717aa"
         }
       }
     },
@@ -2767,49 +3477,49 @@
           "path": "medico-guardia/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "38f204c8311de4878507c0a755cd92dae813db6d8cdc7e6d056aa76f236f1ac3"
+          "pixelSha256": "67c3b8042ae2dab52b8f5848d68d56a70d3e4a685fee96a2e6d54dfdf747e81a"
         },
         "walk": {
           "path": "medico-guardia/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "c84e323797e2f4df3b9165cfc6eaa9a3c04815945fd2e7eb64fde9984d66f1aa"
+          "pixelSha256": "c6dc7ce9c7fe46b07624df6bfa0766b97ab44a20120276f004d9fbd74e66f90f"
         },
         "portrait-neutral": {
           "path": "medico-guardia/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "f3356d27f5fbfdb73e3693bc811070dcf61948cbd42b5872cdbc17a9d455fefd"
+          "pixelSha256": "7eec03d62079001b4a9e97daadcac54d6e491f3f9f73efe0fabcc356d1d3b4bb"
         },
         "portrait-preocupada": {
           "path": "medico-guardia/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "e603f8b5fa8ec083e902b51e9d287ffc790e772e185dc6ea53fc6a04f2250edb"
+          "pixelSha256": "6e67dc16681cf48d8a48bc06c25f9bf893f2faa0c74cfd0626d03fbf3bbe82f7"
         },
         "portrait-triste": {
           "path": "medico-guardia/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "915b8213d61bd8d7e1a3db1adaf723e57263b92003bd8e6e57ddf53f0c490cdb"
+          "pixelSha256": "edd9618ea1665622228066a3969c9f203eaa38064332f7073b0dcc3f7a6a9273"
         },
         "portrait-alegre": {
           "path": "medico-guardia/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "78f1c978aca84ac88501b6baef25ca9b4acc3380e5743dd29c12c228cb17d548"
+          "pixelSha256": "d6b658f5ede61162ea34ea79147288e6f69a9d6db13393c0a3d6d9ee1b3e8064"
         },
         "portrait-cautelosa": {
           "path": "medico-guardia/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "0560521bf4eab1a2c5817ffb6a68b6c9e76dee29c3298f78a3da773513a947b7"
+          "pixelSha256": "42b7e057bad00f5c734b12950acf06aad6a79bcbc918bc1f82b8d31570c3f2d8"
         },
         "portrait-en-crisis": {
           "path": "medico-guardia/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "7734e129a39c2b4a23ece9d93fb9fbe0211d5b0d7f4a4392ff00470f3df743aa"
+          "pixelSha256": "c17085d1b307ac74c689357a9effab1ab2077ac886ec1bb15178ace08e07c365"
         }
       }
     },
@@ -2971,49 +3681,49 @@
           "path": "orientadora-juridica/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "e4ef6f76ad04ecde798cfe30c898b946c6eae62e6d070b80e04a71238902b3df"
+          "pixelSha256": "9d21e6f04746bc1e4c50befebd62c2e277ee05bc4215211bc105725f93f1b5ba"
         },
         "walk": {
           "path": "orientadora-juridica/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "fc030525b5ce7b84f94c0e34a5fd55e6e7601486d70243666dda73b54a1bb15a"
+          "pixelSha256": "e149170562af92d44bd10e78e7f293e77f210c3f7d90f0334b4e1ef3a55a87d5"
         },
         "portrait-neutral": {
           "path": "orientadora-juridica/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "f3fae048ce7f9953e41474d1201051171eb85dbf05bcb78a15310a031ba32f0c"
+          "pixelSha256": "3dde935ab328ed0f12d5847ac1f7fcd8270ecbb239597b5cd54aeae83db84091"
         },
         "portrait-preocupada": {
           "path": "orientadora-juridica/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "399b5f6668f916558df9d70cffb976bf7859a521728f273eed6f20fb8b467a9f"
+          "pixelSha256": "6efab17a2867deb1ca4daf32197d7e1b8e71c7377f44c76f1197a1bcecdc7768"
         },
         "portrait-triste": {
           "path": "orientadora-juridica/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ac2b22b0769ce85a46cc48de87490a4785e45e77a339ee13f03477e560a004f7"
+          "pixelSha256": "e6e29e136b48e214a61785e8827cf9d0ce57bf8b01b30b053e077169e8189c93"
         },
         "portrait-alegre": {
           "path": "orientadora-juridica/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "30e6190ebc83220fe0e5b174b1004371e5b3606e9d277db9aad6f43a165aea91"
+          "pixelSha256": "47644bc8b484b224ba22e634867b57a4274a610bce410aeee83c8cfc81045541"
         },
         "portrait-cautelosa": {
           "path": "orientadora-juridica/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "7ce55ebdabf14123ea8cc141888d31abe016aabca63ebdb74450c471a0cc40ef"
+          "pixelSha256": "5dd7becb83db0aeb7ec4f2603c610598080e643be1917b1d57356a17e0d80b13"
         },
         "portrait-en-crisis": {
           "path": "orientadora-juridica/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "d6982fe723cc0fc832441fd43b1628820e42980ba8d76c59f6e9838e6e1dd067"
+          "pixelSha256": "bf9fe7dfa84309ff66878af2144684354fa6149b6636710ca088a7456aefa371"
         }
       }
     },
@@ -3578,49 +4288,49 @@
           "path": "psicologa-hospitalaria/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "2baa9ee1bf4cb05dc4b43775175d36085cbce2fba6fe389bfc1928c0aef530ee"
+          "pixelSha256": "472230bd49478f69fdcca58cedc87cd599eacda3b1a24d13db24e242b86db01c"
         },
         "walk": {
           "path": "psicologa-hospitalaria/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "1998c2c24a12e8b6d63d9a0f6d794a4693683e5d5487e3c5f7cd4e94d6993b25"
+          "pixelSha256": "2dcbaa765e241e52bc5bedbaa695e532f1aba480ca62021d920fe841ecae8984"
         },
         "portrait-neutral": {
           "path": "psicologa-hospitalaria/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "0f31fb70443d6c9b8b4522a75268aa3ee223eb4bac151c18508e78b8221a3794"
+          "pixelSha256": "250e32fcef518e4bb6f16a7ef2fd1d66a61c64b0a0556cc01026dd29eae1864b"
         },
         "portrait-preocupada": {
           "path": "psicologa-hospitalaria/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "5ec9dc1876071c50da14c8720bfa0c4b72bccba139f5ce5d12b6a95a48da8bf5"
+          "pixelSha256": "4837a462927c2fcd387ef3bf3970afee4dc2912ffc59e988626e3d607ac09e61"
         },
         "portrait-triste": {
           "path": "psicologa-hospitalaria/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "8f104d610a28689b625af0166255cbd766866e26e1bef67c7e8d41bb994dd185"
+          "pixelSha256": "cb745f8c725541ec33683a4850a4c4319dab8f3960e281b3eb13d31993ea6b4a"
         },
         "portrait-alegre": {
           "path": "psicologa-hospitalaria/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "bb66f4c95b34a2806374f28b0f41dfc6a84523c19182f5a253c20d8d60404bb0"
+          "pixelSha256": "29e1b386148b726476a1cae1828e4605c3ed747141cc1b9e22fbbb5b09f3e2b7"
         },
         "portrait-cautelosa": {
           "path": "psicologa-hospitalaria/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "c1225936be351d61904501ac9140fda06ab156453facff80a9d903e7f063539e"
+          "pixelSha256": "49950159e7451349c0d7b0f859eba1d64d33a1fd31c9a7fb4859524088f41fd7"
         },
         "portrait-en-crisis": {
           "path": "psicologa-hospitalaria/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "adf3ee03bc674b28debd59e732abb32a594a958ad7528721a18f99958f35f612"
+          "pixelSha256": "8d1f70af8cf2f400ce007ed464dceb2da6566b1933a87a7eaed9ec74e51ab0e5"
         }
       }
     },
@@ -3823,6 +4533,206 @@
         }
       }
     },
+    "sara": {
+      "displayName": "Sara",
+      "kind": "jugable",
+      "complexion": "c",
+      "provenance": {
+        "source": "Kit SIEP",
+        "license": "SIEP-INTERNAL",
+        "nota": "Avatar hecho con permiso escrito de la persona representada (2026-11)"
+      },
+      "geometry": {
+        "down": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "down-left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "left": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "torsoDepth": 19
+        },
+        "up-left": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "up": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 25
+        },
+        "up-right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        },
+        "right": {
+          "opaqueHeight": 64,
+          "headWidth": 20,
+          "torsoDepth": 19
+        },
+        "down-right": {
+          "opaqueHeight": 64,
+          "headWidth": 21,
+          "shoulderWidth": 21
+        }
+      },
+      "retouched": [],
+      "files": {
+        "idle": {
+          "path": "sara/idle.png",
+          "width": 192,
+          "height": 576,
+          "pixelSha256": "25d347d5fe97bbdaa2fe35d7ba8c78922739edb146b662f72aeddac6671e7fed"
+        },
+        "walk": {
+          "path": "sara/walk.png",
+          "width": 288,
+          "height": 576,
+          "pixelSha256": "172fd66d54a5448ab0ff0708b284f7c1b2195d0ed6bdfa08d0cc33e6c5e65672"
+        },
+        "portrait-neutral": {
+          "path": "sara/portrait-neutral.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "0ab5caf9dceefd8821edfdb813d4944e97c4fef37a3a12fa4c19b45e02e60c8a"
+        },
+        "portrait-preocupada": {
+          "path": "sara/portrait-preocupada.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "32b14ce51bddfc8776c9656a92fcb193dc5c52baa90c4225ccb3e3fa88aadaf6"
+        },
+        "portrait-triste": {
+          "path": "sara/portrait-triste.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "d37312acf66d2f6803374f8a72905658f5e55b89a6bbafbed8ef8a9e45d52311"
+        },
+        "portrait-alegre": {
+          "path": "sara/portrait-alegre.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "ac98b5742aa83854bab0033ea54cc4bcb991bed7b57cce743b2921c9e05d8674"
+        },
+        "portrait-cautelosa": {
+          "path": "sara/portrait-cautelosa.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "34e9a4cb7311e8d03e079d58b7b797603601533fdb65c1083bf33beb17bf0a5e"
+        },
+        "portrait-en-crisis": {
+          "path": "sara/portrait-en-crisis.png",
+          "width": 32,
+          "height": 32,
+          "pixelSha256": "239b4cf2437d481748a85e70d74f4865766aeb673e209b16f850925479f0e16f"
+        }
+      },
+      "variants": {
+        "bata": {
+          "geometry": {
+            "down": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 25
+            },
+            "down-left": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "left": {
+              "opaqueHeight": 64,
+              "headWidth": 20,
+              "torsoDepth": 19
+            },
+            "up-left": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "up": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 25
+            },
+            "up-right": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            },
+            "right": {
+              "opaqueHeight": 64,
+              "headWidth": 20,
+              "torsoDepth": 19
+            },
+            "down-right": {
+              "opaqueHeight": 64,
+              "headWidth": 21,
+              "shoulderWidth": 21
+            }
+          },
+          "retouched": [],
+          "files": {
+            "idle": {
+              "path": "sara/bata/idle.png",
+              "width": 192,
+              "height": 576,
+              "pixelSha256": "eeb0e12be1d24657a8ba9923cdc7b2bd0ea907548094db9856722f54c8911736"
+            },
+            "walk": {
+              "path": "sara/bata/walk.png",
+              "width": 288,
+              "height": 576,
+              "pixelSha256": "97f6eacbe5e3601fe620dda1de15741e3f64b93d68130db4bfc94b6f74c1fe88"
+            },
+            "portrait-neutral": {
+              "path": "sara/bata/portrait-neutral.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "40bdd867cf0e6509c750fb638cab045228e66450fdca15adc0ef5dc6605ce428"
+            },
+            "portrait-preocupada": {
+              "path": "sara/bata/portrait-preocupada.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "a5ad169bc36fcb4dd19b757f2a94926e77e741b5be7bf94337b21baf1fbd7bd6"
+            },
+            "portrait-triste": {
+              "path": "sara/bata/portrait-triste.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "78cfa41317334d729f91ab5da30cbaba9c8d07e4003da6867420119a33830406"
+            },
+            "portrait-alegre": {
+              "path": "sara/bata/portrait-alegre.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "04b2f8adfc7152454f5564b238ec588ac9644f19558536538eb314be98cd916e"
+            },
+            "portrait-cautelosa": {
+              "path": "sara/bata/portrait-cautelosa.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "ee07270d60b191f6ee320154c168e6b0a03824495a4c91f8106b82a40fc6d2c1"
+            },
+            "portrait-en-crisis": {
+              "path": "sara/bata/portrait-en-crisis.png",
+              "width": 32,
+              "height": 32,
+              "pixelSha256": "c5da3bdd7d25526f5eed7fac6085ce0bb97412b4a9b35c6d2fa543286babbd56"
+            }
+          }
+        }
+      }
+    },
     "seguridad": {
       "displayName": "Seguridad",
       "kind": "npc",
@@ -3879,49 +4789,49 @@
           "path": "seguridad/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "fd39815e376ac1d68e4b2f20dee650c99d5bb3ae4554d685cf30f8f2bb151cbd"
+          "pixelSha256": "1f1c21b936962ca8845fbf5316cca78ad3d82446153bad8ea658fe9d589d8168"
         },
         "walk": {
           "path": "seguridad/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "3f90bbfc6a4b2e54b6081cafcbd156a0950d731fb264e4ede0f9871bbcbfbe8c"
+          "pixelSha256": "96601a1ef5008f47adc9b2299aea23945e3ef1aa8cefdb5360882a473fd17175"
         },
         "portrait-neutral": {
           "path": "seguridad/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "c7ea4680e4d18535a30a16030b3bec3a44fc68dc07a50a8cb37c79cb26fe82da"
+          "pixelSha256": "5c6ce476633d786066c73836d4329cd63a9f16aee02cc48c48e0ca4bf6a3970c"
         },
         "portrait-preocupada": {
           "path": "seguridad/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "555b38e33b1db760fe8579c749e1ab75719562ee2b7014d0b263800b2eefc699"
+          "pixelSha256": "e7577b7bb32f27f0162a0a1b9f139f758fcdf5def12f44128a457a3729235202"
         },
         "portrait-triste": {
           "path": "seguridad/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "510364c8026a24a9b7a57ee977c7f76062d191ab9fe36bcad5a7e8529f40727b"
+          "pixelSha256": "d61b1042495758b29711f8c0174dfd58ddbcc3a61b27eef278a3be981282b818"
         },
         "portrait-alegre": {
           "path": "seguridad/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "3d1b39692fc71ea5ec9c83a850aa63c78e7cd3bf40452bf3c55b29eb1732d91b"
+          "pixelSha256": "846059cfd8aa08982c1b2a8b06bcc9751219a4ddcbe97a3eb8bb5119535051fe"
         },
         "portrait-cautelosa": {
           "path": "seguridad/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "aade1454c41f43e4cb1f68b7bfeaf03a6c9d03b4e9874f510ce531ef3c3e93bc"
+          "pixelSha256": "7a54d657d5de896a323a0bbf0410975f82b1c9fdfaa9f72c5f89739eb2851f6c"
         },
         "portrait-en-crisis": {
           "path": "seguridad/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "3ec81a38d3a52d0664577f18429fb367cc89d33d3c6ac950321de4c0d5156b7c"
+          "pixelSha256": "2fdb1824bea8f07801749599e28d3a863e93adbb383f97698f01102a6a3f13aa"
         }
       }
     },
@@ -3981,49 +4891,49 @@
           "path": "sobreviviente/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "c0fca1f73a746f5883e694ac6995748371513a319a30b1c00aae2c06c50476d5"
+          "pixelSha256": "6f064baf0022cd4a9f9c15dd8cec70c85dbe0fdb126cafb4bf8cbf58065f39ef"
         },
         "walk": {
           "path": "sobreviviente/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "0f6faf02d35bc8cd43583c2034954cf33bf663ffd3fbcd6dc5c6f9ca9d54e74d"
+          "pixelSha256": "b86eb4b1d114a010911e312c1d524262c53bece77caef8294d1d5d7e948db273"
         },
         "portrait-neutral": {
           "path": "sobreviviente/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "b69633153a4f7cd04963c9a1d46c24f18345000cf3f4034fb7ce7e2c32cd382a"
+          "pixelSha256": "c67469b221075dfc2d22d12192522846113d10f03da02228864253143c85c092"
         },
         "portrait-preocupada": {
           "path": "sobreviviente/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "c0f3042a3d9ea23413f19f4750a48034bc2f53612653b1685a32e17b5447109d"
+          "pixelSha256": "319899e1b05dbc1e57c38165279e8302a8aa78f227fd04fb6fda81c706a41fbb"
         },
         "portrait-triste": {
           "path": "sobreviviente/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "eabf5549f86664a1deb5a01b88a39eee7a915105b78e65f54008720fa9a39d2c"
+          "pixelSha256": "0e94ce80f62998d68a735212e28c327dc07aefa56bc53a57ddeeae7914706540"
         },
         "portrait-alegre": {
           "path": "sobreviviente/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "e19fe32231094e698ca63a84bf5583899a6bbacab82e67f2d3dece68724992f5"
+          "pixelSha256": "bd4635c53bfb190c96235bcfe52e0b65351b6b033d52c9b9fa0e8cf55c6e1cab"
         },
         "portrait-cautelosa": {
           "path": "sobreviviente/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "26bcf4a8be124866533bc85877704e1a136440d8abd2f91d65e0bbba6bb2faab"
+          "pixelSha256": "2388a074eabf084e5c146d1f0cb00eac1be79eb274f1de524128a2182a4d49ce"
         },
         "portrait-en-crisis": {
           "path": "sobreviviente/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "c7e0af269fe823ae9b60bf628c55a92b710ad71bf55bfd09e3ace17bc1e79126"
+          "pixelSha256": "94793440dcf386335d0e2da21b6934471f21e4134d6ea45d4644f12a05c1b67d"
         }
       }
     },
@@ -4185,49 +5095,49 @@
           "path": "trabajadora-social/idle.png",
           "width": 192,
           "height": 576,
-          "pixelSha256": "784c88e6f9cd195766d576b485f173a179da893bc23d1fe8162db492446964de"
+          "pixelSha256": "b07e0a50a9f1498e4f597c2f6216da402acf0a8aa9b518cd3bcca9773289df32"
         },
         "walk": {
           "path": "trabajadora-social/walk.png",
           "width": 288,
           "height": 576,
-          "pixelSha256": "585ec67e60250a7ff231d1b87f91a683ba6426053dd7afa0c2c7acde66aa7c07"
+          "pixelSha256": "6fbeac48a8f06ddbc5059b27c6610923dad510d88477670007617464f971d9c1"
         },
         "portrait-neutral": {
           "path": "trabajadora-social/portrait-neutral.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "c154f7601089cef976d9d1180799dc1ea8ec8c88449930d63dc1a280af688a67"
+          "pixelSha256": "231aaabea172f655d11a28990fb51352fc09f95ddb286b8d4b322a39c07a8aa9"
         },
         "portrait-preocupada": {
           "path": "trabajadora-social/portrait-preocupada.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "8564ad0c5eaaa72e7cc62bdf123a57f50c89568cdf7a3c163d1ccef98e6d41aa"
+          "pixelSha256": "8d5213a51226b4ff14854ae490e7aeae764dd662e6667b5c01cd9924ff484fbf"
         },
         "portrait-triste": {
           "path": "trabajadora-social/portrait-triste.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "ba50f0734ccd1521238d0fbb3fa54a86e86a2700c8689b65e3a9471e59179a68"
+          "pixelSha256": "fabbd5482a8e9c57ab18a49593f1f06652da26b965617fce50d7d0b69e1b94d0"
         },
         "portrait-alegre": {
           "path": "trabajadora-social/portrait-alegre.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "0a1252d5ca5b85295a634710414a9a5f7431488f60cfc0ab0743a2ec540fcc79"
+          "pixelSha256": "29c589d8cac7deb064472deed14e37953a457f32041f58223ce83096f92ed6cc"
         },
         "portrait-cautelosa": {
           "path": "trabajadora-social/portrait-cautelosa.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "f5cc5ecf8999960c3158857919fe25b85100e93430fcdf71835b2140f914257b"
+          "pixelSha256": "9d0aa3f8015e547c4f0aed5cbbe79761ba16c1b42419840e61ccf4919acb601b"
         },
         "portrait-en-crisis": {
           "path": "trabajadora-social/portrait-en-crisis.png",
           "width": 32,
           "height": 32,
-          "pixelSha256": "898346e177f8018e6c6d771f3b954970c38f581c935cfb728ee473bdb24cdc5a"
+          "pixelSha256": "dba3c36392d9f6bfe870fdb1d617fb11ba61bae23ede118c6590cf75af22cb02"
         }
       }
     },

@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, ElementRef, input, output, signal, viewChild } from '@angular/core';
 
+import { Caja, situarAviso } from '../camara/camara';
 import { PixelIconoComponent } from '../pixel/pixel-icono.component';
 
 /**
@@ -16,8 +17,9 @@ import { PixelIconoComponent } from '../pixel/pixel-icono.component';
   standalone: true,
   imports: [PixelIconoComponent],
   template: `
-    <button type="button" class="aviso u-boton u-sombra" [class.aviso--cerrada]="bloqueada()" [attr.aria-disabled]="bloqueada() ? 'true' : null"
-      [style.left.px]="x()" [style.top.px]="y()" [style.--x]="x() + 'px'" (click)="cruzar.emit()">
+    <button #placa type="button" class="aviso u-boton u-sombra" [class.aviso--cerrada]="bloqueada()" [attr.aria-disabled]="bloqueada() ? 'true' : null"
+      [style.left.px]="posicion()?.x ?? 0" [style.top.px]="posicion()?.y ?? 0" [style.visibility]="posicion() ? null : 'hidden'"
+      (click)="cruzar.emit()">
       @if (conTecla()) {
         <kbd class="aviso__tecla u-tecla u-tecla--letra" aria-hidden="true">E</kbd><span class="aviso__sep" aria-hidden="true">·</span>
       }
@@ -31,7 +33,9 @@ import { PixelIconoComponent } from '../pixel/pixel-icono.component';
         <span class="aviso__falta"><span class="aviso__oculto">: cerrada.</span> {{ detalle() }}</span>
       }
     </button>
-    <span class="aviso__cola" [style.left.px]="x()" [style.top.px]="y()" aria-hidden="true"><app-pixel-icono nombre="cola-abajo" /></span>
+    @if (colaVisible()) {
+      <span class="aviso__cola" [style.left.px]="x()" [style.top.px]="y()" aria-hidden="true"><app-pixel-icono nombre="cola-abajo" /></span>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
@@ -39,16 +43,15 @@ import { PixelIconoComponent } from '../pixel/pixel-icono.component';
     :host { position: absolute; inset: 0; pointer-events: none; container-type: size; }
     /* Bloque U1: el cartel es la placa-botón del cuadro de diálogo (marco, trama, sombra de tramado y estados de sobre, foco y
        pulsado de la hoja común) con la tecla E de las fichas y una cola de pixel que se monta un punto sobre su canto. */
-    /* Centrado sobre su puerta, salvo junto a un borde del lienzo: ahí se corre lo justo para quedar entero (la cola
-       sigue señalando la puerta, que es otro elemento). Si el cartel es más ancho que el lienzo, manda el borde izquierdo. */
+    /* El cartel se coloca con su tamaño real y admite varias líneas en pantallas estrechas. */
     .aviso {
-      --borde: calc(2 * var(--pixel-px, 2px));
-      --dx: clamp(calc(var(--borde) - var(--x, 0px)), -50%, calc(100cqw - var(--x, 0px) - 100% - var(--borde)));
-      position: absolute; transform: none; translate: var(--dx) calc(-100% - 3 * var(--pixel-px, 2px)); pointer-events: auto;
+      position: absolute; transform: none; pointer-events: auto; box-sizing: border-box;
+      width: max-content; max-width: min(32rem, calc(100cqw - 12px)); flex-wrap: wrap; white-space: normal;
+      overflow-wrap: anywhere;
       gap: calc(3 * var(--pixel-px, 2px)); padding: 0 calc(5 * var(--pixel-px, 2px)) 1px calc(3 * var(--pixel-px, 2px));
       font-family: var(--pixel-f-texto); font-size: calc(var(--pixel-tam, 14px) * 1.05); font-weight: 600; line-height: 1.2;
     }
-    .aviso:active { transform: none; translate: var(--dx) calc(-100% - 2 * var(--pixel-px, 2px)); }
+    .aviso:active { transform: none; }
     .aviso__sep { color: var(--pixel-tinta-suave); }
     .aviso__candado { width: calc(7 * var(--pixel-px, 2px)); height: calc(8 * var(--pixel-px, 2px)); flex: none; }
     .aviso__ojo { fill: var(--pixel-penumbra); }
@@ -59,9 +62,6 @@ import { PixelIconoComponent } from '../pixel/pixel-icono.component';
       transform: translate(-50%, -100%);
     }
     .aviso__cola app-pixel-icono { width: 100%; height: 100%; }
-    @media (prefers-reduced-motion: reduce) {
-      .aviso:active { translate: var(--dx) calc(-100% - 3 * var(--pixel-px, 2px)); }
-    }
   `],
 })
 export class AvisoDePuertaComponent {
@@ -76,8 +76,36 @@ export class AvisoDePuertaComponent {
   /** Punto al que señala la cola, en px del contenedor. */
   readonly x = input(0);
   readonly y = input(0);
+  readonly vista = input<Caja | null>(null);
+  readonly ocupadas = input<readonly Caja[]>([]);
   /** Quien juega quiere pasar (o intenta pasar por la puerta cerrada). */
   readonly cruzar = output<void>();
 
   protected readonly detalle = computed(() => this.falta() ?? 'Todavía no se puede pasar.');
+  private readonly placa = viewChild.required<ElementRef<HTMLButtonElement>>('placa');
+  private readonly tamano = signal({ ancho: 0, alto: 0 });
+  private readonly medir = afterRenderEffect(onCleanup => {
+    const el = this.placa().nativeElement;
+    const medir = () => this.tamano.set({ ancho: el.offsetWidth, alto: el.offsetHeight });
+    medir();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    onCleanup(() => observador.disconnect());
+  });
+
+  private readonly preferida = computed<Caja>(() => {
+    const { ancho, alto } = this.tamano();
+    return { x: this.x() - ancho / 2, y: this.y() - alto - 6, ancho, alto };
+  });
+  protected readonly posicion = computed(() => {
+    const caja = this.preferida();
+    const vista = this.vista();
+    return vista && caja.ancho > 0 && caja.alto > 0 ? situarAviso(caja, vista, this.ocupadas()) : null;
+  });
+  protected readonly colaVisible = computed(() => {
+    const p = this.posicion();
+    const caja = this.preferida();
+    return !!p && p.y === caja.y && this.x() > p.x + 8 && this.x() < p.x + caja.ancho - 8;
+  });
 }

@@ -11,6 +11,8 @@ export interface Grupo {
   totalEstudiantes: number;
   /** E2-10: invitaciones que aún no se responden. */
   totalInvitados?: number;
+  /** Solo en el listado: avance de las asignaciones, incluidas las pausadas. */
+  resumenCasos?: { asignados: number; terminados: number; oportunidades: number };
 }
 
 /** Estado de la membresía (E2-10, C5): el docente invita y el estudiante acepta, rechaza o sale. */

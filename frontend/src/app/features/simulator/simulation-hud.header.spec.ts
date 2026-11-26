@@ -81,6 +81,23 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
 
   // Bloque U1, variante B (placas en las esquinas): el HUD es el grupo de la derecha (caso, persona y teclas); la etapa va
   // en la pestaña de la ficha del objetivo y la sala en la del plano (pruebas en simulation-play).
+  describe('Ayuda y Ajustes (UB-E09)', () => {
+    it('distingue las acciones y emite la apertura de ayuda', () => {
+      const root = mount();
+      const help = root.querySelector<HTMLButtonElement>('[data-hud-help]')!;
+      const settings = root.querySelector<HTMLButtonElement>('[data-hud-settings]')!;
+      expect(help?.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Ayuda');
+      expect(settings?.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Ajustes');
+      expect(help.getAttribute('aria-label')).toMatch(/^Ayuda/);
+      expect(settings.getAttribute('aria-label')).toMatch(/^Ajustes/);
+      expect(help.querySelector('app-pixel-icono')?.getAttribute('nombre')).toBe('ayuda');
+      expect(settings.querySelector('app-pixel-icono')?.getAttribute('nombre')).toBe('ajustes');
+      const emitted = vi.fn(); hud.openHelp.subscribe(emitted); help.click();
+      expect(emitted).toHaveBeenCalledTimes(1);
+      settings.click(); expect(hud.settingsOpen()).toBe(true);
+    });
+  });
+
   describe('grupo de la derecha', () => {
     it('la etapa ya no se pinta aquí: la lleva la pestaña de la ficha del objetivo', () => {
       const root = mount(false, { stageLabel: 'Decisión 2 de 6' });
@@ -92,7 +109,7 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
       const root = mount();
       expect(root.querySelector('.hud-case.u-rotulo')).not.toBeNull();
       expect(root.querySelector('.hud-strip.u-placa .hud-persona')).not.toBeNull();
-      expect(root.querySelectorAll('.hud-strip .hud-action.u-tecla--icono').length).toBe(5);
+      expect(root.querySelectorAll('.hud-strip .hud-action.u-tecla--icono').length).toBe(6);
     });
 
     it('el contador antiguo «Paso k (k/6)» ya no existe: ni bloque ni cálculo', () => {
@@ -155,27 +172,54 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
     });
   });
 
-  describe('botón de ayuda', () => {
-    it('existe con el nombre accesible «Abrir cómo se juega» y emite openHelp', () => {
+  describe('botón «Controles» (P8)', () => {
+    it('siempre a la vista: nombre accesible que contiene su texto visible, y emite openControls', () => {
       const root = mount();
-      const help = button(root, 'Abrir cómo se juega');
-      expect(help).not.toBeNull();
-      expect(help?.getAttribute('title')).toBe('Cómo se juega');
-      expect(help?.querySelector('app-pixel-icono')).not.toBeNull();
-      expect(hudSource).toContain('<app-pixel-icono nombre="ayuda" />');
+      const controls = button(root, 'Abrir los controles del juego');
+      expect(controls).not.toBeNull();
+      expect(controls?.getAttribute('title')).toBe('Controles');
+      expect(controls?.hasAttribute('data-hud-controls')).toBe(true);
+      expect(controls?.querySelector('app-pixel-icono')).not.toBeNull();
+      expect(controls?.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Controles');
+      expect(hudSource).toContain('<app-pixel-icono nombre="controles" />');
       const emitted = vi.fn();
-      hud.openHelp.subscribe(emitted);
-      help!.click();
+      hud.openControls.subscribe(emitted);
+      controls!.click();
       expect(emitted).toHaveBeenCalledTimes(1);
+    });
+
+    it('«Ir a…» lleva su texto visible junto al icono, y el nombre accesible lo contiene', () => {
+      const root = mount();
+      const places = root.querySelector<HTMLButtonElement>('button[data-hud-places]')!;
+      expect(places.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Ir a…');
+      expect(places.getAttribute('aria-label')).toContain('Ir a…');
+    });
+
+    it('el texto se va en el tramo compacto (queda el icono con su nombre) y las teclas no pierden su alto', () => {
+      expect(hudSource).toMatch(/@media \(max-height: 700px\), \(max-width: 1100px\) \{\s*\.hud-action__texto \{ display: none; \}/);
+      expect(hudSource).toMatch(/\.hud-action\.hud-action--texto \{ width: auto; min-width: var\(--tecla-hud, 44px\);/);
+    });
+
+    it('«Cómo se juega» sigue en Ajustes y la fila nueva «Texto instantáneo» alterna el ajuste', () => {
+      const root = mount();
+      openSettings(root);
+      expect(settingsRow(root, 'Cómo se juega')).toBeDefined();
+      const row = settingsRow(root, 'Texto instantáneo')!;
+      expect(row.getAttribute('aria-pressed')).toBe('false');
+      expect(row.querySelector('strong')?.textContent?.trim()).toBe('No');
+      const toggled = vi.fn();
+      hud.toggleInstantText.subscribe(toggled);
+      row.click();
+      expect(toggled).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('una sola fuente del copy', () => {
     it('los textos de ayuda del HUD son los de ORIENTATION_COPY', () => {
       const root = mount();
-      const help = button(root, ORIENTATION_COPY.ui.helpAriaLabel);
-      expect(help).not.toBeNull();
-      expect(help?.getAttribute('title')).toBe(ORIENTATION_COPY.ui.helpTitle);
+      const controls = button(root, ORIENTATION_COPY.ui.controlsAriaLabel);
+      expect(controls).not.toBeNull();
+      expect(controls?.getAttribute('title')).toBe(ORIENTATION_COPY.ui.controlsTitle);
       openSettings(root);
       expect(settingsRow(root, ORIENTATION_COPY.ui.settingsHelpRow)).toBeDefined();
       expect(settingsRow(root, ORIENTATION_COPY.ui.settingsHelpAgain)).toBeDefined();
@@ -420,8 +464,11 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
       const fichas = readFileSync(join(__dirname, '../../../styles/tokens/_pixel.scss'), 'utf-8');
       expect(fichas).toContain('--tecla-hud: clamp(44px, calc(var(--pixel-tam) * 3), 48px);');
       expect(fichas).not.toMatch(/--tecla-hud: [^;]*3[0-9]px/);
-      expect(base).toMatch(/\.settings-menu__header button \{[^}]*width: 44px;[^}]*height: 44px;/);
-      expect(base).toMatch(/\.settings-menu > button,\s*\.settings-menu > a \{[^}]*min-height: 44px;/);
+      const botones = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+      expect(hudSource).toContain('class="u-boton u-boton--icono" type="button" aria-label="Cerrar ajustes"');
+      expect(base).toMatch(/\.settings-menu > \.u-boton \{/);
+      expect(botones).toMatch(/\.u-boton--icono \{ width: 44px/);
+      expect(botones).toContain('min-height: 44px');
     });
 
     it('nada del HUD anima width y ya no quedan barras ni pulsos de estrés', () => {

@@ -1,3 +1,4 @@
+import { APP_BRAND } from '../../core/config/brand.config';
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, InjectionToken, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -37,7 +38,7 @@ const ANNOUNCE_GAP_MS = 150;
     <div class="portal" [attr.data-skin]="tema.piel()">
     <main id="main-content" tabindex="-1" class="sin-red">
       <app-pagina-estado tipo="sin-conexion" titulo="Sin conexión"
-        texto="No pudimos cargar esta parte de SIEP porque no hay conexión."
+        [texto]="'No pudimos cargar esta parte de ' + brand.shortName + ' porque no hay conexión.'"
         detalle="Lo que hiciste hasta el último guardado está a salvo. Cuando vuelva la conexión, sigue donde quedaste.">
         <button ui-button type="button" (click)="retry()">Reintentar</button>
       </app-pagina-estado>
@@ -66,6 +67,7 @@ const ANNOUNCE_GAP_MS = 150;
   `],
 })
 export class OfflineComponent {
+  readonly brand = APP_BRAND;
   protected readonly tema = inject(TemaService);
   private readonly from = inject(ActivatedRoute).snapshot.queryParamMap.get('desde');
   private readonly fullNavigation = inject(FULL_NAVIGATION);

@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { RubricAdmin, RubricService } from '../../core/api/rubric.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -385,7 +385,7 @@ export class RubricsComponent {
     }
     const texto = err instanceof HttpErrorResponse && err.status === 403
       ? RUBRIC_READ_ONLY_MESSAGE
-      : apiErrorMessage(err, respaldo);
+      : mensajeDeError(err, respaldo);
     if (texto) this.notify.error(texto);
   }
 }

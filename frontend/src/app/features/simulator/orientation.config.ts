@@ -19,11 +19,18 @@ export const SAFE_EXIT_ALWAYS_REACHABLE: boolean = true;
 /** Textos fijos (F§5.3-5.6). Funciones solo donde hay datos que intercalar. */
 export const ORIENTATION_COPY = {
   now: {
-    nothingNearby: 'No hay nada a tu alcance. Acércate a una persona o un objeto.',
+    nothingNearby: 'No hay nada cerca: acércate a una persona o un objeto, o usa «Ir a…».',
   },
   ui: {
     helpAriaLabel: 'Abrir cómo se juega',
     helpTitle: 'Cómo se juega',
+    /** Botón «Controles» de la cabecera (siempre a la vista) y su tarjeta: se abre también con «?». */
+    controlsLabel: 'Controles',
+    controlsAriaLabel: 'Abrir los controles del juego',
+    controlsTitle: 'Controles',
+    /** Texto visible junto al icono del botón «Ir a…» de la cabecera (su nombre accesible lo contiene: WCAG 2.5.3). */
+    placesVisibleLabel: 'Ir a…',
+    instantTextLabel: 'Texto instantáneo',
     settingsHelpRow: 'Cómo se juega',
     settingsHelpAgain: 'Ver la ayuda otra vez',
     safeExit: 'Salida segura',
@@ -34,6 +41,9 @@ export const ORIENTATION_COPY = {
   notices: {
     obtained: (label: string): string => `Obtuviste: ${label}. Ya está en tu barra de herramientas.`,
     registering: 'Registrando tu decisión…',
+    /** Acuse corto y no bloqueante al elegir una opción: el servidor ya la guardó. */
+    // BORRADOR: texto pendiente de Psicología.
+    decisionRegistered: 'Tu decisión se guardó.',
     supervision: 'Tu decisión quedó registrada en tu seguimiento formativo.',
     errorNpc: 'No pudimos registrar la conversación. Acércate un poco más e inténtalo de nuevo.',
     errorTool: 'No pudimos usar la herramienta.',
@@ -43,5 +53,13 @@ export const ORIENTATION_COPY = {
     before: (phrases: string): string => `Antes de pasar, ${phrases}.`,
     laterGate: 'Esta salida se abre más adelante: sigue en esta sala.',
     fallback: DRAFT_COPY.doorFallback.text,
+    /**
+     * Recién cruzada una puerta no se vuelve a cruzar hasta alejarse de ella (para que un evento residual no rebote a la
+     * sala anterior). El aviso dice cuánto falta y hacia dónde; desaparece solo cuando ya se cumple.
+     */
+    awayFromDoorGeneric: 'Aléjate un poco de la puerta para poder volver a cruzarla.',
+    rearmed: 'Ya puedes cruzar la puerta.',
+    awayFromDoor: (pasos: number, hacia: string): string =>
+      `Aléjate de la puerta para poder volver a cruzarla: da ${pasos === 1 ? 'un paso más' : `${pasos} pasos más`} ${hacia}.`,
   },
 } as const;

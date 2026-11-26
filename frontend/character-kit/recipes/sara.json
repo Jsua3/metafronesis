@@ -1,0 +1,36 @@
+{
+  "id": "sara",
+  "displayName": "Sara",
+  "kind": "jugable",
+  "complexion": "c",
+  "pieces": {
+    "hair": "largo-suelto",
+    "face": "sara",
+    "top": "uniforme-psicologia",
+    "bottom": "jogger",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "negro",
+    "top": "azul-humboldt",
+    "accent": "blanco",
+    "bottom": "azul-humboldt",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": [
+    "neutral",
+    "preocupada",
+    "triste",
+    "alegre",
+    "cautelosa",
+    "en-crisis"
+  ],
+  "provenance": {
+    "source": "Kit SIEP",
+    "license": "SIEP-INTERNAL",
+    "nota": "Avatar hecho con permiso escrito de la persona representada (2026-11)"
+  }
+}

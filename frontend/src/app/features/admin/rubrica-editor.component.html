@@ -109,6 +109,7 @@
           <span class="rb-weight re-total p-numeros" [class.re-total--ok]="totalWeight() === 100">
             <mat-icon class="re-total__icono" aria-hidden="true">{{ totalWeight() === 100 ? 'check_circle' : 'warning' }}</mat-icon>
             {{ resumenPeso() }}
+            <ui-ayuda-breve termino="Criterio y peso" [explicacion]="glosario['Criterio y peso']" />
           </span>
           <div class="re-criterios__acciones">
             <button ui-button type="button" variant="ghost" size="sm" icon="balance" [disabledReason]="criteria.length ? null : 'Agrega un criterio primero.'" (click)="repartirPeso()">Repartir el peso por igual</button>

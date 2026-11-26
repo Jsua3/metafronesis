@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../core/models/user.model';
-import { DestinoConInsignia, NavBadgesService, textoInsignia, textoInsigniaAccesible } from './nav-badges.service';
+import { DestinoConInsignia, NavBadgesService, pendientesDeUsuarios, textoInsignia, textoInsigniaAccesible } from './nav-badges.service';
 import { UserRole, navItemsFor } from './nav-items';
 
 const persona = (id: number): User => ({ id, nombre: 'Ana', apellido: 'Ruiz', email: 'a@b.co', role: 'ESTUDIANTE' });
@@ -36,6 +36,20 @@ describe('NavBadgesService', () => {
     expect(insignias.cuentas()).toEqual({ invitaciones: 2, usuarios: 5 });
     insignias.fijar('invitaciones', 0);
     expect(insignias.cuentas()).toEqual({ usuarios: 5 });
+  });
+
+  // P6: una sola fuente para el número de pendientes de Usuarios (el Inicio y la pantalla escriben con la misma regla).
+  it('«Usuarios» suma solicitudes y cuentas por aprobar, y sin una de las dos cifras no dice ninguna', () => {
+    insignias.fijarUsuarios(3, 1);
+    expect(insignias.cuenta('usuarios')).toBe(4);
+    insignias.fijarUsuarios(0, 0);
+    expect(insignias.cuentas()).toEqual({});
+    insignias.fijarUsuarios(3, null);
+    expect(insignias.cuentas()).toEqual({});
+    insignias.fijarUsuarios(null, 2);
+    expect(insignias.cuentas()).toEqual({});
+    expect(pendientesDeUsuarios(2, 2)).toBe(4);
+    expect(pendientesDeUsuarios(null, 2)).toBeNull();
   });
 
   it('descarta negativos, decimales y valores no finitos', () => {

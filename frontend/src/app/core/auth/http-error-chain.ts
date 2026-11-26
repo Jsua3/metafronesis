@@ -17,7 +17,7 @@ const ME_URL = '/api/auth/me';
  * Pantallas que muestran su propio texto de 429: las públicas de acceso (acceso, Google y solicitud de acceso) y la generación
  * de casos con IA (el tope del día en «Describe tu caso», los intentos agotados en el avance).
  */
-const SELF_THROTTLED_URLS = [LOGIN_URL, '/api/auth/google', '/api/auth/access-request', '/api/authoring/generations'];
+const SELF_THROTTLED_URLS = [LOGIN_URL, '/api/auth/google', '/api/auth/access-request', '/api/auth/password-reset', '/api/authoring/generations'];
 
 /**
  * Marca de una petición cuyo 403 lo explica su pantalla con su propio texto (p. ej. «Esta rúbrica es de solo
@@ -172,7 +172,10 @@ export class ForbiddenHandler extends HttpErrorHandler {
     return statusOf(ctx) === 403 && !ctx.screenHandlesForbidden;
   }
   protected apply(ctx: HttpErrorContext): void {
-    ctx.notifications.warning(PERMISSION_MESSAGE);
+    const code = ctx.error instanceof HttpErrorResponse ? ctx.error.error?.code : null;
+    ctx.notifications.warning(code === 'AUTHORING_NOT_ALLOWED'
+      ? 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.'
+      : PERMISSION_MESSAGE);
   }
 }
 

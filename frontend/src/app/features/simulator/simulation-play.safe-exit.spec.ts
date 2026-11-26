@@ -15,11 +15,11 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { EMPTY, Subject, of } from 'rxjs';
+import { EMPTY, Subject, of, throwError } from 'rxjs';
 
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { SimulationAttemptState } from '../../core/models/simulation.model';
+import { SimulationAttemptState, SimulationWorldState } from '../../core/models/simulation.model';
 import { AudioDirectorService } from './audio-director.service';
 import { CONSENT_RECORDER, SessionConsentRecorder } from './consent-recorder';
 import { SimulationPlayComponent } from './simulation-play.component';
@@ -272,8 +272,24 @@ describe('SimulationPlayComponent: salida segura (correcciones de la revisión)'
       expect(component.attempt()?.status).toBe('PAUSED');
     });
 
-    it('la nota de transición ya no es un temporizador anónimo: se puede cancelar', () => {
-      expect(source).toMatch(/this\.transitionNoteTimer = window\.setTimeout\(\(\) => \{\s*this\.transitionNoteTimer = null;\s*this\.transitionNote\.set\(''\);/);
+    it('la salida segura cancela el temporizador de la nota de transición', () => {
+      const juego = component as unknown as {
+        mostrarNotaDeTransicion(world: SimulationWorldState): boolean;
+        transitionNoteTimer: number | null;
+      };
+      const cancelar = vi.spyOn(window, 'clearTimeout');
+      sim['safeExit'].mockReturnValue(of(paused()));
+      const withNote = { map: { key: 'sala', ambient: { transitionText: 'Quince días después…' } } } as SimulationWorldState;
+      expect(juego.mostrarNotaDeTransicion(withNote)).toBe(true);
+      const temporizador = juego.transitionNoteTimer;
+      expect(temporizador).not.toBeNull();
+
+      component.pauseFromOverlay();
+
+      expect(cancelar).toHaveBeenCalledWith(temporizador);
+      expect(juego.transitionNoteTimer).toBeNull();
+      expect(component.transitionNote()).toBe('');
+      cancelar.mockRestore();
     });
   });
 
@@ -351,6 +367,16 @@ describe('SimulationPlayComponent: salida segura (correcciones de la revisión)'
       expect(sim['safeExit']).not.toHaveBeenCalled();
       sync.next({ attemptId: 'attempt-1', status: 'IN_PROGRESS', map: { key: 'hospital-urgencias' }, player: { x: 120, y: 340 } });
       expect(sim['safeExit']).toHaveBeenCalledTimes(1);
+    });
+
+    it('si el servidor rechaza la posición, registra la pausa e informa de la posición no guardada', () => {
+      sim['updateWorldState'].mockReturnValue(throwError(() => new Error('rechazada')));
+      sim['safeExit'].mockReturnValue(of(paused()));
+      (component as unknown as { lastPosition: { x: number; y: number } }).lastPosition = { x: 120, y: 340 };
+      component.world.set({ map: { key: 'hospital-urgencias' }, objects: [], tools: [], inventory: [], flags: {} } as never);
+      component.pauseFromOverlay();
+      expect(sim['safeExit']).toHaveBeenCalledTimes(1);
+      expect(component.pausePositionNote()).toContain('No se guardó tu última posición');
     });
 
     it('la respuesta de una decisión que llega con la pausa puesta no saca a la persona de ella (adopta el estado, sigue PAUSED)', () => {

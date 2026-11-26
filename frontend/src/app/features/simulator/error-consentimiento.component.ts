@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { UiButton } from '../../shared/ui/button/ui-button';
 
 /**
  * ETH-01: el almacenamiento falló y el consentimiento NO está registrado; el aviso previo sigue (sin mundo) y se puede
@@ -9,13 +8,13 @@ import { UiButton } from '../../shared/ui/button/ui-button';
  */
 @Component({
   selector: 'app-error-consentimiento',
-  imports: [MatIconModule, UiButton],
+  imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'consent-error' },
   template: `
     <mat-icon aria-hidden="true">error</mat-icon>
     <p>{{ texto() }}</p>
-    <button ui-button type="button" variant="secondary" (click)="reintentar.emit()">Reintentar</button>
+    <button type="button" class="u-boton" (click)="reintentar.emit()">Reintentar</button>
   `,
   styles: [`
     :host {

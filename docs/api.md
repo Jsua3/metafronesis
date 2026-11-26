@@ -14,6 +14,9 @@ En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por d
 | POST | /api/auth/google | GoogleLoginView | Público; throttle Google | GoogleLoginSerializer; UserSummarySerializer | users; S1; apps/users/urls.py:14; apps/users/views.py:197 |
 | GET | /api/auth/google/config | GoogleConfigView | Público | — | users; S1; apps/users/urls.py:15; apps/users/views.py:187 |
 | POST | /api/auth/access-request | AccessRequestCreateView | Público; throttle | AccessRequestCreateSerializer | users; S1; apps/users/urls.py:16; apps/users/views.py:263 |
+| POST | /api/auth/password-reset | PasswordResetRequestView | Público; throttle por IP y por correo | PasswordResetRequestSerializer | users; apps/users/urls.py; apps/users/services/password_reset_service.py |
+| POST | /api/auth/password-reset/check | PasswordResetCheckView | Público; throttle | PasswordResetCheckSerializer | users; apps/users/urls.py |
+| POST | /api/auth/password-reset/confirm | PasswordResetConfirmView | Público; throttle | PasswordResetConfirmSerializer | users; apps/users/urls.py; audita PASSWORD_CHANGED |
 | GET | /api/auth/me | MeView | JWT; account/self | UserSummarySerializer | users; S1; apps/users/urls.py:17; apps/users/views.py:358 |
 | POST | /api/auth/change-password | ChangePasswordView | JWT; account/self | ChangePasswordSerializer | users; S1; apps/users/urls.py:18; apps/users/views.py:318 |
 | POST | /api/auth/logout | LogoutView | JWT; account/self | — | users; S1; psychosim/urls.py:72; apps/users/views.py:334 |
@@ -46,6 +49,59 @@ En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por d
 | PATCH | /api/admin/access-requests/<int:request_id>/status | AdminAccessRequestStatusView | JWT; user/manage | AccessRequestStatusSerializer | users; S1; psychosim/urls.py:114; apps/users/views.py:301 |
 | GET | /schema/ | SpectacularAPIView tras _docs_gate | Cerrado 404 por flag; si habilitado JWT y user/manage | OpenAPI; sin serializer de aplicación | psychosim; S1; psychosim/urls.py:120 |
 | GET | /swagger-ui.html | SpectacularSwaggerView tras _docs_gate | Cerrado 404 por flag; si habilitado JWT y user/manage | HTML de Swagger; — | psychosim; S1; psychosim/urls.py:128 |
+
+## Sesiones del docente
+
+Permiso de todas las rutas: `assignment/manage` (PROFESOR sobre sus propias sesiones; una sesión ajena responde 404). Las respuestas usan el sobre `{success, data}`; los errores de estado responden 409 `INVALID_TRANSITION` y los de campo 400 con `field`.
+
+| Método | Ruta | Cuerpo | Respuesta | Auditoría |
+|---|---|---|---|---|
+| GET | /api/sesiones?estado= | `estado` admite varios valores separados por coma | Lista de sesiones: `id, estado, acciones, grupo {id, nombre}, caso {caseVersionId, titulo}, inicio, fin, tiempoMaximoMin, lugar, mensaje, totalConvocados, iniciadaEn, finalizadaEn, canceladaEn` | EXENTO |
+| POST | /api/sesiones | `{grupoId, caseVersionId, inicio, fin, tiempoMaximoMin, lugar?, mensaje?}` | 201, sesión con detalle (los campos de la lista más `convocados`) | SESION_CREADA |
+| GET | /api/sesiones/casos | — | Casos de la biblioteca: `caseVersionId, titulo, version, autor, editadoPor, tiempoEstimadoMin, descripcion` (sin el contenido del caso). `autor` es el nombre de quien creó el caso; `editadoPor`, la lista de nombres de quienes, sin ser el autor, crearon alguna versión suya (en el orden de su primera versión; `[]` si nadie más) | EXENTO |
+| GET | /api/sesiones/<id> | — | Sesión con `convocados: [{estudianteId, nombre, email, estadoConvocatoria, intento, puedeRepetir}]` | EXENTO |
+| PATCH | /api/sesiones/<id> | Los campos de crear, todos opcionales | Sesión con detalle | SESION_EDITADA |
+| POST | /api/sesiones/<id>/iniciar, pausar, reanudar, finalizar, cancelar | Sin cuerpo | Sesión con detalle | SESION_INICIADA, SESION_PAUSADA, SESION_REANUDADA, SESION_FINALIZADA, SESION_CANCELADA |
+| POST | /api/sesiones/<id>/sincronizar | Sin cuerpo | `{agregados: n}` | CONVOCADOS_SINCRONIZADOS |
+| DELETE | /api/sesiones/<id>/convocados/<estudiante_id> | — | Mensaje de confirmación | CONVOCADO_RETIRADO |
+| POST | /api/sesiones/<id>/convocados/<estudiante_id>/repeticion | `{motivo}` | 201 `{id}` | REPETICION_AUTORIZADA |
+
+`acciones` es la lista de lo que el estado actual permite (`iniciar`, `pausar`, `reanudar`, `finalizar`, `cancelar`, `editar`, `gestionarConvocados`); el cliente solo muestra esas.
+
+La ruta `POST /api/sesiones/<id>/convocados` (convocar por correos) se eliminó: los convocados salen de los miembros activos del grupo de la sesión.
+
+## Autoría compartida de casos
+
+La regla está en `apps/autoria/autoria.py` y en `docs/diseno/2026-11-24-autoria-compartida.md`. Las rutas no cambian; cambian quién ve y puede qué, y las respuestas ganan campos.
+
+| Método | Ruta | Qué cambia |
+|---|---|---|
+| GET | /api/authoring/cases | El PROFESOR ve las versiones de sus casos (menos los borradores que creó otra persona), las versiones que él creó en casos ajenos y las **publicadas** de cualquier caso; el ADMIN, todo. Cada fila suma a `{versionId, status, revision, brief}`: `caseId`, `semanticVersion`, `autor: {id, nombre}` (quien creó el caso; no cambia), `editadoPor: [{id, nombre}]` (quienes, sin ser el autor, crearon alguna versión, en el orden de su primera versión), `puedeEditar` (un borrador que creó quien pide, o cualquiera para el ADMIN) y `puedeCrearVersion` (puede clonarla: una publicada de cualquier caso con permiso de autoría, o una archivada del propio caso). |
+| GET | /api/authoring/cases/<id>/editor | Suma `autor` y `editadoPor` con la misma forma. Una publicada ajena se abre (solo lectura); un borrador ajeno responde 404. |
+| PUT/POST/DELETE | rutas de edición del borrador (`brief`, `nodes`, `decisions`, `world`, `checklist`, …) | Solo quien creó el borrador (o el ADMIN). Un borrador ajeno responde 404, también para el autor del caso. |
+| POST | /api/authoring/cases/<id>/clone-version | De una publicada de cualquier caso (en uno ajeno hace falta el permiso de autoría: si no, 403 `AUTHORING_NOT_ALLOWED`) o de una archivada del caso propio. El borrador nuevo es de quien clona (`created_by`, `cloned_from` = la original) y su versión semántica es la menor siguiente a la **mayor** del caso (`M.m+1.0`), así dos docentes que clonan la misma publicada reciben números distintos. |
+| GET, POST | /api/authoring/cases/<id>/lifecycle | `submit` (y la transición `submit` de `allowedTransitions`) es de quien creó la versión; `archive`, del autor del caso; `clone` aparece en una publicada ajena. Al devolver a borrador (`reject`), la revisión queda pedida por quien creó la versión (`review.requestedBy`). |
+| POST | /api/authoring/cases/<id>/publish | Sin cambios (solo ADMIN). Publicar la versión de otro docente no cambia el autor del caso. |
+
+## IA coautora (SIEP-269)
+
+Permiso de todas las rutas: `case/author` (el docente sobre sus propias conversaciones; una ajena responde 404). Con el asistente de autoría apagado (`AI_AUTHORING_ENABLED`), todas responden 404. Diseño: `docs/diseno/2026-11-25-ia-coautora-del-editor.md`.
+
+| Método | Ruta | Cuerpo | Respuesta | Auditoría |
+|---|---|---|---|---|
+| POST | /api/authoring/coauthor | `{idea, lugarId}` (caso nuevo) o `{idea, caseVersionId}` (caso en borrador) | 201, acuerdo con la primera pregunta. Gasta una ayuda del día. Si la primera pregunta falla, trae `error {code, message}` y `pregunta: null` | AI_COAUTHOR_STARTED |
+| GET | /api/authoring/coauthor/<id> | — | Acuerdo | EXENTO |
+| DELETE | /api/authoring/coauthor/<id> | — | Acuerdo `cancelled` | AI_COAUTHOR_CANCELLED |
+| POST | /api/authoring/coauthor/<id>/question | Sin cuerpo | Vuelve a pedir la pregunta pendiente tras una falla | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/answer | `{numero, eleccion: {tipo: opcion, indice} \| {tipo: propia, texto} \| {tipo: decide}}` | Acuerdo con la siguiente pregunta, o `ready` al llegar al tope o cuando la IA dice que ya tiene lo necesario. Un `numero` anterior cambia esa respuesta y descarta las posteriores | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/skip | Sin cuerpo | Acuerdo `ready` | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/summary | `{}` desde `ready`, o `{cambio}` desde `summarized` | Acuerdo `summarized` con la ficha | AI_COAUTHOR_STAGE |
+| PUT | /api/authoring/coauthor/<id>/summary | `{ficha}` | La ficha corregida a mano (se valida igual que la de la IA; no gasta llamadas) | AI_COAUTHOR_STAGE |
+| POST | /api/authoring/coauthor/<id>/accept | Sin cuerpo | Acuerdo `accepted`. En un caso nuevo arranca la generación por etapas con la ficha como descripción y trae `generationId` | AI_COAUTHOR_ACCEPTED |
+
+El acuerdo es `{id, status (clarifying, ready, summarized, accepted, cancelled), lugarId, caseVersionId, idea, respuestas [{numero, ambito, pregunta, porque, opciones, recomendada, eleccion, respuesta}], pregunta {numero, ambito, texto, porque, opciones[3], recomendada} | null, topePreguntas, ficha, llamadasUsadas, llamadasTope, generationId, ocupado}`. La ficha es `{titulo, objetivo, personajes [{nombre, descripcion}], lugar, momento (dia, noche), escenas [{titulo, proposito}], hitos, finales [{titulo, descripcion}], intensidad (LOW, MEDIUM, HIGH), temasSensibles}`.
+
+Errores nuevos: 409 `COAUTHOR_STATE` (el paso no corresponde al estado), 409 `COAUTHOR_BUSY` (la IA ya está pensando esa conversación), 409 `COAUTHOR_EXHAUSTED` (se agotaron las llamadas de la conversación), 422 `AI_COAUTHOR_INVALID` (la IA respondió algo que no cumple el esquema o las reglas de contenido; trae `motivo` fijo). También responde los del asistente: 429 `AI_LIMIT_EXCEEDED`, 422 `AI_REFUSED` y 502 `AI_PROVIDER_ERROR`.
 
 ## Rutas referenciadas pero no incluidas como endpoints del corte
 

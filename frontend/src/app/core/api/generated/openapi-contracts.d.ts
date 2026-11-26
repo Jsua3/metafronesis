@@ -12,6 +12,17 @@ export interface AccessDecision {
   readonly reason?: AccessReasonEnum;
 }
 
+export interface AssignmentProgress {
+  readonly students: number;
+  readonly completed: number;
+  readonly inProgress: number;
+}
+
+/** Resumen del listado de grupos: pares de estudiante activo y caso asignado. */
+export interface GrupoResumenCasos { readonly asignados: number; readonly terminados: number; readonly oportunidades: number; }
+export interface GrupoListado { readonly id: number; readonly nombre: string; readonly codigo: string; readonly totalEstudiantes: number; readonly totalInvitados: number; readonly resumenCasos: GrupoResumenCasos; }
+export interface GrupoListadoListEnvelope { readonly success: boolean; readonly message?: string; readonly data: ReadonlyArray<GrupoListado>; }
+
 export type AccessReasonEnum = 'NOT_ASSIGNED' | 'NOT_YET_OPEN' | 'CLOSED' | 'LOCKED_BY_SEQUENCE';
 
 export type ActivationEnum = 'CALM' | 'TENSE' | 'CRISIS';
@@ -140,6 +151,7 @@ export interface ApiEnvelope {
 export interface Assignment {
   /** Una asignación en pausa no habilita nada. */
   readonly active: boolean;
+  readonly caseId: number;
   readonly caseTitle: string | null;
   readonly caseVersionId: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
@@ -147,6 +159,12 @@ export interface Assignment {
   readonly id: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
   readonly opensAt?: string;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  /** Avance de miembros activos; disponible en el listado de asignaciones del grupo. */
+  readonly progress?: AssignmentProgress;
   /** Su lugar en la secuencia de casos. */
   readonly sortOrder: number;
   /** Dónde está la ventana hoy. */
@@ -930,6 +948,8 @@ export type IntensityEnum = 'LOW' | 'MEDIUM' | 'HIGH';
 
 /** La membresía del estudiante en un grupo: pendiente de respuesta, aceptada o rechazada. El listado no trae las retiradas (`REMOVED`), pero la respuesta de `leave` (y la de aceptar o rechazar) sí devuelve la membresía tal como quedó, también con ese estado. */
 export interface Invitation {
+  /** Casos publicados que el docente asignó al grupo. Solo si ya eres miembro (`ACTIVE`); si no, es nulo. */
+  readonly casesCount: number | null;
   readonly groupId: number;
   readonly groupName: string;
   /** Igual a `groupId`: la membresía es `(grupo, estudiante)`. */
@@ -1294,6 +1314,108 @@ export interface WorldPatchAckMap {
   readonly key: string;
 }
 
+export interface CaseCoverChange {
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  readonly revision: number;
+}
+
+/** Sobre de éxito: `data` es `CaseCoverChange`. */
+export interface CaseCoverChangeEnvelope {
+  readonly data: CaseCoverChange;
+  readonly message?: string;
+  /** Siempre `true` en una respuesta de éxito. */
+  readonly success: boolean;
+}
+
+export interface CaseCoverUpload {
+  readonly imagen: string;
+  readonly pixelArt?: boolean;
+  readonly revision?: number | null;
+}
+
+export interface CatalogoEstudiante {
+  readonly allowed: boolean;
+  readonly case_id: number;
+  readonly case_version_id: number;
+  readonly completed: boolean;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  /** NOT_YET_OPEN, CLOSED o LOCKED_BY_SEQUENCE. Nulo si puede empezar. */
+  readonly reason: string | null;
+  readonly title: string;
+}
+
+export interface FichaSimulacion {
+  readonly caseVersionId: number;
+  readonly code: string;
+  readonly description: string | null;
+  readonly estimatedMinutes: number | null;
+  readonly learningObjectives: ReadonlyArray<string>;
+  readonly narrativeContext: string | null;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  readonly title: string;
+}
+
+/** Sobre de éxito: `data` es `FichaSimulacion`. */
+export interface FichaSimulacionEnvelope {
+  readonly data: FichaSimulacion;
+  readonly message?: string;
+  /** Siempre `true` en una respuesta de éxito. */
+  readonly success: boolean;
+}
+
+export interface PersonaCaso {
+  readonly id: number;
+  readonly nombre: string;
+}
+
+export interface VistaEditor {
+  readonly autor: PersonaCaso;
+  readonly caseVersionId: number;
+  readonly characters: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly checklist: Readonly<Record<string, unknown>>;
+  readonly checklistCompletion: number;
+  readonly contentWarnings: ReadonlyArray<string>;
+  readonly context: string;
+  readonly decisions: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly editadoPor: ReadonlyArray<PersonaCaso>;
+  readonly estimatedMinutes: number | null;
+  readonly hints: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly learningObjectives: ReadonlyArray<string>;
+  readonly maps: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly nodes: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly objects: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  readonly publishable: boolean;
+  readonly rehearsedToEnd: boolean;
+  readonly revision: number;
+  readonly rubrics: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly rules: Readonly<Record<string, unknown>>;
+  readonly semanticVersion: string;
+  readonly status: string;
+  readonly title: string;
+  readonly tools: ReadonlyArray<Readonly<Record<string, unknown>>>;
+}
+
+/** Sobre de éxito: `data` es `VistaEditor`. */
+export interface VistaEditorEnvelope {
+  readonly data: VistaEditor;
+  readonly message?: string;
+  /** Siempre `true` en una respuesta de éxito. */
+  readonly success: boolean;
+}
+
 export interface OpenApiPaths {
   readonly '/api/admin/access-requests': 'GET';
   readonly '/api/admin/access-requests/{request_id}/status': 'PATCH';
@@ -1373,6 +1495,7 @@ export interface OpenApiPaths {
   readonly '/api/authoring/cases/{case_version_id}/definition': 'GET';
   readonly '/api/authoring/cases/{case_version_id}/dialogues/{tree_id}': 'DELETE' | 'PUT';
   readonly '/api/authoring/cases/{case_version_id}/dialogues/{tree_id}/accept-ai': 'POST';
+  readonly '/api/authoring/cases/{case_version_id}/cover': 'DELETE' | 'PUT';
   readonly '/api/authoring/cases/{case_version_id}/editor': 'GET';
   readonly '/api/authoring/cases/{case_version_id}/hints/{hint_id}': 'DELETE' | 'PUT';
   readonly '/api/authoring/cases/{case_version_id}/lifecycle': 'GET' | 'POST';
@@ -1437,7 +1560,7 @@ export interface OpenApiPaths {
   readonly '/api/reportes/grupo/{grupo_id}': 'GET';
   readonly '/api/reportes/grupo/{grupo_id}/export': 'GET';
   readonly '/api/rubrics': 'GET' | 'POST';
-  readonly '/api/rubrics/case-versions/{case_version_id}': 'GET' | 'POST' | 'PUT';
+  readonly '/api/rubrics/case-versions/{case_version_id}': 'GET' | 'PUT';
   readonly '/api/rubrics/{rubric_id}': 'GET' | 'PATCH' | 'PUT';
   readonly '/api/rubrics/{rubric_id}/activate': 'POST';
   readonly '/api/rubrics/{rubric_id}/deactivate': 'POST';
@@ -1471,6 +1594,7 @@ export interface OpenApiPaths {
   readonly '/api/simulation/cases/{case_version_id}/brief': 'GET';
   readonly '/api/simulation/cases/{case_version_id}/consent': 'DELETE' | 'GET' | 'POST';
   readonly '/api/simulation/catalog': 'GET';
+  readonly '/api/simulation/covers/{cover_id}': 'GET';
 }
 
 export type OpenApiEndpointPath = keyof OpenApiPaths;

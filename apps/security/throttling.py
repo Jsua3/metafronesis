@@ -52,6 +52,16 @@ class AccessRequestIpThrottle(ScopedThrottle):
     methods = ("POST",)
 
 
+class PasswordResetIpThrottle(ScopedThrottle):
+    scope = "password_reset_ip"
+    methods = ("POST",)
+
+
+class PasswordResetConfirmIpThrottle(ScopedThrottle):
+    scope = "password_reset_confirm_ip"
+    methods = ("POST",)
+
+
 class CspReportIpThrottle(ScopedThrottle):
     """Informes de violaciones de la CSP (S2-3a, RNF-002): anónimos, así que el límite cuenta por IP de cliente
     (agrupada, como las demás). Solo cuentan los ``POST``: un ``GET`` a la ruta de informes no gasta cupo (hallazgo #17)."""

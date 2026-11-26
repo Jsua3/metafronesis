@@ -27,6 +27,28 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
 
   afterEach(() => http.verify());
 
+  it('envía la imagen como multipart y usa la revisión para subir y quitar la portada', () => {
+    const imagen = new File(['imagen'], 'portada.png', { type: 'image/png' });
+    const recibidos: unknown[] = [];
+    api.updateCover(9, imagen, true, 7).subscribe(datos => recibidos.push(datos));
+    const subida = http.expectOne('/api/authoring/cases/9/cover');
+    expect(subida.request.method).toBe('PUT');
+    expect(subida.request.headers.get('X-Case-Revision')).toBe('7');
+    expect(subida.request.headers.has('Content-Type')).toBe(false);
+    expect(subida.request.body.get('imagen')).toBe(imagen);
+    expect(subida.request.body.get('pixelArt')).toBe('true');
+    const guardada = { portada: '/media/portada.png', portadaPixelArt: true, revision: 8 };
+    subida.flush({ success: true, data: guardada });
+
+    api.removeCover(9, 8).subscribe(datos => recibidos.push(datos));
+    const retirada = http.expectOne('/api/authoring/cases/9/cover');
+    expect(retirada.request.method).toBe('DELETE');
+    expect(retirada.request.headers.get('X-Case-Revision')).toBe('8');
+    const quitada = { portada: null, portadaPixelArt: false, revision: 9 };
+    retirada.flush({ success: true, data: quitada });
+    expect(recibidos).toEqual([guardada, quitada]);
+  });
+
   /** Responde una mutación y, si hace falta, la relectura del editor. */
   function responder(url: string, releer: boolean) {
     const peticion = http.expectOne(url);
@@ -171,6 +193,22 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       expect(lista).toEqual([{ caseVersionId: 5, code: 'A', title: 'Título', description: '', semanticVersion: '', nodeCount: 0, status: 'DRAFT' }]);
     });
 
+    it('la lista trae el caso, la versión y la autoría compartida que manda el servidor', () => {
+      let lista: unknown;
+      api.listAuthoringCases().subscribe(l => (lista = l));
+      http.expectOne('/api/authoring/cases').flush({
+        data: [{
+          versionId: 7, status: 'PUBLISHED', revision: 4, brief: { code: 'B', title: 'Ajeno', description: 'Uno' },
+          caseId: 3, semanticVersion: '1.0.0', autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }],
+          puedeEditar: false, puedeCrearVersion: true,
+        }],
+      });
+      expect(lista).toEqual([{
+        caseVersionId: 7, code: 'B', title: 'Ajeno', description: 'Uno', semanticVersion: '1.0.0', nodeCount: 0, status: 'PUBLISHED',
+        caseId: 3, autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }], puedeEditar: false, puedeCrearVersion: true,
+      }]);
+    });
+
     it('clonar devuelve el editor de la copia', () => {
       let recibida: unknown;
       api.cloneCaseVersion(9).subscribe(v => (recibida = v));
@@ -186,12 +224,14 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       api.validateCase(9).subscribe(v => (validacion = v));
       http.expectOne('/api/authoring/cases/9/validate').flush({ data: { valid: false, problems: [
         { code: 'NODE_NO_QUESTION', where: 'nodes/12', message: 'La escena necesita una pregunta.' },
+        { code: 'CONTENT_PLACEHOLDER', where: 'nodes/12/dialogue/2', message: 'Relleno' },
         { code: 'CASE_NO_START', where: 'case', message: 'El caso necesita una escena inicial.' },
       ] } });
       expect(validacion).toEqual({
         canPublish: false,
         issues: [
           { code: 'NODE_NO_QUESTION', severity: 'error', message: 'La escena necesita una pregunta.', path: 'nodes/12', nodeId: 12 },
+          { code: 'CONTENT_PLACEHOLDER', severity: 'error', message: 'Relleno', path: 'nodes/12/dialogue/2', nodeId: 12 },
           { code: 'CASE_NO_START', severity: 'error', message: 'El caso necesita una escena inicial.', path: 'case' },
         ],
       });

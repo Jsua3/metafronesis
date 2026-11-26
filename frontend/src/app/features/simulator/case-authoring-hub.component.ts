@@ -1,5 +1,7 @@
+import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import { ChangeDetectionStrategy, Component, Injector, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { CasoStore } from '../autoria/estado/caso.store';
 import { BibliotecaService } from '../autoria/modelo/biblioteca.service';
@@ -7,12 +9,15 @@ import { CAPITULOS } from '../autoria/tutorial/capitulos';
 import { asegurarCasoDePractica } from '../autoria/tutorial/caso-de-practica';
 import { guardarProgreso, leerProgreso } from '../autoria/tutorial/progreso-tutorial';
 import { AuthService } from '../../core/auth/auth.service';
+import { AssignmentService } from '../../core/api/assignment.service';
 import { AuthoringApi } from '../../core/api/authoring.api';
+import { GrupoService } from '../../core/api/grupo.service';
+import { Assignment } from '../../core/models/assignment.model';
 import { SimulationCaseSummary } from '../../core/models/simulation.model';
 import { UiBadge, UiBadgeTone } from '../../shared/ui/badge/ui-badge';
 import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiCard } from '../../shared/ui/card/ui-card';
-import { statusLabel } from '../../shared/ui/labels';
+import { autorLabel, editadoPorLabel, statusLabel } from '../../shared/ui/labels';
 import { UiCabeceraIlustrada } from '../../shared/ui/cabecera-ilustrada/ui-cabecera-ilustrada';
 import { UiFiltros } from '../../shared/ui/filtros/ui-filtros';
 import { UiSegmentado } from '../../shared/ui/segmentado/ui-segmentado';
@@ -27,12 +32,16 @@ import { UiErrorState } from '../../shared/ui/state/ui-error-state';
  * Hub de edición de casos (plan visual F7-7): estados de la lista de a uno (esqueleto, error con «Reintentar», primer
  * uso con su acción) y el estado de cada caso con su etiqueta humana («Borrador», no `DRAFT`). Todo caso nuevo empieza
  * eligiendo un lugar (`casos/nuevo`): ya no hay formulario de caso en blanco.
+ *
+ * Autoría compartida: cada tarjeta dice el autor del caso y, si los hay, quiénes más lo editaron. En una versión publicada
+ * de un caso ajeno no se edita: se ofrece «Crear nueva versión», que la clona en un borrador propio y lo abre en el
+ * editor. Lo que se puede hacer con cada versión lo dice el servidor (`puedeEditar`, `puedeCrearVersion`).
  */
 @Component({
   selector: 'app-case-authoring-hub',
   standalone: true,
   imports: [
-    RouterLink, NgTemplateOutlet, UiFiltros, UiSegmentado, UiPortadaCaso,
+    AsignarDesdeCasoComponent, RouterLink, NgTemplateOutlet, UiFiltros, UiSegmentado, UiPortadaCaso,
     UiBadge, UiButton, UiCard, UiCabeceraIlustrada, UiSection, UiSkeleton,
     UiVacioIlustrado, UiErrorState,
   ],
@@ -45,6 +54,7 @@ export class CaseAuthoringHubComponent implements OnInit {
   private readonly auth = inject(AuthService);
 
   readonly statusLabel = statusLabel;
+  readonly autorLabel = autorLabel;
   readonly filtro = signal('ALL');
   readonly busqueda = signal('');
   readonly opciones = computed(() => [
@@ -56,12 +66,12 @@ export class CaseAuthoringHubComponent implements OnInit {
     return this.cases().filter(c => (this.filtro() === 'ALL' || c.status === this.filtro()) &&
       c.title.toLocaleLowerCase('es').includes(texto));
   });
-  // Sin caseId no se agrupa: nunca se mezclan casos antiguos por accidente.
+  // Sin caseId no se agrupa: nunca se mezclan casos antiguos por accidente. Con la autoría compartida también el docente
+  // ve varias versiones de un mismo caso (la publicada de otro y su borrador), así que se agrupan para todos.
   readonly grupos = computed(() => {
     const grupos = new Map<string, SimulationCaseSummary[]>();
-    const admin = this.auth.currentUser()?.role === 'ADMIN';
     for (const caso of this.filtrados()) {
-      const clave = admin && caso.caseId != null ? `caso-${caso.caseId}` : `version-${caso.caseVersionId}`;
+      const clave = caso.caseId != null ? `caso-${caso.caseId}` : `version-${caso.caseVersionId}`;
       grupos.set(clave, [...(grupos.get(clave) ?? []), caso]);
     }
     return [...grupos.values()].map(versiones => versiones.sort((a, b) =>
@@ -69,6 +79,13 @@ export class CaseAuthoringHubComponent implements OnInit {
       (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '') || b.caseVersionId - a.caseVersionId));
   });
   readonly cases = signal<SimulationCaseSummary[]>([]);
+  /**
+   * A qué grupos está asignado cada caso (tras asignar, la tarjeta no lo decía). `null` mientras no se haya podido leer:
+   * sin el dato la tarjeta no dice nada, porque «Sin asignar» sería una afirmación falsa.
+   */
+  private readonly grupoDeCada = signal<{ asignaciones: Assignment[]; nombres: ReadonlyMap<number, string> } | null>(null);
+  private readonly asignacionesApi = inject(AssignmentService);
+  private readonly gruposApi = inject(GrupoService);
   readonly loading = signal(true);
   /** La LISTA no pudo cargarse (el texto va en el estado de error de la lista). */
   readonly error = signal('');
@@ -127,6 +144,70 @@ export class CaseAuthoringHubComponent implements OnInit {
     }
   }
 
+  /**
+   * «Asignado a: Grupo A, Grupo B» o «Sin asignar», solo para un caso publicado (los demás no se pueden asignar). Un grupo
+   * con la asignación en pausa lo dice. Con más de tres grupos se nombran tres y se cuenta el resto.
+   */
+  asignadoA(caseVersionId: number): string | null {
+    const datos = this.grupoDeCada();
+    if (!datos) return null;
+    const grupos = datos.asignaciones
+      .filter(a => a.caseVersionId === caseVersionId && a.target.type === 'GROUP')
+      .flatMap(a => {
+        const nombre = a.target.type === 'GROUP' ? datos.nombres.get(a.target.groupId) : undefined;
+        return nombre ? [a.active ? nombre : `${nombre} (en pausa)`] : [];
+      });
+    if (!grupos.length) return 'Sin asignar';
+    const vistos = grupos.slice(0, 3).join(', ');
+    return `Asignado a: ${vistos}${grupos.length > 3 ? ` y ${grupos.length - 3} más` : ''}`;
+  }
+
+  /** Lee las asignaciones y los grupos; si no se pueden leer, la tarjeta calla en vez de afirmar «Sin asignar». */
+  loadAsignaciones(): void {
+    forkJoin({ asignaciones: this.asignacionesApi.listAll(), grupos: this.gruposApi.listar() }).subscribe({
+      next: ({ asignaciones, grupos }) => this.grupoDeCada.set({ asignaciones, nombres: new Map(grupos.map(g => [g.id, g.nombre] as const)) }),
+      error: () => this.grupoDeCada.set(null),
+    });
+  }
+
+  /** «Editado por: Beto, Carla» de la tarjeta; vacío si nadie más que el autor creó una versión. */
+  editadoPor(item: SimulationCaseSummary): string {
+    return editadoPorLabel(item.editadoPor?.map(p => p.nombre));
+  }
+
+  /**
+   * Una versión de un caso ajeno que quien mira puede clonar: la tarjeta ofrece «Crear nueva versión» en vez de abrirla
+   * para editar. Las del propio caso siguen con su acción de siempre (el editor ofrece ahí crear la versión).
+   */
+  creaVersion(item: SimulationCaseSummary): boolean {
+    const yo = this.auth.currentUser()?.id;
+    return !item.puedeEditar && item.puedeCrearVersion === true && item.autor != null && item.autor.id !== yo;
+  }
+
+  /** La versión que se está clonando (deshabilita los botones mientras tanto). */
+  readonly creandoVersion = signal<number | null>(null);
+  /** Por qué no se pudo crear la versión nueva (se muestra sobre la lista). */
+  readonly errorVersion = signal('');
+
+  /** Clona la versión en un borrador propio del mismo caso y lo abre en el editor. */
+  crearVersion(item: SimulationCaseSummary): void {
+    if (this.creandoVersion() !== null) return;
+    this.creandoVersion.set(item.caseVersionId);
+    this.errorVersion.set('');
+    this.authoringApi.cloneCaseVersion(item.caseVersionId).subscribe({
+      next: vista => {
+        this.creandoVersion.set(null);
+        void this.router.navigate(['/portal/casos', vista.caseVersionId, 'editor']);
+      },
+      error: (e: unknown) => {
+        this.creandoVersion.set(null);
+        const mensaje = (e as { error?: { message?: unknown } } | null)?.error?.message;
+        // BORRADOR: texto pendiente de Psicología (VD-23).
+        this.errorVersion.set(typeof mensaje === 'string' && mensaje ? mensaje : 'No se pudo crear la versión nueva del caso. Vuelve a intentarlo.');
+      },
+    });
+  }
+
   statusTone(status: string | null | undefined): UiBadgeTone {
     const normalized = (status ?? '').toUpperCase();
     if (normalized === 'PUBLISHED') return 'success';
@@ -162,9 +243,12 @@ export class CaseAuthoringHubComponent implements OnInit {
       next: cases => {
         this.cases.set(cases);
         this.loading.set(false);
+        if (cases.some(c => c.status === 'PUBLISHED')) this.loadAsignaciones();
       },
-      error: () => {
-        this.error.set('No fue posible cargar los casos disponibles.');
+      error: (err: { status?: number; error?: { code?: string } }) => {
+        this.error.set(err?.status === 403 && err.error?.code === 'AUTHORING_NOT_ALLOWED'
+          ? 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.'
+          : 'No fue posible cargar los casos disponibles.');
         this.loading.set(false);
       },
     });

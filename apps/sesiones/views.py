@@ -1,56 +1,67 @@
 from rest_framework.views import APIView
+
 from shared.permissions import policy_permission
 from shared.response import api_created, api_ok
-from . import convocatorias, servicios, repeticion
-from .serializers import AgendaSerializer, ConvocadosSerializer
+
+from . import convocatorias, repeticion, servicios
+from .consultas import obtener, propias
+from .serializers import SesionSerializer
+
+PERMISO = [policy_permission("assignment", "manage")]
 
 
 class SesionesView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
+    permission_classes = PERMISO
 
     def get(self, request):
-        return api_ok([servicios.dto(s) for s in servicios.propias(request.user)])
+        estados = [valor for valor in request.query_params.get("estado", "").split(",") if valor]
+        return api_ok([servicios.dto(sesion) for sesion in propias(request.user, estados)])
 
     def post(self, request):
-        serializer = AgendaSerializer(data=request.data)
+        serializer = SesionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        sesion = servicios.agendar(request.user, serializer.validated_data)
-        return api_created({**servicios.dto(sesion), "codigos": sesion.codigos_emitidos}, message="Si los correos corresponden a estudiantes registrados, se incluirán en la sesión.")
+        sesion = servicios.crear(request.user, serializer.validated_data)
+        return api_created(servicios.detalle_dto(obtener(request.user, sesion.pk)))
+
+
+class CasosView(APIView):
+    permission_classes = PERMISO
+
+    def get(self, request):
+        return api_ok(servicios.casos_dto(servicios.biblioteca()))
 
 
 class SesionView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
+    permission_classes = PERMISO
 
     def get(self, request, pk):
-        return api_ok(servicios.dto(servicios.obtener(request.user, pk)))
+        return api_ok(servicios.detalle_dto(obtener(request.user, pk)))
 
-
-class IniciarView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
-
-    def post(self, request, pk):
-        return api_ok(servicios.dto(servicios.iniciar(request.user, pk)))
-
-
-class FinalizarView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
-
-    def post(self, request, pk):
-        return api_ok(servicios.dto(servicios.finalizar(request.user, pk)))
-
-
-class ConvocadosView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
-
-    def post(self, request, pk):
-        serializer = ConvocadosSerializer(data=request.data)
+    def patch(self, request, pk):
+        serializer = SesionSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        codigos = convocatorias.agregar(request.user, pk, serializer.validated_data["emails"])
-        return api_created({"codigos": codigos}, message="Si los correos corresponden a estudiantes registrados, se incluir?n en la sesi?n.")
+        servicios.editar(request.user, pk, serializer.validated_data)
+        return api_ok(servicios.detalle_dto(obtener(request.user, pk)))
+
+
+class TransicionView(APIView):
+    permission_classes = PERMISO
+    accion = None
+
+    def post(self, request, pk):
+        getattr(servicios, self.accion)(request.user, pk)
+        return api_ok(servicios.detalle_dto(obtener(request.user, pk)))
+
+
+class SincronizarView(APIView):
+    permission_classes = PERMISO
+
+    def post(self, request, pk):
+        return api_ok({"agregados": convocatorias.sincronizar(request.user, pk)})
 
 
 class ConvocadoView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
+    permission_classes = PERMISO
 
     def delete(self, request, pk, estudiante_id):
         convocatorias.retirar(request.user, pk, estudiante_id)
@@ -58,7 +69,7 @@ class ConvocadoView(APIView):
 
 
 class RepeticionView(APIView):
-    permission_classes = [policy_permission("assignment", "manage")]
+    permission_classes = PERMISO
 
     def post(self, request, pk, estudiante_id):
         serializer = repeticion.MotivoSerializer(data=request.data)

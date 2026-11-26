@@ -44,6 +44,19 @@ describe('RespuestaComponent', () => {
     expect(raiz.querySelectorAll('button.faceta[aria-expanded="true"]')).toHaveLength(0);
   });
 
+  it('abre los pasos en la ficha y permite desmarcar sin navegar', async () => {
+    const { fixture, raiz } = await montar();
+    const cambios = vi.fn();
+    fixture.componentInstance.efectos.subscribe(cambios);
+    [...raiz.querySelectorAll<HTMLButtonElement>('button.faceta')].find(b => b.textContent?.includes('Pasos'))!.click();
+    await fixture.whenStable();
+    const casilla = raiz.querySelector<HTMLInputElement>('fieldset.hitos input[type=checkbox]')!;
+    expect(casilla.checked).toBe(true);
+    casilla.click();
+    expect(cambios.mock.calls[0][0](base.efectos).hitos).not.toContain('valorar');
+    expect(raiz.querySelector('fieldset.hitos a')?.textContent).toContain('Ver todos los pasos');
+  });
+
   it('lleva la letra con que el estudiante ve la opción y conserva los nombres de las pruebas de extremo a extremo', async () => {
     const { raiz } = await montar();
     expect(raiz.querySelector('.ficha__letra')!.textContent).toBe('B');
@@ -56,7 +69,23 @@ describe('RespuestaComponent', () => {
   it('completa, no muestra el aviso de «Solo en esta pantalla»; sin destino, lo muestra con su motivo', async () => {
     expect((await montar()).raiz.querySelector('.sin-guardar')).toBeNull();
     const { raiz } = await montar({ destinoId: null });
-    expect(raiz.querySelector('.sin-guardar')!.textContent).toContain('Elige a qué escena lleva para guardarla.');
+    expect(raiz.querySelector('.sin-guardar')!.textContent).toContain('Elige una escena en «Lleva a…» o crea una escena final');
+  });
+
+  it('ofrece crear una escena siguiente o conectar con un final sin borrar el texto', async () => {
+    const { fixture, raiz } = await montar({ destinoId: null });
+    fixture.componentRef.setInput('destinos', [{ id: 'e2', etiqueta: '2 · Final', esFinal: true }]);
+    fixture.detectChanges();
+    const destino = vi.fn();
+    const crear = vi.fn();
+    fixture.componentInstance.destino.subscribe(destino);
+    fixture.componentInstance.crearFinal.subscribe(crear);
+    const botones = [...raiz.querySelectorAll('button')];
+    botones.find((b) => b.textContent?.includes('Usar 2 · Final'))!.click();
+    botones.find((b) => b.textContent?.includes('Crear escena final'))!.click();
+    expect(destino).toHaveBeenCalledWith('e2');
+    expect(crear).toHaveBeenCalled();
+    expect(raiz.querySelector<HTMLTextAreaElement>('#rt1')!.value).toBe('Validar su miedo');
   });
 
   it('al enfocar una clase, una línea explica su consecuencia', async () => {

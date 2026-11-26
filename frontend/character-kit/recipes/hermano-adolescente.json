@@ -1,0 +1,26 @@
+{
+  "id": "hermano-adolescente",
+  "displayName": "Hermano adolescente",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-rizado",
+    "face": "sereno",
+    "top": "chaqueta-capucha",
+    "bottom": "jogger",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "castano-oscuro",
+    "top": "gris-oscuro",
+    "inner": "blanco",
+    "accent": "coral",
+    "bottom": "carbon",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

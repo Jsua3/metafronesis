@@ -1,12 +1,18 @@
 import json
 
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 
-from apps.simulation.models import SimulationAttempt
+from django.db.models import Q
+
+from apps.simulation.models import CaseVersion, SimulationAttempt
+from apps.simulation.serializers.portadas import FichaSimulacionSerializer
 from apps.simulation.services.access import available_versions
 from apps.simulation.services.attempt_api import owned
 from apps.simulation.services.attempt_lifecycle import OPEN_STATUSES
+from apps.simulation.services.portadas import datos_portada
+from shared.openapi import envelope_of, error_responses
 from shared.permissions import policy_permission
 from shared.response import api_ok
 
@@ -22,13 +28,17 @@ def datos_intento(intento):
 class Ficha(APIView):
     permission_classes = [policy_permission("attempt", "play")]
 
+    @extend_schema(responses={200: envelope_of(FichaSimulacionSerializer), **error_responses(401, 403, 404)})
     def get(self, request, case_version_id):
-        version = get_object_or_404(available_versions(request.user).select_related("simulation_case"), pk=case_version_id)
+        # La ficha también se lee si el estudiante ya tiene un intento de esa versión (la página de resultado).
+        propias = SimulationAttempt.objects.filter(student=request.user, is_rehearsal=False).values("case_version_id")
+        visibles = CaseVersion.objects.filter(Q(pk__in=available_versions(request.user).values("pk")) | Q(pk__in=propias))
+        version = get_object_or_404(visibles.select_related("simulation_case"), pk=case_version_id)
         caso = version.simulation_case
         return api_ok({"caseVersionId": version.pk, "code": caso.code, "title": caso.title,
                        "description": caso.description, "narrativeContext": version.narrative_context,
                        "learningObjectives": json.loads(version.learning_objectives),
-                       "estimatedMinutes": version.estimated_minutes})
+                       "estimatedMinutes": version.estimated_minutes, **datos_portada(version)})
 
 
 class IntentoActivo(APIView):

@@ -3,7 +3,6 @@ import { Component, ElementRef, HostListener, computed, effect, inject, input, o
 import { MatIconModule } from '@angular/material/icon';
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import { ClinicalToolState } from '../../core/models/simulation.model';
-import { UiIconButton } from '../../shared/ui/button/ui-icon-button';
 import { DRAFT_COPY } from './draft-copy';
 import { PixelIconoComponent } from './pixel/pixel-icono.component';
 
@@ -24,7 +23,7 @@ const RUTA_ICONOS = 'assets/biblioteca/piezas/herramientas/iconos/';
 @Component({
   selector: 'app-tool-inventory',
   standalone: true,
-  imports: [CommonModule, MatIconModule, UiIconButton, PixelIconoComponent],
+  imports: [CommonModule, MatIconModule, PixelIconoComponent],
   template: `
     <div class="tool-dock-wrap">
       @if (tools().length > 0) {
@@ -77,7 +76,9 @@ const RUTA_ICONOS = 'assets/biblioteca/piezas/herramientas/iconos/';
       @if (notice(); as message) {
         <div class="tool-notice u-placa u-sombra">
           <p class="tool-notice__text">{{ message }}</p>
-          <button ui-icon-button class="tool-notice__close" icon="close" label="Cerrar aviso" (click)="dismissNotice()"></button>
+          <button type="button" class="tool-notice__close u-boton u-boton--icono" aria-label="Cerrar aviso" (click)="dismissNotice()">
+            <app-pixel-icono nombre="cerrar" />
+          </button>
         </div>
       }
     </div>
@@ -151,6 +152,11 @@ const RUTA_ICONOS = 'assets/biblioteca/piezas/herramientas/iconos/';
       0%   { transform: scale(.94); }
       70%  { transform: scale(1.02); }
       100% { transform: scale(1); }
+    }
+    @media (max-height: 520px) {
+      .tool-count { display: none; }
+      .tool-dock { max-width: 100%; padding-bottom: 0; }
+      .tool-card { width: 44px; height: 44px; min-height: 44px; padding: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
       .tool-card--selected { animation: none; }

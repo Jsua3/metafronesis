@@ -127,7 +127,7 @@ describe('ficha del objetivo (T9.1)', () => {
 
   it('la ficha recibe la guía, el intento y el pliegue compacto (cardFolded), y refresca la sala al abrirse', () => {
     // V7: también el ajuste «Reducir movimiento» (sin pulso al cambiar el objetivo).
-    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(consentRequired\)="requireConsentAgain\(\)"/);
+    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
     expect(source).toContain('readonly cardFolded = computed(() => this.compactMode() || this.narrowScreen());');
   });
 
@@ -203,14 +203,14 @@ describe('el rótulo de la escena nueva no tapa la ficha del objetivo', () => {
   it('el minimapa va bajo el HUD, en la cabecera, y con las franjas de cine se va; el foco del plano sigue volviendo a su botón', () => {
     const canvas = source.slice(source.indexOf('<section #canvasZone'), source.indexOf('<app-reaction-director'));
     expect(canvas).not.toContain('<app-minimapa');
-    expect(source).toMatch(/@if \(world\(\) && !cinemaBars\(\)\) \{\s*(<!--[\s\S]*?-->\s*)?<app-minimapa \[plano\]="placePlan\(\)" \[actual\]="placeRoom\(\)" \[cercana\]="cameraSettings\.cercana\(\)"\s*\[lugar\]="world\(\)\?\.map\?\.title \?\? ''"/);
+    expect(source).toMatch(/@if \(world\(\) && !cinemaBars\(\)\) \{\s*(<!--[\s\S]*?-->\s*)?<app-minimapa \[plano\]="placePlan\(\)" \[actual\]="placeRoom\(\)" \[destino\]="placeTarget\(\)" \[cercana\]="cameraSettings\.cercana\(\)"\s*\[lugar\]="world\(\)\?\.map\?\.title \?\? ''"/);
     expect(source).toContain("document.querySelector<HTMLElement>('[data-minimapa-abrir]')");
   });
 });
 
 describe('el HUD recibe el título de la escena (T9.2)', () => {
-  it('stageLabel es el título del nodo: sin contador de decisiones ni respaldo por escenarios', () => {
-    expect(source).toMatch(/readonly stageLabel = computed<string \| null>\(\(\) => this\.visibleNode\(\)\?\.title \?\? null\);/);
+  it('stageLabel sigue la ficha de la sala y el nodo visible', () => {
+    expect(source).toContain('return fichaDeLaSala(this.visibleNode(), mapa, guia).titulo;');
     expect(source).not.toContain('fallbackStageLabel');
   });
 
@@ -223,7 +223,7 @@ describe('el HUD recibe el título de la escena (T9.2)', () => {
 
   it('el encabezado del panel lateral no repite el título de la escena encima del h2', () => {
     expect(source).not.toContain('right-panel__kicker');
-    expect(source).toMatch(/<h2>\{\{ game\.currentNode\.title \}\}<\/h2>/);
+    expect(source).toMatch(/<h2>\{\{ visibleNode\(\)\?\.title \}\}<\/h2>/);
   });
 });
 
@@ -241,7 +241,7 @@ describe('barra contextual (T9.3, T9.5)', () => {
   });
 
   it('el secundario conserva «También:» en su nombre accesible aunque el modo compacto lo oculte a la vista', () => {
-    expect(source).toContain(`[attr.aria-label]="'También: ' + also.verb.text"`);
+    expect(source).toContain(`[attr.aria-label]="'También: ' + also.verb.text + (actionStepLabel(also.obj.key)`);
   });
 
   it('en reposo la barra solo trae la nota «No hay nada a tu alcance» (clase propia); ni línea «Ahora:» ni leyenda de teclas', () => {
@@ -297,7 +297,8 @@ describe('«Ir a…» (F6-11, VD-19)', () => {
   });
 
   it('solo se ofrecen personas, puertas y lo examinado (misma regla que el hover) y la llegada se anuncia', () => {
-    expect(source).toContain('selectPlaces(this.gameWorld?.places() ?? [], examined)');
+    // P9: el siguiente paso de la ficha va primero en la lista (y la lista sigue siendo la misma regla del hover).
+    expect(source).toContain('selectPlacesWithNext(this.gameWorld?.places() ?? [], examined, this.refreshGuide().siguienteLugar?.key ?? null)');
     expect(source).toContain('new Set(this.world()?.inspectedObjectKeys ?? [])');
     expect(source).toMatch(/onWalkEnded\(event: \{ key: string; label: string; outcome: 'arrived' \| 'blocked' \}\): void \{/);
     expect(source).toContain('DRAFT_COPY.placesArrived');
@@ -331,7 +332,8 @@ describe('texto de la pantalla de juego (F6-3)', () => {
 
 describe('enlaces con el mundo (T9.5, T9.9)', () => {
   it('el mundo recibe atenuados, puertas y modo compacto, y sus dos salidas nuevas están enlazadas', () => {
-    expect(worldTag).not.toContain('nextTargetKey');
+    // P9: el destino del anillo y de la flecha es el siguiente paso de la ficha del objetivo: una sola fuente para el texto, el mundo, el plano y «Ir a…».
+    expect(worldTag).toContain('[nextTargetKey]="guide().siguienteLugar?.key ?? null"');
     expect(worldTag).toContain('[dimmedKeys]="dimmedKeys()"');
     expect(worldTag).toContain('[doorStates]="doorStates()"');
     expect(worldTag).toContain('[compact]="compactMode()"');
@@ -346,13 +348,14 @@ describe('enlaces con el mundo (T9.5, T9.9)', () => {
 
 describe('ayuda (T9.8)', () => {
   it('la tarjeta de primera vez y la pantalla de ayuda están enlazadas, con la promesa de salida segura condicionada', () => {
-    expect(source).toMatch(/<app-game-help view="card"[^>]*\[safeExitPromise\]="safeExitPromise"[\s\S]*?\(dismissed\)="markHelpCardSeen\(\)" \(openFull\)="openHelp\(\)"/);
+    // P8: la tarjeta de primera vez es la de controles (modal, view="welcome"); se cierra con closeControls (marca vista) y «Más ayuda» abre la pantalla.
+    expect(source).toMatch(/<app-game-help view="welcome"[^>]*\[safeExitPromise\]="safeExitPromise"[\s\S]*?\(dismissed\)="closeControls\(\)" \(openFull\)="openHelpFromControls\(\)"/);
     expect(source).toMatch(/<app-game-help view="screen"[^>]*\[safeExitPromise\]="safeExitPromise"[\s\S]*?\(closed\)="helpOpen\.set\(false\)"/);
     expect(source).toContain('readonly safeExitPromise = SAFE_EXIT_ALWAYS_REACHABLE;');
   });
 
   it('el HUD abre la ayuda y reactiva la tarjeta', () => {
-    expect(source).toMatch(/\(openHelp\)="openHelp\(\)" \(helpReset\)="resetHelpCard\(\)"/);
+    expect(source).toMatch(/\(openControls\)="openControls\(\)" \(openHelp\)="openHelp\(\)" \(helpReset\)="resetHelpCard\(\)"/);
   });
 
   it('la pantalla de ayuda deja libres la cabecera y el pie (no se pone inert)', () => {

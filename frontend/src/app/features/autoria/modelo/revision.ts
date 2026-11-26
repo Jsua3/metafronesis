@@ -1,3 +1,4 @@
+import { esRelleno } from './relleno';
 import type { ValidationIssue } from '../../../core/models/simulation.model';
 import { revisarCaminos, type TipoAviso } from './caminos';
 import type { CasoBorrador, Escena, Respuesta, SalaCaso } from './caso';
@@ -15,7 +16,7 @@ export interface Falta {
    * A dónde lleva «Llévame ahí»: una ruta y, si hace falta, la acción que muestra la guía o el elemento concreto (`ancla`)
    * al que va el foco al llegar: una respuesta, un hito, un final, el aviso de una escena…
    */
-  ir: { ruta: string; accionId?: string; ancla?: string };
+  ir: { ruta: string; accionId?: string; ancla?: string; aviso?: string };
 }
 
 /** Las seis reglas de publicación del modelo, más las dos que cuelgan de los finales. */
@@ -95,7 +96,7 @@ function faltasDelModelo(caso: CasoBorrador): Falta[] {
         faltas.push({
           codigo: 'contraindicated-without-reason',
           mensaje: `La respuesta «${recorte(r.texto)}» de la escena «${e.titulo}» es contraindicada y no explica por qué: escribe el motivo de la prohibición.`,
-          ir: { ruta: rutaDeEscena(e.id), ancla: `respuesta-${r.id}` },
+        ir: { ruta: rutaDeEscena(e.id), ancla: `razon-${r.id}` },
         });
       }
     }
@@ -145,7 +146,7 @@ function faltasDeFinales(caso: CasoBorrador): Falta[] {
     faltas.push({
       codigo: 'ending-without-default',
       mensaje: 'Ningún final del caso aplica a todos los recorridos: agrega un final sin condición para el resto.',
-      ir: { ruta: '/editor/finales', accionId: 'definir-finales' },
+      ir: { ruta: '/editor/finales', ancla: 'final-por-defecto' },
     });
   }
   return faltas;
@@ -160,23 +161,37 @@ export function puedeEnviar(caso: CasoBorrador): { ok: boolean; faltas: Falta[] 
   const faltas: Falta[] = revisarCaminos(caso).map((a) => ({
     mensaje: a.mensaje,
     ir: a.tipo === 'respuesta-sin-destino' && a.escenaId
-      ? { ruta: `/editor/escena/${a.escenaId}`, accionId: 'respuesta-a-escena-nueva' }
+      ? { ruta: `/editor/escena/${a.escenaId}`, ...(a.respuestaId ? { ancla: `destino-${a.respuestaId}` } : { ancla: 'respuestas-escena' }) }
       : a.tipo === 'final-sin-hito'
         ? { ruta: '/editor/finales', accionId: 'definir-finales' }
         : { ruta: '/editor', accionId: 'revisar-caminos' },
   }));
 
-  const sinClasificar = caso.escenas.flatMap((e) => e.respuestas.filter((r) => !r.clase).map(() => e.id));
+  const sinClasificar = caso.escenas.flatMap((e) => e.respuestas.filter((r) => !r.clase).map((r) => ({ escenaId: e.id, respuestaId: r.id })));
   if (sinClasificar.length) {
     const n = sinClasificar.length;
     faltas.push({
       mensaje: n === 1 ? 'Hay 1 respuesta sin clasificar.' : `Hay ${n} respuestas sin clasificar.`,
-      ir: { ruta: `/editor/escena/${sinClasificar[0]}` },
+      ir: { ruta: `/editor/escena/${sinClasificar[0].escenaId}`, ancla: `clase-${sinClasificar[0].respuestaId}` },
     });
   }
 
   faltas.push(...faltasDeSalasSinPersonas(caso));
   faltas.push(...faltasDelModelo(caso));
+  for (const e of caso.escenas) {
+    const agregar = (texto: string, ancla: string, campo: string) => {
+      if (esRelleno(texto)) faltas.push({
+        codigo: 'CONTENT_PLACEHOLDER', mensaje: `Escribe ${campo} de «${e.titulo}»: todavía tiene texto de relleno.`,
+        ir: { ruta: rutaDeEscena(e.id), ancla },
+      });
+    };
+    agregar(e.narracion, 'narracion-escena', 'la narración');
+    for (const l of e.lineas) agregar(l.texto, `linea-${l.id}`, 'el diálogo');
+    for (const r of e.respuestas) {
+      agregar(r.texto, `respuesta-${r.id}`, 'la respuesta');
+      agregar(r.retroalimentacion, `respuesta-${r.id}`, 'la retroalimentación de la respuesta');
+    }
+  }
 
   // La lista de verificación ética: todos los ítems obligatorios marcados (lo mismo que exige la compuerta).
   if (caso.lista?.items.some((i) => i.obligatorio && !i.cumplido)) {
@@ -203,7 +218,11 @@ function partesDeIa(caso: CasoBorrador): { cuantas: number; primera: Falta['ir']
   let primera: Falta['ir'] | null = null;
   for (const e of caso.escenas) {
     const partes = (e.marcaIa ? 1 : 0) + e.lineas.filter((l) => l.marcaIa).length + e.respuestas.filter((r) => r.marcaIa).length;
-    if (partes && !primera) primera = e.marcaIa ? { ruta: '/editor', accionId: 'aceptar-ia' } : { ruta: `/editor/escena/${e.id}`, accionId: 'aceptar-ia' };
+    if (partes && !primera) {
+      const linea = e.lineas.find((l) => l.marcaIa);
+      const respuesta = e.respuestas.find((r) => r.marcaIa);
+      primera = { ruta: rutaDeEscena(e.id), accionId: 'aceptar-ia', ancla: e.marcaIa ? 'narracion-escena' : linea ? `linea-${linea.id}` : `respuesta-${respuesta!.id}` };
+    }
     cuantas += partes;
   }
   // lo que la IA puso o movió en las salas
@@ -214,7 +233,7 @@ function partesDeIa(caso: CasoBorrador): { cuantas: number; primera: Falta['ir']
     piezasIa += marcadas;
   }
   const finalesIa = caso.finales.filter((f) => f.marcaIa).length;
-  if (finalesIa && !primera) primera = { ruta: '/editor/finales', accionId: 'aceptar-ia' };
+  if (finalesIa && !primera) primera = { ruta: '/editor/finales', ancla: `final-${caso.finales.find((f) => f.marcaIa)!.id}` };
   return { cuantas: cuantas + piezasIa + finalesIa, primera };
 }
 
@@ -265,7 +284,9 @@ export function faltasDelServidor(
   caso: CasoBorrador,
   opciones: {
     respuestaDeOpcion: (optionKey: string) => string | undefined;
+    escenaDeNodo?: (nodeId: number) => string;
     faltasLocales: Falta[];
+    soloServidor?: boolean;
     /**
      * Las respuestas de la escena que ya están en el servidor, en el orden en que este las exporta (por su número). Quien llama
      * lo sabe aun de las creadas en esta visita; si falta, se toman las que traen el número del servidor como id.
@@ -280,12 +301,42 @@ export function faltasDelServidor(
 
   for (const h of hallazgos) {
     if (h.severity !== 'error' || yaListados.has(h.code)) continue;
-    const escena = h.nodeId !== undefined ? rutaDeEscena(h.nodeId) : null;
+    const escena = h.nodeId !== undefined ? rutaDeEscena(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : null;
     const falta = (ir: Falta['ir']): Falta => ({ codigo: h.code, mensaje: h.message, ir });
     switch (h.code) {
+      case 'CASE_NO_TERMINAL': {
+        const primera = primeraRespuesta(caso);
+        faltas.push(falta(primera ? { ruta: rutaDeEscena(primera.escena.id), ancla: `destino-${primera.respuestaId}` } : { ruta: '/editor' }));
+        break;
+      }
+      case 'CASE_NO_RUBRIC':
+      case 'RUBRIC_WEIGHTS':
+        faltas.push(falta({ ruta: '/editor/rubrica', ancla: h.code === 'CASE_NO_RUBRIC' ? 'rubrica-titulo' : 'rubrica-pesos' }));
+        break;
+      case 'CASE_NO_TIME':
+        faltas.push(falta({ ruta: '/editor/datos', ancla: 'd-tiempo' }));
+        break;
       case 'scene-without-recommended':
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'respuestas-escena' } : {}) }));
         break;
+      case 'CONTENT_PLACEHOLDER': {
+        const match = h.path?.match(/^nodes\/\d+\/(narrative|dialogue\/(?:(\d+)\/)?(\d+))$/);
+        const localId = h.nodeId !== undefined ? String(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : '';
+        const lineas = caso.escenas.find(e => e.id === localId)?.lineas ?? [];
+        const linea = match?.[3] ? lineas.find(l => match[2] ? l.id === `${match[2]}:${match[3]}` : l.id.endsWith(`:${match[3]}`)) : undefined;
+        if (escena && match?.[2] && !linea) {
+          faltas.push(falta({ ruta: escena, ancla: 'narracion-escena', aviso: h.message }));
+          break;
+        }
+        if (escena && match && (match[1] === 'narrative' || linea)) {
+          faltas.push(falta({ ruta: escena, ancla: linea ? `linea-${linea.id}` : 'narracion-escena' }));
+          break;
+        }
+        const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;
+        faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: respuesta ? `respuesta-${respuesta}` : 'respuestas-escena' } : {}) }));
+        break;
+      }
+      case 'OPTION_NO_JUSTIFICATION':
       case 'contraindicated-without-reason': {
         const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;
         faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: respuesta ? `respuesta-${respuesta}` : 'respuestas-escena' } : {}) }));
@@ -299,7 +350,7 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: '/editor/finales', ...(h.endingKey ? { ancla: `final-${h.endingKey}` } : {}) }));
         break;
       case 'ending-without-default':
-        faltas.push(falta({ ruta: '/editor/finales', accionId: 'definir-finales' }));
+        faltas.push(falta({ ruta: '/editor/finales', ancla: 'final-por-defecto' }));
         break;
       case 'competency-without-evidence': {
         const primera = primeraRespuesta(caso);
@@ -322,7 +373,7 @@ export function faltasDelServidor(
         const salaId = escenaDelCaso?.salaId;
         const ruta = h.path?.replace(/^x-siep\.escenas\[\d+\]\.mapa(?=\.|$)/, 'x-siep.escenas[0].mapa');
         if (!salaId || !caso.salas.some((s) => s.id === salaId) || !ruta || !/^x-siep\.escenas\[\d+\]\.mapa(?:\.|$)/.test(h.path ?? '')) {
-          faltas.push(falta({ ruta: escena ?? '/editor' }));
+          faltas.push(falta(salaId && caso.salas.some((s) => s.id === salaId) ? { ruta: `/editor/sala/${salaId}` } : { ruta: '/editor/plano' }));
           break;
         }
         const destinoSala = { ruta: `/editor/sala/${salaId}` };
@@ -334,7 +385,7 @@ export function faltasDelServidor(
         const destino = elementoDeRuta(ruta, { ...caso, escenas: [escenaDelCaso] });
         faltas.push(falta(destino
           ? { ...destinoSala, ancla: anclaDeElemento(salaId, destino.elemento) }
-          : { ruta: escena ?? '/editor' }));
+          : destinoSala));
         break;
       }
       case 'DSL.OCL-19': {
@@ -342,7 +393,7 @@ export function faltasDelServidor(
         const escenaDelCaso = caso.escenas.find((e) => e.id === String(h.nodeId));
         const salaId = escenaDelCaso?.salaId;
         if (!escenaDelCaso || !salaId || !caso.salas.some((s) => s.id === salaId)) {
-          faltas.push(falta({ ruta: escena ?? '/editor' }));
+          faltas.push(falta({ ruta: '/editor/plano' }));
           break;
         }
         const clave = personaDeTrayecto(caso, escenaDelCaso.id, h.message, h.path);
@@ -363,11 +414,15 @@ export function faltasDelServidor(
         faltas.push(falta({ ruta: '/revision', ancla: 'lista-verificacion' }));
         break;
       case 'AI_SUGGESTED_UNREVIEWED':
-        if (!hayIa) faltas.push(falta({ ruta: '/editor', accionId: 'aceptar-ia' }));
+        if (opciones.soloServidor || !hayIa) {
+          const respuesta = h.optionKey ? opciones.respuestaDeOpcion(h.optionKey) : undefined;
+          faltas.push(falta(escena ? { ruta: escena, ancla: respuesta ? `respuesta-${respuesta}` : 'narracion-escena' }
+            : partesDeIa(caso).primera ?? { ruta: '/editor', accionId: 'aceptar-ia' }));
+        }
         break;
       default: {
         const cubierto = AVISO_QUE_CUBRE[h.code];
-        if (cubierto && avisosDeCaminos.has(cubierto)) break;
+        if (!opciones.soloServidor && cubierto && avisosDeCaminos.has(cubierto)) break;
         faltas.push(falta({ ruta: escena ?? '/editor' }));
       }
     }
@@ -399,10 +454,17 @@ export const CODIGO_LARGO_DE_LECTURA = 'DSL.READING_LENGTH';
  * Los avisos de largo de lectura que da el servidor, como sugerencias: no impiden enviar, citan el texto que se pasa y llevan a
  * su escena. Valen igual para un caso generado con la IA que para uno escrito a mano.
  */
-export function avisosDeLectura(hallazgos: ValidationIssue[]): Falta[] {
+export function avisosDeLectura(hallazgos: ValidationIssue[], caso?: Pick<CasoBorrador, 'escenas'>): Falta[] {
   return hallazgos
     .filter((h) => h.code === CODIGO_LARGO_DE_LECTURA && h.severity === 'warning')
-    .map((h) => ({ codigo: h.code, mensaje: h.message, ir: { ruta: h.nodeId !== undefined ? rutaDeEscena(h.nodeId) : '/editor' } }));
+    .map((h) => {
+      const escena = caso?.escenas.find((e) => e.id === String(h.nodeId));
+      const indice = /\.lineas\[(\d+)\]/.exec(h.path ?? '');
+      const linea = indice && escena?.lineas[Number(indice[1])];
+      return { codigo: h.code, mensaje: h.message, ir: h.nodeId !== undefined
+        ? { ruta: rutaDeEscena(h.nodeId), ancla: linea ? `linea-${linea.id}` : 'narracion-escena' }
+        : { ruta: '/editor' } };
+    });
 }
 
 /** Cosas que conviene mirar pero no impiden enviar. */
@@ -413,11 +475,15 @@ export function sugerencias(caso: CasoBorrador): Falta[] {
   caso.escenas.forEach((e) => {
     const vaciasL = e.lineas.filter((l) => !l.texto.trim()).length;
     const vaciasR = e.respuestas.filter((r) => !r.texto.trim() || !r.retroalimentacion.trim()).length;
-    if (vaciasL) lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasL === 1 ? 'una línea vacía' : `${vaciasL} líneas vacías`}.`, ir: { ruta: `/editor/escena/${e.id}` } });
-    if (vaciasR) lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasR === 1 ? 'una respuesta' : `${vaciasR} respuestas`} sin texto o sin lo que lee el estudiante después.`, ir: { ruta: `/editor/escena/${e.id}` } });
+    if (vaciasL) lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasL === 1 ? 'una línea vacía' : `${vaciasL} líneas vacías`}.`, ir: { ruta: `/editor/escena/${e.id}`, ancla: `lt${e.lineas.findIndex((l) => !l.texto.trim())}` } });
+    if (vaciasR) {
+      const i = e.respuestas.findIndex((r) => !r.texto.trim() || !r.retroalimentacion.trim());
+      const campo = e.respuestas[i].texto.trim() ? 'rf' : 'rt';
+      lista.push({ mensaje: `«${e.titulo}» tiene ${vaciasR === 1 ? 'una respuesta' : `${vaciasR} respuestas`} sin texto o sin lo que lee el estudiante después.`, ir: { ruta: `/editor/escena/${e.id}`, ancla: `${campo}${i}` } });
+    }
   });
   if (caso.modoFinales === 'propio' && caso.finales.some((f) => !f.texto.trim())) {
-    lista.push({ mensaje: 'Hay finales sin el texto que lee el estudiante al terminar.', ir: { ruta: '/editor/finales' } });
+    lista.push({ mensaje: 'Hay finales sin el texto que lee el estudiante al terminar.', ir: { ruta: '/editor/finales', ancla: `texto-final-${caso.finales.find((f) => !f.texto.trim())!.id}` } });
   }
   return lista;
 }

@@ -1,9 +1,12 @@
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from .assessment.evaluation import read_snapshot
 from .models import SimulationCase
+from .serializers.portadas import CatalogoEstudianteSerializer
 from .serializers_s3 import (
     CaseSerializer,
     AttemptSerializer,
@@ -13,6 +16,7 @@ from .serializers_s3 import (
 from .services.access import available_versions
 from .services import attempt_api, estado_intento
 from shared.policies import ADMIN, ESTUDIANTE, PROFESOR
+from shared.openapi import error_responses
 
 
 def author(user):
@@ -90,6 +94,7 @@ class Decision(APIView):
 
 
 class Catalog(APIView):
+    @extend_schema(responses={200: CatalogoEstudianteSerializer(many=True), **error_responses(401, 403)})
     def get(self, request):
         from apps.progression.access import catalog
 
@@ -102,6 +107,6 @@ class Evaluation(APIView):
     def get(self, request, pk):
         from .models import AttemptEvaluation
 
-        attempt = attempt_api.owned(request.user, pk)
+        attempt = attempt_api.owned(request.user, pk, solo_lectura=True)
         evaluation = get_object_or_404(AttemptEvaluation, attempt=attempt)
-        return Response(evaluation.snapshot)
+        return Response(read_snapshot(attempt, evaluation))

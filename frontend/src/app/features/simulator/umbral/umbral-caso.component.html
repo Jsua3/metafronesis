@@ -17,14 +17,18 @@
 
   <div class="umbral-caso__progreso" [class.game-boot]="arrancando()">
     <app-firma-progreso [pasos]="pasos()" [texto]="pasoTexto()" />
-    <!-- Visible solo pasado 1 s; la región de estado del juego ya anuncia «Cargando el caso» una sola vez. -->
+    <!-- BORRADOR: texto pendiente de Psicología. Progreso real de recursos, no del arranque completo. -->
+    @if (fase() === 'escena' && porcentaje() !== null && !conTarjeta()) {
+      <p class="umbral-caso__paso umbral-caso__paso--visible" role="progressbar" aria-label="Carga de recursos de la escena" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="porcentaje()">{{ porcentaje() }} %</p>
+    }
+    <!-- La región de estado del juego anuncia la fase. -->
     <p class="umbral-caso__paso" [class.umbral-caso__paso--visible]="mostrarPaso()" aria-hidden="true">{{ mostrarPaso() ? pasoTexto() : '' }}</p>
   </div>
 
   @if (lento() && fase() !== 'listo') {
     <div class="umbral-caso__lento">
       <p>{{ textoLento }}</p>
-      <button ui-button type="button" variant="secondary" icon="arrow_back" (click)="volver.emit()">{{ volverEtiqueta() }}</button>
+      <button class="u-boton" ui-button type="button" variant="secondary" icon="arrow_back" (click)="volver.emit()">{{ volverEtiqueta() }}</button>
     </div>
   }
 

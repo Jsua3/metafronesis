@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
 import { GuiaService } from '../guia/guia.service';
 import { RutasAutoria } from '../rutas';
 
@@ -10,6 +11,7 @@ export interface Destino {
   ruta: string;
   accionId?: string;
   ancla?: string;
+  aviso?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export function injectLlevar(): (destino: Destino) => Promise<void> {
   const router = inject(Router);
   const rutas = inject(RutasAutoria);
   const guia = inject(GuiaService);
+  const avisos = inject(NotificationService);
   return async (destino) => {
     if (destino.accionId) await guia.mostrar(destino.accionId, 'foco');
     if (destino.ruta) {
@@ -28,6 +31,7 @@ export function injectLlevar(): (destino: Destino) => Promise<void> {
       if (router.url.split('?')[0] !== direccion) await router.navigateByUrl(direccion);
     }
     if (destino.ancla) await enfocar(destino.ancla);
+    if (destino.aviso) avisos.info(destino.aviso);
   };
 }
 
@@ -36,9 +40,19 @@ async function enfocar(id: string): Promise<void> {
   for (let intento = 0; intento < 60; intento++) {
     const el = document.getElementById(id);
     if (el) {
-      if (!el.matches('a[href], button, input, select, textarea, [tabindex]')) el.setAttribute('tabindex', '-1');
-      el.scrollIntoView?.({ block: 'center' });
-      el.focus();
+      // Abrir cualquier <details> nativo que oculte el destino.
+      for (let padre = el.parentElement; padre; padre = padre.parentElement) {
+        if (padre instanceof HTMLDetailsElement) padre.open = true;
+      }
+      const control = id.startsWith('linea-') ? el.querySelector<HTMLElement>('textarea') ?? el : el.matches('a[href], button, input, select, textarea, [tabindex]')
+        ? el : el.querySelector<HTMLElement>('textarea:not([disabled]), input:not([disabled]), select:not([disabled]), button:not([disabled])') ?? el;
+      if (!control.matches('a[href], button, input, select, textarea, [tabindex]')) control.setAttribute('tabindex', '-1');
+      control.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+      control.focus();
+      // Resalte sin animación: también respeta la preferencia de reducir movimiento.
+      const anterior = control.style.outline;
+      control.style.outline = '3px solid var(--ds-info)';
+      setTimeout(() => { control.style.outline = anterior; }, 2000);
       return;
     }
     await new Promise((r) => setTimeout(r, 25));

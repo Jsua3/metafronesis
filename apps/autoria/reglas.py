@@ -113,6 +113,11 @@ def actualizar_reglas(usuario, version_id, datos, seccion):
         valor = nuevos
     else:
         _lista(valor, campo, MAX_FINALES, {"key", "title", "message", "tone", "when", "aiSuggested"})
+        incondicionales = [indice for indice, final in enumerate(valor) if final.get("when") is None]
+        if len(incondicionales) > 1:
+            _error(campo, "Se permite como máximo un final sin condición.")
+        if incondicionales and incondicionales[0] != len(valor) - 1:
+            _error(campo, "El final sin condición debe ser el último.")
         declarados = {hito.key for hito in case_rules.rules_of(version).milestones}
         anteriores = {final.get("key"): final.get("aiSuggested") is True for final in finales_guardados if isinstance(final, dict)}
         nuevos = []

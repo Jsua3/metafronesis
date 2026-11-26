@@ -68,14 +68,16 @@ def start(user, version_id, expected_attempt_id=None):
     return attempt, True
 
 
-def _owned(user, pk):
+def _owned(user, pk, solo_lectura=False):
     qs = SimulationAttempt.all_objects.select_for_update()
     attempt = get_object_or_404(qs, pk=pk, student=user)
     if attempt.is_rehearsal:
         # Un ensayo es de su autora (o de administración) y no pasa por la asignación ni la publicación.
         if not policies.can(user, "attempt", "rehearse", owner_id=attempt.student_id):
             raise Http404
-    else:
+    elif not solo_lectura:
+        # Leer el propio resultado no depende de la asignación (el enlace del correo se abre cuando la sesión ya
+        # terminó); jugar, reanudar o decidir sí.
         get_object_or_404(available_versions(user), pk=attempt.case_version_id)
     attempt._time_expired = _cerrar_si_vencido(attempt)
     return attempt
@@ -104,11 +106,11 @@ def _error_si_vencido(attempt):
         raise ApiError("ATTEMPT_TIME_EXPIRED", "El tiempo del intento ha vencido.", 409)
 
 
-def owned(user, pk, lock=False):
+def owned(user, pk, lock=False, solo_lectura=False):
     if lock:
-        return _owned(user, pk)
+        return _owned(user, pk, solo_lectura)
     with transaction.atomic():
-        attempt = _owned(user, pk)
+        attempt = _owned(user, pk, solo_lectura)
     _error_si_vencido(attempt)
     return attempt
 
@@ -120,10 +122,29 @@ def transition(user, pk, action):
     return attempt
 
 
+def _reglas_al_reanudar(user, pk):
+    """Reanudar es volver a entrar: las reglas de inicio (p. ej. una sesión en pausa) también deciden aquí.
+
+    Corren ANTES del cerrojo del intento porque toman el de la sesión: el orden queda sesión → intento, igual que en
+    los efectos de la sesión, y así no hay abrazo mortal con una pausa o un cierre del docente. El error no se lanza
+    aún: quien llama primero comprueba la propiedad (404) y el tiempo vencido, como antes."""
+    previo = SimulationAttempt.all_objects.select_related("case_version").filter(pk=pk, student=user).first()
+    if previo is None or previo.is_rehearsal:
+        return None
+    try:
+        reglas_de_inicio.verificar(user, previo.case_version)
+    except ApiError as error:
+        return error
+    return None
+
+
 def _transition(user, pk, action):
+    error_de_reglas = _reglas_al_reanudar(user, pk) if action == lifecycle.RESUME else None
     attempt = owned(user, pk, lock=True)
     if attempt._time_expired:
         return attempt
+    if error_de_reglas is not None:
+        raise error_de_reglas
     now = timezone.now()
     previous = attempt.status
     if action == lifecycle.REPLACE:
@@ -186,7 +207,7 @@ def _valid_option(attempt, option_id):
     )
     from . import disponibilidad_mundo
     if option.pk not in {ofrecida.pk for ofrecida in disponibilidad_mundo.opciones(attempt)}:
-        raise ValidationError("La opci?n a?n no est? disponible.")
+        raise ValidationError("La opción aún no está disponible.")
     if option.target_node.case_version_id != attempt.case_version_id:
         raise ValidationError("La escena destino pertenece a otro caso.")
     return option

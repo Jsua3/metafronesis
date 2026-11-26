@@ -1,3 +1,4 @@
+import { APP_BRAND } from '../../core/config/brand.config';
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, HostListener, Renderer2, computed, effect, inject, input, output, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -7,6 +8,7 @@ import { CharacterVisual } from '../character/kit/character-visual.resolver';
 import { KitFigureComponent } from '../character/kit/kit-figure.component';
 import type { PortraitState } from '../character/kit/kit-engine';
 import { DRAFT_COPY } from './draft-copy';
+import { ORIENTATION_COPY } from './orientation.config';
 import { PixelIconoComponent } from './pixel/pixel-icono.component';
 import { CONSULTA_COMPACTO } from './pixel/tramos';
 import { COARSE_POINTER_QUERY, matchesMedia, watchMedia } from './pointer-modality.util';
@@ -29,7 +31,7 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
 
         <!-- Bloque U1, variante B (placas en las esquinas): el grupo de la derecha es la pestaña con el caso sobre una placa con
              la persona y las teclas. La etapa va en la pestaña de la ficha del objetivo y el lugar en la del plano. -->
-        <p class="hud-case u-rotulo u-rotulo--suave" [title]="game.caseTitle"><span class="u-rotulo__texto">SIEP · {{ tituloCorto(game.caseTitle) }}</span></p>
+        <p class="hud-case u-rotulo u-rotulo--suave" [title]="game.caseTitle"><span class="u-rotulo__texto">{{ brand.shortName }} · {{ tituloCorto(game.caseTitle) }}</span></p>
         <div class="hud-strip u-placa u-sombra">
           <div class="hud-zone hud-zone--right">
             <!-- La persona en palabras (sin cifras): su cara según el vínculo y la activación, su pulso y la frase del servidor. -->
@@ -64,13 +66,22 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
             }
 
             <div class="hud-actions">
-              <button type="button" class="hud-action u-tecla u-tecla--icono" data-hud-places (click)="openPlaces.emit()"
+              <!-- «Ir a…» y «Controles» llevan su texto a la vista (P8): como iconos sueltos casi nadie los encontraba. En el
+                   tramo compacto el texto sale (queda el icono, con su nombre accesible y su título). -->
+              <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-places (click)="openPlaces.emit()"
                 [attr.aria-label]="placesLabel" [attr.title]="placesTitle">
                 <app-pixel-icono nombre="ir-a" />
+                <span class="hud-action__texto">{{ placesVisible }}</span>
               </button>
-              <button type="button" class="hud-action u-tecla u-tecla--icono" (click)="openHelp.emit()"
-                aria-label="Abrir cómo se juega" title="Cómo se juega">
+              <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-controls (click)="openControls.emit()"
+                [attr.aria-label]="controlsAriaLabel" [attr.title]="controlsTitle">
+                <app-pixel-icono nombre="controles" />
+                <span class="hud-action__texto">{{ controlsVisible }}</span>
+              </button>
+              <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-help (click)="openHelp.emit()"
+                [attr.aria-label]="helpLabel" [attr.title]="helpVisible">
                 <app-pixel-icono nombre="ayuda" />
+                <span class="hud-action__texto">{{ helpVisible }}</span>
               </button>
               <button type="button" class="hud-action u-tecla u-tecla--icono" [class.hud-action--active]="journalOpen()"
                 (click)="toggleJournal.emit()"
@@ -78,12 +89,13 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                 [title]="journalKey() ? 'Bitácora (J)' : 'Bitácora'">
                 <app-pixel-icono nombre="bitacora" />
               </button>
-              <button #settingsTrigger type="button" class="hud-action u-tecla u-tecla--icono" [class.hud-action--active]="settingsOpen()"
+              <button #settingsTrigger type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-settings [class.hud-action--active]="settingsOpen()"
                 (click)="settingsOpen.set(!settingsOpen())"
-                aria-label="Abrir ajustes del juego" title="Ajustes"
+                [attr.aria-label]="settingsLabel" [attr.title]="settingsVisible"
                 [attr.aria-expanded]="settingsOpen()"
                 [attr.aria-controls]="settingsOpen() ? 'game-settings-menu' : null">
                 <app-pixel-icono nombre="ajustes" />
+                <span class="hud-action__texto">{{ settingsVisible }}</span>
               </button>
               @if (settingsOpen()) {
                 <div #settingsMenu id="game-settings-menu" class="settings-menu" popover="manual"
@@ -91,48 +103,60 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                   role="dialog" aria-modal="false" aria-labelledby="game-settings-title">
                   <div class="settings-menu__header">
                     <strong id="game-settings-title">Ajustes</strong>
-                    <button type="button" aria-label="Cerrar ajustes" (click)="closeSettings()">
+                    <button class="u-boton u-boton--icono" type="button" aria-label="Cerrar ajustes" (click)="closeSettings()">
                       <mat-icon aria-hidden="true">close</mat-icon>
                     </button>
                   </div>
-                  <button type="button" [attr.aria-pressed]="!musicMuted()" (click)="toggleMusic.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="!musicMuted()" (click)="toggleMusic.emit()">
                     <mat-icon aria-hidden="true">{{ musicMuted() ? 'music_off' : 'music_note' }}</mat-icon>
                     <span>Música ambiental</span>
                     <strong aria-hidden="true">{{ musicMuted() ? 'No' : 'Sí' }}</strong>
                   </button>
-                  <button type="button" [attr.aria-pressed]="!sfxMuted()" (click)="toggleSfx.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="!sfxMuted()" (click)="toggleSfx.emit()">
                     <mat-icon aria-hidden="true">{{ sfxMuted() ? 'volume_off' : 'graphic_eq' }}</mat-icon>
                     <span>Sonidos de acciones</span>
                     <strong aria-hidden="true">{{ sfxMuted() ? 'No' : 'Sí' }}</strong>
                   </button>
-                  <button type="button" [attr.aria-pressed]="reduceMotion()" (click)="toggleReduceMotion.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="reduceMotion()" (click)="toggleReduceMotion.emit()">
                     <mat-icon aria-hidden="true">motion_photos_pause</mat-icon>
                     <span>Movimiento reducido</span>
                     <strong aria-hidden="true">{{ reduceMotion() ? 'Sí' : 'No' }}</strong>
                   </button>
                   <!-- WCAG 2.1.4 (F6-10): las teclas de una letra o un número se pueden apagar. -->
-                  <button type="button" [attr.aria-pressed]="shortcuts()" (click)="toggleShortcuts.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="shortcuts()" (click)="toggleShortcuts.emit()">
                     <mat-icon aria-hidden="true">accessibility</mat-icon>
                     <span>{{ shortcutsLabel }}</span>
                     <strong aria-hidden="true">{{ shortcuts() ? 'Sí' : 'No' }}</strong>
                   </button>
-                  <button type="button" (click)="toggleJournal.emit(); settingsOpen.set(false)">
+                  <!-- P8: las líneas de los diálogos aparecen completas, sin máquina de escribir (se recuerda). -->
+                  <button class="u-boton" type="button" [attr.aria-pressed]="instantText()" (click)="toggleInstantText.emit()">
+                    <mat-icon aria-hidden="true">text_fields</mat-icon>
+                    <span>{{ instantTextLabel }}</span>
+                    <strong aria-hidden="true">{{ instantText() ? 'Sí' : 'No' }}</strong>
+                  </button>
+                  <button class="u-boton" type="button" (click)="toggleJournal.emit(); settingsOpen.set(false)">
                     <mat-icon aria-hidden="true">menu_book</mat-icon>
                     <span>Bitácora</span>
                     <strong>{{ journalKey() ? 'J' : '' }}</strong>
                   </button>
-                  <button type="button" (click)="showHelp()">
+                  <button class="u-boton" type="button" (click)="showHelp()">
                     <mat-icon aria-hidden="true">help_outline</mat-icon>
                     <span>Cómo se juega</span>
                     <strong></strong>
                   </button>
-                  <button type="button" (click)="resetHelpMemory()">
+                  <button class="u-boton" type="button" (click)="resetHelpMemory()">
                     <mat-icon aria-hidden="true">replay</mat-icon>
                     <span>Ver la ayuda otra vez</span>
                     <strong>{{ helpResetDone() ? 'Lista' : '' }}</strong>
                   </button>
                   <span class="settings-menu__status" role="status">{{ helpResetDone() ? 'La ayuda de primera vez volverá a mostrarse.' : '' }}</span>
-                  <a routerLink="/portal/simulador">
+                  @if (fichaDisponible()) {
+                    <button class="u-boton" type="button" (click)="closeSettings(); openCaseBrief.emit()">
+                      <mat-icon aria-hidden="true">description</mat-icon>
+                      <span>Ficha del caso</span>
+                    </button>
+                  }
+                  <a class="u-boton" routerLink="/portal/simulador">
                     <mat-icon aria-hidden="true">home</mat-icon>
                     <span>Catálogo</span>
                     <strong></strong>
@@ -199,6 +223,9 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
     /* La tecla de la hoja común sigue la escala única (U1, V7): tres veces la letra, entre 44 y 48 px con cualquier
        puntero (--tecla-hud en las fichas; la guarda de 44 px de RNF-04 y BLOQUE-H no se afloja). */
     .hud-action { width: var(--tecla-hud, 44px); height: var(--tecla-hud, 44px); text-decoration: none; }
+    /* «Ir a…» y «Controles»: icono y texto en una sola tecla, tan alta como las demás. */
+    .hud-action.hud-action--texto { width: auto; min-width: var(--tecla-hud, 44px); padding: 0 calc(4 * var(--pixel-px)) var(--pixel-px); grid-auto-flow: column; gap: calc(3 * var(--pixel-px)); }
+    .hud-action__texto { font-size: var(--pixel-letra-chica); white-space: nowrap; }
     /* Bitácora abierta y Ajustes abiertos: la tecla queda encendida, como al enfocarla. */
     .hud-action--active { --m: var(--marco-tecla-encendida); background-color: var(--luz); color: var(--pixel-tinta-oscura); }
 
@@ -242,37 +269,12 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
       font-size: var(--pixel-letra-media);
       letter-spacing: .04em;
     }
-    .settings-menu__header button, .settings-menu button, .settings-menu a { color: inherit; font: inherit; }
-    .settings-menu__header button {
-      display: grid; place-items: center; width: 44px; height: 44px; padding: 0; cursor: pointer;
-      border-style: solid; border-width: calc(4 * var(--pixel-px)); border-image: var(--marco-tecla) 4 / calc(4 * var(--pixel-px)) stretch;
-      background: var(--pixel-tecla) padding-box; image-rendering: pixelated; color: var(--pixel-tinta);
-    }
-    .settings-menu__header button:active { border-image-source: var(--marco-tecla-hundida); transform: translateY(var(--pixel-px)); }
-    @media (hover: hover) and (pointer: fine) {
-      .settings-menu__header button:hover { border-image-source: var(--marco-tecla-encendida); background-color: var(--luz); color: var(--pixel-tinta-oscura); }
-    }
-    .settings-menu > button,
-    .settings-menu > a {
+    .settings-menu > .u-boton {
       display: grid;
       grid-template-columns: 24px minmax(0, 1fr) 34px;
-      align-items: center;
       gap: calc(4 * var(--pixel-px));
-      min-height: 44px;
       padding: 0 calc(4 * var(--pixel-px));
-      border-style: solid;
-      border-width: calc(4 * var(--pixel-px));
-      border-image: var(--marco-placa) 4 / calc(4 * var(--pixel-px)) stretch;
-      background: var(--pixel-penumbra) var(--trama-placa) 0 0 / calc(8 * var(--pixel-px)) padding-box;
-      image-rendering: pixelated;
       text-align: left;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    .settings-menu > button:focus-visible, .settings-menu > a:focus-visible { border-image-source: var(--marco-placa-foco); background-color: var(--pixel-penumbra-alzada); }
-    .settings-menu > button:active, .settings-menu > a:active { border-image-source: var(--marco-placa-pulsada); background-color: var(--pixel-penumbra-hundida); transform: translateY(var(--pixel-px)); }
-    @media (hover: hover) and (pointer: fine) {
-      .settings-menu > button:hover, .settings-menu > a:hover { border-image-source: var(--marco-placa-sobre); background-color: var(--pixel-penumbra-alzada); }
     }
     .settings-menu mat-icon { color: var(--luz); font-size: 18px; width: 18px; height: 18px; }
     .settings-menu span { min-width: 0; color: var(--pixel-tinta); font-size: var(--pixel-letra-media); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -287,6 +289,8 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
     /* Tramo compacto (U1, V7): la frase sale de la barra y queda la cara con su pulso; al pasar el cursor o al enfocar
        el grupo con teclado, la frase aparece en una placa debajo. Sigue en el nombre accesible del grupo. */
     @media (max-height: 700px), (max-width: 1100px) {
+      .hud-action__texto { display: none; }
+      .hud-action.hud-action--texto { width: var(--tecla-hud, 44px); padding: 0; }
       .hud-persona { position: relative; }
       .hud-persona:focus-visible { outline: var(--pixel-px) solid var(--luz); outline-offset: calc(2 * var(--pixel-px)); }
       .hud-persona-label {
@@ -294,7 +298,10 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
         padding: var(--pixel-px) calc(4 * var(--pixel-px)) calc(2 * var(--pixel-px)); background: var(--pixel-penumbra);
         box-shadow: 0 0 0 var(--pixel-px) var(--pixel-contorno); visibility: hidden;
       }
-      .hud-persona:hover .hud-persona-label, .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
+      .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
+      @media (hover: hover) {
+        .hud-persona:hover .hud-persona-label { visibility: visible; }
+      }
     }
     /* Teléfono en vertical: el catálogo sigue a un toque en Ajustes («Catálogo»). */
     @media (max-width: 480px) {
@@ -307,6 +314,8 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
     @media (max-height: 520px), (pointer: coarse) and (orientation: landscape) {
       /* Compacto: el grupo de la esquina mide lo que sus teclas de 44 px y su marco; el caso se va. */
       .hud-strip { padding: 0; }
+      [data-hud-places] .hud-action__texto { display: inline; }
+      .hud-action.hud-action--texto[data-hud-places] { width: auto; padding: 0 8px; }
       .hud-case { display: none; }
       .settings-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(560px, calc(100vw - 16px)); }
       .settings-menu__header { grid-column: 1 / -1; }
@@ -323,8 +332,11 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
   `]
 })
 export class SimulationHudComponent {
+  readonly brand = APP_BRAND;
   /** La pestaña lleva el título sin su subtítulo («… — tres capítulos»): entero no cabía y salía cortado (B, V4). */
   protected readonly tituloCorto = (titulo: string): string => titulo.split(' — ')[0];
+  readonly fichaDisponible = input(false);
+  readonly openCaseBrief = output<void>();
   readonly attempt = input<SimulationAttemptState | null>(null);
   /** Retrato de la persona consultante en el kit (lo da el mundo al cargar); sin él, la persona se dice solo con palabras. */
   readonly patientVisual = input<CharacterVisual | null>(null);
@@ -342,9 +354,20 @@ export class SimulationHudComponent {
   readonly musicMuted = input(false);
   readonly sfxMuted = input(false);
   readonly reduceMotion = input(false);
+  /** «Texto instantáneo» (P8): las líneas de los diálogos aparecen completas. Lo guarda quien integra el HUD. */
+  readonly instantText = input(false);
   /** Textos nuevos de F6 que viven en el registro de borradores (una sola fuente para Psicología). */
+  protected readonly helpVisible = DRAFT_COPY.hudHelp.text;
+  protected readonly helpLabel = DRAFT_COPY.hudHelpLabel.text;
+  protected readonly settingsVisible = DRAFT_COPY.hudSettings.text;
+  protected readonly settingsLabel = DRAFT_COPY.hudSettingsLabel.text;
   protected readonly placesLabel = DRAFT_COPY.placesButtonLabel.text;
   protected readonly placesTitle = DRAFT_COPY.placesDialog.title;
+  protected readonly placesVisible = ORIENTATION_COPY.ui.placesVisibleLabel;
+  protected readonly controlsVisible = ORIENTATION_COPY.ui.controlsLabel;
+  protected readonly controlsAriaLabel = ORIENTATION_COPY.ui.controlsAriaLabel;
+  protected readonly controlsTitle = ORIENTATION_COPY.ui.controlsTitle;
+  protected readonly instantTextLabel = ORIENTATION_COPY.ui.instantTextLabel;
   protected readonly shortcutsLabel = DRAFT_COPY.shortcutsSettingLabel.text;
   /** «Atajos de una tecla» activos (F6-10, WCAG 2.1.4): con ellos apagados ningún texto promete la J. */
   readonly shortcuts = input(true);
@@ -360,13 +383,16 @@ export class SimulationHudComponent {
   readonly toggleJournal = output<void>();
   /** Botón «Ir a…» de la cabecera (F6-11): pide la lista de personas y puertas de la sala. */
   readonly openPlaces = output<void>();
-  /** Botón «?» de la cabecera y fila «Cómo se juega» de Ajustes: piden abrir la pantalla de ayuda. */
+  /** Botón «Controles» de la cabecera (P8): pide la tarjeta de controles (moverse, interactuar, «Ir a…», plano). */
+  readonly openControls = output<void>();
+  /** Fila «Cómo se juega» de Ajustes (y «Más ayuda» de la tarjeta de controles): piden abrir la pantalla de ayuda. */
   readonly openHelp = output<void>();
   /** «Ver la ayuda otra vez» ya borró la marca de ayuda vista: quien integra puede volver a mostrar la tarjeta de primera vez. */
   readonly helpReset = output<void>();
   readonly toggleMusic = output<void>();
   readonly toggleSfx = output<void>();
   readonly toggleReduceMotion = output<void>();
+  readonly toggleInstantText = output<void>();
   readonly toggleShortcuts = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

@@ -1,3 +1,5 @@
+import { NotificationService } from '../../../../core/notifications/notification.service';
+import { injectLlevar } from '../../marco/llevar';
 import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
@@ -91,7 +93,7 @@ import { RutasAutoria } from '../../rutas';
                 </p>
               }
               @if (avisosDeElegida().length) {
-                <app-estudio-seccion titulo="Por corregir" [resumen]="'' + avisosDeElegida().length">
+                <app-estudio-seccion titulo="Para revisar" [resumen]="'' + avisosDeElegida().length">
                   <ul class="elegida__avisos">
                     @for (a of avisosDeElegida(); track $index) {
                       <li>
@@ -267,6 +269,7 @@ import { RutasAutoria } from '../../rutas';
     .dialogo {
       display: flex; flex-direction: column; gap: 0.75rem; border: 2px solid var(--ds-primary); border-radius: var(--l-radio-tarjeta);
       background: color-mix(in oklab, var(--l-superficie) 97%, transparent); box-shadow: var(--l-sombra-alta);
+      max-block-size: min(80vh, 42rem); overflow: auto;
     }
     .dialogo.peligro { border-color: var(--ds-danger); }
     .dialogo h2, .dialogo p { margin: 0; }
@@ -280,7 +283,7 @@ import { RutasAutoria } from '../../rutas';
     @media (min-width: 64rem) {
       .dialogo {
         position: absolute; z-index: var(--autoria-capa-5); inset-block-start: 3.5rem; inset-inline-end: 1rem;
-        inline-size: min(30rem, calc(100% - 2rem)); max-block-size: calc(100% - 4.5rem); overflow: auto;
+        inline-size: min(38rem, calc(100% - 2rem)); max-block-size: min(80vh, calc(100% - 4.5rem)); overflow: auto;
       }
     }
     @media (max-width: 63.999rem) {
@@ -305,6 +308,8 @@ export class EditorComponent {
   protected readonly conectando = signal<string | null>(null);
   protected readonly destino = signal<string | 'nueva' | null>(null);
   protected readonly borrando = signal<string | null>(null);
+  private readonly llevarRelleno = injectLlevar();
+  private readonly avisosRelleno = inject(NotificationService);
   protected readonly anuncio = signal('');
   /** Por qué aviso va «N avisos en los caminos» (avanza uno por pulsación). */
   private indiceAviso = 0;
@@ -314,8 +319,17 @@ export class EditorComponent {
     this.store.aceptarEscenaIa(id);
     await this.store.sincronizado();
     // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
-    if (this.store.partesIaDeEscena(id) === 0) this.anuncio.set('Aceptaste todo lo sugerido en esta escena.');
-    this.enfocar('#pe'); // el botón pulsado desaparece: el foco no cae al cuerpo de la página
+    if (this.store.partesIaDeEscena(id) === 0) {
+      const faltas = this.store.guiaLocal().filter(p => p.codigo === 'CONTENT_PLACEHOLDER' && p.escenaId === id);
+      if (faltas.length) {
+        const mensaje = `La propuesta trae ${faltas.length} ${faltas.length === 1 ? 'texto' : 'textos'} de muestra: escríbelos antes de enviar.`;
+        this.avisosRelleno.info(mensaje);
+        await this.llevarRelleno(faltas[0].ir);
+        return;
+      }
+      this.anuncio.set('Aceptaste todo lo sugerido en esta escena.');
+    }
+    this.enfocar('#pe');
   }
 
   /** Las escenas en orden de historia: el número de cada una es el mismo del riel y del mapa. */
@@ -335,8 +349,8 @@ export class EditorComponent {
    * el i-ésimo pendiente es el i-ésimo aviso.
    */
   protected readonly avisosMapa = computed<Aviso[]>(() => {
-    const pendientes = this.progreso.pendientes();
-    return this.todosLosAvisos().filter((_, i) => pendientes[i]?.tipo === 'por-corregir');
+    const pendientes = this.store.guiaLocal();
+    return this.todosLosAvisos().filter(aviso => pendientes.some(p => p.mensaje === aviso.mensaje && p.tipo === 'por-corregir'));
   });
   /** Hay caminos sin terminar que todavía no son un error (escenas por escribir). */
   protected readonly caminosPorEscribir = computed(() => this.todosLosAvisos().length > this.avisosMapa().length);

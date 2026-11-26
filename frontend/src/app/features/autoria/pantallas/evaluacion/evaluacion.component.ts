@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 
 import { UiProgress } from '../../../../shared/ui/progress/ui-progress';
@@ -54,7 +56,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
 @Component({
   selector: 'app-evaluacion',
   imports: [
-    UiProgress, AutoAltoDirective, PestanasEvaluacionComponent, FilaDePasoComponent, EstudioRanuraDirective, EstudioSeccionComponent,
+    UiAyudaBreve, UiProgress, AutoAltoDirective, PestanasEvaluacionComponent, FilaDePasoComponent, EstudioRanuraDirective, EstudioSeccionComponent,
     EstudioHerramientaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,10 +67,11 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
           <div class="cabecera">
             <div class="cabecera__titulos">
               <p class="sobretitulo">Etapa 4 · Evaluación</p>
-              <h1>Pasos profesionales</h1>
+              <h1>Pasos profesionales <ui-ayuda-breve termino="Pasos profesionales" [explicacion]="glosario['Pasos profesionales']" /></h1>
               <p class="bajada">Lo que el estudiante tiene que hacer en el caso. Marca qué respuestas cumplen cada paso: es lo mismo que marcarlo en la ficha de la respuesta.</p>
             </div>
-            <app-pestanas-evaluacion actual="pasos" />
+            <p role="status">@if (store.revisionPendiente()) { Falta completar la revisión. } @else { {{ store.totalPendientes() }} por resolver antes de enviar el caso. }</p>
+      <app-pestanas-evaluacion actual="pasos" />
           </div>
 
           @if (agregando()) {
@@ -90,8 +93,8 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
 
           @if (pasos().length) {
             <div class="lista">
-              @for (p of pasos(); track p.hito.clave) {
-                <app-fila-de-paso [class.abierta]="abierto() === p.hito.clave || editando() === p.hito.clave || borrando() === p.hito.clave" [paso]="p" [escenas]="escenas()" [soloLectura]="store.soloLectura()"
+              @for (p of pasos(); track p.hito.clave; let primera = $first) {
+                <app-fila-de-paso [conAyuda]="primera" [class.abierta]="abierto() === p.hito.clave || editando() === p.hito.clave || borrando() === p.hito.clave" [paso]="p" [escenas]="escenas()" [soloLectura]="store.soloLectura()"
                                   [abierto]="abierto() === p.hito.clave" [editando]="editando() === p.hito.clave"
                                   [borrando]="borrando() === p.hito.clave" [finalesQueLoNombran]="borrando() === p.hito.clave ? nombranA(caso, p.hito.clave) : []"
                                   (cambiar)="cambiar(p.hito, $event)" (marcar)="marcar(p.hito, $event)" (quitar)="quitar(p.hito, $event)"
@@ -150,6 +153,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
   styleUrl: './evaluacion.component.scss',
 })
 export class EvaluacionComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly store = inject(CasoStore);
   private readonly progreso = inject(ProgresoDelCaso);
   private readonly rutas = inject(RutasAutoria);
@@ -192,7 +196,7 @@ export class EvaluacionComponent {
     }
     const titulos = new Map(this.escenas().map((e) => [e.escenaId, e.titulo]));
     const inalcanzables = new Set(hitosInalcanzables(caso).map((h) => h.clave));
-    const corregir = new Set(this.progreso.pendientes()
+    const corregir = new Set([...this.store.guiaLocal(), ...this.progreso.pendientes()]
       .filter((p) => p.tipo === 'por-corregir' && p.codigo === 'milestone-unreachable').map((p) => p.ir.ancla));
     const vistas = caso.hitos.map((hito, i) => {
       const respuestas: RespuestaDelPaso[] = dondeSeCumple(caso, hito.clave).map((d) => ({

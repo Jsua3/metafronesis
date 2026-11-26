@@ -39,7 +39,7 @@ def _rubrica(intento):
 
 
 def resultado_de(estudiante, attempt_id) -> dict:
-    intento = owned(estudiante, attempt_id)
+    intento = owned(estudiante, attempt_id, solo_lectura=True)
     if intento.status != AttemptStatus.COMPLETED:
         raise ApiError("ATTEMPT_NOT_FINISHED", "El intento aún no ha finalizado.", 409)
     from .revision_de_respuestas import decisiones_vigentes

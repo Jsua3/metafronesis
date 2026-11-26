@@ -1,3 +1,4 @@
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -21,39 +22,50 @@ def datos(settings):
     otro = CustomUser.objects.create_user(email="otro@example.test", password="test", role=ESTUDIANTE)
     caso = SimpleNamespace(title="Caso de prueba", created_by=docente)
     version = SimpleNamespace(simulation_case=caso)
-    sesion = SimpleNamespace(case_version=version, mensaje="Mensaje de prueba", creada_por=docente)
+    sesion = SimpleNamespace(case_version=version, mensaje="Mensaje de prueba", creada_por=docente,
+                             lugar="Aula 1", inicio=datetime(2026, 5, 4, 8, 0))
     convocatoria = SimpleNamespace(estudiante=estudiante)
     intento = SimpleNamespace(student=estudiante, case_version=version)
     return SimpleNamespace(**locals())
 
 
 def emitir(datos):
-    eventos.convocatoria_emitida.send(sender=object, sesion=datos.sesion,
-        convocatorias=[datos.convocatoria], codigos={datos.estudiante.pk: "ABCDEFGH"})
+    eventos.convocados_cambiaron.send(sender=object, sesion=datos.sesion, agregados=[datos.estudiante], retirados=[])
 
 
-def test_convocatoria_avisa_con_codigo(datos):
+def test_convocatoria_avisa_sin_codigo(datos):
     from apps.notificaciones.models import Notificacion
     emitir(datos)
     aviso = Notificacion.objects.get(destinatario=datos.estudiante)
+    assert aviso.tipo == "CONVOCATORIA" and "Código" not in aviso.cuerpo and "Entra con tu cuenta" in aviso.cuerpo
     assert aviso.correo_enviado
-    assert all(texto in mail.outbox[0].body for texto in ("ABCDEFGH", "Caso de prueba", "Mensaje de prueba", "https://ejemplo.test"))
+    assert all(texto in mail.outbox[0].body for texto in ("Caso de prueba", "Mensaje de prueba", "https://ejemplo.test"))
+
+
+def test_convocatoria_lleva_el_enlace_a_los_casos(datos):
+    emitir(datos)
+    assert "https://ejemplo.test/portal/simulador" in mail.outbox[0].body
 
 
 def test_retirado_recibe_aviso(datos):
-    eventos.convocados_cambiaron.send(sender=object, sesion=datos.sesion, agregados=[], retirados=[datos.estudiante], codigos={})
+    eventos.convocados_cambiaron.send(sender=object, sesion=datos.sesion, agregados=[], retirados=[datos.estudiante])
     assert len(mail.outbox) == 1
     assert "retir" in mail.outbox[0].body.lower()
 
 
-def test_calificacion_avisa_al_estudiante(datos):
+def test_calificacion_del_sistema_no_envia_correo(datos):
+    from apps.notificaciones.models import Notificacion
     eventos.intento_calificado.send(sender=object, intento=datos.intento, evaluacion=object())
-    assert mail.outbox[0].to == [datos.estudiante.email]
+    assert mail.outbox == [] and not Notificacion.objects.exists()
 
 
-def test_retro_avisa_al_estudiante(datos):
+def test_retro_avisa_al_estudiante_con_el_enlace_al_resultado(datos):
+    datos.intento.pk = "abc-123"
+    datos.intento.case_version_id = 7
     eventos.retroalimentacion_registrada.send(sender=object, intento=datos.intento, docente=datos.docente)
     assert mail.outbox[0].to == [datos.estudiante.email]
+    assert mail.outbox[0].subject == "Tu calificación y retroalimentación están disponibles"
+    assert "https://ejemplo.test/portal/simulador/7/cierre/abc-123" in mail.outbox[0].body
 
 
 def test_fallo_de_correo_queda_marcado(datos):

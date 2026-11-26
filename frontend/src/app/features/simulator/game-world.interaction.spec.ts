@@ -21,12 +21,13 @@ vi.mock('phaser', () => ({
 import { MapObjectState, NpcConfig, SimulationWorldState } from '../../core/models/simulation.model';
 import { DataDrivenWorldScene } from './game-world.component';
 import { MARKER_INTERACT_RADIUS, NPC_INTERACT_RADIUS } from './interaction-priority.util';
+import { Caja, EstadoCamara, seCruzan } from './camara/camara';
 import type { Mock } from 'vitest';
 
 interface FakeNode {
   x: number; y: number; scene: object; visible: boolean; alpha: number; scale: number;
   setScale: Mock; setAlpha: Mock; setVisible: Mock; setPosition: Mock;
-  setStrokeStyle: Mock; setDepth: Mock;
+  setStrokeStyle: Mock; setDepth: Mock; setOrigin: Mock; setText: Mock;
   [extra: string]: unknown;
 }
 
@@ -39,6 +40,8 @@ function node(x = 0, y = 0): FakeNode {
     setPosition: vi.fn((nx: number, ny: number) => { self.x = nx; self.y = ny; return self; }),
     setStrokeStyle: vi.fn(() => self),
     setDepth: vi.fn(() => self),
+    setOrigin: vi.fn((x: number, y = x) => { self['originX'] = x; self['originY'] = y; return self; }),
+    setText: vi.fn((t: string) => { self['text'] = t; return self; }),
   };
   return self;
 }
@@ -46,6 +49,7 @@ function node(x = 0, y = 0): FakeNode {
 /** Superficie privada de la escena que estos casos ejercitan. */
 interface SceneProbe {
   player: { x: number; y: number };
+  piesAlEntrar: { x: number; y: number } | null;
   world: SimulationWorldState;
   markers: Map<string, FakeNode>;
   markerData: Map<string, MapObjectState>;
@@ -53,13 +57,19 @@ interface SceneProbe {
   doorHints: Map<string, FakeNode>;
   npcMarkers: Map<string, FakeNode>;
   sound: { play: Mock };
-  add: { ellipse: Mock };
+  add: { ellipse: Mock; text: Mock };
   nearestKey: string | null;
+  focoDeTeclado: string | null;
   alsoKey: string | null;
   revealed: string[];
-  targetRing?: { halo: FakeNode; ring: FakeNode };
+  contornos: Map<string, { dibujo: FakeNode; actualizar(marca: FakeNode): void }>;
+  dibujosDeMarcador: Map<string, FakeNode>;
+  actualizarContornos(tiempo: number): void;
   updateNearestInteraction(suppressSound?: boolean): void;
   interactNearest(): void;
+  caminarALaPuerta(op: { puertaKey: string; puerta: { x: number; y: number }; acompanantes: string[]; jugador: boolean }): Promise<void>;
+  mostrarAcompanantes(): void;
+  placeCandidates(): { key: string }[];
   setOrientation(next: { nextTargetKey: string | null; doorStates: Record<string, 'open' | 'locked'>; dimmedKeys: ReadonlySet<string> }): void;
   setCompactLabels(compact: boolean): void;
   ready: boolean;
@@ -132,12 +142,48 @@ function crearEscena(player = { x: 480, y: 430 }): Harness {
   addNpc(npcConfig('enfermera-urgencias', 'Enfermera de urgencias', 560, 330));
   addNpc(npcConfig('psicologa-orientadora', 'Psicóloga hospitalaria', 780, 440));
   const ellipses: FakeNode[] = [];
-  scene.add = { ellipse: vi.fn(() => { const e = node(); ellipses.push(e); return e; }) };
+  scene.add = { ellipse: vi.fn(() => { const e = node(); ellipses.push(e); return e; }), text: vi.fn(() => node()) };
   nodes['#ellipses'] = ellipses as unknown as FakeNode;
   return { scene, callbacks, nodes };
 }
 
+/** Doble del dibujo de alfa: aquí se prueba quién se realza y dónde, en contorno.spec.ts los píxeles. */
+function probarContorno(h: Harness, clave: string): FakeNode {
+  const dibujo = node();
+  h.scene.dibujosDeMarcador.set(clave, h.nodes[clave]);
+  h.scene.contornos.set(clave, {
+    dibujo, actualizar: marca => dibujo.setPosition(marca.x, marca.y).setVisible(true),
+  });
+  h.scene.actualizarContornos(0);
+  return dibujo;
+}
+
 const move = (h: Harness, x: number, y: number) => { h.scene.player.x = x; h.scene.player.y = y; h.scene.updateNearestInteraction(true); };
+
+describe('herramienta recogida', () => {
+  it('retira la acción cercana al recibir inventario aunque falte cargar arte', () => {
+    const h = crearEscena({ x: 318, y: 428 });
+    const kit = h.scene.markerData.get('tool-pap')!;
+    kit.toolCode = 'PAP';
+    h.scene.nearestKey = kit.key;
+    const scene = h.scene as unknown as { setWorld(world: SimulationWorldState): void; renderWorld: () => void };
+    scene.renderWorld = vi.fn();
+    scene.setWorld({ ...h.scene.world, inventory: ['PAP'] });
+    expect(h.callbacks.onProximity).toHaveBeenLastCalledWith(null);
+  });
+
+  it('no vuelve a interactuar aunque el marcador anterior siga durante la carga de arte', () => {
+    const h = crearEscena({ x: 318, y: 428 });
+    const kit = h.scene.markerData.get('tool-pap')!;
+    kit.toolCode = 'PAP';
+    h.scene.nearestKey = kit.key;
+    h.scene.world = { ...h.scene.world, inventory: ['PAP'] };
+    h.scene.interactNearest();
+    expect(h.callbacks.onInteract).not.toHaveBeenCalled();
+    h.scene.updateNearestInteraction(true);
+    expect(h.scene.nearestKey).not.toBe(kit.key);
+  });
+});
 
 describe('DataDrivenWorldScene: proximidad unificada de personas y objetos', () => {
   it('sin nada cerca no se ofrece nada y no se avisa', () => {
@@ -279,50 +325,35 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
   const orient = (h: Harness, over: Partial<{ nextTargetKey: string | null; doorStates: Record<string, 'open' | 'locked'>; dimmedKeys: ReadonlySet<string> }> = {}) =>
     h.scene.setOrientation({ nextTargetKey: null, doorStates: {}, dimmedKeys: new Set(), ...over });
 
-  it('el destino lleva un solo anillo (anillo y halo), estático, creado una vez y reposicionado', () => {
+  it('el destino activa el contorno en el dibujo, lo sigue por cuadro y lo retira al dejar de ser destino', () => {
     const h = crearEscena();
+    const contorno = probarContorno(h, 'tool-pap');
+    expect(contorno.visible).toBe(false);
     orient(h, { nextTargetKey: 'tool-pap' });
-    const ellipses = h.nodes['#ellipses'] as unknown as FakeNode[];
-    expect(ellipses).toHaveLength(2);
-    expect(h.scene.targetRing?.ring.x).toBe(318);
-    expect(h.scene.targetRing?.ring.y).toBe(428); // pies del marcador: y + 16
-    orient(h, { nextTargetKey: 'npc:enfermera-urgencias' });
-    expect(ellipses).toHaveLength(2);
-    expect([h.scene.targetRing?.ring.x, h.scene.targetRing?.ring.y]).toEqual([560, 330]);
-    orient(h, { nextTargetKey: null });
-    expect(h.scene.targetRing?.ring.visible).toBe(false);
-    expect(h.scene.targetRing?.halo.visible).toBe(false);
-  });
-
-  it('el anillo de un marcador queda quieto aunque el icono flote; el de una persona que camina la sigue', () => {
-    const h = crearEscena();
-    orient(h, { nextTargetKey: 'tool-pap' });
-    const ring = h.scene.targetRing!.ring;
-    const placed = ring.setPosition.mock.calls.length;
-    h.nodes['tool-pap'].y = 409; // la flotación suave del marcador (tween) lo sube unos píxeles
-    move(h, 330, 420);
-    move(h, 331, 421);
-    expect(ring.setPosition.mock.calls.length).toBe(placed);
-    expect([ring.x, ring.y]).toEqual([318, 428]);
-    orient(h, { nextTargetKey: 'npc:enfermera-urgencias' });
-    h.nodes['npc:enfermera-urgencias'].x = 570; h.nodes['npc:enfermera-urgencias'].y = 335;
-    move(h, 559, 373);
-    expect([h.scene.targetRing!.ring.x, h.scene.targetRing!.ring.y]).toEqual([570, 335]);
-  });
-
-  it('un destino que no existe en la sala no inventa anillo', () => {
-    const h = crearEscena();
-    orient(h, { nextTargetKey: 'tool-spikes' });
+    h.scene.actualizarContornos(0);
+    expect(contorno).toMatchObject({ x: 318, y: 412, visible: true });
+    h.nodes['tool-pap'].y -= 3;
+    h.scene.actualizarContornos(16);
+    expect(contorno.y).toBe(409);
+    orient(h);
+    h.scene.actualizarContornos(32);
+    expect(contorno.visible).toBe(false);
     expect(h.scene.add.ellipse).not.toHaveBeenCalled();
-    expect(h.scene.targetRing).toBeUndefined();
   });
 
-  it('el anillo no usa tweens ni animación (también con movimiento normal)', () => {
+  it('una puerta de pieza usa su hoja animada como dibujo del destino', () => {
     const h = crearEscena();
-    (h.scene as unknown as { tweens: { add: Mock } }).tweens = { add: vi.fn() };
-    orient(h, { nextTargetKey: 'tool-pap' });
-    move(h, 330, 420);
-    expect((h.scene as unknown as { tweens: { add: Mock } }).tweens.add).not.toHaveBeenCalled();
+    const clave = 'puerta-sala-escucha';
+    const dibujo = probarContorno(h, clave);
+    orient(h, { nextTargetKey: clave });
+    const hoja = node(832, 392);
+    const sala = h.scene as unknown as { salaPorPiezas: { spriteDeInteraccion(key: string): FakeNode | undefined } };
+    sala.salaPorPiezas = { spriteDeInteraccion: key => key === clave ? hoja : undefined };
+    h.scene.actualizarContornos(0);
+    expect(dibujo).toMatchObject({ x: 832, y: 392, visible: true });
+    hoja.x += 1;
+    h.scene.actualizarContornos(16);
+    expect(dibujo.x).toBe(833);
   });
 
   it('el rótulo del destino se ve aunque esté lejos y se oculta al cambiar de destino', () => {
@@ -340,7 +371,6 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     orient(h, { nextTargetKey: 'tool-pap' });
     // desde (700,430): psicóloga a 80, puerta a 138; zona restringida a 168 (fuera); enfermera a 183 (fuera)
     expect(h.scene.revealed).toEqual(['tool-pap', 'npc:psicologa-orientadora', 'puerta-sala-escucha']);
-    expect(h.nodes['puerta-sala-escucha#hint'].visible).toBe(true);
     expect((h.nodes['npc:psicologa-orientadora']['__labelSprite'] as FakeNode).alpha).toBe(1);
     expect((h.nodes['npc:enfermera-urgencias']['__labelSprite'] as FakeNode).alpha).toBe(0);
     expect(h.nodes['zona-restringida#label'].alpha).toBe(0);
@@ -352,7 +382,6 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     h.scene.updateNearestInteraction(true);
     orient(h, { nextTargetKey: 'tool-pap' });
     expect(h.scene.revealed).toEqual(['tool-pap', 'npc:psicologa-orientadora']);
-    expect(h.nodes['puerta-sala-escucha#hint'].visible).toBe(false);
   });
 
   it('una puerta bloqueada enciende su candado y borde discontinuo; abierta, no', () => {
@@ -384,7 +413,46 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     h.scene.updateNearestInteraction(true);
     h.scene.updateNearestInteraction(true);
     expect(h.nodes['tool-pap'].setAlpha.mock.calls.length).toBe(alphaCalls); // por cuadro no se repinta
-    expect(h.scene.add.ellipse).toHaveBeenCalledTimes(2);
+    expect(h.scene.add.ellipse).not.toHaveBeenCalled();
+    expect(h.scene.add.text).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('los avisos y las acciones al cruzar una puerta', () => {
+  it('la puerta de entrada entra en la barra de acciones después del primer desplazamiento', () => {
+    const h = crearEscena({ x: 838, y: 424 });
+    h.scene.npcMarkers.clear();
+    h.scene.piesAlEntrar = { ...h.scene.player };
+    h.scene.updateNearestInteraction(true);
+    expect(h.scene.nearestKey).toBeNull();
+    move(h, 830, 424);
+    expect(h.scene.nearestKey).toBe('puerta-sala-escucha');
+  });
+
+  it('retira el nombre, la pista y la interacción del acompañante al empezar la salida', async () => {
+    const h = crearEscena({ x: 780, y: 440 });
+    const key = 'npc:psicologa-orientadora';
+    const actor = h.nodes[key];
+    h.callbacks.reduceMotion = true;
+    h.scene.setOrientation({ nextTargetKey: key, doorStates: {}, dimmedKeys: new Set() });
+    expect(h.scene.nearestKey).toBe(key);
+    const contorno = probarContorno(h, key);
+    expect(contorno.visible).toBe(true);
+    const caminata = h.scene.caminarALaPuerta({
+      puertaKey: 'puerta-sala-escucha', puerta: { x: 838, y: 424 }, acompanantes: [key], jugador: false,
+    });
+    expect(actor.visible).toBe(true);
+    expect((actor['__labelSprite'] as FakeNode).alpha).toBe(0);
+    expect((actor['__hintSprite'] as FakeNode).alpha).toBe(0);
+    h.scene.actualizarContornos(0);
+    expect(contorno.visible).toBe(false);
+    expect(h.callbacks.onProximity).toHaveBeenLastCalledWith(null);
+    expect(h.scene.placeCandidates().map(p => p.key)).not.toContain(key);
+    h.scene.interactNearest();
+    expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
+    h.scene.mostrarAcompanantes();
+    await caminata;
+    expect(h.scene.placeCandidates().map(p => p.key)).toContain(key);
   });
 });
 
@@ -435,10 +503,417 @@ describe('DataDrivenWorldScene: los rótulos se dibujan sobre los actores y sigu
   it('los rótulos de marcadores y personas viven fuera de sus contenedores (sobre los actores)', () => {
     const source = readFileSync(join(__dirname, 'game-world.component.ts'), 'utf-8');
     expect(source).toContain('const LABEL_DEPTH = DEPTH.UI - 1;');
-    expect(source).toMatch(/const marker = this\.add\.container\(object\.x, object\.y, \[markerShadow, pulse, main\]\);/);
+    expect(source).toMatch(/const marker = this\.add\.container\([^\n]+, \[markerShadow, pulse, main\]\);/);
     expect(source).not.toMatch(/this\.add\.container\([^)]*\[[^\]]*\blabel\b[^\]]*\]\)/);
-    // Tres de rótulos (marcador, nombre y pista de una persona), dos del ratón (F6-7: contorno y verbo al pasar) y el
-    // chevrón con el nombre de la persona clave (P6).
-    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(6);
+    // Tres de rótulos (marcador, nombre y pista de una persona), el verbo del ratón al pasar y el
+    // chevrón con el nombre de la persona clave (P6), la flecha del siguiente paso y la frase «E · …» de un marcador cercano y el indicador de borde del destino fuera de cuadro (P9).
+    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(8);
+  });
+});
+
+/** Lo privado que los casos de orientarse en el juego (P9) ejercitan, más allá de `SceneProbe`. */
+interface OrientacionProbe extends SceneProbe {
+  stepMark?: FakeNode;
+  markerPrompt?: FakeNode;
+  walk: { target: { x: number; y: number; radius: number } | null };
+  walkInteractKey: string | null;
+  walkGoal: { key: string; label: string } | null;
+  motionPaused: boolean;
+  examinedKeys: ReadonlySet<string>;
+  handlePointerDown(pointer: unknown): void;
+  finishWalkInteract(arrived: boolean): void;
+  walkToKey(key: string): boolean;
+  setShortcutsEnabled(enabled: boolean): void;
+}
+
+describe('DataDrivenWorldScene: proximidad visible (P9)', () => {
+  const orient = (h: Harness, over: Partial<{ nextTargetKey: string | null; doorStates: Record<string, 'open' | 'locked'>; dimmedKeys: ReadonlySet<string> }> = {}) =>
+    h.scene.setOrientation({ nextTargetKey: null, doorStates: {}, dimmedKeys: new Set(), ...over });
+  const probe = (h: Harness) => h.scene as unknown as OrientacionProbe;
+  const hintOf = (h: Harness, npc: string) => h.nodes[`npc:${npc}`]['__hintSprite'] as FakeNode;
+
+  it('E actúa sobre la persona cercana que tiene el contorno y la frase, con un solo contorno aunque también sea el destino', () => {
+    const h = crearEscena();
+    const clave = 'npc:enfermera-urgencias';
+    const contorno = probarContorno(h, clave);
+    const actualizar = vi.spyOn(h.scene.contornos.get(clave)!, 'actualizar');
+    move(h, 559, 373);
+    orient(h, { nextTargetKey: clave });
+    h.scene.actualizarContornos(0);
+    expect(actualizar).toHaveBeenCalledTimes(1);
+    expect(contorno).toMatchObject({ x: 560, y: 330, visible: true });
+    expect(hintOf(h, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('E · Hablar con Enfermera de urgencias');
+    h.scene.interactNearest();
+    expect(h.callbacks.onNpcInteract).toHaveBeenCalledWith(expect.objectContaining({ key: 'enfermera-urgencias' }));
+    orient(h);
+    move(h, 480, 430);
+    h.scene.actualizarContornos(16);
+    expect(contorno.visible).toBe(false);
+    expect(hintOf(h, 'enfermera-urgencias').alpha).toBe(0);
+  });
+
+  it('la acción con foco de teclado realza su persona hasta que se mueve el foco', () => {
+    const h = crearEscena();
+    const clave = 'npc:enfermera-urgencias';
+    const contorno = probarContorno(h, clave);
+    h.callbacks.reduceMotion = true;
+    h.scene.focoDeTeclado = clave;
+    h.scene.actualizarContornos(0);
+    expect(contorno.visible).toBe(true);
+    h.scene.focoDeTeclado = null;
+    h.scene.actualizarContornos(16);
+    expect(contorno.visible).toBe(false);
+  });
+
+  it('lo atenuado no se ilumina aunque quede al alcance', () => {
+    const h = crearEscena();
+    const clave = 'zona-restringida';
+    const contorno = probarContorno(h, clave);
+    move(h, 660, 330);
+    h.scene.actualizarContornos(0);
+    expect(contorno.visible).toBe(true);
+    orient(h, { dimmedKeys: new Set([clave]) });
+    h.scene.actualizarContornos(16);
+    expect(h.scene.nearestKey).toBe(clave);
+    expect(contorno.visible).toBe(false);
+  });
+
+  it('con puntero táctil o sin atajos la frase no menciona la tecla', () => {
+    const h = crearEscena();
+    probe(h).setShortcutsEnabled(false);
+    move(h, 559, 373);
+    expect(hintOf(h, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('Enter · Hablar con Enfermera de urgencias');
+    const t = crearEscena();
+    const original = window.matchMedia;
+    (window as unknown as { matchMedia: unknown }).matchMedia = vi.fn(() => ({ matches: true }));
+    try {
+      move(t, 559, 373);
+      expect(hintOf(t, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('Hablar con Enfermera de urgencias');
+    } finally {
+      (window as unknown as { matchMedia: unknown }).matchMedia = original;
+    }
+  });
+
+  it('un objeto cercano dice «E · Revisar …» bajo su rótulo, una sola vez, y lo retira al alejarse', () => {
+    const h = crearEscena();
+    (h.nodes['zona-restringida#label'] as FakeNode)['displayHeight'] = 14;
+    move(h, 660, 330);
+    const texts = h.scene.add.text.mock.calls as unknown[][];
+    expect(texts).toHaveLength(1);
+    expect(texts[0][2]).toBe('E · Revisar ZONA-RESTRINGIDA');
+    const prompt = probe(h).markerPrompt!;
+    expect([prompt.x, prompt.y]).toEqual([h.nodes['zona-restringida#label'].x, h.nodes['zona-restringida#label'].y + 14 + 2]);
+    expect(prompt.visible).toBe(true);
+    move(h, 661, 331);
+    expect(h.scene.add.text).toHaveBeenCalledTimes(1); // la misma pieza, sin crear otra
+    move(h, 480, 430);
+    expect(prompt.visible).toBe(false);
+  });
+
+  it('una herramienta dice «Recoger …»; una puerta no lleva esta frase (ya dice «E Pasar a … →» en su rótulo)', () => {
+    const h = crearEscena();
+    (h.nodes['tool-pap#label'] as FakeNode)['displayHeight'] = 14;
+    move(h, 330, 420);
+    expect((h.scene.add.text.mock.calls as unknown[][])[0][2]).toBe('E · Recoger TOOL-PAP');
+    const d = crearEscena();
+    move(d, 836, 424);
+    expect(d.scene.nearestKey).toBe('puerta-sala-escucha');
+    expect(d.scene.add.text).not.toHaveBeenCalled();
+  });
+
+  it('nada de esto usa tweens ni crea piezas por cuadro: moverse dentro del radio no vuelve a crear ni a repintar', () => {
+    const h = crearEscena();
+    (h.scene as unknown as { tweens: { add: Mock } }).tweens = { add: vi.fn() };
+    move(h, 559, 373);
+    const creadas = h.scene.add.ellipse.mock.calls.length + h.scene.add.text.mock.calls.length;
+    const textos = hintOf(h, 'enfermera-urgencias').setText.mock.calls.length;
+    for (let i = 0; i < 20; i++) move(h, 559 + (i % 3), 373);
+    expect(h.scene.add.ellipse.mock.calls.length + h.scene.add.text.mock.calls.length).toBe(creadas);
+    expect(hintOf(h, 'enfermera-urgencias').setText.mock.calls.length).toBe(textos);
+    expect((h.scene as unknown as { tweens: { add: Mock } }).tweens.add).not.toHaveBeenCalled();
+  });
+});
+
+describe('DataDrivenWorldScene: la flecha del siguiente paso (P9)', () => {
+  const orient = (h: Harness, nextTargetKey: string | null) =>
+    h.scene.setOrientation({ nextTargetKey, doorStates: {}, dimmedKeys: new Set() });
+  const flecha = (h: Harness) => (h.scene as unknown as OrientacionProbe).stepMark!;
+
+  it('el destino lleva una flecha estática junto a él y se retira al cambiar a nada', () => {
+    const h = crearEscena();
+    orient(h, 'npc:enfermera-urgencias');
+    expect((h.scene.add.text.mock.calls as unknown[][])[0].slice(2, 3)).toEqual(['▶']);
+    expect([flecha(h).x, flecha(h).y, flecha(h).visible]).toEqual([560 - 22, 330 - 46, true]);
+    orient(h, null);
+    expect(flecha(h).visible).toBe(false);
+  });
+
+  it('según qué señala va a otra altura: una herramienta más baja que una persona', () => {
+    const h = crearEscena();
+    orient(h, 'tool-pap');
+    expect([flecha(h).x, flecha(h).y]).toEqual([318 - 22, 428 - 26]);
+    orient(h, 'puerta-sala-escucha');
+    expect(flecha(h).y).toBe(440 - 52);
+  });
+
+  it('se crea una sola vez y una persona que camina se la lleva', () => {
+    const h = crearEscena();
+    orient(h, 'npc:enfermera-urgencias');
+    orient(h, 'tool-pap');
+    orient(h, 'npc:enfermera-urgencias');
+    expect(h.scene.add.text).toHaveBeenCalledTimes(1);
+    h.nodes['npc:enfermera-urgencias'].x = 570; h.nodes['npc:enfermera-urgencias'].y = 335;
+    move(h, 559, 373);
+    expect([flecha(h).x, flecha(h).y]).toEqual([570 - 22, 335 - 46]);
+  });
+
+  it('un destino que no existe en la sala o está atenuado no inventa flecha', () => {
+    const h = crearEscena();
+    orient(h, 'tool-spikes');
+    expect(h.scene.add.text).not.toHaveBeenCalled();
+    h.scene.setOrientation({ nextTargetKey: 'zona-restringida', doorStates: {}, dimmedKeys: new Set(['zona-restringida']) });
+    expect(h.scene.add.text).not.toHaveBeenCalled();
+  });
+});
+
+describe('DataDrivenWorldScene: clic o toque para ir (P9)', () => {
+  const probe = (h: Harness) => h.scene as unknown as OrientacionProbe;
+  const pointer = (over: Partial<{ wasTouch: boolean; button: number; worldX: number; worldY: number }> = {}) =>
+    ({ wasTouch: false, button: 0, worldX: 0, worldY: 0, ...over });
+  const graficos = () => {
+    const g: Record<string, unknown> = { active: true };
+    for (const m of ['clear', 'lineStyle', 'strokeRect', 'setDepth', 'setVisible']) g[m] = vi.fn(() => g);
+    return g;
+  };
+  /** Una sala con el jugador a 70 px de la enfermera (dentro del radio de percepción) y el dibujo del contorno de mentira. */
+  function conRaton(): Harness {
+    const h = crearEscena({ x: 560, y: 400 });
+    (h.scene.add as unknown as { graphics: Mock }).graphics = vi.fn(graficos);
+    return h;
+  }
+
+  it('el clic en el suelo camina hasta ahí, sin interactuar al llegar', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 400, worldY: 420 }));
+    expect(probe(h).walk.target).toEqual({ x: 400, y: 420, radius: 6 });
+    expect(probe(h).walkInteractKey).toBeNull();
+  });
+
+  it('el clic en una persona camina hasta su alcance y recuerda que debe interactuar al llegar', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 560, worldY: 330 - 20 }));
+    expect(probe(h).walk.target).toEqual({ x: 560, y: 330, radius: 72 - 14 });
+    expect(probe(h).walkInteractKey).toBe('npc:enfermera-urgencias');
+  });
+
+  it('el toque del dedo también camina, con un margen de puntería mayor que el del ratón, y no dibuja contorno', () => {
+    const h = conRaton();
+    const casi = { worldX: 560 + 22 + 10, worldY: 330 - 20 };   // fuera de la caja del cursor, dentro de la del dedo
+    probe(h).handlePointerDown(pointer(casi));
+    expect(probe(h).walkInteractKey).toBeNull();               // un cursor lo falla: camina al suelo
+    probe(h).handlePointerDown(pointer({ ...casi, wasTouch: true }));
+    expect(probe(h).walkInteractKey).toBe('npc:enfermera-urgencias');
+    expect(probe(h).walk.target).toMatchObject({ x: 560, y: 330 });
+  });
+
+  it('con una capa abierta o con un botón que no es el principal no camina', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ button: 2, worldX: 400, worldY: 420 }));
+    expect(probe(h).walk.target).toBeNull();
+    probe(h).motionPaused = true;
+    probe(h).handlePointerDown(pointer({ wasTouch: true, worldX: 400, worldY: 420 }));
+    expect(probe(h).walk.target).toBeNull();
+  });
+
+  it('un clic en el suelo suelta lo que esperaba una persona', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 560, worldY: 330 - 20 }));
+    probe(h).handlePointerDown(pointer({ worldX: 300, worldY: 450 }));
+    expect(probe(h).walkInteractKey).toBeNull();
+  });
+
+  it('«Ir a…» solo lleva: no hereda la interacción de un clic anterior', () => {
+    const h = conRaton();
+    probe(h).handlePointerDown(pointer({ worldX: 560, worldY: 330 - 20 }));
+    expect(probe(h).walkToKey('puerta-sala-escucha')).toBe(true);
+    expect(probe(h).walkInteractKey).toBeNull();
+    expect(probe(h).walkGoal).toMatchObject({ key: 'puerta-sala-escucha' });
+  });
+
+  it('al llegar a lo clicado, interactúa con eso: pasa a ser el candidato principal y se abre su conversación', () => {
+    const h = conRaton();
+    move(h, 810, 440);                                   // la psicóloga es la principal
+    expect(h.scene.nearestKey).toBe('npc:psicologa-orientadora');
+    probe(h).walkInteractKey = 'puerta-sala-escucha';    // pero se clicó la puerta
+    probe(h).finishWalkInteract(true);
+    expect(h.scene.nearestKey).toBe('puerta-sala-escucha');
+    expect((h.callbacks.onProximity.mock.calls.at(-1)?.[0] as MapObjectState).key).toBe('puerta-sala-escucha');
+    expect((h.callbacks.onInteract.mock.calls.at(-1)?.[0] as MapObjectState).key).toBe('puerta-sala-escucha');
+    expect(probe(h).walkInteractKey).toBeNull();
+  });
+
+  it('al llegar a una persona abre su conversación; si se rindió (muro, atasco) no hace nada', () => {
+    const h = conRaton();
+    move(h, 559, 373);
+    probe(h).walkInteractKey = 'npc:enfermera-urgencias';
+    probe(h).finishWalkInteract(false);
+    expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
+    expect(probe(h).walkInteractKey).toBeNull();
+    probe(h).walkInteractKey = 'npc:enfermera-urgencias';
+    probe(h).finishWalkInteract(true);
+    expect((h.callbacks.onNpcInteract.mock.calls[0][0] as NpcConfig).key).toBe('enfermera-urgencias');
+  });
+
+  it('sin nada clicado, llegar no interactúa', () => {
+    const h = conRaton();
+    move(h, 559, 373);
+    probe(h).finishWalkInteract(true);
+    expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
+    expect(h.callbacks.onInteract).not.toHaveBeenCalled();
+  });
+});
+
+describe('DataDrivenWorldScene: nada se sale de la vista (P9)', () => {
+  interface VistaProbe extends SceneProbe {
+    cameras: unknown;
+    edgeArrow?: FakeNode;
+    nextTargetKey: string | null;
+    syncEdgeArrow(): void;
+    ubicarRotulos(ocupadas: Caja[], zoomCss: number): void;
+    camState: EstadoCamara;
+    scale: { zoom: number };
+    labelScale: number;
+  }
+  const vista = (x: number, w: number, y = 0, hgt = 528) =>
+    ({ x, right: x + w, y, bottom: y + hgt, width: w, height: hgt });
+  const ponerVista = (p: VistaProbe, v: ReturnType<typeof vista>) => {
+    p.cameras = { main: { worldView: v, width: v.width, height: v.height } };
+    p.camState = { zoom: 1, centro: { x: v.x + v.width / 2, y: v.y + v.height / 2 } };
+  };
+  const conVista = (v: ReturnType<typeof vista>, player = { x: 480, y: 430 }) => {
+    const h = crearEscena(player);
+    const p = h.scene as unknown as VistaProbe;
+    ponerVista(p, v);
+    p.scale = { zoom: 1 };
+    p.labelScale = 1;
+    (h.scene.add as unknown as { text: Mock }).text = vi.fn(() => Object.assign(node(), { displayWidth: 60, displayHeight: 14 }));
+    return { h, p };
+  };
+  const etiqueta = (h: Harness) => Object.assign(h.nodes['npc:enfermera-urgencias']['__labelSprite'] as FakeNode,
+    { originX: 0.5, originY: 1, displayHeight: 14 });
+
+  it('un rótulo junto al borde se recorta a la vista con margen, en vez de salir cortado', () => {
+    const { h } = conVista(vista(540, 400), { x: 570, y: 372 });   // la enfermera (x=560) queda a 20 px del borde izquierdo
+    etiqueta(h)['displayWidth'] = 80;
+    move(h, 570, 372);
+    expect(etiqueta(h).x).toBe(540 + 40 + 6);
+    expect(etiqueta(h).visible).toBe(true);
+    // la pista apilada y encima del nombre sigue al rótulo, no a la persona
+    expect((h.nodes['npc:enfermera-urgencias']['__hintSprite'] as FakeNode).x).toBe(540 + 40 + 6);
+  });
+
+  it('un rótulo cuyo dueño está fuera de la vista se oculta; al volver a entrar se muestra', () => {
+    const { h, p } = conVista(vista(700, 260), { x: 570, y: 372 });
+    etiqueta(h)['displayWidth'] = 80;
+    move(h, 570, 372);
+    expect(etiqueta(h).visible).toBe(false);
+    ponerVista(p, vista(300, 400));
+    p.ubicarRotulos([], 1);
+    expect(etiqueta(h).visible).toBe(true);
+    expect(etiqueta(h).x).toBe(560);
+  });
+
+  it('con la cámara quieta no se recoloca nada por cuadro', () => {
+    const { h, p } = conVista(vista(300, 400), { x: 570, y: 372 });
+    etiqueta(h)['displayWidth'] = 80;
+    move(h, 570, 372);
+    p.ubicarRotulos([], 1);
+    const llamadas = etiqueta(h).setPosition.mock.calls.length;
+    for (let i = 0; i < 10; i++) p.ubicarRotulos([], 1);
+    expect(etiqueta(h).setPosition.mock.calls.length).toBe(llamadas);
+  });
+
+  it('evita que el nombre de un objeto cruce un cuerpo que pasa y lo recupera al quedar libre', () => {
+    const { h, p } = conVista(vista(0, 980));
+    h.scene.setOrientation({ nextTargetKey: 'tool-pap', doorStates: {}, dimmedKeys: new Set() });
+    const rotulo = Object.assign(h.nodes['tool-pap#label'], { originX: 0.5, originY: 0, displayWidth: 90, displayHeight: 14 });
+    const cuerpo = { x: 297, y: 436, ancho: 45, alto: 65 };
+    const original = { x: 273, y: 440, ancho: 90, alto: 14 };
+    const cajas = [cuerpo];
+    expect(seCruzan(original, cuerpo)).toBe(true);
+    p.ubicarRotulos(cajas, 1);
+    expect(rotulo.visible).toBe(true);
+    expect(seCruzan(cajas.at(-1)!, cuerpo)).toBe(false);
+    p.ubicarRotulos([{ x: 0, y: 0, ancho: 980, alto: 528 }], 1);
+    expect(rotulo.visible).toBe(false);
+    p.ubicarRotulos([], 1);
+    expect([rotulo.visible, rotulo.x, rotulo.y]).toEqual([true, 318, 440]);
+  });
+
+  it('mantiene la acción de revisar completa si el panel deja sitio para la acción y no para el nombre', () => {
+    const { h, p } = conVista(vista(600, 200, 320, 110));
+    const nombre = Object.assign(h.nodes['zona-restringida#label'], { originX: 0.5, originY: 0, displayWidth: 180, displayHeight: 24 });
+    move(h, 660, 330);
+    const prompt = (h.scene as unknown as OrientacionProbe).markerPrompt!;
+    const panel = { x: 0, y: 28, ancho: 200, alto: 82 };
+    const cajas = [panel];
+    p.ubicarRotulos(cajas, 1);
+    expect(prompt.visible).toBe(true);
+    expect(prompt['text']).not.toBe('');
+    expect(seCruzan(cajas.at(-1)!, panel)).toBe(false);
+    expect(nombre.visible).toBe(false);
+  });
+
+  it('el siguiente paso fuera de cuadro lleva una flecha al borde por donde hay que ir, con su nombre corto', () => {
+    const { h, p } = conVista(vista(700, 260));
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const flecha = p.edgeArrow!;
+    expect(flecha.visible).toBe(true);
+    expect(flecha.setText).toHaveBeenLastCalledWith('◀ Enfermera de …');
+    expect(flecha.x).toBe(700 + 6);
+    expect(flecha.setOrigin).toHaveBeenLastCalledWith(0, 0.5);
+  });
+
+  it('a la derecha, arriba y abajo cambia el lado; al entrar en cuadro se oculta; es una sola pieza', () => {
+    const { h, p } = conVista(vista(0, 300));
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const flecha = p.edgeArrow!;
+    expect(flecha.setText).toHaveBeenLastCalledWith('Enfermera de … ▶');
+    (p.cameras as { main: { worldView: unknown } }).main.worldView = vista(300, 600, 400, 100);
+    p.syncEdgeArrow();
+    expect(flecha.setText).toHaveBeenLastCalledWith('▲ Enfermera de …');
+    (p.cameras as { main: { worldView: unknown } }).main.worldView = vista(300, 600, 0, 528);
+    p.syncEdgeArrow();
+    expect(flecha.visible).toBe(false);
+    expect(h.scene.add.text.mock.calls.filter((c: unknown[]) => c[2] === '')).toHaveLength(1);
+  });
+
+  it('por cuadro no reescribe ni reposiciona si nada cambió, y sin destino no existe', () => {
+    const { h, p } = conVista(vista(700, 260));
+    p.syncEdgeArrow();
+    expect(p.edgeArrow).toBeUndefined();
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const flecha = p.edgeArrow!;
+    const textos = flecha.setText.mock.calls.length, posiciones = flecha.setPosition.mock.calls.length;
+    for (let i = 0; i < 10; i++) p.syncEdgeArrow();
+    expect(flecha.setText.mock.calls.length).toBe(textos);
+    expect(flecha.setPosition.mock.calls.length).toBe(posiciones);
+    h.scene.setOrientation({ nextTargetKey: null, doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    expect(flecha.visible).toBe(false);
+  });
+
+  it('una persona que camina fuera de cuadro actualiza el borde sin crear nada nuevo', () => {
+    const { h, p } = conVista(vista(0, 300));
+    h.scene.setOrientation({ nextTargetKey: 'npc:enfermera-urgencias', doorStates: {}, dimmedKeys: new Set() });
+    p.syncEdgeArrow();
+    const creadas = h.scene.add.text.mock.calls.length;
+    h.nodes['npc:enfermera-urgencias'].y = 100;
+    p.syncEdgeArrow();
+    expect(h.scene.add.text.mock.calls.length).toBe(creadas);
+    expect(p.edgeArrow!.y).toBeGreaterThanOrEqual(0);
   });
 });

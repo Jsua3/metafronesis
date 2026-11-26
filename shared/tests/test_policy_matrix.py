@@ -238,3 +238,9 @@ def test_rutas_de_revision_nueva_usan_politica_de_alcance():
         assert vista.permission_classes[0].policy == ("attempt", "review")
     assert ReemplazarIntentoView.permission_classes[0].policy == ("attempt", "replace")
     assert policies.MATRIX[("attempt", "replace")] == {PROFESOR: policies.MEMBER, ADMIN: policies.ALL}
+
+
+def test_lectura_de_rubrica_por_version_comparte_permiso_de_edicion():
+    from apps.simulation.views_rubricas import RubricaVersionView
+
+    assert RubricaVersionView.permission_classes[0].policy == ("rubric", "edit")

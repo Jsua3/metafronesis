@@ -32,6 +32,7 @@ describe('Casos: tarjeta del tutorial', () => {
     const raiz = await montar();
     expect(raiz.querySelector('.hub-tutorial')!.textContent).toContain('Aprende a crear un caso');
     expect(raiz.querySelector('.hub-tutorial__accion')!.textContent).toContain('Empezar');
+    expect(raiz.querySelector('.hub-tutorial a[href="/portal/casos/nuevo"]')?.textContent).toContain('Crear mi primer caso');
   });
 
   it('con progreso ofrece Continuar y dice cuántos capítulos van', async () => {

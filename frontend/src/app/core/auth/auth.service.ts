@@ -1,3 +1,4 @@
+import { limpiarTodosLosBorradores } from '../../features/autoria/estado/borradores-respuesta';
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -44,9 +45,30 @@ export class AuthService {
       }));
   }
 
+  /** «¿Olvidaste tu contraseña?»: pide el enlace por correo. Responde igual exista o no la cuenta. */
+  requestPasswordReset(email: string) {
+    return this.http.post<ApiResponse<null>>(`${this.API}/password-reset`, { email });
+  }
+
+  /** ¿El enlace del correo sigue sirviendo? (vence y vale una sola vez). */
+  checkPasswordReset(uid: string, token: string) {
+    return this.http.post<ApiResponse<{ valid: boolean }>>(`${this.API}/password-reset/check`, { uid, token })
+      .pipe(map(res => res.data.valid));
+  }
+
+  /** Fija la contraseña nueva con el enlace del correo. */
+  confirmPasswordReset(uid: string, token: string, password: string) {
+    return this.http.post<ApiResponse<null>>(`${this.API}/password-reset/confirm`, { uid, token, password });
+  }
+
   /** Pide una cuenta. `rol` es el rol que pide quien solicita (el ADMIN decide el definitivo al crear la cuenta). */
   requestAccess(payload: { nombre: string; apellido: string; email: string; rol: User['role']; website?: string }) {
     return this.http.post<ApiResponse<{ status: string }>>(`${this.API}/access-request`, payload);
+  }
+
+  demoConfig() {
+    return this.http.get<ApiResponse<{ enabled: boolean }>>(`${this.API}/demo/config`)
+      .pipe(map(res => res.data));
   }
 
   googleConfig() {
@@ -64,6 +86,7 @@ export class AuthService {
   }
 
   clearSession(): void {
+    limpiarTodosLosBorradores();
     localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
   }

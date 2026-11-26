@@ -17,7 +17,7 @@ export interface DraftCopyEntry {
    * Decisión del plan visual (§9) o regla de negocio que lo origina; `F6-n` / `F7-n` cuando el texto nace de una
    * tarea del plan y no de una decisión.
    */
-  readonly decision: `VD-${number}` | `RN-${number}` | `ETH-${number}` | `F6-${number}` | `F7-${number}` | `F10-${number}` | `P6-${number}` | `DSL-${number}` | `R1-${number}`;
+  readonly decision: `VD-${number}` | `RN-${number}` | `ETH-${number}` | `F6-${number}` | `F7-${number}` | `F10-${number}` | `P6-${number}` | `DSL-${number}` | `R1-${number}` | `UB-E${number}`;
   /** Quién debe fijar la redacción definitiva. */
   readonly owner: 'Psicología';
   /** Qué se espera de Psicología; sin indicar, `validar`. */
@@ -33,6 +33,12 @@ export interface DraftCopyEntry {
 const SHORTCUTS_SETTING_LABEL = 'Atajos de una tecla';
 
 export const DRAFT_COPY = {
+  // BORRADOR: texto pendiente de Psicología (UB-E09).
+  hudHelp: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: texto de Ayuda', text: 'Ayuda' },
+  hudHelpLabel: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: nombre accesible de Ayuda', text: 'Ayuda: cómo se juega' },
+  hudSettings: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: texto de Ajustes', text: 'Ajustes' },
+  hudSettingsLabel: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: nombre accesible de Ajustes', text: 'Ajustes del juego' },
+
   /**
    * Anuncio a lectores de pantalla cuando la persona cambia de estado tras una decisión (VD-23). Va en `polite`, una
    * sola vez por cambio y nunca al cargar; si cambian el vínculo y la activación, se dicen en una sola frase
@@ -98,7 +104,8 @@ export const DRAFT_COPY = {
     owner: 'Psicología',
     where: 'Lista «Ir a…»: título y ayuda',
     title: 'Ir a…',
-    text: 'Elige a dónde quieres ir: caminarás hasta ahí y se te avisará al llegar.',
+    // BORRADOR: texto pendiente de Psicología.
+    text: 'Elige una persona para caminar y hablar, o un lugar para caminar hasta allí.',
   },
   /** Cuando la sala no ofrece nada a lo que ir todavía (F6-11, VD-19): dice por qué en vez de quedar vacía. */
   placesEmpty: {
@@ -547,8 +554,38 @@ export const DRAFT_COPY = {
     decision: 'DSL-2',
     owner: 'Psicología',
     review: 'validar',
-    where: 'Ficha del objetivo: marca de lo que aún no se ha visto',
-    text: 'aún no',
+    where: 'Ficha del objetivo: marca de un objeto que todavía no se revisó',
+    text: 'sin revisar todavía',
+  },
+  /** P9: «aún no» se leía como «no disponible»; ahora dice qué falta (hablar) y cuál es la siguiente persona. */
+  roomMarkUntalked: {
+    decision: 'DSL-2',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Ficha del objetivo: marca de una persona con la que todavía no se habló',
+    text: 'sin hablar todavía',
+  },
+  roomMarkNextStep: {
+    decision: 'DSL-2',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Ficha del objetivo: marca de la persona (u objeto) a la que apunta el siguiente paso',
+    text: 'tu siguiente paso',
+  },
+  /** P9: la etiqueta del siguiente paso en «Ir a…» y el botón de la ficha que camina hasta él. */
+  placesNextStep: {
+    decision: 'F6-11',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Lista «Ir a…»: etiqueta del lugar al que apunta el siguiente paso (va primero)',
+    text: 'Siguiente paso',
+  },
+  goToStepLabel: {
+    decision: 'F6-11',
+    owner: 'Psicología',
+    review: 'validar',
+    where: 'Ficha del objetivo: botón que camina hasta el siguiente paso',
+    text: 'Ir allí',
   },
   hintAskLabel: {
     decision: 'DSL-2',
@@ -669,7 +706,8 @@ export const DRAFT_COPY = {
     owner: 'Psicología',
     review: 'validar',
     where: 'Conversación sin opciones de decisión en esta escena: línea final',
-    text: 'Por ahora no hay nada que decidir en esta conversación.',
+    // BORRADOR: texto pendiente de Psicología.
+    text: 'Esta conversación no tiene una decisión para el paso actual. Vuelve al mapa para continuar.',
   },
   unknownPerson: {
     decision: 'DSL-8',

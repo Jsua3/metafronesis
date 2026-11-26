@@ -360,7 +360,7 @@ describe('SimulationPlayComponent: diálogo sin callejones', () => {
 
       expect(dialogue?.choices).toEqual([]);
       expect(dialogue?.stale).toBe(true);
-      expect(dialogue?.lines.at(-1)?.text).toBe('Por ahora no hay nada que decidir en esta conversación.');
+      expect(dialogue?.lines.some(line => line.text.includes('Por ahora no hay nada que decidir'))).toBe(false);
       expect(component.viewMode()).toBe('dialogue-cinematic');
     });
 

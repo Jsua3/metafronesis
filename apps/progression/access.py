@@ -3,6 +3,8 @@
 from django.db.models import Q
 from django.utils import timezone
 from apps.grupos.models import CaseAssignment, GrupoEstudiante
+from apps.grupos.secuencia import clave_secuencia
+from apps.simulation.services.portadas import datos_portada
 from .models import StudentCaseCompletion
 
 
@@ -34,11 +36,7 @@ def catalog(student):
     )
     ordered = sorted(
         by_version.values(),
-        key=lambda entries: (
-            min(a.sort_order for a in entries),
-            entries[0].case_version.simulation_case_id,
-            entries[0].case_version_id,
-        ),
+        key=clave_secuencia,
     )
     blocked = False
     items = []
@@ -69,6 +67,7 @@ def catalog(student):
                 "completed": done,
                 "allowed": reason is None,
                 "reason": reason,
+                **datos_portada(version),
             }
         )
         if not done and not closed:

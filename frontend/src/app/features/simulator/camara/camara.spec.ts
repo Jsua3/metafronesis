@@ -1,6 +1,6 @@
 import {
   ALTO_CUERPO, Caja, EntradaCamara, EstadoCamara, MEDIO_CUERPO, Momento, Punto, Vista,
-  asentada, esquivarPlacas, avanzarCamara, comoDibujar, duracionDeViaje, enViaje, enViajeDentro, esperaDelGeneral, objetivoCamara, sinSaltos, suavizar,
+  asentada, esquivarPlacas, avanzarCamara, comoDibujar, duracionDeViaje, enViaje, enViajeDentro, esperaDelGeneral, objetivoCamara, sinSaltos, situarAviso, suavizar,
   VELOCIDAD_MAXIMA,
   zoomCaminar, zoomCercano, zoomGeneral,
 } from './camara';
@@ -228,7 +228,65 @@ describe('camara: zona segura de las placas (bloque U1)', () => {
 
   it('sin placas el encuadre es el de siempre', () => {
     const e = entrada({ jugador: { x: 60, y: 110 } });
-    expect(objetivoCamara({ ...e, vista: { ...PORTATIL, placas: [] } }, null)).toEqual(objetivoCamara(e, null));
+    const anterior = { centro: { x: 335, y: 160 }, zoom: 2 };
+    expect(objetivoCamara(e, null)).toEqual(anterior);
+    expect(objetivoCamara({ ...e, vista: { ...PORTATIL, placas: [] }, destino: { x: 100, y: 120 } }, null)).toEqual(anterior);
+  });
+
+  it('deja visible al destino de la guía junto a la pared izquierda con una ficha de 440 × 230', () => {
+    const jugador = { x: 250, y: 225 }, destino = { x: 46, y: 135 };
+    const placa = { x: 12, y: 12, ancho: 440, alto: 230 };
+    const v = { ...PORTATIL, placas: [placa] };
+    const antes = objetivoCamara(entrada({ jugador }), null);
+    expect(tapa(enPantalla(destino, antes, v), placa)).toBe(true);
+    const despues = objetivoCamara(entrada({ jugador, destino, vista: v }), null);
+    const r = enPantalla(destino, despues, v);
+    expect(r.x).toBeGreaterThanOrEqual(0);
+    expect(r.y).toBeGreaterThanOrEqual(0);
+    expect(tapa(r, placa)).toBe(false);
+    expect(tapa(enPantalla(jugador, despues, v), placa)).toBe(false);
+    expect(despues.centro.x).toBeLessThanOrEqual(antes.centro.x);
+    expect(despues.zoom).toBe(2);
+  });
+
+  it('encuadra a ambos interlocutores entre franjas aunque se desplace bajo el borde de la sala', () => {
+    const jugador = { x: 630, y: 470 }, con = { x: 670, y: 438 };
+    const v = vista(1366, 768, 1, 419, 61);
+    const e = objetivoCamara(entrada({ jugador, momento: { tipo: 'conversacion', con }, vista: v }), null);
+    expect(Number.isInteger(e.zoom)).toBe(true);
+    expect(e.centro.y + v.alto / (2 * e.zoom)).toBeGreaterThan(SALA.alto);
+    for (const pie of [jugador, con]) {
+      const r = enPantalla(pie, e, v);
+      expect(r.y).toBeGreaterThanOrEqual(61);
+      expect(r.y + r.alto).toBeLessThanOrEqual(349);
+    }
+  });
+
+  it('abre el plano para conservar entero el objeto en uso junto a la jugadora', () => {
+    const jugador = { x: 550, y: 420 };
+    const libreta = { x: 600, y: 320, cuerpo: { mitad: 20, alto: 20 } };
+    const v = vista(1366, 768, 1, 393, 61);
+    const e = objetivoCamara(entrada({ jugador, destino: libreta, momento: { tipo: 'objeto', en: libreta }, vista: v }), null);
+    const r = enPantalla(jugador, e, v);
+    const x = (libreta.x - libreta.cuerpo.mitad - e.centro.x) * e.zoom + v.ancho / 2;
+    const y = (libreta.y - libreta.cuerpo.alto - e.centro.y) * e.zoom + v.alto / 2;
+    expect(e.zoom).toBe(2);
+    expect(x).toBeGreaterThanOrEqual(0);
+    expect(x + 2 * libreta.cuerpo.mitad * e.zoom).toBeLessThanOrEqual(v.ancho);
+    expect(y).toBeGreaterThanOrEqual(61);
+    expect(y + libreta.cuerpo.alto * e.zoom).toBeLessThanOrEqual(375);
+    expect(r.y).toBeGreaterThanOrEqual(61);
+    expect(r.y + r.alto).toBeLessThanOrEqual(375);
+  });
+
+  it('aparta del pie el rótulo y la acción de una herramienta aunque su sprite ya quede libre', () => {
+    const jugador = { x: 270, y: 425 };
+    const destino = { x: 270, y: 485, rotulo: { ancho: 190, alto: 70, separacion: 27 } };
+    const pie = { x: 0, y: 560, ancho: 1340, alto: 80 };
+    const v = { ...PORTATIL, placas: [pie] };
+    const e = objetivoCamara(entrada({ jugador, destino, vista: v }), null);
+    const altoTotal = enPantalla(destino, e, v).y + (ALTO_CUERPO + destino.rotulo.separacion) * e.zoom + destino.rotulo.alto;
+    expect(altoTotal).toBeLessThanOrEqual(pie.y - 6);
   });
 
   it('en la esquina de arriba a la izquierda, la ficha del objetivo ya no tapa al personaje', () => {
@@ -266,15 +324,61 @@ describe('camara: zona segura de las placas (bloque U1)', () => {
     expect(objetivoCamara(e, primero)).toEqual(primero);
   });
 
-  it('el plano general no se corre: ahí se ve la sala entera', () => {
-    const e = entrada({ jugador: { x: 60, y: 110 }, momento: { tipo: 'general' } });
-    expect(objetivoCamara({ ...e, vista: conPlacas() }, null)).toEqual(objetivoCamara(e, null));
+  it('mantiene el plano general centrado si la ficha deja libre a la persona', () => {
+    const estado = objetivoCamara(entrada({ momento: { tipo: 'general' }, jugador: { x: 600, y: 330 } }), null);
+    const v = { ...PORTATIL, placas: [OBJETIVO] };
+    expect(objetivoCamara(entrada({ momento: { tipo: 'general' }, jugador: { x: 600, y: 330 }, vista: v }), null)).toEqual(estado);
+  });
+
+  it('encuadra a las personas de la sala en el plano de entrada aunque no sean el destino', () => {
+    const jugador = { x: 610, y: 390 };
+    const oscar = { x: 370, y: 245 }, gloria = { x: 1120, y: 340 };
+    const v = vista(1366, 768);
+    v.placas = [{ x: 12, y: 12, ancho: 440, alto: 382 }, { x: 1187, y: 305, ancho: 167, alto: 44 }];
+    const e = { ...entrada({ jugador, vista: v, momento: { tipo: 'general' } }), cuerpos: [oscar, gloria] };
+    const estado = objetivoCamara(e, null);
+    for (const persona of [jugador, oscar, gloria]) {
+      const cuerpo = enPantalla(persona, estado, v);
+      expect(cuerpo.x).toBeGreaterThanOrEqual(0);
+      expect(cuerpo.x + cuerpo.ancho).toBeLessThanOrEqual(v.ancho);
+      expect(v.placas.some(placa => tapa(cuerpo, placa))).toBe(false);
+    }
+  });
+
+  it('incluye a la persona que sigue en la sala cuando el acuse ocupa el carril', () => {
+    const jugador = { x: 630, y: 290 }, vigilante = { x: 550, y: 265 };
+    const acuse = { x: 455, y: 94, ancho: 200, alto: 222 };
+    const v = { ...PORTATIL, placas: [acuse] };
+    const e = { ...entrada({ jugador, vista: v }), cuerpos: [vigilante] };
+    const estado = objetivoCamara(e, null);
+    expect(tapa(enPantalla(vigilante, estado, v), acuse)).toBe(false);
+    expect(tapa(enPantalla(jugador, estado, v), acuse)).toBe(false);
   });
 
   it('si ninguna salida cabe en la vista, no se mueve', () => {
     const todo: Caja = { x: 0, y: 0, ancho: 1340, alto: 640 };
     const centro = { x: 600, y: 300 };
     expect(esquivarPlacas(centro, 2, { ...PORTATIL, placas: [todo] }, [{ x: 600, y: 300 }])).toEqual(centro);
+  });
+});
+
+describe('aviso de puerta en la zona visible', () => {
+  it('sale de la ficha y evita a la persona aunque el ancla esté cerca del borde', () => {
+    const vista = { x: 4, y: 4, ancho: 792, alto: 514 };
+    const ficha = { x: 4, y: 4, ancho: 440, alto: 230 };
+    const persona = { x: 315, y: 241, ancho: 48, alto: 72 };
+    const caja = { x: -50, y: 208, ancho: 390, alto: 45 };
+    const p = situarAviso(caja, vista, [ficha, persona]);
+    expect(p).not.toBeNull();
+    expect(p!.x).toBeGreaterThanOrEqual(vista.x);
+    expect(p!.x + caja.ancho).toBeLessThanOrEqual(vista.x + vista.ancho);
+    expect(p!.y).toBeGreaterThanOrEqual(persona.y + persona.alto + 6);
+    expect(p!.y + caja.alto).toBeLessThanOrEqual(vista.y + vista.alto);
+  });
+
+  it('cede el espacio al pie y a la ficha si entre ellos la placa no cabe', () => {
+    const vista = { x: 0, y: 0, ancho: 360, alto: 220 };
+    expect(situarAviso({ ...vista, alto: 60 }, vista, [{ ...vista, alto: 175 }])).toBeNull();
   });
 });
 

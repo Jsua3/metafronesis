@@ -21,6 +21,7 @@ import {
   NodeUpsertRequest,
   RiskLevel,
   RubricAdoptRequest,
+  PersonaCaso,
   SimulationCaseSummary,
   ToolUpsertRequest,
   ValidationIssue,
@@ -34,7 +35,7 @@ import type {
   GenerationStatus,
 } from '../models/generacion.model';
 import { ApiDataResponse as ApiResponse } from './api-response';
-import type { AssistantGuide, AssistantGuideBody, AssistantProposeBody, AssistantResult, AssistantStatus } from './generated/openapi-contracts';
+import type { AssistantGuide, AssistantGuideBody, AssistantProposeBody, AssistantResult, AssistantStatus, CaseCoverChangeEnvelope } from './generated/openapi-contracts';
 import { CaseListCache } from './case-list-cache';
 import { revisionConflictOf } from './revision-conflict.util';
 
@@ -93,7 +94,20 @@ interface ResumenServidor {
   versionId: number;
   status: string;
   revision: number;
-  brief: { code: string; title: string; description: string | null };
+  brief: { code: string; title: string; description: string | null; portada?: string | null; portadaPixelArt?: boolean };
+}
+
+/**
+ * Una fila de la lista (`servicios.fila`): el resumen con el caso, la versión semántica y la autoría compartida (autor,
+ * «editado por» y lo que quien mira puede hacer con la versión, decidido por el servidor).
+ */
+interface FilaServidor extends ResumenServidor {
+  caseId?: number;
+  semanticVersion?: string;
+  autor?: PersonaCaso;
+  editadoPor?: PersonaCaso[];
+  puedeEditar?: boolean;
+  puedeCrearVersion?: boolean;
 }
 
 /**
@@ -130,23 +144,45 @@ export class AuthoringApi {
       .pipe(map(response => response.data));
   }
 
+  updateCover(caseVersionId: number, imagen: File, pixelArt: boolean, revision: number) {
+    const cuerpo = new FormData();
+    cuerpo.set('imagen', imagen);
+    cuerpo.set('pixelArt', String(pixelArt));
+    return this.http.put<CaseCoverChangeEnvelope>(`${this.API}/${caseVersionId}/cover`, cuerpo, withRevision(revision))
+      .pipe(map(respuesta => respuesta.data));
+  }
+
+  removeCover(caseVersionId: number, revision: number) {
+    return this.http.delete<CaseCoverChangeEnvelope>(`${this.API}/${caseVersionId}/cover`, withRevision(revision))
+      .pipe(map(respuesta => respuesta.data));
+  }
+
   /** Clona la versión (de una publicada o archivada sale un borrador) y devuelve el editor de la copia. */
   cloneCaseVersion(caseVersionId: number) {
     return this.http.post<ApiResponse<{ versionId: number }>>(`${this.API}/${caseVersionId}/clone-version`, {})
       .pipe(switchMap(response => this.caseEditor(response.data.versionId)));
   }
 
-  /** La lista de casos del autor. El servidor trae versión, estado y ficha; el resto del resumen se completa con vacíos. */
+  /**
+   * Los casos que ve quien autora: los suyos, las versiones que creó en casos ajenos y las publicadas de los demás. El
+   * servidor trae versión, estado, ficha, caso y autoría; el resto del resumen se completa con vacíos.
+   */
   listAuthoringCases() {
-    return this.http.get<ApiResponse<ResumenServidor[]>>(this.API).pipe(map(response => response.data.map((v): SimulationCaseSummary => ({
+    return this.http.get<ApiResponse<FilaServidor[]>>(this.API).pipe(map(response => response.data.map((v): SimulationCaseSummary => ({
       caseVersionId: v.versionId,
       code: v.brief.code,
       title: v.brief.title,
       description: v.brief.description ?? '',
-      // El servidor no manda la versión semántica, el número de escenas ni la fecha de edición en la lista.
-      semanticVersion: '',
+      // El servidor no manda el número de escenas ni la fecha de edición en la lista.
+      semanticVersion: v.semanticVersion ?? '',
       nodeCount: 0,
       status: v.status,
+      ...(v.brief.portada !== undefined ? { portada: v.brief.portada, portadaPixelArt: v.brief.portadaPixelArt } : {}),
+      ...(v.caseId != null ? { caseId: v.caseId } : {}),
+      ...(v.autor ? { autor: v.autor } : {}),
+      ...(v.editadoPor ? { editadoPor: v.editadoPor } : {}),
+      ...(v.puedeEditar != null ? { puedeEditar: v.puedeEditar } : {}),
+      ...(v.puedeCrearVersion != null ? { puedeCrearVersion: v.puedeCrearVersion } : {}),
     }))));
   }
 
@@ -343,6 +379,7 @@ export class AuthoringApi {
   updateBrief(caseVersionId: number, body: BriefUpdateRequest, revision?: number) {
     const cuerpo: Record<string, unknown> = {};
     if (body.context !== undefined) cuerpo['narrativeContext'] = body.context;
+    if (body.estimatedMinutes !== undefined) cuerpo['estimatedMinutes'] = body.estimatedMinutes;
     if (body.learningObjectives !== undefined) cuerpo['learningObjectives'] = body.learningObjectives;
     if (body.title !== undefined) cuerpo['title'] = body.title;
     if (body.contentWarnings !== undefined) cuerpo['contentWarnings'] = body.contentWarnings;
@@ -487,7 +524,7 @@ export class AuthoringApi {
       `${this.API}/${caseVersionId}/validate`, {})
       .pipe(map((response): CaseValidation => {
         const issues = response.data.problems.map((p): ValidationIssue => {
-          const nodo = /^nodes\/(\d+)$/.exec(p.where);
+          const nodo = /^nodes\/(\d+)(?:\/|$)/.exec(p.where);
           return { code: p.code, severity: 'error', message: p.message, path: p.where, ...(nodo ? { nodeId: Number(nodo[1]) } : {}) };
         });
         return { issues, canPublish: response.data.valid };

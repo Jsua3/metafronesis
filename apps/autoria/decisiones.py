@@ -40,6 +40,8 @@ def _aplicar(version, decision, datos):
     if "reaction" in datos:
         personajes = set(CaseCharacter.objects.filter(case_version=version).values_list("character_key", flat=True))
         decision.reaction_json = json.dumps(contenido.reaccion(datos["reaction"], personajes), ensure_ascii=False)
+    if "aiSuggested" in datos:
+        decision.ai_suggested = datos["aiSuggested"]
     decision.save()
 
 

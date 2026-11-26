@@ -78,11 +78,15 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
     mustChangePassword = serializers.BooleanField(source="must_change_password", read_only=True)
     pendingApproval = serializers.BooleanField(source="is_pending_approval", read_only=True)
+    permisoAutoria = serializers.SerializerMethodField()
+
+    def get_permisoAutoria(self, user):
+        return hasattr(user, "permiso_autoria")
 
     class Meta:
         model = User
         fields = [
-            "id", "nombre", "apellido", "email", "role", "activo", "mustChangePassword", "pendingApproval",
+            "id", "nombre", "apellido", "email", "role", "activo", "mustChangePassword", "pendingApproval", "permisoAutoria",
         ]
 
 
@@ -210,6 +214,24 @@ class ApproveUsersSerializer(serializers.Serializer):
 class ChangePasswordSerializer(serializers.Serializer):
     currentPassword = serializers.CharField(write_only=True, trim_whitespace=False)
     newPassword = serializers.CharField(write_only=True, trim_whitespace=False)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email_value(value)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
+    password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=256)
+
+
+class PasswordResetCheckSerializer(serializers.Serializer):
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
 
 
 def _nombre_de_persona(value):

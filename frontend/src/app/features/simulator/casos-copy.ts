@@ -7,14 +7,16 @@ export const CASOS_COPY = {
   titulo: 'Tus casos',
   filtroEtiqueta: 'Estado del caso',
   filtros: { todos: 'Todos', sin: 'Sin empezar', curso: 'En curso', terminados: 'Terminados' },
-  acciones: { ficha: 'Ver ficha', continuar: 'Continuar', recorrido: 'Ver tu recorrido', editor: 'Editor visual' },
+  /** La acción principal de cada tarjeta: «Empezar» (lleva a la ficha, donde se confirma), «Continuar» o «Ver mi resultado». */
+  acciones: { empezar: 'Empezar', ficha: 'Ver ficha', continuar: 'Continuar', recorrido: 'Ver mi resultado', editor: 'Editor visual' },
   intentos: {
     resumen: (n: number) => `Tus intentos (${n})`,
     tabla: 'Tus intentos de este caso',
     reemplazado: 'Reemplazado',
     reemplazadoAyuda: 'Empezaste uno nuevo y este quedó cerrado',
   },
-  sinCasosEstudiante: { titulo: 'Aún no tienes casos asignados', texto: 'Cuando tu docente te asigne un caso, aparecerá aquí para que puedas empezar.' },
+  // El vacío del estudiante lo escribe `guiaSinCasos` (según su grupo); este texto es solo el de reserva.
+  sinCasosEstudiante: { titulo: 'Aún no tienes casos asignados', texto: 'Los casos los asigna tu docente a tu grupo. Si ya debería haber uno, avísale.' },
   sinCasosOtros: { titulo: 'Aún no hay casos publicados', texto: 'Cuando se publique un caso, aparecerá aquí.' },
   sinResultados: { titulo: 'Ningún caso en este estado', texto: 'Prueba con otro estado o vuelve a ver todos.' },
   errorCasos: 'No pudimos cargar los casos.',

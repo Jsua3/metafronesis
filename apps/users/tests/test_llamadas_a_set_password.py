@@ -27,6 +27,9 @@ PERMITIDAS = {
     ("apps.users.services.account_service", "change_password"): (
         "la propia persona cambia su clave, tras comprobar la actual"
     ),
+    ("apps.users.services.password_reset_service", "confirm_password_reset"): (
+        "la persona que olvidó su clave fija una nueva con el enlace de un solo uso que le llegó por correo"
+    ),
     ("apps.users.services.account_service", "return_expired_to_pending"): (
         "temporal caducada: la clave queda sin usar (``None``) y la cuenta vuelve a pendiente (S1-5)"
     ),

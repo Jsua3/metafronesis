@@ -27,6 +27,7 @@ import { AvatarStore } from '../character/avatar.store';
 import { KitService } from '../character/kit/kit.service';
 import { fakeKitService } from '../character/kit/testing/kit-testing';
 import { AudioDirectorService } from './audio-director.service';
+import { leerCinematica } from './cinematica/lectura';
 import { CONSENT_RECORDER, ConsentNoticeStaleError } from './consent-recorder';
 import { DRAFT_COPY } from './draft-copy';
 import { SimulationPlayComponent } from './simulation-play.component';
@@ -139,7 +140,7 @@ describe('SimulationPlayComponent: las cuatro entradas (F6-2)', () => {
     };
     audio = {
       init: vi.fn(), setScene: vi.fn(), isMusicMuted: vi.fn(() => false), isSfxMuted: vi.fn(() => false),
-      dispose: vi.fn(), stopIntroLament: vi.fn(), playIntroLament: vi.fn(), playSfx: vi.fn(),
+      dispose: vi.fn(), stopIntroLament: vi.fn(), playIntroLament: vi.fn(), silenciarIntro: vi.fn(), playSfx: vi.fn(),
     };
     TestBed.configureTestingModule({
       imports: [SimulationPlayComponent],
@@ -180,6 +181,40 @@ describe('SimulationPlayComponent: las cuatro entradas (F6-2)', () => {
     component.showContentWarning.set(true);
     fixture.detectChanges();
   }
+
+  it.each([true, false])('releva el foco de la cinemática al tutor y luego al destino visible (controles ya vistos: %s)', controlesVistos => {
+    const world = {
+      map: { key: 'sala-de-foco', title: 'Sala', ambient: { tutor: { nombre: 'Tutor', lineas: ['Lee esto.'] } } },
+      objects: [],
+    } as unknown as SimulationWorldState;
+    component.attempt.set({ ...ATTEMPT, attemptId: `intento-de-foco-${controlesVistos}` });
+    component.world.set(world);
+    component.worldStarted.set(true);
+    component.loading.set(false);
+    component.helpCardSeen.set(controlesVistos);
+    component.cinematica.set(leerCinematica({ cinematica: { planos: [{ escena: 'negro' }] } }));
+    (document.activeElement as HTMLElement | null)?.blur();
+    fixture.detectChanges();
+    const dialogo = root().querySelector<HTMLElement>('app-cinematica-caso [role="dialog"]')!;
+    dialogo.focus();
+    const saltar = [...dialogo.querySelectorAll('button')].find(b => text(b) === 'Saltar')!;
+    saltar.click();
+    fixture.detectChanges();
+    const continuar = root().querySelector<HTMLButtonElement>('app-tutor-caso [cdkFocusInitial]')!;
+    expect(document.activeElement).toBe(continuar);
+    const lectura = root().querySelector<HTMLElement>('app-tutor-caso [role="region"]')!;
+    Object.defineProperty(lectura, 'scrollHeight', { value: 500 });
+    Object.defineProperty(lectura, 'clientHeight', { value: 100 });
+    for (const repeat of [false, true]) {
+      const tecla = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true, repeat });
+      lectura.dispatchEvent(tecla);
+      expect(tecla.defaultPrevented).toBe(false);
+    }
+    continuar.click();
+    fixture.detectChanges();
+    const destino = controlesVistos ? '#main-content' : '.help-layer--controles [data-help-action="dismiss"]';
+    expect(document.activeElement).toBe(root().querySelector(destino));
+  });
 
   describe('una sola forma para las cuatro', () => {
     // req: BLOQUE-H, RNF-04, REGLA-004

@@ -25,6 +25,7 @@ if __name__ == "__main__":
     django.setup()
 
 import importlib  # noqa: E402
+import re  # noqa: E402
 
 from django.apps import apps as django_apps  # noqa: E402
 from django.contrib.auth.models import AnonymousUser  # noqa: E402
@@ -34,6 +35,7 @@ from django.urls import URLPattern, URLResolver, get_resolver  # noqa: E402
 from rest_framework.parsers import MultiPartParser  # noqa: E402
 from rest_framework.permissions import IsAuthenticated  # noqa: E402
 from rest_framework.views import APIView  # noqa: E402
+from shared.body_limit import CASE_COVER_ROUTE  # noqa: E402
 
 VERSION = 1
 HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
@@ -43,11 +45,16 @@ AUTHENTICATED = "authenticated"
 # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
 PUBLIC_ROUTE_REASONS: dict[str, str] = {
     "api/health": "sondeo de salud de la plataforma",
+    "api/simulation/covers/<uuid:cover_id>": "imagen de portada de un caso, saneada al subir y accesible por su URL opaca",
     "api/auth/login": "entrar",
     "api/auth/code-login": "entrar con c?digo de convocatoria",
     "api/auth/google": "entrar con una cuenta de Google",
     "api/auth/google/config": "configuración pública del acceso con Google",
+    "api/auth/demo/config": "si el acceso de demostración está disponible (solo desarrollo; en producción siempre responde que no)",
     "api/auth/access-request": "pedir una cuenta, que aprueba el ADMIN",
+    "api/auth/password-reset": "pedir por correo el enlace para restablecer la contraseña olvidada",
+    "api/auth/password-reset/check": "comprobar si el enlace para restablecer la contraseña sigue sirviendo",
+    "api/auth/password-reset/confirm": "fijar la contraseña nueva con el enlace de un solo uso del correo",
     "api/security/csp-report": "informe anónimo y limitado de violaciones de la política de contenido (CSP)",
     "^(?!api/|schema/|swagger-ui|django-static/).*$": "comodín que sirve la SPA de Angular",
 }
@@ -84,6 +91,11 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     ("api/auth/logout", "POST"): "LOGOUT,SESSIONS_REVOKED",
     ("api/auth/change-password", "POST"): "PASSWORD_CHANGED",
     ("api/auth/access-request", "POST"): "ACCESS_REQUEST_CREATED",
+    ("api/auth/password-reset", "POST"): _exento(
+        "pide el enlace por correo: no cambia la cuenta y responde igual exista o no, para no revelar correos"
+    ),
+    ("api/auth/password-reset/check", "POST"): _exento("solo consulta si el enlace sigue sirviendo: no cambia datos"),
+    ("api/auth/password-reset/confirm", "POST"): "PASSWORD_CHANGED",
     ("api/auth/me", "GET"): _exento(_PROPIO),
     ("api/security/csp-report", "POST"): _exento(
         "informe anónimo del navegador sobre la política de contenido: no cambia datos de personas; "
@@ -111,6 +123,7 @@ AUDIT_BY_ROUTE: dict[tuple[str, str], str] = {
     ("api/grupos/<int:pk>", "DELETE"): "GROUP_DELETED",
     ("api/grupos/<int:pk>/casos", "GET"): _exento(_GRUPOS),
     ("api/grupos/<int:pk>/casos", "POST"): "asignacion.crear",
+    ("api/grupos/<int:pk>/casos/orden", "PUT"): "asignacion.reordenar",
     ("api/grupos/<int:pk>/casos/<int:case_version_id>", "DELETE"): "asignacion.eliminar",
     ("api/grupos/<int:pk>/estudiantes", "GET"): "GROUP_STUDENTS_VIEWED",
     ("api/grupos/<int:pk>/estudiantes", "POST"): "MEMBERSHIP_INVITED",
@@ -236,9 +249,11 @@ def _has_own_parsers(view_class):
     return False
 
 
-def _body(method, view_class):
+def _body(route, method, view_class):
     if method in ("GET", "DELETE"):
         return "none"
+    if CASE_COVER_ROUTE.fullmatch("/" + re.sub(r"<[^>]+>", "1", route)):
+        return "multipart-case-cover"
     # Todas las vistas admiten multipart por el ajuste por defecto; es de importación de archivos
     # solo la que lo declara en sus propios ``parser_classes`` (hoy, la importación de grupos).
     if view_class is not None and _has_own_parsers(view_class) and any(
@@ -272,7 +287,7 @@ def collect_routes(patterns=None):
                 "route": route,
                 "method": method,
                 "exposure": _exposure(view, permissions),
-                "body": _body(method, view_class),
+                "body": _body(route, method, view_class),
                 "throttle": _throttle_scopes(view_class),
                 "audit": auditoria.get((route, method)),  # S4-1 · None: ni muta ni lee datos de otra persona
             }

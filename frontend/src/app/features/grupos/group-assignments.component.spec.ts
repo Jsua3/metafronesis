@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AssignmentService } from '../../core/api/assignment.service';
@@ -15,7 +16,7 @@ const caso12 = { caseVersionId: 12, code: 'CASO-12', title: 'Caso doce', semanti
 const caso13 = { caseVersionId: 13, code: 'CASO-13', title: 'Caso trece', semanticVersion: '2.0.0' } as SimulationCaseSummary;
 
 const row = (partial: Partial<Assignment> = {}): Assignment => ({
-  id: 5, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: 0, ...partial,
+  id: 5, caseId: 12, caseVersionId: 12, target: { type: 'GROUP', groupId: 3 }, state: 'OPEN', active: true, sortOrder: 0, ...partial,
 });
 
 const backendError = (status: number, message: string) => throwError(() => new HttpErrorResponse({ status, error: { message } }));
@@ -25,6 +26,7 @@ interface Api {
   create: (body: unknown) => Observable<Assignment>;
   update: (id: number, changes: unknown) => Observable<Assignment>;
   remove: (id: number) => Observable<{ id: number }>;
+  reorder: (groupId: number, ids: number[]) => Observable<Assignment[]>;
 }
 
 /**
@@ -57,6 +59,7 @@ describe('GroupAssignmentsComponent', () => {
       create: vi.fn(() => of(row({ id: 6, caseVersionId: 13 }))),
       update: vi.fn((_id: number, changes: unknown) => of(row({ ...(changes as object) }))),
       remove: vi.fn(() => of({ id: 5 })),
+      reorder: vi.fn((_groupId: number, ids: number[]) => of(ids.map((id, index) => row({ id, caseVersionId: id + 7, sortOrder: index + 1, caseTitle: ({ 5: 'Caso doce', 6: 'Caso trece', 7: 'Caso catorce' } as Record<number, string>)[id] })))),
       ...options.api,
     };
     open = vi.fn((_component: unknown, _config: { data: AssignmentDialogData }) => ({ closed: of(options.dialog) }));
@@ -65,6 +68,7 @@ describe('GroupAssignmentsComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AssignmentService, useValue: api },
         { provide: UiDialog, useValue: { open, confirm } },
         { provide: NotificationService, useValue: notify },
@@ -89,6 +93,19 @@ describe('GroupAssignmentsComponent', () => {
     expect(text(items()[0].querySelector('.ga-window'))).toBe('Sin fechas: abierto desde ya y sin cierre.');
     expect(text(items()[1].querySelector('ui-badge'))).toBe('Aún no abre');
     expect(text(items()[1].querySelector('.ga-window'))).toMatch(/Abre el .* · Cierra el .*\./);
+  });
+
+  it('muestra el avance por personas y enlaza al grupo y caso', async () => {
+    await render({ api: { list: () => of([row({ progress: { students: 7, completed: 3, inProgress: 2 } })]) } });
+    expect(text(items()[0])).toContain('3 de 7 estudiantes terminaron · 2 en curso');
+    expect(items()[0].querySelector('a[href*="trazabilidad"]')?.getAttribute('href')).toContain('grupo=3&caseVersionId=12');
+  });
+
+  it('abre el diálogo al recibir la petición desde la cabecera', async () => {
+    await render();
+    fixture.componentRef.setInput('solicitudAsignar', 1);
+    await fixture.whenStable();
+    expect(open).toHaveBeenCalledTimes(1);
   });
 
   it('un caso cerrado se rotula «Ya cerró» y uno en pausa «En pausa», aunque su ventana esté abierta', async () => {
@@ -140,7 +157,7 @@ describe('GroupAssignmentsComponent', () => {
       await render({ cases: [caso12] });
       const button = buttonIn(host(), 'Asignar un caso')!;
       expect(button.getAttribute('aria-disabled')).toBe('true');
-      expect(text(document.getElementById(button.getAttribute('aria-describedby')!))).toBe('No hay más casos publicados para asignar.');
+      expect(text(document.getElementById(button.getAttribute('aria-describedby')!))).toBe('Ya asignaste a este grupo todos tus casos publicados. Para ofrecer otro, publícalo en «Casos».');
       button.click();
       expect(open).not.toHaveBeenCalled();
     });
@@ -165,10 +182,10 @@ describe('GroupAssignmentsComponent', () => {
     });
     buttonIn(host(), 'Asignar un caso')!.click();
     await fixture.whenStable();
-    expect(notify.error).toHaveBeenLastCalledWith('No fue posible asignar el caso al grupo.');
+    expect(notify.error).toHaveBeenLastCalledWith('No fue posible asignar el caso al grupo.' + ' Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     buttonIn(items()[0], 'Retirar «Caso doce» del grupo')!.click();
     await fixture.whenStable();
-    expect(notify.error).toHaveBeenLastCalledWith('No fue posible retirar el caso del grupo.');
+    expect(notify.error).toHaveBeenLastCalledWith('No fue posible retirar el caso del grupo.' + ' Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
   });
 
   describe('cambiar las fechas', () => {
@@ -349,15 +366,15 @@ describe('GroupAssignmentsComponent', () => {
 
       fixture.componentRef.setInput('casesStatus', 'failed');
       await fixture.whenStable();
-      expect(text(buttonIn(host(), 'Asignar un caso')!.querySelector('[hidden]'))).toBe('No pudimos cargar los casos publicados.');
+      expect(text(buttonIn(host(), 'Asignar un caso')!.querySelector('[hidden]'))).toBe('No pudimos cargar tus casos publicados. Reintenta para poder asignar.');
     });
 
     it('cada botón de una fila lleva el nombre de su caso, para distinguirlos en la lista de botones', async () => {
       await render({ api: { list: vi.fn(() => of([row({ id: 5, caseVersionId: 12 }), row({ id: 6, caseVersionId: 13, active: false })])) } });
 
       const names = items().map(item => Array.from(item.querySelectorAll('button')).map(button => button.getAttribute('aria-label') ?? text(button)));
-      expect(names[0]).toEqual(['Cambiar fechas de «Caso doce»', 'Pausar «Caso doce»', 'Retirar «Caso doce» del grupo']);
-      expect(names[1]).toEqual(['Cambiar fechas de «Caso trece»', 'Reanudar «Caso trece»', 'Retirar «Caso trece» del grupo']);
+      expect(names[0]).toEqual(['Subir «Caso doce» en el orden', 'Bajar «Caso doce» en el orden', 'Cambiar fechas de «Caso doce»', 'Pausar «Caso doce»', 'Retirar «Caso doce» del grupo']);
+      expect(names[1]).toEqual(['Subir «Caso trece» en el orden', 'Bajar «Caso trece» en el orden', 'Cambiar fechas de «Caso trece»', 'Reanudar «Caso trece»', 'Retirar «Caso trece» del grupo']);
     });
 
     it('«Retirar» dice por qué espera mientras hay un cambio en curso (como los otros botones)', async () => {
@@ -385,6 +402,169 @@ describe('GroupAssignmentsComponent', () => {
       } finally {
         host().remove();
       }
+    });
+  });
+  // P6: un botón apagado dice su causa a la vista (no solo en un globo) y, cuando la hay, ofrece la salida.
+  describe('el motivo del botón apagado se ve junto a él', () => {
+    const motivo = () => host().querySelector('[data-ga-reason]');
+    const salida = () => host().querySelector('.ga-reason a, .ga-reason button');
+
+    it('sin ningún caso publicado lo dice y lleva a «Casos»', async () => {
+      await render({ cases: [], api: { list: vi.fn(() => of([])) } });
+      expect(text(motivo())).toBe('Aún no tienes casos publicados. Publica uno en «Casos» y vuelve aquí para asignarlo.');
+      expect(salida()?.getAttribute('href')).toBe('/portal/casos');
+      expect(text(salida())).toBe('Ir a «Casos»');
+      expect(buttonIn(host(), 'Asignar un caso')!.getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('con todos los publicados ya asignados dice cuál es la situación y también lleva a «Casos»', async () => {
+      await render({ cases: [caso12] });
+      expect(text(motivo())).toContain('Ya asignaste a este grupo todos tus casos publicados');
+      expect(salida()?.getAttribute('href')).toBe('/portal/casos');
+    });
+
+    it('si los casos publicados no cargaron, ofrece «Reintentar» y lo avisa a quien los trae', async () => {
+      await render();
+      const reintentos = vi.fn();
+      fixture.componentInstance.retryCases.subscribe(reintentos);
+      fixture.componentRef.setInput('casesStatus', 'failed');
+      await fixture.whenStable();
+      expect(text(motivo())).toBe('No pudimos cargar tus casos publicados. Reintenta para poder asignar.');
+      (salida() as HTMLButtonElement).click();
+      expect(reintentos).toHaveBeenCalledTimes(1);
+    });
+
+    it('mientras cargan los casos del grupo o los publicados, lo dice sin ofrecer salidas', async () => {
+      await render();
+      fixture.componentRef.setInput('casesStatus', 'loading');
+      await fixture.whenStable();
+      expect(text(motivo())).toBe('Cargando los casos publicados…');
+      expect(salida()).toBeNull();
+    });
+
+    it('con casos por asignar no hay motivo ni salida: el botón funciona', async () => {
+      await render({ api: { list: vi.fn(() => of([])) } });
+      expect(motivo()).toBeNull();
+      expect(buttonIn(host(), 'Asignar un caso')!.getAttribute('aria-disabled')).toBeNull();
+    });
+
+    it('mientras hay un cambio en curso lo dice junto al botón', async () => {
+      const pending = new Subject<Assignment>();
+      await render({ api: { update: vi.fn(() => pending) }, confirmed: true });
+      buttonIn(items()[0], 'Pausar «Caso doce»')!.click();
+      await fixture.whenStable();
+      await fixture.whenStable();
+      expect(text(motivo())).toBe('Hay un cambio en curso: espera un momento.');
+    });
+
+    it('si falla cargar los casos asignados, el error lo dice en palabras de persona con su acción', async () => {
+      await render({ api: { list: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500, error: 'Traceback (most recent call last)' }))) } });
+      const error = host().querySelector('ui-error-state')!;
+      expect(text(error)).toContain('No pudimos cargar los casos asignados. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
+      expect(text(error)).not.toContain('Traceback');
+      expect(buttonIn(error, 'Reintentar')).toBeDefined();
+    });
+  });
+
+  describe('el orden de la secuencia (RN-04)', () => {
+    const tres = () => of([
+      row({ id: 5, caseVersionId: 12, sortOrder: 1, caseTitle: 'Caso doce' }),
+      row({ id: 6, caseVersionId: 13, sortOrder: 2, caseTitle: 'Caso trece' }),
+      row({ id: 7, caseVersionId: 14, sortOrder: 3, caseTitle: 'Caso catorce' }),
+    ]);
+    const titulos = () => items().map(item => text(item.querySelector('strong')));
+    const lugares = () => items().map(item => text(item.querySelector('.ga-item__orden')));
+
+    it('numera los casos en el orden en que el grupo los hace, aunque el servidor los mande desordenados', async () => {
+      await render({ api: { list: vi.fn(() => of([
+        row({ id: 7, caseVersionId: 14, sortOrder: 3, caseTitle: 'Caso catorce' }),
+        row({ id: 5, caseVersionId: 12, sortOrder: 1 }),
+        row({ id: 6, caseVersionId: 13, sortOrder: 2 }),
+      ])) } });
+      expect(host().querySelector('ol.ga-list')).not.toBeNull();
+      expect(titulos()).toEqual(['Caso doce', 'Caso trece', 'Caso catorce']);
+      expect(lugares()).toEqual(['1', '2', '3']);
+    });
+
+    it('dice en cada caso cuándo se abre respecto del anterior', async () => {
+      await render({ api: { list: tres } });
+      const lineas = items().map(item => text(item.querySelector('.ga-sequence')));
+      expect(lineas).toEqual(['Primer caso: se puede empezar de inmediato.', 'Se abre al terminar «Caso doce».', 'Se abre al terminar «Caso trece».']);
+    });
+
+    it('un caso en pausa o ya cerrado no hace esperar a los siguientes', async () => {
+      await render({ api: { list: vi.fn(() => of([
+        row({ id: 5, caseVersionId: 12, sortOrder: 1, active: false }),
+        row({ id: 6, caseVersionId: 13, sortOrder: 2, state: 'CLOSED' }),
+        row({ id: 7, caseVersionId: 14, sortOrder: 3 }),
+      ])) } });
+      const lineas = items().map(item => text(item.querySelector('.ga-sequence')));
+      expect(lineas[0]).toBe('En pausa: no cuenta en la secuencia.');
+      expect(lineas[1]).toBe('Ya cerró: no hace esperar a los siguientes.');
+      expect(lineas[2]).toBe('Primer caso: se puede empezar de inmediato.');
+    });
+
+    it('«Subir» manda al servidor el orden completo, ya reordenado, y la lista queda como respondió', async () => {
+      await render({ api: { list: tres } });
+      buttonIn(items()[1], 'Subir «Caso trece» en el orden')!.click();
+      await fixture.whenStable();
+      expect(api.reorder).toHaveBeenCalledWith(3, [6, 5, 7], [5, 6, 7]);
+      expect(lugares()).toEqual(['1', '2', '3']);
+      expect(titulos()).toEqual(['Caso trece', 'Caso doce', 'Caso catorce']);
+    });
+
+    it('«Bajar» mueve un lugar hacia el final', async () => {
+      await render({ api: { list: tres } });
+      buttonIn(items()[0], 'Bajar «Caso doce» en el orden')!.click();
+      await fixture.whenStable();
+      expect(api.reorder).toHaveBeenCalledWith(3, [6, 5, 7], [5, 6, 7]);
+    });
+
+    it('el primero no sube y el último no baja: lo dicen y no llaman al servidor', async () => {
+      await render({ api: { list: tres } });
+      const subir = buttonIn(items()[0], 'Subir «Caso doce» en el orden')!;
+      const bajar = buttonIn(items()[2], 'Bajar «Caso catorce» en el orden')!;
+      expect(text(subir.querySelector('[hidden]'))).toBe('Ya es el primer caso.');
+      expect(text(bajar.querySelector('[hidden]'))).toBe('Ya es el último caso.');
+      subir.click(); bajar.click();
+      await fixture.whenStable();
+      expect(api.reorder).not.toHaveBeenCalled();
+    });
+
+    it('con un solo caso no hay flechas que no sirvan', async () => {
+      await render({ api: { list: vi.fn(() => of([row()])) } });
+      expect(host().querySelectorAll('[data-ga-move]')).toHaveLength(0);
+    });
+
+    it('si el servidor no acepta el orden, la lista vuelve a como estaba y se dice por qué', async () => {
+      await render({ api: { list: tres, reorder: vi.fn(() => backendError(409, 'La lista de casos cambió mientras la ordenabas.')) } });
+      buttonIn(items()[1], 'Subir «Caso trece» en el orden')!.click();
+      await fixture.whenStable();
+      expect(titulos()).toEqual(['Caso doce', 'Caso trece', 'Caso catorce']);
+      expect(notify.error).toHaveBeenCalledWith('La lista de casos cambió mientras la ordenabas.');
+    });
+
+    it('recarga el orden vigente cuando otra persona cambió la secuencia', async () => {
+      const list = vi.fn().mockImplementationOnce(tres).mockImplementationOnce(() => of([
+        row({ id: 7, caseVersionId: 14, sortOrder: 1, caseTitle: 'Caso catorce' }),
+        row({ id: 5, caseVersionId: 12, sortOrder: 2, caseTitle: 'Caso doce' }),
+        row({ id: 6, caseVersionId: 13, sortOrder: 3, caseTitle: 'Caso trece' }),
+      ]));
+      const reorder = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 409, error: { code: 'ASSIGNMENT_ORDER_STALE' } })));
+      await render({ api: { list, reorder } });
+      buttonIn(items()[1], 'Subir «Caso trece» en el orden')!.click();
+      await fixture.whenStable();
+      expect(list).toHaveBeenCalledTimes(2);
+      expect(titulos()).toEqual(['Caso catorce', 'Caso doce', 'Caso trece']);
+      expect(notify.error).toHaveBeenCalledWith('Otra persona cambió el orden; esta es la lista actual.');
+    });
+
+    it('al asignar desde la ficha, el diálogo recibe las asignaciones de hoy con su nombre para decir tras qué caso irá', async () => {
+      await render({ api: { list: tres }, cases: [caso12, caso13, { caseVersionId: 15, code: 'CASO-15', title: 'Caso quince', semanticVersion: '1.0.0' } as SimulationCaseSummary] });
+      buttonIn(host(), 'Asignar un caso')!.click();
+      await fixture.whenStable();
+      const data = (open.mock.calls[0][1] as { data: AssignmentDialogData }).data;
+      expect(data.groupAssignments?.map(item => item.caseTitle)).toEqual(['Caso doce', 'Caso trece', 'Caso catorce']);
     });
   });
 });

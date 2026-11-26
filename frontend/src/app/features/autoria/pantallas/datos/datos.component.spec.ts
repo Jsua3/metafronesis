@@ -62,6 +62,42 @@ async function montar(opciones: { estado?: string; contexto?: string; objetivos?
 describe('DatosComponent · los datos del caso se guardan solos', () => {
   afterEach(() => document.querySelectorAll('body > app-datos, body > [ng-version]').forEach((n) => n.remove()));
 
+  it('sube, reemplaza y quita la portada; el inspector refleja lo confirmado', async () => {
+    const { raiz, servidor, botonDe, hacerClic, listo } = await montar();
+    const elegir = async (nombre: string) => {
+      const input = raiz.querySelector<HTMLInputElement>('#d-portada')!;
+      Object.defineProperty(input, 'files', { configurable: true, value: [new File(['imagen'], nombre)] });
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      await listo();
+    };
+    const imagen = () => raiz.querySelector('ui-portada-caso .ui-portada-caso__imagen');
+    await elegir('portada.png');
+    (raiz.querySelector('#d-portada-pixel') as HTMLInputElement).click();
+    await hacerClic(botonDe('Subir portada'));
+    expect(imagen()?.getAttribute('src')).toBe('/media/3.png');
+    expect(imagen()?.classList).toContain('ui-portada-caso__imagen--pixel');
+    await elegir('reemplazo.png');
+    await hacerClic(botonDe('Reemplazar portada'));
+    expect(imagen()?.getAttribute('src')).toBe('/media/4.png');
+    expect(imagen()?.classList).not.toContain('ui-portada-caso__imagen--pixel');
+    await hacerClic(botonDe('Quitar portada'));
+    expect(imagen()).toBeNull();
+    expect(raiz.querySelector('ui-portada-caso .ui-portada-caso__puerta')).not.toBeNull();
+    expect(servidor.metodos).toEqual(['updateCover', 'updateCover', 'removeCover']);
+  });
+
+  it('muestra el rechazo de la imagen junto al selector', async () => {
+    const { raiz, servidor, botonDe, hacerClic, listo } = await montar();
+    servidor.fallar('updateCover', 400, 'Elige una imagen PNG, JPEG o WebP válida.');
+    const input = raiz.querySelector<HTMLInputElement>('#d-portada')!;
+    Object.defineProperty(input, 'files', { value: [new File(['falsa'], 'imagen.png')] });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await listo();
+    await hacerClic(botonDe('Subir portada'));
+    expect(raiz.querySelector('#d-portada-error')?.textContent).toContain('Elige una imagen PNG, JPEG o WebP válida.');
+    expect(raiz.querySelector('ui-portada-caso .ui-portada-caso__imagen')).toBeNull();
+  });
+
   it('muestra el nombre, el contexto, los objetivos (uno por campo) y los temas, cada uno con su etiqueta', async () => {
     const { raiz, nombre, contexto, objetivo } = await montar();
     expect(raiz.querySelector('h1')!.textContent).toContain('Datos del caso');
@@ -269,13 +305,14 @@ describe('DatosComponent · los datos del caso se guardan solos', () => {
     expect(contexto().value).toBe('Mi versión del contexto.');
   });
 
-  it('un caso en revisión se lee pero no se cambia: campos de solo lectura, sin botones de cambio y una nota que lo explica', async () => {
+  it('un caso en revisión se lee pero no se cambia: campos de solo lectura, sin botones de cambio ni un segundo aviso', async () => {
     const { raiz, servidor, nombre, contexto, objetivo, escribir } = await montar({ estado: 'IN_REVIEW' });
     expect(nombre().readOnly).toBe(true);
     expect(contexto().readOnly).toBe(true);
     expect(objetivo(0)!.readOnly).toBe(true);
     expect(contexto().value).toBe('Una estudiante llega a Bienestar.');
-    expect(raiz.textContent).toContain('El caso ya no es un borrador: se puede leer, pero no cambiar.');
+    // La franja del editor ya dice que el caso se puede ver pero no editar: la pantalla no lo repite.
+    expect(raiz.textContent).not.toContain('se puede leer, pero no cambiar');
     for (const texto of ['Agregar objetivo', 'Quitar el objetivo 1', 'Agregar tema', 'Quitar el tema Violencia de pareja']) {
       expect([...raiz.querySelectorAll('button')].some((b) => b.textContent?.trim() === texto || b.getAttribute('aria-label') === texto), texto).toBe(false);
     }
@@ -355,5 +392,21 @@ describe('DatosComponent · temas sensibles (RK-7)', () => {
     expect([...vista.querySelectorAll('.vista__lista li')].map((li) => li.textContent)).toEqual(['Valorar el riesgo.', 'Validar sin juzgar.']);
     expect(vista.textContent).toContain('En este caso aparecen');
     expect(vista.textContent).toContain('Violencia de pareja');
+  });
+});
+
+
+describe('Tiempo estimado', () => {
+  afterEach(() => document.querySelectorAll('body > app-datos, body > [ng-version]').forEach((n) => n.remove()));
+  it('guarda minutos válidos y conserva en pantalla los valores fuera del rango', async () => {
+    const { raiz, escribir, servidor, store } = await montar();
+    const campo = raiz.querySelector<HTMLInputElement>('#d-tiempo')!;
+    expect(raiz.querySelector('label[for="d-tiempo"]')!.textContent).toContain('Tiempo estimado (minutos)');
+    await escribir(campo, '60', true);
+    await store.sincronizado();
+    expect(servidor.llamadasA('updateBrief')[0].args[0]).toEqual({ estimatedMinutes: 60 });
+    await escribir(campo, '241', true);
+    expect(servidor.llamadasA('updateBrief')).toHaveLength(1);
+    expect(raiz.querySelector('#d-tiempo-error')!.textContent).toContain('entre 5 y 240');
   });
 });

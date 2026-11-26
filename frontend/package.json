@@ -8,6 +8,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:watch": "ng test --watch",
+    "test:kit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"scripts/character-kit/*.test.mjs\"",
+    "kit:types": "tsc -p tsconfig.kit.json",
+    "kit:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/character-kit/build.mjs",
+    "kit:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/character-kit/check.mjs && tsc -p tsconfig.kit.json",
+    "kit:laminas": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/character-kit/laminas.mjs",
+    "kit:retoque": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/character-kit/retoque.mjs",
     "ui:lint": "node scripts/ui/ui-lint.mjs",
     "test:ui": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"scripts/ui/*.test.mjs\""
   },

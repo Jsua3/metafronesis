@@ -507,6 +507,47 @@ describe('SimulationPlayComponent: robustez del cliente (R1)', () => {
       expect(component.dialogueStart()).toEqual({ key: 'd1', line: 2 });
     });
 
+    it('recupera el retrato del hablante al reanudar la lectura aunque falte la interacción seleccionada', () => {
+      sessionStorage.setItem('siep_punto_lectura_attempt-1', JSON.stringify({ attemptId: 'attempt-1', nodeId: 1, objectKey: 'abuela', dialogueKey: 'd1', line: 2 }));
+      const world = makeWorld();
+      const actor = world.objects[0];
+      const cara = { key: 'visual-abuela' };
+      mundo['characterVisualOf'] = vi.fn(() => cara);
+      sim['openInteraction'].mockReturnValue(of({ world, interaction: actor, dialogue: dialogoDe('d1') }));
+      const juego = interno() as unknown as { restoreReadingPoint(world: SimulationWorldState): void; speakerVisual(): unknown };
+
+      juego.restoreReadingPoint(world);
+      component.selectedInteraction.set(null);
+      expect(juego.speakerVisual()).toBeNull();
+
+      component.worldRendered.set(true);
+      expect(juego.speakerVisual()).toBe(cara);
+      expect(mundo['characterVisualOf']).toHaveBeenCalledWith(actor.key);
+    });
+
+    it('reabre el diálogo de un personaje de ambiente con su retrato y sin interacción seleccionada', () => {
+      const world = makeWorld();
+      const actor = { key: 'acompanante', displayName: 'Acompañante', npcType: 'family' as const,
+        recipeId: 'madre-acompanante', portrait: '', x: 10, y: 20, dialogue: { lines: [{ text: 'Te escucho.' }] } };
+      component.scenarioConfig.set({ scenarioKey: 'caso', startRoomKey: world.map.key, rooms: [{
+        key: world.map.key, displayName: 'Sala', tiledMapKey: 'sala', tiledJsonPath: '', spawnX: 0, spawnY: 0, exits: [], npcs: [actor],
+      }] });
+      sessionStorage.setItem('siep_punto_lectura_attempt-1', JSON.stringify({ attemptId: 'attempt-1', nodeId: 1,
+        objectKey: `npc-${actor.key}`, dialogueKey: `npc-${actor.key}`, line: 0 }));
+      const cara = { key: 'visual-acompanante' };
+      mundo['characterVisualOf'] = vi.fn(() => cara);
+      const juego = interno() as unknown as { restoreReadingPoint(world: SimulationWorldState): void; speakerVisual(): unknown };
+
+      component.worldRendered.set(true);
+      juego.restoreReadingPoint(world);
+
+      expect(component.selectedInteraction()).toBeNull();
+      expect(component.dialogue()?.key).toBe(`npc-${actor.key}`);
+      expect(juego.speakerVisual()).toBe(cara);
+      expect(mundo['characterVisualOf']).toHaveBeenCalledWith(`npc:${actor.key}`);
+      expect(sim['openInteraction']).not.toHaveBeenCalled();
+    });
+
     it('si el objeto ya no está en la sala, el punto se descarta', () => {
       sessionStorage.setItem('siep_punto_lectura_attempt-1', JSON.stringify({ attemptId: 'attempt-1', nodeId: 1, objectKey: 'fantasma', dialogueKey: 'd1', line: 1 }));
       (interno() as any).restoreReadingPoint(makeWorld());

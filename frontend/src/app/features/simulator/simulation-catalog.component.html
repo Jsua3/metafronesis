@@ -3,11 +3,13 @@
 <ui-cabecera-ilustrada [eyebrow]="isStudent ? copy.eyebrow : 'Catálogo'" [title]="titulo"
   [escena]="casesState() === 'empty' ? null : 'casos'" />
 
-<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+<p class="ds-sr-only" role="status">{{ entrando() !== null ? 'Cargando el caso…' : statusText() }}</p>
 
 @if (isStudent && historyState() === 'error') {
   <ui-error-state [kind]="historyErrorKind()" [message]="copy.errorHistorial" (retry)="loadHistory()" />
 }
+
+@if (errorEntrada()) { <p role="alert">No pudimos abrir el caso. Revisa tu conexión y vuelve a intentarlo.</p> }
 
 <section class="cs-biblioteca" [attr.aria-label]="titulo">
   @switch (casesState()) {
@@ -22,7 +24,12 @@
       <ui-error-state [kind]="casesErrorKind()" [message]="copy.errorCasos" (retry)="reintentarCasos()" />
     }
     @case ('empty') {
-      <ui-vacio-ilustrado escena="casos" [titulo]="emptyCases.titulo" [frase]="emptyCases.texto" />
+      @if (isStudent) {
+        <!-- Qué pasa, por qué y qué hacer según su grupo (sin grupo, invitación esperando, grupo sin casos). -->
+        <app-sin-casos-estudiante />
+      } @else {
+        <ui-vacio-ilustrado escena="casos" [titulo]="emptyCases.titulo" [frase]="emptyCases.texto" />
+      }
     }
     @case ('ready') {
       @if (isStudent && cards().length > 1) {
@@ -37,7 +44,8 @@
       <div class="p-rejilla p-rejilla--24" [class.cs-rejilla--uno]="filtradas().length === 1">
         @for (card of filtradas(); track card.item.caseVersionId) {
           <ui-card class="cs-tarjeta" [attr.data-case-id]="card.item.caseVersionId" [class.cs-tarjeta--resaltada]="card.resaltado">
-            <ui-portada-caso class="cs-portada" tamano="tarjeta" [umbral]="entrando() === card.item.caseVersionId" [titulo]="card.item.title" [portada]="card.portada" />
+            <ui-portada-caso class="cs-portada" tamano="tarjeta" portal [umbral]="entrando() === card.item.caseVersionId"
+              [titulo]="card.item.title" [portada]="card.portada" [pixelArt]="card.portadaPixelArt" />
             <div class="cs-cuerpo">
               <p class="cs-codigo">{{ card.item.code }}</p>
               <h3 class="cs-titulo">{{ card.item.title }}</h3>
@@ -49,7 +57,7 @@
                 } @else {
                   <ui-badge tone="neutral">{{ statusLabel(card.item.status) }}</ui-badge>
                 }
-                <span>{{ plural(card.item.nodeCount, 'escena') }}</span>
+                @if (card.item.nodeCount > 0) { <span>{{ plural(card.item.nodeCount, 'escena') }}</span> }
               </p>
               @if (isStudent && card.estado.detalle) {
                 <p class="cs-detalle">{{ card.estado.detalle }}</p>
@@ -57,14 +65,22 @@
               @if (canPlay || canEdit) {
                 <div class="cs-acciones">
                   @if (canPlay) {
+                    <!-- UNA acción principal por tarjeta, según el estado: Continuar, Ver mi resultado o Empezar. Cada botón
+                         nombra su caso (hay uno por tarjeta y sin nombre sonarían igual). Bloqueado: el motivo ya está en
+                         el texto de la tarjeta y el botón lo repite en su aviso. -->
                     @if (card.estado.abierto) {
-                      <button ui-button type="button" icon="play_arrow" (click)="openCase(card, true)">{{ copy.acciones.continuar }}</button>
+                      <button ui-button type="button" icon="play_arrow" [loading]="entrando() === card.item.caseVersionId" [attr.aria-label]="copy.acciones.continuar + ' «' + card.item.title + '»'" (click)="openCase(card, true)">{{ entrando() === card.item.caseVersionId ? 'Entrando…' : copy.acciones.continuar }}</button>
+                      <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
                     } @else if (card.estado.clave === 'terminado' && card.recorrido) {
-                      <button ui-button type="button" variant="secondary" icon="description" (click)="openReport(card.recorrido)">{{ copy.acciones.recorrido }}</button>
-                    } @else if (card.estado.clave === 'sin-empezar' || card.estado.clave === 'terminado') {
-                      <button ui-button type="button" [variant]="card.estado.clave === 'terminado' ? 'secondary' : 'primary'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
+                      <button ui-button type="button" icon="description" [attr.aria-label]="copy.acciones.recorrido + ' de «' + card.item.title + '»'" (click)="openReport(card.recorrido)">{{ copy.acciones.recorrido }}</button>
+                      <!-- Terminado también lleva a la ficha: desde ahí se vuelve a practicar («Comenzar») y se ve la portada. -->
+                      <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
+                    } @else if (card.estado.clave === 'terminado') {
+                      <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
+                    } @else if (card.estado.clave === 'sin-empezar') {
+                      <button ui-button type="button" [loading]="entrando() === card.item.caseVersionId" [attr.aria-label]="copy.acciones.empezar + ' «' + card.item.title + '»'" (click)="openCase(card, false)">{{ entrando() === card.item.caseVersionId ? 'Cargando…' : copy.acciones.empezar }}</button>
                     } @else {
-                      <button ui-button type="button" variant="secondary" [disabledReason]="card.estado.detalle ?? card.estado.etiqueta">{{ copy.acciones.ficha }}</button>
+                      <button ui-button type="button" variant="secondary" [disabledReason]="card.estado.detalle ?? card.estado.etiqueta">{{ copy.acciones.empezar }}</button>
                     }
                   }
                   @if (canEdit) {

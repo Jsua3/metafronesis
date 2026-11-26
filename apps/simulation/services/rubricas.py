@@ -35,7 +35,7 @@ def asociar_a_version(docente, rubric_id: int, case_version_id: int) -> Simulati
     version = CaseVersion.objects.select_for_update().filter(pk=case_version_id).first()
     rubrica = Rubric.objects.filter(pk=rubric_id).first()
     if (version is None or rubrica is None
-            or not policies.can(docente, "case", "author", owner_id=version.created_by_id)
+            or not policies.can(docente, "case", "author", owner_id=version.simulation_case.created_by_id)
             or not policies.can(docente, "rubric", "edit", owner_id=rubrica.created_by_id)):
         raise Http404
     if version.status != CaseVersionStatus.DRAFT:

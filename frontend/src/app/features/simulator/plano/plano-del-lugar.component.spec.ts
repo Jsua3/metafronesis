@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { PlanoDelLugarComponent } from './plano-del-lugar.component';
-import { normalizarLayout, textoDeLaSala } from './plano';
+import { DestinoDelPlano, destinoDelPlano, normalizarLayout, textoDeLaSala } from './plano';
 import { LAYOUT_HOSPITAL } from './plano-ejemplo.testing';
 
 const PLANO = normalizarLayout(LAYOUT_HOSPITAL)!;
@@ -112,5 +112,47 @@ describe('PlanoDelLugarComponent en el editor de casos (P4)', () => {
     expect(elegidas).toEqual(['triaje', PLANO.salas[0].clave]);
     fixture.componentRef.setInput('visitadas', new Set(PLANO.salas.map(s => s.clave))); fixture.detectChanges();
     expect(el.querySelector('button.plano__sala')!.textContent).not.toContain('visitada');
+  });
+});
+
+describe('PlanoDelLugarComponent: el siguiente paso (P9)', () => {
+  function conDestino(modo: 'mini' | 'completo', destino: DestinoDelPlano | null) {
+    const fixture = TestBed.createComponent(PlanoDelLugarComponent);
+    fixture.componentRef.setInput('plano', PLANO);
+    fixture.componentRef.setInput('actual', 'pasillo');
+    fixture.componentRef.setInput('modo', modo);
+    fixture.componentRef.setInput('destino', destino);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+  const persona = () => destinoDelPlano(PLANO, 'pasillo', { key: 'npc:vigilante', label: 'Vigilante', tipo: 'persona' });
+  const puerta = () => destinoDelPlano(PLANO, 'pasillo', { key: 'a-triaje', label: 'Triaje', tipo: 'puerta' });
+
+  it('una persona marca su sala con un rombo (forma, no solo color) junto a «estás aquí»', () => {
+    const el = conDestino('mini', persona());
+    expect(el.querySelectorAll('polygon.destino')).toHaveLength(1);
+    expect(el.querySelector('g[data-sala="pasillo"] polygon.destino')).not.toBeNull();
+    expect(el.querySelector('g[data-sala="pasillo"] .aqui')).not.toBeNull();
+    expect(el.querySelector('.puerta--destino')).toBeNull();
+  });
+
+  it('una puerta marca la sala a la que lleva y su muesca, más grande que las demás', () => {
+    const el = conDestino('mini', puerta());
+    expect(el.querySelector('g[data-sala="triaje"] polygon.destino')).not.toBeNull();
+    const marcada = el.querySelectorAll('.puerta--destino');
+    expect(marcada).toHaveLength(1);
+    const normal = el.querySelector('g[data-sala="pasillo"] .puerta:not(.puerta--destino)')!;
+    expect(Number(marcada[0].getAttribute('width')) + Number(marcada[0].getAttribute('height')))
+      .toBeGreaterThan(Number(normal.getAttribute('width')) + Number(normal.getAttribute('height')));
+  });
+
+  it('el nombre accesible lo dice con palabras, en el minimapa y en la lista del plano completo; sin destino no hay marcas', () => {
+    const mini = conDestino('mini', persona());
+    expect(mini.querySelector('svg')!.getAttribute('aria-label')).toContain('Siguiente paso: habla con Vigilante');
+    const completo = conDestino('completo', persona());
+    expect(completo.querySelector('li[aria-current="location"]')!.textContent).toContain('Siguiente paso: habla con Vigilante');
+    const sin = conDestino('mini', null);
+    expect(sin.querySelector('polygon.destino')).toBeNull();
+    expect(sin.querySelector('svg')!.getAttribute('aria-label')).toBe(textoDeLaSala(PLANO, 'pasillo'));
   });
 });

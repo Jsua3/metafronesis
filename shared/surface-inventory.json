@@ -160,6 +160,16 @@
       "audit": "LOGIN_SUCCEEDED,LOGIN_FAILED,LOGIN_LOCKED"
     },
     {
+      "route": "api/auth/demo/config",
+      "method": "GET",
+      "exposure": "public",
+      "body": "none",
+      "throttle": [
+        "login_ip"
+      ],
+      "audit": null
+    },
+    {
       "route": "api/auth/google",
       "method": "POST",
       "exposure": "public",
@@ -202,6 +212,36 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
+    },
+    {
+      "route": "api/auth/password-reset",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "password_reset_ip"
+      ],
+      "audit": "EXENTO: pide el enlace por correo: no cambia la cuenta y responde igual exista o no, para no revelar correos"
+    },
+    {
+      "route": "api/auth/password-reset/check",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "password_reset_confirm_ip"
+      ],
+      "audit": "EXENTO: solo consulta si el enlace sigue sirviendo: no cambia datos"
+    },
+    {
+      "route": "api/auth/password-reset/confirm",
+      "method": "POST",
+      "exposure": "public",
+      "body": "json-small",
+      "throttle": [
+        "password_reset_confirm_ip"
+      ],
+      "audit": "PASSWORD_CHANGED"
     },
     {
       "route": "api/authoring/cases",
@@ -290,6 +330,22 @@
       "body": "json-small",
       "throttle": null,
       "audit": "CASE_VERSION_CLONED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/cover",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "CASE_COVER_REMOVED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/cover",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "multipart-case-cover",
+      "throttle": null,
+      "audit": "CASE_COVER_UPDATED"
     },
     {
       "route": "api/authoring/cases/<int:case_version_id>/decisions",
@@ -644,6 +700,78 @@
       "audit": "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED"
     },
     {
+      "route": "api/authoring/coauthor",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STARTED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_CANCELLED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de la conversación propia con la IA"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/accept",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_ACCEPTED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/answer",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/question",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/skip",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/summary",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/summary",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
       "route": "api/authoring/generations",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -786,6 +914,14 @@
       "body": "none",
       "throttle": null,
       "audit": "asignacion.eliminar"
+    },
+    {
+      "route": "api/grupos/<int:pk>/casos/orden",
+      "method": "PUT",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "asignacion.reordenar"
     },
     {
       "route": "api/grupos/<int:pk>/estudiantes",
@@ -1079,6 +1215,14 @@
     },
     {
       "route": "api/rubrics/case-versions/<int:case_version_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de la rúbrica del propio caso o de un catálogo común"
+    },
+    {
+      "route": "api/rubrics/case-versions/<int:case_version_id>",
       "method": "PUT",
       "exposure": "role:ADMIN,PROFESOR",
       "body": "json-small",
@@ -1101,7 +1245,7 @@
       "exposure": "role:PROFESOR",
       "body": "none",
       "throttle": null,
-      "audit": "EXENTO: lectura de sesiones propias sin datos de convocados"
+      "audit": "EXENTO: lectura de sesiones propias con conteo de convocados"
     },
     {
       "route": "api/sesiones",
@@ -1117,15 +1261,23 @@
       "exposure": "role:PROFESOR",
       "body": "none",
       "throttle": null,
-      "audit": "EXENTO: lectura de sesión propia sin datos de convocados"
+      "audit": "EXENTO: lectura de sesión propia y de sus convocados"
     },
     {
-      "route": "api/sesiones/<int:pk>/convocados",
+      "route": "api/sesiones/<int:pk>",
+      "method": "PATCH",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_EDITADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/cancelar",
       "method": "POST",
       "exposure": "role:PROFESOR",
       "body": "json-small",
       "throttle": null,
-      "audit": "CONVOCADOS_AGREGADOS"
+      "audit": "SESION_CANCELADA"
     },
     {
       "route": "api/sesiones/<int:pk>/convocados/<int:estudiante_id>",
@@ -1158,6 +1310,38 @@
       "body": "json-small",
       "throttle": null,
       "audit": "SESION_INICIADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/pausar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_PAUSADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/reanudar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "SESION_REANUDADA"
+    },
+    {
+      "route": "api/sesiones/<int:pk>/sincronizar",
+      "method": "POST",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "CONVOCADOS_SINCRONIZADOS"
+    },
+    {
+      "route": "api/sesiones/casos",
+      "method": "GET",
+      "exposure": "role:PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: catálogo de casos publicados sin su contenido"
     },
     {
       "route": "api/simulation/ai-assistant",
@@ -1430,6 +1614,14 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
+    },
+    {
+      "route": "api/simulation/covers/<uuid:cover_id>",
+      "method": "GET",
+      "exposure": "public",
+      "body": "none",
+      "throttle": null,
+      "audit": null
     },
     {
       "route": "schema",

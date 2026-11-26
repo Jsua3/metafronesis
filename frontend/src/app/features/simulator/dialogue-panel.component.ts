@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { AfterRenderRef, AfterViewChecked, Component, DestroyRef, ElementRef, HostListener, Injector, OnDestroy, afterNextRender, computed, effect, inject, input, output, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
+import { InstantTextSettings } from '../../core/a11y/instant-text-settings.service';
 import { ShortcutSettings } from '../../core/a11y/shortcut-settings.service';
-import { DialogueChoiceState, DialogueState, MapObjectState, Persona } from '../../core/models/simulation.model';
+import { DialogueChoiceState, DialogueState, MapObjectState, Persona, SimulationWorldState } from '../../core/models/simulation.model';
 import { KitService } from '../character/kit/kit.service';
 import type { CharacterVisual } from '../character/kit/character-visual.resolver';
 import type { PortraitState } from '../character/kit/kit-engine';
@@ -22,7 +23,6 @@ import {
   isFinalDialogueLine,
   nextDialogueLineIndex,
 } from './dialogue-progression.util';
-import { UiButton } from '../../shared/ui/button/ui-button';
 import { DRAFT_COPY } from './draft-copy';
 import { isSystemVoice, resolvePortraitAsset } from './portrait-resolver.util';
 import { escalaDelRetrato } from './pixel/tramos';
@@ -36,28 +36,26 @@ const CHOICE_ACTIVATION_GUARD_MS = 500;
 const medirVentana = () => typeof window === 'undefined'
   ? { ancho: 1366, alto: 768 }
   : { ancho: window.innerWidth, alto: window.innerHeight };
-/** Texto de la línea informativa de una conversación que pertenece a otra etapa. */
-const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
 
 @Component({
   selector: 'app-dialogue-panel',
   standalone: true,
-  imports: [A11yModule, CommonModule, KitFigureComponent, SafeExitButtonComponent, SceneHintComponent, UiButton],
+  imports: [A11yModule, CommonModule, KitFigureComponent, SafeExitButtonComponent, SceneHintComponent],
   template: `
     @if (dialogue(); as d) {
       <div #dialogueBox
         cdkTrapFocus
-        [cdkTrapFocusAutoCapture]="true"
+        [cdkTrapFocusAutoCapture]="!encuadrando()"
         class="dialogue-strip"
         [class.strip--angosta]="angosta()"
         [class.dialogue-strip--side]="mode() === 'side'"
         [class.strip--warning]="interaction()?.type === 'WARNING'"
         [class.strip--supervisory]="activeSpeakerName(d) === 'Supervisión clínica'"
         [class.strip--quieto]="reduceMotion()"
-        [class.strip--sin-retrato]="!portraitSrc(d) && !visualDeHablante(d)"
         [class.strip--con-opciones]="hasChoices(d)"
         [class.strip--letras-texto]="letrasEnTexto()"
         [style]="arte()"
+        [style.--retrato]="ocultarRetrato(d) ? '0px' : null"
         [attr.data-momento]="momento()"
         role="dialog"
         aria-modal="true"
@@ -72,7 +70,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
             <p class="panel-head__aviso">{{ avisoBreve() }}</p>
           }
           <div class="panel-head__row">
-            <button type="button" class="panel-back" (click)="close.emit()">
+            <button type="button" class="panel-back u-boton" (click)="close.emit()">
               <span class="panel-back__arrow" aria-hidden="true">◀</span> Volver al mapa
             </button>
             <app-safe-exit-button class="panel-head__exit" data-hide-key variante="placa" [pausing]="pausing()" (pause)="safeExit.emit()" />
@@ -87,32 +85,37 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
 
         <div class="strip-main">
           <!-- La placa de quien habla: nombre en su pestaña, retrato que asoma sobre el marco, estado y la línea. -->
-          <section class="placa">
+          <section class="placa" [class.placa--tutor]="d.tutor">
             <p class="speaker-name">{{ activeSpeakerName(d) }}
+              @if (d.tutor?.rol; as rol) { <span class="speaker-role">{{ rol }}</span> }
               @if (showsEmotionCue(d) && emotionLabel(activeEmotion(d)); as em) {
-                <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">{{ em }}</span>
+                <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">
+                  @if (ocultarRetrato(d)) {
+                    <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)" aria-hidden="true"></span>
+                  }{{ em }}</span>
               }
             </p>
             <div class="placa-cuerpo">
-              <div class="portrait" aria-hidden="true" [style.color]="showsEmotionCue(d) ? emotionColor(activeEmotion(d)) : null">
-                @if (portraitSrc(d); as src) {
-                  <img class="portrait-img" [src]="src" alt="" width="96" height="96" (error)="onPortraitError(src)" />
-                } @else if (visualDeHablante(d); as visual) {
-                  <!-- Sin retrato por nombre, la cara del personaje que está en la sala (la misma que usa la reacción). -->
-                  <app-kit-figure class="portrait-kit" [visual]="visual" [portrait]="caraDeKit(d, visual)" [scale]="escalaKit()" />
-                } @else {
-                  <!-- Sin retrato del kit: el busto de reserva, sin rasgos, al mismo oficio (32 x 32, contorno y luz del kit). -->
-                  <img class="portrait-svg" src="assets/game/dialogo/retrato-reserva.png" alt="" width="32" height="32" />
-                }
-                @if (showsEmotionCue(d) && activeEmotion(d) !== 'neutral') {
-                  <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)"></span>
-                }
-                @if (estadoPersona(d); as e) {
-                  <i class="portrait-base" [attr.data-activation]="e.activation"></i>
-                }
-              </div>
+              @if (!ocultarRetrato(d)) {
+                <div class="portrait" aria-hidden="true" [style.color]="showsEmotionCue(d) ? emotionColor(activeEmotion(d)) : null">
+                  @if (portraitSrc(d); as src) {
+                    <img class="portrait-img" [src]="src" alt="" width="96" height="96" (error)="onPortraitError(src)" />
+                  } @else if (visualDeHablante(d); as visual) {
+                    <!-- Sin retrato por nombre, la cara del personaje que está en la sala (la misma que usa la reacción). -->
+                    <app-kit-figure class="portrait-kit" [visual]="visual" [portrait]="caraDeKit(d, visual)" [scale]="escalaKit()" />
+                  }
+                  @if (showsEmotionCue(d) && activeEmotion(d) !== 'neutral') {
+                    <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)"></span>
+                  }
+                  @if (estadoPersona(d); as e) {
+                    <i class="portrait-base" [attr.data-activation]="e.activation"></i>
+                  }
+                </div>
+              }
 
-              <div class="placa-habla">
+              <!-- Clic sobre el texto: muestra la línea entera si aún se escribe y, si ya está completa, avanza (como Enter y
+                   Espacio). Quien usa teclado ya tiene esas teclas; este clic es para ratón y toque, y no sustituye a los botones. -->
+              <div class="placa-habla" (click)="onTextClick($event)">
                 @if (estadoPersona(d); as e) {
                   <!-- El pulso nace de nuevo con cada estado y late unos 4 s (U1: nada se mueve sin fin). -->
                   <p class="persona-state">@for (activacion of [e.activation]; track activacion) {<i class="pulso" [attr.data-activation]="activacion" aria-hidden="true"></i>}{{ e.texto }}</p>
@@ -127,39 +130,27 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                   <p class="stale-note" role="note">{{ note }}</p>
                 }
 
+                <!-- BORRADOR: texto pendiente de Psicología. -->
+                <button type="button" class="instant-setting u-boton" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
                 <div class="placa-pie">
                   @if (paginas().length > 1) {
                     <!-- Parlamento en páginas (V5): cuántas van y cuántas son, a la izquierda y antes de todo botón (al lado
                          de «Saltar» quedaba tapado; V6). El lector tiene el texto entero arriba. -->
                     <span class="placa-pagina" aria-hidden="true">{{ cuentaDePaginas() }}</span>
                   }
-                  @if (!isTypingComplete()) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="skipTypewriter()"
-                      aria-label="Saltar animación de texto">
-                      Saltar <span aria-hidden="true">▶</span>
-                    </button>
-                  }
-                  @if (isTypingComplete() && !esFinal()) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="advanceLine()"
-                      aria-label="Mostrar siguiente intervención">
-                      Siguiente <span aria-hidden="true">▶</span>
-                    </button>
-                  }
-                  @if (isTypingComplete() && esFinal() && !hasChoices(d)) {
-                    <button type="button" class="close-btn" ui-button variant="primary" cdkFocusInitial
-                      (click)="close.emit()">
-                      Continuar <span aria-hidden="true">▶</span>
-                    </button>
-                  }
+                  <button type="button" class="close-btn u-boton u-boton--principal" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
+                    (click)="continuarDialogo()">
+                    Continuar <span aria-hidden="true">▶</span>
+                  </button>
                 </div>
               </div>
             </div>
           </section>
 
           <!-- Las fichas de respuesta, A a D. -->
-          <div class="strip-body">
+          <!-- Las fichas esperan a que la cámara llegue (o a que venza el plazo): ocupan su sitio, invisibles e inertes.
+               La línea que se está leyendo nunca desaparece. -->
+          <div class="strip-body" [attr.data-encuadrando]="encuadrando() ? '' : null" [attr.inert]="encuadrando() ? '' : null">
             @if (choicesVisible() && !d.stale) {
               @let notice = avisoDeOpciones(d);
               @if (notice) {
@@ -181,7 +172,8 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                     [class.choice-btn--chosen]="chosenKey() === choice.key"
                     [class.choice-btn--unavailable]="choice.toolMissing"
                     [style.--stagger]="i"
-                    [attr.aria-label]="letra(i) + '. ' + (etiqueta ? etiqueta + ': ' : '') + choice.text + (choice.toolMissing ? '. ' + toolMissingHint : '')"
+                    [attr.aria-label]="letra(i) + '. ' + (etiqueta ? etiqueta + ': ' : '') + choice.text"
+                    [attr.aria-describedby]="choice.toolMissing ? 'choice-hint-' + i : null"
                     [attr.aria-disabled]="choice.toolMissing ? 'true' : null"
                     (focus)="onChoiceFocus($event)"
                     (click)="onChoiceClick($event, choice)">
@@ -192,7 +184,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
                       }
                       <span class="choice-btn__label">{{ choice.text }}</span>
                       @if (choice.toolMissing) {
-                        {{ ' ' }}<span class="choice-btn__hint" [id]="'choice-hint-' + i">{{ toolMissingHint }}</span>
+                        {{ ' ' }}<span class="choice-btn__hint" aria-hidden="true" [id]="'choice-hint-' + i">{{ missingHint(choice) }}</span>
                       }
                     </span>
                     <i class="choice-btn__cursor" aria-hidden="true"></i>
@@ -242,9 +234,10 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       line-height: 1.45;
       animation: strip-rise 160ms steps(3, jump-none) both;
     }
+    .strip-body[data-encuadrando], .strip-body[data-encuadrando] * { visibility: hidden; animation: none; }
 
     /* Marco de pixel art: borde de 4 px de mundo por lado y relleno con trama, sin esquinas suavizadas. */
-    .placa-cuerpo, .speaker-name, .panel-back, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
+    .placa-cuerpo, .speaker-name, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
       border-style: solid;
       border-width: calc(4 * var(--px));
       border-image: var(--m) 4 / calc(4 * var(--px)) stretch;
@@ -337,11 +330,6 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       padding-top: var(--px);
       padding-bottom: calc(2 * var(--px));
     }
-    /* Con poco alto (1366 x 768, teléfono), la pista de teclado le cede su renglón a las fichas: la letra va en cada ficha
-       y «Esc» en «Volver al mapa». */
-    @media (max-height: 900px), (max-width: 560px) {
-      .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body > .keyboard-hint:last-child { display: none; }
-    }
     /* Si la lista se acota, bajo ella se dice qué fichas quedan abajo (el panel pone data-mas al acotarla). */
     .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body[data-mas]::after {
       content: '▼ ' attr(data-mas);
@@ -398,7 +386,6 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       color: #ffcd82;
     }
     .panel-back {
-      --m: var(--marco-placa); --t: var(--trama-placa);
       display: inline-flex;
       align-items: center;
       gap: 10px;
@@ -427,13 +414,11 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       color: var(--tinta);
     }
     .close-btn::before { content: 'Enter'; }
-    /* «Volver al mapa» con los estados de la placa-botón, como «Salida segura» y «Ver pista»: sobre enciende el canto y
-       pulsada invierte el bisel; el foco es el anillo global de la piel, el mismo en las tres. */
     @media (hover: hover) and (pointer: fine) {
-      .panel-back:hover { --m: var(--marco-placa-sobre); --t: var(--trama-placa-sobre); color: #ffcd82; }
       .panel-back::before, .close-btn::before { display: inline-block; }
     }
-    .panel-back:active { transform: translateY(var(--px)); --m: var(--marco-placa-pulsada); --t: var(--trama-placa-pulsada); }
+    .speaker-role { margin-inline-start: .6em; font-family: var(--pixel-f-texto); font-size: var(--pixel-letra-chica); font-weight: 500; }
+    .placa--tutor { --retrato: 64px; }
     .panel-back__arrow { font-size: .75em; }
 
     /* La placa. */
@@ -502,9 +487,6 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       overflow: hidden;
       background-color: #6c6589;
     }
-    .portrait-svg { display: block; width: var(--retrato); height: var(--retrato); image-rendering: pixelated; }
-    /* Una voz sin retrato del kit (la supervisión, un personaje sin receta): ventanilla chica con la silueta, no un hueco. */
-    .strip--sin-retrato { --retrato: 96px; }
     .portrait-img {
       display: block;
       width: var(--retrato);
@@ -531,8 +513,10 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
     .emotion-chip[data-emotion="positive"] { background: #6ec67a; }
     .emotion-chip[data-emotion="concerned"] { background: #f5b84b; }
     .emotion-chip[data-emotion="danger"] { background: #e25a4f; }
+    .emotion-tag .emotion-chip { position: static; display: inline-block; margin-inline-end: calc(2 * var(--px)); }
 
     .placa-habla { min-width: 0; display: flex; flex-direction: column; gap: calc(3 * var(--px)); padding-top: var(--px); }
+    .placa-habla:only-child { grid-column: 1 / -1; }
     .persona-state { margin: 0; display: flex; align-items: center; gap: calc(4 * var(--px)); font-size: .84em; color: var(--tinta-suave); }
     .pulso {
       flex: none;
@@ -544,7 +528,9 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
     }
     .pulso[data-activation="CALM"] { background-image: var(--pulso-CALM); animation-duration: 2s; animation-iteration-count: 2; }
     .pulso[data-activation="CRISIS"] { background-image: var(--pulso-CRISIS); animation-duration: .5s; animation-iteration-count: 8; }
+    .instant-setting { font-size: .82em; align-self: flex-start; }
     .dialogue-text {
+      line-height: 1.6;
       margin: 0;
       min-height: 4.35em;
       white-space: pre-line;
@@ -571,17 +557,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       align-items: center;
       gap: 8px;
       min-height: 44px;
-      padding: 0 2px;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      color: var(--tinta);
-      font: inherit;
       font-size: .9em;
-      font-weight: 600;
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .dialogue-strip .close-btn:hover { background: transparent; color: var(--luz); }
     }
 
     /* Las fichas de respuesta. */
@@ -782,7 +758,7 @@ const STALE_NOTE = 'Esta conversación corresponde a otro momento del caso.';
       line-height: 1.45;
     }
     /* La pista de teclado solo existe donde hay teclado y puntero fino. */
-    .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: .78em; color: #c3bccf; }
+    .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: max(14px, .9em); color: #f2ecdf; }
     @media (hover: hover) and (pointer: fine) {
       .keyboard-hint { display: block; }
     }
@@ -875,6 +851,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   readonly mode        = input<'cinematic' | 'side'>('cinematic');
   /** El aviso breve de la pantalla (VD-29) mientras el cuadro está sobre el mundo: el cuadro le da su sitio. */
   readonly avisoBreve  = input<string>('');
+  readonly nextStep = input<string | null>(null);
   /** Movimiento reducido del juego (interruptor del HUD o preferencia del sistema): la línea aparece completa, sin máquina de escribir. */
   readonly reduceMotion = input(false);
   /**
@@ -887,8 +864,23 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
    * previa del editor no tiene intento— no hay pistas.
    */
   readonly hintAttempt = input<HintAttemptRef | null>(null);
-  /** Aviso de una opción de herramienta sin la herramienta: se ve y forma parte de su nombre accesible (WCAG 2.5.3). */
-  protected readonly toolMissingHint = 'Aún no tienes esta herramienta. Recógela en la sala.';
+  readonly world = input<SimulationWorldState | null>(null);
+  // BORRADOR: texto pendiente de Psicología. Solo se nombra una ubicación confirmada por el mundo.
+  protected missingHint(choice: DialogueChoiceState): string {
+    const world = this.world();
+    const code = choice.requiredToolCode;
+    const object = world?.objects?.find(item => item.type === 'TOOL' && item.toolCode === code);
+    const label = world?.tools?.find(tool => tool.code === code)?.label || object?.label || code;
+    const room = object ? world?.map?.title : null;
+    if (label && room) return `Necesitas ${label}. La encuentras en ${room}.`;
+    if (label) return `Necesitas ${label}. Busca esta herramienta al explorar las salas.`;
+    return 'Necesitas una herramienta. Búscala al explorar las salas.';
+  }
+  protected toggleInstant(event: Event): void {
+    event.stopPropagation();
+    this.instantText.toggle();
+    if (this.instantText.enabled() && !this.isTypingComplete()) this.skipTypewriter(false);
+  }
   readonly releaseToken = input(0);
   /** Línea con la que arranca la conversación reabierta tras recargar (R1): solo vale para la conversación de esa clave. */
   readonly startAt = input<{ key: string; line: number } | null>(null);
@@ -918,6 +910,8 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   /** Vocabulario educativo en borrador (VD-24): el chip de la cabecera sale del registro de borradores. */
   protected readonly decisionLabel = DRAFT_COPY.decisionLabel.text;
   private readonly shortcuts = inject(ShortcutSettings);
+  /** «Texto instantáneo» (ajustes del juego, P8): sin máquina de escribir, además de con «reducir movimiento». */
+  private readonly instantText = inject(InstantTextSettings);
   /** Pausa reanudable pedida desde el panel (REGLA-004): el anfitrión llama a la salida segura real. */
   readonly safeExit = output<void>();
   readonly execute = output<number>();
@@ -947,6 +941,19 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.lineIndex(),
     this.isTypingComplete() && this.ultimaPagina(),
   ));
+  readonly esperarEncuadre = input(false);
+  readonly encuadreListo = input<object | null>(null);
+  /** Cada disposición se mide por separado, también si las opciones aparecen después de leer. */
+  readonly faseEncuadre = computed(() => ({ dialogo: this.dialogue(), opciones: this.choicesVisible() }));
+  private readonly faseAgotada = signal<object | null>(null);
+  private readonly fasePendiente = computed(() => {
+    const fase = this.faseEncuadre();
+    return this.esperarEncuadre() && fase.dialogo && fase.opciones && this.encuadreListo() !== fase ? fase : null;
+  });
+  readonly encuadrando = computed(() => {
+    const fase = this.fasePendiente();
+    return fase !== null && this.faseAgotada() !== fase;
+  });
   /** Opción ya elegida: pausa breve de confirmación antes de ejecutar. */
   readonly chosenKey = signal<string | null>(null);
   /** La letra de pixel no cargó (ruta o recurso ausente): las opciones muestran su letra en texto. */
@@ -968,10 +975,16 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     }
     return lista;
   });
-  /** Retrato cuya carga falló: cae a la silueta SVG (spike de retratos NPC). */
+  /** Retrato cuya carga falló: permite usar la figura de la sala si está disponible. */
   private readonly failedPortrait = signal<string | null>(null);
 
   private typewriterHandle: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * La persona ya saltó la animación de ESTA línea (Saltar, Enter, Espacio o clic): el resto de sus páginas aparece de
+   * golpe. Sin esto, el reparto en páginas (que llega un cuadro después de abrir la línea) volvía a empezar la máquina de
+   * escribir sobre un texto ya mostrado y «Saltar» parecía no responder.
+   */
+  private saltada = false;
   private confirmHandle: ReturnType<typeof setTimeout> | null = null;
   /** Instante en que aparecieron las opciones: base de la guarda contra la decisión accidental. */
   private choicesShownAt = 0;
@@ -992,6 +1005,13 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   constructor() {
     this.kit.load().catch(() => undefined);
+    effect(onCleanup => {
+      const fase = this.fasePendiente();
+      if (!fase) return;
+      // El viaje más largo desde el plano general toma 1,4 s. Las fichas también abren si el lienzo no responde.
+      const plazo = setTimeout(() => this.faseAgotada.set(fase), 1600);
+      onCleanup(() => clearTimeout(plazo));
+    });
     // El alto que ocupa el cuadro, publicado en el anfitrión para la cámara (M1): data-alto-ocupado, en px CSS.
     afterNextRender(() => {
       if (typeof ResizeObserver === 'undefined') return;
@@ -1026,7 +1046,9 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       }
     });
     effect(() => {
+      if (this.encuadrando()) return;
       if (this.choicesVisible()) this.choicesShownAt = Date.now();
+      untracked(() => this.requestDialogueFocus());
     });
     // La línea activa se anuncia por la región viva persistente de la app (F6-12, H-09). Cuenta la línea completa, no
     // la máquina de escribir, y solo cuando cambia el diálogo o la línea.
@@ -1043,7 +1065,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /**
    * Retrato pixel-art de la línea actual (spec §8.2), o `null` si no hay retrato (voz sin
-   * cuerpo, kit sin cargar o imagen fallida) → el panel muestra la silueta SVG.
+   * cuerpo, kit sin cargar o imagen fallida).
    */
   portraitSrc(d: DialogueState): string | null {
     const line = this.activeLine();
@@ -1051,13 +1073,22 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     const treeSpeaker = d.speakerName?.trim() || null;
     // La receta y la clave del árbol valen para sus propias líneas, no para las de otro hablante.
     const sameSpeaker = !lineSpeaker || lineSpeaker === treeSpeaker;
+    const objeto = this.interaction();
+    if (sameSpeaker && objeto && objeto.type !== 'PERSON'
+      && (objeto.key === d.speakerObjectKey || objeto.key === d.key || objeto.dialogue?.key === d.key)) return null;
     const asset = resolvePortraitAsset(this.kit.bundle(), {
       recipeId: sameSpeaker ? d.recipeId ?? null : null,
       portraitKey: sameSpeaker ? d.portraitKey : null,
       speakerName: lineSpeaker || treeSpeaker,
+      soloReceta: !!d.tutor,
       emotion: line?.emotion?.trim() || d.emotion?.trim() || 'neutral',
     });
     return asset && this.failedPortrait() !== asset ? asset : null;
+  }
+
+  /** Solo abre la ventanilla cuando existe una cara del kit para el hablante de esta línea. */
+  ocultarRetrato(d: DialogueState): boolean {
+    return d.hidePortrait === true || (!this.portraitSrc(d) && (!!d.tutor || !this.visualDeHablante(d)));
   }
 
   activeSpeakerName(d: DialogueState): string {
@@ -1134,7 +1165,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   estadoPersona(d: DialogueState): { texto: string; activation: string } | null {
     const persona = this.persona();
     const label = persona?.label?.trim();
-    if (!persona || !label || isSystemVoice(this.activeSpeakerName(d))) return null;
+    if (!persona || !label || d.hidePortrait || isSystemVoice(this.activeSpeakerName(d))) return null;
     return { texto: label.charAt(0).toUpperCase() + label.slice(1), activation: persona.activation };
   }
 
@@ -1157,10 +1188,10 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     return d.notice || d.choices.find(choice => choice.evidenceWarning)?.evidenceWarning || null;
   }
 
-  /** Línea informativa de «otro momento»; no se repite si la conversación ya la trae como línea. */
+  /** BORRADOR: texto pendiente de Psicología. No presume que ya se habló con la persona. */
   staleNote(d: DialogueState): string | null {
     if (!d.stale) return null;
-    return d.lines.some(line => line.text.includes(STALE_NOTE)) ? null : STALE_NOTE;
+    return `${DRAFT_COPY.noStepNow.text}${this.nextStep() ? ` Ahora te toca: ${this.nextStep()}.` : ''}`;
   }
 
   /** Etiqueta de la ficha de herramienta, solo cuando conviven herramientas y decisiones (sin reordenar). Las decisiones
@@ -1196,7 +1227,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   @HostListener('document:keydown', ['$event'])
   onKeydown(e: KeyboardEvent): void {
     const d = this.dialogue();
-    if (!d) return;
+    if (!d || (this.encuadrando() && e.key !== 'Escape')) return;
     // La cabecera conserva su propia activación: sin esto, Enter o Espacio sobre «Volver al mapa»
     // o «Salida segura» avanzarían el texto y el preventDefault cancelaría el clic nativo.
     if (e.key !== 'Escape' && (e.target as HTMLElement | null)?.closest?.('.panel-head')) return;
@@ -1444,13 +1475,33 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.startTypewriter(d.lines[nextIndex]?.text ?? '');
   }
 
+  continuarDialogo(): void {
+    if (!this.isTypingComplete()) this.skipTypewriter();
+    else if (!this.esFinal()) this.advanceLine();
+    else if (!this.hasChoices(this.dialogue()!)) this.close.emit();
+    else this.requestDialogueFocus();
+  }
+
+  /**
+   * Clic o toque sobre el texto de la línea: muestra todo al instante si aún se escribe y, si ya está completo, pasa a la
+   * página o línea siguiente. No hace nada sobre botones ni enlaces (tienen su propia acción), mientras se selecciona texto
+   * para copiarlo, ni en la última página (cerrar o elegir se hace con su botón o su tecla, no por un clic de más).
+   */
+  protected onTextClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement | null)?.closest?.('button, a, app-scene-hint')) return;
+    if (typeof window.getSelection === 'function' && window.getSelection()?.toString()) return;
+    if (!this.isTypingComplete()) this.skipTypewriter();
+    else if (!this.esFinal()) this.advanceLine();
+  }
+
   /** Skip typewriter animation — shows the active intervention immediately. */
-  skipTypewriter(): void {
+  skipTypewriter(moveFocus = true): void {
     if (this.isTypingComplete()) return;
+    this.saltada = true;
     this.stopTypewriter();
     this.displayedText.set(this.textoPagina());
     this.isTypingComplete.set(true);
-    this.requestDialogueFocus();
+    if (moveFocus) this.requestDialogueFocus();
   }
 
   fullText(): string {
@@ -1459,6 +1510,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /** Empieza una línea: una sola página con todo el texto y, ya maquetada, se parte si no cabe en la placa (V5). */
   private startTypewriter(text: string) {
+    this.saltada = false;
     this.paginas.set([text]);
     this.pagina.set(0);
     this.escribir(text);
@@ -1501,21 +1553,21 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       const placa = parrafo.closest<HTMLElement>('.placa-cuerpo');
       const desborde = () => Math.max(banda.scrollHeight - banda.clientHeight, placa ? placa.scrollHeight - placa.clientHeight : 0);
       const sobra = desborde();
-      if (sobra <= 1) return;
+
       // Solo cuenta lo que desborda POR el texto: con el párrafo plegado, lo que siga desbordando (el retrato, la fila, una
       // banda que aún entra) no es suyo y no se le resta (V6, CI de living-world.e2e.ts:101).
       const estilo = parrafo.style.cssText;
       parrafo.style.cssText += ';height:0;min-height:0;overflow:hidden';
       const culpa = sobra - desborde();
       parrafo.style.cssText = estilo;
-      if (culpa <= 1) return;
+
       const renglon = parseFloat(getComputedStyle(parrafo).lineHeight) || 24;
       // La sonda mide solo el texto, sin el alto mínimo que reserva el párrafo (4,35em): con ese mínimo ninguna página
       // «cabía» en el tope y cada frase salía sola en su página. Cuánto cabe y cómo se llena cada página, en paginarSiNoCabe.
       const sonda = parrafo.cloneNode(false) as HTMLElement;
       sonda.style.cssText = `position:absolute;visibility:hidden;left:0;top:0;min-height:0;width:${parrafo.clientWidth}px`;
       parrafo.parentElement!.appendChild(sonda);
-      const paginas = paginarSiNoCabe(text, parrafo.offsetHeight - culpa, renglon, pagina => {
+      const paginas = paginarSiNoCabe(text, Math.min(parrafo.offsetHeight - culpa, 6 * renglon), renglon, pagina => {
         sonda.textContent = pagina;
         return sonda.offsetHeight;
       });
@@ -1532,7 +1584,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   private escribir(text: string) {
     this.settled = false;
     // `untracked`: el efecto del constructor llama aquí y no debe reiniciar el diálogo cuando cambia el interruptor.
-    if (untracked(() => this.reduceMotion())) {
+    if (this.saltada || untracked(() => this.reduceMotion() || this.instantText.enabled())) {
       this.displayedText.set(text);
       this.isTypingComplete.set(true);
       this.requestDialogueFocus();
@@ -1541,7 +1593,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.displayedText.set('');
     this.isTypingComplete.set(false);
     this.requestDialogueFocus();
-    // Ritmo de la línea (caso/ritmo-texto): 30 caracteres por segundo y una pausa breve en la puntuación.
+    // Ritmo de la línea (caso/ritmo-texto): 50 caracteres por segundo y una pausa breve en la puntuación.
     let pos = 0;
     const paso = () => {
       pos++;

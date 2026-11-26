@@ -12,6 +12,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 export const ICONOS_PIXEL = {
   'ir-a': ['........X', '......XXX', '....XXXX.', '..XXXXXX.', 'XXXXXXXX.', '....XXX..', '....XX...', '....X....'],
   ayuda: ['..XXXXX..', '.XX...XX.', '.XX...XX.', '.....XX..', '....XX...', '....XX...', '.........', '....XX...', '....XX...'],
+  controles: ['XX.....XX', 'XX.....XX', 'XXXXXXXXX', '...XXX...', '..XXXXX..', '...XXX...', 'XXXXXXXXX', 'XX.....XX', 'XX.....XX'],
   bitacora: ['XXXX.XXXX', 'X..XXX..X', 'X.s.X.s.X', 'X..sXs..X', 'X.s.X.s.X', 'X..sXs..X', 'X...X...X', 'XXXXXXXXX'],
   ajustes: ['...X.X...', '.X.XXX.X.', '..XXXXX..', 'XXXX.XXXX', '.XX...XX.', 'XXXX.XXXX', '..XXXXX..', '.X.XXX.X.', '...X.X...'],
   inicio: ['....X....', '...XXX...', '..XXXXX..', '.XXXXXXX.', 'XXXXXXXXX', '.X.....X.', '.X.XX..X.', '.X.XX..X.', '.XXXXXXX.'],

@@ -24,6 +24,10 @@ describe('RielDeEscenasComponent', () => {
 
   it('«Siguiente paso» está arriba y lleva al sitio', async () => {
     const { raiz, listo, store } = await abrirEditor('/portal/casos/41/editor');
+    const caso = structuredClone(store.caso()!);
+    caso.escenas[0].narracion = '';
+    store.fijar(caso);
+    await listo();
     const boton = raiz.querySelector<HTMLButtonElement>('app-riel-de-escenas [data-accion="siguiente-paso"]')!;
     expect(boton.textContent!.trim().length).toBeGreaterThan(0);
     // Con una escena vacía, el paso es escribirla.
@@ -49,7 +53,8 @@ describe('RielDeEscenasComponent', () => {
     expect(opciones[0]).toBe('Todas las escenas y sus caminos');
     expect(opciones[1].startsWith(`Escena 1 de ${store.caso()!.escenas.length} · ${store.caso()!.escenas[0].titulo}`)).toBe(true);
     // Un select no lleva iconos: el estado de cada escena va en palabras.
-    const vacia = store.caso()!.escenas[0].lineas.length === 0 && store.caso()!.escenas[0].respuestas.length === 0;
+    const vacia = !store.caso()!.escenas[0].narracion.trim() && store.caso()!.escenas[0].lineas.length === 0 && store.caso()!.escenas[0].respuestas.length === 0;
+    expect(opciones[1]).not.toMatch(/ ? por escribir$/);
     if (vacia) expect(opciones[1]).toMatch(/ · por escribir$/);
   });
   // req: EDITOR.md §3.4 y §7.3 E1 (riel completo: conmutador, marcas con palabras, «Sin conexión», Alt+↓ y Alt+M)
@@ -72,6 +77,7 @@ describe('RielDeEscenasComponent', () => {
     const caso = structuredClone(store.caso()!);
     const [a, b] = caso.escenas;
     b.esFinal = true;
+    b.narracion = '';
     b.marcaIa = true;
     a.lineas = [{ id: 'l1', personajeId: caso.personajes[0].id, texto: 'Hola', expresion: 'neutral', marcaIa: false }];
     a.respuestas = [{ id: 'r1', texto: 'Ir', clase: 'RECOMMENDED', razon: '', retroalimentacion: '', destinoId: b.id, efectos: {}, marcaIa: false }];
@@ -83,7 +89,7 @@ describe('RielDeEscenasComponent', () => {
     expect(marcas(filas[0])).toMatch(/Completa|Le falta/);
     expect(marcas(filas[1])).toContain('Final');
     expect(marcas(filas[1])).toContain('IA');
-    expect(marcas(filas[1])).toContain('Sin escribir');
+    expect(marcas(filas[1])).toContain('Por escribir');
     expect(filas[1].querySelector('.solo-lector')!.textContent).toContain('es un final');
     for (const img of raiz.querySelectorAll<HTMLImageElement>('app-riel-de-escenas img')) expect(img.getAttribute('src')).toBeTruthy();
   });

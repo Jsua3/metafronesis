@@ -5,6 +5,7 @@ prueba ``apps/simulation/tests/test_openapi_matches_responses.py`` contra la res
 """
 from rest_framework import serializers
 
+from apps.simulation.serializers.portadas import PortadaSerializer
 from shared.openapi import ErrorEnvelopeSerializer
 
 from .access import REASONS as ACCESS_REASONS
@@ -15,6 +16,21 @@ ASSIGNMENT_TARGETS = ("GROUP", "STUDENT")
 
 #: Las ventanas de asignación viajan con el desfase de Bogotá explícito (a diferencia del resto de fechas de la API).
 WINDOW = "ISO 8601 con el desfase de Bogotá (-05:00)."
+
+
+class GrupoResumenCasosSerializer(serializers.Serializer):
+    asignados = serializers.IntegerField(help_text="Asignaciones del grupo, incluidas las pausadas.")
+    terminados = serializers.IntegerField(help_text="Pares estudiante y caso terminados al menos una vez.")
+    oportunidades = serializers.IntegerField(help_text="Pares de membresía activa y caso asignado.")
+
+
+class GrupoListadoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    codigo = serializers.CharField()
+    totalEstudiantes = serializers.IntegerField()
+    totalInvitados = serializers.IntegerField()
+    resumenCasos = GrupoResumenCasosSerializer()
 
 
 class AccessDecisionSerializer(serializers.Serializer):
@@ -34,15 +50,24 @@ class AssignmentTargetSerializer(serializers.Serializer):
     studentId = serializers.IntegerField(required=False, help_text="Solo si `type` es `STUDENT`.")
 
 
-class AssignmentSerializer(serializers.Serializer):
+class AssignmentProgressSerializer(serializers.Serializer):
+    students = serializers.IntegerField(help_text="Membresías activas del grupo.")
+    completed = serializers.IntegerField(help_text="Estudiantes que terminaron esta versión al menos una vez.")
+    inProgress = serializers.IntegerField(help_text="Estudiantes con intento abierto que aún no la terminaron.")
+
+
+class AssignmentSerializer(PortadaSerializer):
     """Una versión de caso asignada, con su ventana de apertura y cierre (C7)."""
 
     id = serializers.IntegerField()
     caseVersionId = serializers.IntegerField()
+    caseId = serializers.IntegerField()
     target = AssignmentTargetSerializer()
     state = serializers.ChoiceField(choices=ASSIGNMENT_STATES, help_text="Dónde está la ventana hoy.")
     active = serializers.BooleanField(help_text="Una asignación en pausa no habilita nada.")
     sortOrder = serializers.IntegerField(help_text="Su lugar en la secuencia de casos.")
+    caseTitle = serializers.CharField(help_text="El título del caso, para nombrar la asignación sin otra consulta.")
+    progress = AssignmentProgressSerializer(required=False, help_text="Solo en el listado de asignaciones de grupo.")
     opensAt = serializers.DateTimeField(required=False, help_text=f"Si no hay fecha, no viaja. {WINDOW}")
     closesAt = serializers.DateTimeField(required=False, help_text=f"Si no hay fecha, no viaja. {WINDOW}")
 
@@ -63,6 +88,11 @@ class InvitationSerializer(serializers.Serializer):
         help_text="Hora local del servidor (America/Bogota), sin zona. Nula en las membresías anteriores a las invitaciones.",
     )
     status = serializers.ChoiceField(choices=MembershipStatus.choices)
+    casesCount = serializers.IntegerField(
+        allow_null=True,
+        min_value=0,
+        help_text="Casos publicados que el docente asignó al grupo. Solo si ya eres miembro (`ACTIVE`); si no, es nulo.",
+    )
 
 
 class MembershipConflictEnvelopeSerializer(ErrorEnvelopeSerializer):

@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .demo_config import DemoConfigView
 from .views import (
     AccessRequestCreateView,
     ChangePasswordView,
@@ -8,14 +9,21 @@ from .views import (
     GoogleLoginView,
     LoginView,
     MeView,
+    PasswordResetCheckView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
 )
 
 urlpatterns = [
     path("login", LoginView.as_view()),
+    path("demo/config", DemoConfigView.as_view()),
     path("code-login", CodeLoginView.as_view()),
     path("google", GoogleLoginView.as_view()),
     path("google/config", GoogleConfigView.as_view()),
     path("access-request", AccessRequestCreateView.as_view()),
     path("me", MeView.as_view()),
     path("change-password", ChangePasswordView.as_view()),
+    path("password-reset", PasswordResetRequestView.as_view()),
+    path("password-reset/check", PasswordResetCheckView.as_view()),
+    path("password-reset/confirm", PasswordResetConfirmView.as_view()),
 ]

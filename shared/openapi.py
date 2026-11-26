@@ -78,6 +78,8 @@ _ERROR_DESCRIPTIONS = {
     403: "Sin permiso para esta acción.",
     404: "No existe, o no es visible para quien pregunta.",
     409: "Choca con el estado actual.",
+    413: "El cuerpo supera el tamaño permitido.",
+    415: "El formato del cuerpo no se admite.",
     422: "La petición es válida pero el contenido no se puede usar; el motivo va en `code`.",
     429: "Se agotó un límite de uso.",
     502: "Falló un servicio externo.",

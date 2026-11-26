@@ -1,9 +1,13 @@
 <ui-cabecera-ilustrada [herramienta]="true" escena="revision" [escala]="1"
   eyebrow="Panel docente"
   title="Revisión formativa del intento"
-  description="Lo que hizo el estudiante y tu valoración, en la misma pantalla." />
+  description="Los intentos de tus estudiantes para revisar y comentar a su ritmo." />
+<!-- BORRADOR: texto pendiente de Psicología. -->
 
 <p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+<!-- Solo la administración: lo que espera su aprobación va ARRIBA, antes de los intentos de estudiantes. -->
+<app-casos-por-aprobar />
 
 <div class="tr-layout p-densidad-compacta">
   <!-- Bajo 1440 px la bandeja no cabe como columna: este selector la abre y dice qué intento está abierto. -->
@@ -16,6 +20,10 @@
   <section id="tr-bandeja" class="tr-list tr-bandeja"
     [class.tr-bandeja--abierta]="bandejaVisible()" aria-labelledby="tr-bandeja-titulo">
     <h2 class="tr-bandeja__titulo" id="tr-bandeja-titulo">Intentos</h2>
+    @if (filtroGrupoCaso) {
+      <p class="tr-hint">Mostrando hasta 20 intentos recientes del grupo y caso elegidos.</p>
+      <a ui-button variant="secondary" href="/portal/docente/trazabilidad">Ver todos los intentos</a>
+    }
     <ui-segmentado etiqueta="Qué intentos ver" [opciones]="segmentos()" [valor]="filtro()" (valorChange)="elegirFiltro($event)" />
     <ui-field label="Buscar por caso o estudiante">
       <input uiControl type="search" autocomplete="off" [value]="busqueda()" (input)="buscar($event)" />
@@ -36,8 +44,13 @@
         <ui-error-state kind="server" message="No pudimos cargar los intentos recientes." (retry)="loadAttempts()" />
       }
       @case ('empty') {
-        <ui-empty-state kind="first-use" title="No hay intentos recientes para tus grupos"
-          description="Cuando tus estudiantes completen simulaciones, aparecerán aquí para revisión." />
+        @if (filtroGrupoCaso) {
+          <ui-empty-state kind="first-use" title="No hay intentos para este grupo y caso"
+            description="Cuando sus estudiantes inicien el caso, aparecerán aquí para revisión." />
+        } @else {
+          <ui-empty-state kind="first-use" title="No hay intentos recientes para tus grupos"
+            description="Cuando tus estudiantes completen simulaciones, aparecerán aquí para revisión." />
+        }
       }
       @default {
         @if (!bandeja().length) {
@@ -107,7 +120,7 @@
                   @if (canReplace(item)) {
                     <!-- E1-2 (RN-07): solo el docente reemplaza un intento abierto, con motivo; es una acción de peso,
                          por eso va en el menú y en rojo, no junto al título. -->
-                    <ui-menu class="tr-mas" label="Más acciones" iconOnly [items]="menuIntento"
+                    <ui-menu class="tr-mas" [label]="'Más acciones del intento de «' + clean(item.studentAlias, 'Estudiante') + '» en «' + clean(item.caseTitle, 'Caso sin título') + '»'" iconOnly [items]="menuIntento"
                       (itemSelected)="accionIntento($event, item)" />
                   }
                 </div>

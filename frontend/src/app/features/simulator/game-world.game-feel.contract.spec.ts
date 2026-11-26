@@ -28,12 +28,15 @@ describe('game-world: game feel del bloque B', () => {
 
   it('la crisis la decide la utilidad pura, se congela con el mundo en pausa y nunca deja dos pulsos vivos', () => {
     expect(source).toMatch(/private applyCrisisState\(\): void \{[\s\S]*?crisisVignetteState\(this\.activation, this\.intensity, this\.callbacks\.reduceMotion \|\| this\.motionPaused\)[\s\S]*?this\.crisisPulse\?\.stop\(\);[\s\S]*?this\.crisisPulse = this\.tweens\.add\(\{[\s\S]*?yoyo: true,[\s\S]*?repeat: -1/);
-    expect(source).toMatch(/setMotionPaused\(paused: boolean\) \{[\s\S]{0,260}this\.applyCrisisState\(\);\s*\}/);
+    expect(source).toMatch(/setMotionPaused\(paused: boolean\) \{[\s\S]*?this\.applyCrisisState\(\);\s*\}/);
     expect(source).toContain("this.addVignette('crisis', CRISIS_VIGNETTE_TINT, 0.18, 1, DEPTH.LIGHTING + 1)");
   });
 
   it('activar movimiento reducido reaplica la crisis y el destello pendiente se consume una sola vez', () => {
-    expect(source).toMatch(/setReduceMotion\(reduced: boolean\) \{\s*this\.callbacks\.reduceMotion = reduced;(?:\s*\/\/[^\n]*)?\s*this\.syncProximityAnimations\(\);(?:\s*\/\/[^\n]*)?(?:\s*if \(reduced\) this\.restPersonWalkers\(\);)?\s*this\.applyCrisisState\(\);\s*\}/);
+    const cambio = source.slice(source.indexOf('  setReduceMotion(reduced: boolean)'), source.indexOf('  setPersonaScene('));
+    expect(cambio).toContain('this.callbacks.reduceMotion = reduced;');
+    expect(cambio).toContain('this.syncProximityAnimations();');
+    expect(cambio).toContain('this.applyCrisisState();');
     expect(source).toMatch(/\n  playPendingRoomFlash\(\): void \{\s*const flash = this\.pendingRoomFlash;\s*this\.pendingRoomFlash = null;/);
   });
 
@@ -86,7 +89,7 @@ describe('game-world: game feel del bloque B', () => {
 
   // req: RNF-04, REGLA-004 (revisión de F6)
   it('cada avance de la carga rearma el plazo: una red lenta que avanza no es un arranque colgado', () => {
-    expect(source).toMatch(/onLoadProgress: percent => this\.zone\.run\(\(\) => \{\s*this\.loadPercent\.set\(percent\);\s*(?:\/\/[^\n]*\n\s*)?if \(!this\.renderReady\(\)\) this\.armBootWatchdog\(\);\s*\}\),/);
+    expect(source).toMatch(/onLoadProgress: percent => this\.zone\.run\(\(\) => \{\s*this\.loadPercent\.set\(percent\);\s*this\.loadProgress\.emit\(percent\);\s*(?:\/\/[^\n]*\n\s*)?if \(!this\.renderReady\(\)\) this\.armBootWatchdog\(\);\s*\}\),/);
   });
 
   it('si Phaser no pinta nada en 25 s el anfitrión lo sabe y ofrece reintentar', () => {

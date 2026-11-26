@@ -85,12 +85,13 @@ function crearJuegoDeSala(op: OpcionesDeJuego): JuegoDeSala {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[attr.data-lienzo]': 'estado()', '[attr.data-version]': 'version()' },
   template: `
-    <div #contenedor style="position: relative"></div>
+    <div #contenedor class="lienzo-contenedor"></div>
     @if (estado() === 'fallo') {
       <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
       <p role="status">No se pudo dibujar la sala. Puedes seguir moviendo las piezas.</p>
     }
   `,
+  styles: [`.lienzo-contenedor { position: relative; }`],
 })
 export class LienzoDeSalaComponent {
   readonly sala = input.required<SalaPorPiezas>();

@@ -8,9 +8,10 @@ from apps.simulation.models import CaseReview, PublicationChecklist, Publication
 from apps.simulation.models.world import CaseCharacter, ClinicalTool, MapObject, SceneHint, SceneMap
 from apps.simulation.services import case_rules
 from apps.simulation.services.audit_service import auditable
+from apps.simulation.services.portadas import datos_portada
 from apps.users.permisos import exigir_autoria
 from shared.jsonutils import read_map, read_string_list
-from . import guardas
+from . import autoria, guardas
 
 ITEMS = (
     ("contentOriginal", "Contenido original — sin copiar personajes, mapas ni narrativa comercial.", "author"),
@@ -67,8 +68,10 @@ def vista(version):
     checklist, porcentaje = lista(version, nodos)
     return {
         "caseVersionId": version.pk, "revision": version.version, "title": version.simulation_case.title,
+        **datos_portada(version),
+        "autor": autoria.persona(version.simulation_case.created_by), "editadoPor": autoria.editores(version.simulation_case),
         "semanticVersion": version.semantic_version, "status": version.status, "context": version.narrative_context or "",
-        "learningObjectives": read_string_list(version.learning_objectives), "contentWarnings": read_string_list(version.content_warnings), "rehearsedToEnd": False,
+        "estimatedMinutes": version.estimated_minutes, "learningObjectives": read_string_list(version.learning_objectives), "contentWarnings": read_string_list(version.content_warnings), "rehearsedToEnd": False,
         "rules": {"milestones": [{"key": hito.key, "label": hito.label, "description": hito.description, "decisive": hito.decisive} for hito in reglas.milestones], "riskLevel": reglas.risk_level.value if reglas.risk_level else None, "endings": list(reglas.endings)},
         "nodes": [{"id": nodo.pk, "key": nodo.node_key, "title": nodo.title, "narrative": nodo.narrative, "supportResources": read_string_list(nodo.support_resources_json), "requiredTools": read_string_list(nodo.required_tools_json), "sensitiveContent": nodo.sensitive_content, "safeExitRequired": nodo.safe_exit_required, "warningMessage": nodo.warning_message, "terminal": nodo.terminal_node, "startNode": nodo.start_node, "positionX": nodo.position_x, "positionY": nodo.position_y, "decisionPrompt": nodo.decision_prompt, "goal": nodo.goal, "comments": read_string_list(nodo.comments_json), "displayOrder": nodo.display_order, "intensity": nodo.intensity, "aiSuggested": nodo.ai_suggested} for nodo in nodos],
         "decisions": [{"id": decision.pk, "optionKey": decision.option_key, "sourceNodeId": decision.source_node_id, "sourceKey": decision.source_node.node_key, "targetNodeId": decision.target_node_id, "targetKey": decision.target_node.node_key, "text": decision.text, "responseClass": decision.response_class, "prohibitedConduct": decision.response_class == "CONTRAINDICATED", "prohibitionReason": decision.prohibition_reason, "immediateFeedback": decision.immediate_feedback, "consequenceText": decision.consequence_text, "theoryBasis": decision.theory_basis, "feedbackText": decision.feedback_text, "effects": read_map(decision.effects), "requires": read_map(decision.requires_json), "reaction": read_map(decision.reaction_json), "aiSuggested": decision.ai_suggested} for decision in decisiones],

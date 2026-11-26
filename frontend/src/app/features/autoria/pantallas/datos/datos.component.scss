@@ -13,6 +13,9 @@
 .formulario .grupo + .conjunto { margin-block-start: 0.75rem; }
 
 .campo--largo { min-block-size: 8rem; }
+.campo--archivo { min-inline-size: 0; padding: var(--ds-space-2); }
+.portada-pixel, .portada-acciones { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ds-space-2); }
+.portada-pixel { min-block-size: var(--ds-target-min); font-size: var(--autoria-texto-14); }
 
 // El estado del guardado: un cuadrito de 8 px (la marca pixel del simulador) y el texto; la forma, no solo el color.
 .estado {

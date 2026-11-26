@@ -39,9 +39,9 @@ let lugares: PlaceCandidate[] = [];
 @Component({
   selector: 'app-game-world',
   template: '',
-  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused',
+  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused', 'nombreDeQuienJuega',
     'sfxMuted', 'reduceMotion', 'activation', 'intensity', 'doorStates', 'doorMessages', 'nextTargetKey', 'dimmedKeys', 'compact', 'showLoader'],
-  outputs: ['worldReady', 'patientVisual', 'proximity', 'proximityAlso', 'nothingNearby', 'interact', 'npcInteract', 'walkEnded',
+  outputs: ['worldReady', 'patientVisual', 'proximity', 'proximityAlso', 'nothingNearby', 'interact', 'npcInteract', 'walkEnded', 'walkCancelled',
     'bootFailed', 'roomExit', 'enterRoom', 'positionChange'],
 })
 class MundoFalso {
@@ -53,6 +53,7 @@ class MundoFalso {
   interact = new EventEmitter<unknown>();
   npcInteract = new EventEmitter<unknown>();
   walkEnded = new EventEmitter<unknown>();
+  walkCancelled = new EventEmitter<void>();
   bootFailed = new EventEmitter<unknown>();
   roomExit = new EventEmitter<unknown>();
   enterRoom = new EventEmitter<unknown>();
@@ -147,11 +148,197 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     } as unknown as SimulationAttemptState);
     component.world.set(mundo());
     if (o.vistos) (component as any).viewedNpcKeys.set(new Set(o.vistos));
+    // La tarjeta de controles de primera vez se anuncia al aparecer (P8); aquí se prueban los avisos de la guía, no ella.
+    component.helpCardSeen.set(true);
     component.worldStarted.set(true);
     component.loading.set(false);
     fixture.detectChanges();
     return { fixture, component, announcer, service: sim };
   }
+
+  it.each(['Enter', ' '])('al cerrar controles con %j, la pulsación queda fuera de la cola del mundo hasta soltarla', tecla => {
+    const { fixture, component, service } = montarConMundo();
+    const herramienta = { ...OBJETO_SIN_DECISION, key: 'tool-pap', type: 'TOOL' as const, toolCode: 'PAP' };
+    const jugar = () => component.openInteraction(herramienta);
+    const cola: Array<() => void> = [];
+    const escucharMundo = (event: KeyboardEvent) => { if (!event.defaultPrevented) cola.push(jugar); };
+    const pulsar = (target: EventTarget, tipo: 'keydown' | 'keyup', repeat = false) => {
+      const event = new KeyboardEvent(tipo, { key: tecla, bubbles: true, cancelable: true, repeat });
+      target.dispatchEvent(event);
+      return event;
+    };
+    component.worldRendered.set(true);
+    component.nearbyInteraction.set(herramienta);
+    component.openControls();
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    const entendido = Array.from(host.querySelectorAll('app-game-help button')).find(button => button.textContent?.includes('Entendido')) as HTMLButtonElement;
+    const juego = host.querySelector<HTMLElement>('.game-container')!;
+    entendido.focus();
+    expect(document.activeElement).toBe(entendido);
+
+    window.addEventListener('keydown', escucharMundo);
+    try {
+      expect(pulsar(entendido, 'keydown').defaultPrevented).toBe(false);
+      if (tecla === ' ') pulsar(entendido, 'keyup');
+      entendido.click(); // Activación nativa que jsdom no sintetiza a partir de KeyboardEvent.
+      fixture.detectChanges();
+      juego.focus();
+      expect(component.controlsVisible()).toBe(false);
+
+      if (tecla === 'Enter') {
+        expect(pulsar(juego, 'keydown', true).defaultPrevented).toBe(true);
+        pulsar(juego, 'keyup');
+      }
+      cola.splice(0).forEach(accion => accion());
+      expect(service['openInteraction']).not.toHaveBeenCalled();
+
+      pulsar(juego, 'keydown');
+      expect(service['openInteraction']).toHaveBeenCalledOnce();
+      expect(service['openInteraction']).toHaveBeenCalledWith('a1', herramienta.key);
+    } finally {
+      window.removeEventListener('keydown', escucharMundo);
+    }
+  });
+
+  it('la guía prioriza los usos del nodo, incluso vacíos, y admite respuestas anteriores', () => {
+    const { component } = montarConMundo();
+    const world = mundo({ usedToolKeys: ['PAP@camilo'], map: { key: 'sala-x', title: 'Sala X', ambient: {
+      guia: { pasos: [{ texto: 'Aplica la herramienta.', hecho: { used: 'PAP' } },
+        { texto: 'Apóyalo con la herramienta.', hecho: { used: 'PAP@camilo' } }] },
+    } } });
+    const hechos = (estado: SimulationWorldState) => component.refreshGuide(estado).pasos?.map(p => p.hecho);
+
+    expect(hechos({ ...world, usedToolKeysHere: [] })).toEqual([false, false]);
+    expect(hechos({ ...world, usedToolKeysHere: ['PAP@otra-persona'] })).toEqual([true, false]);
+    expect(hechos({ ...world, usedToolKeysHere: ['PAP@camilo'] })).toEqual([true, true]);
+    expect(hechos(world)).toEqual([true, true]);
+  });
+
+  it('el Enter de la nota de capítulo no cierra los controles que aparecen después', () => {
+    const { fixture, component, service } = montarConMundo();
+    component.worldRendered.set(true);
+    component.helpCardSeen.set(false);
+    component.transitionNote.set('Capítulo 1 · Una llegada.');
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    const juego = host.querySelector<HTMLElement>('.game-container')!;
+    const pulsar = (tipo: 'keydown' | 'keyup', repeat = false) => {
+      const event = new KeyboardEvent(tipo, { key: 'Enter', bubbles: true, cancelable: true, repeat });
+      juego.dispatchEvent(event);
+      return event;
+    };
+
+    expect(host.querySelector('app-nota-transicion')).not.toBeNull();
+    expect(host.querySelector('app-game-help')).toBeNull();
+    expect(pulsar('keydown').defaultPrevented).toBe(true);
+    fixture.detectChanges();
+    expect(host.querySelector('app-nota-transicion')).toBeNull();
+    expect(host.querySelector('app-game-help')).not.toBeNull();
+    expect(pulsar('keydown', true).defaultPrevented).toBe(true);
+    pulsar('keyup');
+    expect(component.controlsVisible()).toBe(true);
+    expect(service['openInteraction']).not.toHaveBeenCalled();
+  });
+
+  it('conserva las acciones al abrir y cerrar Ir a… y recibir posiciones y cercanía equivalentes', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const other = { ...OBJETO_SIN_DECISION, type: 'PERSON' as const };
+    const { fixture, component } = montarConMundo({ goal: 'Hablar', lugares: [{ key: person.key, label: person.label, kind: 'person' }] });
+    component.nearbyInteraction.set(person);
+    component.nearbyAlso.set(other);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    const primary = host.querySelector('.context-bar__interaction:not(.context-bar__interaction--secondary)');
+    const secondary = host.querySelector('.context-bar__interaction--secondary');
+    expect(primary).not.toBeNull(); expect(secondary).not.toBeNull();
+    const removed: Node[] = [];
+    const observer = new MutationObserver(records => records.forEach(r => removed.push(...Array.from(r.removedNodes))));
+    observer.observe(host.querySelector('.context-bar')!, { childList: true, subtree: true });
+    component.openPlaces(); fixture.detectChanges();
+    for (let i = 0; i < 10; i++) {
+      component.nearbyInteraction.set({ ...person }); component.nearbyAlso.set({ ...other });
+      component.rememberPosition(i, i); fixture.detectChanges();
+    }
+    component.closePlaces(); fixture.detectChanges();
+    removed.push(...observer.takeRecords().flatMap(r => Array.from(r.removedNodes)));
+    observer.disconnect();
+    expect(host.querySelector('.context-bar__interaction:not(.context-bar__interaction--secondary)')).toBe(primary);
+    expect(host.querySelector('.context-bar__interaction--secondary')).toBe(secondary);
+    expect(removed.filter(n => n === primary || n === secondary || (n instanceof Element && !!n.querySelector('button')))).toHaveLength(0);
+  }, 20000);
+
+  it('una persona lejana inicia la caminata y solo interactúa al llegar', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const { component } = montarConMundo();
+    const world = (component as any).gameWorld;
+    const walk = vi.spyOn(world, 'walkToKey').mockReturnValue(true);
+    const open = vi.spyOn(component, 'openInteraction');
+    component.nearbyInteraction.set(person);
+    (component as any).requestInteraction(person);
+    expect(walk).toHaveBeenCalledWith(person.key);
+    expect(open).not.toHaveBeenCalled();
+    component.onWalkEnded({ key: person.key, label: person.label, outcome: 'arrived' });
+    expect(open).toHaveBeenCalledWith(person);
+  });
+
+  it('no abre una persona si la caminata se cancela o queda bloqueada', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const { component } = montarConMundo();
+    const open = vi.spyOn(component, 'openInteraction');
+    component.requestInteraction(person);
+    component.cancelPendingInteraction();
+    component.onWalkEnded({ key: person.key, label: person.label, outcome: 'arrived' });
+    expect(open).not.toHaveBeenCalled();
+    component.requestInteraction(person);
+    component.onWalkEnded({ key: person.key, label: person.label, outcome: 'blocked' });
+    expect(open).not.toHaveBeenCalled();
+    expect(component.softNotice()).toContain(person.label);
+  });
+
+  it('explica que una persona ausente no se puede alcanzar', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const { component } = montarConMundo();
+    vi.spyOn((component as any).gameWorld, 'walkToKey').mockReturnValue(false);
+    component.requestInteraction(person);
+    expect(component.softNotice()).toContain(person.label);
+    expect(component.softNotice()).toContain('Camina');
+  });
+
+  it('retira el aviso de llegada al terminar su plazo', () => {
+    const { component } = montarConMundo();
+    component.onWalkEnded({ key: 'x', label: 'Vigilante', outcome: 'arrived' });
+    expect(component.softNotice()).toContain('Vigilante');
+    vi.advanceTimersByTime(10000);
+    expect(component.softNotice()).toBe('');
+  });
+
+  it('nombra la otra sala cuando la persona está fuera', () => {
+    const person = { ...OBJETO_CON_DECISION, key: 'npc:ana', label: 'Ana', type: 'PERSON' as const };
+    const { component } = montarConMundo();
+    component.scenarioConfig.set({ rooms: [{ key: 'sala-y', displayName: 'Sala de espera', npcs: [{ key: 'ana' }] }] } as any);
+    vi.spyOn((component as any).gameWorld, 'walkToKey').mockReturnValue(false);
+    component.requestInteraction(person);
+    expect(component.softNotice()).toContain('Ana está en Sala de espera');
+    expect(component.softNotice()).toContain('Ir a…');
+  });
+
+  it('al llegar enfoca la acción y Enter conserva su activación nativa', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const { fixture, component } = montarConMundo();
+    component.nearbyInteraction.set(person);
+    fixture.detectChanges();
+    component.onWalkEnded({ key: person.key, label: person.label, outcome: 'arrived' });
+    fixture.detectChanges(); TestBed.tick();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.context-bar__interaction')!;
+    expect(document.activeElement).toBe(button);
+    const key = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    button.dispatchEvent(key);
+    expect(key.defaultPrevented).toBe(false);
+    const request = vi.spyOn(component, 'requestInteraction');
+    button.click();
+    expect(request).toHaveBeenCalledWith(person);
+  });
 
   it('la ficha recibe el objetivo de la escena y no hay contador ni «Ahora:»', () => {
     const { fixture } = montarConMundo({ goal: 'Contener a la familia' });
@@ -175,7 +362,8 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     toggle.click();
     fixture.detectChanges();
     expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('Enfermera');
-    expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('aún no');
+    // P9: «aún no» ya no se dice; la única persona sin ver es el siguiente paso.
+    expect(el.querySelector('app-scene-goal-card')!.textContent).toContain('tu siguiente paso');
   });
 
   it('con algo por conocer, la conversación con decisiones avisa «Puedes conocer más…»', () => {

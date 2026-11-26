@@ -7,7 +7,7 @@
  * «esta acción llamó a esta ruta con la revisión que devolvió la anterior».
  */
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, Subject, of, throwError } from 'rxjs';
+import { Observable, Subject, map, of, throwError } from 'rxjs';
 
 import type { AuthoringApi } from '../../../core/api/authoring.api';
 import type { AssistantProposeBody } from '../../../core/api/generated/openapi-contracts';
@@ -160,6 +160,16 @@ export class ServidorFalso {
       const error = this.entrar('caseEditor', undefined, [cv]);
       return error ? throwError(() => error) : of(clonar(this.editor));
     },
+    updateCover: (_cv: number, imagen: File, pixelArt: boolean, revision: number) =>
+      this.escribir('updateCover', revision, [imagen, pixelArt], () => {
+        this.editor.portada = `/media/${this.editor.revision}.png`;
+        this.editor.portadaPixelArt = pixelArt;
+      }).pipe(map(vista => ({ portada: vista.portada!, portadaPixelArt: vista.portadaPixelArt!, revision: vista.revision }))),
+    removeCover: (_cv: number, revision: number) =>
+      this.escribir('removeCover', revision, [], () => {
+        this.editor.portada = null;
+        this.editor.portadaPixelArt = false;
+      }).pipe(map(vista => ({ portada: null, portadaPixelArt: false, revision: vista.revision }))),
     worldEditor: (cv: number, nodeId?: number) => {
       const error = this.entrar('worldEditor', undefined, [cv, nodeId]);
       if (error) return throwError(() => error);
@@ -356,6 +366,7 @@ export class ServidorFalso {
     updateBrief: (cv: number, cuerpo: BriefUpdateRequest, revision?: number) =>
       this.escribir('updateBrief', revision, [cuerpo], () => {
         if (cuerpo.context !== undefined) this.editor.context = cuerpo.context;
+        if (cuerpo.estimatedMinutes !== undefined) this.editor.estimatedMinutes = cuerpo.estimatedMinutes;
         if (cuerpo.learningObjectives !== undefined) this.editor.learningObjectives = [...cuerpo.learningObjectives];
         if (cuerpo.contentWarnings !== undefined) this.editor.contentWarnings = [...cuerpo.contentWarnings];
         if (cuerpo.title !== undefined) this.editor.title = cuerpo.title;
@@ -457,6 +468,10 @@ export class ServidorFalso {
       this.entrar('assistantStatus', undefined, [cv]);
       return of({ enabled: true, mode: 'connected' as const, remainingToday: 10 });
     },
+
+    // El manifiesto de piezas de la biblioteca: uno válido y vacío (sin piezas), como un catálogo recién instalado.
+    staticJson: (_url: string): Observable<unknown> =>
+      of({ esquema: 2, piezas: {}, pisos: {}, muros: {}, muebles: {}, propios: [], lugares: [] }),
 
     // La generación por etapas vive en `generaciones` (con su propio registro de llamadas).
     generationStatus: () => this.generaciones.generationStatus(),

@@ -108,7 +108,7 @@ describe('usuarios: feedback de acciones (comportamiento)', () => {
 
       component.save();
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible guardar los cambios.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible guardar los cambios. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
 
     it('sin conexión (status 0): no duplica el aviso del interceptor pero libera saving', () => {
@@ -184,7 +184,7 @@ describe('usuarios: feedback de acciones (comportamiento)', () => {
 
       component.dismissRequest(solicitud);
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible actualizar la solicitud.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible actualizar la solicitud. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
       expect(component.error()).toBe('');
     });
 
@@ -283,7 +283,7 @@ describe('usuarios: feedback de acciones (comportamiento)', () => {
 
       await component.toggleStatus(ana);
 
-      expect(notify.error).toHaveBeenCalledWith('No fue posible actualizar el estado del usuario.');
+      expect(notify.error).toHaveBeenCalledWith('No fue posible actualizar el estado del usuario. Es un problema nuestro, no tuyo: espera un momento e inténtalo de nuevo.');
     });
 
     it('sin conexión (status 0): no duplica el aviso del interceptor', async () => {

@@ -269,6 +269,9 @@ export interface CasoBorrador {
   /** La revisión del caso que se está viendo (viaja en cada cambio); 0 en un caso que aún no está en el servidor. */
   revision: number;
   titulo: string;
+  tiempoEstimado?: number | null;
+  portada?: string | null;
+  portadaPixelArt?: boolean;
   /** El contexto que lee el estudiante antes de empezar (texto plano); ausente en un borrador que aún no está en el servidor. */
   contexto?: string;
   /** Los objetivos de aprendizaje del caso, uno por renglón; ausente en un borrador que aún no está en el servidor. */
@@ -293,6 +296,10 @@ export interface CasoBorrador {
   lista?: ListaVerificacion;
   /** El estado del caso en el servidor; ausente en un borrador que aún no está allí. */
   estado?: EstadoCaso;
+  /** Quien creó el caso (autoría compartida); ausente en un borrador que aún no está en el servidor. */
+  autor?: string;
+  /** Quienes, sin ser el autor, crearon alguna versión del caso, en el orden de su primera versión. */
+  editadoPor?: string[];
   /** Quien edita ya probó este caso hasta un final (el ensayo); ausente = no. */
   probadoHastaElFinal?: boolean;
   /** Las herramientas del caso (para avisar de las que ningún objeto entrega); ausente si el servidor no las trae. */

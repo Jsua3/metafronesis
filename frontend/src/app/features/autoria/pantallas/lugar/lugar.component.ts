@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -22,14 +24,14 @@ import { PintorDeVistas } from './pintor-de-vistas.service';
  */
 @Component({
   selector: 'app-lugar',
-  imports: [RouterLink, BarraDePasosComponent, DetalleLugarComponent],
+  imports: [UiAyudaBreve, RouterLink, BarraDePasosComponent, DetalleLugarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="pagina crear">
       <header class="titulo">
         <p class="sobre">Nuevo caso</p>
         <h1>¿Dónde pasa tu caso?</h1>
-        <p class="texto-secundario">Elige un lugar. El caso recibe una copia de sus salas, muebles y personajes: puedes cambiar todo y el lugar original no cambia.</p>
+        <p class="texto-secundario">Elige un lugar. El caso recibe una copia de sus salas, muebles y personajes: puedes cambiar todo y el lugar original no cambia. <ui-ayuda-breve termino="Sala" [explicacion]="glosario['Sala']" /></p>
       </header>
 
       @if (temasPresentes().length > 1) {
@@ -128,6 +130,7 @@ import { PintorDeVistas } from './pintor-de-vistas.service';
   styleUrl: './lugar.component.scss',
 })
 export class LugarComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly rutas = inject(RutasAutoria);
   private readonly biblioteca = inject(BibliotecaService);
   private readonly pintor = inject(PintorDeVistas);

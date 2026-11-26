@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpContext } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { SCREEN_HANDLES_FORBIDDEN } from '../auth/http-error-chain';
 import type { LevelDescriptors } from '../models/revision.model';
@@ -191,11 +191,13 @@ export class RubricService {
 
   /**
    * La rúbrica con que se valora una versión del caso (la asignada, la propia o la predeterminada), si quien pide puede
-   * verla. 404 cuando no hay ninguna o no es visible: la pantalla «Rúbrica» del caso lo muestra como «este caso todavía
-   * no tiene rúbrica». Para que el caso tenga una propia se usa `AuthoringApi.adoptRubric`.
+   * verla. Solo el código RUBRIC_NOT_ASSIGNED indica ausencia; otros errores se propagan a la pantalla.
+   * Para que el caso tenga una propia se usa `AuthoringApi.adoptRubric`.
    */
-  caseVersionRubric(caseVersionId: number): Observable<RubricAdmin> {
-    return this.http.get<ApiDataResponse<RubricAdmin>>(`${this.API}/case-versions/${caseVersionId}`).pipe(map(r => r.data));
+  caseVersionRubric(caseVersionId: number): Observable<RubricAdmin | null> {
+    return this.http.get<ApiDataResponse<RubricAdmin>>(`${this.API}/case-versions/${caseVersionId}`).pipe(
+      map(r => r.data), catchError(error => error.status === 404 && error.error?.code === 'RUBRIC_NOT_ASSIGNED' ? of(null) : throwError(() => error)),
+    );
   }
 
   /**

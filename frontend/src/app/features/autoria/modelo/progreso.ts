@@ -1,4 +1,5 @@
-﻿import type { CasoBorrador, Escena } from './caso';
+﻿import { tieneRelleno } from './relleno';
+import type { CasoBorrador, Escena } from './caso';
 import { escenasAlcanzables } from './hitos';
 import { clasificarPendientes, estaVacia, type Etapa, type Pendiente } from './pendientes';
 
@@ -80,7 +81,7 @@ export function avanceDelCaso(caso: CasoBorrador, pendientes: readonly Pendiente
   const lugar = con('lugar', caso.salas.length ? 'lista' : 'sin-empezar', caso.salas.length ? plural(caso.salas.length, 'sala', 'salas') : '');
 
   const total = caso.escenas.length;
-  const escritas = caso.escenas.filter((e) => !estaVacia(e)).length;
+  const escritas = caso.escenas.filter((e) => !estaVacia(e) && !tieneRelleno(e)).length;
   const historia = con('historia', total > 0 && escritas === total ? 'lista' : escritas > 0 ? 'en-curso' : 'sin-empezar',
     total ? `${escritas} de ${plural(total, 'escena escrita', 'escenas escritas')}` : '');
   // Mientras quede trabajo por escribir en la historia, la etapa no puede estar «lista».

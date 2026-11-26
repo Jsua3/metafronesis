@@ -76,7 +76,8 @@ describe('CharacterEditorComponent', () => {
   it('el elenco es un grupo de radios nativos (flechas del navegador) y elegir cambia el personaje', async () => {
     await render();
     const radios = [...group('Elige tu personaje').querySelectorAll<HTMLInputElement>('input[type="radio"]')];
-    expect(radios).toHaveLength(13);
+    // Los 14 jugables del catálogo (Karen y Sara incluidas) y «personalizado».
+    expect(radios).toHaveLength(15);
     expect(new Set(radios.map(item => item.name)).size).toBe(1);
     expect(radios.filter(item => item.checked)).toHaveLength(1);
     // El elenco y las opciones son radios nativos; el único radiogroup con ARIA es el segmentado de Movimiento (C5).
@@ -141,6 +142,21 @@ describe('CharacterEditorComponent', () => {
   it('sin destino conocido solo ofrece guardar', async () => {
     await render();
     expect(text(host().querySelector('.ce-actions'))).not.toContain('Guardar y volver');
+  });
+
+  it('permite elegir vistas directamente y sincroniza la seleccion con las flechas', async () => {
+    await render();
+    const set = group('Vista del personaje');
+    const radios = [...set.querySelectorAll<HTMLInputElement>('input[type="radio"]')];
+    expect(radios).toHaveLength(4);
+    expect(radio('Vista del personaje', 'Frente').checked).toBe(true);
+    radio('Vista del personaje', 'Espalda').click();
+    await fixture.whenStable();
+    expect(text(host().querySelector('figcaption'))).toBe('Espalda');
+    expect(radio('Vista del personaje', 'Espalda').checked).toBe(true);
+    host().querySelector<HTMLButtonElement>('[aria-label="Girar a la derecha"]')!.click();
+    await fixture.whenStable();
+    expect(radio('Vista del personaje', 'Izquierda').checked).toBe(true);
   });
 
   it('las flechas cambian la dirección de la vista previa', async () => {

@@ -19,7 +19,7 @@ import { EMPTY, of, throwError } from 'rxjs';
 
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { DialogueState, SimulationAttemptState, SimulationWorldState } from '../../core/models/simulation.model';
+import { DialogueState, SimulationAttemptState, SimulationDecisionResult, SimulationWorldState, TutorDelCaso } from '../../core/models/simulation.model';
 import { AudioDirectorService } from './audio-director.service';
 import { CONSENT_RECORDER, SessionConsentRecorder } from './consent-recorder';
 import { SimulationPlayComponent } from './simulation-play.component';
@@ -143,6 +143,40 @@ describe('SimulationPlayComponent: supervisión de la última decisión (DLG-05)
     TestBed.tick();
     return event;
   };
+
+  it('la voz compacta usa el tutor de la sala y, al reanudar sin tutor local, el del mapa inicial', () => {
+    const preparar = (local?: TutorDelCaso, inicial?: SimulationWorldState['tutorInicial']) => {
+      const mundo = makeWorld();
+      component.world.set({ ...mundo, map: { ...mundo.map, ambient: { tutor: local } }, tutorInicial: inicial });
+      return (component as unknown as {
+        buildConsequenceDialogue(d: SimulationDecisionResult): DialogueState | null;
+      }).buildConsequenceDialogue({ consequence: CONSEQUENCE } as SimulationDecisionResult);
+    };
+    const inicial = { nombre: 'Profesor', rol: 'Tutor del caso', recipeId: 'supervisor-clinico' };
+    const local = { nombre: 'Sara', rol: 'Docente', recipeId: 'psicologa-hospitalaria', lineas: ['Hola'] };
+    expect(preparar(local, inicial)).toMatchObject({
+      speakerName: 'Sara', tutor: { rol: 'Docente' }, recipeId: 'psicologa-hospitalaria', hidePortrait: false,
+    });
+    expect(preparar(undefined, inicial)).toMatchObject({
+      speakerName: 'Profesor', tutor: { rol: 'Tutor del caso' }, recipeId: 'supervisor-clinico', hidePortrait: false,
+    });
+    expect(preparar()).toMatchObject({ speakerName: 'Consecuencia', hidePortrait: true });
+  });
+
+  it('sincroniza la última posición antes de navegar a la ficha y conserva el intento abierto', () => {
+    const navegar = vi.mocked(TestBed.inject(Router).navigate).mockResolvedValue(true);
+    component.attempt.set(makeAttempt());
+    const mundo = { ...makeWorld(), attemptId: 'attempt-1' };
+    component.world.set(mundo);
+    sim['updateWorldState'].mockReturnValue(of(mundo));
+    component.rememberPosition(102, 111);
+    component.verFichaDelCaso();
+    expect(sim['updateWorldState']).toHaveBeenCalledWith('attempt-1', 102, 111, mundo.map.key);
+    expect(navegar).toHaveBeenCalledWith(['/portal/simulador', CASE_VERSION_ID, 'ficha']);
+    expect(sim['updateWorldState'].mock.invocationCallOrder[0]).toBeLessThan(navegar.mock.invocationCallOrder[0]);
+    expect(sim['safeExit']).not.toHaveBeenCalled();
+    expect(component.attempt()?.attemptId).toBe('attempt-1');
+  });
 
   describe('la supervisión se lee antes del resultado', () => {
     it('tras la última decisión el intento está COMPLETED y la supervisión queda a la vista, no el resultado', () => {

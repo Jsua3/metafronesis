@@ -11,7 +11,7 @@ interface AuthoringCaseRow {
   versionId: number;
   status: string;
   revision: number;
-  brief: { code: string; title: string; description?: string | null };
+  brief: { code: string; title: string; description?: string | null; portada?: string | null; portadaPixelArt?: boolean };
 }
 
 /**
@@ -37,6 +37,7 @@ export class CaseCatalogApi {
         semanticVersion: String(row.revision),
         nodeCount: 0,
         status: row.status,
+        ...(row.brief.portada !== undefined ? { portada: row.brief.portada, portadaPixelArt: row.brief.portadaPixelArt } : {}),
       }))),
     );
   }

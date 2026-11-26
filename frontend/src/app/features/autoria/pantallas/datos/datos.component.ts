@@ -3,6 +3,8 @@ import {
 } from '@angular/core';
 
 import type { CanLeave } from '../../../../core/navigation/can-leave.guard';
+import { apiErrorMessage } from '../../../../core/api/api-error.util';
+import { UiButton } from '../../../../shared/ui/button/ui-button';
 import { UiDialog } from '../../../../shared/ui/dialog/ui-dialog';
 import { UiPortadaCaso } from '../../../../shared/ui/portada-caso/ui-portada-caso';
 import { AutoAltoDirective } from '../../marco/auto-alto.directive';
@@ -32,7 +34,7 @@ type Situacion = { forma: 'guardando' | 'guardado' | 'error' | 'corregir' | ''; 
  */
 @Component({
   selector: 'app-datos',
-  imports: [UiPortadaCaso, AutoAltoDirective, EstudioRanuraDirective, EstudioSeccionComponent],
+  imports: [UiButton, UiPortadaCaso, AutoAltoDirective, EstudioRanuraDirective, EstudioSeccionComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './datos.component.html',
   styleUrl: './datos.component.scss',
@@ -55,14 +57,28 @@ export class DatosComponent implements CanLeave {
    */
   protected readonly nombre = signal('');
   protected readonly contexto = signal('');
+  protected readonly tiempo = signal('');
+  protected readonly errorTiempo = computed(() => {
+    const valor = this.tiempo().trim();
+    if (!valor) return null;
+    const minutos = Number(valor);
+    return Number.isInteger(minutos) && minutos >= 5 && minutos <= 240 ? null : 'Escribe un número entero entre 5 y 240.';
+  });
   protected readonly objetivos = signal<string[]>([]);
   protected readonly temas = signal<string[]>([]);
   protected readonly temaNuevo = signal('');
   /** Qué secciones están abiertas (todas al entrar: la docente ve el formulario entero y pliega lo que ya revisó). */
   protected readonly abiertaIdentidad = signal(true);
+  protected readonly abiertaPortada = signal(true);
   protected readonly abiertaContexto = signal(true);
   protected readonly abiertaObjetivos = signal(true);
   protected readonly errorTema = signal<string | null>(null);
+  protected readonly archivoPortada = signal<File | null>(null);
+  protected readonly portadaPixelArt = signal(false);
+  protected readonly errorPortada = signal<string | null>(null);
+  protected readonly guardandoPortada = signal(false);
+  protected readonly portadaOcupada = computed(() =>
+    this.guardandoPortada() || !!this.store.guardadoDetenido() || !!this.store.conflicto());
   /** Lo último que esta pantalla dijo del guardado; la lectura de un caso nuevo lo borra. */
   private readonly aviso = signal<Situacion>({ forma: '', texto: '' });
 
@@ -114,6 +130,7 @@ export class DatosComponent implements CanLeave {
         const caso = this.store.caso();
         this.nombre.set(caso?.titulo ?? '');
         this.contexto.set(caso?.contexto ?? '');
+        this.tiempo.set(caso?.tiempoEstimado == null ? '' : String(caso.tiempoEstimado));
         this.objetivos.set([...(caso?.objetivos ?? [])]);
         this.temas.set([...(caso?.temasSensibles ?? [])]);
         this.aviso.set({ forma: '', texto: '' });
@@ -125,6 +142,34 @@ export class DatosComponent implements CanLeave {
   private enfocar(id: string, seccion: { set(v: boolean): void }): void {
     seccion.set(true);
     afterNextRender(() => this.anfitrion.querySelector<HTMLElement>(`#${id}`)?.focus(), { injector: this.injector });
+  }
+
+  protected elegirPortada(entrada: HTMLInputElement): void {
+    const archivo = entrada.files?.[0] ?? null;
+    const grande = Boolean(archivo && archivo.size > 2 * 1024 * 1024);
+    this.errorPortada.set(grande ? 'La portada puede pesar hasta 2 MB.' : null);
+    this.archivoPortada.set(grande ? null : archivo);
+    this.portadaPixelArt.set(false);
+    if (grande) entrada.value = '';
+  }
+
+  protected async cambiarPortada(archivo: File | null, entrada: HTMLInputElement): Promise<void> {
+    if (this.portadaOcupada()) return;
+    this.errorPortada.set(null);
+    this.guardandoPortada.set(true);
+    const accion = archivo ? 'subir' : 'quitar';
+    try {
+      await this.store.cambiarPortada(archivo, this.portadaPixelArt());
+      entrada.value = '';
+      this.archivoPortada.set(null);
+      this.portadaPixelArt.set(false);
+      this.enfocar('d-portada', this.abiertaPortada);
+    } catch (error) {
+      const respaldo = `No se pudo ${accion} la portada. Inténtalo de nuevo.`;
+      this.errorPortada.set(apiErrorMessage(error, respaldo) ?? respaldo);
+    } finally {
+      this.guardandoPortada.set(false);
+    }
   }
 
   protected tope(n: number): string {
@@ -178,6 +223,7 @@ export class DatosComponent implements CanLeave {
     return {
       contexto: errores.contexto ? (caso?.contexto ?? '') : this.contexto().trim(),
       objetivos: errores.objetivos ? [...(caso?.objetivos ?? [])] : this.objetivosVista(),
+      tiempoEstimado: this.errorTiempo() ? (caso?.tiempoEstimado ?? null) : (this.tiempo().trim() ? Number(this.tiempo()) : null),
       temas: this.temas(),
       titulo: errores.nombre ? (caso?.titulo ?? '') : this.nombre().trim(),
     };
@@ -187,7 +233,8 @@ export class DatosComponent implements CanLeave {
   private cambiado(): boolean {
     const caso = this.store.caso();
     const v = this.valoresAGuardar();
-    return v.contexto !== (caso?.contexto ?? '')
+    return v.tiempoEstimado !== (caso?.tiempoEstimado ?? null)
+      || v.contexto !== (caso?.contexto ?? '')
       || JSON.stringify(v.objetivos) !== JSON.stringify(caso?.objetivos ?? [])
       || (this.conTemas() && JSON.stringify(v.temas) !== JSON.stringify(caso?.temasSensibles ?? []))
       || v.titulo !== (caso?.titulo ?? '');
@@ -195,7 +242,7 @@ export class DatosComponent implements CanLeave {
 
   private conErrores(): boolean {
     const errores = this.errores();
-    return !!(errores.contexto || errores.objetivos || errores.nombre);
+    return !!(errores.contexto || errores.objetivos || errores.nombre || this.errorTiempo());
   }
 
   /**
@@ -218,7 +265,7 @@ export class DatosComponent implements CanLeave {
     const v = this.valoresAGuardar();
     const descartadoAntes = this.store.descartado(); // cada rechazo deja una lista nueva: así se sabe si fue ESTE guardado
     this.aviso.set({ forma: 'guardando', texto: 'Guardando…' });
-    this.store.editarFicha(v.contexto, v.objetivos, { ...(this.conTemas() ? { temas: v.temas } : {}), titulo: v.titulo });
+    this.store.editarFicha(v.contexto, v.objetivos, { ...(this.conTemas() ? { temas: v.temas } : {}), titulo: v.titulo, tiempoEstimado: v.tiempoEstimado });
     await this.store.sincronizado();
     if (this.store.descartado() !== descartadoAntes && this.store.error()) {
       this.aviso.set({ forma: 'error', texto: 'No se pudo guardar. Lo escrito sigue en los campos; revisa el aviso.' });
@@ -239,6 +286,7 @@ export class DatosComponent implements CanLeave {
     const errores = this.errores();
     const motivos: string[] = [];
     if (errores.nombre) motivos.push('el nombre del caso');
+    if (this.errorTiempo()) motivos.push('el tiempo estimado');
     if (errores.contexto) motivos.push('el contexto');
     if (errores.objetivos) motivos.push('los objetivos');
     if (this.conTemas() && this.temaNuevo().trim()) motivos.push(`el tema «${this.temaNuevo().trim()}», que no agregaste`);

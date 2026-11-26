@@ -13,9 +13,12 @@ import { UiEmptyState } from '../../shared/ui/state/ui-empty-state';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { AvatarStore } from '../character/avatar.store';
 import { toAvatarV2 } from '../character/kit/avatar-v2';
-import { resolveCharacter } from '../character/kit/character-visual.resolver';
+import { KIT_ASSETS, resolveCharacter } from '../character/kit/character-visual.resolver';
 import { KitFigureComponent } from '../character/kit/kit-figure.component';
 import { KitService } from '../character/kit/kit.service';
+import { conNombre } from './caso/plantilla-nombre';
+import { evaluarRevision, type RevisionLeida } from './caso/revision';
+import { ladoDelRetrato } from './cinematica/tutor-caso.component';
 import { DRAFT_COPY } from './draft-copy';
 import { levelWord, milestoneMark, missedFactsText, responseClassWord } from './outcome-text.util';
 import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
@@ -53,15 +56,16 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
 
         @if (status() === 'PAUSED') {
           <!-- Pausa calmada: lo primero es poder volver; el tablero queda plegado y sin cifras en primer plano. -->
-          <p class="oc-pause-copy">{{ pauseMessage }}</p>
+          <p class="oc-pause-copy">{{ pauseNote() ? pausePendingMessage : pauseMessage }}</p>
           @if (pauseNote()) { <p class="oc-pause-note" role="status">{{ pauseNote() }}</p> }
+          @if (positionNote()) { <p class="oc-pause-note" role="status">{{ positionNote() }}</p> }
           <div class="oc-actions oc-actions--pause">
-            <!-- Pausa reanudable real: mismo intento, sin crear uno nuevo. -->
-            <button type="button" class="oc-btn oc-btn--go u-ficha u-ficha--primaria" cdkFocusInitial (click)="resume.emit()">Reanudar este intento</button>
+            <!-- BORRADOR: texto pendiente de Psicología. Pausa reanudable real: mismo intento. -->
+            <button type="button" class="oc-btn u-boton u-boton--principal" cdkFocusInitial (click)="resume.emit()">Volver al juego</button>
             @if (mode() === 'rehearsal') {
-              <a class="oc-btn oc-btn--line u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
+              <a class="oc-btn u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
             } @else {
-              <a class="oc-btn oc-btn--line u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
+              <a class="oc-btn u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
             }
           </div>
           @if (supportResources().length) {
@@ -83,28 +87,28 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
           <footer class="oc-actions">
             @if (mode() === 'rehearsal') {
               <!-- Ensayo (DSL-10): se repite o se vuelve al editor; nada de catálogo ni de portal de estudiantes. -->
-              <button type="button" class="oc-btn oc-btn--go" (click)="retry.emit()">{{ draft.rehearsalRestart.text }}</button>
-              <a class="oc-btn oc-btn--line" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
+              <button type="button" class="oc-btn u-boton u-boton--principal" (click)="retry.emit()">{{ draft.rehearsalRestart.text }}</button>
+              <a class="oc-btn u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
             } @else if (status() === 'REPLACED') {
               <!-- Ya existe un intento más nuevo: «reintentar» (forceNew) también lo reemplazaría. -->
-              <a class="oc-btn oc-btn--go" routerLink="/portal/simulador">Volver al catálogo</a>
+              <a class="oc-btn u-boton u-boton--principal" routerLink="/portal/simulador">Volver al catálogo</a>
             } @else if (status() === 'SAFE_EXITED') {
               <!-- Cierre terminal honesto: la única continuación es un intento nuevo. -->
-              <button type="button" class="oc-btn oc-btn--go" (click)="retry.emit()">Iniciar un nuevo intento</button>
-              <a class="oc-btn oc-btn--line" routerLink="/portal/simulador">Volver al catálogo</a>
+              <button type="button" class="oc-btn u-boton u-boton--principal" (click)="retry.emit()">Iniciar un nuevo intento</button>
+              <a class="oc-btn u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
             } @else {
               @if (cierreLink(); as cierre) {
                 <!-- Etapa 1 del cierre (DISENO §4.5): el análisis largo vive en la página del portal. La transición de salida
                      (el mundo se funde y llega la página) la decide el router por la ruta; el estado lleva el título al encabezado. -->
-                <a class="oc-btn oc-btn--go" [routerLink]="cierre" [state]="{ umbral: { titulo: report()?.caseTitle ?? '' } }">Ver tu recorrido</a>
-                <button type="button" class="oc-btn oc-btn--line" (click)="retry.emit()">Reintentar caso</button>
+                <a class="oc-btn u-boton u-boton--principal" [routerLink]="cierre" [state]="{ umbral: { titulo: report()?.caseTitle ?? '' } }">Ver tu recorrido</a>
+                <button type="button" class="oc-btn u-boton" (click)="retry.emit()">Reintentar caso</button>
               } @else {
-                <button type="button" class="oc-btn oc-btn--go" (click)="retry.emit()">Reintentar caso</button>
+                <button type="button" class="oc-btn u-boton u-boton--principal" (click)="retry.emit()">Reintentar caso</button>
               }
-              <a class="oc-btn oc-btn--line" routerLink="/portal/simulador">Volver al simulador</a>
+              <a class="oc-btn u-boton" routerLink="/portal/simulador">Volver al simulador</a>
             }
             @if (mode() !== 'rehearsal') {
-              <a class="oc-btn oc-btn--line" routerLink="/portal/dashboard">Volver al portal</a>
+              <a class="oc-btn u-boton" routerLink="/portal/dashboard">Volver al portal</a>
             }
           </footer>
         }
@@ -113,7 +117,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
         <!-- Aviso de alcance (RN-01, borrador de Psicología): fuera de los textos validados del resultado. -->
         <ui-scope-notice />
         @if (report(); as r) {
-          <!-- Orden del cierre: final, autoevaluación breve, hitos, competencias, revisión decisión por decisión. -->
+          <!-- Orden del cierre: final, revisión del profesor, autoevaluación breve, hitos, competencias y decisiones. -->
           @if (r.ending; as ending) {
             <!-- Sin tono semáforo (R-18, §3.2 M7): el final es del mismo color para todos; ending.tone queda para el docente. -->
             <div class="oc-ending" role="status">
@@ -134,6 +138,44 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
             </div>
           }
 
+          @if (revisionEvaluada(); as revision) {
+            <section class="oc-revision" aria-labelledby="oc-revision-title">
+              <h4 class="oc-revision__titulo" id="oc-revision-title">La revisión del profesor</h4>
+              <header class="oc-revision__profesor">
+                @if (revision.retrato && retratoNoDisponible() !== revision.retrato) {
+                  <img class="oc-revision__retrato" [src]="revision.retrato" alt="" width="32" height="32"
+                    [style.--retrato-amplio]="ladoAmplio" [style.--retrato-estrecho]="ladoEstrecho"
+                    (error)="retratoNoDisponible.set(revision.retrato)" />
+                }
+                <div class="oc-revision__identidad">
+                  <p class="u-rotulo">{{ revision.nombre }}</p>
+                  @if (revision.rol) { <p class="oc-revision__rol">{{ revision.rol }}</p> }
+                </div>
+              </header>
+              <div class="oc-revision__placa u-placa u-sombra">
+                @if (revision.entrada) { <p>{{ revision.entrada }}</p> }
+                @for (capitulo of revision.capitulos; track $index) {
+                  <div class="oc-revision__capitulo">
+                    <h5>{{ capitulo.titulo }}</h5>
+                    <ol>
+                      @for (paso of capitulo.pasos; track $index) {
+                        <li [value]="paso.numero">
+                          <p class="oc-revision__paso">{{ paso.titulo }}</p>
+                          <p class="oc-revision__marca" [class.oc-revision__marca--logrado]="paso.logrado">
+                            <span aria-hidden="true">{{ paso.logrado ? '✓' : '▸' }}</span>
+                            {{ paso.logrado ? 'Lo lograste' : 'Para reforzar' }}
+                          </p>
+                          <p>{{ paso.texto }}</p>
+                        </li>
+                      }
+                    </ol>
+                  </div>
+                }
+                @if (revision.cierre) { <p class="oc-revision__cierre">{{ revision.cierre }}</p> }
+              </div>
+            </section>
+          }
+
           @if (status() === 'COMPLETED' && mode() !== 'rehearsal') {
             <!-- Autoevaluación breve (R-6): va ANTES de la revisión; vive solo aquí, no se envía ni se guarda. -->
             <section class="oc-block oc-selfcheck" aria-labelledby="oc-selfcheck-title">
@@ -149,12 +191,12 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
                 </div>
                 <p class="oc-selfcheck__note">{{ draft.selfAssessLocalNote.text }}</p>
                 <div class="oc-selfcheck__actions">
-                  <button type="button" class="oc-btn oc-btn--go" (click)="collapseSelfCheck()">{{ draft.selfAssessDone.text }}</button>
-                  <button type="button" class="oc-btn oc-btn--line" (click)="collapseSelfCheck()">{{ draft.selfAssessSkip.text }}</button>
+                  <button type="button" class="oc-btn u-boton u-boton--principal" (click)="collapseSelfCheck()">{{ draft.selfAssessDone.text }}</button>
+                  <button type="button" class="oc-btn u-boton" (click)="collapseSelfCheck()">{{ draft.selfAssessSkip.text }}</button>
                 </div>
               } @else {
                 <p class="oc-selfcheck__note">{{ draft.selfAssessCollapsed.text }}</p>
-                <button #selfEdit type="button" class="oc-btn oc-btn--line" (click)="reopenSelfCheck()">{{ draft.selfAssessEdit.text }}</button>
+                <button #selfEdit type="button" class="oc-btn u-boton" (click)="reopenSelfCheck()">{{ draft.selfAssessEdit.text }}</button>
               }
             </section>
           }
@@ -224,7 +266,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
                   <div aria-busy="true"><ui-skeleton shape="card" [lines]="3" /></div>
                 }
                 @case ('error') {
-                  <ui-error-state [kind]="errorKind()" [status]="errorStatus()" [message]="draft.decisionsError.text" (retry)="reloadDecisions()" />
+                  <ui-error-state botonesDeJuego [kind]="errorKind()" [status]="errorStatus()" [message]="draft.decisionsError.text" (retry)="reloadDecisions()" />
                 }
                 @case ('empty') {
                   <ui-empty-state kind="no-results" [title]="draft.decisionsEmpty.text" [description]="draft.decisionsEmptyHint.text" />
@@ -338,6 +380,50 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
       padding: 14px 16px; border-radius: 16px;
       background: var(--sim-surface, rgba(27,33,51,.72)); border: 1px solid var(--sim-border, rgba(182,156,255,.22));
     }
+    .oc-revision {
+      margin-inline: auto;
+      width: min(100%, 760px);
+      padding: 4px 4px 10px;
+      font-family: var(--pixel-f-texto);
+      color: var(--pixel-tinta);
+      overflow-wrap: anywhere;
+      line-height: 1.55;
+    }
+    .oc-revision p, .oc-revision h4, .oc-revision h5 { margin: 0; }
+    .oc-revision .oc-revision__titulo { margin-bottom: 8px; font-size: 1.125rem; }
+    .oc-revision__profesor { display: flex; align-items: flex-end; gap: 12px; padding-inline: 4px; }
+    .oc-revision__retrato {
+      --lado-retrato: var(--retrato-amplio);
+      box-sizing: content-box;
+      flex: none;
+      width: var(--lado-retrato);
+      height: var(--lado-retrato);
+      image-rendering: pixelated;
+      border: calc(2 * var(--pixel-px)) solid var(--pixel-contorno);
+      background: var(--pixel-penumbra-alzada);
+    }
+    .oc-revision__identidad { min-width: 0; padding-bottom: 6px; }
+    .oc-revision__identidad .u-rotulo { margin: 0; white-space: normal; }
+    .oc-revision .oc-revision__rol { margin-top: 4px; font-size: .875rem; color: var(--pixel-tinta-suave); }
+    .oc-revision__placa {
+      display: grid;
+      gap: 18px;
+      padding: clamp(8px, 2vw, 20px);
+      font-size: max(1rem, calc(var(--pixel-tam) * 1.15));
+    }
+    .oc-revision__capitulo h5 { font-size: 1em; font-family: var(--pixel-f-nombre); color: var(--luz); }
+    .oc-revision__capitulo ol { margin: 8px 0 0; padding-inline-start: 1.75em; }
+    .oc-revision__capitulo li { padding-inline-start: .25em; }
+    .oc-revision__capitulo li + li { margin-top: 12px; }
+    .oc-revision__capitulo li::marker { color: var(--luz); font-weight: 700; }
+    .oc-revision__paso, .oc-revision__marca { font-weight: 700; }
+    .oc-revision__marca { color: var(--pixel-ambar); }
+    .oc-revision__marca span { display: inline-block; margin-inline-end: .2em; }
+    .oc-revision__marca--logrado { color: var(--pixel-hecho); }
+    .oc-revision__cierre { border-top: var(--pixel-px) solid var(--pixel-canto); padding-top: 12px; }
+    @media (max-width: 559px) {
+      .oc-revision__retrato { --lado-retrato: var(--retrato-estrecho); }
+    }
     .oc-ending {
       padding: 16px 18px; border-radius: 16px;
       background: rgba(124,77,255,.12); border: 1px solid rgba(182,156,255,.4);
@@ -418,21 +504,6 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
     .oc-btn {
       display: inline-flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer; text-decoration: none;
     }
-    /* Aspecto del cierre. La pausa no lo lleva: sus acciones son las piezas de pixel u-boton y u-ficha de la hoja común (U1). */
-    .outcome:not(.outcome--pause) .oc-btn {
-      padding: 8px 20px; border-radius: 12px; font-weight: 900;
-      border: 1px solid var(--sim-border, rgba(182,156,255,.22)); background: var(--sim-surface-2, rgba(18,24,42,.6)); color: var(--sim-ink, #F4F7FB);
-    }
-    .outcome:not(.outcome--pause) .oc-btn--line { background: transparent; color: var(--sim-ink-soft, rgba(244,247,251,.74)); }
-    .outcome:not(.outcome--pause) .oc-btn--go { background: linear-gradient(90deg, var(--sim-purple, #7C4DFF), #6336e0); border-color: transparent; color: #fff; }
-    /* Hover solo con puntero fino (un híbrido táctil no queda pegado) y estilo de pulsado en todas las acciones. */
-    @media (hover: hover) and (pointer: fine) {
-      .outcome:not(.outcome--pause) .oc-btn:hover { border-color: rgba(182,156,255,.55); background: rgba(124,77,255,.18); }
-      .outcome:not(.outcome--pause) .oc-btn--go:hover { filter: brightness(1.08); }
-    }
-    .outcome:not(.outcome--pause) .oc-btn:active { transform: translateY(1px); }
-    .outcome:not(.outcome--pause) .oc-btn:focus-visible, .outcome:not(.outcome--pause) .oc-details summary:focus-visible { outline: 3px solid #C9B3FF; outline-offset: 3px; }
-
     /* Pausa calmada: acciones arriba, sin tablero en primer plano. */
     .oc-pause-note { margin: 0; max-width: 60ch; font-size: var(--ds-type-body-s-size); line-height: 1.5; color: var(--sim-ink-soft, rgba(244,247,251,.74)); }
     .oc-pause-copy { margin: 0; max-width: 60ch; font-size: 1rem; line-height: 1.6; color: var(--sim-ink-soft, rgba(244,247,251,.74)); }
@@ -468,7 +539,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
     }
     .outcome--pause .oc-head__copy h3 { font-family: var(--pixel-f-texto); font-weight: 700; color: var(--pixel-tinta); }
     .outcome--pause .oc-pause-copy { color: var(--pixel-tinta); }
-    .outcome--pause .oc-actions--pause { align-items: center; gap: calc(4 * var(--pixel-px)); }
+    .outcome--pause .oc-actions--pause { align-items: center; gap: max(8px, calc(4 * var(--pixel-px))); }
     .outcome--pause .oc-btn, .outcome--pause .u-ficha { padding: 0 calc(8 * var(--pixel-px)) 1px; }
     .outcome--pause .oc-support {
       padding: calc(3 * var(--pixel-px)) calc(5 * var(--pixel-px)) calc(4 * var(--pixel-px)); border-radius: 0;
@@ -507,6 +578,32 @@ export class AttemptOutcomeComponent {
   readonly playerVisual = computed(() => {
     const bundle = this.kit.bundle();
     return bundle ? resolveCharacter(bundle, { kind: 'jugador', avatar: toAvatarV2(this.avatarStore.avatar()) }) : null;
+  });
+
+  readonly revision = input<RevisionLeida | null>(null);
+  readonly nombre = input('');
+  protected readonly retratoNoDisponible = signal<string | null>(null);
+  private readonly dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
+  protected readonly ladoAmplio = `${ladoDelRetrato(this.dpr, false)}px`;
+  protected readonly ladoEstrecho = `${ladoDelRetrato(this.dpr, true)}px`;
+  protected readonly revisionEvaluada = computed(() => {
+    const datos = this.revision();
+    const cumplidos = this.report()?.milestones?.done;
+    if (this.status() !== 'COMPLETED' || !datos || !Array.isArray(cumplidos)) return null;
+    const claves = cumplidos.map(hito => hito?.key);
+    if (claves.some(clave => typeof clave !== 'string' || !clave.trim())) return null;
+    const nombre = this.nombre();
+    return {
+      nombre: datos.nombre,
+      rol: datos.rol,
+      retrato: datos.recipeId ? `${KIT_ASSETS}/${datos.recipeId}/portrait-neutral.png` : null,
+      entrada: conNombre(datos.entrada, nombre),
+      capitulos: evaluarRevision(datos, claves).map(capitulo => ({
+        ...capitulo,
+        pasos: capitulo.pasos.map(paso => ({ ...paso, texto: conNombre(paso.texto, nombre) })),
+      })),
+      cierre: conNombre(datos.cierre, nombre),
+    };
   });
 
   /** Dónde estaba el foco antes de abrirse el resultado o la pausa: a ese sitio vuelve al cerrarse (H-05, 2.4.3). */
@@ -585,6 +682,7 @@ export class AttemptOutcomeComponent {
   readonly supportResources = input<string[]>([]);
   /** Pausa local aún sin registrar en el servidor (sin conexión): la línea discreta que lo dice; `null` cuando ya quedó registrada. */
   readonly pauseNote = input<string | null>(null);
+  readonly positionNote = input<string | null>(null);
   /**
    * Intento cuyo reporte del dueño trae «Tus decisiones» (C2). Lo pasa quien llama solo al completar: sin id no hay
    * petición. Con el id, `decisionReview` sale del reporte congelado, no de la respuesta de la última decisión.
@@ -664,7 +762,9 @@ export class AttemptOutcomeComponent {
   }
 
   /** Texto tranquilizador de la pausa: sin penalización y sin cifras en primer plano. */
-  readonly pauseMessage = 'Tu avance quedó guardado exactamente donde estabas. No hay penalización: puedes retomarlo cuando quieras.';
+  // BORRADOR: texto pendiente de Psicología.
+  readonly pausePendingMessage = 'Tu caso está en pausa. Puedes volver cuando se registre la pausa.';
+  readonly pauseMessage = 'La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.';
 
   /** Título de la pantalla. La pausa siempre dice «pausa» (el e2e la localiza por su nombre accesible). */
   title(): string {
