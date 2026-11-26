@@ -41,7 +41,7 @@ def test_carga_completa_e_idempotente(documento, autor):
     assert version.scene_maps.count() == 24
     assert version.characters.count() == 13
     assert version.clinical_tools.count() == 5
-    assert sum(sala.map_objects.count() for sala in version.scene_maps.all()) == 300
+    assert sum(sala.map_objects.count() for sala in version.scene_maps.all()) == 299
     otro_autor = CustomUser.objects.create_user(email='otro@example.test', password='prueba', role='PROFESOR')
     assert cargar(plan, otro_autor).pk == version.pk
     assert SimulationCase.objects.count() == 1
@@ -58,6 +58,13 @@ def test_carga_completa_e_idempotente(documento, autor):
 def test_rechaza_contenido_no_soportado_sin_escribir(documento, autor):
     documento['x-siep']['escenas'][0]['novedad'] = True
     with pytest.raises(ErrorDeCarga, match='no soportado'):
+        cargar(traducir(documento), autor)
+    assert not SimulationCase.objects.exists()
+
+
+def test_rechaza_codigo_de_herramienta_con_arroba(documento, autor):
+    documento['x-siep']['herramientas'][0]['codigo'] = 'PAP@gloria'
+    with pytest.raises(ErrorDeCarga, match="'@' está reservado"):
         cargar(traducir(documento), autor)
     assert not SimulationCase.objects.exists()
 

@@ -115,6 +115,19 @@ def _evento(intento, tipo, detalle, solicitud=None):
     AttemptEvent.objects.create(attempt=intento, node=intento.current_node, event_type=tipo, detail=detalle, request_id=solicitud)
 
 
+def _registrar_persona(intento, estado, clave, *otras_claves):
+    hablados_aqui = world._hablados_aqui(intento, estado)
+    disponibilidad_mundo.registrar(estado, "talked", clave)
+    estado.flags = {
+        **estado.flags,
+        "viewedNpcKeys": list(dict.fromkeys([*estado.flags.get("viewedNpcKeys", []), clave, *otras_claves])),
+        world.HABLADOS_POR_NODO: {
+            **estado.flags.get(world.HABLADOS_POR_NODO, {}),
+            str(intento.current_node_id): list(dict.fromkeys([*hablados_aqui, clave])),
+        },
+    }
+
+
 def interactuar(usuario, identificador, clave):
     def ejecutar(intento):
         world._activo(intento)
@@ -129,9 +142,7 @@ def interactuar(usuario, identificador, clave):
         if dialogo and dialogo["key"] not in estado.viewed_dialogue_keys:
             estado.viewed_dialogue_keys = [*estado.viewed_dialogue_keys, dialogo["key"]]
         if dialogo and objeto.object_type == "PERSON":
-            disponibilidad_mundo.registrar(estado, "talked", clave)
-            vistos = estado.flags.get("viewedNpcKeys", [])
-            estado.flags = {**estado.flags, "viewedNpcKeys": list(dict.fromkeys([*vistos, clave, dialogo["key"]]))}
+            _registrar_persona(intento, estado, clave, dialogo["key"])
         herramienta = objeto.tool_code or None
         if herramienta and herramienta not in estado.inventory:
             estado.inventory = [*estado.inventory, herramienta]
@@ -171,12 +182,19 @@ def usar(usuario, identificador, datos):
         solicitud = normalize_request_id(datos.get("requestId"))
         detalle = f"Herramienta usada: {codigo}" + (f" sobre {objetivo}" if objetivo else "") + f" — {'pertinente' if pertinente else 'no pertinente'}"
         anterior = intento.events.filter(request_id=solicitud).first() if solicitud else None
-        if anterior and (anterior.event_type != "TOOL_USED" or anterior.detail != detalle):
+        if anterior and (anterior.event_type != "TOOL_USED" or anterior.node_id != intento.current_node_id
+                         or anterior.detail != detalle):
             raise ValidationError("requestId ya corresponde a otra acción.")
         uso = codigo + (f"@{objetivo}" if objetivo else "")
-        usado = uso in estado.used_tool_keys
+        usos_aqui = world._usos_aqui(intento, estado)
+        usado = uso in usos_aqui
         if not usado and not anterior:
-            estado.used_tool_keys = [*estado.used_tool_keys, uso]
+            if uso not in estado.used_tool_keys:
+                estado.used_tool_keys = [*estado.used_tool_keys, uso]
+            por_nodo = estado.flags.get(world.USOS_POR_NODO, {})
+            estado.flags = {**estado.flags, world.USOS_POR_NODO: {
+                **por_nodo, str(intento.current_node_id): [*usos_aqui, uso],
+            }}
             estado.save()
             _evento(intento, "TOOL_USED", detalle, solicitud)
         return {"world": world._mundo(intento, estado), "toolCode": codigo, "targetKey": objetivo,
@@ -201,10 +219,8 @@ def personaje(usuario, identificador, clave):
         else:
             objeto = get_object_or_404(MapObject, scene_map=estado.scene_map, object_key=clave, object_type="PERSON", visible=True)
             _cerca(estado, objeto)
-        disponibilidad_mundo.registrar(estado, "talked", clave)
-        vistos = estado.flags.get("viewedNpcKeys", [])
-        estado.flags = {**estado.flags, "viewedNpcKeys": list(dict.fromkeys([*vistos, clave]))}
+        _registrar_persona(intento, estado, clave)
         estado.save()
-        _evento(intento, "NPC_DIALOGUE_VIEWED", f"NPC escuchado: {clave}")
+        _evento(intento, "NPC_DIALOGUE_VIEWED", f"{world.PREFIJO_NPC_ESCUCHADO}{clave}")
         return world._mundo(intento, estado)
     return world._ejecutar(usuario, identificador, ejecutar)

@@ -37,6 +37,19 @@ def test_editar_el_clon_no_toca_el_original(caso):
     assert caso['inicio'].narrative == 'Inicio' and caso['opciones'][0].text == 'Opción'
 
 
+def test_clon_rechaza_un_codigo_de_herramienta_con_arroba(caso):
+    original = caso['version']
+    original.status = 'ARCHIVED'
+    original.save(update_fields=['status'])
+    original.clinical_tools.create(tool_code='PAP@gloria', label='PAP')
+
+    respuesta = clonar(caso)
+    assert respuesta.status_code == 400, respuesta.content
+    assert respuesta.json()['field'] == 'toolCode'
+    assert "'@' está reservado" in respuesta.json()['message']
+    assert list(caso['caso'].versions.values_list('pk', flat=True)) == [original.pk]
+
+
 def test_no_se_clona_un_borrador_409(caso):
     respuesta = clonar(caso)
     assert respuesta.status_code == 409 and respuesta.data['code'] == 'INVALID_TRANSITION'

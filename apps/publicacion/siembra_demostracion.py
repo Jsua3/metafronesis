@@ -1,7 +1,7 @@
 """Siembra de demostración (SIEP-234): deja un entorno listo para mostrar el simulador.
 
-Crea, solo lo que falta, docentes, estudiantes, grupos con membresía activa, una rúbrica y el caso insignia
-SIM-VBG-002 publicado y asignado a los grupos. Todo en una transacción: si algo falla, no queda nada a medias.
+Crea, solo lo que falta, docentes, estudiantes, grupos con membresía activa y una rúbrica. Publica y asigna a los
+grupos la versión vigente del caso insignia SIM-VBG-002 y retira las anteriores. Todo en una transacción.
 
 Las cuentas nuevas reciben una contraseña TEMPORAL común que llega de fuera (variable de entorno, nunca del código) y
 quedan con cambio obligatorio al primer ingreso. Las cuentas que ya existían no se tocan. El módulo no imprime la clave.
@@ -24,7 +24,7 @@ from apps.publicacion import ciclo
 from apps.publicacion.arbol import arbol_de
 from apps.simulation.casedef.escritor_insignia import ErrorDeCarga, cargar
 from apps.simulation.casedef.insignia import traducir
-from apps.simulation.models import CaseVersion, CaseVersionStatus, Competency, Rubric, RubricCriterion
+from apps.simulation.models import CaseVersion, CaseVersionStatus, Competency, Rubric, RubricCriterion, SimulationCase
 from apps.simulation.services import rubricas
 from apps.users.models import CustomUser, PermisoDeAutoria, UserRole
 from shared.exceptions import ApiError
@@ -104,6 +104,7 @@ class ErrorDeSiembra(Exception):
 class Informe:
     creado: list = field(default_factory=list)
     existente: list = field(default_factory=list)
+    archivado: list = field(default_factory=list)
 
     def anotar(self, creado, texto):
         (self.creado if creado else self.existente).append(texto)
@@ -181,8 +182,9 @@ def _caso_insignia(autora, publicador, rubrica, informe):
     """
     plan = traducir(json.loads(RUTA_DOCUMENTO.read_text(encoding="utf-8")))
     plan = replace(plan, version=MappingProxyType({**plan.version, "estimated_minutes": MINUTOS_ESTIMADOS}))
-    existente = CaseVersion.objects.filter(simulation_case__code=plan.caso["code"],
-                                           semantic_version=plan.version["semantic_version"]).first()
+    # Serializa el reemplazo por caso, también cuando la versión del documento ya estaba publicada.
+    caso = SimulationCase.objects.select_for_update().filter(code=plan.caso["code"]).first()
+    existente = caso.versions.filter(semantic_version=plan.version["semantic_version"]).first() if caso else None
     if existente is not None and existente.status == CaseVersionStatus.PUBLISHED:
         informe.existente.append(f"caso {plan.caso['code']} versión {existente.semantic_version} (PUBLISHED)")
         return existente
@@ -230,4 +232,13 @@ def sembrar(publicador_correo, clave):
         assignment_service.create_assignment(
             grupo.profesor, {"caseVersionId": version.pk, "target": {"type": "GROUP", "groupId": grupo.pk}})
         informe.creado.append(f"asignación del caso a {grupo.codigo}")
+    otras_publicadas = (CaseVersion.objects.select_for_update()
+        .filter(simulation_case_id=version.simulation_case_id, status=CaseVersionStatus.PUBLISHED)
+        .exclude(pk=version.pk).order_by("pk"))
+    for anterior in otras_publicadas:
+        ciclo.archivar(publicador, anterior.pk)
+        informe.archivado.append(f"versión {anterior.semantic_version} archivada: la reemplaza la {version.semantic_version}")
+    CaseAssignment.objects.filter(
+        grupo__in=grupos, case_version__simulation_case_id=version.simulation_case_id, active=True,
+    ).exclude(case_version=version).update(active=False)
     return informe

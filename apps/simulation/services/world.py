@@ -4,7 +4,7 @@ import json
 import math
 import ipaddress
 import re
-from collections import deque
+from collections import Counter, deque
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -26,6 +26,9 @@ ANCHO_JUGADOR, ALTO_JUGADOR = 22, 16
 DESPLAZAMIENTO_BASE, VELOCIDAD_MAXIMA, SEGUNDOS_MAXIMOS = 240, 300, 30
 # Distancia máxima a la que el jugador puede cruzar una puerta.
 ALCANCE_PUERTA = 120
+USOS_POR_NODO = "usedToolKeysByNode"
+HABLADOS_POR_NODO = "viewedNpcKeysByNode"
+PREFIJO_NPC_ESCUCHADO = "NPC escuchado: "
 
 
 def _mapa_json(valor):
@@ -98,6 +101,57 @@ def _recurso_permitido(valor):
         return False
 
 
+def _usos_aqui(intento, estado):
+    por_nodo = estado.flags.get(USOS_POR_NODO, {})
+    nodo = str(intento.current_node_id)
+    if nodo in por_nodo or not estado.used_tool_keys:
+        return por_nodo.get(nodo, [])
+
+    # Los usos históricos solo guardaban la clave global y el texto del evento.
+    prefijo = "Herramienta usada: "
+    detalles = intento.events.filter(node_id=intento.current_node_id, event_type="TOOL_USED",
+                                     detail__startswith=prefijo).values_list("detail", flat=True)
+    registrados = {detalle.removeprefix(prefijo).rpartition(" — ")[0] for detalle in detalles}
+    return [clave for clave in estado.used_tool_keys
+            if clave in registrados or clave.replace("@", " sobre ", 1) in registrados]
+
+
+def _hablados_aqui(intento, estado):
+    por_nodo = estado.flags.get(HABLADOS_POR_NODO, {})
+    nodo = str(intento.current_node_id)
+    vistas = set(estado.flags.get("viewedNpcKeys", []))
+    if nodo in por_nodo or not vistas:
+        return por_nodo.get(nodo, [])
+
+    eventos = list(intento.events.filter(
+        node_id=intento.current_node_id, event_type__in=["NPC_DIALOGUE_VIEWED", "MAP_INTERACTION_OPENED"],
+        detail__isnull=False,
+    ).order_by("id").values_list("event_type", "detail"))
+    indicaciones = {detalle for tipo, detalle in eventos if tipo == "MAP_INTERACTION_OPENED"}
+    dialogos_vistos = set(estado.viewed_dialogue_keys)
+    personas_por_indicacion = {}
+    if indicaciones and dialogos_vistos and estado.synced_node_id == intento.current_node_id:
+        # Antes, la apertura solo guardaba la indicación. Se puede recuperar si identifica a un único objeto.
+        objetos = list(estado.scene_map.map_objects.filter(interaction_prompt__in=indicaciones))
+        coincidencias = Counter(objeto.interaction_prompt for objeto in objetos)
+        for objeto in objetos:
+            if (objeto.object_type == "PERSON" and objeto.object_key in vistas
+                    and coincidencias[objeto.interaction_prompt] == 1):
+                dialogo = objeto.dialoguetree_set.order_by("id").values_list("tree_key", flat=True).first()
+                if dialogo in dialogos_vistos:
+                    personas_por_indicacion[objeto.interaction_prompt] = objeto.object_key
+
+    claves = []
+    for tipo, detalle in eventos:
+        if tipo == "NPC_DIALOGUE_VIEWED" and detalle.startswith(PREFIJO_NPC_ESCUCHADO):
+            clave = detalle.removeprefix(PREFIJO_NPC_ESCUCHADO)
+            if clave in vistas:
+                claves.append(clave)
+        elif tipo == "MAP_INTERACTION_OPENED" and detalle in personas_por_indicacion:
+            claves.append(personas_por_indicacion[detalle])
+    return list(dict.fromkeys(claves))
+
+
 def _mundo(intento, estado):
     mapa = estado.scene_map
     ambiente = _mapa_json(mapa.ambient_json)
@@ -123,7 +177,9 @@ def _mundo(intento, estado):
                    "category": herramienta.category, "description": herramienta.description, "active": herramienta.active}
                   for herramienta in ClinicalTool.objects.filter(case_version_id=intento.case_version_id, active=True).order_by("id")],
         "inventory": estado.inventory, "inspectedObjectKeys": estado.inspected_object_keys,
-        "viewedDialogueKeys": estado.viewed_dialogue_keys, "usedToolKeys": estado.used_tool_keys,
+        "viewedDialogueKeys": estado.viewed_dialogue_keys, "viewedNpcKeysHere": _hablados_aqui(intento, estado),
+        "usedToolKeys": estado.used_tool_keys,
+        "usedToolKeysHere": _usos_aqui(intento, estado),
         "flags": {clave: estado.flags[clave] for clave in ("viewedNpcKeys",) if clave in estado.flags},
         "decisionOptions": [{"id": opcion.id, "text": opcion.text} for opcion in opciones], "comments": comentarios, "layout": world_layout.construir(intento, mapa),
     }

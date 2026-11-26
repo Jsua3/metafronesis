@@ -25,8 +25,8 @@ def test_traduce_el_documento_real_sin_perder_elementos(documento):
     assert len(plan.nodos) == len(escenas) == 24
     assert len(plan.opciones) == sum(len(escena["opciones"]) for escena in escenas) == 62
     assert len(plan.salas) == len(mapas) == 24
-    assert len(plan.objetos) == sum(len(mapa["objetos"]) for mapa in mapas) == 300
-    assert len(plan.zonas) == sum(len(mapa["colisiones"]) for mapa in mapas) == 267
+    assert len(plan.objetos) == sum(len(mapa["objetos"]) for mapa in mapas) == 299
+    assert len(plan.zonas) == sum(len(mapa["colisiones"]) for mapa in mapas) == 266
     assert len(plan.dialogos) == sum(len(mapa["dialogos"]) for mapa in mapas) == 87
     assert len(plan.comentarios) == 12
     assert len(plan.personajes) == 13

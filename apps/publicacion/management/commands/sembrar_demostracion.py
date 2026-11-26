@@ -2,7 +2,7 @@
 
     SIEP_SEMILLA_CLAVE=... python manage.py sembrar_demostracion --confirmar --publicador admin@ejemplo.org
 
-La contraseña temporal común llega por ``SIEP_SEMILLA_CLAVE`` y no se imprime nunca. Es idempotente: crea lo que falta.
+La contraseña temporal común llega por ``SIEP_SEMILLA_CLAVE`` y no se imprime nunca. La siembra es idempotente.
 """
 import os
 
@@ -31,4 +31,8 @@ class Command(BaseCommand):
         self.stdout.write(f"Ya existía ({len(informe.existente)}):")
         for linea in informe.existente:
             self.stdout.write(f"  {linea}")
+        if informe.archivado:
+            self.stdout.write(f"Archivado ({len(informe.archivado)}):")
+            for linea in informe.archivado:
+                self.stdout.write(f"  {linea}")
         self.stdout.write("Las cuentas nuevas tienen una contraseña temporal y deben cambiarla al primer ingreso.")

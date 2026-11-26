@@ -240,6 +240,11 @@ class DialogueChoice(models.Model):
         ordering = ["display_order"]
 
 
+def validar_codigo_herramienta(codigo):
+    if isinstance(codigo, str) and "@" in codigo:
+        raise ValidationError("El carácter '@' está reservado para separar la herramienta de su objetivo.")
+
+
 class ClinicalTool(models.Model):
     case_version = models.ForeignKey(
         CaseVersion, on_delete=models.CASCADE, null=True, blank=True,

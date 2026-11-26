@@ -12,7 +12,7 @@
     ],
     "rubrica": "RUB-01",
     "titulo": "Violencia Familiar y Tentativa de Feminicidio — tres capítulos",
-    "version": "2.0.0"
+    "version": "2.0.4"
   },
   "escenas": [
     {
@@ -61,7 +61,7 @@
             "clasificacion": "INADECUADA",
             "id": "E02-1",
             "siguienteEscena": "E03",
-            "texto": "Notificar de inmediato la muerte de la niña a Gloria y a la familia, sin estabilización previa ni protocolo.",
+            "texto": "Decirles ahí mismo que la niña murió, con lo que alcanzaste a oír, para que dejen de esperar sin respuestas.",
             "conductaProhibida": true,
             "motivoProhibicion": "Comunicar una muerte sin protocolo ni contención aumenta el daño y revictimiza a la familia."
           },
@@ -75,7 +75,7 @@
             "clasificacion": "INADECUADA",
             "id": "E02-3",
             "siguienteEscena": "E03",
-            "texto": "Acompañar al patrullero a interrogar a Yuliana, herida, para obtener detalles del agresor antes de que entre a cirugía.",
+            "texto": "Acompañar al patrullero a preguntarle a Yuliana hacia dónde pudo irse Edwin, antes de que entre a cirugía.",
             "conductaProhibida": true,
             "motivoProhibicion": "Priorizar la información sobre la estabilización vulnera la dignidad de la víctima y la revictimiza."
           }
@@ -276,7 +276,7 @@
       }
     },
     {
-      "descripcion": "Son las 2 de la mañana. La familia descansa en la sala de escucha con Marcela. Patricia, la psicóloga jefe, llegó por la gravedad del caso. Antes de seguir, quiere ordenar el marco normativo que orienta la atención hospitalaria.",
+      "descripcion": "Son las 2 de la mañana. La familia descansa con Marcela. Patricia, la psicóloga jefe, llegó por la gravedad del caso. Antes de seguir, quiere ordenar el marco normativo que orienta la atención hospitalaria.",
       "id": "E09",
       "orden": 9,
       "titulo": "La psicóloga jefe",
@@ -374,7 +374,7 @@
       }
     },
     {
-      "descripcion": "Son las 7 de la mañana. Afuera ya es de día. El equipo le dio la noticia a Yuliana, con el cirujano y con Gloria presentes. Antes de entregar el turno, Patricia quiere saber qué quedó activado para protegerla.",
+      "descripcion": "Son las 7 de la mañana. Afuera ya es de día. A las 8, con el médico tratante y con Gloria, el equipo va a acompañar a Yuliana con lo de Salomé. Antes de entregar el turno, Patricia quiere saber qué quedó activado para protegerla.",
       "id": "E12",
       "orden": 12,
       "titulo": "Entrega de turno: la ruta",
@@ -438,7 +438,7 @@
       }
     },
     {
-      "descripcion": "Quince días después, tras el alta médica, Yuliana llega a la Comisaría de Familia acompañada por Gloria. Hoy se valora el riesgo y se deciden las medidas definitivas; las provisionales se dictaron la mañana del ataque. Edwin sigue prófugo y su familia la presiona para «arreglar las cosas en familia». Ahora eres del equipo psicosocial de la comisaría.",
+      "descripcion": "Quince días después, tras el alta médica, Yuliana llega a la Comisaría de Familia acompañada por Gloria. Hoy se valora el riesgo y se deciden las medidas definitivas; las provisionales se dictaron la mañana siguiente al ataque. Edwin sigue prófugo y su familia la presiona para «arreglar las cosas en familia». Ahora eres del equipo psicosocial de la comisaría.",
       "id": "E14",
       "orden": 14,
       "titulo": "Capítulo 3 · Quince días después",
@@ -487,7 +487,7 @@
             "clasificacion": "ADECUADA",
             "id": "E15-2",
             "siguienteEscena": "E16",
-            "texto": "El informe del hospital es de una sola línea. Aplicar la valoración de riesgo en privado, preguntando solo lo necesario y explicándole para qué sirve cada pregunta."
+            "texto": "El informe del hospital no sirve de base. Aplicar la valoración de riesgo en privado, preguntando solo lo necesario y explicándole para qué sirve cada pregunta."
           },
           {
             "clasificacion": "RIESGOSA",
@@ -499,7 +499,7 @@
             "clasificacion": "INADECUADA",
             "id": "E15-4",
             "siguienteEscena": "E16",
-            "texto": "Pedirle que cuente de nuevo, con detalle, todo lo que pasó esa noche, para tener tu propia versión.",
+            "texto": "Pedirle que cuente de nuevo, con detalle, todo lo que pasó esa noche, para confirmar que el informe no omita nada.",
             "conductaProhibida": true,
             "motivoProhibicion": "Exigir el relato detallado de nuevo revictimiza sin aportar a la protección."
           }
@@ -508,7 +508,7 @@
       }
     },
     {
-      "descripcion": "Yuliana tiene secuelas físicas y trauma complejo. Con la valoración hecha, la doctora Helena, la comisaria, necesita tu concepto para dictar las medidas y te pregunta con qué respaldo legal se restablecen los derechos.",
+      "descripcion": "Yuliana tiene secuelas físicas y un impacto emocional profundo. Con la valoración hecha, la doctora Helena, la comisaria, necesita tu concepto para dictar las medidas y te pregunta con qué respaldo legal se restablecen los derechos.",
       "id": "E16",
       "orden": 16,
       "titulo": "El marco del restablecimiento",
@@ -570,7 +570,7 @@
       }
     },
     {
-      "descripcion": "Mientras Yuliana está con Liliana en orientación jurídica, Gloria te espera en la sala de espera. Emanuel vino del colegio. Gloria te cuenta que Yuliana se va a quedar con ella y que Emanuel no ha vuelto a dormir bien desde esa noche.",
+      "descripcion": "Mientras Yuliana está con Liliana en orientación jurídica, Gloria te espera en la sala de espera. Emanuel vino con ella. Gloria te cuenta que Yuliana se va a quedar con ella y que Emanuel no ha vuelto a dormir bien desde esa noche.",
       "id": "E18",
       "orden": 18,
       "titulo": "Los que no están en la sala",
@@ -632,7 +632,7 @@
       }
     },
     {
-      "descripcion": "Es tarde. Yuliana y Gloria se fueron con la patrulla al alojamiento temporal. El consultorio queda en silencio. Antes de cerrar el caso, abres tu libreta.",
+      "descripcion": "Es tarde. Yuliana y Gloria ya salieron de la comisaría. El consultorio queda en silencio. Antes de cerrar el caso, abres tu libreta.",
       "id": "E20",
       "orden": 20,
       "titulo": "Cierre: la bitácora",
@@ -745,7 +745,7 @@
   ],
   "versionDsl": "1.0",
   "x-siep": {
-    "contexto": "Viernes, 10:40 de la noche, en un barrio con altas condiciones de vulnerabilidad: pobreza, violencias urbanas, expendio de drogas y grupos armados ilegales.\n\nAndrés, de 28 años, vive con su pareja, Yuliana, de 22, y con Salomé, la hija de 3 años de ella. Hace meses que la controla: le revisa el celular, la cela, le dice que sin él no es nadie. Una vez la amenazó: «si te vas, te mato». Esa tarde volvió a insultarla —«mantenida», «sin mí no eres nadie»— y la acusó de serle infiel. Yuliana llamó a su mamá: al día siguiente se iría con Salomé para su casa.\n\nEsa noche, cuando Edwin regresó, Yuliana le reclamó por haberse perdido toda la tarde. Él sacó una navaja. Salomé murió. Yuliana recibió 28 heridas. Una vecina llamó a la línea 123; cuando llegó la policía, Edwin ya había huido.\n\nEres del equipo de psicología de urgencias del hospital. Te llaman a las 11:20 p. m.: la familia acaba de llegar y todavía no sabe lo de Salomé. En el capítulo 3, quince días después, serás del equipo psicosocial de la Comisaría de Familia.",
+    "contexto": "Viernes, 10:40 de la noche, en un barrio con altas condiciones de vulnerabilidad: pobreza, violencias urbanas, expendio de drogas y grupos armados ilegales.\n\nEdwin, de 28 años, vive con su pareja, Yuliana, de 22, y con Salomé, la hija de 3 años de ella. Hace meses que la controla: le revisa el celular, la cela, le dice que sin él no es nadie. Una vez la amenazó: «si te vas, te mato». Esa tarde volvió a insultarla —«mantenida», «sin mí no eres nadie»— y la acusó de serle infiel. Yuliana llamó a su mamá: al día siguiente se iría con Salomé para su casa.\n\nEsa noche, cuando Edwin regresó, Yuliana le reclamó por haberse perdido toda la tarde. Él sacó una navaja. Salomé murió. Yuliana recibió 28 heridas. Una vecina llamó a la línea 123; cuando llegó la policía, Edwin ya había huido.\n\nEres del equipo de psicología de urgencias del hospital. Te llaman a las 11:20 p. m.: la familia acaba de llegar y todavía no sabe lo de Salomé. En el capítulo 3, quince días después, serás del equipo psicosocial de la Comisaría de Familia.",
     "escenas": [
       {
         "apoyo": [],
@@ -794,6 +794,7 @@
                   "escena": "casa-ventana",
                   "momento": "tarde",
                   "siluetas": [
+                    "mujer",
                     "nina"
                   ],
                   "duracionMs": 7500,
@@ -803,7 +804,10 @@
                   "escena": "casa-ventana",
                   "momento": "noche",
                   "luzVentana": true,
-                  "duracionMs": 5500,
+                  "siluetas": [
+                    "hombre"
+                  ],
+                  "duracionMs": 6000,
                   "subtitulo": "A las 10:40 de la noche, Edwin regresó."
                 },
                 {
@@ -816,6 +820,9 @@
                   "escena": "calle-emergencia",
                   "momento": "noche",
                   "duracionMs": 7500,
+                  "personas": [
+                    "vecina"
+                  ],
                   "subtitulo": "Una vecina llamó a la línea 123. Cuando llegó la policía, Edwin ya había huido."
                 },
                 {
@@ -828,6 +835,11 @@
                   "escena": "urgencias-familia",
                   "momento": "noche",
                   "duracionMs": 8000,
+                  "personas": [
+                    "abuela-familia",
+                    "hermano-mayor",
+                    "hermano-adolescente"
+                  ],
                   "subtitulo": "Gloria, la mamá de Yuliana, y sus hijos Óscar y Emanuel llegaron minutos después. Todavía no saben lo de Salomé."
                 },
                 {
@@ -846,7 +858,7 @@
                 "Hola, {nombre}. Lo que acabas de ver pasa en Colombia más veces de las que quisiéramos.",
                 "Esta noche no vas a resolver el crimen: eso le toca a la Fiscalía. Tu trabajo es otro: que esta familia no quede sola y que Yuliana quede protegida.",
                 "En el servicio vas a encontrar cinco herramientas: la guía de primeros auxilios psicológicos, la tarjeta del protocolo EPICEE, el formato de valoración de riesgo, el flujograma de la ruta de protección y tu libreta. Úsalas cuando la situación lo pida, no antes.",
-                "Te dejo el paso a paso. Lo vas a tener en la tarjeta del objetivo todo el tiempo:",
+                "Te dejo el paso a paso. Lo vas a tener todo el tiempo en la tarjeta del objetivo, arriba a la izquierda:",
                 "Si en algún momento esto te afecta, la salida segura está siempre a la mano. Entra."
               ],
               "pasos": [
@@ -896,7 +908,7 @@
                 {
                   "texto": "Usa la guía de PAP con don Efraín: observa antes de intervenir.",
                   "hecho": {
-                    "used": "PAP"
+                    "used": "PAP@efrain"
                   },
                   "lugar": "efrain"
                 },
@@ -1517,8 +1529,8 @@
               "texto": "Don Efraín cuida el paso a cirugía.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 330,
-              "y": 330,
+              "x": 392,
+              "y": 332,
               "z": 0
             },
             {
@@ -1537,7 +1549,7 @@
                 "apoyo": "pies",
                 "expresion": "en-crisis",
                 "movimiento": "quieto",
-                "recipeId": "estudiante-consultante"
+                "recipeId": "hermano-mayor"
               },
               "movimiento": {},
               "opcion": null,
@@ -1546,8 +1558,8 @@
               "texto": "Óscar discute con el vigilante. Quiere pasar a cirugía.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 420,
-              "y": 360,
+              "x": 472,
+              "y": 372,
               "z": 0
             },
             {
@@ -1595,7 +1607,7 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
@@ -1975,7 +1987,7 @@
                 {
                   "texto": "Usa la guía de PAP con Gloria: escuchar sin presionar.",
                   "hecho": {
-                    "used": "PAP"
+                    "used": "PAP@gloria"
                   },
                   "lugar": "gloria"
                 },
@@ -2087,14 +2099,6 @@
               "etiqueta": "Sillas de espera",
               "x": 477,
               "y": 394
-            },
-            {
-              "alto": 10,
-              "ancho": 46,
-              "clave": "choque-mesa-centro",
-              "etiqueta": "Mesa de centro",
-              "x": 697,
-              "y": 390
             },
             {
               "alto": 16,
@@ -2213,7 +2217,7 @@
                   "emocion": "sad",
                   "hablante": "Emanuel",
                   "orden": 2,
-                  "texto": "Salo me decía «Manu». Tiene tres años. ¿Ella está bien?"
+                  "texto": "Salo me dice «Manu». Tiene tres años. ¿Ella está bien?"
                 }
               ],
               "objeto": "mateo",
@@ -2564,34 +2568,6 @@
               "z": 0
             },
             {
-              "alto": 22,
-              "ancho": 50,
-              "clave": "mesa-centro",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Mesa de centro",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/mesa-centro.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 720,
-              "y": 400,
-              "z": 0
-            },
-            {
               "alto": 42,
               "ancho": 90,
               "clave": "sillas-espera-6",
@@ -2695,7 +2671,7 @@
                 "apoyo": "pies",
                 "expresion": "preocupada",
                 "movimiento": "quieto",
-                "recipeId": "estudiante-consultante"
+                "recipeId": "hermano-mayor"
               },
               "movimiento": {},
               "opcion": null,
@@ -2724,7 +2700,7 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
@@ -2906,7 +2882,7 @@
           {
             "emocion": "cautelosa",
             "gesto": "se-aparta",
-            "linea": "Llevo una hora preguntando lo mismo y nadie contesta.",
+            "linea": "Llevo un rato preguntando lo mismo y nadie contesta.",
             "personaje": "camilo"
           },
           {
@@ -2981,7 +2957,7 @@
               }
             },
             "id": "E02-3",
-            "retroalimentacionInmediata": "La urgencia vital y la estabilización van primero: interrogar a una víctima en shock la revictimiza. Los datos para buscar a Edwin (nombre, dirección, a dónde suele ir) los pueden dar la familia y la vecina; la declaración de Yuliana se toma después, una sola vez, por la autoridad competente.",
+            "retroalimentacionInmediata": "La urgencia vital y la estabilización van primero: interrogar a una víctima en shock la revictimiza. Los datos para buscar a Edwin (nombre, dirección, a dónde suele ir) los pueden dar la familia y la vecina; la declaración de Yuliana la toma después la autoridad competente, cuidando que no tenga que repetirla.",
             "reaccion": {
               "emocion": "en-crisis",
               "gesto": "se-agita",
@@ -3138,7 +3114,7 @@
                   "emocion": "neutral",
                   "hablante": "Don Efraín",
                   "orden": 2,
-                  "texto": "Usted vaya con la familia. Esa gente la necesita más que yo."
+                  "texto": "Usted vaya con la familia. Esa gente necesita su ayuda más que yo."
                 }
               ],
               "objeto": "efrain",
@@ -3488,12 +3464,12 @@
                   "pausaMs": 2500,
                   "puntos": [
                     {
-                      "x": 330,
-                      "y": 330
+                      "x": 392,
+                      "y": 332
                     },
                     {
-                      "x": 470,
-                      "y": 400
+                      "x": 492,
+                      "y": 404
                     }
                   ]
                 },
@@ -3506,8 +3482,8 @@
               "texto": "Don Efraín revisa la lista de visitantes.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 330,
-              "y": 330,
+              "x": 392,
+              "y": 332,
               "z": 0
             },
             {
@@ -3684,7 +3660,7 @@
                 {
                   "texto": "Usa la tarjeta EPICEE con el doctor Ospina: preparar la noticia.",
                   "hecho": {
-                    "used": "SPIKES"
+                    "used": "SPIKES@ospina"
                   },
                   "lugar": "ospina"
                 },
@@ -3862,7 +3838,7 @@
                   "emocion": "concerned",
                   "hablante": "Doctor Ospina",
                   "orden": 3,
-                  "texto": "La mamá entró a cirugía hace diez minutos. Va para largo; está grave, pero estable. La familia todavía no sabe lo de la niña."
+                  "texto": "La mamá entró a cirugía hace diez minutos. Va para largo; está grave, pero estable. Con la familia hay que hablar bien de lo de la niña: con lo confirmado y una sola voz."
                 }
               ],
               "objeto": "ospina",
@@ -4468,7 +4444,7 @@
               }
             },
             "id": "E03-2",
-            "retroalimentacionInmediata": "Sin un acuerdo sobre cuándo, cómo y con quién presente, la noticia queda en el aire y la familia sigue esperando sin saber qué. Coordinar es más que delegar.",
+            "retroalimentacionInmediata": "Si no se acuerda cuándo y cómo dar la noticia, ni quién estará presente, la noticia queda en el aire y la familia sigue esperando sin saber qué pasa. Coordinar es más que delegar.",
             "reaccion": {
               "emocion": "cautelosa",
               "gesto": "se-aparta",
@@ -4537,7 +4513,7 @@
                 {
                   "texto": "Usa la tarjeta EPICEE con Rocío: el entorno también es parte de la noticia.",
                   "hecho": {
-                    "used": "SPIKES"
+                    "used": "SPIKES@rocio"
                   },
                   "lugar": "rocio"
                 },
@@ -4642,14 +4618,6 @@
               "etiqueta": "Sillas de espera",
               "x": 477,
               "y": 394
-            },
-            {
-              "alto": 10,
-              "ancho": 46,
-              "clave": "choque-mesa-centro",
-              "etiqueta": "Mesa de centro",
-              "x": 697,
-              "y": 390
             },
             {
               "alto": 16,
@@ -5111,34 +5079,6 @@
               "z": 0
             },
             {
-              "alto": 22,
-              "ancho": 50,
-              "clave": "mesa-centro",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Mesa de centro",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/mesa-centro.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 720,
-              "y": 400,
-              "z": 0
-            },
-            {
               "alto": 42,
               "ancho": 90,
               "clave": "sillas-espera-6",
@@ -5239,7 +5179,7 @@
                 "apoyo": "pies",
                 "expresion": "cautelosa",
                 "movimiento": "quieto",
-                "recipeId": "estudiante-consultante"
+                "recipeId": "hermano-mayor"
               },
               "movimiento": {},
               "opcion": null,
@@ -5268,7 +5208,7 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
@@ -5503,7 +5443,7 @@
               }
             },
             "id": "E04-1",
-            "retroalimentacionInmediata": "Un lugar privado, donde todos puedan sentarse y con agua y pañuelos a la mano, cuida la seguridad y la comodidad de la familia y prepara el entorno para una conversación difícil (la E de EPICEE).",
+            "retroalimentacionInmediata": "Un lugar privado, con sillas para todos y agua y pañuelos a la mano, cuida la seguridad y la comodidad de la familia y prepara el entorno para una conversación difícil (la E de EPICEE).",
             "reaccion": {
               "emocion": "preocupada",
               "gesto": "se-acerca",
@@ -5704,7 +5644,7 @@
                   "emocion": "neutral",
                   "hablante": "Don Efraín",
                   "orden": 2,
-                  "texto": "Usted vaya con la familia. Esa gente la necesita más que yo."
+                  "texto": "Usted vaya con la familia. Esa gente necesita su ayuda más que yo."
                 }
               ],
               "objeto": "efrain",
@@ -6054,12 +5994,12 @@
                   "pausaMs": 2500,
                   "puntos": [
                     {
-                      "x": 330,
-                      "y": 330
+                      "x": 392,
+                      "y": 332
                     },
                     {
-                      "x": 470,
-                      "y": 400
+                      "x": 492,
+                      "y": 404
                     }
                   ]
                 },
@@ -6072,8 +6012,8 @@
               "texto": "Don Efraín revisa la lista de visitantes.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 330,
-              "y": 330,
+              "x": 392,
+              "y": 332,
               "z": 0
             },
             {
@@ -6246,7 +6186,7 @@
                 {
                   "texto": "Usa la tarjeta EPICEE con Gloria: percepción e invitación.",
                   "hecho": {
-                    "used": "SPIKES"
+                    "used": "SPIKES@gloria"
                   },
                   "lugar": "gloria"
                 },
@@ -6759,11 +6699,11 @@
               "opcion": null,
               "orientacion": "",
               "personaje": "gloria",
-              "texto": "Gloria se sienta en el borde del sillón.",
+              "texto": "Gloria está de pie junto al sillón, sin decidirse a sentarse.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 400,
-              "y": 360,
+              "x": 334,
+              "y": 364,
               "z": 0
             },
             {
@@ -6782,7 +6722,7 @@
                 "apoyo": "pies",
                 "expresion": "cautelosa",
                 "movimiento": "quieto",
-                "recipeId": "estudiante-consultante"
+                "recipeId": "hermano-mayor"
               },
               "movimiento": {},
               "opcion": null,
@@ -6811,7 +6751,7 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
@@ -7036,7 +6976,7 @@
                 {
                   "texto": "Usa la tarjeta EPICEE con Gloria: empatía.",
                   "hecho": {
-                    "used": "SPIKES"
+                    "used": "SPIKES@gloria"
                   },
                   "lugar": "gloria"
                 },
@@ -7555,11 +7495,11 @@
               "opcion": null,
               "orientacion": "",
               "personaje": "gloria",
-              "texto": "Gloria se dobla sobre sí misma.",
+              "texto": "Gloria se dobla sobre sí misma, apoyada en el sillón.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 400,
-              "y": 360,
+              "x": 334,
+              "y": 364,
               "z": 0
             },
             {
@@ -7578,7 +7518,7 @@
                 "apoyo": "pies",
                 "expresion": "en-crisis",
                 "movimiento": "quieto",
-                "recipeId": "estudiante-consultante"
+                "recipeId": "hermano-mayor"
               },
               "movimiento": {},
               "opcion": null,
@@ -7607,7 +7547,7 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
@@ -7841,9 +7781,16 @@
                 {
                   "texto": "Usa la guía de PAP con Óscar: conectar con necesidades y apoyos.",
                   "hecho": {
-                    "used": "PAP"
+                    "used": "PAP@camilo"
                   },
                   "lugar": "camilo"
+                },
+                {
+                  "texto": "Usa la tarjeta EPICEE con Gloria: la estrategia de lo que sigue.",
+                  "hecho": {
+                    "used": "SPIKES@gloria"
+                  },
+                  "lugar": "gloria"
                 },
                 {
                   "texto": "Habla con Marcela, la trabajadora social.",
@@ -8013,7 +7960,16 @@
             },
             {
               "clave": "gloria",
-              "elecciones": [],
+              "elecciones": [
+                {
+                  "clave": "epicee-estrategia",
+                  "efecto": {},
+                  "herramientaRequerida": "SPIKES",
+                  "opcion": null,
+                  "orden": 1,
+                  "texto": "Usar la tarjeta EPICEE: la estrategia de lo que sigue"
+                }
+              ],
               "emocion": "neutral",
               "hablante": "Gloria",
               "lineas": [
@@ -8022,6 +7978,12 @@
                   "hablante": "Gloria",
                   "orden": 1,
                   "texto": "(Mira por la ventana, sin ver nada.)"
+                },
+                {
+                  "emocion": "sad",
+                  "hablante": "Gloria",
+                  "orden": 2,
+                  "texto": "¿Y ahora qué hago? ¿A quién llamo? No me cabe nada en la cabeza."
                 }
               ],
               "objeto": "gloria",
@@ -8425,7 +8387,7 @@
                 "apoyo": "pies",
                 "expresion": "preocupada",
                 "movimiento": "quieto",
-                "recipeId": "estudiante-consultante",
+                "recipeId": "hermano-mayor",
                 "usoHerramienta": {
                   "PAP": "PAP · Conectar: atiende las necesidades básicas (agua, comida, un lugar para descansar, avisar a alguien), da información clara sobre lo que sigue esta noche y conecta a la familia con sus apoyos: Marcela, la tía, los vecinos. Nadie debería quedarse solo esta noche."
                 }
@@ -8452,12 +8414,15 @@
               "etiqueta": "Gloria",
               "herramienta": null,
               "icono": "person",
-              "indicacion": "Mirar a Gloria",
+              "indicacion": "Hablar con Gloria",
               "metadatos": {
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "abuela-familia"
+                "recipeId": "abuela-familia",
+                "usoHerramienta": {
+                  "SPIKES": "EPICEE · Estrategia: resume lo que se habló, acuerda con la familia los pasos de esta noche (quién se queda con Gloria, a quién avisan, qué pasa con Salomé y cuándo podrán ver a Yuliana) y asegúrate de que nadie salga de aquí sin un plan y sin alguien a su lado."
+                }
               },
               "movimiento": {},
               "opcion": null,
@@ -8486,7 +8451,7 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
@@ -8986,7 +8951,7 @@
                   "emocion": "neutral",
                   "hablante": "Don Efraín",
                   "orden": 2,
-                  "texto": "Usted vaya con la familia. Esa gente la necesita más que yo."
+                  "texto": "Usted vaya con la familia. Esa gente necesita su ayuda más que yo."
                 }
               ],
               "objeto": "efrain",
@@ -9336,12 +9301,12 @@
                   "pausaMs": 2500,
                   "puntos": [
                     {
-                      "x": 330,
-                      "y": 330
+                      "x": 392,
+                      "y": 332
                     },
                     {
-                      "x": 470,
-                      "y": 400
+                      "x": 492,
+                      "y": 404
                     }
                   ]
                 },
@@ -9354,8 +9319,8 @@
               "texto": "Don Efraín revisa la lista de visitantes.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 330,
-              "y": 330,
+              "x": 392,
+              "y": 332,
               "z": 0
             },
             {
@@ -10262,7 +10227,7 @@
               }
             },
             "id": "E08-1",
-            "retroalimentacionInmediata": "Con el agresor prófugo, armado y con una amenaza previa, el riesgo es alto: la ubicación de la víctima se protege. Confirmar dónde está puede ponerla en peligro. La seguridad es parte de la ruta desde el primer minuto.",
+            "retroalimentacionInmediata": "Con el agresor prófugo, que usó un arma y la amenazó de muerte, el riesgo es alto: la ubicación de la víctima se protege. Confirmar dónde está puede ponerla en peligro. La seguridad es parte de la ruta desde el primer minuto.",
             "reaccion": {
               "emocion": "neutral",
               "gesto": "asiente",
@@ -10438,22 +10403,6 @@
             },
             {
               "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante",
-              "etiqueta": "Silla de visitante",
-              "x": 431,
-              "y": 358
-            },
-            {
-              "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante-2",
-              "etiqueta": "Silla de visitante",
-              "x": 515,
-              "y": 358
-            },
-            {
-              "alto": 8,
               "ancho": 30,
               "clave": "choque-planta",
               "etiqueta": "Planta",
@@ -10467,6 +10416,22 @@
               "etiqueta": "Dispensador de agua",
               "x": 710,
               "y": 254
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante",
+              "etiqueta": "Silla de visita",
+              "x": 395,
+              "y": 358
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante-2",
+              "etiqueta": "Silla de visita",
+              "x": 551,
+              "y": 358
             }
           ],
           "dialogos": [
@@ -10711,62 +10676,6 @@
               "z": 0
             },
             {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 440,
-              "y": 366,
-              "z": 0
-            },
-            {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante-2",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 524,
-              "y": 366,
-              "z": 0
-            },
-            {
               "alto": 47,
               "ancho": 35,
               "clave": "planta",
@@ -10820,6 +10729,62 @@
               "visible": true,
               "x": 720,
               "y": 262,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 404,
+              "y": 366,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante-2",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 560,
+              "y": 366,
               "z": 0
             },
             {
@@ -11103,22 +11068,6 @@
             },
             {
               "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante",
-              "etiqueta": "Silla de visitante",
-              "x": 431,
-              "y": 358
-            },
-            {
-              "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante-2",
-              "etiqueta": "Silla de visitante",
-              "x": 515,
-              "y": 358
-            },
-            {
-              "alto": 8,
               "ancho": 30,
               "clave": "choque-planta",
               "etiqueta": "Planta",
@@ -11132,6 +11081,22 @@
               "etiqueta": "Dispensador de agua",
               "x": 710,
               "y": 254
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante",
+              "etiqueta": "Silla de visita",
+              "x": 395,
+              "y": 358
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante-2",
+              "etiqueta": "Silla de visita",
+              "x": 551,
+              "y": 358
             }
           ],
           "dialogos": [
@@ -11362,62 +11327,6 @@
               "z": 0
             },
             {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 440,
-              "y": 366,
-              "z": 0
-            },
-            {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante-2",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 524,
-              "y": 366,
-              "z": 0
-            },
-            {
               "alto": 47,
               "ancho": 35,
               "clave": "planta",
@@ -11471,6 +11380,62 @@
               "visible": true,
               "x": 720,
               "y": 262,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 404,
+              "y": 366,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante-2",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 560,
+              "y": 366,
               "z": 0
             },
             {
@@ -11561,7 +11526,7 @@
               }
             },
             "id": "E10-1",
-            "retroalimentacionInmediata": "Parcial: falta el protocolo para comunicarle la noticia a Yuliana, los PAP a la familia y la articulación interdisciplinaria. «Intervenir la disonancia» no es lo que Yuliana necesita al despertar.",
+            "retroalimentacionInmediata": "Parcial: faltan el protocolo para comunicarle la noticia a Yuliana, los PAP a la familia y la articulación interdisciplinaria. «Intervenir la disonancia» no es lo que Yuliana necesita al despertar.",
             "reaccion": {
               "emocion": "cautelosa",
               "gesto": "neutral",
@@ -11583,7 +11548,7 @@
               }
             },
             "id": "E10-2",
-            "retroalimentacionInmediata": "Buena base, pero incompleta: falta la evaluación psicosocial de la familia y el manejo interdisciplinario.",
+            "retroalimentacionInmediata": "Buena base, pero incompleta: faltan la evaluación psicosocial de la familia y el manejo interdisciplinario.",
             "reaccion": {
               "emocion": "neutral",
               "gesto": "neutral",
@@ -11633,7 +11598,7 @@
             "reaccion": {
               "emocion": "neutral",
               "gesto": "asiente",
-              "linea": "Ese es el plan. Yo hablo con el cirujano para que estemos todos cuando despierte.",
+              "linea": "Ese es el plan. Yo hablo con el cirujano para que estemos todos cuando le demos la noticia.",
               "personaje": "patricia"
             }
           }
@@ -11675,7 +11640,7 @@
                   "lugar": "laura"
                 },
                 {
-                  "texto": "No mientas y no decidas sola lo que le toca al equipo.",
+                  "texto": "No mientas y no decidas por tu cuenta lo que le toca al equipo.",
                   "lugar": "laura"
                 }
               ]
@@ -12135,17 +12100,19 @@
                 "apoyo": "pies",
                 "expresion": "preocupada",
                 "movimiento": "quieto",
-                "recipeId": "sobreviviente"
+                "recipeId": "sobreviviente",
+                "postura": "en-cama",
+                "cama": "cama-recuperacion"
               },
               "movimiento": {},
               "opcion": null,
               "orientacion": "",
               "personaje": "laura",
-              "texto": "Yuliana abre los ojos. Tiene vendas en los brazos y en el cuello.",
+              "texto": "Yuliana abre los ojos en la cama. Tiene vendas en los brazos y en el cuello.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 430,
-              "y": 360,
+              "x": 350,
+              "y": 324,
               "z": 0
             },
             {
@@ -12200,8 +12167,8 @@
               "texto": "El timbre para llamar a enfermería.",
               "tipo": "OBJECT",
               "visible": true,
-              "x": 300,
-              "y": 340,
+              "x": 232,
+              "y": 334,
               "z": 0
             },
             {
@@ -12357,7 +12324,7 @@
                 {
                   "texto": "Usa la ruta de protección con Patricia.",
                   "hecho": {
-                    "used": "SAFETY_ROUTE"
+                    "used": "SAFETY_ROUTE@patricia"
                   },
                   "lugar": "patricia"
                 },
@@ -12441,22 +12408,6 @@
             },
             {
               "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante",
-              "etiqueta": "Silla de visitante",
-              "x": 431,
-              "y": 358
-            },
-            {
-              "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante-2",
-              "etiqueta": "Silla de visitante",
-              "x": 515,
-              "y": 358
-            },
-            {
-              "alto": 8,
               "ancho": 30,
               "clave": "choque-planta",
               "etiqueta": "Planta",
@@ -12470,6 +12421,22 @@
               "etiqueta": "Dispensador de agua",
               "x": 710,
               "y": 254
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante",
+              "etiqueta": "Silla de visita",
+              "x": 395,
+              "y": 358
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante-2",
+              "etiqueta": "Silla de visita",
+              "x": 551,
+              "y": 358
             }
           ],
           "dialogos": [
@@ -12516,7 +12483,7 @@
                   "emocion": "sad",
                   "hablante": "Patricia",
                   "orden": 1,
-                  "texto": "Ya le dieron la noticia a Yuliana, con el cirujano y con Gloria. Está deshecha, pero no está sola."
+                  "texto": "A las 8, con el médico tratante y con Gloria, vamos a acompañar a Yuliana con lo de Salomé. No va a estar sola."
                 },
                 {
                   "emocion": "neutral",
@@ -12700,62 +12667,6 @@
               "z": 0
             },
             {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 440,
-              "y": 366,
-              "z": 0
-            },
-            {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante-2",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 524,
-              "y": 366,
-              "z": 0
-            },
-            {
               "alto": 47,
               "ancho": 35,
               "clave": "planta",
@@ -12809,6 +12720,62 @@
               "visible": true,
               "x": 720,
               "y": 262,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 404,
+              "y": 366,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante-2",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 560,
+              "y": 366,
               "z": 0
             },
             {
@@ -13021,7 +12988,7 @@
                 {
                   "texto": "Usa la libreta sobre el informe de remisión.",
                   "hecho": {
-                    "used": "REFLECTION_JOURNAL"
+                    "used": "REFLECTION_JOURNAL@informe-remision"
                   },
                   "lugar": "informe-remision"
                 },
@@ -13105,22 +13072,6 @@
             },
             {
               "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante",
-              "etiqueta": "Silla de visitante",
-              "x": 431,
-              "y": 358
-            },
-            {
-              "alto": 8,
-              "ancho": 18,
-              "clave": "choque-silla-visitante-2",
-              "etiqueta": "Silla de visitante",
-              "x": 515,
-              "y": 358
-            },
-            {
-              "alto": 8,
               "ancho": 30,
               "clave": "choque-planta",
               "etiqueta": "Planta",
@@ -13134,6 +13085,22 @@
               "etiqueta": "Dispensador de agua",
               "x": 710,
               "y": 254
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante",
+              "etiqueta": "Silla de visita",
+              "x": 395,
+              "y": 358
+            },
+            {
+              "alto": 8,
+              "ancho": 18,
+              "clave": "choque-silla-visitante-2",
+              "etiqueta": "Silla de visita",
+              "x": 551,
+              "y": 358
             }
           ],
           "dialogos": [
@@ -13374,62 +13341,6 @@
               "z": 0
             },
             {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 440,
-              "y": 366,
-              "z": 0
-            },
-            {
-              "alto": 34,
-              "ancho": 22,
-              "clave": "silla-visitante-2",
-              "codigoCorto": "MUE",
-              "colision": false,
-              "color": "#7FB3D5",
-              "desbloqueo": {},
-              "etiqueta": "Silla de visitante",
-              "herramienta": null,
-              "icono": "chair",
-              "indicacion": "",
-              "metadatos": {
-                "apoyo": "pies",
-                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
-                "colision": true
-              },
-              "movimiento": {},
-              "opcion": null,
-              "orientacion": "",
-              "personaje": null,
-              "texto": "",
-              "tipo": "PROP",
-              "visible": true,
-              "x": 524,
-              "y": 366,
-              "z": 0
-            },
-            {
               "alto": 47,
               "ancho": 35,
               "clave": "planta",
@@ -13483,6 +13394,62 @@
               "visible": true,
               "x": 720,
               "y": 262,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 404,
+              "y": 366,
+              "z": 0
+            },
+            {
+              "alto": 34,
+              "ancho": 22,
+              "clave": "silla-visitante-2",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Silla de visita",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/hospital/silla-visitante.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 560,
+              "y": 366,
               "z": 0
             },
             {
@@ -13653,7 +13620,7 @@
               }
             },
             "id": "E13-2",
-            "retroalimentacionInmediata": "Es correcto, pero no sirve: quien lo lea tendrá que preguntarle todo otra vez a Yuliana. Un informe pobre obliga a revictimizar.",
+            "retroalimentacionInmediata": "La información es cierta, pero no alcanza: quien lo lea tendrá que preguntarle todo otra vez a Yuliana. Un informe incompleto empuja a revictimizar.",
             "reaccion": {
               "emocion": "cautelosa",
               "gesto": "neutral",
@@ -14558,7 +14525,7 @@
                 {
                   "texto": "Usa la valoración de riesgo sobre el informe.",
                   "hecho": {
-                    "used": "RISK_METER"
+                    "used": "RISK_METER@informe-hospital"
                   },
                   "lugar": "informe-hospital"
                 },
@@ -14655,6 +14622,14 @@
               "etiqueta": "Archivador",
               "x": 841,
               "y": 286
+            },
+            {
+              "alto": 16,
+              "ancho": 120,
+              "clave": "choque-escritorio",
+              "etiqueta": "Escritorio",
+              "x": 630,
+              "y": 296
             }
           ],
           "dialogos": [
@@ -14675,7 +14650,7 @@
                   "herramientaRequerida": null,
                   "opcion": "v-sin-informe",
                   "orden": 2,
-                  "texto": "El informe es de una línea: valorar en privado, preguntar solo lo necesario y explicar para qué sirve cada pregunta"
+                  "texto": "El informe del hospital no sirve de base: valorar en privado, preguntar solo lo necesario y explicar para qué sirve cada pregunta"
                 },
                 {
                   "clave": "v-b",
@@ -14691,7 +14666,7 @@
                   "herramientaRequerida": null,
                   "opcion": "v-relato",
                   "orden": 4,
-                  "texto": "Pedirle que cuente de nuevo, con detalle, todo lo que pasó esa noche, para tener tu propia versión"
+                  "texto": "Pedirle que cuente de nuevo, con detalle, todo lo que pasó esa noche, para confirmar que el informe no omita nada"
                 }
               ],
               "emocion": "concerned",
@@ -14982,6 +14957,34 @@
               "z": 0
             },
             {
+              "alto": 68,
+              "ancho": 125,
+              "clave": "escritorio",
+              "codigoCorto": "MUE",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Escritorio",
+              "herramienta": null,
+              "icono": "chair",
+              "indicacion": "",
+              "metadatos": {
+                "apoyo": "pies",
+                "arte": "/assets/biblioteca/piezas/muebles/comisaria/escritorio-funcionario.png",
+                "colision": true
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "",
+              "tipo": "PROP",
+              "visible": true,
+              "x": 690,
+              "y": 312,
+              "z": 0
+            },
+            {
               "alto": 48,
               "ancho": 48,
               "clave": "laura",
@@ -15023,11 +15026,12 @@
               "icono": "description",
               "indicacion": "Leer el informe del hospital",
               "metadatos": {
-                "apoyo": "pies",
+                "apoyo": "sobre",
                 "arte": "/assets/biblioteca/piezas/objetos/comisaria/carpeta-medidas-proteccion.png",
                 "usoHerramienta": {
-                  "RISK_METER": "Valoración del riesgo de feminicidio. Factores presentes: (1) tentativa de feminicidio con arma blanca; (2) homicidio de la hija; (3) agresor prófugo; (4) amenaza previa de muerte («si te vas, te mato»); (5) separación en curso; (6) control y celos; (7) presión de la familia del agresor para retirar la denuncia. Resultado: riesgo extremo."
-                }
+                  "RISK_METER": "Valoración del riesgo de feminicidio con lo que consta en el informe y lo que Yuliana confirme en privado. Si el informe no trae un factor, se pregunta solo ese. Factores presentes: (1) tentativa de feminicidio con arma blanca; (2) homicidio de la hija; (3) agresor prófugo; (4) amenaza previa de muerte («si te vas, te mato»); (5) separación en curso; (6) control y celos; (7) presión de la familia del agresor para retirar la denuncia. Resultado: riesgo extremo."
+                },
+                "mueble": "escritorio"
               },
               "movimiento": {},
               "opcion": null,
@@ -15037,7 +15041,7 @@
               "tipo": "OBJECT",
               "visible": true,
               "x": 676,
-              "y": 300,
+              "y": 270,
               "z": 0
             },
             {
@@ -15156,7 +15160,7 @@
               }
             },
             "id": "E15-2",
-            "retroalimentacionInmediata": "Es lo mejor que se puede hacer con un informe pobre, pero a Yuliana le toca contar más de lo que habría hecho falta. Lo que se escribe en un servicio protege, o no, en el siguiente.",
+            "retroalimentacionInmediata": "Es lo mejor que se puede hacer cuando el informe no sirve de base (una sola línea, o un relato con juicios), pero a Yuliana le toca contar más de lo que habría hecho falta. Lo que se escribe en un servicio protege, o no, en el siguiente.",
             "reaccion": {
               "emocion": "triste",
               "gesto": "baja-la-mirada",
@@ -15207,7 +15211,7 @@
               }
             },
             "id": "E15-4",
-            "retroalimentacionInmediata": "El relato ya está en el informe y en la Fiscalía. Pedírselo otra vez, con detalle, la obliga a revivirlo sin que eso aporte a la valoración del riesgo.",
+            "retroalimentacionInmediata": "La Fiscalía ya tiene su relato de esa noche. Aunque el informe del hospital no alcance, pedirle otra vez todo el detalle, en lugar de preguntar solo lo necesario, la obliga a revivirlo sin que eso aporte a la valoración del riesgo.",
             "reaccion": {
               "emocion": "en-crisis",
               "gesto": "se-agita",
@@ -16488,9 +16492,7 @@
             "clase": "RISKY",
             "clave": "n9-hoja",
             "efectos": {
-              "milestones": [
-                "asesoria_derechos_realizada"
-              ],
+              "milestones": [],
               "persona": {
                 "bond": -1,
                 "activation": 0
@@ -17087,8 +17089,8 @@
               "texto": "Gloria espera mientras Yuliana está con Liliana.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 980,
-              "y": 400,
+              "x": 1010,
+              "y": 432,
               "z": 0
             },
             {
@@ -17107,13 +17109,13 @@
                 "apoyo": "pies",
                 "expresion": "triste",
                 "movimiento": "quieto",
-                "recipeId": "adolescente"
+                "recipeId": "hermano-adolescente"
               },
               "movimiento": {},
               "opcion": null,
               "orientacion": "",
               "personaje": "mateo",
-              "texto": "Emanuel, con el uniforme del colegio, mira el celular sin verlo.",
+              "texto": "Emanuel, con la capucha puesta, mira el celular sin verlo.",
               "tipo": "PERSON",
               "visible": true,
               "x": 900,
@@ -17385,7 +17387,7 @@
                 {
                   "texto": "Usa la ruta de protección con la comisaria: medidas definitivas y remisiones.",
                   "hecho": {
-                    "used": "SAFETY_ROUTE"
+                    "used": "SAFETY_ROUTE@helena"
                   },
                   "lugar": "helena"
                 },
@@ -18036,7 +18038,7 @@
                 {
                   "texto": "Usa tu libreta: registra lo que hiciste y lo que te dejó.",
                   "hecho": {
-                    "used": "REFLECTION_JOURNAL"
+                    "used": "REFLECTION_JOURNAL@libreta"
                   },
                   "lugar": "libreta"
                 },
@@ -18179,7 +18181,7 @@
                   "emocion": "neutral",
                   "hablante": "Tu libreta",
                   "orden": 1,
-                  "texto": "Es tarde. Yuliana y Gloria se fueron con la patrulla al alojamiento temporal. El consultorio queda en silencio."
+                  "texto": "Es tarde. Yuliana y Gloria ya salieron de la comisaría. El consultorio queda en silencio."
                 }
               ],
               "objeto": "libreta",
@@ -18577,6 +18579,139 @@
                   "lugar": "cierre-resumen"
                 }
               ]
+            },
+            "revision": {
+              "nombre": "Profesor",
+              "rol": "Profesor de psicología · tutor del caso",
+              "recipeId": "supervisor-clinico",
+              "entrada": "Terminaste, {nombre}. Repasemos juntos el paso a paso: lo que hiciste y lo que vale la pena reforzar.",
+              "capitulos": [
+                {
+                  "titulo": "En el hospital",
+                  "pasos": [
+                    {
+                      "numero": 1,
+                      "titulo": "Observa",
+                      "hitos": [
+                        "primer_contacto"
+                      ],
+                      "logrado": "Miraste antes de actuar: quién corría riesgo y quién necesitaba qué.",
+                      "pendiente": "En una crisis, el primer minuto es para observar: la seguridad, quién está peor y qué necesita cada quien."
+                    },
+                    {
+                      "numero": 2,
+                      "titulo": "Contén antes de informar",
+                      "hitos": [
+                        "familia_contenida",
+                        "pap_aplicado"
+                      ],
+                      "logrado": "Sostuviste a la familia sin mentir y sin apurar la noticia.",
+                      "pendiente": "La familia necesitaba contención antes que información: escuchar, no mentir y no dejarla sola."
+                    },
+                    {
+                      "numero": 3,
+                      "titulo": "Prepara la noticia",
+                      "hitos": [
+                        "equipo_coordinado",
+                        "entorno_preparado"
+                      ],
+                      "logrado": "Confirmaste la información, acordaste una sola voz con el equipo y buscaste un lugar privado.",
+                      "pendiente": "Una noticia así se prepara: información confirmada, una sola voz y un lugar privado."
+                    },
+                    {
+                      "numero": 4,
+                      "titulo": "Comunica con protocolo",
+                      "hitos": [
+                        "percepcion_explorada",
+                        "emocion_acompanada",
+                        "duelo_acompanado",
+                        "plan_integral",
+                        "verdad_cuidada"
+                      ],
+                      "logrado": "Preguntaste qué sabían, dijiste la verdad con palabras claras y te quedaste en el silencio. Con Yuliana tampoco mentiste.",
+                      "pendiente": "EPICEE pide explorar qué saben, decirlo claro, acompañar la emoción antes de lo práctico y no mentir, tampoco a quien despierta."
+                    },
+                    {
+                      "numero": 5,
+                      "titulo": "Conecta y protege",
+                      "hitos": [
+                        "familia_conectada",
+                        "seguridad_cuidada",
+                        "marco_hospital_correcto",
+                        "ruta_hospital_activada"
+                      ],
+                      "logrado": "Conectaste a la familia con apoyos, cuidaste dónde estaba Yuliana y dejaste la ruta activada esa misma noche.",
+                      "pendiente": "Proteger empieza en el hospital: necesidades básicas, red de apoyo, paciente reservada y la ruta activada antes de entregar el turno."
+                    },
+                    {
+                      "numero": 6,
+                      "titulo": "Escribe",
+                      "hitos": [
+                        "informe_completo"
+                      ],
+                      "logrado": "Tu informe protegió a Yuliana: en la comisaría no tuvo que volver a contarlo todo.",
+                      "pendiente": "Lo que escribes viaja: con hechos, fuentes y factores de riesgo, sin juicios, le ahorras a la víctima repetir su historia."
+                    }
+                  ]
+                },
+                {
+                  "titulo": "En la comisaría",
+                  "pasos": [
+                    {
+                      "numero": 1,
+                      "titulo": "Prioriza la protección",
+                      "hitos": [
+                        "prioridad_proteccion",
+                        "marco_comisaria_correcto",
+                        "medidas_proteccion_activadas"
+                      ],
+                      "logrado": "Pusiste el riesgo y los derechos primero, y tu concepto le dio a la comisaria con qué dictar las medidas.",
+                      "pendiente": "Con el agresor prófugo, la protección va antes que la mediación o la terapia, y las medidas necesitan un concepto que las sostenga."
+                    },
+                    {
+                      "numero": 2,
+                      "titulo": "Valora sin repetir la herida",
+                      "hitos": [
+                        "riesgo_feminicidio_valorado",
+                        "relato_protegido"
+                      ],
+                      "logrado": "Valoraste el riesgo con factores concretos y sin pedirle que contara todo otra vez.",
+                      "pendiente": "El riesgo se valora con factores concretos, partiendo de lo que ya está escrito y preguntando solo lo necesario."
+                    },
+                    {
+                      "numero": 3,
+                      "titulo": "Explica quién hace qué",
+                      "hitos": [
+                        "ruta_acompanada",
+                        "asesoria_derechos_realizada"
+                      ],
+                      "logrado": "Le explicaste quién hace qué y la acompañaste hasta la orientadora jurídica, sin prometer lo que no depende de ti.",
+                      "pendiente": "Conectar es acompañar hasta la persona indicada, no entregar una hoja ni prometer una seguridad que nadie puede garantizar."
+                    },
+                    {
+                      "numero": 4,
+                      "titulo": "Mira a toda la familia",
+                      "hitos": [
+                        "red_familiar_valorada",
+                        "valoracion_dependientes_realizada",
+                        "derivacion_salud_mental_activada"
+                      ],
+                      "logrado": "Miraste a quien la cuida y a quien depende de ella: Emanuel también quedó en la ruta.",
+                      "pendiente": "La violencia no termina en la víctima: quien la cuida y quien depende de ella también necesitan valoración y apoyo."
+                    },
+                    {
+                      "numero": 5,
+                      "titulo": "Cierra y cuídate",
+                      "hitos": [
+                        "autocuidado_registrado"
+                      ],
+                      "logrado": "Registraste lo que hiciste, lo que faltó y lo que te dejó, y pediste supervisión.",
+                      "pendiente": "Cerrar un caso así también es registrarlo y cuidarte: quien atiende violencia también se afecta."
+                    }
+                  ]
+                }
+              ],
+              "cierre": "Este caso pesa. Si algo te removió, háblalo con tu docente o con alguien de confianza: cuidarte también es parte del oficio."
             }
           },
           "ancho": 960,
@@ -19136,7 +19271,7 @@
           "key": "proteccion_integral",
           "tone": "positive",
           "title": "Protección integral",
-          "message": "Yuliana está en un lugar seguro con su mamá, y Emanuel tiene quién lo acompañe. La red funcionó porque cada quien hizo su parte, y tú hiciste la tuya: sostuviste a la familia la peor noche y dejaste a Yuliana protegida.",
+          "message": "Yuliana está en un lugar seguro con su mamá, y Emanuel tiene quién lo acompañe. La red funcionó porque cada quien hizo su parte, y tú hiciste la tuya: sostuviste a la familia en su peor noche y dejaste a Yuliana protegida.",
           "when": {
             "all": [
               {
@@ -19169,7 +19304,7 @@
           "key": "proteccion_con_brechas",
           "tone": "neutral",
           "title": "Protegida, con brechas en el cuidado",
-          "message": "Yuliana quedó protegida, pero en el camino hubo momentos en que la familia o ella no recibieron el cuidado que necesitaban: la contención, el duelo, la verdad o no tener que contar su historia otra vez. Revisa esos momentos."
+          "message": "Yuliana quedó protegida, pero en el camino hubo momentos en que la familia o ella no recibieron el cuidado que necesitaban: la contención, el duelo, la verdad o no tener que contar su historia otra vez; o faltó cerrar tu propio trabajo. Revisa esos momentos."
         }
       ],
       "milestones": [

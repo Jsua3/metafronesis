@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.db import close_old_connections, transaction
 from django.db.models.query import QuerySet
 from rest_framework.test import APIClient
-from apps.simulation.models import SceneHint, MapObject, ClinicalTool
+from apps.simulation.models import AttemptWorldState, ClinicalTool, DialogueTree, MapObject, SceneHint
 from apps.simulation.tests.test_mundo_api import mundo
 
 pytestmark = [pytest.mark.django_db, pytest.mark.req("RF-11", "RF-17", "RF-19", "RNF-08")]
@@ -40,18 +40,45 @@ def test_interaccion_herramienta_y_personaje(mundo):
     datos = respuesta.json()["data"]
     assert datos["unlockedToolCode"] == "guia"
     assert "persona" in datos["world"]["inspectedObjectKeys"]
+    assert datos["world"]["viewedNpcKeysHere"] == []
     uso = cliente.post(base + "/tools/use", {"toolCode": "guia", "targetInteractionKey": "persona"}, format="json")
     assert uso.status_code == 200
     assert uso.json()["data"]["pertinent"] is True
     personaje = cliente.post(base + "/npcs/persona", {}, format="json")
     assert personaje.status_code == 200
     assert personaje.json()["data"]["flags"]["viewedNpcKeys"] == ["persona"]
+    assert personaje.json()["data"]["viewedNpcKeysHere"] == ["persona"]
 
 
 def test_objeto_lejano_no_se_inspecciona(mundo):
     MapObject.objects.create(scene_map=mundo["sala"], object_key="distante", label="Objeto", object_type="OBJECT", position_x=400, position_y=350)
     respuesta = mundo["client"].post(mundo["base"] + "/interactions/distante", {}, format="json")
     assert respuesta.status_code == 400
+
+
+@pytest.mark.parametrize("indicacion_compartida", [False, True])
+def test_recupera_conversaciones_historicas_del_nodo(mundo, indicacion_compartida):
+    cliente, base, intento = mundo["client"], mundo["base"], mundo["intento"]
+    indicacion = "Hablar con Gloria"
+    gloria = MapObject.objects.create(scene_map=mundo["sala"], object_key="gloria", object_type="PERSON",
+                                      position_x=50, position_y=50, interaction_prompt=indicacion)
+    DialogueTree.objects.create(scene_map=mundo["sala"], map_object=gloria, tree_key="dialogo-gloria")
+    if indicacion_compartida:
+        MapObject.objects.create(scene_map=mundo["sala"], object_key="otro", object_type="OBJECT", interaction_prompt=indicacion)
+    assert cliente.get(base + "/world").status_code == 200
+    AttemptWorldState.objects.filter(attempt=intento).update(
+        viewed_dialogue_keys=["dialogo-gloria"],
+        flags={"viewedNpcKeys": ["gloria", "dialogo-gloria", "ana", "lejos"]},
+    )
+    intento.events.create(node=intento.current_node, event_type="MAP_INTERACTION_OPENED", detail=indicacion)
+    intento.events.create(node=intento.current_node, event_type="NPC_DIALOGUE_VIEWED", detail="NPC escuchado: ana")
+    intento.events.create(node=mundo["end"], event_type="NPC_DIALOGUE_VIEWED", detail="NPC escuchado: lejos")
+
+    datos = cliente.get(base + "/world").json()["data"]
+    assert datos["viewedNpcKeysHere"] == (["ana"] if indicacion_compartida else ["gloria", "ana"])
+    respuesta = cliente.post(base + "/interactions/gloria", {}, format="json")
+    assert respuesta.status_code == 200, respuesta.content
+    assert set(respuesta.json()["data"]["world"]["viewedNpcKeysHere"]) == {"gloria", "ana"}
 
 
 @pytest.mark.parametrize("ruta,metodo,cuerpo", [
@@ -114,6 +141,28 @@ def test_herramienta_repetida_no_duplica_evento(mundo):
     segunda = cliente.post(base + "/tools/use", cuerpo, format="json")
     assert primera.json()["data"] == segunda.json()["data"]
     assert mundo["intento"].events.filter(event_type="TOOL_USED").count() == 1
+
+
+def test_uso_historico_de_herramienta_se_atribuye_al_nodo_del_evento(mundo):
+    intento, cliente, base = mundo["intento"], mundo["client"], mundo["base"]
+    ClinicalTool.objects.create(case_version=mundo["version"], tool_code="guia", label="Guía")
+    MapObject.objects.create(scene_map=mundo["sala"], object_key="ana", label="Ana", object_type="PERSON",
+                             position_x=50, position_y=50, tool_code="guia")
+    assert cliente.get(base + "/world").status_code == 200
+    estado = intento.world_state
+    estado.inventory = ["guia"]
+    estado.used_tool_keys = ["guia@ana", "guia"]
+    estado.save(update_fields=["inventory", "used_tool_keys"])
+    intento.events.create(node=intento.current_node, event_type="TOOL_USED",
+                          detail="Herramienta usada: guia sobre ana — pertinente")
+    intento.events.create(node=mundo["end"], event_type="TOOL_USED",
+                          detail="Herramienta usada: guia — no pertinente")
+
+    datos = cliente.get(base + "/world").json()["data"]
+    assert datos["usedToolKeysHere"] == ["guia@ana"]
+    repetida = cliente.post(base + "/tools/use", {"toolCode": "guia", "targetInteractionKey": "ana"}, format="json")
+    assert repetida.json()["data"]["alreadyUsed"] is True
+    assert intento.events.filter(event_type="TOOL_USED").count() == 2
 
 
 @pytest.mark.parametrize("movimiento", ["deambula", {"tipo": "va-y-viene", "hasta": {"x": 50, "y": 50}},
@@ -198,10 +247,12 @@ def test_contrato_completo_de_respuestas_de_acciones(mundo):
     uso = cliente.post(base + "/tools/use", {"toolCode": "guia"}, format="json").json()["data"]
     assert set(uso) == {"world", "toolCode", "targetKey", "pertinent", "feedbackMessage", "alreadyUsed"}
     assert (uso["toolCode"], uso["targetKey"], uso["pertinent"], uso["alreadyUsed"]) == ("guia", None, True, False)
+    assert uso["world"]["usedToolKeysHere"] == ["guia"]
     personaje = cliente.post(base + "/npcs/persona", {}, format="json").json()["data"]
     for estado in (interaccion["world"], uso["world"], personaje):
         assert set(estado) == {"attemptId", "status", "map", "player", "objects", "collisions", "tools", "inventory",
-                               "inspectedObjectKeys", "viewedDialogueKeys", "usedToolKeys", "flags", "decisionOptions", "comments", "layout"}
+                               "inspectedObjectKeys", "viewedDialogueKeys", "viewedNpcKeysHere", "usedToolKeys", "usedToolKeysHere",
+                               "flags", "decisionOptions", "comments", "layout"}
         assert set(estado["map"]) == {"id", "key", "title", "width", "height", "theme", "spawnX", "spawnY", "ambient", "structure"}
         assert set(estado["player"]) == {"x", "y"}
         assert isinstance(estado["attemptId"], str) and isinstance(estado["status"], str)
@@ -209,9 +260,10 @@ def test_contrato_completo_de_respuestas_de_acciones(mundo):
         assert all(isinstance(estado["map"][clave], str) for clave in ("key", "title", "theme"))
         assert isinstance(estado["map"]["ambient"], dict)
         assert all(isinstance(estado["player"][clave], int) for clave in ("x", "y"))
-        assert all(isinstance(estado[clave], list) for clave in ("objects", "collisions", "tools", "inventory", "inspectedObjectKeys", "viewedDialogueKeys", "usedToolKeys", "decisionOptions", "comments"))
+        listas_texto = ("inventory", "inspectedObjectKeys", "viewedDialogueKeys", "viewedNpcKeysHere", "usedToolKeys", "usedToolKeysHere")
+        assert all(isinstance(estado[clave], list) for clave in (*listas_texto, "objects", "collisions", "tools", "decisionOptions", "comments"))
         assert isinstance(estado["flags"], dict)
-        assert all(isinstance(valor, str) for clave in ("inventory", "inspectedObjectKeys", "viewedDialogueKeys", "usedToolKeys") for valor in estado[clave])
+        assert all(isinstance(valor, str) for clave in listas_texto for valor in estado[clave])
         for elemento in estado["objects"]:
             assert all(isinstance(elemento[clave], str) for clave in ("key", "label", "type", "color", "icon", "shortCode", "interactionPrompt", "interactionText", "facing"))
             assert all(isinstance(elemento[clave], int) for clave in ("x", "y", "width", "height"))

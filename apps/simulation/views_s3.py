@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from .assessment.evaluation import read_snapshot
 from .models import SimulationCase
 from .serializers_s3 import (
     CaseSerializer,
@@ -104,4 +105,4 @@ class Evaluation(APIView):
 
         attempt = attempt_api.owned(request.user, pk, solo_lectura=True)
         evaluation = get_object_or_404(AttemptEvaluation, attempt=attempt)
-        return Response(evaluation.snapshot)
+        return Response(read_snapshot(attempt, evaluation))

@@ -1,12 +1,15 @@
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
 
 from apps.simulation.models import (CaseCharacter, CaseVersion, CaseVersionStatus, ClinicalTool, CollisionZone,
                                     DecisionOption, DialogueChoice, DialogueLine, DialogueTree, MapObject,
                                     SceneHint, SceneMap, SimulationNode, SimulationRubricAssignment)
+from apps.simulation.models.world import validar_codigo_herramienta
 from apps.simulation.services.audit_service import auditable
 from apps.autoria import autoria
 from apps.users.permisos import exigir_autoria
+from shared.exceptions import ApiError
 from .ciclo import _exigir_estado, version_accesible
 
 
@@ -52,6 +55,11 @@ def _copiar_arbol(original, clon):
         copia = CaseCharacter.objects.create(case_version=clon, **_valores(personaje, {'case_version'}))
         personajes[personaje.pk] = copia.pk
     for herramienta in original.clinical_tools.all():
+        try:
+            validar_codigo_herramienta(herramienta.tool_code)
+        except ValidationError as error:
+            raise ApiError("VALIDATION_ERROR", f"Herramienta {herramienta.tool_code!r}: {error.message}",
+                           field="toolCode") from error
         ClinicalTool.objects.create(case_version=clon, **_valores(herramienta, {'case_version'}))
     for mapa in original.scene_maps.all():
         copia_mapa = SceneMap.objects.create(case_version=clon, node_id=nodos[mapa.node_id],

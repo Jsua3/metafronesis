@@ -105,7 +105,7 @@ Después de la cinemática, el profesor aparece con su retrato y su texto. El es
 
 > «Hola, {nombre}. Lo que acabas de ver pasa en Colombia más veces de las que quisiéramos. Esta noche no vas a resolver el crimen: eso le toca a la Fiscalía. Tu trabajo es otro: que esta familia no quede sola y que Yuliana quede protegida.
 >
-> Te dejo el paso a paso. Lo vas a tener arriba a la derecha todo el tiempo:
+> Te dejo el paso a paso. Lo vas a tener en la tarjeta del objetivo todo el tiempo:
 > 1. **Observa** antes de actuar: quién corre riesgo y quién necesita qué.
 > 2. **Contén** antes de informar: escucha sin apurar y sin mentir.
 > 3. **Prepara la noticia:** un lugar privado, el equipo de acuerdo y una sola voz.
@@ -119,7 +119,9 @@ Entre capítulos, el profesor dice una sola línea:
 - **Del 1 al 2:** «Ya preparaste el terreno. Ahora viene lo más difícil: decir la verdad sin dejar a nadie solo.»
 - **Del 2 al 3:** «Pasaron quince días. Cambias de lugar y de rol: ahora eres de la comisaría. Vas a leer el informe que escribiste en el hospital.»
 
-### La guía de arriba a la derecha
+### La guía (tarjeta del objetivo, arriba a la izquierda)
+
+Va arriba a la **izquierda**: arriba a la derecha están la barra de estado y el minimapa. Con la guía escrita, la tarjeta es compacta: el paso actual va resaltado y con su «Ir allí», y «En esta sala» queda plegada para no tapar la sala.
 
 Muestra el paso del profesor en el que va el estudiante y, debajo, lo concreto de la sala donde está. Cuando el estudiante cambia de sala, la guía cambia con él. Por ejemplo:
 
@@ -133,7 +135,7 @@ Muestra el paso del profesor en el que va el estudiante y, debajo, lo concreto d
 | Herramienta | Para qué sirve en la vida real | Dónde se usa | Qué aprende el estudiante |
 |---|---|---|---|
 | **H01 Primeros auxilios psicológicos** (OMS: observar, escuchar, conectar) | Sostener a personas en crisis sin hacer terapia. | Capítulo 1: entrada (observar) y sala de espera (escuchar). Capítulo 2: pasillo (conectar). | Que los PAP son una secuencia, no una frase. |
-| **H02 Protocolo EPICEE** (SPIKES) | Comunicar una noticia difícil. | Capítulo 1: elegir la sala (entorno). Capítulo 2: percepción e invitación, la noticia, empatía y estrategia. Se vuelve a pensar cuando despierta Yuliana. | Que la noticia se prepara, se da con palabras claras y se acompaña. |
+| **H02 Protocolo EPICEE** (SPIKES) | Comunicar una noticia difícil. | Capítulo 1: preparar la noticia con el médico (una sola voz) y elegir la sala (entorno). Capítulo 2: percepción e invitación, la noticia y empatía en la sala de escucha; estrategia con Gloria en el pasillo. Cuando despierta Yuliana se aplica por el contenido de la decisión (no mentir, decidirlo en equipo), sin usar la tarjeta. | Que la noticia se prepara, se da con palabras claras y se acompaña. |
 | **H03 Valoración de riesgo** | Estimar el riesgo de violencia mortal y decidir la protección. | Capítulo 2: la llamada a enfermería (riesgo inmediato). Capítulo 3: la valoración completa en el consultorio. | Que el riesgo se valora con factores concretos (huyó, usó un arma, amenazó, ella se iba a separar), no se adivina ni se promete. |
 | **H04 Ruta de protección** | Activar la red: salud, Policía, Fiscalía y Comisaría. | Capítulo 2: entrega de turno (notificación, reporte, medidas provisionales, paciente reservada). Capítulo 3: medidas definitivas y remisiones. | Que la protección empieza esa misma noche y que cada institución tiene su parte. |
 | **H05 Bitácora reflexiva** | Registrar lo que se hizo y por qué, y cuidar a quien atiende. | Capítulo 2: el informe que va a la comisaría. Capítulo 3: la reflexión final y el autocuidado. | Que lo que se escribe viaja: un buen informe evita la revictimización. |
@@ -157,16 +159,17 @@ Clave: **[O]** = decisión original de Psicología, reescrita para la historia; 
      - acompañar al patrullero a interrogar a Yuliana antes de la cirugía (inadecuada).
    - **Hitos:** `familia_contenida` y `pap_aplicado`.
    - **Escuchar a la familia revela:** la amenaza «si te vas, te mato», que Yuliana se iba a ir al día siguiente y que una vez fue a la comisaría. Ese dato sirve en el capítulo 3.
-3. **Sala de espera. Un lugar para hablar. [N]**
+3. **Estación de enfermería. Una sola voz. [N]**
+   - **Situación:** el doctor Ospina confirma que Salomé murió. Yuliana sigue en cirugía.
+   - **Opciones:** acordar qué se sabe, quién lo dice y que el estudiante estará presente (adecuada) · que él lo diga cuando pueda (riesgosa) · decirlo ya con lo que se alcanzó a oír (inadecuada).
+   - **Herramienta:** EPICEE, en su paso de preparación (se recoge aquí, en la enfermería).
+   - **Hito:** `equipo_coordinado`.
+4. **Sala de espera. Un lugar para hablar. [N]**
    - **Situación:** la sala de espera está llena. La sala de escucha está cerrada y la llave la tiene Rocío.
    - **Opciones:** la sala de escucha (adecuada) · un rincón de la sala de espera (riesgosa) · el pasillo, de pie, frente a cirugía (inadecuada).
    - **Herramienta:** EPICEE, en su paso «entorno».
    - **Hito:** `entorno_preparado`.
    - **Al salir:** la familia camina primero hacia la puerta y el estudiante entra de último.
-4. **Estación de enfermería. Una sola voz. [N]**
-   - **Situación:** el doctor Ospina confirma que Salomé murió. Yuliana sigue en cirugía.
-   - **Opciones:** acordar qué se sabe, quién lo dice y que el estudiante estará presente (adecuada) · que él lo diga cuando pueda (riesgosa) · decirlo ya con lo que se alcanzó a oír (inadecuada).
-   - **Hito:** `equipo_coordinado`.
 
 ### Capítulo 2 · La noticia (hospital, de 12:10 a 7:00 a. m.; amanece en la escena 10)
 
@@ -180,7 +183,7 @@ Clave: **[O]** = decisión original de Psicología, reescrita para la historia; 
    - **Hitos:** `emocion_acompanada` y `duelo_acompanado`.
 7. **Pasillo. Lo que sigue esta noche. [N]**
    - **Opciones:** resumir, preguntar qué necesitan y presentarles a Marcela (adecuada) · darles un papel con los trámites (riesgosa) · despedirse (inadecuada).
-   - **Herramientas:** PAP, en su paso «conectar», y EPICEE, en su paso «estrategia».
+   - **Herramientas:** PAP con Óscar, en su paso «conectar», y EPICEE con Gloria, en su paso «estrategia».
    - **Hito:** `familia_conectada`.
 8. **Enfermería, 1:30 a. m. La llamada. [N]**
    - **Situación:** un hombre que dice ser primo de Yuliana pregunta en qué habitación está.
@@ -225,7 +228,8 @@ Clave: **[O]** = decisión original de Psicología, reescrita para la historia; 
 14. **Consultorio. Sin repetir la herida. [N]**
     - **Situación:** sobre el escritorio está el informe del hospital.
     - **Opciones:**
-      - partir del informe y aplicar la valoración en privado, explicando para qué sirve cada pregunta (adecuada);
+      - partir del informe y aplicar la valoración en privado, explicando para qué sirve cada pregunta (adecuada; solo si en E13 se escribió el informe completo);
+      - si el informe no sirve de base (una línea, o un relato con juicios): valorar en privado preguntando solo lo necesario (aceptable: a Yuliana le toca contar más);
       - leer el instrumento como una lista (riesgosa);
       - pedirle que cuente todo otra vez (inadecuada).
     - **Herramienta:** Valoración de riesgo, completa. El estudiante marca los factores que conoce, y los que escuchó a la familia en el capítulo 1 aparecen en el informe. El resultado es riesgo extremo.
@@ -253,12 +257,18 @@ Clave: **[O]** = decisión original de Psicología, reescrita para la historia; 
 
 ## 8. Los finales (según lo que se hizo)
 
+Se evalúan en este orden y gana el primero que se cumple (el último es el de respaldo):
+
 | Final | Cuándo se alcanza | Epílogo |
 |---|---|---|
-| **Protección integral** (positivo) | Ninguna opción inadecuada y como mucho dos riesgosas. Además: familia contenida, duelo acompañado, verdad cuidada, ruta del hospital activada, riesgo valorado, medidas recomendadas y red familiar valorada. | «Yuliana está en un lugar seguro con su mamá y Emanuel. La red funcionó porque cada quien hizo su parte, y tú hiciste la tuya.» |
-| **Protegida, pero sola en su dolor** (intermedio) | Se lograron los pasos de protección, pero en el hospital faltó la contención o el acompañamiento del duelo. | Yuliana quedó protegida, pero la familia recuerda esa noche como la noche en que nadie se quedó con ellos. |
-| **El riesgo sigue abierto** (advertencia) | Falta valorar el riesgo o activar las medidas, con Edwin prófugo. | Yuliana volvió a casa de su mamá, que es el primer lugar donde él la buscaría. |
-| **La ruta se rompe** (crítico) | Dos o más opciones inadecuadas, o Yuliana se retira de la comisaría porque dejó de confiar. | Yuliana no volvió a la comisaría. El caso sigue en la Fiscalía, pero ella está sola frente al riesgo. |
+| **La ruta se rompe** (crítico) | Dos o más opciones inadecuadas, o el vínculo de Yuliana queda en retiro (dejó de confiar). | Yuliana no volvió a la comisaría. El caso sigue en la Fiscalía, pero ella está sola frente al riesgo. |
+| **El riesgo sigue abierto** (advertencia) | Falta cualquiera de los tres pasos de protección: la ruta activada desde el hospital, el riesgo de feminicidio valorado o las medidas fundamentadas. | Yuliana volvió a la casa de su mamá, el primer lugar donde Edwin la buscaría. |
+| **Protección integral** (positivo) | Ninguna inadecuada y como mucho dos riesgosas. Además: familia contenida, duelo acompañado, verdad cuidada, relato protegido y red familiar valorada (los tres pasos de protección ya se exigieron arriba). | «Yuliana está en un lugar seguro con su mamá, y Emanuel tiene quién lo acompañe. La red funcionó porque cada quien hizo su parte, y tú hiciste la tuya.» |
+| **Protegida, con brechas en el cuidado** (intermedio, respaldo) | Todo lo demás: la protección se logró, pero faltó algo del cuidado (contención, duelo, verdad, no repetir el relato) o el cierre del propio trabajo. | Yuliana quedó protegida, pero hubo momentos en que la familia o ella no recibieron el cuidado que necesitaban. |
+
+Un intento que no se termina (cierre de sesión, tiempo) no recibe ningún epílogo de la historia: sale como «Recorrido incompleto».
+
+**Al cerrar, el profesor repasa el paso a paso** (`ambiente.revision` en la sala de E21): por cada paso del hospital y de la comisaría dice «Lo lograste» o «Para reforzar», según los hitos que de verdad se cumplieron.
 
 ## 9. Dudas para Psicología
 
@@ -268,3 +278,6 @@ Clave: **[O]** = decisión original de Psicología, reescrita para la historia; 
 4. ¿Las medidas definitivas propuestas (protección policial, alojamiento temporal, orden de no acercamiento) son las que dictaría una comisaria en un caso así?
 5. ¿Es verosímil que la psicóloga jefe llegue a las 2 de la mañana, o lo realista es una llamada?
 6. ¿La decisión sobre el autocuidado (escena 19) debe calificarse, o solo registrarse?
+7. En el plan de la psicóloga jefe (escena 9b), ¿la derivación a psiquiatría y psicoterapia debe ser parte automática del plan correcto, o depender de una valoración e indicación clínica?
+8. ¿Es precisa la expresión «denuncia de oficio» en la ruta del hospital, o conviene distinguir el reporte institucional, la denuncia y la investigación de oficio (Policía y Fiscalía)?
+9. La ficha del caso habla de «feminicidio de su hija de 3 años» (así venía en el documento de Psicología Social), mientras la historia dice «homicidio de Salomé». ¿Cuál es la calificación correcta para enseñar?

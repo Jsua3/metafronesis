@@ -2,10 +2,9 @@
 
 import json
 
+from apps.simulation.models import AttemptEvaluation, AttemptStatus
 from apps.simulation.models.vocabulary import FormativeLevel
-from apps.simulation.services.case_rules import rules_of
-from apps.simulation.services.endings import resolve
-from apps.simulation.models import AttemptEvaluation
+from apps.simulation.services import endings
 
 LEVELS = list(FormativeLevel.values)
 
@@ -53,7 +52,7 @@ def build(attempt):
         ],
         "counts": counts,
         "milestones": attempt.state_json.get("milestones", []),
-        "ending": resolve(rules_of(attempt.case_version), attempt.state_json, counts),
+        "ending": endings.resolve(attempt, counts),
         "evidence": evidence,
     }
 
@@ -63,3 +62,11 @@ def freeze(attempt):
         attempt=attempt, defaults={"snapshot": build(attempt)}
     )
     return evaluation
+
+
+def read_snapshot(attempt, evaluation):
+    snapshot = evaluation.snapshot
+    if attempt.status != AttemptStatus.COMPLETED:
+        # Las instantáneas antiguas pueden traer un epílogo. Se conserva el resto de la evidencia.
+        return {**snapshot, "ending": endings.incomplete()}
+    return snapshot

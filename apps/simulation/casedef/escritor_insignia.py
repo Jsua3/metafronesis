@@ -6,6 +6,7 @@ from decimal import Decimal
 from collections.abc import Mapping
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.publicacion import ciclo
@@ -16,6 +17,7 @@ from apps.simulation.models import (
     DialogueChoice, DialogueLine, DialogueTree, MapObject, Rubric, RubricCriterion,
     SceneHint, SceneMap, SimulationCase, SimulationNode, SimulationRubricAssignment,
 )
+from apps.simulation.models.world import validar_codigo_herramienta
 from shared.exceptions import ApiError
 from shared.policies import can
 
@@ -120,29 +122,25 @@ class _ComparacionTerminada(Exception):
         self.huella = huella
 
 
+def _version_numerica(semantica):
+    partes = semantica.split('.') if isinstance(semantica, str) else ()
+    if len(partes) == 3 and all(parte.isascii() and parte.isdecimal() for parte in partes):
+        return tuple(map(int, partes))
+    return None
+
+
 @transaction.atomic
 def cargar(plan, autor, publicador=None):
     """Carga el plan o devuelve la versión idéntica; expone los motivos de publicación."""
     if plan.no_soportado:
         raise ErrorDeCarga('Contenido no soportado: ' + '; '.join(plan.no_soportado))
     datos_caso = descongelar(plan.caso)
-    caso = SimulationCase.objects.select_for_update().filter(code=datos_caso['code']).first()
-    if caso:
-        distintos = {campo: valor for campo, valor in datos_caso.items() if getattr(caso, campo) != valor}
-        nueva = not CaseVersion.objects.filter(simulation_case=caso, semantic_version=plan.version['semantic_version']).exists()
-        if distintos and not nueva:
-            raise ErrorDeCarga('El caso existente tiene una huella diferente.')
-        if distintos:
-            # Una versión nueva del documento puede renovar el título y la descripción del caso (p. ej. 1.0.0 → 2.0.0).
-            for campo, valor in distintos.items():
-                setattr(caso, campo, valor)
-            caso.full_clean()
-            caso.save(update_fields=list(distintos))
-    else:
-        caso = _crear(SimulationCase, created_by=autor, **datos_caso)
     semantica = plan.version['semantic_version']
-    existente = CaseVersion.objects.filter(simulation_case=caso, semantic_version=semantica).first()
+    caso = SimulationCase.objects.select_for_update().filter(code=datos_caso['code']).first()
+    existente = caso.versions.filter(semantic_version=semantica).first() if caso else None
     if existente:
+        if any(getattr(caso, campo) != valor for campo, valor in datos_caso.items()):
+            raise ErrorDeCarga('El caso existente tiene una huella diferente.')
         try:
             with transaction.atomic():
                 provisional = _guardar(plan, caso, autor, 'tmp-' + uuid.uuid4().hex[:20])
@@ -152,6 +150,32 @@ def cargar(plan, autor, publicador=None):
                 raise ErrorDeCarga('La versión existente tiene una huella diferente.')
         version = existente
     else:
+        numerica = _version_numerica(semantica)
+        if numerica is None:
+            raise ErrorDeCarga(f'La versión {semantica!r} debe tener el formato mayor.menor.parche.')
+        for herramienta in plan.herramientas:
+            try:
+                validar_codigo_herramienta(herramienta.clave)
+            except ValidationError as error:
+                raise ErrorDeCarga(f'Herramienta {herramienta.clave!r}: {error.message}') from error
+        if caso is None:
+            caso = _crear(SimulationCase, created_by=autor, **datos_caso)
+        else:
+            mayor = max(
+                ((numero, valor) for valor in caso.versions.values_list('semantic_version', flat=True)
+                 if (numero := _version_numerica(valor)) is not None),
+                key=lambda version: version[0],
+                default=None,
+            )
+            if mayor and numerica < mayor[0]:
+                raise ErrorDeCarga(f'La versión {semantica} es menor que la mayor versión existente ({mayor[1]}).')
+            if mayor is None or numerica > mayor[0]:
+                distintos = {campo: valor for campo, valor in datos_caso.items() if getattr(caso, campo) != valor}
+                if distintos:
+                    for campo, valor in distintos.items():
+                        setattr(caso, campo, valor)
+                    caso.full_clean()
+                    caso.save(update_fields=list(distintos))
         version = _guardar(plan, caso, autor, semantica)
     if version.status == CaseVersionStatus.PUBLISHED:
         version.motivos_publicacion = []

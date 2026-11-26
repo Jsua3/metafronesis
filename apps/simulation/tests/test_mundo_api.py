@@ -45,8 +45,10 @@ def test_lectura_tiene_contrato_y_crea_estado_perezoso(mundo):
     assert respuesta.status_code == 200
     datos = respuesta.json()["data"]
     assert set(datos) == {"attemptId", "status", "map", "player", "objects", "collisions", "tools",
-                          "inventory", "inspectedObjectKeys", "viewedDialogueKeys", "usedToolKeys",
-                          "flags", "decisionOptions", "comments", "layout"}
+                          "inventory", "inspectedObjectKeys", "viewedDialogueKeys", "viewedNpcKeysHere", "usedToolKeys",
+                          "usedToolKeysHere", "flags", "decisionOptions", "comments", "layout"}
+    assert datos["usedToolKeysHere"] == []
+    assert datos["viewedNpcKeysHere"] == []
     assert datos["player"] == {"x": 50, "y": 50}
     assert AttemptWorldState.objects.filter(attempt=mundo["intento"]).count() == 1
 
@@ -194,3 +196,8 @@ def test_openapi_del_patch_admite_acuse_y_mundo_completo():
     esquema = SchemaGenerator().get_schema(public=True)
     respuesta = esquema["paths"]["/api/simulation/attempts/{id}/world-state"]["patch"]["responses"]["200"]
     assert "anyOf" in respuesta["content"]["application/json"]["schema"]
+    mundo = esquema["components"]["schemas"]["MundoRespuesta"]
+    assert "usedToolKeysHere" in mundo["required"]
+    assert mundo["properties"]["usedToolKeysHere"] == {"type": "array", "items": {"type": "string"}}
+    assert "viewedNpcKeysHere" in mundo["required"]
+    assert mundo["properties"]["viewedNpcKeysHere"] == {"type": "array", "items": {"type": "string"}}
