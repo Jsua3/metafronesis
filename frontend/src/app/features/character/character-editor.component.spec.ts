@@ -76,7 +76,8 @@ describe('CharacterEditorComponent', () => {
   it('el elenco es un grupo de radios nativos (flechas del navegador) y elegir cambia el personaje', async () => {
     await render();
     const radios = [...group('Elige tu personaje').querySelectorAll<HTMLInputElement>('input[type="radio"]')];
-    expect(radios).toHaveLength(13);
+    // Los 14 jugables del catálogo (Karen y Sara incluidas) y «personalizado».
+    expect(radios).toHaveLength(15);
     expect(new Set(radios.map(item => item.name)).size).toBe(1);
     expect(radios.filter(item => item.checked)).toHaveLength(1);
     // El elenco y las opciones son radios nativos; el único radiogroup con ARIA es el segmentado de Movimiento (C5).
