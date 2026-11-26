@@ -37,17 +37,18 @@ export function conNombre(texto: string | null | undefined, nombre: string | nul
 /** Quita el hueco que dejó la marca y arregla lo que queda alrededor. */
 function sinHueco(texto: string): string {
   let t = texto;
+  t = t.replace(new RegExp(`¡[ \\t]*${HUECO}[ \\t]*!|¿[ \\t]*${HUECO}[ \\t]*\\?`, 'g'), '');
   // «Gracias, {nombre}, por venir.» → «Gracias por venir.»: el nombre iba entre dos comas (vocativo en medio de la frase).
-  t = t.replace(new RegExp(`\\s*,\\s*${HUECO}\\s*,\\s*`, 'g'), ' ');
+  t = t.replace(new RegExp(`(?:[ \\t]*,)+[ \\t]*${HUECO}(?:[ \\t]*,)+[ \\t]*`, 'g'), ' ');
   // «Hola, {nombre}.» / «¡Hola, {nombre}!» → «Hola.» / «¡Hola!»: la coma de antes sobra si después viene puntuación o el final.
-  t = t.replace(new RegExp(`\\s*,\\s*${HUECO}(?=\\s*(?:[.,;:!?…)»”]|$))`, 'g'), '');
+  t = t.replace(new RegExp(`(?:[ \\t]*,)+[ \\t]*${HUECO}(?=[ \\t]*(?:[.,;:!?…)»”]|$))`, 'gm'), '');
   // «{nombre}, mira esto» al empezar una frase → «Mira esto» (la mayúscula pasa a la palabra siguiente).
   t = t.replace(
-    new RegExp(`(^|[.!?…]\\s+|[¡¿«“(]\\s*)${HUECO}[ \\t]*,?[ \\t]*((?:[¡¿«“(][ \\t]*)*)(\\p{L})`, 'gmu'),
+    new RegExp(`(^|[.!?…]\\s+|[¡¿«“(]\\s*)[ \\t]*${HUECO}(?:[ \\t]*,)*[ \\t]*((?:[¡¿«“(][ \\t]*)*)(\\p{L})`, 'gmu'),
     (_, antes: string, apertura: string, letra: string) => antes + apertura + letra.toLocaleUpperCase('es'),
   );
   // «Eres {nombre}, del equipo» → «Eres del equipo»: la coma que seguía al nombre sobra.
-  t = t.replace(new RegExp(`\\s*${HUECO}\\s*,\\s*`, 'g'), ' ');
+  t = t.replace(new RegExp(`[ \\t]*${HUECO}(?:[ \\t]*,)+[ \\t]*`, 'g'), ' ');
   // Lo que quede: el hueco se va con un espacio.
   t = t.replace(new RegExp(HUECO, 'g'), ' ');
   return t

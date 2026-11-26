@@ -5,6 +5,7 @@ import { LiveRegionAnnouncer } from '../../../core/a11y/live-announcer.service';
 import { CinematicaCasoComponent, type FinDeCinematica } from './cinematica-caso.component';
 import { leerCinematica } from './lectura';
 import type { CinematicaLeida } from './lectura';
+import { LienzoDeCinematica } from './lienzo';
 
 const CINEMATICA = leerCinematica({
   cinematica: {
@@ -78,7 +79,8 @@ describe('CinematicaCasoComponent', () => {
 
   it('muestra y anuncia el subtítulo del plano', () => {
     expect(texto()).toContain('Viernes, 4 de la tarde.');
-    expect(anuncios).toContain('Viernes, 4 de la tarde.');
+    expect(anuncios).toContain('Plano 1 de 3. Viernes, 4 de la tarde.');
+    expect(fixture.nativeElement.querySelector('#cine-texto').textContent).toContain('Flecha izquierda');
   });
 
   it('Enter pasa de plano; el negro pide silencio y el título lleva el nombre de pila', () => {
@@ -93,7 +95,67 @@ describe('CinematicaCasoComponent', () => {
     expect(texto()).toContain('Eres');
     expect(texto()).toContain('Ana,');
     expect(texto()).not.toContain('{nombre}');
-    expect(anuncios).toContain('Eres Ana, del equipo.');
+    expect(anuncios).toContain('Plano 2 de 3.');
+    expect(anuncios).toContain('Plano 3 de 3. Eres Ana, del equipo.');
+  });
+
+  it('al saltar en pausa muestra completo el plano de destino y su texto', () => {
+    const lienzo = vi.spyOn(LienzoDeCinematica.prototype, 'disponible', 'get').mockReturnValue(true);
+    const pintar = vi.spyOn(LienzoDeCinematica.prototype, 'pintar').mockReturnValue({ dx: 0, dy: 0 });
+    try {
+      tecla(' ');
+      tecla('ArrowRight');
+      tecla('ArrowRight');
+      expect(pintar).toHaveBeenLastCalledWith(expect.anything(), null, 1);
+      expect(component.visible()).toBe(true);
+    } finally {
+      pintar.mockRestore();
+      lienzo.mockRestore();
+    }
+  });
+
+  it('usa el tiempo del plano para el fundido al redibujar en pausa', () => {
+    const lienzo = vi.spyOn(LienzoDeCinematica.prototype, 'disponible', 'get').mockReturnValue(true);
+    const pintar = vi.spyOn(LienzoDeCinematica.prototype, 'pintar').mockReturnValue({ dx: 0, dy: 0 });
+    const ahora = vi.spyOn(performance, 'now').mockReturnValue(100);
+    try {
+      tecla('ArrowRight');
+      tecla('ArrowRight');
+      tecla(' ');
+      const medir = component as unknown as { medir(): void };
+      medir.medir();
+      const mezcla = pintar.mock.lastCall?.[2];
+      ahora.mockReturnValue(1100);
+      medir.medir();
+      expect(mezcla).toBeLessThan(1);
+      expect(pintar.mock.lastCall?.[2]).toBe(mezcla);
+    } finally {
+      ahora.mockRestore();
+      pintar.mockRestore();
+      lienzo.mockRestore();
+    }
+  });
+
+  it('cada entrada espera su propio subtítulo y el cierre cancela la espera', () => {
+    tecla('ArrowRight');
+    vi.advanceTimersByTime(100);
+    tecla('ArrowRight');
+    vi.advanceTimersByTime(180);
+    expect(component.visible()).toBe(false);
+    tecla('Enter');
+    vi.advanceTimersByTime(100);
+    expect(component.visible()).toBe(false);
+  });
+
+  it('el texto largo tiene una región con nombre y Tab y conserva el desplazamiento con PageDown', () => {
+    const region = fixture.nativeElement.querySelector('[aria-label="Subtítulo del plano"]') as HTMLElement;
+    expect(region?.tabIndex).toBe(0);
+    Object.defineProperty(region, 'scrollHeight', { value: 500 });
+    Object.defineProperty(region, 'clientHeight', { value: 100 });
+    const pagina = new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true, cancelable: true });
+    region.dispatchEvent(pagina);
+    expect(pagina.defaultPrevented).toBe(false);
+    expect(component.indice()).toBe(0);
   });
 
   it('← vuelve al plano anterior', () => {

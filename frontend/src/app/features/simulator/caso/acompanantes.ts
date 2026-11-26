@@ -21,12 +21,12 @@ export interface EntornoDeRuta {
 
 /** Lado de la rejilla de búsqueda (px): lo bastante fino para pasar entre muebles, lo bastante grueso para ser barato. */
 export const CELDA_PX = 10;
-/** Tope de celdas que explora el A* antes de rendirse y caer a la línea recta. */
+/** Tope de celdas que explora el A* antes de dar la ruta por inaccesible. */
 const TOPE_DE_NODOS = 3000;
 /** Cuánto se amplía, hacia cada lado, la caja que une salida y llegada para buscar el rodeo. */
 const MARGEN_DE_BUSQUEDA_PX = 120;
 /** Cada cuántos px se comprueba que un tramo recto esté libre. */
-const MUESTREO_PX = 6;
+const MUESTREO_PX = 1;
 /** Cerca de la puerta no se exige suelo libre: el marcador de la puerta puede caer sobre su propia pared. */
 const HOLGURA_DE_PUERTA_PX = 14;
 
@@ -43,26 +43,32 @@ const ASENTAR_MS = 120;
 
 const distancia = (a: Punto, b: Punto): number => Math.hypot(b.x - a.x, b.y - a.y);
 
-/** ¿El tramo está libre? Junto a una puerta se permite cruzar su pared. */
-function tramoLibre(a: Punto, b: Punto, env: EntornoDeRuta, libreDe: Punto, holgura: number): boolean {
-  const largo = distancia(a, b);
+/** ¿El tramo está libre? Solo el último tramo puede entrar en la pared de la puerta. */
+function tramoLibre(a: Punto, b: Punto, env: EntornoDeRuta, holgura = 0): boolean {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const largo = Math.hypot(dx, dy);
   const pasos = Math.max(1, Math.ceil(largo / MUESTREO_PX));
+  const nx = largo ? -dy / largo * MUESTREO_PX : 0, ny = largo ? dx / largo * MUESTREO_PX : 0;
   for (let i = 1; i <= pasos; i++) {
-    const p = { x: a.x + ((b.x - a.x) * i) / pasos, y: a.y + ((b.y - a.y) * i) / pasos };
-    if (holgura > 0 && distancia(p, libreDe) <= holgura) continue;
-    if (env.bloqueado(p.x, p.y)) return false;
+    if (holgura > 0 && largo * (1 - i / pasos) <= holgura) continue;
+    const x = a.x + (dx * i) / pasos, y = a.y + (dy * i) / pasos;
+    if (env.bloqueado(x, y)) return false;
+    // El margen lateral evita raspar esquinas entre muestras al atravesar en diagonal.
+    if (dx !== 0 && dy !== 0 && i < pasos
+      && (env.bloqueado(x + nx, y + ny) || env.bloqueado(x - nx, y - ny))) return false;
   }
   return true;
 }
 
 /**
- * Camino de `desde` a `hasta` esquivando lo que bloquea: puntos de paso SIN el de salida y con `hasta` al final. Si la
- * búsqueda no encuentra nada, los acompañantes aún cruzan la puerta. Una llegada que exige suelo libre devuelve [].
+ * Camino de `desde` a `hasta` esquivando lo que bloquea: puntos de paso sin el de salida y con `hasta` al final.
+ * Si la búsqueda no encuentra una ruta libre, devuelve [].
  */
 export function rutaEsquivando(desde: Punto, hasta: Punto, env: EntornoDeRuta, exigirLlegadaLibre = false): Punto[] {
-  const holgura = exigirLlegadaLibre ? 0 : HOLGURA_DE_PUERTA_PX;
-  if (exigirLlegadaLibre && env.bloqueado(hasta.x, hasta.y)) return [];
-  if (tramoLibre(desde, hasta, env, hasta, holgura)) return [hasta];
+  const llegadaBloqueada = env.bloqueado(hasta.x, hasta.y);
+  if (exigirLlegadaLibre && llegadaBloqueada) return [];
+  const holgura = llegadaBloqueada ? HOLGURA_DE_PUERTA_PX : 0;
+  if (tramoLibre(desde, hasta, env, holgura)) return [hasta];
 
   const { limites } = env;
   const minX = Math.max(limites.minX, Math.min(desde.x, hasta.x) - MARGEN_DE_BUSQUEDA_PX);
@@ -82,25 +88,24 @@ export function rutaEsquivando(desde: Punto, hasta: Punto, env: EntornoDeRuta, e
   const [c1, f1] = aCelda(hasta);
   const libre = new Map<number, boolean>();
   const celdaLibre = (c: number, f: number): boolean => {
-    if (c === c1 && f === f1) return true;   // la llegada siempre se puede pisar
-    if (c === c0 && f === f0) return true;   // y la salida: ahí ya está parada
     const k = id(c, f);
     let v = libre.get(k);
     if (v === undefined) {
       const p = aPunto(c, f);
-      v = (holgura > 0 && distancia(p, hasta) <= holgura) || !env.bloqueado(p.x, p.y);
+      v = !env.bloqueado(p.x, p.y);
       libre.set(k, v);
     }
     return v;
   };
 
-  const g = new Map<number, number>([[id(c0, f0), 0]]);
+  // La salida exacta es un nodo propio. También puede enlazar con su celda redondeada si el tramo está libre.
+  const salida = -1;
+  const g = new Map<number, number>([[salida, 0]]);
   const padre = new Map<number, number>();
   const cerrado = new Set<number>();
   // Cola de prioridad mínima y simple: pocas celdas, un arreglo con búsqueda del menor basta.
-  const abierta: { k: number; c: number; f: number; costo: number }[] = [{ k: id(c0, f0), c: c0, f: f0, costo: 0 }];
-  const h = (c: number, f: number): number => Math.hypot(c1 - c, f1 - f);
-  let encontrado = false;
+  const abierta: { k: number; c: number; f: number; costo: number }[] = [{ k: salida, c: c0, f: f0, costo: 0 }];
+  let llegada: number | undefined;
   let explorados = 0;
 
   while (abierta.length > 0 && explorados < TOPE_DE_NODOS) {
@@ -110,42 +115,46 @@ export function rutaEsquivando(desde: Punto, hasta: Punto, env: EntornoDeRuta, e
     if (cerrado.has(actual.k)) continue;
     cerrado.add(actual.k);
     explorados++;
-    if (actual.c === c1 && actual.f === f1) { encontrado = true; break; }
+    const punto = actual.k === salida ? desde : aPunto(actual.c, actual.f);
+    if (Math.abs(actual.c - c1) <= 1 && Math.abs(actual.f - f1) <= 1 && tramoLibre(punto, hasta, env, holgura)) {
+      llegada = actual.k;
+      break;
+    }
     for (let dc = -1; dc <= 1; dc++) {
       for (let df = -1; df <= 1; df++) {
-        if (dc === 0 && df === 0) continue;
+        if (dc === 0 && df === 0 && actual.k !== salida) continue;
         const nc = actual.c + dc, nf = actual.f + df;
         if (nc < 0 || nf < 0 || nc >= columnas || nf >= filas || !celdaLibre(nc, nf)) continue;
         // Sin cortar esquinas: en diagonal, las dos celdas vecinas también deben estar libres.
         if (dc !== 0 && df !== 0 && (!celdaLibre(actual.c + dc, actual.f) || !celdaLibre(actual.c, actual.f + df))) continue;
         const nk = id(nc, nf);
         if (cerrado.has(nk)) continue;
-        const costo = (g.get(actual.k) ?? 0) + (dc !== 0 && df !== 0 ? Math.SQRT2 : 1);
+        const siguiente = aPunto(nc, nf);
+        const costo = (g.get(actual.k) ?? 0) + distancia(punto, siguiente);
         if (costo < (g.get(nk) ?? Infinity)) {
+          if (!tramoLibre(punto, siguiente, env)) continue;
           g.set(nk, costo);
           padre.set(nk, actual.k);
-          abierta.push({ k: nk, c: nc, f: nf, costo: costo + h(nc, nf) });
+          abierta.push({ k: nk, c: nc, f: nf, costo: costo + distancia(siguiente, hasta) });
         }
       }
     }
   }
-  if (!encontrado) return exigirLlegadaLibre ? [] : [hasta];
+  if (llegada === undefined) return [];
 
-  const celdas: Punto[] = [];
-  for (let k: number | undefined = id(c1, f1); k !== undefined; k = padre.get(k)) {
-    celdas.push(aPunto(k % columnas, Math.floor(k / columnas)));
+  const camino: Punto[] = [hasta];
+  for (let k: number | undefined = llegada; k !== undefined && k !== salida; k = padre.get(k)) {
+    camino.push(aPunto(k % columnas, Math.floor(k / columnas)));
   }
-  celdas.reverse();
-  // La primera celda es la de salida (≈ `desde`) y la última la de llegada: se cambian por los puntos exactos.
-  const camino: Punto[] = [desde, ...celdas.slice(1, -1), hasta];
+  camino.push(desde);
+  camino.reverse();
 
   // Se estira el camino: de cada punto se salta al más lejano al que se llega en línea recta libre.
   const liso: Punto[] = [];
   let i = 0;
   while (i < camino.length - 1) {
     let j = camino.length - 1;
-    while (j > i + 1 && !tramoLibre(camino[i], camino[j], env, hasta, holgura)) j--;
-    if (exigirLlegadaLibre && !tramoLibre(camino[i], camino[j], env, hasta, holgura)) return [];
+    while (j > i + 1 && !tramoLibre(camino[i], camino[j], env, j === camino.length - 1 ? holgura : 0)) j--;
     liso.push(camino[j]);
     i = j;
   }
@@ -162,7 +171,7 @@ export interface PasoDeAcompanante {
   /** Los puntos de paso hasta la puerta (sin el de salida). */
   readonly ruta: readonly Punto[];
   readonly longitud: number;
-  /** Cuándo echa a andar (escalón) y cuánto camina. */
+  /** Cuándo empieza y cuánto dura su caminata o su desvanecimiento en el sitio. */
   readonly inicioMs: number;
   readonly caminaMs: number;
 }
@@ -194,13 +203,19 @@ function largoDe(desde: Punto, ruta: readonly Punto[]): number {
  * `TOPE_DE_CAMINATA_MS` no se permite: quien está lejos acelera (la coreografía no debe hacer esperar a quien juega).
  */
 export function planearAcompanantes(entradas: readonly EntradaAcompanante[], puerta: Punto, env: EntornoDeRuta): PlanDeAcompanantes {
+  let inicioAnterior = 0;
+  let fin = -ESCALON_MS;
   const pasos: PasoDeAcompanante[] = entradas.map((e, orden) => {
     const ruta = rutaEsquivando(e.desde, puerta, env);
     const longitud = largoDe(e.desde, ruta);
     const velocidad = Math.max(VELOCIDAD_A_LA_PUERTA, (longitud / TOPE_DE_CAMINATA_MS) * 1000);
-    return { key: e.key, ruta, longitud, inicioMs: orden * ESCALON_MS, caminaMs: Math.round((longitud / velocidad) * 1000) };
+    const caminaMs = ruta.length ? Math.round((longitud / velocidad) * 1000) : DESVANECE_REDUCIDO_MS;
+    const previsto = Math.max(orden * ESCALON_MS, inicioAnterior);
+    const inicioMs = previsto + caminaMs > fin ? previsto : fin + ESCALON_MS - caminaMs;
+    inicioAnterior = inicioMs;
+    fin = inicioMs + caminaMs;
+    return { key: e.key, ruta, longitud, inicioMs, caminaMs };
   });
-  const fin = pasos.reduce((m, p) => Math.max(m, p.inicioMs + p.caminaMs), 0);
   return { pasos, totalMs: pasos.length ? fin + ASENTAR_MS : 0 };
 }
 
@@ -208,6 +223,7 @@ export function planearAcompanantes(entradas: readonly EntradaAcompanante[], pue
 export function muestrearAcompanante(paso: PasoDeAcompanante, desde: Punto, ms: number): MuestraDeAcompanante {
   if (ms < paso.inicioMs) return { ...desde, vista: null, alfa: 1, caminando: false, cruzo: false };
   const t = paso.caminaMs <= 0 ? 1 : Math.min(1, (ms - paso.inicioMs) / paso.caminaMs);
+  if (paso.ruta.length === 0) return { ...desde, vista: null, alfa: 1 - t, caminando: false, cruzo: t >= 1 };
   let restante = paso.longitud * t;
   let previo = desde;
   let vista: ViewId | null = null;

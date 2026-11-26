@@ -17,7 +17,7 @@ import type { PlanDeSala } from '../sala/composicion';
 import { SEAM, TOP } from '../sala/geometria';
 import type { Momento } from '../sala/geometria';
 import { calcularLuz } from '../sala/luz';
-import { componerSala, pintarFondo } from '../sala/pintor';
+import { componerSala } from '../sala/pintor';
 import type { Imagen, Imagenes } from '../sala/pintor';
 
 export type ClaveDeDecorado = 'calle:tarde' | 'calle:noche' | 'urgencias:noche';
@@ -119,7 +119,7 @@ export interface DecoradoPintado {
   grado: readonly [number, number, number];
   /** El cristal de la ventana de la casa (solo en la calle). */
   vidrio: Vidrio | null;
-  /** Lo que suma la ventana encendida en la pared y el andén (RGBA; alfa 255 donde hay luz). Solo en la calle. */
+  /** Lo que suma la ventana encendida en la pared y el andén (RGBA; alfa 255 donde hay luz). Solo en la calle de noche. */
   derrame: Imagen | null;
 }
 
@@ -147,16 +147,14 @@ function unirEnFila(imagenes: Imagen[]): Imagen {
 }
 
 /** El cielo pintado por la composición (sin luz): 1 donde el píxel es una franja del cielo de día. */
-function mascaraDeCielo(fondo: Imagen): Uint8Array {
-  const m = new Uint8Array(fondo.ancho * fondo.alto);
+function marcarCielo(fondo: Imagen, mascara: Uint8Array, ancho: number, x0: number): void {
   const colores = new Set(CIELO_DE_DIA.map(c => (c[0] << 16) | (c[1] << 8) | c[2]));
   for (let y = 0; y < Math.min(fondo.alto, TOP); y++) {
     for (let x = 0; x < fondo.ancho; x++) {
       const p = (y * fondo.ancho + x) * 4, d = fondo.rgba;
-      if (colores.has((d[p] << 16) | (d[p + 1] << 8) | d[p + 2])) m[y * fondo.ancho + x] = 1;
+      if (colores.has((d[p] << 16) | (d[p + 1] << 8) | d[p + 2])) mascara[y * ancho + x0 + x] = 1;
     }
   }
-  return m;
 }
 
 /** La hora dorada: cielo cálido, grado sobre todo lo demás y la sombra tramada de enfrente en el andén. */
@@ -295,12 +293,20 @@ export function pintarDecorado(clave: ClaveDeDecorado, manifiesto: ManifiestoDeP
   const { salas, momento } = partes(clave);
   const losPlanes = planes(clave, manifiesto);
   const capas = losPlanes.map((_, n) => calcularLuz(salas[n], manifiesto.piezas, { momento }));
-  const escenas = losPlanes.map((plan, n) => componerSala(plan, imagenes, capas[n]));
+  const tarde = clave === 'calle:tarde';
+  const ancho = losPlanes.reduce((total, plan) => total + plan.ancho, 0);
+  const cielo = tarde ? new Uint8Array(ancho * TOP) : null;
+  let xDeSala = 0;
+  const escenas = losPlanes.map((plan, n) => {
+    const escena = componerSala(plan, imagenes, capas[n], [], null,
+      cielo ? fondo => marcarCielo(fondo, cielo, ancho, xDeSala) : undefined);
+    xDeSala += plan.ancho;
+    return escena;
+  });
   const luces = losPlanes.map((plan, n): Imagen => ({ ancho: plan.ancho, alto: plan.alto, rgba: capas[n].ambiente }));
   const imagen = unirEnFila(escenas);
   const ambiente = unirEnFila(luces).rgba as Uint8ClampedArray;
-  const tarde = clave === 'calle:tarde';
-  if (tarde) gradoDeTarde(imagen, mascaraDeCielo(unirEnFila(losPlanes.map(plan => pintarFondo(plan, imagenes)))));
+  if (cielo) gradoDeTarde(imagen, cielo);
   const calle = clave.startsWith('calle');
   const vidrio = calle ? vidrioDe(losPlanes[0], imagenes, VENTANA_DE_LA_CASA) : null;
   if (calle && momento === 'noche') {
@@ -323,7 +329,7 @@ export function pintarDecorado(clave: ClaveDeDecorado, manifiesto: ManifiestoDeP
     ambiente,
     grado: tarde ? GRADO_DE_TARDE : SIN_GRADO,
     vidrio,
-    derrame: vidrio ? derrameDe(vidrio, imagen.ancho, imagen.alto) : null,
+    derrame: vidrio && momento === 'noche' ? derrameDe(vidrio, imagen.ancho, imagen.alto) : null,
   };
 }
 

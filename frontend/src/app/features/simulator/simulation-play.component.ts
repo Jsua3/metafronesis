@@ -59,7 +59,7 @@ import { altoTapado } from './camara/cubierta';
 import type { Caja } from './camara/camara';
 import { type EscenarioReaccion, type FinReaccion, ReactionDirectorComponent } from './reaction-director.component';
 import { JournalPanelComponent, JournalSaveState } from './journal-panel.component';
-import { isActivatableTarget, isShortcutContext, isTextEntryTarget } from './keyboard-focus.util';
+import { isActivatableTarget, isScrollRegionTarget, isShortcutContext, isTextEntryTarget } from './keyboard-focus.util';
 import { salaDelMundo } from './sala/mundo-a-sala';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
 import { WorldPlacesListComponent } from './world-places-list.component';
@@ -2227,12 +2227,27 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.revelando.set(true);
     if (this.revelandoTimer !== null) window.clearTimeout(this.revelandoTimer);
     this.revelandoTimer = window.setTimeout(() => { this.revelandoTimer = null; this.revelando.set(false); }, REVELAR_MS);
+    afterNextRender(() => this.recuperarFocoDelMundo(), { injector: this.injector });
+  }
+
+  private recuperarFocoDelMundo(): void {
+    const juego = this.host?.nativeElement.querySelector<HTMLElement>('.game-container');
+    const documento = juego?.ownerDocument;
+    const activo = documento?.activeElement;
+    if (activo && activo !== documento?.body && activo.isConnected
+      && !activo.closest('app-umbral-caso, [inert], [hidden], :disabled')) return;
+    juego?.focus({ preventScroll: true });
+  }
+
+  /** Se ejecuta tras desmontar la trampa anterior y después de que aparezca la capa que toma el relevo. */
+  private relevarFocoDeLaEntrada(): void {
     afterNextRender(() => {
-      const activo = document.activeElement as HTMLElement | null;
-      if (activo && activo !== document.body && activo.isConnected && !activo.closest('app-umbral-caso')) return;
-      // El contenedor del juego (tabindex="-1"): las teclas del mundo se escuchan en la ventana, así que basta con que el
-      // foco no quede en el cuerpo ni en un nodo que ya no existe.
-      this.host?.nativeElement.querySelector<HTMLElement>('.game-container')?.focus({ preventScroll: true });
+      const siguiente = this.tutor() ? 'app-tutor-caso' : this.controlsVisible() ? '.help-layer--controles' : null;
+      if (siguiente) {
+        this.host?.nativeElement.querySelector<HTMLElement>(`${siguiente} [cdkFocusInitial]`)?.focus({ preventScroll: true });
+      } else if (!this.inputBlocked() && !this.helpOpen()) {
+        this.recuperarFocoDelMundo();
+      }
     }, { injector: this.injector });
   }
 
@@ -2662,7 +2677,9 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     }
     if (!this.overlayKeysDown.has(key)) return;
     const target = event.target instanceof Element ? event.target : null;
-    if (!isTextEntryTarget(target) && event.key !== 'e' && event.key !== 'E') event.preventDefault();
+    const desplazaLectura = (event.key === ' ' || event.key === 'PageDown')
+      && target?.closest('app-cinematica-caso, app-tutor-caso') && isScrollRegionTarget(target);
+    if (!desplazaLectura && !isTextEntryTarget(target) && event.key !== 'e' && event.key !== 'E') event.preventDefault();
     event.stopPropagation();
   };
 
@@ -4721,6 +4738,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.cinematica.set(null);
     this.audioDirector.silenciarIntro(false);
     this.seguirEntrada();
+    this.relevarFocoDeLaEntrada();
   }
 
   /** El corte a negro de la cinemática pide silencio a la música de entrada. */
@@ -4746,6 +4764,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.tutorAbierto.set(null);
     const nota = this.notaTrasTutor;
     this.notaTrasTutor = null;
+    this.relevarFocoDeLaEntrada();
     if (this.entradaEnCurso) {
       this.terminarEntrada();
       return;

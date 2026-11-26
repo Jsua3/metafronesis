@@ -19,9 +19,9 @@ import { FRAME, VIEW_ROWS } from '../../character/kit/kit-engine';
 import { KIT_ASSETS } from '../../character/kit/character-visual.resolver';
 import { pintarDecorado, rutasDelDecorado, luzEn } from './decorados';
 import type { ClaveDeDecorado, DecoradoPintado } from './decorados';
-import { decoradoDelPlano, recetasDelPlano } from './escenas';
+import { URGENCIAS, decoradoDelPlano, recetasDelPlano } from './escenas';
 import { cuartoEncendido, hazDeBaliza, reflejoDeVidrio, resplandor, vinetaTramada } from './pixeles';
-import { SEAM } from '../sala/geometria';
+import { ALTO, SEAM } from '../sala/geometria';
 import type { ActorEnCuadro, CuadroDeCinematica, MuebleEnCuadro } from './escenas';
 import type { PlanoLeido } from './lectura';
 
@@ -75,12 +75,23 @@ function lienzo(ancho: number, alto: number): { canvas: HTMLCanvasElement; ctx: 
   return { canvas, ctx };
 }
 
-function cargarImagen(url: string): Promise<HTMLImageElement> {
+function cargarImagen(url: string, signal: AbortSignal): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(signal.reason); return; }
     const img = new Image();
     img.decoding = 'async';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`No cargó ${url}`));
+    const limpiar = () => {
+      img.onload = img.onerror = null;
+      signal.removeEventListener('abort', cancelar);
+    };
+    const cancelar = () => {
+      limpiar();
+      img.removeAttribute('src');
+      reject(signal.reason);
+    };
+    img.onload = () => { limpiar(); resolve(img); };
+    img.onerror = () => { limpiar(); reject(new Error(`No cargó ${url}`)); };
+    signal.addEventListener('abort', cancelar, { once: true });
     img.src = url;
   });
 }
@@ -104,7 +115,9 @@ function aLienzo(imagen: Imagen): HTMLCanvasElement | null {
 const respirar = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
 interface DecoradoListo {
-  datos: DecoradoPintado;
+  datos: Pick<DecoradoPintado, 'ancho' | 'alto' | 'ambiente' | 'grado'> & {
+    vidrio: Omit<NonNullable<DecoradoPintado['vidrio']>, 'mascara'> | null;
+  };
   fondo: HTMLCanvasElement;
   derrame: HTMLCanvasElement | null;
   /** La máscara del cristal como lienzo (blanco opaco donde hay cristal), para recortar el interior. */
@@ -123,9 +136,10 @@ export class LienzoDeCinematica {
   private interior: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null;
   /** Las capas de luz por escalones (`pixeles.ts`), compuestas una vez y reutilizadas en cada cuadro. */
   private readonly capasDeLuz = new Map<string, HTMLCanvasElement | null>();
+  private usaResplandor = false;
   private mueble: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null;
   private forma: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null;
-  private destruido = false;
+  private readonly preparacion = new AbortController();
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly base = '') {
     let ctx: CanvasRenderingContext2D | null = null;
@@ -147,23 +161,31 @@ export class LienzoDeCinematica {
    * plano está listo (para no esperar a todos antes de empezar).
    */
   async preparar(planos: readonly PlanoLeido[], primero?: () => void): Promise<void> {
+    const { signal } = this.preparacion;
+    if (signal.aborted) return;
     const claves = [...new Set(planos.map(decoradoDelPlano))]
       .filter((c): c is ClaveDeDecorado => c === 'calle:tarde' || c === 'calle:noche' || c === 'urgencias:noche');
     const recetas = [...new Set(planos.flatMap(recetasDelPlano))];
     const kit = Promise.all(recetas.map(r => this.cargarHojas(r)));
     if (planos.some(p => p.escena === 'urgencias-llegada')) {
-      cargarImagen(`${this.base}${urlDePieza('piezas/muebles/hospital/camilla.png')}`).then(img => { if (!this.destruido) this.camilla = img; }, () => undefined);
+      this.usaResplandor = true;
+      cargarImagen(`${this.base}${urlDePieza('piezas/muebles/hospital/camilla.png')}`, signal)
+        .then(img => { if (!signal.aborted) this.camilla = img; }, () => undefined);
+      if (this.disponible) this.resplandorDeUrgencias(this.medida.ancho);
     }
     let manifiesto: ManifiestoDePiezas | null = null;
     try {
-      const respuesta = await fetch(`${this.base}${MANIFIESTO_DE_PIEZAS_URL}`);
+      const respuesta = await fetch(`${this.base}${MANIFIESTO_DE_PIEZAS_URL}`, { signal });
+      if (signal.aborted) return;
       const json: unknown = respuesta.ok ? await respuesta.json() : null;
       manifiesto = esManifiestoDePiezas(json) ? json : null;
     } catch {
       manifiesto = null;
     }
-    if (manifiesto && !this.destruido) {
+    if (signal.aborted) return;
+    if (manifiesto) {
       const imagenes = new Map<string, Imagen>();
+      let primeraLista = false;
       for (const clave of claves) {
         let rutas: string[];
         try {
@@ -171,30 +193,45 @@ export class LienzoDeCinematica {
         } catch {
           continue;
         }
-        await Promise.all(rutas.filter(r => !imagenes.has(r)).map(r => cargarImagen(`${this.base}${urlDePieza(r)}`)
-          .then(img => { const px = pixelesDe(img); if (px) imagenes.set(r, px); }, () => undefined)));
-        if (this.destruido) return;
+        await Promise.all(rutas.filter(r => !imagenes.has(r)).map(async r => {
+          try {
+            const img = await cargarImagen(`${this.base}${urlDePieza(r)}`, signal);
+            if (signal.aborted) return;
+            const px = pixelesDe(img);
+            if (px) imagenes.set(r, px);
+          } catch {
+            // La pieza se omite si no pudo cargarse o convertirse en píxeles.
+          }
+        }));
+        if (signal.aborted) return;
         await respirar();
         // La pausa deja correr al navegador: la cinemática pudo cerrarse entretanto.
-        if (this.destruido) return;
+        if (signal.aborted) return;
         try {
           this.guardarDecorado(pintarDecorado(clave, manifiesto, imagenes));
         } catch {
           // Sin este decorado: se pinta su respaldo.
         }
-        if (clave === claves[0]) primero?.();
+        if (clave === claves[0]) {
+          primeraLista = true;
+          primero?.();
+          if (signal.aborted) return;
+        }
       }
+      if (!primeraLista) primero?.();
+    } else {
+      primero?.();
     }
-    primero?.();
     await kit;
   }
 
   private guardarDecorado(datos: DecoradoPintado): void {
-    const fondo = aLienzo(datos.imagen);
+    const { clave, imagen, derrame, vidrio, ancho, alto, ambiente, grado } = datos;
+    const fondo = aLienzo(imagen);
     if (!fondo) return;
     let mascara: HTMLCanvasElement | null = null;
-    if (datos.vidrio) {
-      const v = datos.vidrio, l = lienzo(v.w, v.h);
+    if (vidrio) {
+      const v = vidrio, l = lienzo(v.w, v.h);
       if (l) {
         const img = l.ctx.createImageData(v.w, v.h);
         for (let i = 0; i < v.mascara.length; i++) if (v.mascara[i]) img.data.set([255, 255, 255, 255], i * 4);
@@ -202,20 +239,25 @@ export class LienzoDeCinematica {
         mascara = l.canvas;
       }
     }
-    this.decorados.set(datos.clave, { datos, fondo, derrame: datos.derrame ? aLienzo(datos.derrame) : null, mascara });
+    const caja = vidrio ? { x: vidrio.x, y: vidrio.y, w: vidrio.w, h: vidrio.h } : null;
+    this.decorados.set(clave, {
+      datos: { ancho, alto, ambiente, grado, vidrio: caja }, fondo, derrame: derrame ? aLienzo(derrame) : null, mascara,
+    });
   }
 
   private async cargarHojas(receta: string): Promise<void> {
+    const { signal } = this.preparacion;
     try {
-      const [idle, walk] = await Promise.all(['idle', 'walk'].map(h => cargarImagen(`${this.base}${KIT_ASSETS}/${receta}/${h}.png`)));
-      if (!this.destruido) this.hojas.set(receta, { idle, walk });
+      const [idle, walk] = await Promise.all(['idle', 'walk'].map(h => cargarImagen(`${this.base}${KIT_ASSETS}/${receta}/${h}.png`, signal)));
+      if (!signal.aborted) this.hojas.set(receta, { idle, walk });
     } catch {
-      // Sin su hoja, esa persona no se dibuja; la escena sigue.
+      // El cuadro usará las hojas del papel genérico cuando estén disponibles.
     }
   }
 
   /** Ajusta la resolución del lienzo a la vista (más un píxel de margen por lado para el paneo suave). */
   ajustar(medida: MedidaDeVista): void {
+    if (this.preparacion.signal.aborted) return;
     const w = medida.ancho + 2, h = medida.alto + 2;
     const mismoTamano = this.capa !== null && this.canvas.width === w && this.canvas.height === h && this.medida.ancho === medida.ancho;
     this.medida = medida;
@@ -227,6 +269,7 @@ export class LienzoDeCinematica {
     this.vineta = this.pintarVineta(w, h);
     // Las capas de luz dependen del ancho de la vista: las del tamaño anterior ya no sirven (y no deben quedar retenidas).
     this.capasDeLuz.clear();
+    if (this.usaResplandor && this.disponible) this.resplandorDeUrgencias(medida.ancho);
   }
 
   get vista(): { ancho: number; alto: number } {
@@ -238,7 +281,7 @@ export class LienzoDeCinematica {
    * actual, en píxeles del lienzo, para que el componente la corra con CSS.
    */
   pintar(actual: CuadroDeCinematica, anterior: CuadroDeCinematica | null, mezcla: number): { dx: number; dy: number } {
-    if (!this.ctx || this.destruido) return { dx: 0, dy: 0 };
+    if (!this.ctx || this.preparacion.signal.aborted) return { dx: 0, dy: 0 };
     if (anterior && mezcla < 1 && this.capa) {
       this.pintarCuadro(this.ctx, anterior);
       const fraccion = this.pintarCuadro(this.capa.ctx, actual);
@@ -252,7 +295,7 @@ export class LienzoDeCinematica {
   }
 
   destruir(): void {
-    this.destruido = true;
+    this.preparacion.abort();
     this.decorados.clear();
     this.hojas.clear();
     this.capasDeLuz.clear();
@@ -298,7 +341,7 @@ export class LienzoDeCinematica {
       if ('actor' in cosa) this.pintarActor(ctx, cosa.actor, listo, cuadro.momento);
       else this.pintarMueble(ctx, cosa.mueble, listo);
     }
-    this.pintarLuces(ctx, cuadro, izq, arr, vw, vh);
+    this.pintarLuces(ctx, cuadro, izq, vw);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (this.vineta) ctx.drawImage(this.vineta, 0, 0);
     return { dx: px - ix, dy: py - iy };
@@ -374,7 +417,8 @@ export class LienzoDeCinematica {
   }
 
   private pintarActor(ctx: CanvasRenderingContext2D, actor: ActorEnCuadro, listo: DecoradoListo | null, momento: string): void {
-    const hojas = this.hojas.get(actor.receta), f = this.figura;
+    const hojas = this.hojas.get(actor.receta) ?? this.hojas.get(actor.recetaDeRespaldo ?? actor.receta);
+    const f = this.figura;
     if (!hojas || !f) return;
     const x = actor.x - FRAME.pivotX, y = actor.y - FRAME.pivotY;
     // La sombra larga de la tarde: la silueta tendida hacia la derecha y aplastada sobre el andén (el sol bajo, a la
@@ -464,7 +508,7 @@ export class LienzoDeCinematica {
   }
 
   /** Luces de emergencia: rojo y azul sobre las paredes (en la calle) o el rojo que entra por la izquierda (urgencias). */
-  private pintarLuces(ctx: CanvasRenderingContext2D, cuadro: CuadroDeCinematica, izq: number, arr: number, vw: number, vh: number): void {
+  private pintarLuces(ctx: CanvasRenderingContext2D, cuadro: CuadroDeCinematica, izq: number, vw: number): void {
     const { rojo, azul, barrido } = cuadro.luces;
     if (rojo <= 0.01 && azul <= 0.01) return;
     // La luz se SUMA (lighter) y su fuerza va por escalones de un cuarto: nada de transparencias continuas.
@@ -497,13 +541,24 @@ export class LienzoDeCinematica {
       }
     } else {
       // Urgencias: el rojo de la ambulancia que quedó afuera entra por la izquierda, a escalones.
-      const radio = Math.max(24, Math.round(vw * 0.7));
-      const charco = this.capa_(`resplandor:${radio}`, () => resplandor(radio, [255, 40, 46]));
+      const { charco, x, y } = this.resplandorDeUrgencias(vw);
       ctx.globalAlpha = escalonada(rojo) * 0.6;
-      if (charco) ctx.drawImage(charco, 40 - radio, 300 - radio);
+      if (charco) ctx.drawImage(charco, x, y);
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+  }
+
+  private resplandorDeUrgencias(anchoVista: number): { charco: HTMLCanvasElement | null; x: number; y: number } {
+    const radio = Math.max(24, Math.round(anchoVista * 0.7));
+    const izq = 40 - radio, arriba = 300 - radio;
+    const x = Math.max(0, izq), y = Math.max(0, arriba);
+    const charco = this.capa_(`resplandor:${radio}`, () => resplandor(radio, [255, 40, 46], {
+      x: x - izq, y: y - arriba,
+      ancho: Math.min(URGENCIAS.ancho, izq + 2 * radio) - x,
+      alto: Math.min(ALTO, arriba + 2 * radio) - y,
+    }));
+    return { charco, x, y };
   }
 
   /** Una capa de luz compuesta una sola vez (y reutilizada); null si no hay lienzo (jsdom). */

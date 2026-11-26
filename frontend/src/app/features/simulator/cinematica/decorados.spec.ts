@@ -49,7 +49,7 @@ describe('cinematica/decorados (con la biblioteca de piezas real)', () => {
     expect(tarde.vidrio!.x).toBeGreaterThan(150);
     expect(tarde.vidrio!.x + tarde.vidrio!.w).toBeLessThan(320);
     expect(tarde.vidrio!.mascara.some(Boolean)).toBe(true);
-    expect(tarde.derrame).not.toBeNull();
+    expect(tarde.derrame).toBeNull();
     expect(tarde.grado).toEqual(GRADO_DE_TARDE);
   });
 

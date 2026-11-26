@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import { SimulationService } from '../../core/api/simulation.service';
-import type { GuiaEscena } from './caso/guia';
+import { armarGuia, type GuiaEscena } from './caso/guia';
 import type { HintAttemptRef } from './scene-hint.component';
 import { SceneGoalCardComponent } from './scene-goal-card.component';
 
@@ -159,10 +159,55 @@ describe('SceneGoalCardComponent', () => {
       expect(pedidas).toEqual(['familia']);
     });
 
+    it('asocia la flecha y el botón a la primera fila con destino disponible y muestra el avance real', () => {
+      const guia = armarGuia({
+        goal: 'Plan', lugares: [
+          { key: 'cerrada', kind: 'door', label: 'Pasillo', note: 'Cerrada' },
+          { key: 'npc:patricia', kind: 'person', label: 'Patricia' },
+        ], inspeccionados: [], hablados: new Set(),
+        autorada: {
+          guia: { paso: 2, titulo: 'Plan', pasos: [
+            { texto: 'Yuliana despertará en unas horas.' },
+            { texto: 'Espera la apertura.', lugar: 'cerrada', hecho: { inspected: 'cerrada' } },
+            { texto: 'Propón el plan a Patricia.', lugar: 'patricia', hecho: { talked: 'patricia' } },
+            { texto: 'Recoge el material.', hecho: { has: 'kit' } },
+          ] },
+          mundo: { hablados: new Set(), inspeccionados: [], inventario: ['kit'], herramientasUsadas: [] },
+        },
+      });
+      const { el, abrir } = montar({ guia });
+      abrir();
+      const fila = el.querySelector('[aria-current="step"]')!;
+      expect(fila.textContent).toContain('Propón el plan a Patricia.');
+      expect(fila.querySelector('[data-guia-ir]')?.textContent).toContain('Hablar con Patricia');
+      expect(el.querySelector('.goal-card__paso-cuenta')?.textContent).toContain('1 de 4 hechos');
+      expect(el.querySelector('[data-guia-pasos] li')?.textContent).not.toContain('✓');
+    });
+
     it('sin nada a lo que apuntar no hay botón', () => {
       const { el, abrir } = montar({ guia: { ...GUIA, siguiente: null, siguienteLugar: null } });
       abrir();
       expect(el.querySelector('[data-guia-ir]')).toBeNull();
+    });
+
+    it('la puerta de respaldo queda fuera de la fila que indica cómo seguir en la sala', () => {
+      const guia = armarGuia({
+        goal: 'Plan', lugares: [{ key: 'puerta', kind: 'door', label: 'Pasillo' }], inspeccionados: [], hablados: new Set(),
+        autorada: {
+          guia: { paso: 1, titulo: '', pasos: [{ texto: 'Decide qué responder.' }] },
+          mundo: { hablados: new Set(), inspeccionados: [], inventario: [], herramientasUsadas: [] },
+        },
+      });
+      const { el, abrir, fixture } = montar({ guia });
+      const lugares: string[] = [];
+      fixture.componentInstance.goToStep.subscribe(k => lugares.push(k));
+      abrir();
+      expect(el.querySelector('[aria-current="step"]')?.textContent).toContain('Decide qué responder.');
+      const ir = el.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
+      expect(ir.closest('li')).toBeNull();
+      expect(el.textContent).toContain('Cuando termines en esta sala: Pasillo.');
+      ir.click();
+      expect(lugares).toEqual(['puerta']);
     });
   });
 

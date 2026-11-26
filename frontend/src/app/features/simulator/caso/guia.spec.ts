@@ -157,9 +157,9 @@ describe('la guía escrita en el caso (`ambiente.guia`)', () => {
   });
   const armar = (m = mundo()) => armarGuia({ goal: 'x', lugares: LUG, inspeccionados: [], hablados: m.hablados, autorada: { guia: GUIA, mundo: m } });
 
-  it('un consejo sin hecho se da por cumplido cuando se cumple un paso posterior; la decisión final queda como paso actual', () => {
+  it('un consejo anterior queda atrás sin marcarse hecho y la decisión final queda como paso actual', () => {
     const conConsejo = leerGuiaAutorada({ guia: { paso: 4, titulo: 'Comunica', pasos: [
-      { texto: 'El médico ya lo dijo con palabras claras. Quédate.' },
+      { texto: 'El médico ya lo dijo con palabras claras. Quédate.', lugar: 'abuela' },
       { texto: 'Usa la tarjeta EPICEE con Gloria.', hecho: { used: 'SPIKES@gloria' }, lugar: 'abuela' },
       { texto: 'Decide qué haces ahora.' },
     ] } })!;
@@ -167,9 +167,19 @@ describe('la guía escrita en el caso (`ambiente.guia`)', () => {
       autorada: { guia: conConsejo, mundo: { ...mundo({ usadas }) } } });
     expect(con([]).pasos!.map(p => p.hecho)).toEqual([false, false, false]);
     const despues = con(['SPIKES@gloria']);
-    expect(despues.pasos!.map(p => p.hecho)).toEqual([true, true, false]);
+    expect(despues.pasos!.map(p => p.hecho)).toEqual([false, true, false]);
+    expect(despues.pasos![0]).toMatchObject({ informativo: true });
     expect(despues.siguiente).toBe('Decide qué haces ahora.');
-    expect([despues.hechos, despues.total]).toEqual([2, 3]);
+    expect(despues.siguienteLugar?.tipo).toBe('puerta');
+    expect([despues.hechos, despues.total]).toEqual([1, 3]);
+  });
+
+  it.each([[], [2], true, '2.5', 0.5, -1, {}].map(paso => ({ paso })))('usa el paso de respaldo con numeración inválida ($paso)', ({ paso }) => {
+    expect(leerGuiaAutorada({ guia: { paso, pasos: [{ texto: 'Observa.' }] } })?.paso).toBe(1);
+  });
+
+  it('acepta enteros positivos escritos en decimal', () => {
+    expect(leerGuiaAutorada({ guia: { paso: ' 12 ', pasos: [{ texto: 'Observa.' }] } })?.paso).toBe(12);
   });
 
   it('lee la forma del contrato y descarta lo que no la tiene', () => {
@@ -248,10 +258,19 @@ describe('la guía escrita en el caso (`ambiente.guia`)', () => {
     expect(armar(mundo({ hablados: ['abuela'] })).siguienteLugar?.key).toBe('kit-pap');
   });
 
-  it('si ningún pendiente trae lugar, cae al siguiente lugar calculado (la puerta con todo hecho)', () => {
+  it('si ningún pendiente tiene destino, ofrece la salida como acción aparte', () => {
     const g = armar(mundo({ hablados: ['abuela'], inventario: ['PAP'] }));
     expect(g.siguiente).toBe('Usa los primeros auxilios.');
     expect(g.siguienteLugar?.key).toBe('puerta');
+    expect(g).toMatchObject({ textoSalida: expect.stringContaining('Sala de escucha') });
+  });
+
+  it('con todos los hechos registrados, la salida no apunta a una persona de la guía calculada', () => {
+    const m = mundo({ hablados: ['abuela'] });
+    const g = armarGuia({ goal: 'x', lugares: [...LUG, { key: 'otra', label: 'Otra persona', kind: 'person' }],
+      inspeccionados: [], hablados: m.hablados, autorada: { guia: { ...GUIA, pasos: [GUIA.pasos[0]] }, mundo: m } });
+    expect(g.siguienteLugar?.tipo).toBe('puerta');
+    expect(g.siguiente).toContain('Cuando termines');
   });
 
   it('sin guía escrita, nada cambia', () => {

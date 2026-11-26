@@ -62,9 +62,9 @@ let nextGoalCardId = 0;
               @for (p of pasos; track $index) {
                 <li class="goal-card__pasoitem" [class.goal-card__pasoitem--hecho]="p.hecho" [class.goal-card__pasoitem--actual]="$index === pasoActual()"
                   [attr.data-hecho]="p.hecho" [attr.aria-current]="$index === pasoActual() ? 'step' : null">
-                  <span class="goal-card__pasomarca" aria-hidden="true">{{ p.hecho ? '✓' : $index === pasoActual() ? '▸' : '○' }}</span>
-                  <span class="goal-card__pasotexto">{{ p.texto }}<span class="goal-card__sr"> · {{ p.hecho ? 'hecho' : $index === pasoActual() ? 'tu siguiente paso' : 'pendiente' }}</span></span>
-                  @if ($index === pasoActual() && guia().siguienteLugar; as lugar) {
+                  <span class="goal-card__pasomarca" aria-hidden="true">{{ p.hecho ? '✓' : $index === pasoActual() ? '▸' : p.informativo ? '·' : '○' }}</span>
+                  <span class="goal-card__pasotexto">{{ p.texto }}<span class="goal-card__sr"> · {{ p.hecho ? 'hecho' : $index === pasoActual() ? 'tu siguiente paso' : p.informativo ? 'información' : 'pendiente' }}</span></span>
+                  @if ($index === pasoActual() && !guia().textoSalida && guia().siguienteLugar; as lugar) {
                     <!-- BORRADOR: texto pendiente de Psicología. -->
                     <button type="button" class="goal-card__ir goal-card__ir--en-paso u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)">
                       {{ actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
@@ -72,6 +72,13 @@ let nextGoalCardId = 0;
                 </li>
               }
             </ol>
+            @if (guia().textoSalida) {
+              <p class="goal-card__paso">{{ guia().textoSalida }}</p>
+              @if (guia().siguienteLugar; as salida) {
+                <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(salida.key)">
+                  {{ actionForPlace('object', salida.label) }} <span aria-hidden="true">▶</span></button>
+              }
+            }
           }
           @if (guia().enEstaSala.length) {
             <!-- Con la guía escrita, los pasos ya dicen con quién hablar: «En esta sala» queda plegada (la ficha no tapa la sala). -->
@@ -206,12 +213,12 @@ export class SceneGoalCardComponent {
   protected readonly pulso = signal(false);
   /** «Siguiente paso · 2 de 6» mientras queda algo en la sala; con todo hecho, «Todo hecho en esta sala». */
   protected readonly cuentaDePasos = computed(() => {
-    const { hechos, total } = this.guia();
+    const { hechos, total, pasos } = this.guia();
     if (total === 0) return 'Siguiente paso';
+    if (pasos && hechos < total) return `${hechos} de ${total} hechos`;
     return hechos >= total ? `Todo hecho en esta sala · ${total} de ${total}` : `Siguiente paso · ${hechos + 1} de ${total}`;
   });
-  /** El índice del primer paso no hecho de la guía escrita (−1 si no hay guía o está todo hecho). */
-  protected readonly pasoActual = computed(() => (this.guia().pasos ?? []).findIndex(p => !p.hecho));
+  protected readonly pasoActual = computed(() => this.guia().pasoActual ?? -1);
   /** Los pasos que se cumplen salen por el anunciador de la app (la ficha no tiene región viva propia). */
   private readonly anunciador = inject(LiveRegionAnnouncer);
   private hechosVistos: ReadonlySet<string> | null = null;

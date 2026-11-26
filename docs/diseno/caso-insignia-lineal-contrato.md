@@ -2,7 +2,7 @@
 
 Campos **opcionales** que un caso puede traer en `x-siep.escenas[].mapa.ambiente` (llegan al cliente tal cual como `world.map.ambient`) y en los `metadatos` de un objeto `EXIT` (llegan como `metadata`). Un caso que no los trae se juega exactamente como hoy. El reproductor no contiene texto de ningún caso: todo el texto viene de estos campos.
 
-Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pila del estudiante que inició sesión (`AuthService.currentUser().nombre`, primera palabra). Si no hay nombre, se reemplaza por una cadena vacía y se limpian los espacios y comas sobrantes. Vale para cinemática, tutor, guía, líneas y elecciones de diálogo, comentarios, objetivo, texto de opciones, reacciones y `transitionText`.
+Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pila del estudiante que inició sesión (`AuthService.currentUser().nombre`, primera palabra). Si no hay nombre, se quita la marca junto con las comas y los espacios sobrantes y los pares de exclamación o interrogación que quedan vacíos. Vale para cinemática, tutor, guía, líneas y elecciones de diálogo, comentarios, objetivo, texto de opciones, reacciones y `transitionText`.
 
 ## 1. `ambiente.cinematica` (solo en la sala de la escena inicial)
 
@@ -34,12 +34,12 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
   - `calle-emergencia` (de noche, con luces rojas y azules sobre las paredes)
   - `urgencias-llegada` (entrada de urgencias con una camilla que entra)
   - `urgencias-familia` (llegada de tres personas)
-- `personas` (opcional): recetas del kit, en orden, de quienes aparecen en el plano. En `urgencias-familia`, las tres que llegan (exactamente tres; si no, las genéricas); en `calle-emergencia`, la vecina. Así la cinemática muestra a los mismos personajes que el juego. Solo claves de receta válidas (`[a-z0-9-]`), tres como mucho.
   - `titulo` (pantalla de título con el subtítulo grande)
+- `personas` (opcional) trae las recetas del kit por papel y en orden. En `urgencias-familia` se esperan exactamente tres posiciones. Una lista de otra longitud usa el reparto genérico. En `calle-emergencia` se lee la primera posición para la vecina. Cada posición usa su receta genérica si falta una clave válida (`[a-z0-9-]`) o alguna hoja del kit.
 - `momento` vale `tarde` o `noche`.
-- Cada plano dura `duracionMs`. El subtítulo debe quedar en pantalla al menos el tiempo de lectura (unas 15 palabras cada 4 s).
+- `duracionMs` pide hasta 30 segundos por plano. El tiempo de lectura del subtítulo visible (unas 15 palabras cada 4 s más un margen de entrada) puede prolongar el plano. El cálculo usa el texto tras aplicar la plantilla del nombre.
 - Se reproduce **una vez por intento**, después del consentimiento y antes del tutor.
-- Botones: «Saltar» y pausa. Con «movimiento reducido», planos fijos con fundido.
+- Los botones permiten saltar y pausar. En pausa, navegar muestra entero el plano de destino. Al reanudar, un fundido que quedó en curso sigue desde donde se detuvo. Con movimiento reducido, los planos fijos conservan los fundidos.
 
 ## 2. `ambiente.tutor` (en la sala inicial y en la primera sala de cada capítulo)
 
@@ -58,6 +58,7 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
 - El tutor está **fuera de la historia**. Es una capa sobre el mundo, con el retrato del kit (`recipeId`, emoción neutral), su nombre y su rol.
 - Las líneas avanzan con Enter, Espacio o clic.
 - Si trae `pasos`, la tarjeta muestra la lista numerada junto a la línea que la presenta (la penúltima línea).
+- Con movimiento reducido, la tarjeta solo funde su opacidad y los pasos se muestran juntos.
 - Se muestra **una vez por intento y por sala**. En la sala inicial va después de la cinemática; en las demás, al entrar y antes de la nota de capítulo.
 - La salida segura sigue disponible.
 
@@ -85,7 +86,8 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
   - `{"used": clave}` consulta `world.usedToolKeysHere` cuando está presente, incluso si es `[]`. Este campo opcional recoge los usos del nodo actual. Si falta, se consulta `world.usedToolKeys` para mantener la compatibilidad con respuestas anteriores.
     - Si `clave` incluye `@` (por ejemplo, `PAP@camilo`), debe coincidir exactamente con uno de los usos.
     - Si `clave` solo lleva el código (por ejemplo, `PAP`), coincide con ese código o con cualquier uso que empiece por `PAP@`.
-- `lugar` es la clave de un objeto de la sala. «Ir allí» y el anillo del mapa apuntan al primer paso no hecho que tenga `lugar`.
+- `lugar` es la clave de un objeto de la sala. «Ir allí» aparece junto al primer paso pendiente con destino disponible y el anillo señala ese mismo destino. Si no se puede resolver ningún destino pendiente, la ficha puede ofrecer una puerta abierta como acción aparte.
+- La cuenta solo suma hechos verificados. Una indicación sin `hecho` puede quedar como información cuando se verifica un paso posterior. Los pasos verificables siguen pendientes hasta que se cumpla su propio hecho.
 
 ## 4. `metadatos.acompanantes` en un objeto `EXIT`
 
@@ -95,6 +97,7 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
 
 - Son claves de objetos `PERSON` de la sala actual.
 - Al usar la puerta, si se puede abrir (la misma comprobación de hoy), se bloquea el control del jugador. Los acompañantes caminan en orden hasta la puerta, rodeando los muebles, y desaparecen al cruzarla. La puerta se anima abierta.
+- Si no se encuentra una ruta libre, el acompañante se desvanece donde está y la transición continúa.
 - Solo después el jugador cruza (fundido y `enter-room`, como hoy). Si el servidor rechaza la entrada, se recarga el mundo y vuelven a aparecer.
 - Con «movimiento reducido», los acompañantes se desvanecen sin caminar.
 

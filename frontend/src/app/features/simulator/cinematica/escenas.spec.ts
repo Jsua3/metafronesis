@@ -90,10 +90,14 @@ describe('cinematica/escenas', () => {
 
   it('las personas del caso reemplazan a las genéricas (familia y vecina); con un número distinto, las genéricas', () => {
     const familia = plano({ escena: 'urgencias-familia', momento: 'noche', personas: ['abuela-familia', 'hermano-mayor', 'hermano-adolescente'] });
-    expect(recetasDelPlano(familia)).toEqual(['abuela-familia', 'hermano-mayor', 'hermano-adolescente']);
+    expect(recetasDelPlano(familia)).toEqual(['abuela-familia', 'hermano-mayor', 'hermano-adolescente', 'estudiante-consultante', 'adolescente']);
     expect(cuadroDelPlano(familia, 7900, vista, false).actores.map(a => a.receta)).toEqual(['abuela-familia', 'hermano-mayor', 'hermano-adolescente']);
     expect(recetasDelPlano(plano({ escena: 'urgencias-familia', personas: ['solo-una'] }))).toHaveLength(3);
-    expect(recetasDelPlano(plano({ escena: 'calle-emergencia', momento: 'noche', personas: ['madre-acompanante'] }))).toEqual(['madre-acompanante']);
+    expect(recetasDelPlano(plano({ escena: 'calle-emergencia', momento: 'noche', personas: ['madre-acompanante'] }))).toEqual(['madre-acompanante', 'vecina']);
+    const parcial = plano({ escena: 'urgencias-familia', personas: ['otra-abuela', null, 'otro-adolescente'] });
+    const actores = cuadroDelPlano(parcial, 0, { ancho: 640, alto: 268 }, true).actores;
+    expect(actores.map(a => a.receta)).toEqual(['otra-abuela', 'estudiante-consultante', 'otro-adolescente']);
+    expect(actores.map(a => a.recetaDeRespaldo)).toEqual(['abuela-familia', 'estudiante-consultante', 'adolescente']);
   });
 
   it('en la ventana, él es una cabeza más alto que ella y la distancia entre los dos se cierra', () => {

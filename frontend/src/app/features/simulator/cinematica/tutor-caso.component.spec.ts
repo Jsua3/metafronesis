@@ -52,7 +52,8 @@ describe('TutorCasoComponent', () => {
     const retrato = el().querySelector<HTMLImageElement>('img.tutor__retrato');
     expect(retrato?.getAttribute('src')).toBe('/assets/characters/kit/supervisor-clinico/portrait-neutral.png');
     expect(retrato?.getAttribute('alt')).toBe('');
-    expect(anuncios[0]).toBe('Profesor: Hola, Laura. Lo que viste pasa.');
+    expect(dialogo?.getAttribute('aria-describedby')).toContain('tutor-rol');
+    expect(anuncios[0]).toBe('Profesor. Tutor del caso. Línea 1 de 3. Hola, Laura. Lo que viste pasa.');
   });
 
   it('«Seguir» avanza; la lista de pasos va con la penúltima línea; la última dice «Continuar» y cierra', () => {
@@ -62,7 +63,7 @@ describe('TutorCasoComponent', () => {
     expect(el().querySelector('#tutor-linea')?.textContent).toBe('Te dejo el paso a paso:');
     const pasos = Array.from(el().querySelectorAll('.tutor__paso')).map(p => p.textContent?.replace(/\s+/g, ' ').trim());
     expect(pasos).toEqual(['1 Observa antes de actuar.', '2 Contén']);
-    expect(anuncios.at(-1)).toBe('Te dejo el paso a paso: 1. Observa antes de actuar. 2. Contén');
+    expect(anuncios.at(-1)).toBe('Línea 2 de 3. Te dejo el paso a paso: 1. Observa antes de actuar. 2. Contén');
     boton('Seguir')!.click();
     fixture.detectChanges();
     expect(el().querySelector('.tutor__pasos')).toBeNull();
@@ -86,6 +87,45 @@ describe('TutorCasoComponent', () => {
     expect(cerrado).toBe(0);
     (el().querySelector('.tutor__cuerpo') as HTMLElement).click();
     expect(cerrado).toBe(1);
+  });
+
+  it('devuelve el foco a Seguir cuando desaparece el botón Anterior', () => {
+    boton('Seguir')!.click();
+    fixture.detectChanges();
+    const anterior = boton('Anterior')!;
+    anterior.focus();
+    expect(document.activeElement).toBe(anterior);
+    anterior.click();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(boton('Seguir'));
+  });
+
+  it('la región de lectura se alcanza con Tab y Espacio permite recorrerla', () => {
+    const region = el().querySelector<HTMLElement>('[aria-label="Texto del tutor"]')!;
+    expect(region?.tabIndex).toBe(0);
+    Object.defineProperty(region, 'scrollHeight', { value: 500 });
+    Object.defineProperty(region, 'clientHeight', { value: 100 });
+    const espacio = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    region.dispatchEvent(espacio);
+    expect(espacio.defaultPrevented).toBe(false);
+    expect(component.indice()).toBe(0);
+  });
+
+  it('la preferencia del juego y la del sistema eliminan todas las traslaciones', () => {
+    fixture.componentRef.setInput('reduceMotion', true);
+    boton('Seguir')!.click();
+    fixture.detectChanges();
+    const tarjeta = el().querySelector<HTMLElement>('.tutor__tarjeta')!;
+    const paso = el().querySelector<HTMLElement>('.tutor__paso')!;
+    expect(getComputedStyle(tarjeta).animationName).toMatch(/(?:^|_)tutor-funde$/);
+    expect(getComputedStyle(paso).animation).toBe('none');
+    expect(paso.style.animationDelay).toBe('0ms');
+
+    const medios = Array.from(document.styleSheets).flatMap(s => Array.from(s.cssRules))
+      .filter((r): r is CSSMediaRule => r.type === CSSRule.MEDIA_RULE && r.cssText.includes('tutor__tarjeta'));
+    const reducido = medios.find(r => r.conditionText.includes('prefers-reduced-motion: reduce'));
+    expect(reducido?.cssText).toMatch(/tutor__tarjeta[^{}]*\{[^{}]*animation-name:\s*[\w-]*tutor-funde/);
+    expect(reducido?.cssText).toMatch(/tutor__paso[^{}]*\{[^{}]*animation:\s*none/);
   });
 
   it('la salida segura está en la tarjeta', () => {

@@ -110,12 +110,13 @@ export function hazDeBaliza(ancho: number, alto: number, color: Rgb, suelo: numb
 }
 
 /** Un resplandor circular por escalones (la luz roja de la ambulancia que entra por la puerta de urgencias). */
-export function resplandor(radio: number, color: Rgb): Imagen {
-  const lado = radio * 2;
-  const img = imagen(lado, lado);
-  for (let y = 0; y < lado; y++) {
-    for (let x = 0; x < lado; x++) {
-      const k = escalon(1 - Math.hypot(x - radio, y - radio) / radio, 5, x, y);
+export function resplandor(radio: number, color: Rgb, recorte = { x: 0, y: 0, ancho: radio * 2, alto: radio * 2 }): Imagen {
+  const img = imagen(recorte.ancho, recorte.alto);
+  for (let y = 0; y < recorte.alto; y++) {
+    const sy = y + recorte.y;
+    for (let x = 0; x < recorte.ancho; x++) {
+      const sx = x + recorte.x;
+      const k = escalon(1 - Math.hypot(sx - radio, sy - radio) / radio, 5, sx, sy);
       if (k) poner(img, x, y, escala(color, k / 4));
     }
   }

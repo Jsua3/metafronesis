@@ -26,9 +26,23 @@ describe('rutaEsquivando', () => {
     }
   });
 
-  it('si no hay paso, cae a la línea recta en vez de colgarse', () => {
+  it('si no hay paso, devuelve una ruta vacía', () => {
     const cerrado = { bloqueado: (x: number) => x >= 190 && x <= 210, limites: LIMITES };
-    expect(rutaEsquivando({ x: 100, y: 100 }, { x: 300, y: 100 }, cerrado)).toEqual([{ x: 300, y: 100 }]);
+    expect(rutaEsquivando({ x: 100, y: 100 }, { x: 300, y: 100 }, cerrado)).toEqual([]);
+  });
+
+  it('rodea un obstáculo que cae entre dos puntos libres de la rejilla', () => {
+    const desde = { x: 0, y: 10 }, hasta = { x: 50, y: 10 };
+    const bloqueado = (x: number, y: number) => x >= 4 && x <= 7 && y >= 8 && y <= 12;
+    const ruta = rutaEsquivando(desde, hasta, { limites: LIMITES, bloqueado });
+    expect(ruta.at(-1)).toEqual(hasta);
+    let previo = desde;
+    for (const p of ruta) {
+      for (let i = 0; i <= 100; i++) {
+        expect(bloqueado(previo.x + (p.x - previo.x) * i / 100, previo.y + (p.y - previo.y) * i / 100)).toBe(false);
+      }
+      previo = p;
+    }
   });
 
   it('una puerta sobre su propia pared (llegada bloqueada) igual se alcanza', () => {
@@ -62,6 +76,25 @@ describe('planearAcompanantes', () => {
 
   it('sin acompañantes no dura nada', () => {
     expect(planearAcompanantes([], puerta, LIBRE)).toEqual({ pasos: [], totalMs: 0 });
+  });
+
+  it('se desvanece en su sitio cuando la puerta queda aislada', () => {
+    const desde = { x: 100, y: 100 };
+    const env = { bloqueado: (x: number) => x >= 190 && x <= 210, limites: LIMITES };
+    const plan = planearAcompanantes([{ key: 'a', desde }], { x: 300, y: 100 }, env);
+    const paso = plan.pasos[0];
+    expect(muestrearAcompanante(paso, desde, paso.caminaMs / 2))
+      .toMatchObject({ ...desde, alfa: 0.5, caminando: false, cruzo: false });
+    expect(plan.totalMs).toBeGreaterThan(paso.caminaMs);
+  });
+
+  it('la persona más cercana cruza después si aparece segunda en la lista', () => {
+    const plan = planearAcompanantes([
+      { key: 'lejos', desde: { x: 2, y: 40 } }, { key: 'cerca', desde: { x: 191, y: 40 } },
+    ], puerta, LIBRE);
+    const llegadas = plan.pasos.map(p => p.inicioMs + p.caminaMs);
+    expect(llegadas[1]).toBeGreaterThan(llegadas[0]);
+    expect(plan.totalMs).toBeGreaterThan(llegadas[1]);
   });
 });
 

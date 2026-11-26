@@ -36,6 +36,10 @@ describe('plantilla {nombre}', () => {
   });
 
   describe('sin nombre: la marca se quita y la frase queda limpia', () => {
+    it('quita los signos vacíos y las comas que pertenecen al hueco', () => {
+      expect(conNombre('¡{nombre}! ¿{nombre}? Hola,, {nombre}. ¿De verdad?', '')).toBe('Hola. ¿De verdad?');
+      expect(conNombre('Hola,, mundo. {nombre}, entra.', '')).toBe('Hola,, mundo. Entra.');
+    });
     it.each([
       ['Hola, {nombre}. Lo que acabas de ver pasa.', 'Hola. Lo que acabas de ver pasa.'],
       ['¡Hola, {nombre}!', '¡Hola!'],

@@ -9,17 +9,16 @@
 import type {
   EscenaDeCinematica, MomentoDeCinematica, PasoDelTutor, SiluetaDeCinematica,
 } from '../../../core/models/simulation.model';
+import { conNombre } from '../caso/plantilla-nombre';
 
 export const ESCENAS_DE_CINEMATICA: readonly EscenaDeCinematica[] = Object.freeze([
   'barrio', 'casa-ventana', 'negro', 'calle-emergencia', 'urgencias-llegada', 'urgencias-familia', 'titulo',
 ]);
 const SILUETAS: readonly SiluetaDeCinematica[] = ['hombre', 'mujer', 'nina'];
 
-/** Lo que dura un plano como mínimo y como máximo, pida lo que pida el caso. */
+/** Mínimo del plano y máximo de la duración pedida por el caso. */
 export const DURACION_MINIMA_MS = 1500;
 export const DURACION_MAXIMA_MS = 30_000;
-/** Ritmo de lectura del contrato: unas 15 palabras cada 4 s. */
-const MS_POR_PALABRA = 4000 / 15;
 /**
  * Lo que un subtítulo tarda en aparecer entero y el fundido entre planos: se suma al tiempo de lectura para que el texto
  * quede ENTERO en pantalla al menos lo que se tarda en leerlo.
@@ -40,6 +39,8 @@ export interface PlanoLeido {
   subtitulo: string;
   /** Lo que dura de verdad: la que pidió el caso, nunca menos que su tiempo de lectura. */
   duracionMs: number;
+  /** Duración base antes de calcular la lectura del texto con el nombre de quien juega. */
+  duracionBaseMs?: number;
   siluetas: SiluetaDeCinematica[];
   /** null: lo que la escena hace por omisión. */
   luzVentana: boolean | null;
@@ -48,7 +49,7 @@ export interface PlanoLeido {
    * `calle-emergencia`: la vecina). Vacío: las genéricas del reproductor. Así la cinemática muestra a los mismos personajes
    * que el juego sin que el reproductor sepa nada del caso.
    */
-  personas: string[];
+  personas: (string | null)[];
 }
 
 /** Una clave de receta del kit (las rutas de sus hojas se arman con ella: nada de barras ni puntos). */
@@ -81,7 +82,12 @@ function palabras(t: string): number {
 /** Lo que tarda en leerse un subtítulo, con el margen de su aparición y del fundido. 0 si no hay texto. */
 export function tiempoDeLectura(subtitulo: string): number {
   const n = palabras(subtitulo);
-  return n ? Math.ceil(n * MS_POR_PALABRA) + MARGEN_DE_LECTURA_MS : 0;
+  return n ? Math.ceil(n * 4000 / 15) + MARGEN_DE_LECTURA_MS : 0;
+}
+
+/** Al montar, el reloj y la animación usan la duración del texto que realmente se muestra. */
+export function duracionConNombre(plano: PlanoLeido, nombre: string): number {
+  return Math.max(plano.duracionBaseMs ?? plano.duracionMs, tiempoDeLectura(conNombre(plano.subtitulo, nombre)));
 }
 
 /** Las escenas de noche por naturaleza: de noche si el caso no dice otra cosa. */
@@ -98,15 +104,17 @@ function leerPlano(x: unknown): PlanoLeido | null {
   const subtitulo = texto(x['subtitulo']);
   const pedida = typeof x['duracionMs'] === 'number' && Number.isFinite(x['duracionMs']) ? x['duracionMs'] : 0;
   const base = pedida > 0 ? pedida : subtitulo ? 0 : DURACION_SIN_TEXTO_MS;
-  const duracionMs = Math.round(Math.min(DURACION_MAXIMA_MS, Math.max(DURACION_MINIMA_MS, base, tiempoDeLectura(subtitulo))));
+  const duracionBaseMs = Math.round(Math.min(DURACION_MAXIMA_MS, Math.max(DURACION_MINIMA_MS, base)));
+  const duracionMs = Math.max(duracionBaseMs, tiempoDeLectura(subtitulo));
   const siluetas = Array.isArray(x['siluetas'])
     ? (x['siluetas'] as unknown[]).filter((s): s is SiluetaDeCinematica => typeof s === 'string' && (SILUETAS as readonly string[]).includes(s)).slice(0, 3)
     : [];
   const luzVentana = typeof x['luzVentana'] === 'boolean' ? x['luzVentana'] : null;
-  const personas = Array.isArray(x['personas'])
-    ? (x['personas'] as unknown[]).filter((r): r is string => typeof r === 'string' && RECETA_VALIDA.test(r)).slice(0, 3)
-    : [];
-  return { escena: e, momento, subtitulo, duracionMs, siluetas, luzVentana, personas };
+  const lista = x['personas'];
+  const cantidad = e === 'urgencias-familia' ? 3 : e === 'calle-emergencia' ? 1 : 0;
+  const posiciones = Array.isArray(lista) && (e !== 'urgencias-familia' || lista.length === cantidad) ? lista.slice(0, cantidad) : [];
+  const personas = Array.from(posiciones, (r: unknown) => typeof r === 'string' && RECETA_VALIDA.test(r) ? r : null);
+  return { escena: e, momento, subtitulo, duracionMs, duracionBaseMs, siluetas, luzVentana, personas };
 }
 
 /** `ambient.cinematica` validada, o null si no hay o no trae ningún plano que se pueda dibujar. */

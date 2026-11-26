@@ -49,6 +49,8 @@ export interface EstadoParaGuia {
 export interface PasoMostrado {
   texto: string;
   hecho: boolean;
+  /** Indicación sin hecho que ya quedó atrás en la lista. */
+  informativo?: boolean;
 }
 
 export interface ElementoSala {
@@ -80,6 +82,9 @@ export interface GuiaEscena {
   /** Con guía escrita: la pestaña «Paso 2 · Título» y la lista de pasos con su marca. Sin guía escrita, `null`. */
   pestana?: string | null;
   pasos?: readonly PasoMostrado[] | null;
+  pasoActual?: number;
+  /** Si se ofrece una salida aparte, acompaña a `siguienteLugar` fuera de la lista. */
+  textoSalida?: string;
 }
 
 /** Hacia dónde apunta el siguiente paso: una persona, una herramienta o la puerta por la que seguir. */
@@ -103,6 +108,11 @@ export interface HerramientaSala {
 export const pasoSalida = (puerta: string): string =>
   `Cuando termines en esta sala: ${puerta}. También llegas con «Ir a…», arriba a la derecha.`;
 
+function puertaAbierta(lugares: readonly PlaceCandidate[]): LugarDelPaso | null {
+  const puerta = lugares.find(l => l.kind === 'door' && !l.note && l.label.trim() !== '');
+  return puerta ? { key: puerta.key, label: puerta.label.trim(), tipo: 'puerta' } : null;
+}
+
 /** El siguiente paso y la cuenta, con las personas, las herramientas y las puertas de la sala (módulo puro). */
 function siguientePaso(personas: readonly ElementoSala[], herramientas: readonly HerramientaSala[], lugares: readonly PlaceCandidate[]) {
   const pasos = [
@@ -112,9 +122,9 @@ function siguientePaso(personas: readonly ElementoSala[], herramientas: readonly
   const hechos = pasos.filter(p => p.hecho).length;
   const pendiente = pasos.find(p => !p.hecho);
   // Con todo hecho, la primera puerta sin aviso (las cerradas lo traen: «se abre más adelante»).
-  const puerta = lugares.find(l => l.kind === 'door' && !l.note && l.label.trim() !== '');
-  const siguiente = pendiente?.texto ?? (puerta ? pasoSalida(puerta.label.trim()) : null);
-  const siguienteLugar: LugarDelPaso | null = pendiente?.lugar ?? (puerta ? { key: puerta.key, label: puerta.label.trim(), tipo: 'puerta' } : null);
+  const puerta = puertaAbierta(lugares);
+  const siguiente = pendiente?.texto ?? (puerta ? pasoSalida(puerta.label) : null);
+  const siguienteLugar = pendiente?.lugar ?? puerta;
   return { siguiente, hechos, total: pasos.length, siguienteLugar };
 }
 
@@ -154,9 +164,10 @@ export function leerGuiaAutorada(ambiente: unknown, nombre?: string): GuiaAutora
     pasos.push(paso);
   }
   if (pasos.length === 0) return null;
-  const numero = Number(crudo['paso']);
+  const paso = crudo['paso'];
+  const numero = typeof paso === 'string' && /^\d+$/.test(paso.trim()) ? Number(paso) : paso;
   return {
-    paso: Number.isFinite(numero) && numero > 0 ? Math.floor(numero) : 1,
+    paso: typeof numero === 'number' && Number.isSafeInteger(numero) && numero > 0 ? numero : 1,
     titulo: typeof crudo['titulo'] === 'string' ? conNombre(crudo['titulo'].trim(), nombre) : '',
     pasos,
   };
@@ -168,31 +179,34 @@ export const pestanaDeLaGuia = (g: Pick<GuiaAutorada, 'paso' | 'titulo'>): strin
 
 /** Los pasos escritos, evaluados contra el mundo, y a dónde apunta el primero pendiente que trae `lugar`. */
 function pasosAutorados(a: NonNullable<EntradaGuia['autorada']>, lugares: readonly PlaceCandidate[]) {
-  const directos = a.guia.pasos.map(p => pasoCumplido(p.hecho, a.mundo));
-  // Un paso sin `hecho` (un consejo, «Quédate», o la decisión final) no se puede verificar: se da por cumplido cuando ya se
-  // cumplió un paso posterior (quien juega lo dejó atrás). Así la flecha y la cuenta nunca se quedan en un consejo, y la
-  // decisión, que es la última y no tiene hecho, queda como el paso actual cuando lo demás está hecho.
-  const evaluados = a.guia.pasos.map((p, i) => ({
-    ...p,
-    cumplido: directos[i] || (!p.hecho && directos.slice(i + 1).some(Boolean)),
+  const hechos = a.guia.pasos.map(p => pasoCumplido(p.hecho, a.mundo));
+  const ultimoHecho = hechos.lastIndexOf(true);
+  const pasos = a.guia.pasos.map((p, i): PasoMostrado => ({
+    texto: p.texto, hecho: hechos[i], ...(!p.hecho && i < ultimoHecho ? { informativo: true } : {}),
   }));
-  const pendiente = evaluados.find(p => !p.cumplido);
-  const conLugar = evaluados.find(p => !p.cumplido && p.lugar);
+  let pasoActual = pasos.findIndex(p => !p.hecho && !p.informativo);
   let siguienteLugar: LugarDelPaso | null = null;
-  if (conLugar?.lugar) {
-    const destino = lugares.find(l => l.key === conLugar.lugar || l.key === PREFIJO_NPC + conLugar.lugar);
-    if (destino) {
-      const tipo: LugarDelPaso['tipo'] = destino.kind === 'person' ? 'persona' : destino.kind === 'door' ? 'puerta' : 'herramienta';
-      siguienteLugar = { key: destino.key, label: destino.label.trim() || conLugar.lugar, tipo };
-    }
+  for (const [i, paso] of a.guia.pasos.entries()) {
+    if (pasos[i].hecho || pasos[i].informativo || !paso.lugar) continue;
+    const destino = lugares.find(l => (l.key === paso.lugar || l.key === PREFIJO_NPC + paso.lugar)
+      && (l.kind !== 'door' || !l.note));
+    if (!destino) continue;
+    const tipo: LugarDelPaso['tipo'] = destino.kind === 'person' ? 'persona' : destino.kind === 'door' ? 'puerta' : 'herramienta';
+    siguienteLugar = { key: destino.key, label: destino.label.trim() || paso.lugar, tipo };
+    pasoActual = i;
+    break;
   }
+  const salida = siguienteLugar ? null : puertaAbierta(lugares);
+  const textoSalida = salida ? pasoSalida(salida.label) : undefined;
   return {
     pestana: pestanaDeLaGuia(a.guia),
-    pasos: evaluados.map(p => ({ texto: p.texto, hecho: p.cumplido })),
-    siguiente: pendiente?.texto ?? null,
-    hechos: evaluados.filter(p => p.cumplido).length,
-    total: evaluados.length,
-    siguienteLugar,
+    pasos,
+    pasoActual,
+    siguiente: pasos[pasoActual]?.texto ?? textoSalida ?? null,
+    hechos: hechos.filter(Boolean).length,
+    total: pasos.length,
+    siguienteLugar: siguienteLugar ?? salida,
+    textoSalida,
   };
 }
 
@@ -219,23 +233,12 @@ export function armarGuia(e: EntradaGuia): GuiaEscena {
   }
 
   const todos = [...personas, ...objetos];
-  const calculado = siguientePaso(personas, e.herramientas ?? [], e.lugares);
   const base = {
     objetivo: e.goal.trim(),
     enEstaSala: todos.filter(el => el.tipo === 'persona' || el.visto),
     quedaPorConocer: todos.some(el => !el.visto),
   };
-  if (!e.autorada) return { ...base, ...calculado };
-
-  // Con guía escrita manda ella; si ningún pendiente trae `lugar` (o su objeto no está), se cae al siguiente lugar calculado.
-  const { siguienteLugar, ...escrita } = pasosAutorados(e.autorada, e.lugares);
-  return {
-    ...base,
-    ...escrita,
-    // Con todos los pasos hechos, el aviso de salida de siempre.
-    siguiente: escrita.siguiente ?? calculado.siguiente,
-    siguienteLugar: siguienteLugar ?? calculado.siguienteLugar,
-  };
+  return { ...base, ...(e.autorada ? pasosAutorados(e.autorada, e.lugares) : siguientePaso(personas, e.herramientas ?? [], e.lugares)) };
 }
 
 /** Los ids de `despues` que no estaban en `antes`; en la primera carga (`antes` nulo) nada es nuevo. */

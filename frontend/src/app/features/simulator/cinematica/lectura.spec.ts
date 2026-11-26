@@ -1,5 +1,5 @@
 import {
-  DURACION_MAXIMA_MS, DURACION_MINIMA_MS, VistosDelIntento, esRecetaValida, leerCinematica, leerTutor, lineaDeLosPasos, marcaDeCinematica,
+  DURACION_MAXIMA_MS, DURACION_MINIMA_MS, VistosDelIntento, duracionConNombre, esRecetaValida, leerCinematica, leerTutor, lineaDeLosPasos, marcaDeCinematica,
   marcaDeTutor, tiempoDeLectura,
 } from './lectura';
 
@@ -122,12 +122,26 @@ describe('cinematica/lectura', () => {
     });
   });
 
-  it('las personas de un plano son recetas del kit válidas (sin barras ni puntos), tres como mucho', () => {
+  it('la familia exige exactamente tres posiciones y los datos inválidos conservan el papel genérico', () => {
     const c = leerCinematica({ cinematica: { planos: [
-      { escena: 'urgencias-familia', personas: ['abuela-familia', '../secreto', 'hermano-mayor', 7, 'hermano-adolescente', 'otra'] },
-      { escena: 'barrio' },
+      { escena: 'urgencias-familia', personas: ['abuela-familia', 'hermano-mayor', 'hermano-adolescente', 'otra'] },
+      { escena: 'urgencias-familia', personas: ['abuela-familia', false, 'hermano-adolescente'] },
+      { escena: 'calle-emergencia', personas: [null, 'otra'] },
     ] } });
-    expect(c?.planos[0].personas).toEqual(['abuela-familia', 'hermano-mayor', 'hermano-adolescente']);
-    expect(c?.planos[1].personas).toEqual([]);
+    expect(c?.planos[0].personas).toEqual([]);
+    expect(c?.planos[1].personas).toEqual(['abuela-familia', null, 'hermano-adolescente']);
+    expect(c?.planos[2].personas).toEqual([null]);
+  });
+
+  it('el ritmo de lectura prevalece sobre el máximo de la duración pedida', () => {
+    const subtitulo = Array(120).fill('sí').join(' ');
+    const c = leerCinematica({ cinematica: { planos: [{ escena: 'barrio', subtitulo, duracionMs: 60_000 }] } });
+    expect(c?.planos[0].duracionMs).toBe(33_800);
+  });
+
+  it('mide el texto que queda después de aplicar la plantilla del nombre', () => {
+    const c = leerCinematica({ cinematica: { planos: [{ escena: 'titulo', subtitulo: 'Hola, {nombre}.' }] } })!;
+    expect(duracionConNombre(c.planos[0], '')).toBe(tiempoDeLectura('Hola.'));
+    expect(duracionConNombre(c.planos[0], 'Ana María')).toBe(tiempoDeLectura('Hola, Ana.'));
   });
 });

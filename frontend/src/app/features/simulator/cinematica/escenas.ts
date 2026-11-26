@@ -22,6 +22,7 @@ export type Decorado = 'calle' | 'urgencias' | 'negro' | 'titulo';
 /** Una persona del kit en el cuadro: (x, y) es donde pisa. */
 export interface ActorEnCuadro {
   receta: string;
+  recetaDeRespaldo?: string;
   hoja: 'idle' | 'walk';
   vista: ViewId;
   cuadro: number;
@@ -225,7 +226,8 @@ function calleEmergencia(plano: PlanoLeido, ms: number, reducido: boolean): Cuad
   // La casa sigue con la luz encendida; la vecina mira hacia ella desde el andén.
   cuadro.ventana = { luz: 1, siluetas: [] };
   const vecina = plano.personas[0] ?? VECINA;
-  cuadro.actores.push({ receta: vecina, hoja: 'idle', vista: 'left', cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, 3), x: 905, y: CALLE.anden[0] + 6 });
+  cuadro.actores.push({ receta: vecina, recetaDeRespaldo: VECINA, hoja: 'idle', vista: 'left',
+    cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, 3), x: 905, y: CALLE.anden[0] + 6 });
   if (reducido) {
     cuadro.luces = { rojo: 0.45, azul: 0.45 };
   } else {
@@ -271,8 +273,8 @@ function urgenciasFamilia(plano: PlanoLeido, ms: number, vista: VistaDeCinematic
   const metas: readonly (readonly [number, number])[] = [[540, 330], [592, 346], [646, 332]];
   const salidas: readonly (readonly [number, number])[] = [[430, abajo + 10], [470, abajo + 40], [520, abajo + 18]];
   const velocidad = 72;   // px por segundo: prisa, sin correr
-  const familia = plano.personas.length === FAMILIA.length ? plano.personas : FAMILIA;
-  familia.forEach((receta, n) => {
+  FAMILIA.forEach((recetaDeRespaldo, n) => {
+    const receta = (plano.personas.length === FAMILIA.length ? plano.personas[n] : null) ?? recetaDeRespaldo;
     const [mx, my] = metas[n];
     const [sx, sy] = salidas[n];
     const largo = Math.hypot(mx - sx, my - sy);
@@ -281,7 +283,7 @@ function urgenciasFamilia(plano: PlanoLeido, ms: number, vista: VistaDeCinematic
     if (recorrido < largo) {
       const f = recorrido / largo;
       cuadro.actores.push({
-        receta, hoja: 'walk', vista: 'up-right', cuadro: cuadroDeHoja('walk', ms, 9, n * 170),
+        receta, recetaDeRespaldo, hoja: 'walk', vista: 'up-right', cuadro: cuadroDeHoja('walk', ms, 9, n * 170),
         x: Math.round(entre(sx, mx, f)), y: Math.round(entre(sy, my, f)),
       });
       return;
@@ -290,7 +292,7 @@ function urgenciasFamilia(plano: PlanoLeido, ms: number, vista: VistaDeCinematic
     const llego = reducido ? 0 : ms - empieza - (largo / velocidad) * 1000;
     const busca = !reducido && n === 1 && llego > 1400 && llego < 3600;
     cuadro.actores.push({
-      receta, hoja: 'idle', vista: busca ? 'up-left' : n === 2 && llego > 2200 ? 'left' : 'up',
+      receta, recetaDeRespaldo, hoja: 'idle', vista: busca ? 'up-left' : n === 2 && llego > 2200 ? 'left' : 'up',
       cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, 4, n * 250), x: mx, y: my,
     });
   });
@@ -316,9 +318,12 @@ export function recetasDelPlano(plano: PlanoLeido): string[] {
   switch (plano.escena) {
     case 'barrio': return plano.momento === 'tarde' ? [...PASEANTES] : [];
     case 'casa-ventana': return plano.siluetas.map(s => RECETA_DE_SILUETA[s]);
-    case 'calle-emergencia': return [plano.personas[0] ?? VECINA];
+    case 'calle-emergencia': return [...new Set([plano.personas[0] ?? VECINA, VECINA])];
     case 'urgencias-llegada': return [...EQUIPO_DE_URGENCIAS];
-    case 'urgencias-familia': return plano.personas.length === FAMILIA.length ? [...plano.personas] : [...FAMILIA];
+    case 'urgencias-familia': {
+      const escritas = plano.personas.length === FAMILIA.length ? plano.personas.filter(p => p !== null) : [];
+      return [...new Set([...escritas, ...FAMILIA])];
+    }
     default: return [];
   }
 }

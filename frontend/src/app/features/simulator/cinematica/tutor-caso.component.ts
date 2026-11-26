@@ -1,9 +1,10 @@
 import { A11yModule } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, HostListener, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
 
 import { LiveRegionAnnouncer } from '../../../core/a11y/live-announcer.service';
 import { KIT_ASSETS } from '../../character/kit/character-visual.resolver';
 import { conNombre } from '../caso/plantilla-nombre';
+import { isScrollRegionTarget } from '../keyboard-focus.util';
 import { SafeExitButtonComponent } from '../safe-exit-button.component';
 import { lineaDeLosPasos } from './lectura';
 import type { TutorLeido } from './lectura';
@@ -35,7 +36,8 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
   host: { '[class.tutor--reducido]': 'reduceMotion()' },
   template: `
     <div class="tutor-trampa" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
-      <section class="tutor" role="dialog" aria-modal="true" aria-labelledby="tutor-nombre" aria-describedby="tutor-linea">
+      <section class="tutor" role="dialog" aria-modal="true" aria-labelledby="tutor-nombre"
+        [attr.aria-describedby]="rol() ? 'tutor-rol tutor-linea' : 'tutor-linea'">
         <article class="tutor__tarjeta" (click)="clic($event)">
           <header class="tutor__cabeza">
             @if (retrato()) {
@@ -44,7 +46,7 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
             }
             <div class="tutor__quien">
               <p class="tutor__nombre u-rotulo" id="tutor-nombre"><span class="u-rotulo__texto">{{ nombreTutor() }}</span></p>
-              @if (rol()) { <p class="tutor__rol">{{ rol() }}</p> }
+              @if (rol()) { <p class="tutor__rol" id="tutor-rol">{{ rol() }}</p> }
             </div>
             @if (total() > 1) {
               <p class="tutor__cuenta" aria-hidden="true">{{ indice() + 1 }} / {{ total() }}</p>
@@ -54,7 +56,7 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
           <div class="tutor__cuerpo u-placa u-sombra">
             <!-- El desplazamiento va DENTRO de la placa: si fuera la placa la que se desplaza, sus bordes de píxel (pseudo-
                  elementos que salen de la caja) sacan barras de desplazamiento aunque el texto quepa. -->
-            <div class="tutor__texto">
+            <div #lectura class="tutor__texto" tabindex="0" role="region" aria-label="Texto del tutor">
             @for (l of [indice()]; track l) {
               <p class="tutor__linea" id="tutor-linea">{{ linea() }}</p>
               @if (conPasos()) {
@@ -75,9 +77,9 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
             <app-safe-exit-button variante="placa" [pausing]="pausing()" (pause)="salidaSegura.emit()" />
             <span class="tutor__hueco"></span>
             @if (indice() > 0) {
-              <button type="button" class="u-boton tutor__boton" (click)="anterior()">Anterior</button>
+              <button #volver type="button" class="u-boton tutor__boton" (click)="anterior()">Anterior</button>
             }
-            <button type="button" class="u-ficha u-ficha--primaria tutor__boton tutor__seguir" cdkFocusInitial (click)="seguir()">
+            <button #continuar type="button" class="u-ficha u-ficha--primaria tutor__boton tutor__seguir" cdkFocusInitial (click)="seguir()">
               {{ ultima() ? 'Continuar' : 'Seguir' }}
             </button>
           </footer>
@@ -96,19 +98,20 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
     }
     .tutor-trampa, .tutor { position: absolute; inset: 0; }
     .tutor {
+      --tutor-margen: clamp(12px, 4vh, 48px);
       display: grid; place-items: end center;
-      padding: clamp(12px, 4vh, 48px) clamp(10px, 3vw, 32px);
+      padding: var(--tutor-margen) clamp(10px, 3vw, 32px);
     }
     .tutor__tarjeta {
-      display: grid; gap: 0;
+      display: flex; flex-direction: column;
       width: min(760px, 100%);
-      max-height: calc(100dvh - 24px);
+      max-height: calc(100dvh - 2 * var(--tutor-margen));
       color: var(--pixel-tinta);
       font-family: var(--pixel-f-texto);
       animation: tutor-sube var(--ds-dur-slow) var(--ds-ease-out) both;
       cursor: pointer;
     }
-    .tutor__cabeza { display: flex; align-items: flex-end; gap: 12px; padding: 0 4px; }
+    .tutor__cabeza { display: flex; flex: none; align-items: flex-end; gap: 12px; padding: 0 4px; }
     .tutor__retrato {
       flex: none; display: block;
       image-rendering: pixelated; image-rendering: crisp-edges;
@@ -116,7 +119,7 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
       border: calc(2 * var(--pixel-px)) solid var(--pixel-contorno);
       background: var(--pixel-penumbra-alzada);
     }
-    .tutor__quien { display: grid; gap: 2px; min-width: 0; padding-bottom: 2px; }
+    .tutor__quien { display: grid; gap: 2px; min-width: 0; padding-bottom: 2px; overflow-wrap: anywhere; }
     .tutor__nombre { margin: 0; }
     .tutor__rol {
       margin: 0 0 6px calc(6 * var(--pixel-px));
@@ -128,11 +131,13 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
       font-size: var(--pixel-letra-minima); color: var(--pixel-tinta-apagada);
     }
     .tutor__cuerpo {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
       padding: calc(7 * var(--pixel-px)) calc(10 * var(--pixel-px)) calc(8 * var(--pixel-px));
     }
     .tutor__texto {
-      max-height: min(56dvh, 460px);
+      min-height: 0; max-height: min(56dvh, 460px);
       overflow-x: hidden; overflow-y: auto;
+      overflow-wrap: anywhere;
       overscroll-behavior: contain;
     }
     .tutor__linea {
@@ -143,7 +148,7 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
     }
     .tutor__pasos { display: grid; gap: 8px; margin: 14px 0 2px; padding: 0; list-style: none; }
     .tutor__paso {
-      display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 10px;
+      display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 10px;
       font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 1.02));
       line-height: 1.45;
       animation: tutor-sube 320ms var(--ds-ease-out) both;
@@ -157,18 +162,18 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
     .tutor__paso strong { color: var(--luz); font-weight: 700; }
     .tutor__detalle { color: var(--pixel-tinta); }
     .tutor__acciones {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 8px;
       padding: 10px 2px 0;
     }
     .tutor__hueco { flex: 1; }
     .tutor__boton { min-height: 44px; font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.98)); }
     .tutor__seguir { padding: 0 calc(10 * var(--pixel-px)); }
-    :host(.tutor--reducido), :host(.tutor--reducido) .tutor__tarjeta, :host(.tutor--reducido) .tutor__linea,
-    :host(.tutor--reducido) .tutor__paso { animation-duration: 1ms; }
+    :host(.tutor--reducido) .tutor__tarjeta { animation-name: tutor-funde; }
+    :host(.tutor--reducido) .tutor__linea, :host(.tutor--reducido) .tutor__paso { animation: none; }
     @keyframes tutor-funde { from { opacity: 0; } }
     @keyframes tutor-sube { from { opacity: 0; transform: translateY(6px); } }
     @media (prefers-reduced-motion: reduce) {
-      :host, .tutor__tarjeta { animation-duration: 1ms; }
+      .tutor__tarjeta { animation-name: tutor-funde; }
       /* Los pasos traen un retraso escalonado en línea: con movimiento reducido no hay animación alguna. */
       .tutor__linea, .tutor__paso { animation: none; }
     }
@@ -185,6 +190,9 @@ export class TutorCasoComponent {
   readonly salidaSegura = output<void>();
 
   private readonly announcer = inject(LiveRegionAnnouncer);
+  private readonly lectura = viewChild<ElementRef<HTMLElement>>('lectura');
+  private readonly volver = viewChild<ElementRef<HTMLButtonElement>>('volver');
+  private readonly continuar = viewChild<ElementRef<HTMLButtonElement>>('continuar');
 
   readonly indice = signal(0);
   readonly sinRetrato = signal(false);
@@ -213,9 +221,13 @@ export class TutorCasoComponent {
     effect(() => {
       const linea = this.linea();
       const pasos = this.conPasos() ? this.pasos() : [];
-      const nombre = untracked(() => this.nombreTutor());
+      const indice = this.indice();
+      const posicion = `Línea ${indice + 1} de ${this.total()}.`;
       const lista = pasos.map(p => `${p.numero}. ${p.titulo}${p.detalle ? ` ${p.detalle}` : ''}`).join(' ');
-      untracked(() => this.announcer.announce(`${this.indice() === 0 ? `${nombre}: ` : ''}${linea}${lista ? ` ${lista}` : ''}`));
+      untracked(() => {
+        const quien = indice === 0 ? [this.nombreTutor(), this.rol()].filter(Boolean).map(t => t + '.') : [];
+        this.announcer.announce([...quien, posicion, linea, lista].filter(Boolean).join(' '));
+      });
     });
   }
 
@@ -224,10 +236,18 @@ export class TutorCasoComponent {
       this.cerrado.emit();
       return;
     }
+    const lectura = this.lectura()?.nativeElement;
+    if (lectura) lectura.scrollTop = 0;
     this.indice.update(i => i + 1);
   }
 
   anterior(): void {
+    const volver = this.volver()?.nativeElement;
+    if (this.indice() === 1 && volver?.ownerDocument.activeElement === volver) {
+      this.continuar()?.nativeElement.focus({ preventScroll: true });
+    }
+    const lectura = this.lectura()?.nativeElement;
+    if (lectura) lectura.scrollTop = 0;
     this.indice.update(i => Math.max(0, i - 1));
   }
 
@@ -243,8 +263,9 @@ export class TutorCasoComponent {
   tecla(event: KeyboardEvent): void {
     if (event.defaultPrevented || event.repeat) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    const destino = event.target as HTMLElement | null;
+    const destino = event.target instanceof Element ? event.target : null;
     if (destino?.closest?.('button, a, input, textarea, select, [role="button"]')) return;
+    if (event.key === ' ' && isScrollRegionTarget(destino)) return;
     event.preventDefault();
     this.seguir();
   }

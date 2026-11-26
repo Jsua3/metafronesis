@@ -76,4 +76,15 @@ describe('cinematica/pixeles: luz por escalones, nunca degradados', () => {
     // El centro queda limpio.
     expect(vineta.rgba[(30 * 120 + 60) * 4 + 3]).toBe(0);
   });
+
+  it('el recorte del resplandor calcula solo sus píxeles y respeta el radio y el tramado originales', () => {
+    const color = [255, 40, 46] as const;
+    const completo = resplandor(40, color);
+    const recorte = resplandor(40, color, { x: 17, y: 31, ancho: 11, alto: 9 });
+    expect(recorte.rgba.length).toBe(11 * 9 * 4);
+    for (let y = 0; y < recorte.alto; y++) {
+      const inicio = ((y + 31) * completo.ancho + 17) * 4;
+      expect(recorte.rgba.subarray(y * 44, (y + 1) * 44)).toEqual(completo.rgba.subarray(inicio, inicio + 44));
+    }
+  });
 });
