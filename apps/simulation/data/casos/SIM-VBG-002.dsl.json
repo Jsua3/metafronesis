@@ -12,7 +12,7 @@
     ],
     "rubrica": "RUB-01",
     "titulo": "Violencia Familiar y Tentativa de Feminicidio — tres capítulos",
-    "version": "2.0.4"
+    "version": "2.0.5"
   },
   "escenas": [
     {
@@ -84,7 +84,7 @@
       }
     },
     {
-      "descripcion": "El doctor Ospina sale un momento de reanimación. Confirma que Salomé falleció y que Yuliana sigue en cirugía. La familia todavía no lo sabe. Antes de volver con ellos, hay que acordar quién va a decir qué.",
+      "descripcion": "El doctor Ospina sale un momento de reanimación. Confirma que Salomé falleció y que Yuliana sigue en cirugía. La familia todavía no tiene nada confirmado. Antes de volver con ellos, hay que acordar quién va a decir qué.",
       "id": "E03",
       "orden": 3,
       "titulo": "Estación de enfermería: una sola voz",
@@ -6892,7 +6892,7 @@
             "reaccion": {
               "emocion": "triste",
               "gesto": "se-acerca",
-              "linea": "Que la niña venía con ella en la ambulancia… y que nadie nos ha dicho nada. Sí. Queremos saber. Los tres.",
+              "linea": "Que la niña venía con ella en la ambulancia… y que nadie nos ha dicho nada cierto. Sí. Queremos saber. Los tres.",
               "personaje": "gloria"
             }
           },
@@ -10423,7 +10423,7 @@
               "clave": "choque-silla-visitante",
               "etiqueta": "Silla de visita",
               "x": 395,
-              "y": 358
+              "y": 390
             },
             {
               "alto": 8,
@@ -10431,7 +10431,7 @@
               "clave": "choque-silla-visitante-2",
               "etiqueta": "Silla de visita",
               "x": 551,
-              "y": 358
+              "y": 390
             }
           ],
           "dialogos": [
@@ -10756,7 +10756,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 404,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -10784,7 +10784,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 560,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -11088,7 +11088,7 @@
               "clave": "choque-silla-visitante",
               "etiqueta": "Silla de visita",
               "x": 395,
-              "y": 358
+              "y": 390
             },
             {
               "alto": 8,
@@ -11096,7 +11096,7 @@
               "clave": "choque-silla-visitante-2",
               "etiqueta": "Silla de visita",
               "x": 551,
-              "y": 358
+              "y": 390
             }
           ],
           "dialogos": [
@@ -11407,7 +11407,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 404,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -11435,7 +11435,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 560,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -12428,7 +12428,7 @@
               "clave": "choque-silla-visitante",
               "etiqueta": "Silla de visita",
               "x": 395,
-              "y": 358
+              "y": 390
             },
             {
               "alto": 8,
@@ -12436,7 +12436,7 @@
               "clave": "choque-silla-visitante-2",
               "etiqueta": "Silla de visita",
               "x": 551,
-              "y": 358
+              "y": 390
             }
           ],
           "dialogos": [
@@ -12747,7 +12747,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 404,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -12775,7 +12775,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 560,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -13092,7 +13092,7 @@
               "clave": "choque-silla-visitante",
               "etiqueta": "Silla de visita",
               "x": 395,
-              "y": 358
+              "y": 390
             },
             {
               "alto": 8,
@@ -13100,7 +13100,7 @@
               "clave": "choque-silla-visitante-2",
               "etiqueta": "Silla de visita",
               "x": 551,
-              "y": 358
+              "y": 390
             }
           ],
           "dialogos": [
@@ -13421,7 +13421,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 404,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
@@ -13449,7 +13449,7 @@
               "tipo": "PROP",
               "visible": true,
               "x": 560,
-              "y": 366,
+              "y": 398,
               "z": 0
             },
             {
