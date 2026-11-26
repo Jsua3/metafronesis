@@ -53,10 +53,10 @@ const medirVentana = () => typeof window === 'undefined'
         [class.strip--warning]="interaction()?.type === 'WARNING'"
         [class.strip--supervisory]="activeSpeakerName(d) === 'Supervisión clínica'"
         [class.strip--quieto]="reduceMotion()"
-        [class.strip--sin-retrato]="!portraitSrc(d) && !visualDeHablante(d)"
         [class.strip--con-opciones]="hasChoices(d)"
         [class.strip--letras-texto]="letrasEnTexto()"
         [style]="arte()"
+        [style.--retrato]="ocultarRetrato(d) ? '0px' : null"
         [attr.data-momento]="momento()"
         role="dialog"
         aria-modal="true"
@@ -89,27 +89,29 @@ const medirVentana = () => typeof window === 'undefined'
           <section class="placa">
             <p class="speaker-name">{{ activeSpeakerName(d) }}
               @if (showsEmotionCue(d) && emotionLabel(activeEmotion(d)); as em) {
-                <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">{{ em }}</span>
+                <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">
+                  @if (ocultarRetrato(d)) {
+                    <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)" aria-hidden="true"></span>
+                  }{{ em }}</span>
               }
             </p>
             <div class="placa-cuerpo">
-              <div class="portrait" aria-hidden="true" [style.color]="showsEmotionCue(d) ? emotionColor(activeEmotion(d)) : null">
-                @if (portraitSrc(d); as src) {
-                  <img class="portrait-img" [src]="src" alt="" width="96" height="96" (error)="onPortraitError(src)" />
-                } @else if (visualDeHablante(d); as visual) {
-                  <!-- Sin retrato por nombre, la cara del personaje que está en la sala (la misma que usa la reacción). -->
-                  <app-kit-figure class="portrait-kit" [visual]="visual" [portrait]="caraDeKit(d, visual)" [scale]="escalaKit()" />
-                } @else {
-                  <!-- Sin retrato del kit: el busto de reserva, sin rasgos, al mismo oficio (32 x 32, contorno y luz del kit). -->
-                  <img class="portrait-svg" src="assets/game/dialogo/retrato-reserva.png" alt="" width="32" height="32" />
-                }
-                @if (showsEmotionCue(d) && activeEmotion(d) !== 'neutral') {
-                  <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)"></span>
-                }
-                @if (estadoPersona(d); as e) {
-                  <i class="portrait-base" [attr.data-activation]="e.activation"></i>
-                }
-              </div>
+              @if (!ocultarRetrato(d)) {
+                <div class="portrait" aria-hidden="true" [style.color]="showsEmotionCue(d) ? emotionColor(activeEmotion(d)) : null">
+                  @if (portraitSrc(d); as src) {
+                    <img class="portrait-img" [src]="src" alt="" width="96" height="96" (error)="onPortraitError(src)" />
+                  } @else if (visualDeHablante(d); as visual) {
+                    <!-- Sin retrato por nombre, la cara del personaje que está en la sala (la misma que usa la reacción). -->
+                    <app-kit-figure class="portrait-kit" [visual]="visual" [portrait]="caraDeKit(d, visual)" [scale]="escalaKit()" />
+                  }
+                  @if (showsEmotionCue(d) && activeEmotion(d) !== 'neutral') {
+                    <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)"></span>
+                  }
+                  @if (estadoPersona(d); as e) {
+                    <i class="portrait-base" [attr.data-activation]="e.activation"></i>
+                  }
+                </div>
+              }
 
               <!-- Clic sobre el texto: muestra la línea entera si aún se escribe y, si ya está completa, avanza (como Enter y
                    Espacio). Quien usa teclado ya tiene esas teclas; este clic es para ratón y toque, y no sustituye a los botones. -->
@@ -485,9 +487,6 @@ const medirVentana = () => typeof window === 'undefined'
       overflow: hidden;
       background-color: #6c6589;
     }
-    .portrait-svg { display: block; width: var(--retrato); height: var(--retrato); image-rendering: pixelated; }
-    /* Una voz sin retrato del kit (la supervisión, un personaje sin receta): ventanilla chica con la silueta, no un hueco. */
-    .strip--sin-retrato { --retrato: 96px; }
     .portrait-img {
       display: block;
       width: var(--retrato);
@@ -514,8 +513,10 @@ const medirVentana = () => typeof window === 'undefined'
     .emotion-chip[data-emotion="positive"] { background: #6ec67a; }
     .emotion-chip[data-emotion="concerned"] { background: #f5b84b; }
     .emotion-chip[data-emotion="danger"] { background: #e25a4f; }
+    .emotion-tag .emotion-chip { position: static; display: inline-block; margin-inline-end: calc(2 * var(--px)); }
 
     .placa-habla { min-width: 0; display: flex; flex-direction: column; gap: calc(3 * var(--px)); padding-top: var(--px); }
+    .placa-habla:only-child { grid-column: 1 / -1; }
     .persona-state { margin: 0; display: flex; align-items: center; gap: calc(4 * var(--px)); font-size: .84em; color: var(--tinta-suave); }
     .pulso {
       flex: none;
@@ -972,7 +973,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     }
     return lista;
   });
-  /** Retrato cuya carga falló: cae a la silueta SVG (spike de retratos NPC). */
+  /** Retrato cuya carga falló: permite usar la figura de la sala si está disponible. */
   private readonly failedPortrait = signal<string | null>(null);
 
   private typewriterHandle: ReturnType<typeof setTimeout> | null = null;
@@ -1053,7 +1054,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /**
    * Retrato pixel-art de la línea actual (spec §8.2), o `null` si no hay retrato (voz sin
-   * cuerpo, kit sin cargar o imagen fallida) → el panel muestra la silueta SVG.
+   * cuerpo, kit sin cargar o imagen fallida).
    */
   portraitSrc(d: DialogueState): string | null {
     const line = this.activeLine();
@@ -1061,6 +1062,9 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     const treeSpeaker = d.speakerName?.trim() || null;
     // La receta y la clave del árbol valen para sus propias líneas, no para las de otro hablante.
     const sameSpeaker = !lineSpeaker || lineSpeaker === treeSpeaker;
+    const objeto = this.interaction();
+    if (sameSpeaker && objeto && objeto.type !== 'PERSON'
+      && (objeto.key === d.speakerObjectKey || objeto.key === d.key || objeto.dialogue?.key === d.key)) return null;
     const asset = resolvePortraitAsset(this.kit.bundle(), {
       recipeId: sameSpeaker ? d.recipeId ?? null : null,
       portraitKey: sameSpeaker ? d.portraitKey : null,
@@ -1068,6 +1072,11 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       emotion: line?.emotion?.trim() || d.emotion?.trim() || 'neutral',
     });
     return asset && this.failedPortrait() !== asset ? asset : null;
+  }
+
+  /** Solo abre la ventanilla cuando existe una cara del kit para el hablante de esta línea. */
+  ocultarRetrato(d: DialogueState): boolean {
+    return d.hidePortrait === true || (!this.portraitSrc(d) && !this.visualDeHablante(d));
   }
 
   activeSpeakerName(d: DialogueState): string {
@@ -1144,7 +1153,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   estadoPersona(d: DialogueState): { texto: string; activation: string } | null {
     const persona = this.persona();
     const label = persona?.label?.trim();
-    if (!persona || !label || isSystemVoice(this.activeSpeakerName(d))) return null;
+    if (!persona || !label || d.hidePortrait || isSystemVoice(this.activeSpeakerName(d))) return null;
     return { texto: label.charAt(0).toUpperCase() + label.slice(1), activation: persona.activation };
   }
 

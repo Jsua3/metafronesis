@@ -46,9 +46,10 @@ describe('game-world: NPC, personas, guía y figurantes del kit; nada los deform
     expect(source).not.toMatch(/KenneyCharFrames|'characters'|npc-avatar-presets|baked-cast|phaser-avatar-renderer|v1-avatar|avatar-config\.util|authoring-catalog|avatarPresetKey|frameIndex/);
   });
 
-  it('el único espejo que queda es el de las puertas laterales', () => {
-    expect(source.match(/setFlipX\(/g) ?? []).toHaveLength(1);
+  it('el espejo se aplica a puertas laterales y cobijas, con la cabeza siempre de frente', () => {
+    expect(source.match(/setFlipX\(/g) ?? []).toHaveLength(2);
     expect(body('private buildDoorSprite(')).toContain('.setFlipX(');
+    expect(body('private dibujarPersonaEnCama(')).toMatch(/const cobija = .*\.setFlipX\(mueble\.espejo\)/);
   });
 
   it('NPC, personas y figurantes se resuelven con el punto único', () => {

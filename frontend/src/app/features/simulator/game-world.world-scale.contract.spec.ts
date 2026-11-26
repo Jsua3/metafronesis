@@ -37,7 +37,7 @@ describe('game-world: puertas, herramientas y objetos a escala 1 (spec §13.1, d
     // Reposo y hoja de cercanía (cuadro 0 = reposo, mismas medidas): ni uno ni otro se escalan.
     // (con apoyo en los pies el arte se dibuja con la base en (x, y); sin él, 6 px arriba del centro: `artY`)
     expect(source).toContain('const image = this.add.image(0, artY, art.textureKey);');
-    expect(source).toContain('return { sprite: this.atWorldScale(image), animation: null };');
+    expect(source).toContain('return { sprite: elevado ? image : this.atWorldScale(image), animation: null };');
     expect(source).toContain('const sprite = this.add.sprite(0, artY, sheet.textureKey, 0);');
   });
 

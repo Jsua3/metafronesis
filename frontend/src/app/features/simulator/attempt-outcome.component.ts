@@ -13,9 +13,12 @@ import { UiEmptyState } from '../../shared/ui/state/ui-empty-state';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { AvatarStore } from '../character/avatar.store';
 import { toAvatarV2 } from '../character/kit/avatar-v2';
-import { resolveCharacter } from '../character/kit/character-visual.resolver';
+import { KIT_ASSETS, resolveCharacter } from '../character/kit/character-visual.resolver';
 import { KitFigureComponent } from '../character/kit/kit-figure.component';
 import { KitService } from '../character/kit/kit.service';
+import { conNombre } from './caso/plantilla-nombre';
+import { evaluarRevision, type RevisionLeida } from './caso/revision';
+import { ladoDelRetrato } from './cinematica/tutor-caso.component';
 import { DRAFT_COPY } from './draft-copy';
 import { levelWord, milestoneMark, missedFactsText, responseClassWord } from './outcome-text.util';
 import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
@@ -114,7 +117,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
         <!-- Aviso de alcance (RN-01, borrador de Psicología): fuera de los textos validados del resultado. -->
         <ui-scope-notice />
         @if (report(); as r) {
-          <!-- Orden del cierre: final, autoevaluación breve, hitos, competencias, revisión decisión por decisión. -->
+          <!-- Orden del cierre: final, revisión del profesor, autoevaluación breve, hitos, competencias y decisiones. -->
           @if (r.ending; as ending) {
             <!-- Sin tono semáforo (R-18, §3.2 M7): el final es del mismo color para todos; ending.tone queda para el docente. -->
             <div class="oc-ending" role="status">
@@ -133,6 +136,44 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
                 </ul>
               }
             </div>
+          }
+
+          @if (revisionEvaluada(); as revision) {
+            <section class="oc-revision" aria-labelledby="oc-revision-title">
+              <h4 class="oc-revision__titulo" id="oc-revision-title">La revisión del profesor</h4>
+              <header class="oc-revision__profesor">
+                @if (revision.retrato && retratoNoDisponible() !== revision.retrato) {
+                  <img class="oc-revision__retrato" [src]="revision.retrato" alt="" width="32" height="32"
+                    [style.--retrato-amplio]="ladoAmplio" [style.--retrato-estrecho]="ladoEstrecho"
+                    (error)="retratoNoDisponible.set(revision.retrato)" />
+                }
+                <div class="oc-revision__identidad">
+                  <p class="u-rotulo">{{ revision.nombre }}</p>
+                  @if (revision.rol) { <p class="oc-revision__rol">{{ revision.rol }}</p> }
+                </div>
+              </header>
+              <div class="oc-revision__placa u-placa u-sombra">
+                @if (revision.entrada) { <p>{{ revision.entrada }}</p> }
+                @for (capitulo of revision.capitulos; track $index) {
+                  <div class="oc-revision__capitulo">
+                    <h5>{{ capitulo.titulo }}</h5>
+                    <ol>
+                      @for (paso of capitulo.pasos; track $index) {
+                        <li [value]="paso.numero">
+                          <p class="oc-revision__paso">{{ paso.titulo }}</p>
+                          <p class="oc-revision__marca" [class.oc-revision__marca--logrado]="paso.logrado">
+                            <span aria-hidden="true">{{ paso.logrado ? '✓' : '▸' }}</span>
+                            {{ paso.logrado ? 'Lo lograste' : 'Para reforzar' }}
+                          </p>
+                          <p>{{ paso.texto }}</p>
+                        </li>
+                      }
+                    </ol>
+                  </div>
+                }
+                @if (revision.cierre) { <p class="oc-revision__cierre">{{ revision.cierre }}</p> }
+              </div>
+            </section>
           }
 
           @if (status() === 'COMPLETED' && mode() !== 'rehearsal') {
@@ -339,6 +380,50 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
       padding: 14px 16px; border-radius: 16px;
       background: var(--sim-surface, rgba(27,33,51,.72)); border: 1px solid var(--sim-border, rgba(182,156,255,.22));
     }
+    .oc-revision {
+      margin-inline: auto;
+      width: min(100%, 760px);
+      padding: 4px 4px 10px;
+      font-family: var(--pixel-f-texto);
+      color: var(--pixel-tinta);
+      overflow-wrap: anywhere;
+      line-height: 1.55;
+    }
+    .oc-revision p, .oc-revision h4, .oc-revision h5 { margin: 0; }
+    .oc-revision .oc-revision__titulo { margin-bottom: 8px; font-size: 1.125rem; }
+    .oc-revision__profesor { display: flex; align-items: flex-end; gap: 12px; padding-inline: 4px; }
+    .oc-revision__retrato {
+      --lado-retrato: var(--retrato-amplio);
+      box-sizing: content-box;
+      flex: none;
+      width: var(--lado-retrato);
+      height: var(--lado-retrato);
+      image-rendering: pixelated;
+      border: calc(2 * var(--pixel-px)) solid var(--pixel-contorno);
+      background: var(--pixel-penumbra-alzada);
+    }
+    .oc-revision__identidad { min-width: 0; padding-bottom: 6px; }
+    .oc-revision__identidad .u-rotulo { margin: 0; white-space: normal; }
+    .oc-revision .oc-revision__rol { margin-top: 4px; font-size: .875rem; color: var(--pixel-tinta-suave); }
+    .oc-revision__placa {
+      display: grid;
+      gap: 18px;
+      padding: clamp(8px, 2vw, 20px);
+      font-size: max(1rem, calc(var(--pixel-tam) * 1.15));
+    }
+    .oc-revision__capitulo h5 { font-size: 1em; font-family: var(--pixel-f-nombre); color: var(--luz); }
+    .oc-revision__capitulo ol { margin: 8px 0 0; padding-inline-start: 1.75em; }
+    .oc-revision__capitulo li { padding-inline-start: .25em; }
+    .oc-revision__capitulo li + li { margin-top: 12px; }
+    .oc-revision__capitulo li::marker { color: var(--luz); font-weight: 700; }
+    .oc-revision__paso, .oc-revision__marca { font-weight: 700; }
+    .oc-revision__marca { color: var(--pixel-ambar); }
+    .oc-revision__marca span { display: inline-block; margin-inline-end: .2em; }
+    .oc-revision__marca--logrado { color: var(--pixel-hecho); }
+    .oc-revision__cierre { border-top: var(--pixel-px) solid var(--pixel-canto); padding-top: 12px; }
+    @media (max-width: 559px) {
+      .oc-revision__retrato { --lado-retrato: var(--retrato-estrecho); }
+    }
     .oc-ending {
       padding: 16px 18px; border-radius: 16px;
       background: rgba(124,77,255,.12); border: 1px solid rgba(182,156,255,.4);
@@ -508,6 +593,32 @@ export class AttemptOutcomeComponent {
   readonly playerVisual = computed(() => {
     const bundle = this.kit.bundle();
     return bundle ? resolveCharacter(bundle, { kind: 'jugador', avatar: toAvatarV2(this.avatarStore.avatar()) }) : null;
+  });
+
+  readonly revision = input<RevisionLeida | null>(null);
+  readonly nombre = input('');
+  protected readonly retratoNoDisponible = signal<string | null>(null);
+  private readonly dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
+  protected readonly ladoAmplio = `${ladoDelRetrato(this.dpr, false)}px`;
+  protected readonly ladoEstrecho = `${ladoDelRetrato(this.dpr, true)}px`;
+  protected readonly revisionEvaluada = computed(() => {
+    const datos = this.revision();
+    const cumplidos = this.report()?.milestones?.done;
+    if (this.status() !== 'COMPLETED' || !datos || !Array.isArray(cumplidos)) return null;
+    const claves = cumplidos.map(hito => hito?.key);
+    if (claves.some(clave => typeof clave !== 'string' || !clave.trim())) return null;
+    const nombre = this.nombre();
+    return {
+      nombre: datos.nombre,
+      rol: datos.rol,
+      retrato: datos.recipeId ? `${KIT_ASSETS}/${datos.recipeId}/portrait-neutral.png` : null,
+      entrada: conNombre(datos.entrada, nombre),
+      capitulos: evaluarRevision(datos, claves).map(capitulo => ({
+        ...capitulo,
+        pasos: capitulo.pasos.map(paso => ({ ...paso, texto: conNombre(paso.texto, nombre) })),
+      })),
+      cierre: conNombre(datos.cierre, nombre),
+    };
   });
 
   /** Dónde estaba el foco antes de abrirse el resultado o la pausa: a ese sitio vuelve al cerrarse (H-05, 2.4.3). */

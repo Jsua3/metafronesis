@@ -13,8 +13,9 @@ const source = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'ut
  */
 describe('F6: anuncios de las regiones vivas, una sola vez', () => {
   it('la barra de contexto no es una región viva y ya no trae leyenda de teclado (las teclas viven en la ayuda)', () => {
-    expect(source).toMatch(/<div class="context-bar">/);
-    expect(source).not.toMatch(/<div class="context-bar" aria-live/);
+    const barra = source.match(/<div class="context-bar"[^>]*>/)?.[0];
+    expect(barra).toBeDefined();
+    expect(barra).not.toMatch(/\baria-live\b/);
     expect(source).not.toContain('context-bar__hint');
   });
 

@@ -398,7 +398,11 @@ export interface SimulationWorldState {
   inventory: string[];
   inspectedObjectKeys: string[];
   viewedDialogueKeys: string[];
+  /** Claves de las personas con las que se habló en el nodo actual. */
+  viewedNpcKeysHere?: string[];
   usedToolKeys: string[];
+  /** Usos realizados en el nodo actual, como código o código@objetivo. */
+  usedToolKeysHere?: string[];
   flags: Record<string, unknown>;
   /** Opciones ofrecidas ahora para el nodo actual; solo las traen las respuestas de mundo del juego (no el acuse de PATCH). */
   decisionOptions?: SimulationDecisionOption[];
@@ -497,7 +501,61 @@ export interface SceneMapState {
   theme: string;
   spawnX: number;
   spawnY: number;
-  ambient: Record<string, unknown>;
+  ambient: AmbienteDeSala;
+}
+
+/**
+ * `map.ambient` de una sala (`x-siep.escenas[].mapa.ambiente` del caso). Llega tal cual del servidor: los campos con tipo son
+ * los que el cliente conoce y todos son opcionales; cualquier otro sigue siendo `unknown`. Lo que trae se valida al leerlo
+ * (`cinematica/lectura.ts`), nunca se da por bueno por el tipo.
+ */
+export interface AmbienteDeSala {
+  [campo: string]: unknown;
+  /** Nota de capítulo o de salto de tiempo («Capítulo 2 · La noticia…»). */
+  transitionText?: unknown;
+  /** Cinemática del caso: solo en la sala de la escena inicial (contrato del caso insignia, §1). */
+  cinematica?: CinematicaDelCaso;
+  /** El tutor fuera de la historia: en la sala inicial y en la primera sala de cada capítulo (§2). */
+  tutor?: TutorDelCaso;
+}
+
+/** Escenas genéricas que el reproductor sabe dibujar con el arte del juego (no imágenes del caso). */
+export type EscenaDeCinematica =
+  | 'barrio' | 'casa-ventana' | 'negro' | 'calle-emergencia' | 'urgencias-llegada' | 'urgencias-familia' | 'titulo';
+export type MomentoDeCinematica = 'tarde' | 'noche';
+export type SiluetaDeCinematica = 'hombre' | 'mujer' | 'nina';
+
+/** Un plano de la cinemática. Todo su texto viene del caso; `{nombre}` se pone al pintarlo. */
+export interface PlanoDeCinematica {
+  escena: EscenaDeCinematica;
+  momento?: MomentoDeCinematica;
+  subtitulo?: string;
+  duracionMs?: number;
+  /** Solo `casa-ventana`: quiénes se ven tras la ventana. */
+  siluetas?: SiluetaDeCinematica[];
+  /** `casa-ventana` (y `barrio`): la luz de la ventana encendida. */
+  luzVentana?: boolean;
+}
+
+export interface CinematicaDelCaso {
+  id: string;
+  planos: PlanoDeCinematica[];
+}
+
+export interface PasoDelTutor {
+  numero: number;
+  titulo: string;
+  detalle?: string;
+}
+
+/** El tutor: una capa sobre el mundo con el retrato del kit (`recipeId`, emoción neutral), su nombre y su rol. */
+export interface TutorDelCaso {
+  nombre: string;
+  rol?: string;
+  recipeId?: string;
+  lineas: string[];
+  /** La lista numerada que la tarjeta muestra junto a la penúltima línea. */
+  pasos?: PasoDelTutor[];
 }
 
 export interface PlayerState {
@@ -554,6 +612,8 @@ export interface DialogueState {
   portraitKey: string | null;
   /** Receta del kit del NPC que habla (solo en el cliente: diálogos de NPC de escenario). */
   recipeId?: string | null;
+  /** Clave del actor en el mundo para recuperar su aspecto en el cliente. */
+  speakerObjectKey?: string;
   emotion: string;
   lines: DialogueLineState[];
   choices: DialogueChoiceState[];
@@ -561,6 +621,8 @@ export interface DialogueState {
   notice?: string | null;
   /** UI: la conversación corresponde a otro momento del caso; se muestra como informativa, sin decisiones. */
   stale?: boolean;
+  /** UI: la placa de un aviso o texto narrado se presenta sin retrato. */
+  hidePortrait?: boolean;
 }
 
 export interface DialogueLineState {

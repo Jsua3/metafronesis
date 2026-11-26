@@ -31,8 +31,13 @@ import { nextAmbientStep, npcMotionStrategyFor } from './motion-strategies';
 import { DEPTH, actorDepth, tiledLayerDepth } from './depth-sort.util';
 import { AvisoDePuertaComponent } from './sala/aviso-de-puerta.component';
 import { MANIFIESTO_DE_PIEZAS_URL, esManifiestoDePiezas } from './sala/catalogo';
-import { EscenaDeSala } from './sala/escena-de-sala';
+import { EscenaDeSala, texturaDeMueble } from './sala/escena-de-sala';
 import type { MuebleDeSala } from './sala/escena-de-sala';
+import {
+  FILAS_DE_CABEZA, anclaDelArte, apoyoDeMueble, bordesDelMueble, cobijaDeCama, cuadroDeRespiracion,
+  pisaElMueble, profundidadSobre,
+} from './sala/apoyos-de-mueble';
+import type { ApoyoDeMueble } from './sala/apoyos-de-mueble';
 import { piezaDelObjeto } from './sala/mueble-vivo';
 import type { ManifiestoDePiezas } from './sala/catalogo';
 import type { Cuerpo } from './sala/luz';
@@ -71,6 +76,10 @@ import { InputKind, nextInputKind, touchControlsVisible } from './world-input-ki
 import { PlaceCandidate } from './world-places.util';
 import { DRAFT_COPY } from './draft-copy';
 import { pasosDeGesto } from './caso/gestos';
+import {
+  type EntornoDeRuta, type PlanDeAcompanantes, type Punto, alfaReducido, muestrearAcompanante, planearAcompanantes,
+  planearDesvanecimiento, rutaEsquivando,
+} from './caso/acompanantes';
 import type { Gesto } from './caso/vocabulario';
 import {
   KEY_PERSON_CHEVRON, KEY_PERSON_COLOR, KEY_PERSON_COLOR_HEX, KEY_PERSON_HALO_HEX, KEY_PERSON_NAME_GAP_PX,
@@ -98,7 +107,8 @@ import { heldInput } from './touch-hold.util';
 import { attachScrollKeyGuard, isScrollRegionTarget, isShortcutContext, isTextEntryTarget, resolveInteractPress } from './keyboard-focus.util';
 import { isCriticalAsset } from './asset-criticality.util';
 import {
-  Caja as CajaDePlaca, EstadoCamara, Momento, avanzarCamara, comoDibujar, duracionDeViaje, enViajeDentro, esperaDelGeneral, objetivoCamara, sinSaltos,
+  ALTO_CUERPO, MEDIO_CUERPO, Caja as CajaDePlaca, EstadoCamara, Momento, Sujeto,
+  avanzarCamara, comoDibujar, duracionDeViaje, enViajeDentro, esperaDelGeneral, objetivoCamara, sinSaltos, situarAviso,
 } from './camara/camara';
 import { fitGameToHost, pixelScaleConfig, watchHostSize } from './pixel-canvas';
 import { PixelRender } from './pixel-render';
@@ -111,6 +121,7 @@ import {
 } from './proximity-animation.util';
 import { AVATAR_STORAGE_KEY } from '../character/avatar.store';
 import { NpcMotionConfig, NpcMovementZone } from '../../core/models/simulation.model';
+import { FRAME } from '../character/kit/kit-engine';
 import type { KitBundle, ViewId } from '../character/kit/kit-engine';
 import { CharacterRef, CharacterVisual, resolveCharacter } from '../character/kit/character-visual.resolver';
 import {
@@ -143,6 +154,8 @@ interface AvisoDePuertaEnPantalla {
   bloqueada: boolean;
   x: number;
   y: number;
+  vista: CajaDePlaca;
+  ocupadas: readonly CajaDePlaca[];
 }
 
 interface WorldCallbacks {
@@ -215,6 +228,28 @@ interface PersonWalker {
   lastPose: { direction: ViewId | null; walking: boolean };
 }
 
+/** Quién camina a la puerta: el marcador, sus pies y desde dónde sale. */
+interface ActorDeCoreografia {
+  key: string;
+  marker: Phaser.GameObjects.Container;
+  /** Cuánto bajo el marcador pisa (el jugador ya es sus pies). */
+  feet: number;
+  desde: Punto;
+  jugador: boolean;
+  ultimaVista?: ViewId;
+  caminando?: boolean;
+}
+
+interface Coreografia {
+  tMs: number;
+  totalMs: number;
+  actores: ActorDeCoreografia[];
+  plan: PlanDeAcompanantes;
+  reducido: boolean;
+  puertaKey: string;
+  fin: () => void;
+}
+
 interface NpcMover {
   key: string;
   cfg: NpcMotionConfig;
@@ -258,6 +293,8 @@ const NEAR_RING_COLOR = 0xffffff;
 /** Marca del siguiente paso (P9): una flecha estática a la izquierda del destino y a qué altura del suelo (px del mundo). */
 const STEP_MARK_GLYPH = '▶';
 const STEP_MARK_SIDE_PX = 22;
+const ALCANCE_AL_BORDE_PX = 38;
+const PIE_PARA_ENCUADRAR_CAMA_PX = 42;
 const STEP_MARK_LIFT: Readonly<{ person: number; door: number; object: number }> = { person: 46, door: 52, object: 26 };
 /** Margen (px del mundo) que un rótulo deja al borde de la vista y del indicador de destino fuera de cuadro (P9). */
 const VIEW_EDGE_MARGIN_PX = 6;
@@ -294,6 +331,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private currentRoomKey = '';
   private authoredRoomActive = false;
   private dbDoorArmed = true;
+  private piesAlEntrar: Punto | null = null;
   /** Histéresis de puertas BD: dispara al acercarse (≤30) pero solo re-arma al
    *  alejarse bien (≥72). Evita el rebote cuando el punto de entrada de una sala
    *  queda cerca de la puerta de regreso (el armado inmediato disparaba de vuelta). */
@@ -639,8 +677,21 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   override update(time: number, delta: number) {
     this.reportProximityAnimation();
+    this.respirarEnCama(time);
     if (!this.player || !this.cursors || !this.keys || !this.world) {
       this.tappedKeys.e = this.tappedKeys.space = this.tappedKeys.enter = false;
+      return;
+    }
+    // Los acompañantes (y quien juega) caminan hasta la puerta: el control queda congelado y solo se anima eso y la puerta.
+    if (this.coreografia) {
+      this.tappedKeys.e = this.tappedKeys.space = this.tappedKeys.enter = false;
+      this.updateCoreografia(delta);
+      for (const a of this.coreografia?.actores ?? []) this.ysort(a.marker);
+      if (this.salaPorPiezas) {
+        this.salaPorPiezas.actualizar(delta, this.player ? { x: this.player.x, y: this.player.y } : null,
+          new Set(Object.keys(this.doorStates).filter(clave => this.doorStates[clave] === 'locked')), this.callbacks.reduceMotion);
+        this.sombrasConSilueta(this.salaPorPiezas);
+      }
       return;
     }
     // Sin captura de Phaser, las teclas también llegan mientras se escribe en la bitácora o se
@@ -762,13 +813,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     // P2: la sala por piezas abre la puerta a la que se acerca quien juega y rehace su luz (sombra incluida).
     // P2: con una capa encima (plano, diálogo, bitácora) las puertas de pieza no se abren ni se cierran: quedan como estaban.
     if (this.salaPorPiezas && !this.motionPaused) {
-      const activa = this.salaPorPiezas.actualizar(delta, this.player ? { x: this.player.x, y: this.player.y } : null,
+      this.salaPorPiezas.actualizar(delta, this.player ? { x: this.player.x, y: this.player.y } : null,
         new Set(Object.keys(this.doorStates).filter(clave => this.doorStates[clave] === 'locked')), this.callbacks.reduceMotion);
       this.sombrasConSilueta(this.salaPorPiezas);
-      this.avisoDePuerta(activa);
       this.salaPorPiezas.cerca(this.nearestKey);
-    } else {
-      this.avisoDePuerta(null);
     }
   }
 
@@ -781,16 +829,75 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const p = id ? this.salaPorPiezas?.posicionDelAviso(id) : null;
     const obj = id ? this.markerData.get(id) : undefined;
     if (id && p && obj) {
-      const cam = this.cameras.main, dpr = 1 / (this.scale.zoom || 1);
       aviso = {
         id, texto: exitVerb(obj.label), bloqueada: this.doorStates[id] === 'locked',
-        x: Math.round(((p.x - cam.worldView.x) * cam.zoom) / dpr), y: Math.round(((p.y - cam.worldView.y) * cam.zoom) / dpr),
+        ...this.proyectarAviso(p), vista: this.vistaParaAvisos(), ocupadas: this.obstaculosParaAvisos(),
       };
     }
-    const firma = aviso ? `${aviso.id}|${aviso.x}|${aviso.y}|${aviso.bloqueada}` : '';
+    const firma = aviso ? JSON.stringify(aviso) : '';
     if (firma === this.firmaDelAviso) return;
     this.firmaDelAviso = firma;
     this.callbacks.onAvisoDePuerta?.(aviso);
+  }
+
+  /** Proyección del lienzo compuesto, también cuando el zoom se aplica por CSS durante el viaje. */
+  private proyectarAviso(p: Punto): Punto {
+    const cam = this.cameras.main;
+    const estado = this.camState ?? { centro: cam.midPoint, zoom: cam.zoom };
+    const escala = this.scale.zoom || 1;
+    return {
+      x: Math.round(((p.x - estado.centro.x) * estado.zoom + cam.width / 2) * escala),
+      y: Math.round(((p.y - estado.centro.y) * estado.zoom + cam.height / 2) * escala),
+    };
+  }
+
+  private vistaParaAvisos(): CajaDePlaca {
+    const { width, height } = this.cameras.main;
+    const escala = this.scale.zoom || 1;
+    return { x: 4, y: 4 + this.camCoveredTopCss, ancho: width * escala - 8,
+      alto: height * escala - 8 - this.camCoveredTopCss - this.camCoveredCss };
+  }
+
+  private obstaculosParaAvisos(): CajaDePlaca[] {
+    const cajas = [...this.camPlacas];
+    const zoomCss = (this.camState?.zoom ?? this.cameras.main.zoom) * (this.scale.zoom || 1);
+    const cuerpo = (x: number, y: number, alto = ALTO_CUERPO) => cajas.push({
+      ...this.proyectarAviso({ x: x - MEDIO_CUERPO, y: y - alto }),
+      ancho: Math.ceil(2 * MEDIO_CUERPO * zoomCss), alto: Math.ceil(alto * zoomCss),
+    });
+    if (this.player) cuerpo(this.player.x, this.player.y);
+    this.markers.forEach((marker, key) => {
+      const objeto = this.markerData.get(key);
+      if (objeto?.type === 'PERSON' && marker.visible && marker.alpha > 0) {
+        const cama = this.apoyosDeLaSala.get(key)?.cama;
+        if (cama) cuerpo(marker.x, marker.y + FILAS_DE_CABEZA, FILAS_DE_CABEZA);
+        else cuerpo(marker.x, marker.y + markerFeetOffsetY(objeto));
+      }
+      const rotulo = this.markerLabels.get(key);
+      if (rotulo?.visible && rotulo.alpha > 0) {
+        cajas.push({
+          ...this.proyectarAviso({ x: rotulo.x - rotulo.displayWidth / 2, y: rotulo.y }),
+          ancho: rotulo.displayWidth * zoomCss, alto: rotulo.displayHeight * zoomCss,
+        });
+      }
+    });
+    this.npcMarkers.forEach(npc => { if (npc.visible && npc.alpha > 0) cuerpo(npc.x, npc.y); });
+    const prompt = this.markerPrompt;
+    if (prompt?.visible) {
+      cajas.push({
+        ...this.proyectarAviso({ x: prompt.x - prompt.displayWidth / 2, y: prompt.y }),
+        ancho: prompt.displayWidth * zoomCss, alto: prompt.displayHeight * zoomCss,
+      });
+    }
+    return cajas;
+  }
+
+  /** Al entrar por una puerta, primero deja ver al personaje. Un paso real vuelve a mostrar los avisos. */
+  private haDadoUnPaso(): boolean {
+    if (this.piesAlEntrar && this.player && Math.hypot(
+      this.player.x - this.piesAlEntrar.x, this.player.y - this.piesAlEntrar.y,
+    ) > 6) this.piesAlEntrar = null;
+    return !this.piesAlEntrar;
   }
 
   /** P2: la sombra con silueta de quien juega y de cada persona del caso, en una sala por piezas (regla 3 de calidad). */
@@ -874,6 +981,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   setReduceMotion(reduced: boolean) {
     this.callbacks.reduceMotion = reduced;
+    if (reduced) this.respirarEnCama(0);
     // Al reducir el movimiento lo que animaba vuelve al cuadro 0; al volver a permitirlo, el principal retoma.
     this.syncProximityAnimations();
     // Las personas que caminaban vuelven a su sitio y quedan quietas; al permitirlo de nuevo, retoman desde ahí.
@@ -966,7 +1074,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * sonido de error (F-14): quien escucha decide cómo decirlo.
    */
   interactNearest() {
-    const key = this.nearestKey;
+    const key = this.coreografia ? null : this.nearestKey;   // con la coreografía de la puerta en curso nada se activa
     if (key !== null) {
       if (key.startsWith(NPC_KEY_PREFIX)) {
         const npc = this.npcConfigFor(key);
@@ -1029,6 +1137,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * y el objetivo marcado en el último movimiento ya no es el que está debajo.
    */
   private hoverTargetAt(pointer: Phaser.Input.Pointer): string | null {
+    if (this.coreografia) return null;
     if (pointer.wasTouch || this.motionPaused || !this.player || !this.world) return null;
     return pickHoverTarget({ x: pointer.worldX, y: pointer.worldY }, this.hoverCandidates(), this.examinedKeys);
   }
@@ -1039,6 +1148,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * es la misma: solo lo que el jugador ya podría saber.
    */
   private tapTargetAt(pointer: Phaser.Input.Pointer): string | null {
+    if (this.coreografia) return null;
     if (this.motionPaused || !this.player || !this.world) return null;
     return pickHoverTarget({ x: pointer.worldX, y: pointer.worldY }, this.hoverCandidates(), this.examinedKeys, TAP_SLOP_PX);
   }
@@ -1050,13 +1160,15 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const candidates: HoverCandidate[] = [];
     this.markers.forEach((marker, key) => {
       const obj = this.markerData.get(key);
-      if (!obj || !this.isInteractive(obj)) return;
+      const apoyo = this.apoyosDeLaSala.get(key);
+      if (!obj || !this.disponible(marker) || !(apoyo || this.isInteractive(obj))) return;
       const moving = this.markerMoves(key);
-      const x = moving ? marker.x : obj.x;
-      const y = moving ? marker.y : obj.y;
+      const x = apoyo?.dibujo.x ?? (moving ? marker.x : obj.x);
+      const y = apoyo?.cama ? apoyo.dibujo.y + FILAS_DE_CABEZA : apoyo?.dibujo.y ?? (moving ? marker.y : obj.y);
       candidates.push({ key, x, y, playerDistance: Math.hypot(px - x, py - y) });
     });
     this.npcMarkers.forEach((container, key) => {
+      if (!this.disponible(container)) return;
       candidates.push({
         key: this.npcKeyOf(key), x: container.x, y: container.y,
         playerDistance: Math.hypot(px - container.x, py - container.y),
@@ -1088,7 +1200,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     } else {
       const marker = this.markers.get(key);
       if (!marker) return null;
-      if (this.markerMoves(key)) { x = marker.x; y = marker.y; }
+      const apoyo = this.apoyosDeLaSala.get(key);
+      if (apoyo) {
+        x = apoyo.dibujo.x;
+        y = apoyo.dibujo.y + (apoyo.cama ? FILAS_DE_CABEZA : 0);
+      } else if (this.markerMoves(key)) { x = marker.x; y = marker.y; }
     }
     const state = obj.type === 'EXIT' ? this.doorStates[key] : undefined;
     const door = state ? { state, missing: [], stageLocked: false, message: null } : null;
@@ -1104,16 +1220,18 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    */
   placeCandidates(): PlaceCandidate[] {
     const out: PlaceCandidate[] = [];
-    this.npcMarkers.forEach((_container, key) => {
+    this.npcMarkers.forEach((container, key) => {
+      if (!this.disponible(container)) return;
       const candidateKey = this.npcKeyOf(key);
       const npc = this.npcConfigFor(candidateKey);
       if (npc) out.push({ key: candidateKey, label: npc.displayName, kind: 'person' });
     });
     const mapKey = this.world?.map.key ?? '';
-    this.markers.forEach((_marker, key) => {
+    this.markers.forEach((marker, key) => {
+      if (!this.disponible(marker)) return;
       const obj = this.markerData.get(key);
       const keyPerson = obj !== undefined && this.keyPersonKey() === key;
-      if (!obj || !(keyPerson || this.isInteractive(obj))) return;
+      if (!obj || !(keyPerson || this.apoyosDeLaSala.has(key) || this.isInteractive(obj))) return;
       out.push({
         key,
         label: getSceneDisplayLabel(obj, mapKey),
@@ -1126,13 +1244,25 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** Camina hasta lo elegido en «Ir a…» (F6-11) y lo avisa al llegar o si no pudo. false si ya no está en la sala. */
   walkToKey(key: string): boolean {
-    const anchor = this.player ? this.hoverAnchor(key) : null;
+    const anchor = this.player && !this.coreografia ? this.hoverAnchor(key) : null;
     if (!anchor) return false;
+    const walk = this.caminataAlMarcador(key, anchor);
+    if (!walk.target) return false;
     this.walkGoal = { key, label: anchor.label };
     this.walkInteractKey = null;   // «Ir a…» solo lleva: al llegar se anuncia, no se interactúa
     this.walkWaitsForResume = this.motionPaused;
-    this.walk = startWalk({ x: anchor.x, y: anchor.y, radius: anchor.reach });
+    this.walk = walk;
     return true;
+  }
+
+  /** Al pie de un mueble, la llegada es el punto del piso al que también señala el anillo. */
+  private caminataAlMarcador(key: string, anchor: { x: number; y: number; reach: number }): WalkState {
+    const apoyo = this.apoyosDeLaSala.get(key);
+    if (!apoyo) return startWalk({ x: anchor.x, y: anchor.y, radius: anchor.reach });
+    if (!this.player) return NO_WALK;
+    const [primero, ...resto] = this.rutaAlMueble(this.player, apoyo.llegada)
+      .map(punto => ({ ...punto, radius: WALK_GROUND_RADIUS_PX }));
+    return primero ? startWalk(primero, resto) : NO_WALK;
   }
 
   /**
@@ -1176,6 +1306,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * contorno ni cursor (no hay «pasar por encima»).
    */
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.coreografia) return;
     if (this.motionPaused || !this.player || !this.world) return;
     if (pointer.button !== 0) return;
     // Se vuelve a decidir qué hay bajo el puntero (el último movimiento pudo quedar atrás: cámara o persona en marcha).
@@ -1186,9 +1317,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.walkGoal = null;
     this.walkWaitsForResume = false;
     this.walkInteractKey = aimed ? key : null;
-    this.walk = aimed
-      ? startWalk({ x: aimed.x, y: aimed.y, radius: aimed.reach })
+    this.walk = aimed && key !== null
+      ? this.caminataAlMarcador(key, aimed)
       : startWalk({ x: pointer.worldX, y: pointer.worldY, radius: WALK_GROUND_RADIUS_PX });
+    if (!this.walk.target) this.walkInteractKey = null;
   }
 
   /** Contorno y verbo sobre lo señalado: la forma (borde y texto) lleva el mensaje, no solo el color. */
@@ -1323,14 +1455,23 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** La reacción, la conversación o el objeto en curso, con los pies de quien corresponda; null si no hay. */
   private closeMomentNow(): Momento | null {
     if (this.camFrameKey) {
-      const de = this.feetOf(this.camFrameKey);
+      const de = this.focoDelApoyo(this.camFrameKey) ?? this.liveFeetOf(this.camFrameKey);
       if (de) return { tipo: 'reaccion', de };
     }
     if (this.camMoment.tipo !== 'explorar') {
-      const feet = this.feetOf(this.camMoment.clave);
+      const { tipo, clave } = this.camMoment;
+      const feet = this.focoDelApoyo(clave) ?? (tipo === 'conversacion' ? this.liveFeetOf(clave) : this.feetOf(clave));
       if (feet) return this.camMoment.tipo === 'conversacion' ? { tipo: 'conversacion', con: feet } : { tipo: 'objeto', en: feet };
     }
     return null;
+  }
+
+  /** La cámara de conversación resta altura al punto de apoyo para centrar el rostro. */
+  private focoDelApoyo(key: string): Punto | null {
+    const apoyo = this.apoyosDeLaSala.get(key);
+    if (!apoyo || !this.disponible(this.actorOf(key))) return null;
+    const { x, y } = apoyo.dibujo;
+    return { x, y: y + (apoyo.cama ? PIE_PARA_ENCUADRAR_CAMA_PX : 0) };
   }
 
   /**
@@ -1368,11 +1509,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       momento,
       cercana: this.camOptions.cercana,
       acercarAuto: this.camOptions.acercarAuto,
-      cerca: this.nearestKey ? this.feetOf(this.nearestKey) : null,
+      cerca: this.nearestKey ? this.feetForSafeArea(this.nearestKey) : null,
+      destino: this.nextTargetKey && !this.dimmedKeys.has(this.nextTargetKey)
+        ? this.feetForSafeArea(this.nextTargetKey) : null,
     }, this.camCut ? null : this.camState);
     // Plano sostenido: el objetivo es el de antes de soltarse (sin recalcular con el cuadro que se va).
-    const objetivo = this.camSosteniendo && this.camUltimoObjetivo ? this.camUltimoObjetivo : calculado;
-    if (!this.camSosteniendo) this.camUltimoObjetivo = calculado;
+    const sostener = this.camSosteniendo && this.camCoveredCss === 0;
+    const objetivo = sostener && this.camUltimoObjetivo ? this.camUltimoObjetivo : calculado;
+    if (!sostener) this.camUltimoObjetivo = calculado;
 
     let next: EstadoCamara;
     if (this.camCut || !this.camState || this.callbacks.reduceMotion) {
@@ -1406,6 +1550,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.scaleLabelsForZoom(next.zoom);
     this.syncEdgeArrow();
     this.refitLabelsToView();
+    const avisos = this.haDadoUnPaso() && !this.coreografia && !this.motionPaused;
+    this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null);
+    this.ubicarAvisosHeredados(avisos);
     if (escala === 1 && base !== this.camSettledZoom) {
       this.camSettledZoom = base;
       this.onCameraZoomSettled();
@@ -1451,7 +1598,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.hoverLabel?.setScale(next);
     this.markerPrompt?.setScale(next);
     this.keyPersonIndicator?.container.setScale(next);
-    this.doorHints.forEach(hint => { hint.setScale(next); this.placeDoorHint(hint); });
+    this.doorHints.forEach(hint => hint.setScale(next));
     this.npcMarkers.forEach(container => {
       const bag = container as unknown as Record<string, unknown>;
       (bag['__labelSprite'] as Phaser.GameObjects.Text | undefined)?.setScale(next);
@@ -1481,6 +1628,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** Reproduce los pasos del gesto sobre el marcador de `key` y lo deja en su sitio exacto; resuelve al terminar (o ya, sin pasos).
    *  `voltear` no se aplica: game-world.kit.contract.spec.ts prohíbe espejar personas y ningún gesto lo pide. */
   playGesture(key: string, gesto: Gesto): Promise<void> {
+    if (this.apoyosDeLaSala.get(key)?.cama) return Promise.resolve();
     this.gazes.get(key)?.end();   // un gesto manda sobre la mirada
     const actor = this.actorOf(key);
     const toward = (a: number, b: number) => Math.sign(a - b) as -1 | 0 | 1;
@@ -1530,6 +1678,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** Pone a la persona (o NPC) mirando hacia el jugador o hacia otra clave, sin caminar, y SOSTIENE la mirada `holdMs`: el paseo no la pisa y al vencer retoma. De media vuelta pasa antes por una dirección intermedia (con movimiento reducido, de una vez). */
   faceTowards(key: string, target: 'player' | string, holdMs: number = GAZE_HOLD_MS): void {
+    if (this.apoyosDeLaSala.get(key)?.cama) return;
     const actor = this.actorOf(key);
     const from = this.liveFeetOf(key);
     const to = target === 'player' ? (this.player ? { x: this.player.x, y: this.player.y } : null) : this.liveFeetOf(target);
@@ -1607,7 +1756,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** Dónde pisa ahora `key`: el contenedor VIVO (camina o flota) más el contacto con el piso; no la posición de reposo del dato. */
   private liveFeetOf(key: string): { x: number; y: number } | null {
     const actor = this.actorOf(key);
-    if (!actor) return null;
+    if (!actor || !this.disponible(actor)) return null;
+    const apoyo = this.apoyosDeLaSala.get(key);
+    if (apoyo) return apoyo.llegada;
     const object = this.markerData.get(key);
     return { x: actor.x, y: actor.y + (key.startsWith(NPC_KEY_PREFIX) || !object ? 0 : markerFeetOffsetY(object)) };
   }
@@ -1638,8 +1789,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const scale = this.scale?.displayScale;
     const sx = scale?.x || 1;
     const sy = scale?.y || 1;
+    const apoyo = this.apoyosDeLaSala.get(key);
+    const cabezaY = apoyo?.cama ? apoyo.dibujo.y + 4 : footY - KEY_PERSON_HEAD_PX;
     const x = ((actor.x - view.x) * zoom) / sx;
-    const y = (((footY - KEY_PERSON_HEAD_PX) - view.y) * zoom) / sy;
+    const y = ((cabezaY - view.y) * zoom) / sy;
     const k = this.camDrawScale;
     if (k === 1) return { x, y };
     // Durante un viaje el lienzo compuesto va escalado alrededor de su centro (bloque M1).
@@ -1738,15 +1891,19 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private salaApartada: EscenaDeSala | null = null;
   /** P2: dónde estaba la cámara al apartar la sala (vuelve ahí si la sala vuelve). */
   private camaraApartada: { x: number; y: number } | null = null;
+  private readonly apoyosDeLaSala = new Map<string, ApoyoDeMueble & { visual?: CharacterVisual }>();
+  private readonly mueblesConApoyo = new Set<MuebleDeSala>();
+  private readonly cobijas = new Set<Phaser.GameObjects.Sprite>();
 
   /** P2: lo que dibuja la sala por piezas: estructura, encuadre, puertas y objetos con arte. Igual = no hay que rearmarla. */
   private firmaDeSala(): string {
     if (!this.world) return '';
     const mapa = this.world.map as unknown as Record<string, unknown>;
-    const objetos = this.world.objects
-      .filter(o => o.type === 'EXIT' || typeof o.metadata?.['arte'] === 'string')
-      .map(o => [o.key, o.type, o.x, o.y, o.metadata?.['arte'] ?? null, o.metadata?.['espejo'] ?? null, o.metadata?.['muro'] ?? null,
-        o.metadata?.['pos'] ?? null, o.metadata?.['modelo'] ?? null]);
+    const objetos = this.renderableWorldObjects()
+      .filter(o => o.type === 'EXIT' || typeof o.metadata?.['arte'] === 'string' || o.metadata?.['postura'] === 'en-cama'
+        || o.metadata?.['apoyo'] === 'sobre')
+      .map(o => [o.key, o.type, o.x, o.y, o.metadata?.['arte'], o.metadata?.['espejo'], o.metadata?.['muro'],
+        o.metadata?.['pos'], o.metadata?.['modelo'], o.metadata?.['apoyo'], o.metadata?.['mueble'], o.metadata?.['postura'], o.metadata?.['cama']]);
     return JSON.stringify([mapa['key'], mapa['structure'] ?? null, (mapa['ambient'] as Record<string, unknown> | undefined)?.['encuadre'] ?? null, objetos]);
   }
   private salaIncompletaAvisada: string | null = null;
@@ -1761,7 +1918,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     for (const [key, m] of this.markers) {
       const arte = (m as unknown as Record<string, unknown>)['__artSprite'] as Phaser.GameObjects.Image | undefined;
       const obj = this.markerData.get(key);
-      if (!arte || !obj || obj.type === 'PERSON' || obj.metadata?.['sombra'] === false) continue;
+      if (!arte || !obj || obj.type === 'PERSON' || obj.metadata?.['sombra'] === false || this.apoyosDeLaSala.has(key)) continue;
       const cuerpo = EscenaDeSala.cuerpoDeSprite(arte, m.x, m.y);
       if (cuerpo) cuerpos.push(cuerpo);
     }
@@ -1781,6 +1938,51 @@ export class DataDrivenWorldScene extends Phaser.Scene {
         espejo: obj.metadata?.['espejo'] === true,
       }] : [];
     });
+  }
+
+  private prepararApoyos(muebles: readonly MuebleDeSala[]): void {
+    const objetos = this.renderableWorldObjects();
+    const props = new Set(objetos.filter(obj => obj.type === 'PROP').map(obj => obj.key));
+    const soportes = new Map(muebles
+      .filter(m => props.has(m.id) && this.textures.exists(texturaDeMueble(m.clave)))
+      .map(m => [m.id, m]));
+    const ocupadas = new Set<string>();
+    for (const objeto of objetos) {
+      const apoyo = apoyoDeMueble(objeto, soportes);
+      if (!apoyo) continue;
+      let visual: CharacterVisual | undefined;
+      if (apoyo.cama) {
+        const kit = this.callbacks.kit;
+        if (!kit || ocupadas.has(apoyo.mueble.id)) continue;
+        visual = this.actorVisual(personCharacterRef(kit, objeto)) ?? undefined;
+        if (!visual) continue;
+        ocupadas.add(apoyo.mueble.id);
+      }
+      apoyo.mueble.x = Math.round(apoyo.mueble.x);
+      apoyo.mueble.y = Math.round(apoyo.mueble.y);
+      this.apoyosDeLaSala.set(objeto.key, { ...apoyo, visual });
+      this.mueblesConApoyo.add(apoyo.mueble);
+    }
+    for (const apoyo of this.apoyosDeLaSala.values()) {
+      const bordes = bordesDelMueble(apoyo);
+      const desde = this.world!.player;
+      apoyo.llegada = bordes.find(borde => this.rutaAlMueble(desde, borde).length > 0)
+        ?? bordes.find(borde => !this.wouldCollide(borde.x, borde.y)) ?? bordes[0];
+    }
+  }
+
+  private rutaAlMueble(desde: Punto, hasta: Punto): Punto[] {
+    if (!this.world) return [];
+    return rutaEsquivando(desde, hasta, {
+      limites: { minX: 0, minY: 0, maxX: this.world.map.width || AUTHORED_ROOM_WIDTH, maxY: this.world.map.height || AUTHORED_ROOM_HEIGHT },
+      bloqueado: (x, y) => this.wouldCollide(x, y),
+    }, true);
+  }
+
+  private respirarEnCama(tiempo: number): void {
+    if (this.cobijas.size === 0) return;
+    const cuadro = cuadroDeRespiracion(tiempo, this.callbacks.reduceMotion);
+    for (const cobija of this.cobijas) if (Number(cobija.frame.name) !== cuadro) cobija.setFrame(cuadro);
   }
 
   /** P2: ¿el mundo de ahora es una sala por piezas (`map.structure` válida)? Manda sobre el ScenarioConfig del legado. */
@@ -1844,7 +2046,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (apartada && apartada.firma !== this.firmaDeSala()) apartada.destruir();
     // Las puertas de pieza ya están en el muro: su marcador no lleva sprite, solo el rótulo y el área para cruzar.
     // Los muebles y objetos de la biblioteca de piezas los dibuja la escena (con su animación); su marcador, solo el rótulo.
-    const dePieza = new Set([...(sala.puertas ?? []).map(p => p.id), ...muebles.map(m => m.id)]);
+    this.prepararApoyos(muebles);
+    const dePieza = new Set([...(sala.puertas ?? []).map(p => p.id), ...muebles
+      .filter(m => !this.apoyosDeLaSala.has(m.id) || this.textures.exists(texturaDeMueble(m.clave))).map(m => m.id)]);
     this.renderableWorldObjects()
       .map(obj => (dePieza.has(obj.key) ? { ...obj, metadata: { ...(obj.metadata ?? {}), pintada: true, dePieza: true } } : obj))
       .forEach(obj => this.createMarker(obj));
@@ -1853,8 +2057,12 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       apartada.devolver();
       this.salaPorPiezas = apartada;
     } else {
+      const piezas = muebles.map(m => {
+        const apoyo = this.apoyosDeLaSala.get(m.id);
+        return apoyo ? { ...m, ...apoyo.dibujo, profundidadSobre: profundidadSobre(apoyo.mueble.y) } : m;
+      });
       this.salaPorPiezas = new EscenaDeSala(this, sala, plan, manifiesto, {
-        reducido: this.callbacks.reduceMotion, cuerpos: this.cuerposDeLaSala(), muebles,
+        reducido: this.callbacks.reduceMotion, cuerpos: this.cuerposDeLaSala(), muebles: piezas,
       });
       this.salaPorPiezas.firma = this.firmaDeSala();
     }
@@ -2218,6 +2426,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const sala = this.world?.map?.key || this.currentRoomKey || '';
     if (sala !== this.camRoomId) {
       this.camRoomId = sala;
+      this.piesAlEntrar = this.player ? { x: this.player.x, y: this.player.y } : null;
       const yaVisitada = this.camRoomsSeen.has(sala);
       this.camRoomsSeen.add(sala);
       // La espera empieza el primer cuadro en que el plano general se ve de verdad (ver `cameraMomentNow`).
@@ -2530,12 +2739,13 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const label = this.markerLabels.get(key);
     const obj = this.markerData.get(key);
     if (!marker || !label || !obj) return;
+    const llegada = this.apoyosDeLaSala.get(key)?.llegada;
     const moving = this.markerMoves(key);
-    const x = moving ? marker.x : obj.x;
+    const x = llegada?.x ?? (moving ? marker.x : obj.x);
     // P2: bajo los pies como siempre; si ahí pisa a otra persona o un rótulo visible, sobre la cabeza (rotulo-sin-pisar).
-    const pies = (moving ? marker.y : obj.y) + markerFeetOffsetY(obj);
+    const pies = llegada?.y ?? (moving ? marker.y : obj.y) + markerFeetOffsetY(obj);
     const y = yDelRotulo(x, pies, label.displayWidth, label.displayHeight,
-      obj.type === 'PERSON' ? ALTO_DE_PERSONA_PX : 0, this.cajasOcupadas(key));
+      obj.type === 'PERSON' && !llegada ? ALTO_DE_PERSONA_PX : 0, this.cajasOcupadas(key));
     const lx = this.fitLabelX(label, x);
     if (label.x !== lx || label.y !== y) label.setPosition(lx, y);
     if (key === this.nearestKey) this.placeMarkerPrompt(key);
@@ -2574,6 +2784,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** Pone (x, y) del destino en `edgeXY` sin asignar nada; false si no está en la sala. */
   private targetPointInto(key: string): boolean {
+    if (!this.disponible(this.actorOf(key))) return false;
     if (key.startsWith(NPC_KEY_PREFIX)) {
       const npc = this.npcMarkers.get(key.slice(NPC_KEY_PREFIX.length));
       if (!npc) return false;
@@ -2582,7 +2793,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     }
     const obj = this.markerData.get(key);
     if (!obj || !this.markers.has(key)) return false;
-    this.edgeXY.x = obj.x; this.edgeXY.y = obj.y + markerFeetOffsetY(obj);
+    const llegada = this.apoyosDeLaSala.get(key)?.llegada;
+    this.edgeXY.x = llegada?.x ?? obj.x; this.edgeXY.y = llegada?.y ?? obj.y + markerFeetOffsetY(obj);
     return true;
   }
 
@@ -2646,11 +2858,15 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private cajasOcupadas(propia: string): Caja[] {
     const cajas: Caja[] = [];
     this.markers.forEach((m, key) => {
-      if (key === propia) return;
+      if (key === propia || !this.disponible(m)) return;
       const obj = this.markerData.get(key);
       if (!obj) return;
       const moving = this.markerMoves(key);
-      if (obj.type === 'PERSON') cajas.push(cajaDelCuerpo(moving ? m.x : obj.x, (moving ? m.y : obj.y) + markerFeetOffsetY(obj)));
+      if (obj.type === 'PERSON') {
+        const cama = this.apoyosDeLaSala.get(key);
+        cajas.push(cama ? cajaDelCuerpo(cama.dibujo.x, cama.dibujo.y + FILAS_DE_CABEZA, FILAS_DE_CABEZA)
+          : cajaDelCuerpo(moving ? m.x : obj.x, (moving ? m.y : obj.y) + markerFeetOffsetY(obj)));
+      }
       const otro = this.markerLabels.get(key);
       if (otro && otro.alpha > 0) cajas.push(cajaDelRotulo(otro.x, otro.y, otro.displayWidth, otro.displayHeight));
     });
@@ -2955,12 +3171,12 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * se dibuja el reposo y no hay animación.
    */
   private buildArtSprite(
-    object: MapObjectState,
+    object: MapObjectState, elevado = false,
   ): { sprite: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite; animation: ProximityAnimation | null } | null {
     const art = spriteFor(object, this.callbacks.artManifest ?? null);
     if (!art) return null;
     // Con apoyo en los pies (lo que trae el editor) la base del arte está en (x, y); sin él, centrado y 6 px arriba.
-    const onFeet = standsOnFeet(object);
+    const onFeet = elevado || standsOnFeet(object);
     const artY = onFeet ? 0 : -6;
     const sheet = art.sheet;
     if (sheet && this.textures.exists(sheet.textureKey)) {
@@ -2974,7 +3190,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (!this.textures.exists(art.textureKey)) return null;
     const image = this.add.image(0, artY, art.textureKey);
     if (onFeet) image.setOrigin(0.5, 1);
-    return { sprite: this.atWorldScale(image), animation: null };
+    return { sprite: elevado ? image : this.atWorldScale(image), animation: null };
   }
 
   /** Registra (una sola vez) la animación en bucle de una hoja; false si la hoja trae menos de dos cuadros. */
@@ -3039,6 +3255,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   private createMarker(object: MapObjectState) {
+    const apoyo = this.apoyosDeLaSala.get(object.key);
     const isExit = object.type === 'EXIT';
     const color  = Number.parseInt(object.color.replace('#', ''), 16) || 0x4fa3a5;
     const displayLabel = getSceneDisplayLabel(object, this.world?.map.key);
@@ -3053,7 +3270,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
     let main: Phaser.GameObjects.GameObject;
     // Dónde pisa el objeto dentro de su marcador: 0 si su posición es su punto de apoyo (`metadata.apoyo`), 16 como siempre si no.
-    const feetY = markerFeetOffsetY(object);
+    const feetY = apoyo ? 0 : markerFeetOffsetY(object);
     // Una puerta que ya está pintada en el fondo no lleva sprite encima: solo la pista y el área para cruzar.
     // Una puerta pintada en el fondo o una pieza que dibuja la sala por piezas (P2): sin sprite propio, solo rótulo y área.
     const painted = isPaintedDoor(object) || object.metadata?.['dePieza'] === true;
@@ -3062,9 +3279,12 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     let doorSprite: Phaser.GameObjects.Image | null = null;
 
     // Un marcador con sprite de pixel art nunca se escala (markerEmphasis, focus): spec §1.1.2.
-    let pixelSprite = false;
-    const art = this.assetsLoaded && !isExit && !painted ? this.buildArtSprite(object) : null;
-    if (painted) {
+    let pixelSprite = !!apoyo;
+    const art = this.assetsLoaded && !isExit && !painted && !apoyo?.cama ? this.buildArtSprite(object, !!apoyo) : null;
+    if (apoyo?.cama && apoyo.visual) {
+      personVisual = apoyo.visual;
+      main = this.dibujarPersonaEnCama(apoyo.cama, apoyo.mueble, personVisual);
+    } else if (painted) {
       main = this.add.container(0, 0);
     } else if (this.assetsLoaded) {
       doorSprite = isExit ? this.buildDoorSprite(object) : null;
@@ -3104,6 +3324,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
         }
       } else if (this.textures.exists('dungeon-tiles')) {
         main = this.add.image(0, 0, 'dungeon-tiles', this.frameForType(object.type)).setScale(2);
+        if (apoyo) (main as Phaser.GameObjects.Image).setOrigin(0.5, 1);
         pixelSprite = true;
       } else {
         main = this.buildGeomMarker(color);
@@ -3114,18 +3335,19 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
     // Un icono de respaldo (sin arte propio) va centrado: con el apoyo en los pies queda sobre la sombra, 16 px arriba.
     const centerY = feetY - LEGACY_FEET_OFFSET_Y;
-    if (centerY !== 0 && !art && !doorSprite && !personVisual && !painted) (main as unknown as { y: number }).y = centerY;
+    if (centerY !== 0 && !art && !doorSprite && !personVisual && !painted && !apoyo) (main as unknown as { y: number }).y = centerY;
     const pulse = this.add.circle(0, centerY, 22, color, .1);
-    if (painted) pulse.setVisible(false);
+    if (painted || apoyo) pulse.setVisible(false);
     else if (!this.callbacks.reduceMotion) {
       this.tweens.add({ targets: pulse, scale: 1.3, alpha: .05, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 
     // Sombra de contacto: el icono queda asentado en el piso, no flotando (una puerta pintada ya tiene la suya en el fondo).
     const markerShadow = this.add.ellipse(0, feetY, 26, 8, 0x000000, .2);
-    if (painted) markerShadow.setVisible(false);
-    const marker = this.add.container(object.x, object.y, [markerShadow, pulse, main]);
+    if (painted || apoyo) markerShadow.setVisible(false);
+    const marker = this.add.container(apoyo?.dibujo.x ?? object.x, apoyo?.dibujo.y ?? object.y, [markerShadow, pulse, main]);
     this.setFeetOffset(marker, feetY);   // la sombra marca el contacto con el piso
+    if (apoyo) marker.setDepth(profundidadSobre(apoyo.mueble.y));
     this.markers.set(object.key, marker);
     this.markerData.set(object.key, object);
     if (art?.animation) this.proximityAnimations.set(object.key, art.animation);
@@ -3134,20 +3356,21 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (art && main === art.sprite) bag['__artSprite'] = art.sprite;   // P2: su silueta va a la luz de la sala por piezas
     bag['__pixelSprite'] = pixelSprite;
     bag['__pulse'] = pulse;
-    if (personSpriteForWalk && personVisual) {
-      bag['__personSprite'] = personSpriteForWalk;
-      bag['__personVisual'] = personVisual;
-    }
+    if (personSpriteForWalk) bag['__personSprite'] = personSpriteForWalk;
+    if (personVisual) bag['__personVisual'] = personVisual;
     if (personVisual?.recipeId === PATIENT_RECIPE_ID) {
       const icon = this.patientIcon(feetY);
       if (icon) {
+        if (apoyo?.cama) icon.setY(0);
         marker.add(icon);
         bag['__patientIcon'] = icon;
       }
     }
     if (label) this.markerLabels.set(object.key, label);
-    this.registerPersonWalk(marker, object);
-    this.applyAmbientLife(marker, object);
+    if (!apoyo) {
+      this.registerPersonWalk(marker, object);
+      this.applyAmbientLife(marker, object);
+    }
     this.buildKeyPersonIndicator(marker, object);
 
     // La puerta de pieza no lleva esta pista de Phaser: la avisa `app-aviso-de-puerta` sobre el lienzo (P2).
@@ -3167,20 +3390,46 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       bag['__doorBg'] = hintBg;
       bag['__doorLock'] = lock;
       bag['__doorX'] = object.x;
+      bag['__doorY'] = hintY;
       bag['__doorHalfWidth'] = hintWidth / 2;
-      this.placeDoorHint(hint);
       this.doorHints.set(object.key, hint);
     }
   }
 
-  /** Centra el rótulo de una puerta sobre ella sin salirse del mapa (las puertas están en los bordes). */
-  private placeDoorHint(hint: Phaser.GameObjects.Container): void {
-    const bag = hint as unknown as Record<string, unknown>;
-    const x = bag['__doorX'] as number | undefined;
-    const half = bag['__doorHalfWidth'] as number | undefined;
-    if (x === undefined || half === undefined) return;
-    const reach = half * this.labelScale + 6;
-    hint.x = Math.max(reach, Math.min(960 - reach, x));
+  private dibujarPersonaEnCama(cama: NonNullable<ApoyoDeMueble['cama']>, mueble: MuebleDeSala, visual: CharacterVisual) {
+    const cabeza = this.add.sprite(-FRAME.pivotX, 0, kitSheetKey(visual, 'idle'), kitFrameIndex('idle', 'down'))
+      .setOrigin(0, 0).setCrop(0, 0, FRAME.width, FILAS_DE_CABEZA);
+    const perfil = cama.cobija;
+    const textura = `sala:cobija:${mueble.clave}`;
+    if (!this.textures.exists(textura)) {
+      addRgbaTexture(this, textura, cobijaDeCama(cama), undefined, { frameWidth: perfil.ancho, frameHeight: perfil.alto });
+    }
+    const x = mueble.espejo ? cama.cabeza.x - perfil.x - perfil.ancho : perfil.x - cama.cabeza.x;
+    const cobija = this.add.sprite(x, perfil.y - cama.cabeza.y, textura, 0).setOrigin(0, 0).setFlipX(mueble.espejo);
+    this.cobijas.add(cobija);
+    return this.add.container(0, 0, [cabeza, cobija]);
+  }
+
+  private ubicarAvisosHeredados(avisos: boolean): void {
+    const candidatos = [...this.doorHints].filter(([key]) =>
+      avisos && (key === this.nearestKey || this.revealed.includes(key)));
+    this.doorHints.forEach(hint => hint.setVisible(false));
+    if (!candidatos.length || !this.camState) return;
+    const ocupadas = this.obstaculosParaAvisos();
+    const vista = this.vistaParaAvisos();
+    const zoomCss = this.camState.zoom * (this.scale.zoom || 1);
+    for (const [, hint] of candidatos) {
+      const bag = hint as unknown as Record<string, number>;
+      const ancla = this.proyectarAviso({ x: bag['__doorX'], y: bag['__doorY'] });
+      const ancho = bag['__doorHalfWidth'] * 2 * hint.scaleX * zoomCss;
+      const alto = 22 * hint.scaleY * zoomCss;
+      const caja = { x: ancla.x - ancho / 2, y: ancla.y - alto / 2, ancho, alto };
+      const posicion = situarAviso(caja, vista, ocupadas);
+      if (!posicion) continue;
+      hint.setPosition(bag['__doorX'] + (posicion.x - caja.x) / zoomCss,
+        bag['__doorY'] + (posicion.y - caja.y) / zoomCss).setVisible(true);
+      ocupadas.push({ ...caja, ...posicion });
+    }
   }
 
   /** Texto del rótulo de una puerta: sin la letra E donde no hay teclado ni con los atajos apagados. */
@@ -3230,6 +3479,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** Dónde pisa un candidato (para el anillo): los pies de la persona o el contacto del marcador con el piso. */
   private feetOf(key: string): { x: number; y: number } | null {
+    if (!this.disponible(this.actorOf(key))) return null;
+    const apoyo = this.apoyosDeLaSala.get(key);
+    if (apoyo) return apoyo.llegada;
     if (key.startsWith(NPC_KEY_PREFIX)) {
       const npc = this.npcMarkers.get(key.slice(NPC_KEY_PREFIX.length));
       return npc ? { x: npc.x, y: npc.y } : null;
@@ -3237,6 +3489,23 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     // Posición de reposo del marcador (la del dato, no la del icono que flota): el anillo es estático.
     const obj = this.markerData.get(key);
     return obj && this.markers.has(key) ? { x: obj.x, y: obj.y + markerFeetOffsetY(obj) } : null;
+  }
+
+  /** Para esquivar placas, una persona que camina cuenta donde se la ve. */
+  private feetForSafeArea(key: string): Sujeto | null {
+    const objeto = this.markerData.get(key);
+    if (objeto?.type === 'PERSON') return this.liveFeetOf(key);
+    const pies = this.feetOf(key);
+    const rotulo = this.markerLabels.get(key);
+    if (!pies || !rotulo?.alpha) return pies;
+    const prompt = key === this.nearestKey && this.markerPromptOn ? this.markerPrompt : null;
+    // El rótulo mide lo mismo en pantalla al cambiar de zoom; su separación de los pies es de mundo.
+    const escala = labelScaleFor(this.scale.displayScale.x, 1) * this.scale.zoom;
+    return { ...pies, rotulo: {
+      ancho: Math.max(rotulo.width, prompt?.width ?? 0) * escala,
+      alto: (rotulo.height + (prompt?.height ?? 0)) * escala,
+      separacion: rotulo.y - pies.y + (prompt ? 2 : 0),
+    } };
   }
 
   /**
@@ -3286,6 +3555,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** A qué altura de sus pies va la flecha: más arriba para una persona o una puerta que para un objeto bajo. */
   private stepMarkLift(key: string): number {
+    if (this.apoyosDeLaSala.has(key)) return 0;
     if (key.startsWith(NPC_KEY_PREFIX)) return STEP_MARK_LIFT.person;
     const type = this.markerData.get(key)?.type;
     return type === 'PERSON' ? STEP_MARK_LIFT.person : type === 'EXIT' ? STEP_MARK_LIFT.door : STEP_MARK_LIFT.object;
@@ -3369,6 +3639,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** Reinicia lo que `children.removeAll` destruye al reconstruir la sala. */
   private resetOrientationVisuals(): void {
+    this.coreografia?.fin();
+    this.acompanantesEnSalida.clear();
+    this.apoyosDeLaSala.clear();
+    this.mueblesConApoyo.clear();
+    this.cobijas.clear();
     this.targetRing = undefined;
     this.stepMark = undefined;
     this.nearRing = undefined;
@@ -3468,6 +3743,144 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       walker.lastPose = { direction: null, walking: false };
       this.applyPersonPose(walker, marker, resumed.direction, this.personShouldWalk(resumed));
     }
+  }
+
+  // ── los acompañantes caminan a la puerta (contrato `metadatos.acompanantes`) ──
+
+  private coreografia: Coreografia | null = null;
+  /** Acompañantes que están saliendo o ya cruzaron. Se excluyen de las acciones desde el primer cuadro. */
+  private readonly acompanantesEnSalida = new Set<Phaser.GameObjects.Container>();
+
+  private disponible(marker: Phaser.GameObjects.Container | undefined): boolean {
+    return !!marker && marker.visible !== false && !this.acompanantesEnSalida.has(marker);
+  }
+
+  private marcadorDePersona(key: string): Phaser.GameObjects.Container | null {
+    return this.actorOf(key) ?? this.npcMarkers.get(key) ?? null;
+  }
+
+  private poseDeMarcador(marker: Phaser.GameObjects.Container, direction: ViewId, walking: boolean): void {
+    const bag = marker as unknown as Record<string, unknown>;
+    const sprite = (bag['__personSprite'] ?? bag['__npcSprite']) as Phaser.GameObjects.Sprite | undefined;
+    const visual = (bag['__personVisual'] ?? bag['__npcVisual']) as CharacterVisual | undefined;
+    if (sprite && visual) playKitPose(sprite, visual, direction, walking, this.callbacks.reduceMotion);
+  }
+
+  /**
+   * Los acompañantes (y, si se pide, quien juega) caminan hasta la puerta y la promesa se cumple cuando todos llegaron.
+   * Rodean los muebles (A* sobre la colisión de la sala), salen escalonados y cada persona se desvanece al cruzar; quien
+   * juega queda en el umbral, visible, para el fundido. La entrada queda congelada. Con «Reducir movimiento» no caminan:
+   * solo se desvanecen. Nunca falla: sin puerta, sin personas o con un fallo de la escena, la promesa se cumple igual.
+   */
+  caminarALaPuerta(op: { puertaKey: string; puerta: { x: number; y: number }; acompanantes: readonly string[]; jugador: boolean }): Promise<void> {
+    if (this.coreografia || !this.world) return Promise.resolve();
+    const reducido = this.callbacks.reduceMotion;
+    const umbral = this.salaPorPiezas?.puertas().find(p => p.id === op.puertaKey)?.umbral;
+    const meta = umbral ? { x: umbral[0], y: umbral[1] } : { x: op.puerta.x, y: op.puerta.y };
+    const actores: ActorDeCoreografia[] = [];
+    for (const key of op.acompanantes) {
+      if (this.apoyosDeLaSala.get(key)?.cama) continue;
+      const marker = this.marcadorDePersona(key);
+      if (!marker || !this.disponible(marker)) continue;
+      const feet = Number((marker as unknown as Record<string, unknown>)['__feetOffset'] ?? 16);
+      this.personWalkers.delete(key);
+      this.npcMovers.delete(key.startsWith(NPC_KEY_PREFIX) ? key.slice(NPC_KEY_PREFIX.length) : key);
+      actores.push({ key, marker, feet, desde: { x: marker.x, y: marker.y + feet }, jugador: false });
+    }
+    if (op.jugador && this.player) {
+      actores.push({ key: '@jugador', marker: this.player, feet: 0, desde: { x: this.player.x, y: this.player.y }, jugador: true });
+    }
+    if (actores.length === 0) return Promise.resolve();
+
+    const entorno: EntornoDeRuta = {
+      limites: { minX: 0, minY: 0, maxX: this.world.map.width || AUTHORED_ROOM_WIDTH, maxY: this.world.map.height || AUTHORED_ROOM_HEIGHT },
+      bloqueado: (x, y) => this.wouldCollide(x, y, op.puertaKey),
+    };
+    const caminantes = reducido ? [] : actores;
+    const plan = planearAcompanantes(caminantes.map(a => ({ key: a.key, desde: a.desde })), meta, entorno);
+    const totalMs = reducido ? planearDesvanecimiento(actores.filter(a => !a.jugador).map(a => a.key)).totalMs : plan.totalMs;
+
+    return new Promise<void>(resolve => {
+      let listo = false;
+      const fin = () => {
+        if (listo) return;
+        listo = true;
+        clearTimeout(respaldo);
+        this.cerrarCoreografia();
+        resolve();
+      };
+      // Red de seguridad si la escena deja de actualizar mientras caminan.
+      const respaldo = setTimeout(fin, totalMs + 2500);
+      this.coreografia = { tMs: 0, totalMs, actores, plan, reducido, puertaKey: op.puertaKey, fin };
+      for (const a of actores) if (!a.jugador) this.acompanantesEnSalida.add(a.marker);
+      if (this.walkGoal) this.callbacks.onWalkCancelled?.();
+      this.walk = NO_WALK;
+      this.walkGoal = this.walkInteractKey = null;
+      this.interactPending = false;
+      this.setHover(null);
+      this.nearestKey = this.alsoKey = null;
+      this.callbacks.onProximity(null);
+      this.callbacks.onProximityAlso(null);
+      this.refreshMarkerStates();
+      this.syncKeyPersonIndicator();
+      this.syncEdgeArrow();
+      this.avisoDePuerta(null);
+      this.salaPorPiezas?.forzarAbierta(op.puertaKey);
+    });
+  }
+
+  private updateCoreografia(delta: number): void {
+    const c = this.coreografia;
+    if (!c) return;
+    c.tMs += Math.min(delta, 100);
+    let orden = 0;
+    for (const a of c.actores) {
+      if (c.reducido) {
+        if (!a.jugador) a.marker.setAlpha(alfaReducido(orden++, c.tMs));
+        continue;
+      }
+      const paso = c.plan.pasos.find(p => p.key === a.key);
+      if (!paso) continue;
+      const m = muestrearAcompanante(paso, a.desde, c.tMs);
+      a.marker.setPosition(m.x, m.y - a.feet);
+      if (m.vista) a.ultimaVista = m.vista;
+      if (a.jugador) {
+        this.applyPlayerPose(a.ultimaVista ?? this.mirada.actual, m.caminando);
+      } else {
+        a.marker.setAlpha(m.alfa);
+        if (m.vista || a.caminando !== m.caminando) this.poseDeMarcador(a.marker, a.ultimaVista ?? 'down', m.caminando);
+        a.caminando = m.caminando;
+      }
+    }
+    if (c.tMs >= c.totalMs) c.fin();
+  }
+
+  private cerrarCoreografia(): void {
+    const c = this.coreografia;
+    if (!c) return;
+    this.coreografia = null;
+    this.salaPorPiezas?.forzarAbierta(null);
+    for (const a of c.actores) {
+      if (a.jugador) { this.applyPlayerPose(a.ultimaVista ?? this.mirada.actual, false); continue; }
+      // Ocultos, no destruidos: la sala se reconstruye al cruzar y, si la puerta falla, `mostrarAcompanantes` los devuelve.
+      a.marker.setAlpha(0);
+      a.marker.setVisible(false);
+    }
+    this.syncKeyPersonIndicator();
+  }
+
+  /** La puerta falló: los acompañantes que habían cruzado reaparecen donde quedaron (la recarga del mundo los repone en su sitio). */
+  mostrarAcompanantes(): void {
+    this.coreografia?.fin();
+    for (const marker of this.acompanantesEnSalida) {
+      if (!marker.scene) continue;   // ya destruido por una sala reconstruida
+      marker.setVisible(true);
+      marker.setAlpha(1);
+    }
+    this.acompanantesEnSalida.clear();
+    this.updateNearestInteraction(true);
+    this.refreshMarkerStates();
+    this.syncKeyPersonIndicator();
   }
 
   /** ¿Debe verse caminando? Solo si va andando y el mundo no está en pausa ni se pidió reducir el movimiento. */
@@ -3573,7 +3986,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: `${LABEL_BASE_FONT_PX}px`, color: KEY_PERSON_COLOR, fontStyle: 'bold',
       backgroundColor: WORLD_LABEL_PLATE, padding: { x: 5, y: 3 }, align: 'center',
     }).setOrigin(0.5, 1);
-    const tipOffsetY = keyPersonTipOffsetY(markerFeetOffsetY(object));
+    const tipOffsetY = this.apoyosDeLaSala.get(object.key)?.cama ? -3 : keyPersonTipOffsetY(markerFeetOffsetY(object));
     const children: Phaser.GameObjects.GameObject[] = [chevron, name];
     if (state) {
       children.push(this.add.text(0, -(height + KEY_PERSON_NAME_GAP_PX), state, {
@@ -3605,7 +4018,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const indicator = this.keyPersonIndicator;
     const marker = indicator ? this.markers.get(indicator.key) : undefined;
     if (!indicator || !marker) return;
-    this.reportKeyPersonPosition(marker);
+    const visible = this.disponible(marker);
+    indicator.container.setVisible(visible);
+    this.reportKeyPersonPosition(visible ? marker : null);
     const y = marker.y + indicator.tipOffsetY;
     if (indicator.container.x !== marker.x || indicator.container.y !== y) indicator.container.setPosition(marker.x, y);
   }
@@ -3736,6 +4151,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    */
   private wouldCollide(x: number, y: number, ignoreObjectKey?: string): boolean {
     if (this.world && serverRejectsPlayerAt(this.world, x, y, ignoreObjectKey)) return true;
+    for (const mueble of this.mueblesConApoyo) if (pisaElMueble(mueble, x, y)) return true;
     const hb = playerHitbox(x, y);
     if (this.wallsLayer) {
       const corners = [
@@ -3777,7 +4193,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    */
   private updateNearestInteraction(suppressSound = false) {
     const player = this.player;
-    if (!player || !this.world) return;
+    if (!player || !this.world || this.coreografia) return;
     const px = player.x, py = player.y;
     const mapKey = this.world.map.key;
     const list = this.candidates;
@@ -3785,21 +4201,26 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     let anyInRange = false;
     let targetX = 0, targetY = 0, targetSeen = false;
     let nearX = 0, nearY = 0, nearSeen = false;
+    const haDadoUnPaso = this.haDadoUnPaso();
     // Un objeto atenuado nunca es el destino: ni anillo ni rótulo fijo (lo atenuado no llama la atención).
     const target = this.nextTargetKey !== null && !this.dimmedKeys.has(this.nextTargetKey) ? this.nextTargetKey : null;
 
     for (const [key, marker] of this.markers) {
       const obj = this.markerData.get(key);
-      if (!obj || (obj.type === 'TOOL' && obj.toolCode && this.world.inventory?.includes(obj.toolCode))) continue;
+      if (!obj || !this.disponible(marker) || (obj.type === 'EXIT' && !haDadoUnPaso)
+        || (obj.type === 'TOOL' && obj.toolCode && this.world.inventory?.includes(obj.toolCode))) continue;
       // Un mueble (PROP) y lo que no tiene comportamiento se dibujan, pero no entran en la prioridad de interacción.
       if (!participatesInInteraction(obj)) continue;
       const c = this.candidateAt(list.length);
       c.key = key; c.kind = 'marker'; c.exit = obj.type === 'EXIT';
-      c.distance = Math.hypot(px - marker.x, py - marker.y); c.radius = MARKER_INTERACT_RADIUS;
+      const llegada = this.apoyosDeLaSala.get(key)?.llegada;
+      c.distance = Math.hypot(px - (llegada?.x ?? marker.x), py - (llegada?.y ?? marker.y));
+      c.radius = llegada ? ALCANCE_AL_BORDE_PX : MARKER_INTERACT_RADIUS;
       if (c.distance <= c.radius) anyInRange = true;
       list.push(c);
     }
     for (const [key, container] of this.npcMarkers) {
+      if (!this.disponible(container)) continue;
       const c = this.candidateAt(list.length);
       c.key = this.npcKeyOf(key); c.kind = 'npc'; c.exit = false;
       c.distance = Math.hypot(px - container.x, py - container.y); c.radius = NPC_INTERACT_RADIUS;
@@ -3874,7 +4295,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (key.startsWith(NPC_KEY_PREFIX)) {
       const container = this.npcMarkers.get(key.slice(NPC_KEY_PREFIX.length));
       const npc = this.npcConfigFor(key);
-      if (!container || !npc) return null;
+      if (!container || !npc || !this.disponible(container)) return null;
       return {
         key, label: npc.displayName, type: 'PERSON', x: container.x, y: container.y,
         width: 0, height: 0, color: '#4fa3a5', icon: 'person', shortCode: '', collision: false,
@@ -3884,8 +4305,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const obj = this.markerData.get(key);
     const marker = this.markers.get(key);
     if (obj && marker) {
+      if (!this.disponible(marker)) return null;
       if (obj.type === 'TOOL' && obj.toolCode && this.world?.inventory?.includes(obj.toolCode)) return null;
-      return { ...obj, label: getSceneDisplayLabel(obj, mapKey), x: marker.x, y: marker.y };
+      const apoyo = this.apoyosDeLaSala.get(key);
+      return { ...obj, label: getSceneDisplayLabel(obj, mapKey), x: apoyo ? obj.x : marker.x, y: apoyo ? obj.y : marker.y };
     }
     const zone = getSceneAmbientZones(mapKey).find(z => z.key === key);
     return zone ? buildSceneAmbientObject(zone, mapKey) : null;
@@ -3912,23 +4335,22 @@ export class DataDrivenWorldScene extends Phaser.Scene {
         dimmed: this.dimmedKeys.has(key),
       });
       m.setScale(emphasis.scale);
-      m.setAlpha(emphasis.alpha);
+      if (this.disponible(m)) m.setAlpha(emphasis.alpha);
       const label = this.markerLabels.get(key);
       if (!label) return;
-      const shown = sel || near || revealed.includes(key);
+      const shown = this.disponible(m) && (sel || near || revealed.includes(key));
       label.setAlpha(shown ? 1 : 0);
       if (shown) {
         this.placeLabel(key);
         if (this.markerMoves(key)) this.followLabels.push(key);
       }
     });
-    this.doorHints.forEach((h, key) => h.setVisible(key === this.nearestKey || revealed.includes(key)));
     this.npcMarkers.forEach((container, key) => {
       const candidateKey = this.npcKeyOf(key);
       const bag = container as unknown as Record<string, unknown>;
-      const shown = revealed.includes(candidateKey);
+      const shown = this.disponible(container) && revealed.includes(candidateKey);
       (bag['__labelSprite'] as Phaser.GameObjects.Text | undefined)?.setAlpha(shown ? 1 : 0);
-      const inRange = candidateKey === this.nearestKey || candidateKey === this.alsoKey;
+      const inRange = this.disponible(container) && (candidateKey === this.nearestKey || candidateKey === this.alsoKey);
       const hint = bag['__hintSprite'] as Phaser.GameObjects.Text | undefined;
       hint?.setAlpha(inRange ? 1 : 0);
       // El principal dice qué hace E con él («E · Hablar con Vigilante»); el secundario conserva la flecha de siempre (P9).
@@ -3964,7 +4386,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.hoverLabel?.setScale(next);
     this.markerPrompt?.setScale(next);
     this.keyPersonIndicator?.container.setScale(next);
-    this.doorHints.forEach(hint => { hint.setScale(next); this.placeDoorHint(hint); });
+    this.doorHints.forEach(hint => hint.setScale(next));
     this.npcMarkers.forEach(container => {
       const bag = container as unknown as Record<string, unknown>;
       (bag['__labelSprite'] as Phaser.GameObjects.Text | undefined)?.setScale(next);
@@ -4002,7 +4424,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     </div>
     @if (avisoDePuerta(); as aviso) {
       <app-aviso-de-puerta [texto]="aviso.texto" [bloqueada]="aviso.bloqueada" [falta]="doorMessages()[aviso.id] ?? null" [conTecla]="!touchInput()"
-        [x]="aviso.x" [y]="aviso.y" (cruzar)="cruzarPorAviso(aviso.id)" />
+        [x]="aviso.x" [y]="aviso.y" [vista]="aviso.vista" [ocupadas]="aviso.ocupadas" (cruzar)="cruzarPorAviso(aviso.id)" />
     }
     @if (!assetsReady() && showLoader()) {
       <div class="world-loading">
@@ -4254,6 +4676,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
 
   /** P2: pulsar el aviso es lo mismo que E junto a esa puerta: el anfitrión decide si se cruza o dice qué falta. */
   cruzarPorAviso(id: string): void {
+    if (this.avisoDePuerta()?.id !== id) return;
     const puerta = this.world()?.objects.find(o => o.key === id);
     if (puerta) this.interact.emit(puerta);
   }
@@ -4374,6 +4797,14 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
   }
 
   nudge(direction: 'up' | 'down' | 'left' | 'right') { this.scene?.nudge(direction); }
+
+  /** Los acompañantes (y quien juega, si se pide) caminan hasta la puerta; se cumple cuando todos llegaron. */
+  caminarALaPuerta(op: { puertaKey: string; puerta: { x: number; y: number }; acompanantes: readonly string[]; jugador: boolean }): Promise<void> {
+    return this.scene?.caminarALaPuerta(op) ?? Promise.resolve();
+  }
+
+  /** La puerta falló: los acompañantes ocultos reaparecen. */
+  mostrarAcompanantes(): void { this.scene?.mostrarAcompanantes(); }
 
   /** Pies del jugador en la escena (px enteros) o null si aún no existe. Es la posición viva:
    *  `positionChange` llega a Angular a lo sumo ~8 veces por segundo y va hasta 125 ms atrás. */

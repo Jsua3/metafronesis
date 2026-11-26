@@ -50,7 +50,8 @@ import { BurbujaVisible, MundoCercania, ProximityReactions, RELOJ_DE_VENTANA, ac
 import { CommentBubbleComponent } from './comment-bubble.component';
 import { RehearsalGoneComponent } from './rehearsal-gone.component';
 import { RehearsalPanelComponent } from './rehearsal-panel.component';
-import { type GuiaEscena, GUIA_VACIA, armarGuia, avisarOpcionNueva } from './caso/guia';
+import { type GuiaEscena, GUIA_VACIA, armarGuia, avisarOpcionNueva, leerGuiaAutorada } from './caso/guia';
+import { leerAcompanantes } from './caso/acompanantes';
 import { DialoguePanelComponent } from './dialogue-panel.component';
 import { CameraMoment, GameWorldComponent, NPC_KEY_PREFIX } from './game-world.component';
 import { CameraSettings } from './camara/camera-settings.service';
@@ -58,7 +59,7 @@ import { altoTapado } from './camara/cubierta';
 import type { Caja } from './camara/camara';
 import { type EscenarioReaccion, type FinReaccion, ReactionDirectorComponent } from './reaction-director.component';
 import { JournalPanelComponent, JournalSaveState } from './journal-panel.component';
-import { isShortcutContext } from './keyboard-focus.util';
+import { isActivatableTarget, isShortcutContext, isTextEntryTarget } from './keyboard-focus.util';
 import { salaDelMundo } from './sala/mundo-a-sala';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
 import { WorldPlacesListComponent } from './world-places-list.component';
@@ -83,6 +84,7 @@ import {
   isSceneAmbientInteraction,
 } from './scene-map-display.util';
 import { AttemptOutcomeComponent } from './attempt-outcome.component';
+import { leerRevision } from './caso/revision';
 import { accessErrorMessage } from './case-access.util';
 import { CaseAccessCache } from '../../core/api/case-access.cache';
 import { AuthService } from '../../core/auth/auth.service';
@@ -102,6 +104,12 @@ import { PixelIconoComponent } from './pixel/pixel-icono.component';
 import { FaseUmbral, UmbralCasoComponent } from './umbral/umbral-caso.component';
 import { NotaTransicionComponent } from './nota-transicion.component';
 import { ErrorConsentimientoComponent } from './error-consentimiento.component';
+import { CinematicaCasoComponent } from './cinematica/cinematica-caso.component';
+import { TutorCasoComponent } from './cinematica/tutor-caso.component';
+import {
+  type CinematicaLeida, type TutorLeido, VistosDelIntento, leerCinematica, leerTutor, marcaDeCapitulo, marcaDeCinematica, marcaDeTutor,
+} from './cinematica/lectura';
+import { comentarioConNombre, conNombre, dialogoConNombre, nombreDePila } from './caso/plantilla-nombre';
 
 /**
  * Plazo máximo de la precarga del consentimiento (S3-2b): antes de decidir si se pide el aviso se pregunta al servidor si la
@@ -124,8 +132,8 @@ const WORLD_REVEAL_DELAY_MS = 80;
 const CONSEQUENCE_SPEAKER = 'Consecuencia';
 
 /**
- * V7: ¿la escena siguiente sigue en el mismo lugar? Cada escena trae su propia clave de mapa aunque sea la misma sala
- * (en SIM-VBG-002, `hosp-sala-espera-1` y `-2` son la sala de espera): manda el nombre del lugar; sin nombre, la clave.
+ * V7: dos escenas pueden compartir sala con claves de mapa distintas. Se comparan los nombres del lugar si ambos
+ * existen y, en su defecto, las claves.
  */
 export function mismoLugar(antes: { key: string; title?: string | null }, despues: { key: string; title?: string | null }): boolean {
   const a = antes.title?.trim() ?? '', b = despues.title?.trim() ?? '';
@@ -143,17 +151,18 @@ const ROOM_BANNER_MS = 2200;
 const STAGE_BANNER_MS = 3000;
 /** Nota de transición autorada en el mapa (salto temporal). Hoy dura lo mismo que `NOTICE_MS`, pero es otro aviso. */
 const TRANSITION_NOTE_MS = 4200;
+const OVERLAY_KEYS = new Set(['Enter', ' ', 'Escape', '?', 'e', 'E']);
 /**
  * Las placas de la interfaz que quedan sobre el mundo al explorar (variante B, U1): la ficha del objetivo, el carril,
- * el grupo de la derecha (HUD y plano), «Salida segura», las herramientas y la acción cercana. La cámara no deja
- * cuerpos bajo ellas (zona segura). Las ocultas miden 0 y no cuentan.
+ * el grupo de la derecha (HUD y plano), el pie y los paneles de diálogo. Las franjas de cine se reservan aparte.
  */
 const PLACAS_SOBRE_EL_MUNDO = [
   '.objective-card', '.carril .sensitive-strip', '.carril .soft-notice', '.carril .room-banner',
   'app-simulation-hud .hud-case', 'app-simulation-hud .hud-strip',
   'app-minimapa .minimapa__lugar', 'app-minimapa .minimapa__abrir', 'app-minimapa .minimapa__alternar',
-  '.bottom-zone .safe-exit-btn', '.bottom-zone .tool-dock-wrap', '.bottom-zone .notice-pie .sensitive-strip',
-  '.bottom-zone .context-bar__interaction', '.bottom-zone .context-bar__now',
+  '.bottom-zone', '.right-panel',
+  '.dialogue-cinematic .placa', '.dialogue-cinematic .panel-head', '.dialogue-cinematic .strip-body',
+  'app-reaction-director .reaction-strip', 'app-game-world .touch-dpad', 'app-game-world .touch-interact',
 ].join(', ');
 /** Modo compacto (F§7.9): la misma condición que el CSS compacto y que el HUD. */
 const COMPACT_QUERY = '(max-height: 520px), (pointer: coarse) and (orientation: landscape)';
@@ -199,7 +208,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     ToolInventoryComponent, JournalPanelComponent, AttemptOutcomeComponent,
     SafeExitButtonComponent, PixelIconoComponent, SceneGoalCardComponent, GameHelpComponent, WorldPlacesListComponent,
     MinimapaComponent, PlanoCompletoComponent,
-    ReactionDirectorComponent, CommentBubbleComponent, RehearsalGoneComponent, RehearsalPanelComponent, SensitiveNoticeComponent, UiButton, UiErrorState, UiScopeNotice, UmbralCasoComponent, NotaTransicionComponent, ErrorConsentimientoComponent
+    ReactionDirectorComponent, CommentBubbleComponent, RehearsalGoneComponent, RehearsalPanelComponent, SensitiveNoticeComponent, UiButton, UiErrorState, UiScopeNotice, UmbralCasoComponent, NotaTransicionComponent, ErrorConsentimientoComponent,
+    CinematicaCasoComponent, TutorCasoComponent
   ],
   template: `
     <div class="game-container pixel-juego" data-skin="game" id="main-content" tabindex="-1" [attr.data-mode]="viewMode()" [style]="arteJuego"
@@ -348,6 +358,19 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
           </section>
         }
 
+        @if (cinematica(); as cine) {
+          <!-- La cinemática del caso (después del consentimiento): su texto viene del caso (ambient.cinematica); trae su
+               «Salida segura» y atiende sus teclas (Esc detiene; con la cinemática detenida, Esc es la salida segura). -->
+          <app-cinematica-caso [cinematica]="cine" [nombre]="nombreDeQuienJuega()" [reduceMotion]="reduceMotion()"
+            [textoInstantaneo]="instantText.enabled()" [pausing]="pausing()"
+            (terminada)="alTerminarCinematica()" (silencio)="silenciarIntro($event)" (salidaSegura)="pauseFromOverlay()" />
+        }
+        @if (tutor(); as profe) {
+          <!-- El tutor fuera de la historia (ambient.tutor): una vez por intento y por sala; Esc es la salida segura. -->
+          <app-tutor-caso [tutor]="profe" [nombre]="nombreDeQuienJuega()" [reduceMotion]="reduceMotion()" [pausing]="pausing()"
+            (cerrado)="alCerrarTutor()" (salidaSegura)="pauseFromOverlay()" />
+        }
+
         @if (showCaseIntro()) {
           <section class="case-intro-overlay" role="dialog" aria-modal="true" aria-labelledby="case-intro-title">
             <article class="case-intro-card" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
@@ -382,7 +405,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         <!-- Envoltorio sin caja (display: contents): con el umbral a la vista, la barra, el mundo y el pie quedan inertes y
              ocultos a la tecnología asistiva de una vez, sin tocar los enlaces de inert propios de cada capa. -->
         <div class="capas-del-mundo" [attr.inert]="umbralVisible() ? '' : null" [attr.aria-hidden]="umbralVisible() ? 'true' : null">
-        <header class="top-bar" [attr.inert]="inputBlocked() ? '' : null" [attr.aria-hidden]="inputBlocked() ? 'true' : null">
+        <header class="top-bar" [attr.inert]="inputBlocked() || transitionNote() ? '' : null" [attr.aria-hidden]="inputBlocked() || transitionNote() ? 'true' : null">
           @if (mode() === 'rehearsal') { <p class="rehearsal-banner" role="note">{{ draft.rehearsalBanner.text }}</p> }
           <!-- Bloque U1, variante B: una fila sobre el mundo. A la izquierda, el hueco de la ficha del objetivo (que vive en el
                lienzo); en medio, el carril de avisos; a la derecha, el grupo del caso, la persona y las teclas. -->
@@ -392,7 +415,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
             <!-- Recordatorio ético del nodo sensible (ETH-01): franja bajo la cabecera, completa al entrar y plegada a un chip a los 8 s;
                  siempre a la vista en todos los dispositivos. Ocupa su propio sitio: no tapa al personaje ni los controles. -->
             <app-sensitive-notice [text]="sensitiveNotice()" [sceneKey]="visibleNode()?.key ?? null" [reduceMotion]="reduceMotion()" />
-              @if (softNotice() && viewMode() !== 'dialogue-cinematic') {
+              @if (softNotice() && !reacting() && viewMode() !== 'dialogue-cinematic') {
                 <!-- Aviso breve (4,2 s): lo que dice ya se anunció; nunca es la única
                      fuente. Sin role: una región que nace con su texto no se anuncia de forma fiable. -->
                 <div class="soft-notice u-placa u-sombra"><app-pixel-icono nombre="hecho" /><span>{{ softNotice() }} <span>{{ decisionSelection() }}</span></span></div>
@@ -438,7 +461,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
 
         <div class="main-zone">
           <section #canvasZone class="canvas-zone" aria-label="Escena de la simulación"
-            [attr.inert]="inputBlocked() || rehearsalGone() ? '' : null" [attr.aria-hidden]="inputBlocked() || rehearsalGone() ? 'true' : null">
+            [attr.inert]="inputBlocked() || transitionNote() || rehearsalGone() ? '' : null"
+            [attr.aria-hidden]="inputBlocked() || transitionNote() || rehearsalGone() ? 'true' : null">
             @if (world()) {
               <!-- Sin role="status": la ficha no trae región viva (los avisos salen por el anunciador de la app). -->
               <div class="objective-card">
@@ -463,7 +487,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 [sfxMuted]="sfxMuted()"
                 [reduceMotion]="reduceMotion()"
                 [activation]="attempt()?.persona?.activation ?? 'CALM'"
-                [intensity]="attempt()?.currentNode?.intensity ?? 'MEDIUM'"
+                [intensity]="visibleNode()?.intensity ?? 'MEDIUM'"
                 [nextTargetKey]="guide().siguienteLugar?.key ?? null"
                 [doorStates]="doorStates()" [doorMessages]="doorMessages()"
                 [dimmedKeys]="dimmedKeys()" [compact]="compactMode()"
@@ -477,7 +501,11 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 (salaIncompleta)="onSalaIncompleta()"
                 (positionChange)="rememberPosition($event.x, $event.y)" />
               <!-- Franjas de cine (bloque M1, regla 7): entran en la decisión y en la reacción; la de abajo aloja el cuadro de diálogo. -->
-              <div class="cine cine--arriba" aria-hidden="true" [class.cine--dentro]="cinemaBars()"></div>
+              <div class="cine cine--arriba" aria-hidden="true" [class.cine--dentro]="cinemaBars()">
+                @if (confirmacionEnReaccion(); as texto) {
+                  <div class="confirmacion-reaccion"><app-pixel-icono nombre="hecho" />{{ texto }}</div>
+                }
+              </div>
               <div class="cine cine--abajo" aria-hidden="true" [class.cine--dentro]="cinemaBars()"
                 [style.height.px]="cinemaBottomPx()"></div>
             } @else {
@@ -490,7 +518,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               [pausing]="pausing()" (finished)="afterReaction($event)" (safeExit)="pauseFromOverlay()" />
 
             <!-- Lo que dice un personaje al acercarse (4.6): sobre su cabeza, sin foco ni teclas; se anuncia por el anunciador de la app. -->
-            <app-comment-bubble [comment]="bubble()?.comment ?? null" [speaker]="bubbleSpeaker()" [anchor]="bubbleAnchor()"
+            <app-comment-bubble [comment]="comentarioConNombre()" [speaker]="bubbleSpeaker()" [anchor]="bubbleAnchor()"
               [persona]="attempt()?.persona ?? null" [reduceMotion]="reduceMotion()" />
 
           </section>
@@ -498,14 +526,14 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
           @if (viewMode() === 'dialogue-right') {
             <aside class="right-panel" aria-label="Decisión formativa en curso" (animationend)="refreshWorldScale()">
               <header class="right-panel__scene">
-                <h2>{{ game.currentNode.title }}</h2>
-                @if (game.currentNode.narrative) {
+                <h2>{{ visibleNode()?.title }}</h2>
+                @if (visibleNode()?.narrative; as narrativa) {
                   <p class="right-panel__narrative" tabindex="0" role="region"
-                    aria-label="Contexto narrativo de la etapa">{{ game.currentNode.narrative }}</p>
+                    aria-label="Contexto narrativo de la etapa">{{ narrativa }}</p>
                 }
               </header>
               <app-dialogue-panel class="dialogue-side" mode="side" [reduceMotion]="reduceMotion()"
-                [dialogue]="dialogue()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
+                [dialogue]="dialogoConNombre()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
                 [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
                 (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
                 (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -538,13 +566,14 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
           <app-sensitive-notice class="notice-pie" [text]="sensitiveNotice()" [sceneKey]="visibleNode()?.key ?? null" [reduceMotion]="reduceMotion()" />
 
           <app-tool-inventory class="tool-dock" [tools]="world()?.tools ?? []"
+            [attr.inert]="transitionNote() ? '' : null"
             [inventory]="world()?.inventory ?? []"
             [selectedToolCode]="selectedToolCode()"
             (select)="selectTool($event)" />
 
           <!-- Sin aria-live (H-10): la barra ya no relee la línea de reposo ni la pista de teclas. La interacción
                cercana la anuncia el servicio de regiones vivas (efecto sobre contextLabel). -->
-          <div class="context-bar">
+          <div class="context-bar" [attr.inert]="transitionNote() ? '' : null">
             @if (contextAction(); as action) {
               <!-- Un solo botón principal, una línea y altura fija: el mundo no cambia de tamaño al acercarte a algo. -->
               <button type="button" class="context-bar__interaction u-ficha u-sombra"
@@ -585,7 +614,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         </div>
 
         @if (viewMode() === 'dialogue-cinematic') {
-          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogue()" [world]="world()" [avisoBreve]="softNotice() + (decisionSelection() ? ' ' + decisionSelection() : '')" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
+          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogoConNombre()" [world]="world()" [avisoBreve]="softNotice() + (decisionSelection() ? ' ' + decisionSelection() : '')" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
             [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
             (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
             (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -647,6 +676,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
 
         @if (!holdingOutcome() && !reactingToLast()) {
           <app-attempt-outcome [report]="game.completionReport" [status]="game.status"
+            [revision]="revisionDelCierre()" [nombre]="nombreDeQuienJuega()"
             [supportResources]="supportResources()" [pauseNote]="pauseNote()" [positionNote]="pausePositionNote()"
             [mode]="mode()" [caseVersionId]="game.caseVersionId"
             [reviewAttemptId]="game.status === 'COMPLETED' && mode() !== 'rehearsal' ? game.attemptId : null"
@@ -773,6 +803,11 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       transition: transform 560ms cubic-bezier(.22, 1, .36, 1);
     }
     .cine--arriba { top: 0; height: clamp(28px, 8%, 72px); transform: translateY(-101%); }
+    .confirmacion-reaccion {
+      height: 100%; padding-inline: var(--pixel-borde); display: flex; align-items: center;
+      gap: calc(3 * var(--pixel-px)); color: var(--pixel-tinta); font-size: var(--pixel-tam); font-weight: 600;
+    }
+    @media (max-width: 760px) { .confirmacion-reaccion { display: none; } }
     .cine--abajo { bottom: 0; min-height: clamp(28px, 8%, 72px); transform: translateY(101%); }
     .cine--dentro { transform: none; }
     .cine:not(.cine--dentro) { transition-duration: 440ms; }
@@ -1001,7 +1036,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     }
     .case-intro-card__header h2 {
       margin: 0;
-      font-size: clamp(1.25rem, 3.6vw, 2rem);
+      font-size: clamp(var(--ds-type-h3-size), 3.6vw, var(--ds-type-h2-size));
       line-height: 1.15;
       color: #fff;
     }
@@ -1014,7 +1049,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       border-radius: 999px;
       color: #bdeef2;
       background: rgba(108,192,199,.1);
-      font-size: .75rem;
+      font-size: var(--ds-type-caption-size);
       font-weight: 800;
       letter-spacing: .04em;
     }
@@ -1030,7 +1065,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       color: #bdeef2;
       background: rgba(108,192,199,.1);
       font: inherit;
-      font-size: .8rem;
+      font-size: var(--ds-type-body-s-size);
       font-weight: 700;
       cursor: pointer;
       transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
@@ -1061,7 +1096,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     .case-intro-card__body p {
       margin: 0 0 14px;
       color: rgba(244,247,251,.84);
-      font-size: clamp(.92rem, 2vw, 1rem);
+      font-size: clamp(var(--ds-type-body-s-size), 2vw, var(--ds-type-body-size));
       line-height: 1.7;
     }
     .case-intro-card__body p:last-child { margin-bottom: 0; color: #f3dfb5; }
@@ -1076,7 +1111,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
     }
     .case-intro-card__actions > span {
       color: rgba(244,247,251,.58);
-      font-size: .78rem;
+      font-size: var(--ds-type-caption-size);
       line-height: 1.4;
     }
     .case-intro-card__actions .psy-button {
@@ -1287,20 +1322,19 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         padding: 8px 16px;
       }
       .case-intro-card__header .psy-eyebrow { grid-area: eyebrow; margin: 0; }
-      .case-intro-card__header h2 { grid-area: title; font-size: 1.2rem; }
+      .case-intro-card__header h2 { grid-area: title; font-size: var(--ds-type-lead-size); }
       .case-intro-card__header .case-intro-card__chip,
       .case-intro-card__header .intro-music-toggle { grid-area: extra; }
-      .case-intro-card__header .case-intro-card__chip { padding: 3px 9px; font-size: .75rem; }
+      .case-intro-card__header .case-intro-card__chip { padding: 3px 9px; }
       .case-intro-card__header .intro-music-toggle { min-height: 44px; }
       .case-intro-card__body { padding: 10px 16px 28px; }
-      .case-intro-card__body p { margin-bottom: 8px; font-size: .86rem; line-height: 1.5; }
+      .case-intro-card__body p { margin-bottom: 8px; font-size: var(--ds-type-body-s-size); line-height: 1.5; }
       .case-intro-card__actions { position: relative; }
       .case-intro-card__actions::before {
         content: ''; position: absolute; left: 0; right: 0; top: -26px; height: 26px; pointer-events: none;
         background: linear-gradient(180deg, rgba(18,24,42,0), rgba(5,8,14,.94));
       }
       .case-intro-card__actions { padding: 8px 16px; gap: 10px; }
-      .case-intro-card__actions > span { font-size: .75rem; }
     }
     /* Interruptor «Movimiento reducido» del juego (Ajustes): apaga también las animaciones y transiciones CSS de la pantalla y
        de todos sus componentes (sheet-up, panel-in, choice-in, door-notice-in, tool-pop, fade-in…), igual que la regla global de
@@ -1369,6 +1403,13 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   readonly showResumePrompt = signal(false);
   readonly progressMap = signal<ProgressMapState | null>(null);
   readonly world      = signal<SimulationWorldState | null>(null);
+  /** La última decisión vuelve a pedir el mundo, ya sincronizado con la escena terminal. */
+  readonly revisionDelCierre = computed(() => {
+    const intento = this.attempt();
+    const mundo = this.world();
+    if (intento?.status !== 'COMPLETED' || mundo?.status !== 'COMPLETED' || mundo.attemptId !== intento.attemptId) return null;
+    return leerRevision(mundo.map.ambient);
+  });
   readonly scenarioConfig = signal<ScenarioConfig | null>(null);
   readonly loading    = signal(true);
   readonly busy       = signal(false);
@@ -1409,6 +1450,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   readonly planOpen = signal(false);
   /** Franjas de cine (bloque M1, regla 7): en la decisión (diálogo con opciones) y durante la reacción. */
   readonly cinemaBars = computed(() => (this.dialogue()?.choices?.length ?? 0) > 0 || this.reacting());
+  protected readonly confirmacionEnReaccion = computed(() => {
+    const texto = ORIENTATION_COPY.notices.decisionRegistered;
+    return this.reacting() && this.softNotice().includes(texto) ? texto : '';
+  });
   /** Alto de la franja de abajo: la que aloja el cuadro de diálogo (lo que este tapa), o la de arriba si no hay cuadro. */
   readonly cinemaBottomPx = signal(0);
 
@@ -1501,6 +1546,32 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   readonly footerExit = computed(() => this.worldStarted() && (this.attempt()?.status === 'IN_PROGRESS' || this.reactingToLast()));
   readonly showCaseIntro = signal(false);
 
+  // ── La entrada del caso: cinemática y tutor (contrato del caso insignia, §1 y §2) ──────────────────────────────────
+  /** La cinemática a la vista (de `ambient.cinematica` de la sala inicial), o null. */
+  readonly cinematica = signal<CinematicaLeida | null>(null);
+  /** El tutor a la vista y la sala de la que es, o null. */
+  private readonly tutorAbierto = signal<{ datos: TutorLeido; mapa: string } | null>(null);
+  readonly tutor = computed(() => this.tutorAbierto()?.datos ?? null);
+  /** La cinemática y el tutor de la sala inicial van en cadena: al cerrarse el último, termina la entrada del caso. */
+  private entradaEnCurso = false;
+  /** La nota de capítulo de la sala que espera a que se cierre su tutor (el tutor va primero). */
+  private notaTrasTutor: SimulationWorldState | null = null;
+  /**
+   * El nombre de pila de quien juega, para `{nombre}` (contrato: «Plantilla común»). Se lee perezoso y a prueba de fallos:
+   * las pruebas de instancia montan el juego sin la sesión.
+   */
+  readonly nombreDeQuienJuega = computed(() => {
+    try {
+      const sesion = this.injector.get(AuthService, null) as { currentUser?: () => { nombre?: string } | null } | null;
+      return nombreDePila(typeof sesion?.currentUser === 'function' ? sesion.currentUser()?.nombre : '');
+    } catch {
+      return '';
+    }
+  });
+  /** El diálogo y el comentario con `{nombre}` puesto al pintar (sin marcas, el mismo objeto). */
+  protected readonly dialogoConNombre = computed(() => dialogoConNombre(this.dialogue(), this.nombreDeQuienJuega()));
+  protected readonly comentarioConNombre = computed(() => comentarioConNombre(this.bubble()?.comment ?? null, this.nombreDeQuienJuega()));
+
   // ── El umbral (DISENO §4.4; DP-09, DP-26) ────────────────────────────────────────────────────────────────────
   /** Lo que la ficha, Inicio o Casos mandaron al navegar para pintar el umbral desde el primer cuadro (`history.state`). */
   readonly umbralDatos = signal<{ titulo: string | null; portada: string | null }>(umbralDelEstado(estadoDeNavegacion()));
@@ -1518,7 +1589,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     return !this.worldRendered() || this.showCaseIntro();
   });
   /** Una tarjeta de entrada (la tarjeta, reanudar o el aviso de respaldo) se posa sobre el umbral. */
-  readonly umbralConTarjeta = computed(() => this.showCaseIntro() || this.showResumePrompt() || this.showContentWarning());
+  readonly umbralConTarjeta = computed(() => this.showCaseIntro() || this.showResumePrompt() || this.showContentWarning()
+    || this.cinematica() !== null || this.tutor() !== null);
   /** La fase REAL del arranque: cada una enciende un píxel (el intento respondió, la sala llegó, el primer cuadro). */
   readonly umbralFase = computed<FaseUmbral>(() => {
     if (this.worldRendered()) return 'listo';
@@ -1621,8 +1693,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** El HUD nombra la escena (sin contador de decisiones: el número de pasos lo decide la docente, no la pantalla). */
   readonly stageLabel = computed<string | null>(() => this.visibleNode()?.title ?? null);
   /**
-   * La escena que la barra y la ficha del objetivo muestran: durante la reacción del personaje (4.3.3), la anterior,
-   * aunque la respuesta de la decisión ya traiga la siguiente; después, la actual.
+   * La escena que la barra y la ficha del objetivo muestran. Tras decidir, conserva la anterior hasta aplicar el mundo nuevo.
    */
   readonly visibleNode = computed(() => this.heldNode() ?? this.attempt()?.currentNode ?? null);
   private readonly heldNode = signal<SimulationNodeState | null>(null);
@@ -1642,11 +1713,12 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   readonly inputBlocked = computed(() =>
     this.showResumePrompt() || this.showContentWarning()
     || this.showCaseIntro() || this.dialogue() !== null || this.journalOpen() || this.placesOpen() || this.planOpen()
-    || this.cambioDeLugar() !== null
+    || this.cambioDeLugar() !== null || this.cinematica() !== null || this.tutor() !== null
     || (!this.reactingToLast() && (this.attempt()?.status ?? 'IN_PROGRESS') !== 'IN_PROGRESS'));
 
   /** Con la pantalla de ayuda abierta el personaje no camina mientras se lee. */
-  readonly worldMotionPaused = computed(() => this.inputBlocked() || this.helpOpen() || this.controlsVisible() || this.reacting() || this.rehearsalGone());
+  readonly worldMotionPaused = computed(() => this.inputBlocked() || this.transitionNote() !== ''
+    || this.helpOpen() || this.controlsVisible() || this.reacting() || this.rehearsalGone());
 
   /**
    * Última decisión: el intento ya figura COMPLETED mientras el personaje reacciona, pero el resultado espera a la
@@ -1671,20 +1743,26 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private readonly gameWorldRef = viewChild(GameWorldComponent);
   private readonly canvasZone = viewChild<ElementRef<HTMLElement>>('canvasZone');
   /**
-   * Zona segura de la cámara (U1): las cajas de las placas sobre el mundo, en px CSS desde la esquina del lienzo. Solo al
-   * explorar: con las franjas de cine o un cuadro abierto la cámara ya encuadra entre las franjas.
+   * Zona segura de la cámara (U1): cajas visibles sobre el mundo, en px CSS desde el contenedor del lienzo.
+   * El contenedor conserva su tamaño cuando se escala el lienzo durante un viaje.
    */
   private readonly medirPlacas = (): Caja[] => {
-    if (this.cinemaBars() || this.viewMode() !== 'explore') return [];
     const zona = this.canvasZone()?.nativeElement;
     const raiz = zona?.closest('.game-container');
-    const lienzo = zona?.querySelector<HTMLElement>('app-game-world canvas') ?? zona;
+    const lienzo = zona?.querySelector<HTMLElement>('app-game-world .phaser-host') ?? zona;
     if (!raiz || !lienzo) return [];
     const base = lienzo.getBoundingClientRect();
     const cajas: Caja[] = [];
     raiz.querySelectorAll<HTMLElement>(PLACAS_SOBRE_EL_MUNDO).forEach(el => {
       const r = el.getBoundingClientRect();
-      if (r.width >= 1 && r.height >= 1) cajas.push({ x: r.left - base.left, y: r.top - base.top, ancho: r.width, alto: r.height });
+      const x = Math.max(r.left, base.left);
+      const y = Math.max(r.top, base.top);
+      const ancho = Math.min(r.right, base.right) - x;
+      const alto = Math.min(r.bottom, base.bottom) - y;
+      if (ancho >= 1 && alto >= 1 && (el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true })
+        ?? getComputedStyle(el).visibility === 'visible')) {
+        cajas.push({ x: x - base.left, y: y - base.top, ancho, alto });
+      }
     });
     return cajas;
   };
@@ -1722,8 +1800,11 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   protected readonly bubbleAnchor = signal<{ x: number; y: number } | null>(null);
   /** El personaje con quien se habla, para la cara del panel de diálogo (la misma fuente que la burbuja y la reacción). */
   protected readonly speakerVisual = computed(() => {
-    const key = this.selectedInteraction()?.key;
-    return key ? this.gameWorld?.characterVisualOf(key) ?? null : null;
+    const dialogue = this.dialogue();
+    if (!dialogue || dialogue.hidePortrait || !this.worldRendered()) return null;
+    const key = dialogue.speakerObjectKey ?? this.world()?.objects.find(object =>
+      object.dialogue?.key === dialogue.key || object.key === dialogue.key)?.key;
+    return key ? (this.gameWorldRef() ?? this.gameWorld)?.characterVisualOf(key) ?? null : null;
   });
   protected readonly bubbleSpeaker = computed(() => {
     const key = this.bubble()?.objectKey;
@@ -1791,19 +1872,21 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Tarjeta de controles pedida con «Controles» o «?» (la de primera vez es `showHelpCard`). */
   readonly controlsOpen = signal(false);
   /** La tarjeta de controles está a la vista, sea la de primera vez o la pedida. Mientras dura, el personaje no camina. */
-  readonly controlsVisible = computed(() => this.showHelpCard() || this.controlsOpen());
+  readonly controlsVisible = computed(() => this.showHelpCard() || (this.controlsOpen() && this.ayudaDisponible()));
   /** «Da unos pasos…»: aviso no modal que dice cuánto falta para volver a cruzar la puerta; '' cuando no hay. */
   readonly stepsNotice = signal('');
 
   readonly showHelpCard = computed(() =>
     !this.helpCardSeen() && this.worldStarted() && this.world() !== null && !this.loading()
     && (this.attempt()?.status ?? null) === 'IN_PROGRESS'
-    && !this.showResumePrompt() && !this.showContentWarning() && !this.showCaseIntro()
-    && this.dialogue() === null && !this.journalOpen() && !this.helpOpen());
+    && this.ayudaDisponible() && !this.helpOpen());
+
+  private readonly ayudaDisponible = computed(() =>
+    !this.inputBlocked() && !this.transitionNote() && !this.reacting() && !this.rehearsalGone());
 
   /** Objetos de decisión de otras etapas: el mundo los atenúa (alfa .55, sin anillo). Nunca marca la opción adecuada. */
   readonly dimmedKeys = computed<ReadonlySet<string>>(() =>
-    otherStageDecisionKeys(this.world(), this.attempt()?.currentNode.options?.map(option => option.id) ?? null));
+    otherStageDecisionKeys(this.world(), this.visibleNode()?.options?.map(option => option.id) ?? null));
 
   readonly selectedToolCode = computed(() => {
     const sel = this.selectedInteraction();
@@ -1895,8 +1978,12 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
           this.cinemaBottomPx.set(bottom);
           this.gameWorld?.setCameraMoment(moment, bottom, top);
         };
-        requestAnimationFrame(medir);
-        setTimeout(medir, 450);
+        const cuadro = requestAnimationFrame(medir);
+        const despues = setTimeout(medir, 450);
+        onCleanup(() => {
+          cancelAnimationFrame(cuadro);
+          clearTimeout(despues);
+        });
         // Con un diálogo o una reacción en pantalla, en vivo: las opciones entran escalonadas y el aviso aparece después.
         if (moment.tipo !== 'explorar' || bars) {
           const vivo = setInterval(medir, 250);
@@ -1934,11 +2021,13 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     effect(() => {
       this.visibleNode()?.key;
       this.visibleNode()?.goal;
+      this.nombreDeQuienJuega();
       this.world()?.map.key;
       // Y lo hecho: al hablar, recoger o abrirse una puerta, la tarjeta pasa al siguiente paso en el acto (V7).
       this.viewedNpcKeys();
       this.world()?.inventory;
       this.world()?.inspectedObjectKeys;
+      this.world()?.usedToolKeys;
       this.doorStates();
       untracked(() => this.refreshGuide());
     });
@@ -2007,6 +2096,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    window.removeEventListener('keydown', this.captureOverlayKey, true);
+    window.removeEventListener('keyup', this.releaseOverlayKey, true);
     const pendiente = this.pausa.activa ? this.attempt() : null;
     // Último intento de registrar la pausa, sin tocar señales: la marca de «pausa pendiente» cubre si tampoco llega.
     pendiente && this.simulationService.safeExit(pendiente.attemptId, 'Salida segura solicitada')
@@ -2028,6 +2119,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    window.addEventListener('keydown', this.captureOverlayKey, true);
+    window.addEventListener('keyup', this.releaseOverlayKey, true);
     const stopCompact = watchMedia(COMPACT_QUERY, matches => this.compactMode.set(matches));
     const stopCoarse = watchMedia(COARSE_POINTER_QUERY, matches => this.coarsePointer.set(matches));
     const stopNarrow = watchMedia(NARROW_QUERY, matches => this.narrowScreen.set(matches));
@@ -2556,12 +2649,41 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.applyAudioScene(attempt);
   }
 
+  private readonly overlayKeysDown = new Set<string>();
+
+  /** Reserva la pulsación antes de que un hijo cierre la capa o el navegador devuelva el foco. */
+  private readonly captureOverlayKey = (event: KeyboardEvent): void => {
+    const key = event.code || event.key;
+    if (!event.repeat) {
+      const avanzaCinematica = this.cinematica() && (event.key === 'ArrowRight' || event.key === 'PageDown');
+      if (avanzaCinematica || (OVERLAY_KEYS.has(event.key) && this.worldMotionPaused())) this.overlayKeysDown.add(key);
+      else this.overlayKeysDown.delete(key);
+      return;
+    }
+    if (!this.overlayKeysDown.has(key)) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (!isTextEntryTarget(target) && event.key !== 'e' && event.key !== 'E') event.preventDefault();
+    event.stopPropagation();
+  };
+
+  private readonly releaseOverlayKey = (event: KeyboardEvent): void => {
+    this.overlayKeysDown.delete(event.code || event.key);
+  };
+
+  @HostListener('window:blur')
+  clearOverlayKeys(): void { this.overlayKeysDown.clear(); }
+
   @HostListener('window:keydown', ['$event'])
   handleGlobalInteraction(event: KeyboardEvent) {
-    // Si otro handler ya consumió la tecla (p. ej. el panel de diálogo cierra
-    // con Escape en document:keydown), no reinterpretarla aquí: sin esta
-    // guarda, un solo Escape cerraba el diálogo Y disparaba la salida segura.
+    // Los manejadores de las capas pueden consumir la tecla en document antes de que llegue a window.
     if (event.defaultPrevented) return;
+    if (this.overlayKeysDown.has(event.code || event.key)) {
+      // Este oyente se registra antes de que arranque el mundo. Phaser no debe encolar la tecla en window:
+      // al consumirla en su siguiente cuadro, el botón podría haber cerrado la capa y devuelto el foco.
+      // La acción nativa de Enter/Espacio sigue disponible en el botón de la capa.
+      event.stopImmediatePropagation();
+      if (!this.worldMotionPaused()) return;
+    }
     if (this.rehearsalGone() && event.key !== 'Escape') return;   // ensayo perdido: el mundo no atiende teclas; Esc sigue
     // Durante la reacción solo Esc (salida segura) llega a la partida: nada abre interacciones ni mueve al jugador.
     if (this.reacting() && event.key !== 'Escape') return;
@@ -2576,6 +2698,18 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       // Enter/click). Se traga Escape para que no caiga en la salida segura,
       // que mutaría el intento en backend sin decisión informada.
       if (event.key === 'Escape') event.preventDefault();
+      return;
+    }
+
+    // La cinemática atiende sus teclas en su propio oyente (Esc la detiene; detenida, Esc es la salida segura): el mundo de
+    // debajo no recibe ninguna.
+    if (this.cinematica()) return;
+    if (this.tutor()) {
+      // REGLA-004: como en la tarjeta de entrada, Esc es la salida segura. Enter y Espacio pasan las líneas (el tutor).
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.pauseFromOverlay();
+      }
       return;
     }
 
@@ -2595,6 +2729,15 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       if (event.key === 'Enter') {
         event.preventDefault();
         this.continueFromCaseIntro();
+      }
+      return;
+    }
+
+    if (this.transitionNote() && !this.inputBlocked() && !this.helpOpen() && !this.controlsVisible() && event.key !== 'Escape') {
+      const target = event.target instanceof Element ? event.target : null;
+      if ((event.key === 'Enter' || event.key === ' ') && !isActivatableTarget(target) && !isTextEntryTarget(target)) {
+        event.preventDefault();
+        this.cerrarNotaDeTransicion();
       }
       return;
     }
@@ -2773,6 +2916,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** Abre «Cómo se juega» (botón «?» del HUD, fila de Ajustes o «Más ayuda»). Quien la abre ya vio la tarjeta de primera vez. */
   openHelp(): void {
+    if (!this.ayudaDisponible()) return;
     this.markHelpCardSeen();
     this.controlsOpen.set(false);
     this.helpOpen.set(true);
@@ -2780,6 +2924,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** «Controles» (cabecera) o «?»: abre la tarjeta de controles. Quien la abre ya no necesita la de primera vez. */
   openControls(): void {
+    if (!this.ayudaDisponible()) return;
     this.markHelpCardSeen();
     this.helpOpen.set(false);
     this.controlsOpen.set(true);
@@ -2885,7 +3030,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
         this.mergeViewedNpcKeysFromWorld(result.world);
         this.applyDecisionOptions(result.world);
         this.selectedInteraction.set(result.interaction);
-        this.dialogue.set(this.decorateDialogue(result.dialogue ?? result.interaction.dialogue));
+        this.dialogue.set(this.decorateDialogue(result.dialogue ?? result.interaction.dialogue, interaction.key));
         this.announcePickup(result);
         if (interaction.type !== 'PERSON') this.reactions?.onInspected(interaction.key);
         this.busy.set(false);
@@ -2936,7 +3081,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       }
     }
     this.busy.set(true);
-    this.withSyncedPosition(() => this.triggerFade(() => {
+    const cruzar = () => this.withSyncedPosition(() => this.triggerFade(() => {
       this.simulationService.enterRoom(
         game.attemptId, target, door.key,
       ).pipe(timeout(PLAZO_ACCION_MS)).subscribe({
@@ -2959,12 +3104,39 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
         error: err => this.onDoorFailed(game.attemptId, err),
       });
     }, 'door_open'));
+    // Acompañantes (`metadata.acompanantes`): caminan hasta la puerta, la cruzan y recién entonces cruza quien juega.
+    const acompanantes = leerAcompanantes(door.metadata);
+    if (acompanantes.length > 0 && this.gameWorld) {
+      this.acompanantesCruzaron = true;
+      const caminata = this.gameWorld.caminarALaPuerta({ puertaKey: door.key, puerta: { x: door.x, y: door.y }, acompanantes, jugador: false });
+      this.refreshGuide();
+      void caminata.then(() => {
+        if (this.respuestaVigente(game.attemptId)) { cruzar(); return; }
+        // La pausa llegó mientras caminaban: la puerta no se cruza y vuelven a verse.
+        this.busy.set(false);
+        this.devolverAcompanantes(game);
+      });
+    } else {
+      cruzar();
+    }
+  }
+
+  /** Se ocultaron acompañantes al cruzar la puerta: si la entrada falla se repone el mundo para que reaparezcan. */
+  private acompanantesCruzaron = false;
+
+  private devolverAcompanantes(game: SimulationAttemptState | null): void {
+    if (!this.acompanantesCruzaron) return;
+    this.acompanantesCruzaron = false;
+    this.gameWorld?.mostrarAcompanantes();
+    this.refreshGuide();
+    if (game && this.respuestaVigente(game.attemptId)) this.loadWorld(game);
   }
 
   /** La puerta falló. Con la pausa puesta mientras esperaba, nada sale sobre la pantalla de pausa. */
   private onDoorFailed(attemptId: string, err: unknown): void {
     this.busy.set(false);
     this.fadeActive.set(false);
+    this.devolverAcompanantes(this.attempt());
     if (!this.respuestaVigente(attemptId)) return;
     // Si el servidor rechaza una puerta que el cliente creía abierta, su texto (el del seed) puede nombrar
     // temas de las decisiones: se dice lo que el cliente sabe decir, sin ese texto.
@@ -3046,10 +3218,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
    * etapa: ningún objeto del mundo ofrece una decisión que `currentNode.options` no contiene (AC-3).
    * Las opciones no revelan su resultado pedagógico antes de responder.
    */
-  private decorateDialogue(dialogue: DialogueState | null): DialogueState | null {
+  private decorateDialogue(dialogue: DialogueState | null, speakerObjectKey: string): DialogueState | null {
     if (!dialogue) return null;
     const node = this.attempt()?.currentNode;
-    return decorateDialogueState(dialogue, {
+    return decorateDialogueState({ ...dialogue, speakerObjectKey }, {
       nodeKey: node?.key ?? null,
       nodeOptionIds: node?.options?.map(option => option.id) ?? null,
       world: this.world(),
@@ -3068,11 +3240,11 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** Contexto de las puertas (F§7.5): null mientras no haya intento y mundo. */
   private doorContext(): (DoorStatusContext & { world: SimulationWorldState }) | null {
-    const game = this.attempt();
+    const nodo = this.visibleNode();
     const world = this.world();
-    if (!game || !world) return null;
+    if (!nodo || !world) return null;
     return {
-      nodeKey: game.currentNode.key,
+      nodeKey: nodo.key,
       world,
       viewedNpcKeys: collectViewedNpcKeys(world, this.viewedNpcKeys()),
       copy: this.copyContext(),
@@ -3269,7 +3441,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.clearPendingDecision(game.attemptId);
     if (this.attempt()?.status === 'PAUSED') this.adoptDecisionUnderPause(updated);
     else {
-      this.decisionSelection.set(!updated.retry && selected ? `Elegiste: “${selected}”` : '');
+      this.decisionSelection.set(!updated.retry && selected ? `Elegiste: “${conNombre(selected, this.nombreDeQuienJuega())}”` : '');
       this.applyDecisionResult(game, updated);
     }
   }
@@ -3309,6 +3481,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       this.showSoftNotice(previous ? `${previous} ${ORIENTATION_COPY.notices.decisionRegistered}` : ORIENTATION_COPY.notices.decisionRegistered);
     }
     this.trackStageChange(game, updated);
+    this.heldNode.set(escenaRetenida(this.visibleNode() ?? game.currentNode, updated.currentNode));
     this.attempt.set(updated);
     // La etiqueta nueva la dice la reacción en su paso (`afterReaction` la deja si no hubo): aquí solo el icono.
     this.syncPersonaIcon(updated, false);
@@ -3320,11 +3493,12 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     // El personaje reacciona en su sala; la supervisión y la sala de destino siguen en `afterReaction`.
     this.pendingAfterReaction = updated;
     if (!this.reaction) { this.afterReaction(); return; }
-    this.heldNode.set(escenaRetenida(game.currentNode, updated.currentNode));
     this.reacting.set(true);
+    const reaction = updated.reaction;
     this.reaction.play(
-      { reaction: updated.reaction, personaAntes: game.persona, personaDespues: updated.persona, reduceMotion: this.reduceMotion() },
-      this.reactionActor(updated.reaction?.objectKey ?? null),
+      { reaction: reaction ? { ...reaction, line: conNombre(reaction.line, this.nombreDeQuienJuega()) } : null,
+        personaAntes: game.persona, personaDespues: updated.persona, reduceMotion: this.reduceMotion() },
+      this.reactionActor(reaction?.objectKey ?? null),
     );
   }
 
@@ -3347,7 +3521,6 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (motivo === 'cancelada') return;   // la salida segura ya tomó la pantalla (`cutReactionForPause`)
     const updated = this.pendingAfterReaction;
     this.pendingAfterReaction = null;
-    this.heldNode.set(null);
     this.reacting.set(false);
     if (!updated) return;
     // Última decisión: la consecuencia se lee sobre la escena y el resultado se abre al cerrarla. Se arma antes
@@ -3388,18 +3561,41 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.simulationService.getWorld(updated.attemptId).pipe(timeout(PLAZO_ACCION_MS)).subscribe({
       next: mundo => {
         if (token !== this.transicionToken) return;
-        if (salaActual !== null && !mismoLugar(salaActual, mundo.map)) {
-          const lugar = mundo.map.title?.trim() || 'otro lugar';
-          this.cambioDeLugar.set({ lugar, mundo, intento: updated });
-          this.announce(`La historia continúa en ${lugar}.`);
+        const cambiaDeSala = salaActual !== null && !mismoLugar(salaActual, mundo.map);
+        const seguir = () => {
+          if (token !== this.transicionToken) return;
+          if (cambiaDeSala) {
+            const lugar = mundo.map.title?.trim() || 'otro lugar';
+            this.cambioDeLugar.set({ lugar, mundo, intento: updated });
+            this.announce(`La historia continúa en ${lugar}.`);
+            return;
+          }
+          this.irAlMundo(updated, mundo);
+        };
+        // Tras decidir, si la sala actual tiene la puerta hacia el nodo siguiente: los acompañantes caminan hasta ella y
+        // quien juega entra el último (el servidor ya movió el intento; el mundo nuevo se pinta después, sin cambios).
+        const salida = cambiaDeSala ? this.salidaHaciaNodo(updated.currentNode?.key ?? null) : null;
+        if (salida && this.gameWorld) {
+          this.acompanantesCruzaron = true;
+          const caminata = this.gameWorld.caminarALaPuerta({
+            puertaKey: salida.key, puerta: { x: salida.x, y: salida.y }, acompanantes: leerAcompanantes(salida.metadata), jugador: true,
+          });
+          this.refreshGuide();
+          void caminata.then(seguir);
           return;
         }
-        this.irAlMundo(updated, mundo);
+        seguir();
       },
       error: () => {
         if (token === this.transicionToken) this.irAlMundo(updated, null);
       },
     });
+  }
+
+  /** La puerta EXIT de la sala actual cuyo destino es el nodo `nodeKey`, o null (entonces el cambio es el de siempre). */
+  private salidaHaciaNodo(nodeKey: string | null): MapObjectState | null {
+    if (!nodeKey) return null;
+    return this.world()?.objects.find(o => (o.type || '').toUpperCase() === 'EXIT' && this.doorTargetNodeKey(o) === nodeKey) ?? null;
   }
 
   /** V7: «Ir a <lugar>» en la tarjeta del cambio de lugar: ahora sí cambia la sala. */
@@ -3414,14 +3610,21 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private irAlMundo(updated: SimulationAttemptState, mundo: SimulationWorldState | null): void {
     this.loadProgressMap(updated);
     this.applyAudioScene(updated);
-    this.triggerFade(() => (mundo ? this.applyWorldWithScenario(mundo) : this.loadWorld(updated)), null);   // la elección ya sonó al enviarse
+    const token = this.transicionToken;
+    this.triggerFade(() => {
+      if (token !== this.transicionToken) return;
+      if (mundo) this.applyWorldWithScenario(mundo);
+      else this.loadWorld(updated);
+    }, null);   // la elección ya sonó al enviarse
   }
 
   /** V7: la transición se corta (pausa, recarga): la tarjeta se va y una respuesta tardía del mundo ya no hace nada. */
   private cortarTransicion(): void {
+    this.devolverAcompanantes(null);
     this.transicionPendiente = null;
     this.transicionToken++;
     this.cambioDeLugar.set(null);
+    this.heldNode.set(null);
   }
 
   /** La salida segura corta la reacción en el acto: si la decisión cerró el caso, el resultado se abre sin supervisión; si no, su consecuencia se lee al reanudar (A3). */
@@ -3528,9 +3731,12 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       this.busy.set(false);
       return;
     }
+    const mapKey = this.world()?.map.key;
     this.simulationService.recordNpcInteraction(game.attemptId, npc.key).pipe(timeout(PLAZO_ACCION_MS)).subscribe({
       next: world => {
-        if (!this.respuestaVigente(game.attemptId)) { this.busy.set(false); return; }
+        if (!this.respuestaVigente(game.attemptId, mapKey)) { this.busy.set(false); return; }
+        // Con «hablado en esta escena» el mundo nuevo trae la marca para la guía (contrato §3).
+        if (world.viewedNpcKeysHere !== undefined) this.world.set(world);
         this.mergeViewedNpcKeysFromWorld(world);
         this.applyDecisionOptions(world);
         this.showNpcDialogue(npc);
@@ -3549,6 +3755,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.dialogue.set({
       key: `npc-${npc.key}`,
       recipeId: npc.recipeId,
+      speakerObjectKey: `${NPC_KEY_PREFIX}${npc.key}`,
       speakerName: npc.displayName,
       portraitKey: npc.portrait ?? null,
       emotion: 'neutral',
@@ -3704,6 +3911,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.placesOpen.set(false);
     this.planOpen.set(false);
     this.showCaseIntro.set(false);
+    this.cerrarEntradaDelCaso();
     this.helpOpen.set(false);
     this.pendingRestrictedInteraction.set(null);
     this.resetNotices();
@@ -3778,6 +3986,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.dialogue.set({
       key: `tool-feedback-${result.toolCode}-${Date.now()}`,
       speakerName: result.pertinent ? 'Herramienta pertinente' : 'Herramienta aplicada',
+      hidePortrait: true,
       portraitKey: null, emotion: result.pertinent ? 'positive' : 'neutral',
       lines: [{ order: 1, speakerName: '', text: result.feedbackMessage, emotion: 'neutral' }],
       choices: []
@@ -4016,6 +4225,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (!lines.length) return null;
     return {
       key: `consequence-${Date.now()}`, speakerName: CONSEQUENCE_SPEAKER,
+      hidePortrait: true,
       portraitKey: null,
       emotion: 'neutral',
       lines, choices: []
@@ -4104,12 +4314,14 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     const previousMapKey = this.world()?.map.key ?? null;
     const mapChanged = previousMapKey !== world.map.key;
     if (mapChanged) {
+      this.acompanantesCruzaron = false;
       this.doorInteractionArmed = false;
       this.stepsNotice.set('');
       // El aviso de una puerta de la sala anterior ya no dice nada de esta (permanece hasta cerrarse o cambiar de sala).
       this.dismissDoorNotice();
     }
     this.world.set(world);
+    this.heldNode.set(null);
     this.syncPersonaIcon(this.attempt());
     this.mergeViewedNpcKeysFromWorld(world);
     this.applyDecisionOptions(world);
@@ -4167,7 +4379,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private maybeShowInitialCaseIntro(): void {
     const attempt = this.attempt();
     if (!attempt) return;
-    this.applyIntroStep(this.resolveIntroStepFor(attempt));
+    const step = this.resolveIntroStepFor(attempt);
+    this.applyIntroStep(step);
+    // Con la entrada ya hecha: el tutor de esta sala si aún no se vio en este intento (al volver de una pausa, por ejemplo).
+    if (step === 'none') this.mostrarTutorPendiente();
   }
 
   private resolveIntroStepFor(attempt: SimulationAttemptState): IntroGateStep {
@@ -4185,6 +4400,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
         this.showContentWarning.set(true);
         return;
       case 'card':
+        // Una sala inicial con cinemática o tutor reemplaza la tarjeta genérica «Antes de comenzar»: no salen las dos.
+        if (this.empezarEntradaDelCaso()) return;
         this.revealCaseIntro();
         return;
       default:
@@ -4402,6 +4619,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.audioDirector.stopIntroLament();
     this.applyAudioScene(attempt);
     this.announce(DRAFT_COPY.introDone.text);
+    this.mostrarNotaDeInicio(this.world());
   }
 
   /** Lectura y escritura del almacenamiento de la sesión sin que un bloqueo (modo privado, cuota) rompa el juego. */
@@ -4433,17 +4651,137 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       this.showRoomBanner(world.map.title, ROOM_BANNER_MS);
       this.announce(`Entraste a ${world.map.title}.`);
     }
-    const transition = (world.map.ambient as Record<string, unknown> | undefined)?.['transitionText'];
-    if (typeof transition === 'string' && transition && !this.seenTransitionMapKeys.has(world.map.key)) {
-      this.seenTransitionMapKeys.add(world.map.key);
-      this.transitionNote.set(transition);
-      this.announce(transition);
-      if (this.transitionNoteTimer !== null) window.clearTimeout(this.transitionNoteTimer);
-      this.transitionNoteTimer = window.setTimeout(() => {
-        this.transitionNoteTimer = null;
-        this.transitionNote.set('');
-      }, TRANSITION_NOTE_MS);
+    // El tutor de la sala (si lo trae y no se vio en este intento) va primero; la nota de capítulo espera a que se cierre.
+    if (this.abrirTutor(world, world)) return;
+    this.mostrarNotaDeTransicion(world);
+  }
+
+  /** La nota de capítulo o de salto de tiempo (`map.ambient.transitionText`), una vez por sala, con `{nombre}` puesto. */
+  private mostrarNotaDeTransicion(world: SimulationWorldState): boolean {
+    const crudo = (world.map.ambient as Record<string, unknown> | undefined)?.['transitionText'];
+    if (typeof crudo !== 'string' || !crudo || this.seenTransitionMapKeys.has(world.map.key)) return false;
+    const transition = conNombre(crudo, this.nombreDeQuienJuega());
+    this.seenTransitionMapKeys.add(world.map.key);
+    this.transitionNote.set(transition);
+    this.announce(transition);
+    if (this.transitionNoteTimer !== null) window.clearTimeout(this.transitionNoteTimer);
+    this.transitionNoteTimer = window.setTimeout(() => this.cerrarNotaDeTransicion(), TRANSITION_NOTE_MS);
+    return true;
+  }
+
+  private cerrarNotaDeTransicion(): void {
+    if (this.transitionNoteTimer !== null) window.clearTimeout(this.transitionNoteTimer);
+    this.transitionNoteTimer = null;
+    this.transitionNote.set('');
+  }
+
+  /**
+   * La nota de capítulo de la sala donde empieza el juego, al terminar la entrada (tarjeta, o cinemática y tutor). Antes no
+   * salía nunca: `announceRoomChange` solo corre al CAMBIAR de sala. Una vez por intento.
+   */
+  private mostrarNotaDeInicio(world: SimulationWorldState | null): void {
+    const attempt = this.attempt();
+    if (!world || !attempt || attempt.status !== 'IN_PROGRESS') return;
+    const vistos = new VistosDelIntento(attempt.attemptId);
+    if (vistos.visto(marcaDeCapitulo(world.map.key))) return;
+    if (this.mostrarNotaDeTransicion(world)) vistos.marcar(marcaDeCapitulo(world.map.key));
+  }
+
+  /**
+   * La entrada del caso cuando la sala inicial trae cinemática o tutor (contrato del caso insignia): consentimiento →
+   * cinemática → tutor → mundo y nota de capítulo. Cada pieza sale una vez por intento (las ya vistas se saltan). false si
+   * la sala no trae ninguna de las dos: entonces sale la tarjeta genérica. En el ensayo de la docente no hay entrada (4.2.1).
+   */
+  private empezarEntradaDelCaso(): boolean {
+    if (this.entradaEnCurso) return true;
+    const world = this.world(), attempt = this.attempt();
+    if (!world || !attempt || attempt.status !== 'IN_PROGRESS' || this.mode() === 'rehearsal') return false;
+    const cine = leerCinematica(world.map.ambient);
+    if (!cine && !leerTutor(world.map.ambient)) return false;
+    this.entradaEnCurso = true;
+    if (cine && !new VistosDelIntento(attempt.attemptId).visto(marcaDeCinematica(cine.id))) {
+      this.audioDirector.playIntroLament();
+      this.cinematica.set(cine);
+      return true;
     }
+    this.seguirEntrada();
+    return true;
+  }
+
+  /** Tras la cinemática: el tutor de la sala inicial (si falta verlo) o el final de la entrada. */
+  private seguirEntrada(): void {
+    if (this.abrirTutor(this.world(), null)) return;
+    this.terminarEntrada();
+  }
+
+  /** La cinemática terminó (vista o saltada): queda vista en este intento y sigue la entrada. */
+  alTerminarCinematica(): void {
+    const cine = this.cinematica(), attempt = this.attempt();
+    if (cine && attempt) new VistosDelIntento(attempt.attemptId).marcar(marcaDeCinematica(cine.id));
+    this.cinematica.set(null);
+    this.audioDirector.silenciarIntro(false);
+    this.seguirEntrada();
+  }
+
+  /** El corte a negro de la cinemática pide silencio a la música de entrada. */
+  silenciarIntro(silencio: boolean): void {
+    this.audioDirector.silenciarIntro(silencio);
+  }
+
+  /** Abre el tutor de la sala si lo trae y aún no se vio en este intento. `nota`: la sala cuya nota de capítulo espera tras él. */
+  private abrirTutor(world: SimulationWorldState | null, nota: SimulationWorldState | null): boolean {
+    const attempt = this.attempt();
+    if (!world || !attempt || attempt.status !== 'IN_PROGRESS' || this.mode() === 'rehearsal' || this.tutorAbierto()) return false;
+    const datos = leerTutor(world.map.ambient);
+    if (!datos || new VistosDelIntento(attempt.attemptId).visto(marcaDeTutor(world.map.key))) return false;
+    this.notaTrasTutor = nota;
+    this.tutorAbierto.set({ datos, mapa: world.map.key });
+    return true;
+  }
+
+  /** El tutor se cerró: queda visto en esta sala y sigue lo que esperaba (el final de la entrada o la nota de capítulo). */
+  alCerrarTutor(): void {
+    const abierto = this.tutorAbierto(), attempt = this.attempt();
+    if (abierto && attempt) new VistosDelIntento(attempt.attemptId).marcar(marcaDeTutor(abierto.mapa));
+    this.tutorAbierto.set(null);
+    const nota = this.notaTrasTutor;
+    this.notaTrasTutor = null;
+    if (this.entradaEnCurso) {
+      this.terminarEntrada();
+      return;
+    }
+    if (nota) this.mostrarNotaDeTransicion(nota);
+  }
+
+  /** Fin de la entrada: queda «leída» (como la tarjeta), suena la música de la escena y sale la nota de la sala inicial. */
+  private terminarEntrada(): void {
+    this.entradaEnCurso = false;
+    const attempt = this.attempt();
+    if (attempt) this.writeStored(this.caseIntroStorageKey(attempt), 'read');
+    this.audioDirector.stopIntroLament();
+    this.applyAudioScene(attempt);
+    this.announce(DRAFT_COPY.introDone.text);
+    this.mostrarNotaDeInicio(this.world());
+  }
+
+  /** Un tutor que quedó sin ver en esta sala (se pausó con él abierto o se volvió otro día), si nada más ocupa la pantalla. */
+  private mostrarTutorPendiente(): void {
+    if (this.dialogue() || this.cambioDeLugar() || this.reacting() || this.showCaseIntro() || this.cinematica()) return;
+    this.abrirTutor(this.world(), null);
+  }
+
+  /**
+   * Pausa o intento nuevo: se cierran la cinemática y el tutor. La cinemática queda vista (quien salió por la salida segura
+   * no tiene que volver a verla); el tutor no, y sale otra vez al reanudar.
+   */
+  private cerrarEntradaDelCaso(): void {
+    const cine = this.cinematica(), attempt = this.attempt();
+    if (cine && attempt) new VistosDelIntento(attempt.attemptId).marcar(marcaDeCinematica(cine.id));
+    if (cine) this.audioDirector.silenciarIntro(false);
+    this.cinematica.set(null);
+    this.tutorAbierto.set(null);
+    this.entradaEnCurso = false;
+    this.notaTrasTutor = null;
   }
 
   /** La sala y la persona a atender que ya se anunciaron: `world.set` repite el mundo en cada acción y no debe repetir el aviso. */
@@ -4499,9 +4837,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     this.roomBanner.set('');
     this.dismissDoorNotice();
     this.stepsNotice.set('');
-    if (this.transitionNoteTimer !== null) window.clearTimeout(this.transitionNoteTimer);
-    this.transitionNoteTimer = null;
-    this.transitionNote.set('');
+    this.cerrarNotaDeTransicion();
   }
 
   /**
@@ -4559,8 +4895,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   /** Vuelve a decorar la conversación con decisiones que sigue abierta, desde el diálogo del objeto: así muestra la opción nueva. */
   private redecorateOpenDialogue(): void {
     const open = this.dialogue();
-    const raw = this.selectedInteraction()?.dialogue;
-    if (open?.choices.some(choice => choice.decisionOptionId != null) && raw?.key === open.key) this.dialogue.set(this.decorateDialogue(raw));
+    const selected = this.selectedInteraction();
+    if (open?.choices.some(choice => choice.decisionOptionId != null) && selected?.dialogue?.key === open.key) {
+      this.dialogue.set(this.decorateDialogue(selected.dialogue, selected.key));
+    }
   }
 
   /** Relee la guía de la escena (objetivo del documento, lo que hay en la sala, si queda algo por conocer). */
@@ -4568,16 +4906,34 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     // El siguiente paso (V7): las puertas cerradas no se proponen; las herramientas de la sala, hasta que se recogen.
     const cerradas = this.doorStates();
     const inventario = world?.inventory ?? [];
+    const nombre = this.nombreDeQuienJuega();
     const guide = armarGuia({
-      goal: this.visibleNode()?.goal ?? '',
+      goal: conNombre(this.visibleNode()?.goal ?? '', nombre),
       lugares: (this.gameWorld?.places() ?? []).map(l => l.kind === 'door' && cerradas[l.key] === 'locked' ? { ...l, note: 'cerrada' } : l),
       inspeccionados: world?.inspectedObjectKeys ?? [],
       hablados: collectViewedNpcKeys(world, this.viewedNpcKeys()),
       herramientas: (world?.objects ?? []).filter(o => o.type === 'TOOL' && o.toolCode)
         .map(o => ({ key: o.key, label: o.label, recogida: inventario.includes(o.toolCode!) })),
+      // La guía escrita en el caso (`ambiente.guia`) reemplaza los pasos calculados; sin ella todo sigue igual.
+      autorada: this.guiaAutoradaDe(world, inventario, nombre),
     });
     this.guide.set(guide);
     return guide;
+  }
+
+  private guiaAutoradaDe(world: SimulationWorldState | null, inventario: readonly string[], nombre: string) {
+    const guia = leerGuiaAutorada(world?.map?.ambient, nombre);
+    if (!guia) return undefined;
+    return {
+      guia,
+      mundo: {
+        hablados: collectViewedNpcKeys(world, this.viewedNpcKeys()),
+        viewedNpcKeysHere: world?.viewedNpcKeysHere,
+        inspeccionados: world?.inspectedObjectKeys ?? [],
+        inventario,
+        herramientasUsadas: world?.usedToolKeysHere ?? world?.usedToolKeys ?? [],
+      },
+    };
   }
 
   private mergeViewedNpcKeysFromWorld(world: SimulationWorldState): void {

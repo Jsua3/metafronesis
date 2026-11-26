@@ -225,17 +225,28 @@ describe('DialoguePanelComponent - integración renderizada', () => {
     expect(portraitSrc()).toBe('/assets/characters/kit/supervisor-clinico/portrait-alegre.png');
   });
 
-  it('una voz sin cuerpo no tiene retrato: queda la silueta', () => {
+  it.each(['Supervisión clínica', 'Consecuencia', 'Aviso de pausa', 'Tu libreta', 'Informe', 'Cierre del caso'])(
+    '%s muestra el texto sin una ventanilla de retrato', (speakerName) => {
     render({
       ...MULTI_LINE_DIALOGUE,
-      speakerName: 'Supervisión clínica',
+      speakerName,
       portraitKey: null,
-      lines: [{ order: 1, speakerName: 'Supervisión clínica', text: 'Revisa el protocolo.', emotion: 'danger' }],
+      lines: [{ order: 1, speakerName, text: 'Revisa el protocolo.', emotion: 'danger' }],
       choices: [],
     });
 
-    expect(portraitSrc()).toBeNull();
-    expect(fixture.nativeElement.querySelector('.portrait-svg')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.speaker-name')?.textContent).toContain(speakerName);
+    expect(fixture.nativeElement.querySelector('.portrait')).toBeNull();
+  });
+
+  it('el aviso de herramienta muestra el texto sin la ventanilla de retrato', () => {
+    render({
+      ...MULTI_LINE_DIALOGUE, speakerName: 'Herramienta pertinente', portraitKey: null, hidePortrait: true,
+      lines: [{ order: 1, speakerName: '', text: 'La herramienta ayudó a la persona.', emotion: 'neutral' }], choices: [],
+    });
+
+    expect(fixture.nativeElement.querySelector('.speaker-name')?.textContent).toContain('Herramienta pertinente');
+    expect(fixture.nativeElement.querySelector('.portrait')).toBeNull();
   });
 
   it('la receta del árbol no vale para la línea de otro hablante', () => {
@@ -1676,7 +1687,7 @@ describe('DialoguePanelComponent - el aviso breve va dentro del cuadro', () => {
 
   it('la pantalla no pinta el aviso suelto mientras hay un diálogo sobre el mundo: se lo pasa al cuadro', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
-    expect(pantalla).toContain("@if (softNotice() && viewMode() !== 'dialogue-cinematic') {");
+    expect(pantalla).toContain("@if (softNotice() && !reacting() && viewMode() !== 'dialogue-cinematic') {");
     expect(pantalla).toMatch(/<app-dialogue-panel class="dialogue-cinematic"[^>]*\[avisoBreve\]="softNotice\(\) \+/);
   });
 });

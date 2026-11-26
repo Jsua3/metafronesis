@@ -1,7 +1,7 @@
 /**
  * Retrato del diálogo (spec §7.3, §8.2): el de la receta del hablante, buscado primero por
  * la receta del NPC y su clave y después por su nombre. Una voz sin cuerpo («Supervisión
- * clínica», «Protocolo clínico»…) no tiene retrato: el panel muestra su silueta.
+ * clínica», «Protocolo clínico»…) puede hablar sin ventanilla de retrato.
  */
 import {
   portraitStateFor,

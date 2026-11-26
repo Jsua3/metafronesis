@@ -14,6 +14,7 @@
 import Phaser from 'phaser';
 
 import { DEPTH, actorDepth } from '../depth-sort.util';
+import { anclaDelArte } from './apoyos-de-mueble';
 import { urlDePieza } from './catalogo';
 import type { ManifiestoDePiezas, MuebleDeCatalogo, SalaPorPiezas } from './catalogo';
 import { clipsDe, cuadroDelClip } from './mueble-vivo';
@@ -153,6 +154,8 @@ export interface MuebleDeSala {
   x: number;
   y: number;
   espejo: boolean;
+  /** Los objetos sobre un tablero comparten su orden y no tienen sombra de piso. */
+  profundidadSobre?: number;
 }
 
 interface MuebleVivo {
@@ -164,7 +167,7 @@ interface MuebleVivo {
   desde: number;
 }
 
-const texturaDeMueble = (clave: string) => `sala:mueble:${clave}`;
+export const texturaDeMueble = (clave: string) => `sala:mueble:${clave}`;
 
 /**
  * Lo caro de armar una sala (el fondo compuesto y la luz) guardado por su firma: cada respuesta del servidor vuelve a armar
@@ -321,13 +324,16 @@ export class EscenaDeSala {
       const hoja = texturaDeMueble(m.clave);
       if (!escena.textures.exists(hoja)) continue;
       const clips = clipsDe(m.ficha);
-      const apoyo = (m.ficha as { apoyo?: [number, number] }).apoyo ?? [Math.floor(m.ficha.ancho / 2), m.ficha.alto];
+      const apoyo = anclaDelArte(m.ficha);
       const sprite = escena.add.sprite(m.x, m.y, hoja, clips['reposo'].de)
-        .setOrigin(apoyo[0] / m.ficha.ancho, apoyo[1] / m.ficha.alto).setFlipX(m.espejo).setDepth(actorDepth(m.y));
+        .setOrigin(apoyo[0] / m.ficha.ancho, apoyo[1] / m.ficha.alto).setFlipX(m.espejo)
+        .setDepth(m.profundidadSobre ?? actorDepth(m.y));
       this.objetos.push(sprite);
       this.mueblesVivos.push({ id: m.id, sprite, extras: [], clips, clip: 'reposo', desde: 0 });
-      const cuerpo = EscenaDeSala.cuerpoDeSprite(sprite, 0, 0);
-      if (cuerpo) cuerpos.push(cuerpo);
+      if (m.profundidadSobre === undefined) {
+        const cuerpo = EscenaDeSala.cuerpoDeSprite(sprite, 0, 0);
+        if (cuerpo) cuerpos.push(cuerpo);
+      }
     }
 
     // Luz.
@@ -476,6 +482,13 @@ export class EscenaDeSala {
     }] : []);
   }
 
+  /** Puerta que se mantiene abierta aunque quien juega no esté cerca (los acompañantes la cruzan), o null. */
+  private forzada: string | null = null;
+
+  forzarAbierta(id: string | null): void {
+    this.forzada = id;
+  }
+
   /** La puerta que manda ahora (la que muestra el aviso), o null. */
   puertaActiva(): string | null {
     return this.activa;
@@ -493,7 +506,7 @@ export class EscenaDeSala {
     for (const vivo of this.vivos) {
       const s = vivo.plan;
       if (s.puerta) {
-        vivo.estado = avanzarPuerta(vivo.estado, { dtMs, cerca: this.activa === s.id, bloqueada: bloqueadas.has(s.id), reducido: this.reducido });
+        vivo.estado = avanzarPuerta(vivo.estado, { dtMs, cerca: this.activa === s.id || this.forzada === s.id, bloqueada: bloqueadas.has(s.id), reducido: this.reducido });
         vivo.objeto.setFrame(cuadroVisible(vivo.estado, vivo.hojas));
         vivo.objeto.x = s.x + desvioDeSacudida(vivo.estado);
         if (abiertaDelTodo(vivo.estado)) abiertas.push(s.id);
@@ -764,12 +777,12 @@ export class EscenaDeSala {
     this.reducido = reducido;
   }
 
-  /** Dónde va el aviso de una puerta, en coordenadas de sala: sobre la puerta (o sobre su umbral, si es del lado de la cámara). */
+  /** Ancla del aviso en la puerta. La pantalla decide cuánto moverlo para dejar libres las figuras. */
   posicionDelAviso(id: string): { x: number; y: number } | null {
     const s = this.plan.sprites.find(p => p.id === id && p.puerta);
     if (!s?.puerta) return null;
-    if (s.puerta.muro === 'camara') return { x: s.puerta.llegada[0], y: s.puerta.llegada[1] - 84 };
-    return { x: s.puerta.llegada[0], y: Math.min(s.y, s.puerta.llegada[1] - 84) - 6 };
+    if (s.puerta.muro === 'camara') return { x: s.puerta.ancla[0], y: s.y };
+    return { x: s.puerta.ancla[0], y: s.y - 6 };
   }
 
   destruir(): void {

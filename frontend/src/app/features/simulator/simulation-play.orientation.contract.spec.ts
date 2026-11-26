@@ -223,7 +223,7 @@ describe('el HUD recibe el título de la escena (T9.2)', () => {
 
   it('el encabezado del panel lateral no repite el título de la escena encima del h2', () => {
     expect(source).not.toContain('right-panel__kicker');
-    expect(source).toMatch(/<h2>\{\{ game\.currentNode\.title \}\}<\/h2>/);
+    expect(source).toMatch(/<h2>\{\{ visibleNode\(\)\?\.title \}\}<\/h2>/);
   });
 });
 

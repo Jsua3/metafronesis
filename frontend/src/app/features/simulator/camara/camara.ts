@@ -37,6 +37,10 @@ export const TASA = 6;
 export const AIRE_PLACA = 6;
 
 export interface Punto { x: number; y: number }
+export interface Sujeto extends Punto {
+  /** Rótulo y acción bajo el objeto: ancho/alto en CSS, separación de los pies en mundo. */
+  rotulo?: { ancho: number; alto: number; separacion: number };
+}
 
 /** Una placa de la interfaz sobre el lienzo (bloque U1), en px físicos desde la esquina superior izquierda de la vista. */
 export interface Caja { x: number; y: number; ancho: number; alto: number }
@@ -74,7 +78,9 @@ export interface EntradaCamara {
   /** Acercamiento automático en los momentos (ajuste; encendido por defecto). */
   acercarAuto: boolean;
   /** Pies de lo que está al alcance (persona, puerta u objeto): tampoco queda bajo una placa. */
-  cerca?: Punto | null;
+  cerca?: Sujeto | null;
+  /** Pies del destino del paso actual de la guía, si está en la sala. */
+  destino?: Sujeto | null;
 }
 
 export interface EstadoCamara { centro: Punto; zoom: number }
@@ -129,6 +135,7 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
   const base = e.cercana ? zoomCercano(vista, caminar) : caminar;
   // Con el acercamiento automático, un paso más cerca; siempre se abre lo que haga falta para que quepan las cabezas.
   const desde = e.acercarAuto ? base + 1 : base;
+  const zonaSegura = !!vista.placas?.length || tapadoAbajo(vista) > 0 || tapadoArriba(vista) > 0;
 
   let zoom = base;
   let foco: Punto = { x: jugador.x, y: jugador.y - FOCO_PERSONA };
@@ -144,15 +151,43 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
     const alto = Math.abs(otro.y - jugador.y) + ALTO_CUERPO + 2 * MARGEN_ALTO;
     zoom = mayorQueCabe(desde, general, ancho, alto, vista);
   } else if (momento.tipo === 'reaccion') {
-    pies = momento.de.y;
+    pies = zonaSegura ? Math.max(jugador.y, momento.de.y) : momento.de.y;
     foco = { x: momento.de.x, y: momento.de.y - FOCO_PERSONA };
-    zoom = mayorQueCabe(desde, general, 2 * (MEDIO_CUERPO + MARGEN_LADO), ALTO_CUERPO + 2 * MARGEN_ALTO, vista);
+    const ancho = (zonaSegura ? Math.abs(momento.de.x - jugador.x) : 0) + 2 * (MEDIO_CUERPO + MARGEN_LADO);
+    const alto = (zonaSegura ? Math.abs(momento.de.y - jugador.y) : 0) + ALTO_CUERPO + 2 * MARGEN_ALTO;
+    zoom = mayorQueCabe(desde, general, ancho, alto, vista);
   } else if (momento.tipo === 'objeto') {
-    pies = momento.en.y;
+    pies = zonaSegura ? Math.max(jugador.y, momento.en.y) : momento.en.y;
     foco = { x: momento.en.x, y: momento.en.y - FOCO_OBJETO };
     zoom = mayorQueCabe(desde, general, 96, 96, vista);
   }
 
+  const centro = centroBase(zoom, foco, pies, e, previo);
+  if (momento.tipo === 'general' || !zonaSegura) {
+    return { centro, zoom };
+  }
+  const principales: Sujeto[] = momento.tipo === 'reaccion' ? [momento.de, jugador] : [jugador];
+  if (momento.tipo === 'conversacion') principales.push(momento.con);
+  if (momento.tipo === 'objeto') principales.push(momento.en);
+  const opcionales: Sujeto[] = [];
+  for (const pie of [e.destino, e.cerca]) {
+    if (!pie) continue;
+    const igual = (p: Punto) => p.x === pie.x && p.y === pie.y;
+    const i = principales.findIndex(igual);
+    if (i >= 0) principales[i] = pie;
+    else if (!opcionales.some(igual)) opcionales.push(pie);
+  }
+  // Primero intenta mantener el plano y sus sujetos. Si la franja o las placas los apretaron, abre a otro entero.
+  for (let k = zoom; k >= 1; k--) {
+    const base = k === zoom ? centro : centroBase(k, foco, pies, e, previo);
+    const encuadre = centroLibre(base, k, vista, principales, opcionales);
+    if (encuadre) return { centro: encuadre, zoom: k };
+  }
+  return { centro: esquivarPlacas(centro, zoom, vista, principales), zoom };
+}
+
+function centroBase(zoom: number, foco: Punto, pies: number, e: EntradaCamara, previo: EstadoCamara | null): Punto {
+  const { vista, sala, momento } = e;
   const visibleAncho = vista.ancho / zoom;
   const visibleAlto = vista.alto / zoom;
   const abajo = tapadoAbajo(vista) / zoom;
@@ -164,80 +199,115 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
   let y = foco.y + corrimiento;
   if (momento.tipo === 'explorar' && previo) {
     x = seguir(previo.centro.x, foco.x, (ZONA_MUERTA * visibleAncho) / 2);
-    y = seguir(previo.centro.y - corrimiento, foco.y, (ZONA_MUERTA * (visibleAlto - abajo - arriba)) / 2) + corrimiento;
+    y = seguir(previo.centro.y - corrimiento, foco.y, ZONA_MUERTA * libre(vista) / (2 * zoom)) + corrimiento;
   }
 
-  // La cámara se queda dentro de la sala; solo baja de su borde lo justo para que los pies queden sobre el cuadro.
+  // Encuadre base: dentro de la sala, con espacio bajo el cuadro de diálogo si hace falta.
   const fondo = Math.max(sala.alto, pies + MARGEN_PIES + abajo);
-  const centro = {
+  return {
     x: limitar(x, visibleAncho / 2, 0, sala.ancho),
     y: limitar(y, visibleAlto / 2, 0, fondo),
   };
-  return { centro: esquivarPlacas(centro, zoom, vista, cuerposQueImportan(e)), zoom };
-}
-
-/** Los cuerpos que una placa no debe tapar: quien juega y lo que tiene al alcance, con quien habla, quien reacciona. */
-function cuerposQueImportan(e: EntradaCamara): Punto[] {
-  const m = e.momento;
-  if (m.tipo === 'general') return [];
-  if (m.tipo === 'conversacion') return [e.jugador, m.con];
-  if (m.tipo === 'reaccion') return [m.de];
-  if (m.tipo === 'objeto') return [e.jugador, m.en];
-  return e.cerca ? [e.jugador, e.cerca] : [e.jugador];
 }
 
 /**
- * Zona segura (bloque U1): si un cuerpo (su cuadro de 48 × 72 sobre los pies) cae bajo una placa de la interfaz, el
- * encuadre se corre lo mínimo para sacarlo, en el eje y el sentido que pidan menos, sin que el cuerpo salga de lo que
- * dejan libre las franjas. Nunca se corre más que el tamaño de la placa: pasado el borde de la sala se ve el vacío, que
- * queda bajo la misma placa. Sin placas devuelve el centro tal cual.
+ * Zona segura (U1): busca el menor desplazamiento común que deje los cuerpos fuera de las placas y entre las franjas.
+ * Si el grupo no cabe, conserva los primeros sujetos del plano. Un destino fuera de vista sigue usando la flecha.
  */
-export function esquivarPlacas(centro: Punto, zoom: number, vista: Vista, cuerpos: readonly Punto[]): Punto {
+export function esquivarPlacas(centro: Punto, zoom: number, vista: Vista, cuerpos: readonly Sujeto[]): Punto {
+  for (let n = cuerpos.length; n > 0; n--) {
+    const salida = centroLibre(centro, zoom, vista, cuerpos.slice(0, n), []);
+    if (salida) return salida;
+  }
+  return centro;
+}
+
+function huella(pie: Sujeto, centro: Punto, zoom: number, vista: Vista): Caja[] {
+  const x = (pie.x - centro.x) * zoom + vista.ancho / 2;
+  const y = (pie.y - centro.y) * zoom + vista.alto / 2;
+  const cajas = [{
+    x: x - MEDIO_CUERPO * zoom, y: y - ALTO_CUERPO * zoom, ancho: 2 * MEDIO_CUERPO * zoom, alto: ALTO_CUERPO * zoom,
+  }];
+  if (pie.rotulo) {
+    const { ancho, alto, separacion } = pie.rotulo;
+    cajas.push({ x: x - ancho * vista.dpr / 2, y: y + separacion * zoom, ancho: ancho * vista.dpr, alto: alto * vista.dpr });
+  }
+  return cajas;
+}
+
+function centroLibre(
+  centro: Punto, zoom: number, vista: Vista, principales: readonly Sujeto[], opcionales: readonly Sujeto[],
+): Punto | null {
   const placas = vista.placas ?? [];
-  if (placas.length === 0 || cuerpos.length === 0 || !(zoom > 0)) return centro;
   const aire = AIRE_PLACA * vista.dpr;
-  const arribaLibre = tapadoArriba(vista);
-  const abajoLibre = vista.alto - tapadoAbajo(vista);
-  let cx = centro.x;
-  let cy = centro.y;
-  for (let vuelta = 0; vuelta < 3; vuelta++) {
-    let movio = false;
-    for (const pie of cuerpos) {
-      const r = {
-        x: (pie.x - MEDIO_CUERPO - cx) * zoom + vista.ancho / 2,
-        y: (pie.y - ALTO_CUERPO - cy) * zoom + vista.alto / 2,
-        ancho: 2 * MEDIO_CUERPO * zoom,
-        alto: ALTO_CUERPO * zoom,
-      };
-      for (const p of placas) {
-        const tapa = r.x < p.x + p.ancho + aire && r.x + r.ancho > p.x - aire
-          && r.y < p.y + p.alto + aire && r.y + r.alto > p.y - aire;
-        if (!tapa) continue;
-        const salida = [
-          { dx: p.x + p.ancho + aire - r.x, dy: 0 },
-          { dx: p.x - aire - (r.x + r.ancho), dy: 0 },
-          { dx: 0, dy: p.y + p.alto + aire - r.y },
-          { dx: 0, dy: p.y - aire - (r.y + r.alto) },
-        ].filter(o => r.x + o.dx >= 0 && r.x + r.ancho + o.dx <= vista.ancho
-          && r.y + o.dy >= arribaLibre && r.y + r.alto + o.dy <= abajoLibre)
-          .sort((a, b) => Math.abs(a.dx) + Math.abs(a.dy) - (Math.abs(b.dx) + Math.abs(b.dy)))[0];
-        if (!salida) continue;
-        // El contenido se mueve (dx, dy) en pantalla: la cámara, lo contrario en mundo.
-        cx -= salida.dx / zoom;
-        cy -= salida.dy / zoom;
-        r.x += salida.dx;
-        r.y += salida.dy;
-        movio = true;
+  const adicionales = opcionales.map(pie => huella(pie, centro, zoom, vista)).filter(([r]) =>
+    r.x < vista.ancho && r.x + r.ancho > 0 && r.y < vista.alto && r.y + r.alto > 0);
+  const obligatorias = principales.flatMap(pie => huella(pie, centro, zoom, vista));
+  for (let n = adicionales.length; n >= 0; n--) {
+    const cajas = obligatorias.concat(adicionales.slice(0, n).flat());
+    const limite = {
+      izq: Math.max(...cajas.map(r => -r.x)),
+      der: Math.min(...cajas.map(r => vista.ancho - r.ancho - r.x)),
+      sup: Math.max(...cajas.map(r => tapadoArriba(vista) - r.y)),
+      inf: Math.min(...cajas.map(r => vista.alto - tapadoAbajo(vista) - r.alto - r.y)),
+    };
+    const salida = desplazamientoLibre(limite, cajas.flatMap(r => placas.map(p => bloqueoDe(r, p, aire))));
+    if (salida) return { x: centro.x - salida.x / zoom, y: centro.y - salida.y / zoom };
+  }
+  return null;
+}
+
+/** Sitúa una placa del mundo completa cerca de su ancla, evitando cuerpos y placas de la interfaz. */
+export function situarAviso(caja: Caja, vista: Caja, ocupadas: readonly Caja[]): Punto | null {
+  const salida = desplazamientoLibre({
+    izq: vista.x - caja.x, der: vista.x + vista.ancho - caja.ancho - caja.x,
+    sup: vista.y - caja.y, inf: vista.y + vista.alto - caja.alto - caja.y,
+  }, ocupadas.map(p => bloqueoDe(caja, p, AIRE_PLACA)));
+  return salida ? { x: caja.x + salida.x, y: caja.y + salida.y } : null;
+}
+
+/** Desplazamientos que harían chocar una caja con una placa. */
+function bloqueoDe(r: Caja, p: Caja, aire: number): Bordes {
+  return {
+    izq: p.x - aire - r.x - r.ancho, der: p.x + p.ancho + aire - r.x,
+    sup: p.y - aire - r.y - r.alto, inf: p.y + p.alto + aire - r.y,
+  };
+}
+
+interface Bordes { izq: number; der: number; sup: number; inf: number }
+
+function contiene(b: Bordes, x: number, y: number): boolean {
+  return x > b.izq && x < b.der && y > b.sup && y < b.inf;
+}
+
+/** El punto libre más cercano al origen está en un borde o en el punto del tramo permitido más cercano a cero. */
+function desplazamientoLibre(limite: Bordes, bloqueos: readonly Bordes[]): Punto | null {
+  const { izq, der, sup, inf } = limite;
+  if (izq > der || sup > inf) return null;
+  const x0 = Math.max(izq, Math.min(der, 0));
+  const y0 = Math.max(sup, Math.min(inf, 0));
+  if (!bloqueos.some(b => contiene(b, x0, y0))) return { x: x0, y: y0 };
+  const xs = new Set([x0]);
+  const ys = new Set([y0]);
+  for (const b of bloqueos) {
+    if (b.der <= izq || b.izq >= der || b.inf <= sup || b.sup >= inf) continue;
+    if (b.izq >= izq) xs.add(b.izq);
+    if (b.der <= der) xs.add(b.der);
+    if (b.sup >= sup) ys.add(b.sup);
+    if (b.inf <= inf) ys.add(b.inf);
+  }
+  let mejor: Punto | null = null;
+  let distancia = Number.POSITIVE_INFINITY;
+  for (const x of xs) {
+    for (const y of ys) {
+      const cuadrado = x * x + y * y;
+      if (cuadrado < distancia && !bloqueos.some(b => contiene(b, x, y))) {
+        mejor = { x, y };
+        distancia = cuadrado;
       }
     }
-    if (!movio) break;
   }
-  const topeX = Math.max(...placas.map(p => p.ancho)) / zoom;
-  const topeY = Math.max(...placas.map(p => p.alto)) / zoom;
-  return {
-    x: centro.x + Math.max(-topeX, Math.min(topeX, cx - centro.x)),
-    y: centro.y + Math.max(-topeY, Math.min(topeY, cy - centro.y)),
-  };
+  return mejor;
 }
 
 /** Ya llegó: el zoom a menos de una centésima y el centro a menos de medio píxel. */

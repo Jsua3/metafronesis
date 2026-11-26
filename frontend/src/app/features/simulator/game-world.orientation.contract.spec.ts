@@ -126,7 +126,7 @@ describe('game-world: ratón (F6-7, VD-5)', () => {
     expect(handler).not.toMatch(/if \(pointer\.wasTouch \|\|/);
     expect(handler).toMatch(/pointer\.button !== 0/);
     // Sobre algo señalado camina hasta su alcance de interacción; en el suelo, hasta el punto clicado.
-    expect(handler).toContain('startWalk({ x: aimed.x, y: aimed.y, radius: aimed.reach })');
+    expect(handler).toContain('this.caminataAlMarcador(key, aimed)');
     expect(handler).toContain('WALK_GROUND_RADIUS_PX');
   });
 

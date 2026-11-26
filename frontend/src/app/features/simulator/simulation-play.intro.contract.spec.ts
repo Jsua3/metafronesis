@@ -1,18 +1,41 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 // Los fines de línea se normalizan: con `core.autocrlf=true` el árbol de trabajo sale en CRLF y varios cortes de abajo buscan `\n`.
 const source = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8').replace(/\r\n/g, '\n');
 
+/** Texto que solo puede venir de un caso (nombres, hechos, claves): ni el juego ni el reproductor de la cinemática lo traen. */
+const TEXTO_DE_CASO = /28 heridas|Contexto inicial del caso|hospital-urgencias|SIM-VBG|Yuliana|Edwin|Salomé|Laura|Andrés|Sofía|Gloria|cortopunzante|Fiscalía/;
+
 describe('simulation-play: introducción', () => {
-  it('la introducción es una tarjeta genérica: sin escena animada, sin video y sin texto de un caso', () => {
+  it('la introducción genérica es una tarjeta: sin escena animada propia, sin video y sin texto de un caso', () => {
     expect(source).not.toContain('app-case-intro-scene');
     expect(source).not.toContain('<video');
     expect(source).not.toContain('fondoHabitacion');
-    expect(source).not.toMatch(/28 heridas|Contexto inicial del caso|hospital-urgencias/);
+    expect(source).not.toMatch(TEXTO_DE_CASO);
     expect(existsSync(join(__dirname, '../../../assets/video/fondoHabitacion.mp4'))).toBe(false);
     for (const gone of ['case-intro-scene.component.ts', 'intro-scene.util.ts']) {
       expect(existsSync(join(__dirname, gone)), gone).toBe(false);
+    }
+  });
+
+  // Contrato del caso insignia (§1 y §2): la cinemática y el tutor son DATOS del caso (`ambient.cinematica`, `ambient.tutor`)
+  // que pinta un reproductor genérico en su propia carpeta; el juego solo los lee del mundo y los pasa.
+  it('la cinemática y el tutor salen del mundo, no del código: el juego solo los lee de ambient', () => {
+    expect(source).toContain('leerCinematica(world.map.ambient)');
+    expect(source).toContain('leerTutor(world.map.ambient)');
+    expect(source).toMatch(/<app-cinematica-caso \[cinematica\]="cine"/);
+    expect(source).toMatch(/<app-tutor-caso \[tutor\]="profe"/);
+  });
+
+  it('el reproductor de la cinemática y el tutor no traen texto de ningún caso ni video', () => {
+    const carpeta = join(__dirname, 'cinematica');
+    const fuentes = readdirSync(carpeta).filter(f => f.endsWith('.ts') && !f.endsWith('.spec.ts'));
+    expect(fuentes.length).toBeGreaterThan(0);
+    for (const archivo of fuentes) {
+      const texto = readFileSync(join(carpeta, archivo), 'utf-8');
+      expect(texto, archivo).not.toMatch(TEXTO_DE_CASO);
+      expect(texto, archivo).not.toMatch(/<video|\.mp4|\.webm/);
     }
   });
 

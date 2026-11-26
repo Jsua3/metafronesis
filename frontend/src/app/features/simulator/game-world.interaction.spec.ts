@@ -48,6 +48,7 @@ function node(x = 0, y = 0): FakeNode {
 /** Superficie privada de la escena que estos casos ejercitan. */
 interface SceneProbe {
   player: { x: number; y: number };
+  piesAlEntrar: { x: number; y: number } | null;
   world: SimulationWorldState;
   markers: Map<string, FakeNode>;
   markerData: Map<string, MapObjectState>;
@@ -62,6 +63,9 @@ interface SceneProbe {
   targetRing?: { halo: FakeNode; ring: FakeNode };
   updateNearestInteraction(suppressSound?: boolean): void;
   interactNearest(): void;
+  caminarALaPuerta(op: { puertaKey: string; puerta: { x: number; y: number }; acompanantes: string[]; jugador: boolean }): Promise<void>;
+  mostrarAcompanantes(): void;
+  placeCandidates(): { key: string }[];
   setOrientation(next: { nextTargetKey: string | null; doorStates: Record<string, 'open' | 'locked'>; dimmedKeys: ReadonlySet<string> }): void;
   setCompactLabels(compact: boolean): void;
   ready: boolean;
@@ -367,7 +371,6 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     orient(h, { nextTargetKey: 'tool-pap' });
     // desde (700,430): psicóloga a 80, puerta a 138; zona restringida a 168 (fuera); enfermera a 183 (fuera)
     expect(h.scene.revealed).toEqual(['tool-pap', 'npc:psicologa-orientadora', 'puerta-sala-escucha']);
-    expect(h.nodes['puerta-sala-escucha#hint'].visible).toBe(true);
     expect((h.nodes['npc:psicologa-orientadora']['__labelSprite'] as FakeNode).alpha).toBe(1);
     expect((h.nodes['npc:enfermera-urgencias']['__labelSprite'] as FakeNode).alpha).toBe(0);
     expect(h.nodes['zona-restringida#label'].alpha).toBe(0);
@@ -379,7 +382,6 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     h.scene.updateNearestInteraction(true);
     orient(h, { nextTargetKey: 'tool-pap' });
     expect(h.scene.revealed).toEqual(['tool-pap', 'npc:psicologa-orientadora']);
-    expect(h.nodes['puerta-sala-escucha#hint'].visible).toBe(false);
   });
 
   it('una puerta bloqueada enciende su candado y borde discontinuo; abierta, no', () => {
@@ -412,6 +414,42 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     h.scene.updateNearestInteraction(true);
     expect(h.nodes['tool-pap'].setAlpha.mock.calls.length).toBe(alphaCalls); // por cuadro no se repinta
     expect(h.scene.add.ellipse).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('los avisos y las acciones al cruzar una puerta', () => {
+  it('la puerta de entrada entra en la barra de acciones después del primer desplazamiento', () => {
+    const h = crearEscena({ x: 838, y: 424 });
+    h.scene.npcMarkers.clear();
+    h.scene.piesAlEntrar = { ...h.scene.player };
+    h.scene.updateNearestInteraction(true);
+    expect(h.scene.nearestKey).toBeNull();
+    move(h, 830, 424);
+    expect(h.scene.nearestKey).toBe('puerta-sala-escucha');
+  });
+
+  it('retira el nombre, la pista y la interacción del acompañante al empezar la salida', async () => {
+    const h = crearEscena({ x: 780, y: 440 });
+    const key = 'npc:psicologa-orientadora';
+    const actor = h.nodes[key];
+    h.callbacks.reduceMotion = true;
+    h.scene.setOrientation({ nextTargetKey: key, doorStates: {}, dimmedKeys: new Set() });
+    expect(h.scene.nearestKey).toBe(key);
+    expect(h.scene.targetRing?.ring.visible).toBe(true);
+    const caminata = h.scene.caminarALaPuerta({
+      puertaKey: 'puerta-sala-escucha', puerta: { x: 838, y: 424 }, acompanantes: [key], jugador: false,
+    });
+    expect(actor.visible).toBe(true);
+    expect((actor['__labelSprite'] as FakeNode).alpha).toBe(0);
+    expect((actor['__hintSprite'] as FakeNode).alpha).toBe(0);
+    expect(h.scene.targetRing?.ring.visible).toBe(false);
+    expect(h.callbacks.onProximity).toHaveBeenLastCalledWith(null);
+    expect(h.scene.placeCandidates().map(p => p.key)).not.toContain(key);
+    h.scene.interactNearest();
+    expect(h.callbacks.onNpcInteract).not.toHaveBeenCalled();
+    h.scene.mostrarAcompanantes();
+    await caminata;
+    expect(h.scene.placeCandidates().map(p => p.key)).toContain(key);
   });
 });
 
@@ -462,7 +500,7 @@ describe('DataDrivenWorldScene: los rótulos se dibujan sobre los actores y sigu
   it('los rótulos de marcadores y personas viven fuera de sus contenedores (sobre los actores)', () => {
     const source = readFileSync(join(__dirname, 'game-world.component.ts'), 'utf-8');
     expect(source).toContain('const LABEL_DEPTH = DEPTH.UI - 1;');
-    expect(source).toMatch(/const marker = this\.add\.container\(object\.x, object\.y, \[markerShadow, pulse, main\]\);/);
+    expect(source).toMatch(/const marker = this\.add\.container\([^\n]+, \[markerShadow, pulse, main\]\);/);
     expect(source).not.toMatch(/this\.add\.container\([^)]*\[[^\]]*\blabel\b[^\]]*\]\)/);
     // Tres de rótulos (marcador, nombre y pista de una persona), dos del ratón (F6-7: contorno y verbo al pasar) y el
     // chevrón con el nombre de la persona clave (P6), la flecha del siguiente paso y la frase «E · …» de un marcador cercano y el indicador de borde del destino fuera de cuadro (P9).

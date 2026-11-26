@@ -14,6 +14,7 @@ import { of, throwError } from 'rxjs';
 import { SimulationService } from '../../core/api/simulation.service';
 import { DecisionReviewItem, MissedOption } from '../../core/models/simulation.model';
 import { RECONSIDERED_LABEL } from './reconsidered.util';
+import { leerRevision } from './caso/revision';
 
 /** El único servicio que la pantalla de resultado llama: «Tus decisiones» lee el reporte congelado del dueño (C2). */
 const simulation = { studentReport: vi.fn() };
@@ -166,7 +167,10 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   const host = () => fixture.nativeElement as HTMLElement;
   const text = (el: Element | null) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
-  function render(status: 'PAUSED' | 'COMPLETED' | 'SAFE_EXITED' | 'REPLACED' | 'IN_PROGRESS', options: { report?: AttemptCompletionReport | null; resources?: string[]; pauseNote?: string | null } = {}): void {
+  function render(status: 'PAUSED' | 'COMPLETED' | 'SAFE_EXITED' | 'REPLACED' | 'IN_PROGRESS', options: {
+    report?: AttemptCompletionReport | null; resources?: string[]; pauseNote?: string | null;
+    revision?: ReturnType<typeof leerRevision>; nombre?: string;
+  } = {}): void {
     TestBed.configureTestingModule({
       imports: [AttemptOutcomeComponent],
       providers: [
@@ -186,12 +190,65 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     writeInputSignal(component.report, options.report === undefined ? makeReport({ status: status as AttemptCompletionReport['status'] }) : options.report);
     if (options.resources) writeInputSignal(component.supportResources, options.resources);
     if (options.pauseNote !== undefined) writeInputSignal(component.pauseNote, options.pauseNote);
+    if (options.revision) writeInputSignal(component.revision, options.revision);
+    if (options.nombre) writeInputSignal(component.nombre, options.nombre);
     fixture.detectChanges();
   }
 
   afterEach(() => {
     fixture?.destroy();
     TestBed.resetTestingModule();
+  });
+
+  describe('revisión del profesor', () => {
+    const paso = { titulo: 'Escucha', logrado: 'Escuchaste, {nombre}.', pendiente: 'Practica la escucha, {nombre}.' };
+    const revision = leerRevision({ revision: {
+      nombre: 'Profesor', rol: 'Tutor del caso', recipeId: 'supervisor-clinico',
+      entrada: 'Terminaste, {nombre}.', cierre: 'Cuídate, {nombre}.',
+      capitulos: [{ titulo: 'En el hospital', pasos: [
+        { ...paso, numero: 1, hitos: ['escucha'] },
+        { ...paso, numero: 3, hitos: ['proteccion', 'remision'] },
+      ] }],
+    } });
+    const region = () => host().querySelector('section[aria-labelledby="oc-revision-title"]');
+
+    it('muestra la región entre el epílogo y las decisiones, con lista, marcas y nombre de pila', () => {
+      render('COMPLETED', { revision, nombre: 'Ana López' });
+      const repaso = region()!;
+      expect(text(repaso.querySelector('h4#oc-revision-title'))).toBe('La revisión del profesor');
+      expect(repaso.compareDocumentPosition(host().querySelector('.oc-ending')!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+      expect(repaso.compareDocumentPosition(host().querySelector('.oc-decisions')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(repaso.querySelector('img')?.getAttribute('src')).toBe('/assets/characters/kit/supervisor-clinico/portrait-neutral.png');
+      expect(text(repaso.querySelector('.u-rotulo'))).toBe('Profesor');
+      expect(text(repaso.querySelector('.oc-revision__rol'))).toBe('Tutor del caso');
+      expect(text(repaso)).toContain('Terminaste, Ana.');
+      expect(text(repaso)).toContain('Cuídate, Ana.');
+      const pasos = [...repaso.querySelectorAll<HTMLLIElement>('ol > li')];
+      expect(pasos.map(li => li.value)).toEqual([1, 3]);
+      expect(text(pasos[0])).toContain('✓ Lo lograste Escuchaste, Ana.');
+      expect(text(pasos[1])).toContain('▸ Para reforzar Practica la escucha, Ana.');
+      expect(pasos[0].querySelector('.oc-revision__marca--logrado')).not.toBeNull();
+      expect(pasos[1].querySelector('.oc-revision__marca--logrado')).toBeNull();
+    });
+
+    it.each(['IN_PROGRESS', 'PAUSED', 'REPLACED', 'SAFE_EXITED'] as const)('no se presenta con estado %s', status => {
+      render(status, { revision });
+      expect(region()).toBeNull();
+    });
+
+    it('espera la revisión de la sala y un reporte con hitos', () => {
+      render('COMPLETED', { report: makeReport({ milestones: undefined }) });
+      expect(region()).toBeNull();
+      writeInputSignal(component.revision, revision);
+      fixture.detectChanges();
+      expect(region()).toBeNull();
+      writeInputSignal(component.report, makeReport({ milestones: { done: [], missing: [] } }));
+      fixture.detectChanges();
+      expect(text(region())).toContain('Terminaste.');
+      expect(text(region())).toContain('Cuídate.');
+      expect(text(region())).toContain('Para reforzar');
+      expect(text(region())).not.toContain('Lo lograste');
+    });
   });
 
   it('el título es «Tu caso está en pausa», dentro de un alertdialog nombrado por él', () => {

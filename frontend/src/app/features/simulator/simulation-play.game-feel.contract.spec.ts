@@ -6,7 +6,7 @@ const source = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'ut
 describe('simulation-play: game feel del bloque B', () => {
   it('el mundo recibe la activación de la persona y la intensidad de la escena', () => {
     expect(source).toContain("[activation]=\"attempt()?.persona?.activation ?? 'CALM'\"");
-    expect(source).toContain("[intensity]=\"attempt()?.currentNode?.intensity ?? 'MEDIUM'\"");
+    expect(source).toContain("[intensity]=\"visibleNode()?.intensity ?? 'MEDIUM'\"");
     expect(source).not.toMatch(/stressLevel|stressIndex/);
   });
 

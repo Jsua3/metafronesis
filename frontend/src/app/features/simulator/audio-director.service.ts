@@ -150,6 +150,18 @@ export class AudioDirectorService {
   }
 
   /**
+   * La cinemática pide silencio en el corte a negro: la pista de entrada baja a cero en 600 ms y vuelve igual. Con la música
+   * silenciada por la persona no hace nada (no la vuelve a subir).
+   */
+  silenciarIntro(silencio: boolean): void {
+    const pista = this.introLament;
+    if (!pista || this.musicMuted) return;
+    const ahora = pista.volume();
+    const destino = silencio ? 0 : this.musicVolume;
+    if (typeof ahora === 'number' && ahora !== destino) pista.fade(ahora, destino, 600);
+  }
+
+  /**
    * Las capas siguen a la escena y a la persona (nunca a una cifra): la intensidad de la escena elige la capa
    * (LOW = solo la calma; MEDIUM = la tensión a medias; HIGH = la tensión completa) y una persona en crisis
    * suma la capa de crisis. Un valor desconocido suena como una escena de intensidad media.
