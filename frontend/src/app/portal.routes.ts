@@ -1,0 +1,207 @@
+import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { AuthService } from './core/auth/auth.service';
+import { roleGuard } from './core/auth/auth.guard';
+import { canLeaveGuard } from './core/navigation/can-leave.guard';
+import { caseUnlockedGuard } from './features/simulator/case-unlocked.guard';
+import { rolesFor } from './shared/layout/nav-items';
+import { SimulationService } from './core/api/simulation.service';
+import { CachedSimulationService } from './core/api/cached-simulation.service';
+
+function destinoInicial(): string {
+  const rol = inject(AuthService).currentUser()?.role;
+  // Cada rol tiene su inicio en /portal/dashboard (el del personal y el del estudiante, cada uno con su `canMatch`).
+  return rol === 'ADMIN' || rol === 'PROFESOR' || rol === 'ESTUDIANTE' ? '/portal/dashboard' : '/portal/invitaciones';
+}
+
+/** El inicio del docente y de la administración: el del estudiante es otra ruta con su propio `canMatch`. */
+function esPersonal(): boolean {
+  const rol = inject(AuthService).currentUser()?.role;
+  return rol === 'ADMIN' || rol === 'PROFESOR';
+}
+
+export const portalRoutes: Routes = [{
+  path: '',
+  providers: [{ provide: SimulationService, useExisting: CachedSimulationService }],
+  children: [
+      { path: '', pathMatch: 'full', redirectTo: () => destinoInicial() },
+      {
+        path: 'dashboard',
+        pathMatch: 'full',
+        title: 'Inicio',
+        canMatch: [esPersonal],
+        loadComponent: () => import('./features/dashboard/staff-dashboard.component').then(m => m.StaffDashboardComponent)
+      },
+      {
+        // SIEP-239: el inicio del estudiante (sus casos, su siguiente paso y su recorrido).
+        path: 'dashboard',
+        pathMatch: 'full',
+        title: 'Inicio',
+        canMatch: [() => inject(AuthService).currentUser()?.role === 'ESTUDIANTE'],
+        loadComponent: () => import('./features/dashboard/student-dashboard.component').then(m => m.StudentDashboardComponent)
+      },
+      // Sin otro inicio que coincida, a la bandeja de grupos (una redirección fija: no puede volver a /portal/dashboard).
+      { path: 'dashboard', pathMatch: 'full', redirectTo: '/portal/invitaciones' },
+      {
+        // ED-5: solo el estudiante juega (`attempt.play`); al resto el servidor le responde 403.
+        path: 'jugar',
+        title: 'Sala de simulación',
+        data: { chrome: 'hidden' },
+        canActivate: [roleGuard('ESTUDIANTE')],
+        loadComponent: () => import('./features/simulator/game-menu.component').then(m => m.GameMenuComponent)
+      },
+      {
+        path: 'simulador',
+        title: 'Casos',
+        canActivate: [roleGuard(...rolesFor('simulador'))],
+        loadComponent: () => import('./features/simulator/simulation-catalog.component').then(m => m.SimulationCatalogComponent)
+      },
+      {
+        // F10-1 (C8, RF-16): la ficha del caso se lee antes de empezar y no crea el intento; «Comenzar» abre el juego.
+        path: 'simulador/:caseVersionId/ficha',
+        title: 'Ficha del caso',
+        canActivate: [roleGuard('ESTUDIANTE')],
+        loadComponent: () => import('./features/simulator/case-brief.component').then(m => m.CaseBriefComponent)
+      },
+      {
+        // DP-13: el cierre del caso es una página del portal, con URL estable (se vuelve a ella desde Casos y desde el resultado del juego).
+        path: 'simulador/:caseVersionId/cierre/:attemptId',
+        title: 'Cierre del caso',
+        canActivate: [roleGuard('ESTUDIANTE')],
+        loadComponent: () => import('./features/simulator/cierre/cierre-caso.component').then(m => m.CierreCasoComponent)
+      },
+      {
+        path: 'simulador/:caseVersionId',
+        title: 'Simulación',
+        data: { chrome: 'hidden' },
+        canActivate: [roleGuard('ESTUDIANTE'), caseUnlockedGuard],
+        loadComponent: () => import('./features/simulator/simulation-play.component').then(m => m.SimulationPlayComponent)
+      },
+      {
+        path: 'personaje',
+        title: 'Mi personaje',
+        canActivate: [roleGuard(...rolesFor('personaje'))],
+        canDeactivate: [canLeaveGuard],
+        loadComponent: () => import('./features/character/character-editor.component').then(m => m.CharacterEditorComponent)
+      },
+      {
+        // E2-10 (C5): el estudiante acepta, rechaza o deja los grupos a los que lo invitan.
+        path: 'invitaciones',
+        title: 'Tus grupos',
+        canActivate: [roleGuard(...rolesFor('invitaciones'))],
+        loadComponent: () => import('./features/invitations/invitations.component').then(m => m.InvitationsComponent)
+      },
+      {
+        path: 'grupos',
+        title: 'Grupos',
+        canActivate: [roleGuard(...rolesFor('grupos'))],
+        loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
+      },
+      {
+        // DP-18: el detalle de un grupo tiene ruta propia (atrás funciona y el Inicio docente enlaza directo). Carga el
+        // MISMO componente, que lee `grupoId` con withComponentInputBinding.
+        path: 'grupos/:grupoId',
+        title: 'Grupos',
+        canActivate: [roleGuard(...rolesFor('grupos'))],
+        loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
+      },
+      {
+        path: 'sesiones',
+        title: 'Sesiones',
+        canActivate: [roleGuard(...rolesFor('sesiones'))],
+        loadComponent: () => import('./features/sesiones/sesiones-page.component').then(m => m.SesionesPageComponent)
+      },
+      {
+        // El detalle tiene ruta propia (atrás funciona); el mismo componente lee `sesionId`.
+        path: 'sesiones/:sesionId',
+        title: 'Sesión',
+        canActivate: [roleGuard(...rolesFor('sesiones'))],
+        loadComponent: () => import('./features/sesiones/sesiones-page.component').then(m => m.SesionesPageComponent)
+      },
+      {
+        path: 'casos',
+        title: 'Casos',
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadComponent: () => import('./features/simulator/case-authoring-hub.component').then(m => m.CaseAuthoringHubComponent)
+      },
+      {
+        // P6: crear un caso empieza por elegir el lugar y las salas; el editor nuevo pone su propio marco (sin la barra del portal).
+        path: 'casos/nuevo',
+        title: 'Nuevo caso',
+        data: { chrome: 'propio' },
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadChildren: () => import('./features/autoria/autoria.routes').then(m => m.rutasNuevoCaso)
+      },
+      {
+        // Bloque B: la docente ensaya su borrador en el juego real (la misma pantalla en modo ensayo). El servidor vuelve a comprobar el permiso.
+        path: 'casos/:caseVersionId/ensayo',
+        title: 'Ensayo del caso',
+        data: { chrome: 'hidden', mode: 'rehearsal' },
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadComponent: () => import('./features/simulator/simulation-play.component').then(m => m.SimulationPlayComponent)
+      },
+      {
+        // P6: el editor nuevo de casos. Un PROFESOR solo abre los suyos (lo hace cumplir el servidor).
+        path: 'casos/:caseVersionId/editor',
+        title: 'Editor de caso',
+        data: { chrome: 'propio' },
+        canActivate: [roleGuard(...rolesFor('casos'))],
+        loadChildren: () => import('./features/autoria/autoria.routes').then(m => m.rutasEditorCaso)
+      },
+      {
+        path: 'docente/trazabilidad',
+        title: 'Revisión formativa',
+        canActivate: [roleGuard(...rolesFor('trazabilidad'))],
+        canDeactivate: [canLeaveGuard],
+        loadComponent: () => import('./features/simulator/instructor-trace.component').then(m => m.InstructorTraceComponent)
+      },
+      {
+        path: 'rubricas',
+        title: 'Rúbricas',
+        canActivate: [roleGuard(...rolesFor('rubricas'))],
+        canDeactivate: [canLeaveGuard],
+        // Biblioteca y editor viven en la misma ruta (`?rubrica=`); la guardia de salida corre también al cambiar ese
+        // parámetro, para preguntar antes de dejar una rúbrica con cambios sin guardar.
+        runGuardsAndResolvers: 'paramsOrQueryParamsChange',
+        loadComponent: () => import('./features/admin/rubrics.component').then(m => m.RubricsComponent)
+      },
+      {
+        path: 'reportes',
+        title: 'Reportes',
+        canActivate: [roleGuard(...rolesFor('reportes'))],
+        loadComponent: () => import('./features/reportes/reporte-grupo.component').then(m => m.ReporteGrupoComponent)
+      },
+      {
+        // Los intentos de un estudiante; se llega desde la tabla del reporte del grupo.
+        path: 'reportes/estudiante/:estudianteId',
+        title: 'Reporte del estudiante',
+        canActivate: [roleGuard(...rolesFor('reportes'))],
+        loadComponent: () => import('./features/reportes/reporte-estudiante.component').then(m => m.ReporteEstudianteComponent)
+      },
+      {
+        path: 'admin/usuarios',
+        title: 'Usuarios',
+        canActivate: [roleGuard(...rolesFor('usuarios'))],
+        loadComponent: () => import('./features/admin/users.component').then(m => m.UsersComponent)
+      },
+      {
+        // DP-22: cambiar la contraseña por gusto, dentro del portal y desde el menú de cuenta. El MISMO componente que el
+        // cambio obligatorio (`/cambiar-contrasena`, fuera del portal); `modo` le llega desde `data`.
+        path: 'cuenta/contrasena',
+        title: 'Cambiar contraseña',
+        data: { modo: 'voluntario' },
+        loadComponent: () => import('./features/account/change-password.component').then(m => m.ChangePasswordComponent)
+      },
+      {
+        // Plan visual F4-3: adonde manda roleGuard al negar una sección (antes, al panel en silencio).
+        path: 'sin-permiso',
+        title: 'Sin permiso',
+        loadComponent: () => import('./features/public/forbidden.component').then(m => m.ForbiddenComponent)
+      },
+      {
+        path: '**',
+        title: 'Página no encontrada',
+        loadComponent: () => import('./features/public/not-found.component').then(m => m.NotFoundComponent)
+      }
+  ],
+}];

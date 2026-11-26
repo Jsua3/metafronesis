@@ -14,7 +14,7 @@ describe('draft-copy: textos en borrador pendientes de Psicología', () => {
     const entries = draftCopyList();
     expect(entries.length).toBeGreaterThan(0);
     for (const entry of entries) {
-      expect(entry.decision, entry.key).toMatch(/^(VD|RN|ETH|F6|F7|F10|P6|DSL|R1)-\d+$/);
+      expect(entry.decision, entry.key).toMatch(/^(?:(?:VD|RN|ETH|F6|F7|F10|P6|DSL|R1)-|UB-E)\d+$/);
       expect(entry.owner, entry.key).toBe('Psicología');
       expect(entry.where.trim(), entry.key).not.toBe('');
       expect(entry.text.trim(), entry.key).not.toBe('');
@@ -58,7 +58,7 @@ describe('draft-copy: textos en borrador pendientes de Psicología', () => {
     // 107 − 1 + 4. Los avisos de error del registro, el sonido y los tres del umbral solo se conocen.
     // P9 (orientarse en el juego): entran cuatro que se validan: las marcas «sin hablar todavía» y «tu siguiente paso» de la
     // ficha, la etiqueta «Siguiente paso» de «Ir a…» y el botón «Ir allí»: 110 + 4.
-    expect(list.filter(entry => entry.review === 'validar')).toHaveLength(114);
+    expect(list.filter(entry => entry.review === 'validar')).toHaveLength(118);
   });
 
   // req: ETH-01, SIEP-RF-05 (S3-2b)

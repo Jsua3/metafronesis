@@ -75,8 +75,13 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
               </button>
               <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-controls (click)="openControls.emit()"
                 [attr.aria-label]="controlsAriaLabel" [attr.title]="controlsTitle">
-                <app-pixel-icono nombre="ayuda" />
+                <app-pixel-icono nombre="controles" />
                 <span class="hud-action__texto">{{ controlsVisible }}</span>
+              </button>
+              <button type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-help (click)="openHelp.emit()"
+                [attr.aria-label]="helpLabel" [attr.title]="helpVisible">
+                <app-pixel-icono nombre="ayuda" />
+                <span class="hud-action__texto">{{ helpVisible }}</span>
               </button>
               <button type="button" class="hud-action u-tecla u-tecla--icono" [class.hud-action--active]="journalOpen()"
                 (click)="toggleJournal.emit()"
@@ -84,12 +89,13 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                 [title]="journalKey() ? 'Bitácora (J)' : 'Bitácora'">
                 <app-pixel-icono nombre="bitacora" />
               </button>
-              <button #settingsTrigger type="button" class="hud-action u-tecla u-tecla--icono" [class.hud-action--active]="settingsOpen()"
+              <button #settingsTrigger type="button" class="hud-action hud-action--texto u-tecla u-tecla--icono" data-hud-settings [class.hud-action--active]="settingsOpen()"
                 (click)="settingsOpen.set(!settingsOpen())"
-                aria-label="Abrir ajustes del juego" title="Ajustes"
+                [attr.aria-label]="settingsLabel" [attr.title]="settingsVisible"
                 [attr.aria-expanded]="settingsOpen()"
                 [attr.aria-controls]="settingsOpen() ? 'game-settings-menu' : null">
                 <app-pixel-icono nombre="ajustes" />
+                <span class="hud-action__texto">{{ settingsVisible }}</span>
               </button>
               @if (settingsOpen()) {
                 <div #settingsMenu id="game-settings-menu" class="settings-menu" popover="manual"
@@ -365,6 +371,10 @@ export class SimulationHudComponent {
   /** «Texto instantáneo» (P8): las líneas de los diálogos aparecen completas. Lo guarda quien integra el HUD. */
   readonly instantText = input(false);
   /** Textos nuevos de F6 que viven en el registro de borradores (una sola fuente para Psicología). */
+  protected readonly helpVisible = DRAFT_COPY.hudHelp.text;
+  protected readonly helpLabel = DRAFT_COPY.hudHelpLabel.text;
+  protected readonly settingsVisible = DRAFT_COPY.hudSettings.text;
+  protected readonly settingsLabel = DRAFT_COPY.hudSettingsLabel.text;
   protected readonly placesLabel = DRAFT_COPY.placesButtonLabel.text;
   protected readonly placesTitle = DRAFT_COPY.placesDialog.title;
   protected readonly placesVisible = ORIENTATION_COPY.ui.placesVisibleLabel;
