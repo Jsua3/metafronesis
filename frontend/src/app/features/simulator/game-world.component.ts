@@ -109,7 +109,7 @@ import { isCriticalAsset } from './asset-criticality.util';
 import {
   ALTO_CUERPO, MEDIO_CUERPO, Caja as CajaDePlaca, EstadoCamara, Momento, Sujeto,
   avanzarCamara, asentada, comoDibujar, duracionDeViaje, encuadreSinCortes, enViajeDentro, esperaDelGeneral, objetivoCamara, seCruzan,
-  sinSaltos, situarAviso,
+  protegerDePlacas, sinSaltos, situarAviso,
 } from './camara/camara';
 import { fitGameToHost, pixelScaleConfig, watchHostSize } from './pixel-canvas';
 import { PixelRender } from './pixel-render';
@@ -140,7 +140,7 @@ import { DOOR_FALLBACK_HEIGHT, DOOR_SPRITE_FEET_Y, doorHintY, staleSpriteSize, w
 import { npcsDeLaSala } from './caso/npcs-de-sala';
 
 /** Lo que la pantalla le pide a la cámara (bloque M1): explorar, o encuadrar la conversación o el objeto `clave`. */
-export type CameraMoment = { tipo: 'explorar' } | { tipo: 'conversacion' | 'objeto'; clave: string };
+export type CameraMoment = { tipo: 'explorar'; dialogo?: true } | { tipo: 'conversacion' | 'objeto'; clave: string };
 export interface CameraOptions { cercana: boolean; acercarAuto: boolean }
 export interface PlacaDeInterfaz extends CajaDePlaca {
   ubicar?: (posicion: Punto | null) => void;
@@ -299,7 +299,6 @@ const NEAR_RING_COLOR = 0xffffff;
 const STEP_MARK_GLYPH = '▶';
 const STEP_MARK_SIDE_PX = 22;
 const ALCANCE_AL_BORDE_PX = 38;
-const PIE_PARA_ENCUADRAR_CAMA_PX = 42;
 const STEP_MARK_LIFT: Readonly<{ person: number; door: number; object: number }> = { person: 46, door: 52, object: 26 };
 /** Margen (px del mundo) que un rótulo deja al borde de la vista y del indicador de destino fuera de cuadro (P9). */
 const VIEW_EDGE_MARGIN_PX = 6;
@@ -1464,25 +1463,33 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** La reacción, la conversación o el objeto en curso, con los pies de quien corresponda; null si no hay. */
   private closeMomentNow(): Momento | null {
     if (this.camFrameKey) {
-      const de = this.cuerpoVivo(this.camFrameKey) ?? this.focoDelApoyo(this.camFrameKey) ?? this.liveFeetOf(this.camFrameKey);
+      const de = this.cuerpoVivo(this.camFrameKey) ?? this.liveFeetOf(this.camFrameKey);
       if (de) return { tipo: 'reaccion', de };
     }
     if (this.camMoment.tipo !== 'explorar') {
       const { tipo, clave } = this.camMoment;
       const feet = tipo === 'conversacion'
         ? this.cuerpoVivo(clave) ?? this.liveFeetOf(clave)
-        : this.focoDelApoyo(clave) ?? this.feetOf(clave);
+        : this.sujetoDelObjeto(clave);
       if (feet) return this.camMoment.tipo === 'conversacion' ? { tipo: 'conversacion', con: feet } : { tipo: 'objeto', en: feet };
     }
     return null;
   }
 
-  /** La cámara de conversación resta altura al punto de apoyo para centrar el rostro. */
-  private focoDelApoyo(key: string): Punto | null {
+  /** Huella del arte que se está revisando, en su posición dibujada. */
+  private sujetoDelObjeto(key: string): Sujeto | null {
+    const actor = this.actorOf(key);
+    if (!this.disponible(actor)) return null;
     const apoyo = this.apoyosDeLaSala.get(key);
-    if (!apoyo || !this.disponible(this.actorOf(key))) return null;
-    const { x, y } = apoyo.dibujo;
-    return { x, y: y + (apoyo.cama ? PIE_PARA_ENCUADRAR_CAMA_PX : 0) };
+    if (apoyo?.arte) return { ...apoyo.dibujo, cuerpo: { mitad: apoyo.arte.ancho / 2, alto: apoyo.arte.alto } };
+    const sprite = (actor as unknown as Record<string, unknown>)['__artSprite'] as Phaser.GameObjects.Image | undefined;
+    if (sprite) {
+      const { x, y, originY, displayWidth, displayHeight } = sprite;
+      return { x: actor!.x + x, y: actor!.y + y + (1 - originY) * displayHeight,
+        cuerpo: { mitad: displayWidth / 2, alto: displayHeight } };
+    }
+    const pie = this.feetOf(key);
+    return pie && { ...pie, cuerpo: { mitad: 24, alto: 32 } };
   }
 
   /**
@@ -1515,6 +1522,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     };
     const jugador = { x: this.player.x, y: this.player.y };
     const cuerpos = this.cuerposVisibles();
+    const destino = this.nextTargetKey && !this.dimmedKeys.has(this.nextTargetKey)
+      ? this.feetForSafeArea(this.nextTargetKey) : null;
     const calculado = objetivoCamara({
       jugador,
       sala,
@@ -1523,8 +1532,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       cercana: this.camOptions.cercana,
       acercarAuto: this.camOptions.acercarAuto,
       cerca: this.nearestKey ? this.feetForSafeArea(this.nearestKey) : null,
-      destino: this.nextTargetKey && !this.dimmedKeys.has(this.nextTargetKey)
-        ? this.feetForSafeArea(this.nextTargetKey) : null,
+      destino,
       cuerpos,
     }, this.camCut ? null : this.camState);
     const retenido = this.camUltimoObjetivo;
@@ -1552,6 +1560,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       }
       // V5: un objetivo que cambia de golpe a mitad de un viaje (la placa que se esquiva) no se ve como un salto.
       next = sinSaltos(this.camState, next, delta);
+    }
+    if (this.camMoment.tipo === 'explorar' && this.camCoveredCss === 0) {
+      const cama = this.nextTargetKey && this.apoyosDeLaSala.get(this.nextTargetKey)?.cama;
+      next = protegerDePlacas(next, vista, jugador, cama ? destino : null);
     }
     this.camCut = false;
     this.camMomentType = momento.tipo;
@@ -2887,6 +2899,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     }
     const flecha = this.edgeArrow;
     if (flecha?.visible) colocar(flecha, flecha.x, flecha.y);
+    const anillo = this.targetRing?.ring;
+    const puntero = this.stepMark;
+    if (this.nextTargetKey && anillo?.visible && puntero) {
+      colocar(puntero, anillo.x - STEP_MARK_SIDE_PX, anillo.y - this.stepMarkLift(this.nextTargetKey));
+    }
   }
 
   /** Pone (x, y) del destino en `edgeXY` sin asignar nada; false si no está en la sala. */
@@ -3607,7 +3624,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private feetForSafeArea(key: string): Sujeto | null {
     const objeto = this.markerData.get(key);
     if (objeto?.type === 'PERSON') return this.cuerpoVivo(key);
-    if (this.apoyosDeLaSala.has(key)) return this.focoDelApoyo(key);
+    if (this.apoyosDeLaSala.has(key)) return this.sujetoDelObjeto(key);
     const pies = this.feetOf(key);
     const rotulo = this.markerLabels.get(key);
     if (!pies || !rotulo?.alpha) return pies;
@@ -4358,9 +4375,12 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       }
     }
 
-    const picked = pickNearby(list, this.nearestKey, this.pick);
-    const primaryKey = picked.primary?.key ?? null;
-    const alsoKey = picked.secondary?.key ?? null;
+    const enDialogo = this.camMoment.tipo !== 'explorar' || this.camMoment.dialogo || this.camFrameKey !== null;
+    const interlocutor = this.camMoment.tipo === 'conversacion' ? this.camMoment.clave : this.camFrameKey;
+    const picked = enDialogo ? null : pickNearby(list, this.nearestKey, this.pick);
+    const primaryKey = enDialogo && interlocutor && this.cuerpoVivo(interlocutor)
+      ? interlocutor : picked?.primary?.key ?? null;
+    const alsoKey = picked?.secondary?.key ?? null;
     selectRevealed(list, target, primaryKey, this.dimmedKeys, this.compactLabels ? 1 : 2, this.revealScratch);
     const revealChanged = !sameKeys(this.revealScratch, this.revealed);
     if (revealChanged) {
@@ -4375,7 +4395,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.targetRing!.halo.setPosition(targetX, targetY);
       ring.setPosition(targetX, targetY);
     }
-    if (targetSeen && this.stepMark && (this.stepMark.x !== targetX - STEP_MARK_SIDE_PX || this.stepMark.y !== targetY - STEP_MARK_LIFT.person)) {
+    if (targetSeen && this.stepMark && !this.camState) {
       this.stepMark.setPosition(targetX - STEP_MARK_SIDE_PX, targetY - STEP_MARK_LIFT.person);
     }
     const near = this.nearRing?.ring;
@@ -4399,7 +4419,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     for (let i = 0; i < this.followLabels.length; i++) this.placeLabel(this.followLabels[i]);
     // Play blip only when *entering* range (the primary changes to a key), not on every frame.
     // suppressSound=true on spawn/world-switch to avoid a false-positive blip on load.
-    if (primaryChanged && primaryKey && !this.callbacks.reduceMotion && !this.callbacks.sfxMuted && !suppressSound) {
+    if (primaryChanged && primaryKey && !enDialogo && !this.callbacks.reduceMotion && !this.callbacks.sfxMuted && !suppressSound) {
       this.sound.play('proximity-blip', { volume: 0.45 });
     }
   }

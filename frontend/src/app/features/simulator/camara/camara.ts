@@ -66,7 +66,7 @@ export type Momento =
   /** La reacción a una respuesta: la cámara va a quien reacciona (`de` son sus pies). */
   | { tipo: 'reaccion'; de: Sujeto }
   /** Revisar un objeto: `en` es su base. */
-  | { tipo: 'objeto'; en: Punto };
+  | { tipo: 'objeto'; en: Sujeto };
 
 export interface EntradaCamara {
   /** Pies del personaje del estudiante. */
@@ -170,15 +170,15 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
     return { centro, zoom };
   }
   const principales = [jugador];
-  const interlocutor = momento.tipo === 'conversacion' ? momento.con : momento.tipo === 'reaccion' ? momento.de : null;
-  if (interlocutor) principales.push(interlocutor);
+  const activo = momento.tipo === 'conversacion' ? momento.con
+    : momento.tipo === 'reaccion' ? momento.de : momento.tipo === 'objeto' ? momento.en : null;
+  if (activo) principales.push(activo);
   const opcionales: Sujeto[] = [];
-  for (const pie of [e.destino, e.cerca, momento.tipo === 'objeto' ? momento.en : null]) {
+  for (const pie of [e.destino, e.cerca]) {
     if (!pie) continue;
     const igual = (p: Punto) => mismoPunto(p, pie);
     const i = principales.findIndex(igual);
-    if (i >= 0) principales[i] = { ...pie, ...principales[i] };
-    else if (!opcionales.some(igual)) opcionales.push(pie);
+    if (i < 0 && !opcionales.some(igual)) opcionales.push(pie);
   }
   const resto = (e.cuerpos ?? []).filter(pie => !principales.some(p => mismoPunto(p, pie))
     && !opcionales.some(p => mismoPunto(p, pie)));
@@ -188,7 +188,13 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
     const encuadre = centroLibre(base, k, vista, principales, opcionales, resto);
     if (encuadre) return { centro: encuadre, zoom: k };
   }
-  return { centro: esquivarPlacas(centro, zoom, vista, principales), zoom };
+  // Si alguien más de la sala impide el encuadre, aún pueden caber la jugadora y la interacción.
+  const abierto = centroBase(1, foco, pies, e, previo);
+  const encuadre = centroLibre(abierto, 1, vista, principales, []);
+  if (encuadre) return { centro: encuadre, zoom: 1 };
+  const soloJugadora = centroLibre(centro, zoom, vista, [jugador], []);
+  return soloJugadora ? { centro: soloJugadora, zoom }
+    : { centro: esquivarPlacas(abierto, 1, vista, [jugador]), zoom: 1 };
 }
 
 const mismoPunto = (a: Punto, b: Punto) => a.x === b.x && a.y === b.y;
@@ -227,6 +233,18 @@ export function esquivarPlacas(centro: Punto, zoom: number, vista: Vista, cuerpo
     if (salida) return salida;
   }
   return centro;
+}
+
+/** Si reaparece una placa durante un viaje, corrige también el plano que se dibuja en ese cuadro. */
+export function protegerDePlacas(estado: EstadoCamara, vista: Vista, jugador: Sujeto, destino: Sujeto | null): EstadoCamara {
+  const { centro, zoom } = estado;
+  const placas = vista.placas ?? [];
+  if (!placas.length) return estado;
+  const pantalla = { x: 0, y: 0, ancho: vista.ancho, alto: vista.alto };
+  const cuerpos = [jugador];
+  if (destino && seCruzan(huella(destino, centro, zoom, vista)[0], pantalla)) cuerpos.push(destino);
+  const tapado = cuerpos.some(pie => placas.some(placa => seCruzan(huella(pie, centro, zoom, vista)[0], placa)));
+  return tapado ? { centro: esquivarPlacas(centro, zoom, vista, cuerpos), zoom } : estado;
 }
 
 function huella(pie: Sujeto, centro: Punto, zoom: number, vista: Vista): Caja[] {

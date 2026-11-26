@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import type { MapObjectState, SimulationWorldState } from '../../core/models/simulation.model';
 import type { CharacterVisual } from '../character/kit/character-visual.resolver';
 import { kitFrameIndex } from '../character/kit/kit-phaser';
+import { seCruzan } from './camara/camara';
+import type { Caja, EstadoCamara, Sujeto } from './camara/camara';
 import { actorDepth } from './depth-sort.util';
 import { DataDrivenWorldScene } from './game-world.component';
 import { apoyoDeMueble, bordesDelMueble, cobijaDeCama, pisaElMueble } from './sala/apoyos-de-mueble';
@@ -39,20 +41,22 @@ const informe = objeto('Informe', 'OBJECT', 336, 282, { apoyo: 'sobre', mueble: 
 interface Dibujo {
   x: number; y: number; alpha: number; visible: boolean; depth: number;
   frame: { name: string }; hijos: Dibujo[];
-  setCrop: ReturnType<typeof vi.fn>; setPosition: ReturnType<typeof vi.fn>;
+  displayWidth: number; displayHeight: number; originX: number; originY: number;
+  setCrop: ReturnType<typeof vi.fn>; setPosition: ReturnType<typeof vi.fn>; setText: ReturnType<typeof vi.fn>;
 }
 
 function dibujo(x = 0, y = 0, hijos: Dibujo[] = []): Dibujo {
   const nodo = {
     x, y, angle: 0, visible: true, alpha: 1, scene: {}, displayWidth: 50, displayHeight: 14, depth: 0,
-    frame: { name: '0' }, hijos,
+    frame: { name: '0' }, hijos, originX: 0.5, originY: 0.5,
     setPosition: vi.fn((nx: number, ny: number) => { nodo.x = nx; nodo.y = ny; return nodo; }),
     setAlpha: vi.fn((alpha: number) => { nodo.alpha = alpha; return nodo; }),
     setDepth: vi.fn((depth: number) => { nodo.depth = depth; return nodo; }),
     setVisible: vi.fn((visible: boolean) => { nodo.visible = visible; return nodo; }),
     setFrame: vi.fn((frame: number) => { nodo.frame.name = String(frame); return nodo; }),
     setY: vi.fn((ny: number) => { nodo.y = ny; return nodo; }),
-    setOrigin: vi.fn(() => nodo), setStrokeStyle: vi.fn(() => nodo), setScale: vi.fn(() => nodo),
+    setOrigin: vi.fn((ox: number, oy: number) => { nodo.originX = ox; nodo.originY = oy; return nodo; }),
+    setStrokeStyle: vi.fn(() => nodo), setScale: vi.fn(() => nodo), setWordWrapWidth: vi.fn(() => nodo),
     setCrop: vi.fn(() => nodo), setFlipX: vi.fn(() => nodo), setText: vi.fn(() => nodo),
     play: vi.fn(() => nodo),
   };
@@ -79,6 +83,7 @@ function salaMinima(soporte: MuebleDeSala, sujeto: MapObjectState, colisiones: S
     targetRing: { ring: Dibujo };
     nearRing: { ring: Dibujo };
     markerPrompt: Dibujo;
+    stepMark: Dibujo;
     personWalkers: Map<string, unknown>;
     apoyosDeLaSala: Map<string, { llegada: { x: number; y: number } }>;
     prepararApoyos(muebles: MuebleDeSala[]): void;
@@ -87,6 +92,12 @@ function salaMinima(soporte: MuebleDeSala, sujeto: MapObjectState, colisiones: S
     respirarEnCama(tiempo: number): void;
     finishWalkGoal(outcome: 'arrived'): void;
     wouldCollide(x: number, y: number): boolean;
+    camState: EstadoCamara;
+    roomSize: { width: number; height: number };
+    stepCamera(delta: number): void;
+    cuerpoVivo(key: string): Sujeto | null;
+    cuerpoEnPantalla(pie: Sujeto, zoom: number): Caja;
+    proyectarAviso(pie: Sujeto): Sujeto;
   };
   interno.world = {
     map: { key: 'ronda5-sala-minima', width: 960, height: 528 },
@@ -153,6 +164,67 @@ describe('metadatos de apoyo de muebles', () => {
 });
 
 describe('sala con muebles de apoyo', () => {
+  it('al reaparecer la ficha durante el viaje, conserva visibles a la jugadora y a Yuliana en cama', () => {
+    const { escena, interno } = salaMinima(cama, persona, [], { x: 303, y: 351 });
+    Object.assign(escena, {
+      cameras: { main: { width: 1366, height: 768, zoom: 1, fadeEffect: { isRunning: false },
+        centerOn: vi.fn(), setZoom: vi.fn() } },
+      scale: { zoom: 1, displayScale: { x: 1 } },
+    });
+    interno.roomSize = { width: 1200, height: 528 };
+    escena.setOrientation({ nextTargetKey: persona.key, doorStates: {}, dimmedKeys: new Set() });
+    escena.setCameraMoment({ tipo: 'conversacion', clave: persona.key }, 393, 61);
+    interno.stepCamera(16);
+    const ficha = { x: 12, y: 12, ancho: 440, alto: 314 };
+    const moment = { tipo: 'explorar' } as const;
+    // La posición intermedia del viaje deja a las dos bajo la ficha recién abierta.
+    interno.camState = { centro: { x: 600, y: 430 }, zoom: 1.14 };
+    escena.setCameraPlacas(() => [ficha]);
+    escena.setCameraMoment(moment, 0);
+    interno.stepCamera(16);
+    for (const pie of [interno.player, interno.cuerpoVivo(persona.key)!]) {
+      expect(seCruzan(ficha, interno.cuerpoEnPantalla(pie, interno.camState.zoom))).toBe(false);
+    }
+  });
+
+  it('esquiva el cuerpo de la jugadora al colocar el puntero junto a la cama', () => {
+    const { escena, interno } = salaMinima(cama, persona, [], { x: 303, y: 351 });
+    Object.assign(escena, {
+      cameras: { main: { width: 1366, height: 768, zoom: 1, fadeEffect: { isRunning: false },
+        centerOn: vi.fn(), setZoom: vi.fn() } },
+      scale: { zoom: 1, displayScale: { x: 1 } },
+    });
+    escena.setOrientation({ nextTargetKey: persona.key, doorStates: {}, dimmedKeys: new Set() });
+    interno.stepCamera(16);
+    const marca = interno.stepMark;
+    const zoom = interno.camState.zoom;
+    const ancla = interno.proyectarAviso(marca);
+    const ancho = marca.displayWidth * zoom;
+    const alto = marca.displayHeight * zoom;
+    const puntero = { x: ancla.x - ancho * marca.originX, y: ancla.y - alto * marca.originY, ancho, alto };
+    expect(marca.visible).toBe(true);
+    expect(seCruzan(puntero, interno.cuerpoEnPantalla(interno.player, zoom))).toBe(false);
+  });
+
+  it('la cercanía sigue a la interlocutora mientras el diálogo está abierto y vuelve al objeto al cerrar', () => {
+    const { escena, interno, callbacks } = salaMinima(escritorio, informe, [], { x: 336, y: 348 });
+    const interlocutora = { ...persona, x: 370, y: 365, metadata: { recipeId: 'sobreviviente' } };
+    interno.createMarker(interlocutora);
+    interno.updateNearestInteraction(true);
+    expect(callbacks.onProximity).toHaveBeenLastCalledWith(expect.objectContaining({ key: informe.key }));
+
+    escena.setCameraMoment({ tipo: 'conversacion', clave: interlocutora.key }, 0);
+    interno.updateNearestInteraction(true);
+    expect(callbacks.onProximity).toHaveBeenLastCalledWith(expect.objectContaining({ key: interlocutora.key }));
+    expect(interno.nearRing.ring).toMatchObject({ x: interlocutora.x });
+    expect(interno.markerPrompt.setText).toHaveBeenLastCalledWith('E · Hablar con Yuliana');
+    expect(callbacks.onProximityAlso).toHaveBeenLastCalledWith(null);
+
+    escena.setCameraMoment({ tipo: 'explorar' }, 0);
+    interno.updateNearestInteraction(true);
+    expect(callbacks.onProximity).toHaveBeenLastCalledWith(expect.objectContaining({ key: informe.key }));
+  });
+
   it('recorta a Yuliana de frente, conserva su visual y su interacción, y deja quieto el cuerpo', async () => {
     const { escena, interno, callbacks, sprite, visual } = salaMinima(cama, persona);
     const marker = interno.markers.get(persona.key)!;

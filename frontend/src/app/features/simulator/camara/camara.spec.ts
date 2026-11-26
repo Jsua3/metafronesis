@@ -262,6 +262,23 @@ describe('camara: zona segura de las placas (bloque U1)', () => {
     }
   });
 
+  it('abre el plano para conservar entero el objeto en uso junto a la jugadora', () => {
+    const jugador = { x: 550, y: 420 };
+    const libreta = { x: 600, y: 320, cuerpo: { mitad: 20, alto: 20 } };
+    const v = vista(1366, 768, 1, 393, 61);
+    const e = objetivoCamara(entrada({ jugador, destino: libreta, momento: { tipo: 'objeto', en: libreta }, vista: v }), null);
+    const r = enPantalla(jugador, e, v);
+    const x = (libreta.x - libreta.cuerpo.mitad - e.centro.x) * e.zoom + v.ancho / 2;
+    const y = (libreta.y - libreta.cuerpo.alto - e.centro.y) * e.zoom + v.alto / 2;
+    expect(e.zoom).toBe(2);
+    expect(x).toBeGreaterThanOrEqual(0);
+    expect(x + 2 * libreta.cuerpo.mitad * e.zoom).toBeLessThanOrEqual(v.ancho);
+    expect(y).toBeGreaterThanOrEqual(61);
+    expect(y + libreta.cuerpo.alto * e.zoom).toBeLessThanOrEqual(375);
+    expect(r.y).toBeGreaterThanOrEqual(61);
+    expect(r.y + r.alto).toBeLessThanOrEqual(375);
+  });
+
   it('aparta del pie el rótulo y la acción de una herramienta aunque su sprite ya quede libre', () => {
     const jugador = { x: 270, y: 425 };
     const destino = { x: 270, y: 485, rotulo: { ancho: 190, alto: 70, separacion: 27 } };

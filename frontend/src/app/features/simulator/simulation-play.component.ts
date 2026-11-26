@@ -1470,7 +1470,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (dialogo && !interaction && dialogo.key.startsWith('npc-')) {
       return { tipo: 'conversacion', clave: `${NPC_KEY_PREFIX}${dialogo.key.slice('npc-'.length)}` };
     }
-    if (!dialogo || !interaction) return { tipo: 'explorar' };
+    if (!dialogo) return { tipo: 'explorar' };
+    if (!interaction) return { tipo: 'explorar', dialogo: true };
     const persona = interaction.type === 'PERSON' || interaction.key.startsWith('npc:');
     return { tipo: persona ? 'conversacion' : 'objeto', clave: interaction.key };
   });
