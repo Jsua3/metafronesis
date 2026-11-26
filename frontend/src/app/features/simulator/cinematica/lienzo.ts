@@ -24,6 +24,7 @@ import { cuartoEncendido, hazDeBaliza, reflejoDeVidrio, resplandor, vinetaTramad
 import { ALTO, SEAM } from '../sala/geometria';
 import type { ActorEnCuadro, CuadroDeCinematica, MuebleEnCuadro } from './escenas';
 import type { PlanoLeido } from './lectura';
+import { LienzoDeBurbujas } from './burbujas';
 
 /** Lo que mide la vista en píxeles del arte y a cuántos píxeles físicos equivale cada uno. */
 export interface MedidaDeVista {
@@ -124,8 +125,16 @@ interface DecoradoListo {
   mascara: HTMLCanvasElement | null;
 }
 
+interface Proyeccion {
+  dx: number;
+  dy: number;
+  ix: number;
+  iy: number;
+}
+
 export class LienzoDeCinematica {
   private readonly ctx: CanvasRenderingContext2D | null;
+  private readonly burbujas: LienzoDeBurbujas | null;
   private medida: MedidaDeVista = { k: 1, dpr: 1, ancho: 640, alto: 268 };
   private readonly decorados = new Map<ClaveDeDecorado, DecoradoListo>();
   private readonly hojas = new Map<string, Hojas>();
@@ -141,7 +150,7 @@ export class LienzoDeCinematica {
   private forma: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null;
   private readonly preparacion = new AbortController();
 
-  constructor(private readonly canvas: HTMLCanvasElement, private readonly base = '') {
+  constructor(private readonly canvas: HTMLCanvasElement, private readonly base = '', capaDeBurbujas?: HTMLCanvasElement) {
     let ctx: CanvasRenderingContext2D | null = null;
     try {
       ctx = canvas.getContext('2d', { alpha: false });
@@ -149,6 +158,7 @@ export class LienzoDeCinematica {
       ctx = null;
     }
     this.ctx = ctx;
+    this.burbujas = ctx && capaDeBurbujas ? new LienzoDeBurbujas(capaDeBurbujas) : null;
     if (ctx) ctx.imageSmoothingEnabled = false;
   }
 
@@ -256,7 +266,8 @@ export class LienzoDeCinematica {
   }
 
   /** Ajusta la resolución del lienzo a la vista (más un píxel de margen por lado para el paneo suave). */
-  ajustar(medida: MedidaDeVista): void {
+  ajustar(medida: MedidaDeVista, anchoFisico = medida.ancho * medida.k, altoFisico = medida.alto * medida.k): void {
+    this.burbujas?.ajustar(anchoFisico, altoFisico, medida.dpr);
     if (this.preparacion.signal.aborted) return;
     const w = medida.ancho + 2, h = medida.alto + 2;
     const mismoTamano = this.capa !== null && this.canvas.width === w && this.canvas.height === h && this.medida.ancho === medida.ancho;
@@ -282,16 +293,25 @@ export class LienzoDeCinematica {
    */
   pintar(actual: CuadroDeCinematica, anterior: CuadroDeCinematica | null, mezcla: number): { dx: number; dy: number } {
     if (!this.ctx || this.preparacion.signal.aborted) return { dx: 0, dy: 0 };
+    let proyeccion: Proyeccion;
     if (anterior && mezcla < 1 && this.capa) {
       this.pintarCuadro(this.ctx, anterior);
-      const fraccion = this.pintarCuadro(this.capa.ctx, actual);
+      proyeccion = this.pintarCuadro(this.capa.ctx, actual);
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.globalAlpha = Math.max(0, mezcla);
       this.ctx.drawImage(this.capa.canvas, 0, 0);
       this.ctx.globalAlpha = 1;
-      return fraccion;
+    } else {
+      proyeccion = this.pintarCuadro(this.ctx, actual);
     }
-    return this.pintarCuadro(this.ctx, actual);
+    const { dx, dy, ix, iy } = proyeccion;
+    const { k, dpr } = this.medida;
+    // El margen y el desplazamiento CSS del decorado también rigen para el ancla de la burbuja.
+    this.burbujas?.pintar(actual.burbuja, {
+      x: 1 - ix - Math.round((1 + dx) * k) / k,
+      y: 1 - iy - Math.round((1 + dy) * k) / k,
+    }, actual.camara.zoom, k, dpr);
+    return { dx, dy };
   }
 
   destruir(): void {
@@ -306,17 +326,17 @@ export class LienzoDeCinematica {
 
   // ── Un cuadro ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
-  private pintarCuadro(ctx: CanvasRenderingContext2D, cuadro: CuadroDeCinematica): { dx: number; dy: number } {
+  private pintarCuadro(ctx: CanvasRenderingContext2D, cuadro: CuadroDeCinematica): Proyeccion {
     const W = this.medida.ancho + 2, H = this.medida.alto + 2;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = NEGRO;
     ctx.fillRect(0, 0, W, H);
-    if (cuadro.decorado === 'negro') return { dx: 0, dy: 0 };
+    if (cuadro.decorado === 'negro') return { dx: 0, dy: 0, ix: 0, iy: 0 };
     if (cuadro.decorado === 'titulo') {
       if (this.vineta) ctx.drawImage(this.vineta, 0, 0);
-      return { dx: 0, dy: 0 };
+      return { dx: 0, dy: 0, ix: 0, iy: 0 };
     }
     const clave = `${cuadro.decorado}:${cuadro.momento}` as ClaveDeDecorado;
     const listo = this.decorados.get(clave) ?? null;
@@ -338,13 +358,16 @@ export class LienzoDeCinematica {
       ...cuadro.muebles.map(mueble => ({ y: mueble.y, mueble })),
     ].sort((a, b) => a.y - b.y);
     for (const cosa of cosas) {
-      if ('actor' in cosa) this.pintarActor(ctx, cosa.actor, listo, cuadro.momento);
-      else this.pintarMueble(ctx, cosa.mueble, listo);
+      if ('actor' in cosa) {
+        const actor = cosa.actor;
+        const sacudida = cuadro.burbuja?.actor === actor ? cuadro.burbuja.sacudida : 0;
+        this.pintarActor(ctx, sacudida ? { ...actor, x: actor.x + sacudida } : actor, listo, cuadro.momento);
+      } else this.pintarMueble(ctx, cosa.mueble, listo);
     }
     this.pintarLuces(ctx, cuadro, izq, vw);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (this.vineta) ctx.drawImage(this.vineta, 0, 0);
-    return { dx: px - ix, dy: py - iy };
+    return { dx: px - ix, dy: py - iy, ix, iy };
   }
 
   private pintarRespaldo(ctx: CanvasRenderingContext2D, clave: ClaveDeDecorado, ancho: number, alto: number): void {
@@ -377,7 +400,12 @@ export class LienzoDeCinematica {
     // Las siluetas, negras con un borde apenas cálido: la luz está detrás de ellas.
     for (const s of ventana.siluetas) {
       const figura = this.silueta(s, '#120c0e');
-      if (figura) c.drawImage(figura, s.x - v.x - FRAME.pivotX, s.y - v.y - FRAME.pivotY);
+      const sacudida = cuadro.burbuja?.actor === s ? cuadro.burbuja.sacudida : 0;
+      const x = s.x - v.x + sacudida, y = s.y - v.y;
+      if (figura) {
+        c.drawImage(figura, x - FRAME.pivotX, y - FRAME.pivotY);
+        if (s.conTelefono) this.manoAlTelefono(c, x, y, s.vista === 'right' || s.vista === 'down-right');
+      }
     }
     // El reflejo del vidrio: dos rayas diagonales de píxel, apenas visibles.
     const reflejo = this.capa_(`reflejo:${v.w}x${v.h}`, () => reflejoDeVidrio(v.w, v.h));
@@ -394,6 +422,24 @@ export class LienzoDeCinematica {
       ctx.globalCompositeOperation = 'source-over';
     }
     ctx.globalAlpha = 1;
+  }
+
+  /** Teléfono vertical junto al oído y antebrazo levantado, dentro de la máscara del cristal. */
+  private manoAlTelefono(c: CanvasRenderingContext2D, x: number, y: number, aLaDerecha: boolean): void {
+    c.save();
+    c.translate(x, y);
+    c.scale(aLaDerecha ? -1 : 1, 1);
+    c.fillStyle = '#120c0e';
+    c.fillRect(-17, -60, 5, 10);
+    c.fillRect(-16, -52, 6, 5);
+    c.fillRect(-16, -48, 4, 11);
+    c.fillRect(-15, -39, 9, 5);
+    c.fillStyle = '#9a704d';
+    c.fillRect(-17, -60, 1, 8);
+    c.fillRect(-16, -60, 3, 1);
+    c.fillStyle = '#574136';
+    c.fillRect(-15, -57, 2, 4);
+    c.restore();
   }
 
   /** El cuadro de una persona del kit como figura de un solo color (silueta o sombra). */

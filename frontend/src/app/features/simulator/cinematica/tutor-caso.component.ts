@@ -77,7 +77,7 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
             <app-safe-exit-button variante="placa" [pausing]="pausing()" (pause)="salidaSegura.emit()" />
             <span class="tutor__hueco"></span>
             @if (indice() > 0) {
-              <button #volver type="button" class="u-boton tutor__boton" (click)="anterior()">Anterior</button>
+              <button #volver type="button" class="u-ficha tutor__boton" (click)="anterior()">Anterior</button>
             }
             <button #continuar type="button" class="u-ficha u-ficha--primaria tutor__boton tutor__seguir" cdkFocusInitial (click)="seguir()">
               {{ ultima() ? 'Continuar' : 'Seguir' }}
@@ -166,8 +166,8 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
       padding: 10px 2px 0;
     }
     .tutor__hueco { flex: 1; }
-    .tutor__boton { min-height: 44px; font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.98)); }
-    .tutor__seguir { padding: 0 calc(10 * var(--pixel-px)); }
+    .tutor__boton { min-height: 44px; padding: 0 calc(5 * var(--pixel-px)); font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.98)); }
+    .tutor__seguir { padding-inline: calc(10 * var(--pixel-px)); }
     :host(.tutor--reducido) .tutor__tarjeta { animation-name: tutor-funde; }
     :host(.tutor--reducido) .tutor__linea, :host(.tutor--reducido) .tutor__paso { animation: none; }
     @keyframes tutor-funde { from { opacity: 0; } }

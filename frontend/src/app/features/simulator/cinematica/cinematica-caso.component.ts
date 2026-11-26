@@ -11,7 +11,7 @@ import { isScrollRegionTarget } from '../keyboard-focus.util';
 import { SafeExitButtonComponent } from '../safe-exit-button.component';
 import { cuadroDelPlano, fundidoHacia } from './escenas';
 import type { CuadroDeCinematica } from './escenas';
-import { duracionConNombre } from './lectura';
+import { duracionConNombre, programarBurbujas } from './lectura';
 import type { CinematicaLeida, PlanoLeido } from './lectura';
 import { LienzoDeCinematica, medirVista } from './lienzo';
 import { RelojDeCinematica } from './reproductor';
@@ -29,11 +29,16 @@ const FUNDIDO_FINAL_MS = 700;
 const SUBTITULO_DESDE_MS = 280;
 const SUBTITULO_APARECE_MS = 1100;
 
+const VOCES: Readonly<Record<string, string>> = {
+  hombre: 'El hombre', mujer: 'La mujer', 'mujer-telefono': 'La mujer', nina: 'La niña', telefono: 'Voz al teléfono',
+  vecina: 'La vecina', 'abuela-familia': 'La abuela', 'hermano-mayor': 'El hermano mayor',
+  'hermano-adolescente': 'El hermano adolescente',
+};
 /**
  * La cinemática del caso (contrato del caso insignia, §1): una capa a pantalla completa sobre el mundo, con franjas de cine,
  * los planos que manda el caso pintados con el arte del juego (`lienzo.ts`) y sus subtítulos abajo, grandes y legibles.
  *
- * - No trae texto de ningún caso: todo sale de `cinematica` (y `{nombre}` se pone aquí, al pintar).
+ * - La narración y los parlamentos salen de `cinematica` (y `{nombre}` se pone aquí, al pintar).
  * - Se maneja con el teclado: Enter o → pasan al plano siguiente, ← vuelve al anterior, Espacio pausa o sigue. Esc NO pausa el
  *   caso de una vez: la primera pulsación detiene la cinemática (y deja a la vista «Salida segura»); la segunda, con la
  *   cinemática ya detenida, es la salida segura. Así Esc nunca saca a nadie sin querer, y la salida queda a dos pulsaciones.
@@ -70,19 +75,20 @@ const SUBTITULO_APARECE_MS = 1100;
         </p>
         </div>
         <div class="cine__controles">
-          <button type="button" class="cine__boton u-boton" [attr.aria-pressed]="pausada()" (click)="alternarPausa()">
+          <button type="button" class="cine__boton u-ficha u-ficha--primaria" [attr.aria-pressed]="pausada()" (click)="alternarPausa()">
             {{ pausada() ? 'Seguir' : 'Pausa' }}
           </button>
-          <button type="button" class="cine__boton u-boton" (click)="saltar()">Saltar</button>
+          <button type="button" class="cine__boton u-ficha" (click)="saltar()">Saltar</button>
           <app-safe-exit-button variante="placa" data-hide-key [pausing]="pausing()" (pause)="salidaSegura.emit()" />
         </div>
       </div>
 
       <div class="cine__banda" #banda (click)="clicEnBanda($event)">
         <canvas #lienzo class="cine__lienzo" aria-hidden="true"></canvas>
+        <canvas #burbujas class="cine__burbujas" aria-hidden="true"></canvas>
         @if (esTitulo() && visible()) {
           <div class="cine__titulo cine__lectura" role="region" aria-label="Título del plano" tabindex="0">
-            <span class="cine__titulo-texto">
+            <span class="cine__titulo-texto" aria-hidden="true">
               @for (palabra of palabras(); track $index) {
                 <span class="cine__palabra" [style.animation-delay.ms]="retrasoDe($index)">{{ palabra }} </span>
               }
@@ -95,16 +101,17 @@ const SUBTITULO_APARECE_MS = 1100;
         <div class="cine__velo" [class.cine__velo--cerrado]="cerrando()" aria-hidden="true"></div>
       </div>
 
-      <div class="cine__abajo" #lectura
-        [attr.role]="!esTitulo() && visible() && texto() ? 'region' : null"
-        [attr.aria-label]="!esTitulo() && visible() && texto() ? 'Subtítulo del plano' : null"
-        [attr.tabindex]="!esTitulo() && visible() && texto() ? 0 : null">
+      <div class="cine__pie">
         @if (!esTitulo() && visible() && palabras().length) {
-          <p class="cine__subtitulo">
-            @for (palabra of palabras(); track $index) {
-              <span class="cine__palabra" [style.animation-delay.ms]="retrasoDe($index)">{{ palabra }} </span>
-            }
-          </p>
+          <div class="cine__marco u-placa">
+            <div class="cine__abajo" #lectura role="region" aria-label="Subtítulo del plano" tabindex="0">
+              <p class="cine__subtitulo" aria-hidden="true">
+                @for (palabra of palabras(); track $index) {
+                  <span class="cine__palabra" [style.animation-delay.ms]="retrasoDe($index)">{{ palabra }} </span>
+                }
+              </p>
+            </div>
+          </div>
         }
       </div>
       <p id="cine-texto" class="ds-sr-only">
@@ -154,7 +161,10 @@ const SUBTITULO_APARECE_MS = 1100;
     :host(.cine--pausada) .cine__plano-lleno { animation-play-state: paused; }
     :host(.cine--reducida) .cine__plano-lleno { animation: none; }
     .cine__controles { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
-    .cine__boton { font-family: var(--pixel-f-texto); font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.95)); }
+    .cine__boton {
+      min-height: 44px; padding: 0 calc(5 * var(--pixel-px)); white-space: nowrap;
+      font-family: var(--pixel-f-texto); font-size: max(var(--pixel-letra-minima), calc(var(--pixel-tam) * 0.95));
+    }
 
     .cine__banda {
       position: relative; place-self: center; overflow: hidden;
@@ -173,6 +183,7 @@ const SUBTITULO_APARECE_MS = 1100;
       image-rendering: pixelated; image-rendering: crisp-edges;
       transform-origin: 0 0;
     }
+    .cine__burbujas { position: absolute; inset: 0; pointer-events: none; image-rendering: pixelated; }
     .cine__velo {
       position: absolute; inset: 0; pointer-events: none; background: var(--pixel-cine);
       opacity: 0; transition: opacity 700ms var(--ds-ease-out);
@@ -185,21 +196,27 @@ const SUBTITULO_APARECE_MS = 1100;
       pointer-events: none;
     }
 
+    .cine__pie {
+      display: grid; place-items: center; min-height: 0;
+      padding: clamp(4px, 1vh, 10px) clamp(10px, 4vw, 48px);
+    }
+    .cine__marco {
+      display: flex; flex-direction: column;
+      width: min(100%, 880px); max-height: 100%; min-height: 0;
+    }
     .cine__abajo {
-      min-height: 0;
+      min-height: 0; padding: clamp(4px, 1.15vh, 14px) clamp(8px, 2vw, 26px);
       overflow: auto;
       overscroll-behavior: contain;
-      padding: clamp(10px, 2.2vh, 24px) clamp(14px, 5vw, 64px) clamp(8px, 2vh, 18px);
     }
     .cine__subtitulo, .cine__titulo {
       margin: 0; text-align: center; text-wrap: balance; overflow-wrap: anywhere;
       font-family: var(--pixel-f-texto); font-weight: 600; letter-spacing: .01em;
       color: var(--pixel-tinta);
-      text-shadow: 0 2px 0 var(--pixel-cine), 0 0 12px var(--pixel-cine);
     }
     .cine__subtitulo {
-      max-width: 46ch; margin-inline: auto;
-      font-size: max(18px, calc(var(--pixel-tam) * 1.55));
+      max-width: 66ch; margin-inline: auto;
+      font-size: clamp(calc(var(--pixel-letra-minima) * 1.34), 1.45vw, calc(var(--pixel-tam) * 1.56));
       line-height: 1.45;
     }
     .cine__titulo {
@@ -258,6 +275,7 @@ export class CinematicaCasoComponent {
   private readonly zone = inject(NgZone);
   private readonly bandaRef = viewChild<ElementRef<HTMLElement>>('banda');
   private readonly lienzoRef = viewChild<ElementRef<HTMLCanvasElement>>('lienzo');
+  private readonly burbujasRef = viewChild<ElementRef<HTMLCanvasElement>>('burbujas');
   private readonly dialogoRef = viewChild<ElementRef<HTMLElement>>('dialogo');
   private readonly lecturaRef = viewChild<ElementRef<HTMLElement>>('lectura');
 
@@ -274,6 +292,10 @@ export class CinematicaCasoComponent {
   /** Sube cada vez que se entra a un plano (también al mismo, con ←): rehace la barra de progreso. */
   readonly vuelta = signal(0);
   private readonly plano = computed<PlanoLeido | null>(() => this.planos()[this.indice()] ?? null);
+  private readonly intervenciones = computed(() => {
+    const plano = this.plano();
+    return plano ? programarBurbujas(plano, this.nombre()) : [];
+  });
   readonly esTitulo = computed(() => this.plano()?.escena === 'titulo');
   readonly texto = computed(() => conNombre(this.plano()?.subtitulo ?? '', this.nombre()));
   readonly palabras = computed(() => this.texto().split(/\s+/).filter(Boolean));
@@ -322,7 +344,7 @@ export class CinematicaCasoComponent {
     const banda = this.bandaRef()?.nativeElement;
     const planos = this.planos();
     this.reloj = new RelojDeCinematica(planos.map(p => p.duracionMs));
-    if (canvas) this.lienzo = new LienzoDeCinematica(canvas);
+    if (canvas) this.lienzo = new LienzoDeCinematica(canvas, '', this.burbujasRef()?.nativeElement);
     if (banda && typeof ResizeObserver !== 'undefined') {
       this.observador = new ResizeObserver(() => {
         if (this.medidaRaf) return;
@@ -350,7 +372,7 @@ export class CinematicaCasoComponent {
     if (!banda || !canvas || !this.lienzo) return;
     const caja = banda.getBoundingClientRect();
     const medida = medirVista(caja.width, caja.height, window.devicePixelRatio || 1);
-    this.lienzo.ajustar(medida);
+    this.lienzo.ajustar(medida, Math.round(caja.width * medida.dpr), Math.round(caja.height * medida.dpr));
     const s = medida.k / medida.dpr;
     canvas.style.width = `${(medida.ancho + 2) * s}px`;
     canvas.style.height = `${(medida.alto + 2) * s}px`;
@@ -423,8 +445,12 @@ export class CinematicaCasoComponent {
         this.visible.set(true);
       }, espera);
     }
-    const texto = this.texto();
-    this.announcer.announce(`Plano ${reloj.indice + 1} de ${reloj.total}.${texto ? ' ' + texto : ''}`);
+    const voces = this.intervenciones().map(({ quien, texto, grito, nombre }) => {
+      const papel = Object.hasOwn(VOCES, quien) ? VOCES[quien] : quien.replace(/-/g, ' ');
+      const voz = conNombre(nombre, this.nombre()) || papel;
+      return `${voz}${grito ? ' grita' : ''}: ${texto}`;
+    });
+    this.announcer.announce([`Plano ${reloj.indice + 1} de ${reloj.total}.`, this.texto(), ...voces].filter(Boolean).join(' '));
     const silencio = plano?.escena === 'negro';
     if (silencio !== this.enSilencio) {
       this.enSilencio = silencio;
@@ -449,7 +475,9 @@ export class CinematicaCasoComponent {
     const plano = this.plano(), reloj = this.reloj, lienzo = this.lienzo;
     if (!plano || !reloj || !lienzo?.disponible) return;
     const vista = lienzo.vista, reducido = this.reducida();
-    const actual = cuadroDelPlano(plano, reloj.transcurrido, vista, reducido);
+    const ms = reloj.transcurrido;
+    const burbuja = this.intervenciones().find(b => ms >= b.desde && ms < b.hasta);
+    const actual = cuadroDelPlano(plano, ms, vista, reducido, burbuja);
     let anterior: CuadroDeCinematica | null = null, mezcla = 1;
     const f = this.fundido;
     if (f && f.dura > 0) {

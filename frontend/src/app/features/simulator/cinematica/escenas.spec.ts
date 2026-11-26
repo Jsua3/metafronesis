@@ -38,6 +38,27 @@ describe('cinematica/escenas', () => {
     expect(c.ventana?.siluetas.map(s => s.vista)).toEqual(['right', 'left']);
   });
 
+  it('ancla la voz del teléfono a la figura con el auricular', () => {
+    const p = plano({ escena: 'casa-ventana', siluetas: ['mujer-telefono', 'nina'] });
+    const voz = { quien: 'telefono', texto: 'Aquí te espero.', grito: true, desde: 850, hasta: 4350 } as const;
+    const cuadro = cuadroDelPlano(p, 900, vista, false, voz);
+    expect(cuadro.burbuja?.actor).toBe(cuadro.ventana?.siluetas[0]);
+    expect(cuadro.burbuja?.actor.conTelefono).toBe(true);
+    expect(cuadro.burbuja?.actor.x).toBeLessThan(CALLE.ventana.x - 12);
+    expect(cuadro.burbuja?.sacudida).toBe(0);
+    expect(recetasDelPlano(p)).toContain(RECETA_DE_SILUETA.mujer);
+  });
+
+  it('sacude solo a quien grita y durante menos de 300 ms', () => {
+    const p = plano({ escena: 'casa-ventana', siluetas: ['hombre', 'mujer'] });
+    const grito = { quien: 'hombre', texto: '¡Ya!', grito: true, desde: 850, hasta: 4350 } as const;
+    const temprano = cuadroDelPlano(p, 900, vista, false, grito);
+    expect(temprano.burbuja?.sacudida).not.toBe(0);
+    expect(temprano.burbuja?.actor).toBe(temprano.ventana?.siluetas[0]);
+    expect(cuadroDelPlano(p, 1150, vista, false, grito).burbuja?.sacudida).toBe(0);
+    expect(cuadroDelPlano(p, 900, vista, true, grito).burbuja?.sacudida).toBe(0);
+  });
+
   it('de noche, la luz pedida se ENCIENDE dentro del plano (salvo con movimiento reducido)', () => {
     const p = plano({ escena: 'casa-ventana', momento: 'noche', luzVentana: true });
     expect(cuadroDelPlano(p, 200, vista, false).ventana?.luz).toBe(0);
