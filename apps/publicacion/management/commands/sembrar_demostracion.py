@@ -17,12 +17,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--confirmar", action="store_true", help="Obligatorio: confirma que se quiere escribir en este entorno.")
         parser.add_argument("--publicador", required=True, help="Correo de un ADMIN que ya existe; publica el caso.")
+        parser.add_argument("--docentes", default="",
+                            help="Correos de 1 a 3 cuentas PROFESOR que ya existen, separados por comas: quedan a cargo de los grupos sembrados.")
 
     def handle(self, *args, **options):
         if not options["confirmar"]:
             raise CommandError("Falta --confirmar: este comando escribe en la base del entorno actual.")
         try:
-            informe = siembra.sembrar(options["publicador"], os.environ.get("SIEP_SEMILLA_CLAVE", ""))
+            docentes = [correo.strip() for correo in options["docentes"].split(",") if correo.strip()]
+            informe = siembra.sembrar(options["publicador"], os.environ.get("SIEP_SEMILLA_CLAVE", ""), docentes)
         except siembra.ErrorDeSiembra as error:
             raise CommandError(str(error)) from None
         self.stdout.write(f"Creado ({len(informe.creado)}):")
