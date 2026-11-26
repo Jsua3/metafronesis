@@ -12,7 +12,7 @@
     ],
     "rubrica": "RUB-01",
     "titulo": "Violencia Familiar y Tentativa de Feminicidio — tres capítulos",
-    "version": "2.0.5"
+    "version": "2.0.6"
   },
   "escenas": [
     {
@@ -50,7 +50,7 @@
       "advertencia": "Este caso aborda violencia de género, una tentativa de feminicidio y la muerte de una niña. Puedes usar la salida segura en cualquier momento."
     },
     {
-      "descripcion": "La familia aceptó sentarse contigo en la sala de espera, pero la calma dura poco: Gloria exige ver a la niña y el patrullero quiere subir a interrogar a Yuliana antes de la cirugía. Estabiliza emocionalmente a la familia y evita acciones prematuras que aumenten la crisis.",
+      "descripcion": "La familia, con Óscar otra vez al lado de su mamá, aceptó sentarse contigo en la sala de espera, pero la calma dura poco: Gloria exige ver a la niña y el patrullero quiere subir a interrogar a Yuliana antes de la cirugía. Estabiliza emocionalmente a la familia y evita acciones prematuras que aumenten la crisis.",
       "id": "E02",
       "orden": 2,
       "titulo": "Sala de espera: contener antes de informar",
@@ -148,7 +148,7 @@
       }
     },
     {
-      "descripcion": "Pasó la medianoche. La familia está sentada en la sala de escucha. El doctor Ospina entra contigo y cierra la puerta. Todos saben que algo viene. Decide cómo empezar.",
+      "descripcion": "Pasó la medianoche. Rocío abrió la sala de escucha y la familia ya está sentada ahí. El doctor Ospina entra contigo y cierra la puerta. Todos saben que algo viene. Decide cómo empezar.",
       "id": "E05",
       "orden": 5,
       "titulo": "Capítulo 2 · La noticia",
@@ -244,7 +244,7 @@
       }
     },
     {
-      "descripcion": "Es la 1:30 de la mañana. La familia está con Marcela. En enfermería, Rocío acaba de recibir una llamada: un hombre que dice ser primo de Yuliana pregunta en qué habitación está. Edwin sigue prófugo.",
+      "descripcion": "Es la 1:30 de la mañana. Marcela, la trabajadora social, se quedó con la familia. Rocío te manda a llamar a enfermería: acaba de recibir una llamada de un hombre que dice ser primo de Yuliana y pregunta en qué habitación está. Edwin sigue prófugo.",
       "id": "E08",
       "orden": 8,
       "titulo": "La llamada",
@@ -438,7 +438,7 @@
       }
     },
     {
-      "descripcion": "Quince días después, tras el alta médica, Yuliana llega a la Comisaría de Familia acompañada por Gloria. Hoy se valora el riesgo y se deciden las medidas definitivas; las provisionales se dictaron la mañana siguiente al ataque. Edwin sigue prófugo y su familia la presiona para «arreglar las cosas en familia». Ahora eres del equipo psicosocial de la comisaría.",
+      "descripcion": "Quince días después, tras el alta médica, Yuliana llega a la Comisaría de Familia acompañada por Gloria. Hoy se valora el riesgo y se deciden las medidas definitivas; las provisionales se dictaron la mañana siguiente al ataque, con el reporte de la policía. Edwin sigue prófugo y su familia la presiona para «arreglar las cosas en familia». Ahora eres del equipo psicosocial de la comisaría.",
       "id": "E14",
       "orden": 14,
       "titulo": "Capítulo 3 · Quince días después",
@@ -508,7 +508,7 @@
       }
     },
     {
-      "descripcion": "Yuliana tiene secuelas físicas y un impacto emocional profundo. Con la valoración hecha, la doctora Helena, la comisaria, necesita tu concepto para dictar las medidas y te pregunta con qué respaldo legal se restablecen los derechos.",
+      "descripcion": "Yuliana tiene secuelas físicas y un impacto emocional profundo. Con lo que ya se sabe del riesgo, la doctora Helena, la comisaria, necesita tu concepto para dictar las medidas y te pregunta con qué respaldo legal se restablecen los derechos.",
       "id": "E16",
       "orden": 16,
       "titulo": "El marco del restablecimiento",
@@ -570,7 +570,7 @@
       }
     },
     {
-      "descripcion": "Mientras Yuliana está con Liliana en orientación jurídica, Gloria te espera en la sala de espera. Emanuel vino con ella. Gloria te cuenta que Yuliana se va a quedar con ella y que Emanuel no ha vuelto a dormir bien desde esa noche.",
+      "descripcion": "Mientras Yuliana está con Liliana en orientación jurídica, Gloria te espera en la sala de espera. Emanuel vino con ella. Gloria te cuenta que quiere que Yuliana se quede con ella mientras encuentran un lugar seguro, y que Emanuel no ha vuelto a dormir bien desde esa noche.",
       "id": "E18",
       "orden": 18,
       "titulo": "Los que no están en la sala",
@@ -7527,8 +7527,8 @@
               "texto": "Óscar golpea la pared con la palma abierta.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 820,
-              "y": 300,
+              "x": 766,
+              "y": 272,
               "z": 0
             },
             {
@@ -12232,7 +12232,7 @@
               }
             },
             "id": "E11-1",
-            "retroalimentacionInmediata": "No se dan falsas seguridades y tampoco se improvisa a solas una noticia así: se acompaña, se le dice que el equipo hablará con ella y se decide en equipo cuándo y cómo, como en el plan acordado con Patricia.",
+            "retroalimentacionInmediata": "No se dan falsas seguridades y tampoco se improvisa a solas una noticia así: se acompaña, se le dice que el equipo hablará con ella y se decide en equipo cuándo y cómo.",
             "reaccion": {
               "emocion": "triste",
               "gesto": "se-encoge",
@@ -12254,7 +12254,7 @@
               }
             },
             "id": "E11-2",
-            "retroalimentacionInmediata": "Las palabras claras y quedarse son parte del protocolo, pero falta el equipo: recién salida de la anestesia, sin el médico tratante y sin su mamá, la noticia llega sin el cuidado que se había acordado.",
+            "retroalimentacionInmediata": "Las palabras claras y quedarse son parte del protocolo, pero falta el equipo: recién salida de la anestesia, sin el médico tratante y sin su mamá, la noticia llega sin el cuidado que necesita.",
             "reaccion": {
               "emocion": "en-crisis",
               "gesto": "se-agita",
@@ -12923,7 +12923,7 @@
             "reaccion": {
               "emocion": "cautelosa",
               "gesto": "neutral",
-              "linea": "¿Y mientras tanto? Él sabe dónde está.",
+              "linea": "¿Y mientras tanto? Él sigue prófugo y sabe dónde vive ella.",
               "personaje": "patricia"
             }
           },
@@ -15133,7 +15133,7 @@
               }
             },
             "id": "E15-1",
-            "retroalimentacionInmediata": "Minimizar la revictimización es un objetivo del caso: se parte de lo que ya está escrito, se pregunta solo lo necesario, en privado, y se explica para qué sirve cada pregunta. El informe que escribiste en el hospital le ahorró a Yuliana repetir su historia.",
+            "retroalimentacionInmediata": "Minimizar la revictimización es un objetivo del caso: se parte de lo que ya está escrito, se pregunta solo lo necesario, en privado, y se explica para qué sirve cada pregunta. Lo que ya consta en el informe del hospital no se le vuelve a preguntar.",
             "reaccion": {
               "emocion": "cautelosa",
               "gesto": "asiente",
@@ -15394,7 +15394,7 @@
                   "emocion": "concerned",
                   "hablante": "Doctora Helena",
                   "orden": 1,
-                  "texto": "Buenos días, {nombre}. Ya vi la valoración: riesgo extremo. Con él prófugo, no me sorprende."
+                  "texto": "Buenos días, {nombre}. Ya leí el informe del hospital: riesgo extremo. Con él prófugo, no me sorprende."
                 },
                 {
                   "emocion": "neutral",
@@ -16714,7 +16714,7 @@
                   "emocion": "anxious",
                   "hablante": "Gloria",
                   "orden": 1,
-                  "texto": "Ella se va a quedar conmigo. Pero él sabe dónde vivo."
+                  "texto": "Quiero que se quede conmigo mientras encontramos un lugar seguro. Pero él sabe dónde vivo."
                 },
                 {
                   "emocion": "sad",
