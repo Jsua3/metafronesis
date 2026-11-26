@@ -56,12 +56,12 @@ def verificar(estudiante, version):
     es sesión → intento, el mismo de los efectos de la sesión (``efectos.pausar_intentos`` / ``cerrar_intentos``)."""
     convocatoria = _convocatoria_bloqueada(estudiante, version)
     if convocatoria is None:
-        return
+        return None
     sesion = convocatoria.sesion
     sesion.estado_actual().verificar_ingreso()
     intentos = SimulationAttempt.objects.filter(student=estudiante, case_version=version, started_at__gte=sesion.iniciada_en)
     if intentos.filter(status__in=OPEN_ATTEMPT_STATUSES).exists():
-        return  # vuelve a su intento abierto: el plazo de ingreso ya no aplica
+        return convocatoria  # vuelve a su intento abierto: el plazo de ingreso ya no aplica
     fraccion = getattr(settings, "SIEP_INGRESO_TARDIO_FRACCION", 0.5)
     if timezone.now() > sesion.iniciada_en + (sesion.fin - sesion.iniciada_en) * fraccion:
         raise ApiError("LATE_ENTRY", "El plazo de ingreso ha terminado.", 409)
@@ -74,9 +74,12 @@ def verificar(estudiante, version):
             raise ApiError("SESSION_ALREADY_PARTICIPATED", "Ya existe una participación en la sesión.", 409)
         autorizacion.usada = True
         autorizacion.save(update_fields=["usada"])
+    return convocatoria
 
 
 def limite(intento):
+    if intento.convocatoria_id:
+        return intento.convocatoria.sesion.tiempo_maximo_min
     fecha = intento.started_at or timezone.now()
     convocatoria = (
         Convocatoria.objects.filter(
