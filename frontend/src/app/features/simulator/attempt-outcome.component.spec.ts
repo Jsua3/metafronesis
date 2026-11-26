@@ -293,7 +293,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     render('PAUSED');
     const resume = vi.fn();
     component.resume.subscribe(resume);
-    const button = host().querySelector('button.oc-btn--go') as HTMLButtonElement;
+    const button = host().querySelector('button.oc-btn.u-boton--principal') as HTMLButtonElement;
     expect(button.hasAttribute('cdkFocusInitial')).toBe(true);
     button.click();
     expect(resume).toHaveBeenCalledTimes(1);
@@ -302,7 +302,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   it('la pausa captura el foco: el elemento activo es «Volver al juego»', async () => {
     render('PAUSED');
     await fixture.whenStable();
-    expect(document.activeElement).toBe(host().querySelector('button.oc-btn--go'));
+    expect(document.activeElement).toBe(host().querySelector('button.oc-btn.u-boton--principal'));
   });
 
   it('el final del caso solo aparece dentro del details cerrado «Ver mi seguimiento»', () => {
@@ -336,7 +336,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   it('sin informe no hay details y la pausa sigue ofreciendo reanudar', () => {
     render('PAUSED', { report: null });
     expect(host().querySelector('details')).toBeNull();
-    expect(text(host().querySelector('button.oc-btn--go'))).toBe('Volver al juego');
+    expect(text(host().querySelector('button.oc-btn.u-boton--principal'))).toBe('Volver al juego');
   });
 
   it('el resto de estados conserva su tablero y sus acciones', () => {
@@ -401,7 +401,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     it('en pausa el foco sigue en «Volver al juego»: lo primero es poder volver', async () => {
       render('PAUSED');
       await fixture.whenStable();
-      expect(document.activeElement).toBe(host().querySelector('button.oc-btn--go'));
+      expect(document.activeElement).toBe(host().querySelector('button.oc-btn.u-boton--principal'));
     });
 
     it('al reanudar el foco vuelve a donde estaba antes de la pausa, y si ese elemento ya no está, al juego', async () => {
@@ -464,7 +464,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
       expect(text(host().querySelector('#outcome-title'))).toBe('Tu caso está en pausa');
       expect(component.pauseMessage)
         .toBe('La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.');
-      expect(text(host().querySelector('button.oc-btn--go'))).toBe('Volver al juego');
+      expect(text(host().querySelector('button.oc-btn.u-boton--principal'))).toBe('Volver al juego');
     });
   });
 
@@ -476,9 +476,11 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     const rem = (selector: string) => Number(/font-size:\s*([0-9.]+)rem/.exec(rule(selector))?.[1]);
 
     it('las acciones tienen hover protegido para híbridos y estilo de pulsado', () => {
-      expect(source).not.toMatch(/\n {4}\.oc-btn[^{]*:hover/); // a nivel de hoja, sin la consulta
-      expect(source).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?\.oc-btn:hover \{/);
-      expect(source).toMatch(/\.oc-btn:active \{ transform: translateY\(1px\); \}/);
+      const pixel = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+      expect(source).not.toMatch(/\n {4}\.oc-btn[^{]*:hover/);
+      expect(source).toContain('oc-btn u-boton u-boton--principal');
+      expect(pixel).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.u-boton:hover/);
+      expect(pixel).toMatch(/\.u-boton:active \{[^}]*transform: translateY\(var\(--pixel-px\)\)/);
     });
 
     it('ningún rótulo del resultado baja de 12 px', () => {

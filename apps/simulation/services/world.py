@@ -152,6 +152,22 @@ def _hablados_aqui(intento, estado):
     return list(dict.fromkeys(claves))
 
 
+def _identidad_tutor(tutor):
+    if not isinstance(tutor, dict):
+        return {}
+    return {campo: tutor[campo].strip() for campo in ("nombre", "rol", "recipeId")
+            if isinstance(tutor.get(campo), str) and tutor[campo].strip()}
+
+
+def _tutor_inicial(mapa, ambiente):
+    if _identidad_tutor(ambiente.get("tutor")):
+        return None
+    inicial = SceneMap.objects.filter(case_version_id=mapa.case_version_id, node__start_node=True).order_by("id").first()
+    if inicial is None or inicial.id == mapa.id:
+        return None
+    return _identidad_tutor(_mapa_json(inicial.ambient_json).get("tutor")) or None
+
+
 def _mundo(intento, estado):
     mapa = estado.scene_map
     ambiente = _mapa_json(mapa.ambient_json)
@@ -161,7 +177,9 @@ def _mundo(intento, estado):
     activo = intento.status == "IN_PROGRESS" and not intento.current_node.terminal_node
     opciones = disponibilidad_mundo.opciones(intento, estado) if activo else []
     comentarios = disponibilidad_mundo.comentarios(intento, estado) if activo else []
+    tutor_inicial = _tutor_inicial(mapa, ambiente)
     return {
+        **({"tutorInicial": tutor_inicial} if tutor_inicial is not None else {}),
         "attemptId": str(intento.pk), "status": intento.status,
         "map": {"id": mapa.id, "key": mapa.map_key, "title": mapa.title, "width": mapa.width,
                 "height": mapa.height, "theme": mapa.theme, "spawnX": mapa.spawn_x,

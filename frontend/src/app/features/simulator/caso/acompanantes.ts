@@ -44,7 +44,7 @@ const ASENTAR_MS = 120;
 const distancia = (a: Punto, b: Punto): number => Math.hypot(b.x - a.x, b.y - a.y);
 
 /** ¿El tramo está libre? Solo el último tramo puede entrar en la pared de la puerta. */
-function tramoLibre(a: Punto, b: Punto, env: EntornoDeRuta, holgura = 0): boolean {
+export function tramoLibre(a: Punto, b: Punto, env: EntornoDeRuta, holgura = 0): boolean {
   const dx = b.x - a.x, dy = b.y - a.y;
   const largo = Math.hypot(dx, dy);
   const pasos = Math.max(1, Math.ceil(largo / MUESTREO_PX));

@@ -33,10 +33,17 @@ class AcuseMundo(serializers.Serializer):
     player = Posicion()
 
 
+class IdentidadTutor(serializers.Serializer):
+    nombre = serializers.CharField(required=False)
+    rol = serializers.CharField(required=False)
+    recipeId = serializers.CharField(required=False)
+
+
 class MundoRespuesta(serializers.Serializer):
     attemptId = serializers.UUIDField()
     status = serializers.CharField()
     map = serializers.DictField()
+    tutorInicial = IdentidadTutor(required=False)
     player = Posicion()
     objects = serializers.ListField(child=serializers.DictField())
     collisions = serializers.ListField(child=serializers.DictField())

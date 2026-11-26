@@ -391,6 +391,8 @@ export interface SimulationWorldState {
   attemptId: string;
   status: SimulationAttemptState['status'];
   map: SceneMapState;
+  /** Identidad del tutor del mapa de inicio cuando la sala actual carece de tutor. */
+  tutorInicial?: Partial<Pick<TutorDelCaso, 'nombre' | 'rol' | 'recipeId'>>;
   player: PlayerState;
   objects: MapObjectState[];
   collisions: CollisionZoneState[];
@@ -517,6 +519,13 @@ export interface AmbienteDeSala {
   cinematica?: CinematicaDelCaso;
   /** El tutor fuera de la historia: en la sala inicial y en la primera sala de cada capítulo (§2). */
   tutor?: TutorDelCaso;
+  /** Conversaciones ambientales entre dos personas de la sala (§8). */
+  conversaciones?: {
+    personas: [string, string];
+    lineas: { quien: string; texto: string }[];
+    pausaMs?: number;
+    modo?: 'quietos' | 'caminan';
+  }[];
 }
 
 /** Escenas genéricas que el reproductor sabe dibujar con el arte del juego (no imágenes del caso). */
@@ -614,6 +623,8 @@ export interface DialogueState {
   recipeId?: string | null;
   /** Clave del actor en el mundo para recuperar su aspecto en el cliente. */
   speakerObjectKey?: string;
+  /** Identidad del tutor en la retroalimentación inmediata. */
+  tutor?: { rol: string };
   emotion: string;
   lines: DialogueLineState[];
   choices: DialogueChoiceState[];

@@ -39,7 +39,7 @@ let lugares: PlaceCandidate[] = [];
 @Component({
   selector: 'app-game-world',
   template: '',
-  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused',
+  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused', 'nombreDeQuienJuega',
     'sfxMuted', 'reduceMotion', 'activation', 'intensity', 'doorStates', 'doorMessages', 'nextTargetKey', 'dimmedKeys', 'compact', 'showLoader'],
   outputs: ['worldReady', 'patientVisual', 'proximity', 'proximityAlso', 'nothingNearby', 'interact', 'npcInteract', 'walkEnded', 'walkCancelled',
     'bootFailed', 'roomExit', 'enterRoom', 'positionChange'],

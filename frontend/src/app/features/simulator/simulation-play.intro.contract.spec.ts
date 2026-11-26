@@ -53,7 +53,7 @@ describe('simulation-play: introducción', () => {
   it('ninguna tarjeta nombra la pista interna y ambas permiten silenciar la música', () => {
     expect(source).not.toContain('está sonando');
     expect(source).not.toContain('PsicoLament');
-    const toggles = source.match(/class="intro-music-toggle" \[attr\.aria-pressed\]="musicMuted\(\)" \(click\)="toggleMusicMute\(\)"/g) ?? [];
+    const toggles = source.match(/class="intro-music-toggle u-boton" \[attr\.aria-pressed\]="musicMuted\(\)" \(click\)="toggleMusicMute\(\)"/g) ?? [];
     expect(toggles).toHaveLength(1);
   });
 
@@ -80,7 +80,7 @@ describe('simulation-play: salida segura alcanzable desde cada superposición (R
 
   it('la tarjeta de la introducción ofrece «Salida segura» a la izquierda de «Continuar»', () => {
     // U1 (crítica r2): la salida de la tarjeta es la placa con brasa de I1, la misma del pie del juego.
-    const intoPause = /<app-safe-exit-button variante="placa" \[pausing\]="pausing\(\)" \(pause\)="pauseFromOverlay\(\)" \/>\s*<button cdkFocusInitial class="psy-button psy-button--primary" type="button" \(click\)="continueFromCaseIntro\(\)">/;
+    const intoPause = /<app-safe-exit-button variante="placa" \[pausing\]="pausing\(\)" \(pause\)="pauseFromOverlay\(\)" \/>\s*<button cdkFocusInitial class="u-boton u-boton--principal" type="button" \(click\)="continueFromCaseIntro\(\)">/;
     expect(caseIntro).toMatch(intoPause);
   });
 

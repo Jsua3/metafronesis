@@ -6,7 +6,7 @@
 // Muestra aprobada: variante B, placas en las esquinas.
 
 :where(.pixel-juego) {
-  .u-placa, .u-rotulo, .u-boton, .u-ficha, .u-tecla, .u-ranura {
+  .u-placa, .u-rotulo, .u-boton, .u-boton.ui-button, .u-ficha, .u-tecla, .u-ranura {
     border-style: solid;
     border-width: calc(4 * var(--pixel-px));
     border-image: var(--m) 4 / calc(4 * var(--pixel-px)) stretch;
@@ -48,7 +48,7 @@
 
   // Placa-botón (hermana de «Volver al mapa»): sobre y foco encienden el canto; pulsada se hunde un punto; apagada pierde
   // la luz (deshabilitada con aria-disabled: se ve y se explica, no promete nada).
-  .u-boton {
+  .u-boton, .u-boton.ui-button {
     --m: var(--marco-placa);
     --t: var(--trama-placa);
     display: inline-flex;
@@ -68,6 +68,35 @@
   @media (hover: hover) and (pointer: fine) {
     .u-boton:hover:not([aria-disabled='true'], :active) { --m: var(--marco-placa-sobre, var(--marco-ficha-sobre)); --t: var(--trama-placa-sobre, var(--trama-placa)); background-color: var(--pixel-penumbra-alzada); color: var(--luz); }
   }
+
+  .u-boton--principal, .u-boton--principal.ui-button {
+    --m: var(--marco-ficha-elegida);
+    --t: var(--trama-ficha-elegida);
+    background-color: var(--pixel-crema);
+    color: var(--pixel-tinta-oscura);
+    font-weight: 700;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .u-boton--principal:hover:not([aria-disabled='true'], :active) {
+      --m: var(--marco-ficha-elegida);
+      --t: var(--trama-ficha-elegida);
+      background-color: var(--pixel-crema);
+      color: var(--pixel-tinta-oscura);
+      outline: var(--pixel-px) solid var(--luz);
+      outline-offset: var(--pixel-px);
+    }
+  }
+  .u-boton--principal:is(:focus-visible, :active) {
+    --m: var(--marco-ficha-elegida);
+    --t: var(--trama-ficha-elegida);
+    background-color: var(--pixel-crema);
+    color: var(--pixel-tinta-oscura);
+  }
+  .u-boton--icono { width: 44px; padding: 0; justify-content: center; }
+  .u-boton[aria-pressed='true'] { --m: var(--marco-placa-foco); }
+  .u-boton:disabled { cursor: default; opacity: .65; transform: none; }
+  .u-boton:is(a) { text-decoration: none; }
+  .u-boton:focus-visible { outline: var(--pixel-px) solid var(--luz); outline-offset: var(--pixel-px); }
 
   // «Salida segura» NO va aquí: es app-safe-exit-button con variante «placa» (I1), la implementación única (REGLA-004).
 
@@ -179,45 +208,7 @@
     .case-intro-card__actions > :first-child:not(.case-intro-card__buttons) { margin-right: auto; }
     .case-intro-card__buttons { flex-wrap: wrap; justify-content: flex-end; flex-shrink: 1; min-width: 0; gap: calc(4 * var(--pixel-px)); }
 
-    // Botones como las placas-botón del juego; la acción principal, como la ficha encendida (crema).
-    .case-intro-card__actions .ui-button,
-    .case-intro-card__actions .psy-button,
-    .intro-music-toggle {
-      --m: var(--marco-placa); --t: var(--trama-placa);
-      min-height: 44px; padding: 0 calc(6 * var(--pixel-px)) 1px;
-      border-style: solid; border-width: calc(4 * var(--pixel-px)); border-color: transparent; border-radius: 0;
-      border-image: var(--m) 4 / calc(4 * var(--pixel-px)) stretch;
-      background-color: var(--pixel-penumbra); background-image: var(--t);
-      background-size: calc(8 * var(--pixel-px)); background-clip: padding-box;
-      box-shadow: none; color: var(--pixel-tinta); font-family: var(--pixel-f-texto); font-weight: 600; text-decoration: none;
-      transition: none;
-    }
-    .case-intro-card__actions .ui-button--primary,
-    .case-intro-card__actions .psy-button--primary {
-      --m: var(--marco-ficha-elegida); --t: var(--trama-ficha-elegida);
-      background-color: var(--pixel-crema); color: var(--pixel-tinta-oscura); font-weight: 700;
-    }
-    .intro-music-toggle[aria-pressed="true"] { color: var(--pixel-tinta-suave); background-image: none; }
-    .case-intro-card__actions .ui-button:focus-visible,
-    .case-intro-card__actions .psy-button:focus-visible,
-    .intro-music-toggle:focus-visible { outline: var(--pixel-px) solid var(--luz); outline-offset: calc(2 * var(--pixel-px)); }
-    .case-intro-card__actions .ui-button:active,
-    .case-intro-card__actions .psy-button:active,
-    .intro-music-toggle:active { transform: translateY(var(--pixel-px)); }
-    @media (hover: hover) and (pointer: fine) {
-      .case-intro-card__actions .ui-button:hover,
-      .case-intro-card__actions .psy-button:hover,
-      .intro-music-toggle:hover {
-        background-color: var(--pixel-penumbra); outline: var(--pixel-px) solid var(--luz); outline-offset: calc(2 * var(--pixel-px));
-      }
-      .case-intro-card__actions .ui-button--primary:hover,
-      .case-intro-card__actions .psy-button--primary:hover { background-color: var(--pixel-crema); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .case-intro-card__actions .ui-button:active,
-      .case-intro-card__actions .psy-button:active,
-      .intro-music-toggle:active { transform: none; }
-    }
+
   }
 }
 

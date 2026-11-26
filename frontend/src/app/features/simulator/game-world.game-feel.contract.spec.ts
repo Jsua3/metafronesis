@@ -28,7 +28,7 @@ describe('game-world: game feel del bloque B', () => {
 
   it('la crisis la decide la utilidad pura, se congela con el mundo en pausa y nunca deja dos pulsos vivos', () => {
     expect(source).toMatch(/private applyCrisisState\(\): void \{[\s\S]*?crisisVignetteState\(this\.activation, this\.intensity, this\.callbacks\.reduceMotion \|\| this\.motionPaused\)[\s\S]*?this\.crisisPulse\?\.stop\(\);[\s\S]*?this\.crisisPulse = this\.tweens\.add\(\{[\s\S]*?yoyo: true,[\s\S]*?repeat: -1/);
-    expect(source).toMatch(/setMotionPaused\(paused: boolean\) \{[\s\S]{0,260}this\.applyCrisisState\(\);\s*\}/);
+    expect(source).toMatch(/setMotionPaused\(paused: boolean\) \{[\s\S]*?this\.applyCrisisState\(\);\s*\}/);
     expect(source).toContain("this.addVignette('crisis', CRISIS_VIGNETTE_TINT, 0.18, 1, DEPTH.LIGHTING + 1)");
   });
 

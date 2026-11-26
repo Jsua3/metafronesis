@@ -174,6 +174,26 @@ def test_persona_en_movimiento_es_alcanzable(mundo, movimiento):
     assert mundo["client"].post(mundo["base"] + "/npcs/persona", {}, format="json").status_code == 200
 
 
+def test_dialogo_propio_del_acompanante_sigue_disponible_en_el_recorrido(mundo):
+    cliente, base, sala = mundo["client"], mundo["base"], mundo["sala"]
+    guia = {"personas": ["lider", "acompanante"], "modo": "caminan",
+            "lineas": [{"quien": "lider", "texto": "Caminemos."}]}
+    sala.ambient_json = json.dumps({"conversaciones": [guia]})
+    sala.save(update_fields=["ambient_json"])
+    MapObject.objects.create(scene_map=sala, object_key="lider", object_type="PERSON", position_x=50, position_y=85)
+    actor = MapObject.objects.create(scene_map=sala, object_key="acompanante", object_type="PERSON",
+                                    position_x=390, position_y=85)
+    DialogueTree.objects.create(scene_map=sala, map_object=actor, tree_key="dialogo-propio")
+    lejos = MapObject.objects.create(scene_map=sala, object_key="fuera", object_type="PERSON", position_x=490, position_y=380)
+    DialogueTree.objects.create(scene_map=sala, map_object=lejos, tree_key="fuera")
+    assert cliente.post(base + "/interactions/acompanante", {}, format="json").status_code == 200
+    assert cliente.post(base + "/interactions/fuera", {}, format="json").status_code == 400
+    guia["modo"] = "quietos"
+    sala.ambient_json = json.dumps({"conversaciones": [guia]})
+    sala.save(update_fields=["ambient_json"])
+    assert cliente.post(base + "/interactions/acompanante", {}, format="json").status_code == 400
+
+
 def test_intento_esperado_cambiado_devuelve_conflicto(mundo):
     respuesta = mundo["client"].post("/api/simulation/attempts", {"case_version_id": mundo["version"].pk,
         "expectedAttemptId": str(uuid.uuid4())}, format="json")

@@ -72,14 +72,14 @@ describe('game-world: NPC, personas, guía y figurantes del kit; nada los deform
     expect(create).not.toContain('.setVisible(false)');
   });
 
-  it('una persona del caso no se escala ni se atenúa: el énfasis lo decide markerEmphasis y el pulso va al anillo', () => {
+  it('una persona del caso no se escala ni se atenúa: el énfasis lo decide markerEmphasis y el foco activa el contorno', () => {
     const refresh = body('private refreshMarkerStates() {');
     expect(refresh).toContain("markerEmphasis({");
     expect(refresh).toContain("kitSprite: bag['__kitSprite'] === true, pixelSprite: bag['__pixelSprite'] === true");
     expect(refresh).toContain('dimmed: this.dimmedKeys.has(key)');
     expect(refresh).not.toMatch(/m\.setScale\(sel \?|m\.setAlpha\(sel \|\|/);
     const focus = body('focus(key: string) {');
-    expect(focus).toContain("bag['__kitSprite'] === true || bag['__pixelSprite'] === true ? bag['__pulse'] : m");
+    expect(focus).toContain('this.focoClave = key;');
     expect(source).toContain("bag['__kitSprite'] = personVisual !== null;");
   });
 });

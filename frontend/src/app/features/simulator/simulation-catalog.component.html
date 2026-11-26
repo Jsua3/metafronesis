@@ -69,6 +69,7 @@
                          el texto de la tarjeta y el botón lo repite en su aviso. -->
                     @if (card.estado.abierto) {
                       <button ui-button type="button" icon="play_arrow" [loading]="entrando() === card.item.caseVersionId" [attr.aria-label]="copy.acciones.continuar + ' «' + card.item.title + '»'" (click)="openCase(card, true)">{{ entrando() === card.item.caseVersionId ? 'Entrando…' : copy.acciones.continuar }}</button>
+                      <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
                     } @else if (card.estado.clave === 'terminado' && card.recorrido) {
                       <button ui-button type="button" icon="description" [attr.aria-label]="copy.acciones.recorrido + ' de «' + card.item.title + '»'" (click)="openReport(card.recorrido)">{{ copy.acciones.recorrido }}</button>
                     } @else if (card.estado.clave === 'terminado') {

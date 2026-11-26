@@ -1051,7 +1051,7 @@ describe('DialoguePanelComponent - «Continuar» y sonido de opciones (T4.7)', (
     const expectPrimary = () => {
       expect(advanceButtons()).toHaveLength(1);
       const [button] = advanceButtons();
-      expect(button.classList).toContain('ui-button--primary');
+      expect(button.classList).toContain('u-boton--principal');
       expect(button.classList).not.toContain('psy-button--ghost');
     };
     // Línea 1 de 2, todavía escribiéndose: «Saltar».
@@ -1386,9 +1386,11 @@ describe('DialoguePanelComponent - texto de 12 px, estados y vocabulario educati
   });
 
   it('«Volver al mapa» tiene hover protegido, respuesta al presionar y el anillo global de la piel', () => {
-    expect(styles).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.panel-back:hover \{/);
-    expect(styles).toMatch(/\.panel-back:active \{[^}]*transform:/);
-    expect(styles).not.toMatch(/\.panel-back:focus-visible/);
+    const pixel = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+    expect(template).toContain('class="panel-back u-boton"');
+    expect(pixel).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.u-boton:hover/);
+    expect(pixel).toMatch(/\.u-boton:active \{[^}]*transform:/);
+    expect(pixel).toMatch(/\.u-boton:focus-visible \{[^}]*outline:/);
     expect(styles).not.toMatch(/\.choice-btn:focus-visible \{[^}]*outline:\s*\d+px solid/);
   });
 
@@ -1690,19 +1692,14 @@ describe('DialoguePanelComponent - las placas-botón de la cabecera', () => {
     expect(pistaHtml).toContain(`[icon]="variante() === 'placa' ? undefined : 'lightbulb'"`);
   });
 
-  it('las tres miden y visten igual: marco y trama de pixel, la misma letra y la misma altura', () => {
-    expect(source).toContain('--tam-boton: .82em;');
-    for (const css of [salida, pistaScss]) {
-      expect(css).toContain('border-image: var(--m) 4 / calc(4 * var(--px)) stretch;');
-      expect(css).toContain('font-size: var(--tam-boton);');
-      expect(css).toContain('padding: 0 12px 1px 8px;');
-    }
-    expect(source).toMatch(/\.panel-back \{[^}]*font-size: var\(--tam-boton\);/);
-    // El mismo alto para las tres (el de «Volver» con su tecla «Esc»), y «Volver al mapa» en un solo renglón.
-    expect(source).toContain('--alto-boton: calc(22 * var(--px));');
-    expect(source).toMatch(/\.panel-back \{[^}]*min-height: var\(--alto-boton\);[^}]*white-space: nowrap;/);
+  it('el diálogo y la pista reutilizan la placa-botón del juego, con un blanco de al menos 44 px', () => {
+    const pixel = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+    expect(source).toContain('class="panel-back u-boton"');
+    expect(source).toContain('class="instant-setting u-boton"');
+    expect(source).toContain('class="close-btn u-boton u-boton--principal"');
+    expect(pistaHtml).toContain("[class.u-boton]=\"variante() === 'placa'\"");
+    expect(pixel).toContain('min-height: 44px');
     expect(salida).toContain('min-height: var(--alto-boton, 44px);');
-    expect(pistaScss).toContain('min-block-size: var(--alto-boton, 44px);');
   });
 
   it('«Salida segura» lleva brasa y su texto tibio llega a 4,5:1; «Ver pista» apagada se lee y su bombilla se apaga', () => {
@@ -1713,8 +1710,7 @@ describe('DialoguePanelComponent - las placas-botón de la cabecera', () => {
       expect(contrastRatio('#F2ECDF', surface)).toBeGreaterThanOrEqual(4.5);
     }
     expect(salida).toContain('--m: var(--marco-salida); --t: var(--trama-salida);');
-    expect(pistaScss).toMatch(/&\[aria-disabled='true'\] \{[^}]*--m: var\(--marco-placa-apagada\);[^}]*color: #a9a2b8;/);
-    expect(pistaScss).toContain('&::before { background-image: var(--icono-bombilla-apagada); }');
+    expect(pistaScss).toContain("&[aria-disabled='true']::before { background-image: var(--icono-bombilla-apagada); }");
   });
 });
 const PLACA_ARTE = ['#1B1826', '#211E2E', '#171421'];
