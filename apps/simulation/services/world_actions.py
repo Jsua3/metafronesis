@@ -68,7 +68,7 @@ def _distancia_rectangulo(posicion_x, posicion_y, rectangulo):
     return math.hypot(distancia_x, distancia_y)
 
 
-def _cerca(estado, objeto):
+def _distancia_al_movimiento(estado, objeto, *, paseo_corto=False):
     origen_x, origen_y = objeto.position_x, objeto.position_y
     ancho, alto = objeto.width or 0, objeto.height or 0
     movimiento = world._mapa_json(objeto.metadata_json).get("movimiento") if objeto.object_type == "PERSON" else None
@@ -103,11 +103,54 @@ def _cerca(estado, objeto):
                         posicion_y = inicio[1] + (fin[1] - inicio[1]) * paso / pasos
                         distancia = min(distancia, _distancia_rectangulo(estado.player_x, estado.player_y,
                                                                         (posicion_x, posicion_y, ancho, alto)))
-                if distancia > ALCANCE_INTERACCION:
-                    raise ValidationError("Estás demasiado lejos para interactuar.")
-                return
-    if _distancia_rectangulo(estado.player_x, estado.player_y, rectangulo) > ALCANCE_INTERACCION:
-        raise ValidationError("Estás demasiado lejos para interactuar.")
+                return distancia
+    if paseo_corto and rectangulo == (origen_x, origen_y, ancho, alto):
+        rectangulo = (origen_x - 64, origen_y, ancho + 128, alto)
+    return _distancia_rectangulo(estado.player_x, estado.player_y, rectangulo)
+
+
+def _distancia_al_punto_de_encuentro(estado, objeto, primero):
+    dx, dy = primero.position_x - objeto.position_x, primero.position_y - objeto.position_y
+    largo = dx * dx + dy * dy
+    t = ((estado.player_x - objeto.position_x) * dx + (estado.player_y - objeto.position_y) * dy) / largo if largo else 0
+    t = min(1, max(0, t))
+    return math.hypot(estado.player_x - objeto.position_x - t * dx, estado.player_y - objeto.position_y - t * dy)
+
+
+def _cerca_de_conversacion(estado, objeto):
+    conversaciones = world._mapa_json(estado.scene_map.ambient_json).get("conversaciones")
+    if objeto.object_type != "PERSON" or not isinstance(conversaciones, list):
+        return False
+    for entrada in conversaciones:
+        if not isinstance(entrada, dict) or entrada.get("modo") != "caminan":
+            continue
+        claves, lineas = entrada.get("personas"), entrada.get("lineas")
+        if (not isinstance(claves, list) or len(claves) != 2 or claves[0] == claves[1]
+                or not all(isinstance(clave, str) for clave in claves) or objeto.object_key not in claves
+                or not isinstance(lineas, list)
+                or not any(isinstance(linea, dict) and linea.get("quien") in claves
+                           and isinstance(linea.get("texto"), str) and linea["texto"].strip() for linea in lineas)):
+            continue
+        par = {persona.object_key: persona for persona in estado.scene_map.map_objects.filter(
+            object_key__in=claves, object_type="PERSON", visible=True)}
+        if len(par) != 2 or any(world._mapa_json(persona.metadata_json).get("postura") == "en-cama" for persona in par.values()):
+            continue
+        primero = par[claves[0]]
+        distancia = _distancia_al_movimiento(estado, primero, paseo_corto=True)
+        if objeto.object_key != primero.object_key:
+            distancia = min(distancia, _distancia_al_punto_de_encuentro(estado, objeto, primero))
+        # La ruta usa el mismo rodeo de 120 px de los acompañantes y conserva 28 px de separación.
+        if distancia <= ALCANCE_INTERACCION + 120 + 28:
+            return True
+    return False
+
+
+def _cerca(estado, objeto, *, conversacion=False):
+    if _distancia_al_movimiento(estado, objeto) <= ALCANCE_INTERACCION:
+        return
+    if conversacion and _cerca_de_conversacion(estado, objeto):
+        return
+    raise ValidationError("Estás demasiado lejos para interactuar.")
 
 
 def _evento(intento, tipo, detalle, solicitud=None):
@@ -133,12 +176,12 @@ def interactuar(usuario, identificador, clave):
         world._activo(intento)
         estado = world._estado(intento)
         objeto = get_object_or_404(MapObject, scene_map=estado.scene_map, object_key=clave, visible=True)
-        _cerca(estado, objeto)
+        dialogo = world._dialogo(objeto)
+        _cerca(estado, objeto, conversacion=bool(dialogo))
         # Como en v3, autoría conserva la condición; el juego no la evalúa al interactuar.
         disponibilidad_mundo.registrar(estado, "inspected", clave)
         if clave not in estado.inspected_object_keys:
             estado.inspected_object_keys = [*estado.inspected_object_keys, clave]
-        dialogo = world._dialogo(objeto)
         if dialogo and dialogo["key"] not in estado.viewed_dialogue_keys:
             estado.viewed_dialogue_keys = [*estado.viewed_dialogue_keys, dialogo["key"]]
         if dialogo and objeto.object_type == "PERSON":
