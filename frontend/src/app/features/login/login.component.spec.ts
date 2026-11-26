@@ -458,7 +458,7 @@ describe('LoginComponent', () => {
       button('Docente').click();
       await fixture.whenStable();
       expect(scene().getAttribute('data-paso')).toBe('evalua');
-      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('docente-universidad/portrait-alegre.png');
+      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('sebas/portrait-alegre.png');
 
       button('Administrador').click();
       await fixture.whenStable();

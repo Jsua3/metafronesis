@@ -1459,7 +1459,7 @@
       "id": "docente",
       "nombre": "Docente",
       "rol": "Docente",
-      "recipeId": "docente-universidad"
+      "recipeId": "sebas"
     },
     {
       "id": "estudiante-consultante",

@@ -38,7 +38,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
       'Supervisa intentos, evalúa competencias y acompaña el aprendizaje con evidencia clínica trazable.',
     previewCase: 'Panel docente',
     previewScene: 'Grupos · Reportes',
-    avatar: RETRATO('docente-universidad'),
+    avatar: RETRATO('sebas'),
   },
   {
     id: 'ADMIN',

@@ -69,7 +69,7 @@
       </div>
       @if (fallo('grupos')) { <ui-error-state message="No pudimos cargar todos los datos de tus grupos." (retry)="reload()" /> }
       @if (!fallo('grupos') && !grupos().length) {
-        <div class="panel"><ui-empty-state figura="docente-universidad" title="Aún no tienes grupos" description="Crea un grupo para acompañar a tus estudiantes." actionLabel="Crear grupo" (action)="irGrupos()" /></div>
+        <div class="panel"><ui-empty-state figura="sebas" title="Aún no tienes grupos" description="Crea un grupo para acompañar a tus estudiantes." actionLabel="Crear grupo" (action)="irGrupos()" /></div>
       } @else if (grupos().length) {
         <div class="rejilla">
           @for (vista of grupos(); track vista.grupo.id) {

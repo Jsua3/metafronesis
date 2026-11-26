@@ -124,7 +124,7 @@ describe('ui-empty-state', () => {
   it('cada rol tiene su figura del kit, siempre la misma (una sola tabla)', () => {
     expect(FIGURAS_VACIO).toEqual({
       estudiante: 'camila/bata',
-      docente: 'docente-universidad',
+      docente: 'sebas',
       admin: 'funcionaria-recepcion',
       revision: 'supervisor-clinico',
     });

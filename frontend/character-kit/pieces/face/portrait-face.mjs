@@ -58,6 +58,8 @@ const MOUTHS = {
 };
 
 const BLUSH = [[9, 19, 'q'], [10, 19, 'q'], [21, 19, 'q'], [22, 19, 'q']];
+/** Rostro de mejillas rojizas (`rosy`): rubor siempre, más ancho y una fila más abajo. */
+const ROSY = [[8, 19, 'q'], [23, 19, 'q'], [8, 20, 'q'], [9, 20, 'q'], [10, 20, 'q'], [21, 20, 'q'], [22, 20, 'q'], [23, 20, 'q']];
 /** Rostro maduro: bolsas bajo los ojos y surcos junto a la boca, en sombra de piel. */
 const MATURE_LINES = [[11, 18, 'w'], [12, 18, 'w'], [19, 18, 'w'], [20, 18, 'w'], [13, 19, 'w'], [18, 19, 'w']];
 
@@ -76,13 +78,14 @@ const STATES = {
 };
 
 /** Superposición de retrato del rostro en un estado. */
-export function facePortrait(state, { mature = false } = {}) {
+export function facePortrait(state, { mature = false, rosy = false } = {}) {
   const s = STATES[state];
   const cells = [
     ...EYES_X.flatMap(EYES[s.eyes]),
     ...BROWS[s.brows],
     ...MOUTHS[s.mouth],
-    ...(s.blush ? BLUSH : []),
+    ...(s.blush || rosy ? BLUSH : []),
+    ...(rosy ? ROSY : []),
     ...(s.tension ? TENSION_LINES : []),
     ...(mature ? MATURE_LINES : []),
   ];

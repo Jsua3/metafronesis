@@ -1,4 +1,5 @@
 /** Todas las piezas del kit. Registro explícito: el build no descubre archivos. */
+import barbaCorta from './accessory/barba-corta.mjs';
 import gafas from './accessory/gafas.mjs';
 import gafete from './accessory/gafete.mjs';
 import faldaLarga from './bottom/falda-larga.mjs';
@@ -7,6 +8,7 @@ import jean from './bottom/jean.mjs';
 import jogger from './bottom/jogger.mjs';
 import pantalon from './bottom/pantalon.mjs';
 import pantalonUniforme from './bottom/pantalon-uniforme.mjs';
+import cachetes from './face/cachetes.mjs';
 import maduro from './face/maduro.mjs';
 import sereno from './face/sereno.mjs';
 import afro from './hair/afro.mjs';
@@ -51,6 +53,7 @@ export const PIECES = Object.freeze([
   rapado,
   trenza,
   // rostro
+  cachetes,
   maduro,
   sereno,
   // arriba
@@ -82,6 +85,7 @@ export const PIECES = Object.freeze([
   tenis,
   zapatos,
   // accesorios
+  barbaCorta,
   gafas,
   gafete,
 ]);

@@ -35,7 +35,7 @@ export interface CapituloTutorial {
 }
 
 // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
-export const MENTOR = { receta: 'docente-universidad', nombre: 'Profe Guía' } as const;
+export const MENTOR = { receta: 'sebas', nombre: 'Profe Sebas' } as const;
 
 const respuestas = (c: CasoBorrador) => c.escenas.flatMap((e) => e.respuestas);
 
