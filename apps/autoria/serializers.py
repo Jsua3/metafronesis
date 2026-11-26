@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.simulation.serializers.portadas import PortadaSerializer
 from apps.simulation.models.vocabulary import Intensity, ResponseClass
 
 
@@ -204,7 +205,7 @@ class PersonaCasoSerializer(serializers.Serializer):
     nombre = serializers.CharField()
 
 
-class VistaEditorSerializer(serializers.Serializer):
+class VistaEditorSerializer(PortadaSerializer):
     caseVersionId = serializers.IntegerField()
     revision = serializers.IntegerField()
     title = serializers.CharField()

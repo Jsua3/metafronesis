@@ -8,6 +8,7 @@ from apps.simulation.models import CaseReview, PublicationChecklist, Publication
 from apps.simulation.models.world import CaseCharacter, ClinicalTool, MapObject, SceneHint, SceneMap
 from apps.simulation.services import case_rules
 from apps.simulation.services.audit_service import auditable
+from apps.simulation.services.portadas import datos_portada
 from apps.users.permisos import exigir_autoria
 from shared.jsonutils import read_map, read_string_list
 from . import autoria, guardas
@@ -67,6 +68,7 @@ def vista(version):
     checklist, porcentaje = lista(version, nodos)
     return {
         "caseVersionId": version.pk, "revision": version.version, "title": version.simulation_case.title,
+        **datos_portada(version),
         "autor": autoria.persona(version.simulation_case.created_by), "editadoPor": autoria.editores(version.simulation_case),
         "semanticVersion": version.semantic_version, "status": version.status, "context": version.narrative_context or "",
         "estimatedMinutes": version.estimated_minutes, "learningObjectives": read_string_list(version.learning_objectives), "contentWarnings": read_string_list(version.content_warnings), "rehearsedToEnd": False,

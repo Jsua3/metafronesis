@@ -16,6 +16,7 @@ from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.simulation.models import CaseVersion, SimulationAttempt
+from apps.simulation.services.portadas import datos_portada
 from shared import policies
 from shared.exceptions import ApiError
 
@@ -50,6 +51,7 @@ def assignment_dto(assignment, now=None):
         "sortOrder": assignment.sort_order,
         # El docente necesita nombrar cada asignación (orden, secuencia) sin una segunda consulta por caso.
         "caseTitle": assignment.case_version.simulation_case.title,
+        **datos_portada(assignment.case_version),
     }
     if assignment.opens_at is not None:
         data["opensAt"] = format_window_value(assignment.opens_at)

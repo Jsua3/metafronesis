@@ -26,12 +26,14 @@ from apps.simulation.casedef.escritor_insignia import ErrorDeCarga, cargar
 from apps.simulation.casedef.insignia import traducir
 from apps.simulation.models import CaseVersion, CaseVersionStatus, Competency, Rubric, RubricCriterion, SimulationCase
 from apps.simulation.services import rubricas
+from apps.simulation.services.portadas import crear_portada
 from apps.users.models import CustomUser, PermisoDeAutoria, UserRole
 from shared.exceptions import ApiError
 
 DOMINIO = "demo.metafronesis.test"
 MINUTOS_ESTIMADOS = 40  # el caso lineal se juega en unos 40 minutos
 RUTA_DOCUMENTO = Path(__file__).resolve().parents[1] / "simulation/data/casos/SIM-VBG-002.dsl.json"
+RUTA_PORTADA = RUTA_DOCUMENTO.with_name("SIM-VBG-002.portada.png")
 
 DOCENTES = (
     ("laura.mendoza", "Laura", "Mendoza"),
@@ -174,11 +176,23 @@ def _rubrica(autora, informe):
     return rubrica
 
 
+def _adjuntar_portada_insignia(version):
+    if version.cover_id or not RUTA_PORTADA.is_file():
+        return
+    try:
+        with RUTA_PORTADA.open("rb") as archivo:
+            version.cover = crear_portada(archivo)
+    except (ApiError, OSError) as error:
+        raise ErrorDeSiembra(f"No se pudo adjuntar la portada del caso insignia: {error}") from error
+    version.cover_pixel_art = True
+    version.save(update_fields=["cover", "cover_pixel_art"])
+
+
 def _caso_insignia(autora, publicador, rubrica, informe):
     """Carga el caso como borrador, le asigna la rúbrica de la siembra y lo publica.
 
     La rúbrica entra en la huella de la versión: se asigna ANTES de publicar, porque después cambiarla rompería el sello.
-    Una versión que ya está publicada no se toca.
+    Una versión ya publicada solo recibe la portada si todavía le falta: es un recurso de presentación fuera del sello.
     """
     plan = traducir(json.loads(RUTA_DOCUMENTO.read_text(encoding="utf-8")))
     plan = replace(plan, version=MappingProxyType({**plan.version, "estimated_minutes": MINUTOS_ESTIMADOS}))
@@ -186,6 +200,7 @@ def _caso_insignia(autora, publicador, rubrica, informe):
     caso = SimulationCase.objects.select_for_update().filter(code=plan.caso["code"]).first()
     existente = caso.versions.filter(semantic_version=plan.version["semantic_version"]).first() if caso else None
     if existente is not None and existente.status == CaseVersionStatus.PUBLISHED:
+        _adjuntar_portada_insignia(existente)
         informe.existente.append(f"caso {plan.caso['code']} versión {existente.semantic_version} (PUBLISHED)")
         return existente
     try:
@@ -194,6 +209,7 @@ def _caso_insignia(autora, publicador, rubrica, informe):
         raise ErrorDeSiembra(f"No se pudo cargar el caso insignia: {error}") from error
     if version.status != CaseVersionStatus.DRAFT:
         raise ErrorDeSiembra(f"El caso insignia está en estado {version.status}; la siembra no lo publica.")
+    _adjuntar_portada_insignia(version)
     rubricas.asociar_a_version(autora, rubrica.pk, version.pk)
     problemas = arbol_de(version).problemas()
     if problemas:

@@ -1,3 +1,4 @@
+from django.http import QueryDict
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 from shared.permissions import policy_permission
@@ -41,7 +42,8 @@ CABECERA_REVISION = "X-Case-Revision"
 
 def _datos(serializer, request):
     """El cuerpo validado. La revisión del caso puede ir en el cuerpo o, como la manda el editor, en ``X-Case-Revision``."""
-    cuerpo = dict(request.data) if hasattr(request.data, "keys") else {}
+    datos = request.data
+    cuerpo = datos.dict() if isinstance(datos, QueryDict) else dict(datos) if hasattr(datos, "keys") else {}
     if cuerpo.get("revision") in (None, "") and request.headers.get(CABECERA_REVISION) is not None:
         cuerpo["revision"] = request.headers[CABECERA_REVISION]
     instancia = serializer(data=cuerpo)

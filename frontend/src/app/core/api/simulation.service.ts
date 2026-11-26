@@ -58,6 +58,8 @@ interface CatalogWire {
   completed: boolean;
   allowed: boolean;
   reason: CaseAccessReason | null;
+  portada?: string | null;
+  portadaPixelArt?: boolean;
 }
 
 /** Un caso de la lista (`GET /cases`, sin sobre). */
@@ -78,6 +80,12 @@ interface BriefWire {
   narrativeContext: string;
   learningObjectives: string[];
   estimatedMinutes: number | null;
+  portada?: string | null;
+  portadaPixelArt?: boolean;
+}
+
+function portadaDe(fila: Pick<CatalogWire, 'portada' | 'portadaPixelArt'>) {
+  return fila.portada === undefined ? {} : { portada: fila.portada, portadaPixelArt: fila.portadaPixelArt };
 }
 
 /** La respuesta de una decisión (`POST …/decisions`, sin sobre): solo el resultado de la jugada, no el estado del intento. */
@@ -150,6 +158,7 @@ export class SimulationService {
         semanticVersion: '',
         nodeCount: 0,
         status: 'PUBLISHED',
+        ...portadaDe(item),
       };
     })));
   }
@@ -165,6 +174,7 @@ export class SimulationService {
       completed: fila.completed,
       locked: !fila.allowed,
       access: { allowed: fila.allowed, ...(fila.reason ? { reason: fila.reason } : {}) },
+      ...portadaDe(fila),
     }))));
   }
 
@@ -188,6 +198,7 @@ export class SimulationService {
         learningObjectives: ficha.learningObjectives,
         hasSensitiveContent: consentimiento?.required ?? false,
         access: { allowed: true },
+        ...portadaDe(ficha),
       };
     }));
   }

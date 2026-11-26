@@ -6,6 +6,7 @@ from apps.biblioteca.services import copiar_al_caso, lugares
 from apps.simulation.models import DecisionOption, SimulationNode
 from shared.jsonutils import read_map, read_string_list
 from apps.simulation.services.audit_service import auditable
+from apps.simulation.services.portadas import datos_portada
 from apps.users.permisos import exigir_autoria, puede_autorar
 from .constructor import ConstructorDeBorrador
 from . import autoria, contenido, guardas
@@ -15,7 +16,8 @@ def ficha(version):
     caso = version.simulation_case
     return {"code": caso.code, "title": caso.title, "description": caso.description,
         "narrativeContext": version.narrative_context, "learningObjectives": json.loads(version.learning_objectives),
-        "estimatedMinutes": version.estimated_minutes, "contentWarnings": read_string_list(version.content_warnings)}
+        "estimatedMinutes": version.estimated_minutes, "contentWarnings": read_string_list(version.content_warnings),
+        **datos_portada(version)}
 
 
 def resumen(version):

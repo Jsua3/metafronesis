@@ -5,6 +5,7 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from PIL import Image
 from rest_framework.test import APIClient
 
 from apps.grupos import assignment_service
@@ -106,6 +107,22 @@ def test_caso_insignia_publicado_con_rubrica_y_asignado(admin, clave):
     assert all(c.competency_ref_id and len(c.level_descriptors_json) > 50 for c in criterios)
     asignados = CaseAssignment.objects.filter(case_version=version, active=True)
     assert set(asignados.values_list("grupo__codigo", flat=True)) == set(Grupo.objects.filter(codigo__startswith="DEMO-").values_list("codigo", flat=True))
+
+
+@pytest.mark.parametrize("llega_despues", [False, True])
+def test_portada_insignia_en_la_version_publicada(admin, clave, tmp_path, monkeypatch, llega_despues):
+    portada = tmp_path / "SIM-VBG-002.portada.png"
+    monkeypatch.setattr(siembra_demostracion, "RUTA_PORTADA", portada)
+    if llega_despues:
+        sembrar(admin, "--confirmar")
+        assert CaseVersion.objects.get(simulation_case__code="SIM-VBG-002").cover_id is None
+    Image.new("RGB", (240, 132), "purple").save(portada)
+    sembrar(admin, "--confirmar")
+    version = CaseVersion.objects.get(simulation_case__code="SIM-VBG-002")
+    assert version.status == "PUBLISHED" and version.cover_pixel_art and version.cover.formato == "PNG"
+    assert version.definition_hash == huella_de(version)
+    sembrar(admin, "--confirmar")
+    assert CaseVersion.objects.get(pk=version.pk).cover_id == version.cover_id
 
 
 @pytest.mark.req("SIEP-234")

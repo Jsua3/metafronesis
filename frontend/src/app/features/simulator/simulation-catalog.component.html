@@ -44,7 +44,8 @@
       <div class="p-rejilla p-rejilla--24" [class.cs-rejilla--uno]="filtradas().length === 1">
         @for (card of filtradas(); track card.item.caseVersionId) {
           <ui-card class="cs-tarjeta" [attr.data-case-id]="card.item.caseVersionId" [class.cs-tarjeta--resaltada]="card.resaltado">
-            <ui-portada-caso class="cs-portada" tamano="tarjeta" [umbral]="entrando() === card.item.caseVersionId" [titulo]="card.item.title" [portada]="card.portada" />
+            <ui-portada-caso class="cs-portada" tamano="tarjeta" portal [umbral]="entrando() === card.item.caseVersionId"
+              [titulo]="card.item.title" [portada]="card.portada" [pixelArt]="card.portadaPixelArt" />
             <div class="cs-cuerpo">
               <p class="cs-codigo">{{ card.item.code }}</p>
               <h3 class="cs-titulo">{{ card.item.title }}</h3>

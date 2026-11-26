@@ -15,6 +15,8 @@ ESQUEMA = json.loads(Path(__file__).with_name("esquema_caso.json").read_text(enc
 
 def exportar(usuario, case_version_id):
     definicion = servicios.definicion(usuario, case_version_id)
+    campos_ficha = ESQUEMA["properties"]["ficha"]["properties"]
+    ficha = {campo: valor for campo, valor in definicion["brief"].items() if campo in campos_ficha}
     nodos = definicion["nodes"]
     claves = {nodo["id"]: nodo["key"] for nodo in nodos}
     escenas_dsl = [{k: n[k] for k in ("key", "title", "narrative", "question", "start", "terminal", "order")} for n in nodos]
@@ -23,7 +25,7 @@ def exportar(usuario, case_version_id):
         for opcion in nodo["decisions"]:
             opciones.append({**{k: opcion[k] for k in ("key", "text", "responseClass", "feedback", "theoryBasis")},
                              "source": nodo["key"], "target": claves[opcion["targetNodeId"]]})
-    return {"formato": "metafronesis-caso", "version": 1, "ficha": definicion["brief"],
+    return {"formato": "metafronesis-caso", "version": 1, "ficha": ficha,
             "escenas": escenas_dsl, "decisiones": opciones}
 
 

@@ -33,6 +33,36 @@
           </div>
         </app-estudio-seccion>
 
+        @if (!soloLectura()) {
+          <app-estudio-seccion titulo="Portada" [resumen]="caso.portada ? 'Con imagen' : 'Sin imagen'" [(abierta)]="abiertaPortada">
+            <div class="grupo">
+              <label for="d-portada" class="etiqueta">Imagen de portada</label>
+              <input #imagen id="d-portada" class="campo campo--archivo" type="file" accept="image/png,image/jpeg,image/webp"
+                [disabled]="portadaOcupada()" [attr.aria-invalid]="errorPortada() ? 'true' : null"
+                [attr.aria-describedby]="'d-portada-ayuda' + (errorPortada() ? ' d-portada-error' : '')"
+                (change)="elegirPortada(imagen)" />
+              <p id="d-portada-ayuda" class="ayuda">PNG, JPEG o WebP. Hasta 2 MB. Cada lado debe medir entre 64 y 2048 píxeles.</p>
+              <label class="portada-pixel">
+                <input #pixel id="d-portada-pixel" type="checkbox" [checked]="portadaPixelArt()"
+                  [disabled]="!archivoPortada() || portadaOcupada()" (change)="portadaPixelArt.set(pixel.checked)" />
+                La imagen es pixel art
+              </label>
+              <div class="portada-acciones">
+                <button ui-button type="button" [disabled]="!archivoPortada() || portadaOcupada()"
+                  (click)="cambiarPortada(archivoPortada(), imagen)">
+                  {{ caso.portada ? 'Reemplazar portada' : 'Subir portada' }}
+                </button>
+                @if (caso.portada) {
+                  <button ui-button type="button" variant="ghost" [disabled]="portadaOcupada()"
+                    (click)="cambiarPortada(null, imagen)">Quitar portada</button>
+                }
+              </div>
+              @if (guardandoPortada()) { <p class="ayuda" role="status">Actualizando la portada…</p> }
+              @if (errorPortada(); as error) { <p id="d-portada-error" class="error" role="alert">{{ error }}</p> }
+            </div>
+          </app-estudio-seccion>
+        }
+
         <app-estudio-seccion titulo="Antes de empezar" [resumen]="resumenContexto()" [(abierta)]="abiertaContexto">
           <div class="grupo">
             <div class="etiqueta-fila">
@@ -122,7 +152,8 @@
       <h2 id="d-vista" class="vista-titulo">Así aparece para el estudiante</h2>
       <div class="marco-vista">
         <article class="vista">
-          <ui-portada-caso class="vista__portada" [titulo]="nombre()" tamano="tarjeta" />
+          <ui-portada-caso class="vista__portada" [titulo]="nombre()" tamano="tarjeta"
+            [portada]="caso.portada" [pixelArt]="caso.portadaPixelArt ?? true" />
           <h3 class="vista__nombre">{{ nombre().trim() || 'Sin nombre' }}</h3>
           <p class="vista__contexto" [class.vacio]="!contexto().trim()">{{ contexto().trim() || 'Aquí se verá el contexto cuando lo escribas.' }}</p>
           @if (objetivosVista().length) {

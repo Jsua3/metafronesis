@@ -46,6 +46,21 @@ describe('Casos del estudiante', () => {
 
   beforeEach(() => { info.mockClear(); sessionStorage.removeItem('siep.catalogo.retorno'); });
 
+  it('usa la portada asignada y aplica el escalado de píxeles solo cuando corresponde', async () => {
+    const { host } = await render([
+      entrada(1, { portada: '/media/sala.png', portadaPixelArt: true }),
+      entrada(2, { portada: '/media/foto.jpg', portadaPixelArt: false }),
+      entrada(3),
+    ], []);
+    const tarjetas = host.querySelectorAll('.cs-tarjeta');
+    const portada = (i: number) => tarjetas[i].querySelector('.ui-portada-caso__imagen');
+    expect(portada(0)?.getAttribute('src')).toBe('/media/sala.png');
+    expect(portada(0)?.classList).toContain('ui-portada-caso__imagen--pixel');
+    expect(portada(1)?.getAttribute('src')).toBe('/media/foto.jpg');
+    expect(portada(1)?.classList).not.toContain('ui-portada-caso__imagen--pixel');
+    expect(tarjetas[2].querySelector('.ui-portada-caso__puerta')).not.toBeNull();
+  });
+
   it('agrupa los intentos por caso sin duración ni nombre repetido, y «Ver mi resultado» navega al cierre', async () => {
     const { host, navegar } = await render([entrada(1, { completed: true })], [intento()]);
     const historial = host.querySelector('details')!;
