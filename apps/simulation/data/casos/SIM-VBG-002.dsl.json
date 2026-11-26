@@ -12,7 +12,7 @@
     ],
     "rubrica": "RUB-01",
     "titulo": "Violencia Familiar y Tentativa de Feminicidio — tres capítulos",
-    "version": "2.0.6"
+    "version": "2.0.7"
   },
   "escenas": [
     {
@@ -777,7 +777,7 @@
                 {
                   "escena": "barrio",
                   "momento": "tarde",
-                  "duracionMs": 6500,
+                  "duracionMs": 7000,
                   "subtitulo": "Viernes, 4 de la tarde. Un barrio donde la violencia no es noticia."
                 },
                 {
@@ -787,18 +787,44 @@
                     "hombre",
                     "mujer"
                   ],
-                  "duracionMs": 8000,
-                  "subtitulo": "Edwin volvió a gritarle a Yuliana: que sin él no era nadie, que era una mantenida, que ella le era infiel."
+                  "duracionMs": 11000,
+                  "subtitulo": "Edwin volvió a gritarle a Yuliana: que sin él no era nadie, que era una mantenida, que ella le era infiel.",
+                  "burbujas": [
+                    {
+                      "quien": "hombre",
+                      "texto": "¡Sin mí no eres nadie!",
+                      "grito": true
+                    },
+                    {
+                      "quien": "mujer",
+                      "texto": "Ya no más, Edwin."
+                    },
+                    {
+                      "quien": "hombre",
+                      "texto": "¡Mantenida!",
+                      "grito": true
+                    }
+                  ]
                 },
                 {
                   "escena": "casa-ventana",
                   "momento": "tarde",
                   "siluetas": [
-                    "mujer",
+                    "mujer-telefono",
                     "nina"
                   ],
-                  "duracionMs": 7500,
-                  "subtitulo": "Esa tarde, Yuliana llamó a su mamá. Al día siguiente se iría con Salomé, su hija de 3 años."
+                  "duracionMs": 9000,
+                  "subtitulo": "Esa tarde, Yuliana llamó a su mamá. Al día siguiente se iría con Salomé, su hija de 3 años.",
+                  "burbujas": [
+                    {
+                      "quien": "mujer-telefono",
+                      "texto": "Mamá, mañana me voy con la niña."
+                    },
+                    {
+                      "quien": "telefono",
+                      "texto": "Aquí te espero, mija."
+                    }
+                  ]
                 },
                 {
                   "escena": "casa-ventana",
@@ -807,8 +833,15 @@
                   "siluetas": [
                     "hombre"
                   ],
-                  "duracionMs": 6000,
-                  "subtitulo": "A las 10:40 de la noche, Edwin regresó."
+                  "duracionMs": 6500,
+                  "subtitulo": "A las 10:40 de la noche, Edwin regresó.",
+                  "burbujas": [
+                    {
+                      "quien": "hombre",
+                      "texto": "¿Así que te ibas a ir?",
+                      "grito": true
+                    }
+                  ]
                 },
                 {
                   "escena": "negro",
@@ -819,11 +852,17 @@
                 {
                   "escena": "calle-emergencia",
                   "momento": "noche",
-                  "duracionMs": 7500,
+                  "duracionMs": 8500,
                   "personas": [
                     "vecina"
                   ],
-                  "subtitulo": "Una vecina llamó a la línea 123. Cuando llegó la policía, Edwin ya había huido."
+                  "subtitulo": "Una vecina llamó a la línea 123. Cuando llegó la policía, Edwin ya había huido.",
+                  "burbujas": [
+                    {
+                      "quien": "vecina",
+                      "texto": "¡Aló, 123! ¡Manden a alguien, rápido!"
+                    }
+                  ]
                 },
                 {
                   "escena": "urgencias-llegada",
@@ -834,18 +873,29 @@
                 {
                   "escena": "urgencias-familia",
                   "momento": "noche",
-                  "duracionMs": 8000,
+                  "duracionMs": 10000,
                   "personas": [
                     "abuela-familia",
                     "hermano-mayor",
                     "hermano-adolescente"
                   ],
-                  "subtitulo": "Gloria, la mamá de Yuliana, y sus hijos Óscar y Emanuel llegaron minutos después. Todavía no saben lo de Salomé."
+                  "subtitulo": "Gloria, la mamá de Yuliana, y sus hijos Óscar y Emanuel llegaron minutos después. Todavía no saben lo de Salomé.",
+                  "burbujas": [
+                    {
+                      "quien": "abuela-familia",
+                      "texto": "¿Dónde está mi hija? ¿Y la niña?"
+                    },
+                    {
+                      "quien": "hermano-mayor",
+                      "texto": "¡Déjeme pasar!",
+                      "grito": true
+                    }
+                  ]
                 },
                 {
                   "escena": "titulo",
                   "momento": "noche",
-                  "duracionMs": 6000,
+                  "duracionMs": 7000,
                   "subtitulo": "11:20 p. m. Eres {nombre}, del equipo de psicología de urgencias. Te acaban de llamar."
                 }
               ]
@@ -1803,6 +1853,9 @@
                   "gloria",
                   "mateo",
                   "rincon"
+                ],
+                "requiresTools": [
+                  "PAP"
                 ]
               },
               "movimiento": {},
@@ -1973,6 +2026,34 @@
             "music": "none",
             "salaId": "sala-espera",
             "ambientTone": "clinical",
+            "conversaciones": [
+              {
+                "personas": [
+                  "fig-senora",
+                  "fig-joven"
+                ],
+                "modo": "quietos",
+                "pausaMs": 9000,
+                "lineas": [
+                  {
+                    "quien": "fig-senora",
+                    "texto": "¿Usted por quién espera, joven?"
+                  },
+                  {
+                    "quien": "fig-joven",
+                    "texto": "Por mi papá. Le dio un infarto."
+                  },
+                  {
+                    "quien": "fig-senora",
+                    "texto": "Ay, Dios. Que no sea nada grave."
+                  },
+                  {
+                    "quien": "fig-joven",
+                    "texto": "Llevo tres horas y nadie dice nada."
+                  }
+                ]
+              }
+            ],
             "guia": {
               "paso": 2,
               "titulo": "Contén antes de informar",
@@ -2793,10 +2874,10 @@
               "opcion": null,
               "orientacion": "",
               "personaje": null,
-              "texto": "Un muchacho espera noticias de su papá.",
+              "texto": "Un muchacho espera noticias de su papá. Conversa con la señora de al lado.",
               "tipo": "PERSON",
               "visible": true,
-              "x": 1080,
+              "x": 430,
               "y": 300,
               "z": 0
             },
@@ -2990,6 +3071,34 @@
             "music": "none",
             "salaId": "entrada-urgencias",
             "ambientTone": "clinical",
+            "conversaciones": [
+              {
+                "personas": [
+                  "fig-esposo",
+                  "fig-vecina"
+                ],
+                "modo": "quietos",
+                "pausaMs": 10000,
+                "lineas": [
+                  {
+                    "quien": "fig-esposo",
+                    "texto": "Mija, mejor volvamos mañana."
+                  },
+                  {
+                    "quien": "fig-vecina",
+                    "texto": "Usted no se mueve de aquí hasta que lo vean."
+                  },
+                  {
+                    "quien": "fig-esposo",
+                    "texto": "Es solo una fiebre…"
+                  },
+                  {
+                    "quien": "fig-vecina",
+                    "texto": "Desde ayer. Aquí nos quedamos."
+                  }
+                ]
+              }
+            ],
             "guia": {
               "paso": 0,
               "titulo": "Una noche cualquiera en urgencias",
@@ -3167,6 +3276,22 @@
                 }
               ],
               "objeto": "fig-vecina",
+              "retrato": null
+            },
+            {
+              "clave": "fig-esposo",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Señor con fiebre",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Señor con fiebre",
+                  "orden": 1,
+                  "texto": "Mi señora no me deja ir. Y tiene razón, ¿no?"
+                }
+              ],
+              "objeto": "fig-esposo",
               "retrato": null
             }
           ],
@@ -3532,7 +3657,7 @@
                 "apoyo": "pies",
                 "expresion": "neutral",
                 "movimiento": "deambula",
-                "recipeId": "seguridad"
+                "recipeId": "camillero"
               },
               "movimiento": {},
               "opcion": null,
@@ -3571,6 +3696,35 @@
               "tipo": "PERSON",
               "visible": true,
               "x": 900,
+              "y": 420,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "fig-esposo",
+              "codigoCorto": "FIG",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Señor con fiebre",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Mirar: señor con fiebre",
+              "metadatos": {
+                "apoyo": "pies",
+                "expresion": "neutral",
+                "movimiento": "quieto",
+                "recipeId": "esposo-fiebre"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "El esposo de la señora, con fiebre, quiere irse para la casa.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 952,
               "y": 420,
               "z": 0
             },
@@ -4342,7 +4496,10 @@
                 "requiresNodes": [
                   "c1-lugar-para-hablar"
                 ],
-                "lockedMessage": "Primero acuerda con el doctor Ospina cómo se va a dar la noticia."
+                "lockedMessage": "Primero acuerda con el doctor Ospina cómo se va a dar la noticia.",
+                "requiresTools": [
+                  "SPIKES"
+                ]
               },
               "movimiento": {},
               "opcion": null,
@@ -5521,6 +5678,34 @@
             "music": "none",
             "salaId": "entrada-urgencias",
             "ambientTone": "clinical",
+            "conversaciones": [
+              {
+                "personas": [
+                  "fig-esposo",
+                  "fig-vecina"
+                ],
+                "modo": "quietos",
+                "pausaMs": 10000,
+                "lineas": [
+                  {
+                    "quien": "fig-esposo",
+                    "texto": "Mija, mejor volvamos mañana."
+                  },
+                  {
+                    "quien": "fig-vecina",
+                    "texto": "Usted no se mueve de aquí hasta que lo vean."
+                  },
+                  {
+                    "quien": "fig-esposo",
+                    "texto": "Es solo una fiebre…"
+                  },
+                  {
+                    "quien": "fig-vecina",
+                    "texto": "Desde ayer. Aquí nos quedamos."
+                  }
+                ]
+              }
+            ],
             "guia": {
               "paso": 0,
               "titulo": "Una noche cualquiera en urgencias",
@@ -5698,6 +5883,22 @@
                 }
               ],
               "objeto": "fig-vecina",
+              "retrato": null
+            },
+            {
+              "clave": "fig-esposo",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Señor con fiebre",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Señor con fiebre",
+                  "orden": 1,
+                  "texto": "Mi señora no me deja ir. Y tiene razón, ¿no?"
+                }
+              ],
+              "objeto": "fig-esposo",
               "retrato": null
             }
           ],
@@ -6063,7 +6264,7 @@
                 "apoyo": "pies",
                 "expresion": "neutral",
                 "movimiento": "deambula",
-                "recipeId": "seguridad"
+                "recipeId": "camillero"
               },
               "movimiento": {},
               "opcion": null,
@@ -6102,6 +6303,35 @@
               "tipo": "PERSON",
               "visible": true,
               "x": 900,
+              "y": 420,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "fig-esposo",
+              "codigoCorto": "FIG",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Señor con fiebre",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Mirar: señor con fiebre",
+              "metadatos": {
+                "apoyo": "pies",
+                "expresion": "neutral",
+                "movimiento": "quieto",
+                "recipeId": "esposo-fiebre"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "El esposo de la señora, con fiebre, quiere irse para la casa.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 952,
               "y": 420,
               "z": 0
             },
@@ -8511,7 +8741,7 @@
                 "apoyo": "pies",
                 "expresion": "neutral",
                 "movimiento": "deambula",
-                "recipeId": "seguridad"
+                "recipeId": "camillero"
               },
               "movimiento": {},
               "opcion": null,
@@ -8829,6 +9059,34 @@
             "music": "none",
             "salaId": "entrada-urgencias",
             "ambientTone": "clinical",
+            "conversaciones": [
+              {
+                "personas": [
+                  "fig-esposo",
+                  "fig-vecina"
+                ],
+                "modo": "quietos",
+                "pausaMs": 10000,
+                "lineas": [
+                  {
+                    "quien": "fig-esposo",
+                    "texto": "Mija, mejor volvamos mañana."
+                  },
+                  {
+                    "quien": "fig-vecina",
+                    "texto": "Usted no se mueve de aquí hasta que lo vean."
+                  },
+                  {
+                    "quien": "fig-esposo",
+                    "texto": "Es solo una fiebre…"
+                  },
+                  {
+                    "quien": "fig-vecina",
+                    "texto": "Desde ayer. Aquí nos quedamos."
+                  }
+                ]
+              }
+            ],
             "guia": {
               "paso": 0,
               "titulo": "Una noche cualquiera en urgencias",
@@ -9006,6 +9264,22 @@
                 }
               ],
               "objeto": "fig-vecina",
+              "retrato": null
+            },
+            {
+              "clave": "fig-esposo",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Señor con fiebre",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Señor con fiebre",
+                  "orden": 1,
+                  "texto": "Mi señora no me deja ir. Y tiene razón, ¿no?"
+                }
+              ],
+              "objeto": "fig-esposo",
               "retrato": null
             }
           ],
@@ -9371,7 +9645,7 @@
                 "apoyo": "pies",
                 "expresion": "neutral",
                 "movimiento": "deambula",
-                "recipeId": "seguridad"
+                "recipeId": "camillero"
               },
               "movimiento": {},
               "opcion": null,
@@ -9410,6 +9684,35 @@
               "tipo": "PERSON",
               "visible": true,
               "x": 900,
+              "y": 420,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "fig-esposo",
+              "codigoCorto": "FIG",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Señor con fiebre",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Mirar: señor con fiebre",
+              "metadatos": {
+                "apoyo": "pies",
+                "expresion": "neutral",
+                "movimiento": "quieto",
+                "recipeId": "esposo-fiebre"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "El esposo de la señora, con fiebre, quiere irse para la casa.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 952,
               "y": 420,
               "z": 0
             },
@@ -10185,7 +10488,10 @@
                 "requiresNodes": [
                   "c2-marco-hospital"
                 ],
-                "lockedMessage": "Antes, decide qué se hace con esa llamada."
+                "lockedMessage": "Antes, decide qué se hace con esa llamada.",
+                "requiresTools": [
+                  "RISK_METER"
+                ]
               },
               "movimiento": {},
               "opcion": null,
@@ -15929,6 +16235,30 @@
             "music": "none",
             "salaId": "comisaria-pasillo",
             "ambientTone": "calm",
+            "conversaciones": [
+              {
+                "personas": [
+                  "fig-mama",
+                  "fig-joven"
+                ],
+                "modo": "quietos",
+                "pausaMs": 10000,
+                "lineas": [
+                  {
+                    "quien": "fig-mama",
+                    "texto": "¿Seguro que quiere entrar conmigo?"
+                  },
+                  {
+                    "quien": "fig-joven",
+                    "texto": "Sí, ma. No la voy a dejar sola."
+                  },
+                  {
+                    "quien": "fig-mama",
+                    "texto": "Gracias, mijo."
+                  }
+                ]
+              }
+            ],
             "guia": {
               "paso": 3,
               "titulo": "Explica quién hace qué",
@@ -16096,6 +16426,22 @@
                 }
               ],
               "objeto": "fig-joven",
+              "retrato": null
+            },
+            {
+              "clave": "fig-mama",
+              "elecciones": [],
+              "emocion": "neutral",
+              "hablante": "Señora que espera con su hijo",
+              "lineas": [
+                {
+                  "emocion": "neutral",
+                  "hablante": "Señora que espera con su hijo",
+                  "orden": 1,
+                  "texto": "Vengo a poner una denuncia. Mi hijo no me quiso dejar venir sola."
+                }
+              ],
+              "objeto": "fig-mama",
               "retrato": null
             }
           ],
@@ -16346,6 +16692,35 @@
               "tipo": "PERSON",
               "visible": true,
               "x": 1180,
+              "y": 320,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "fig-mama",
+              "codigoCorto": "FIG",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Señora que espera con su hijo",
+              "herramienta": null,
+              "icono": "person",
+              "indicacion": "Mirar: señora que espera con su hijo",
+              "metadatos": {
+                "apoyo": "pies",
+                "expresion": "neutral",
+                "movimiento": "quieto",
+                "recipeId": "mama-comisaria"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "La mamá del muchacho le habla en voz baja.",
+              "tipo": "PERSON",
+              "visible": true,
+              "x": 1232,
               "y": 320,
               "z": 0
             },
@@ -17890,6 +18265,32 @@
               "z": 0
             },
             {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-ruta-comisaria",
+              "codigoCorto": "SAF",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Flujograma de la ruta de la comisaría",
+              "herramienta": "SAFETY_ROUTE",
+              "icono": "healing",
+              "indicacion": "Tomar el flujograma de la ruta",
+              "metadatos": {
+                "apoyo": "pies"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "La ruta de protección de la comisaría: quién hace qué, en qué plazos y a dónde se remite.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 700,
+              "y": 392,
+              "z": 0
+            },
+            {
               "alto": 40,
               "ancho": 24,
               "clave": "puerta-pasillo",
@@ -18421,6 +18822,32 @@
               "visible": true,
               "x": 860,
               "y": 300,
+              "z": 0
+            },
+            {
+              "alto": 48,
+              "ancho": 48,
+              "clave": "tool-bitacora-bolso",
+              "codigoCorto": "REF",
+              "colision": false,
+              "color": "#7FB3D5",
+              "desbloqueo": {},
+              "etiqueta": "Tu bolso",
+              "herramienta": "REFLECTION_JOURNAL",
+              "icono": "healing",
+              "indicacion": "Sacar tu libreta de reflexión del bolso",
+              "metadatos": {
+                "apoyo": "pies"
+              },
+              "movimiento": {},
+              "opcion": null,
+              "orientacion": "",
+              "personaje": null,
+              "texto": "En el bolso está la libreta de reflexión que empezaste en el hospital.",
+              "tipo": "TOOL",
+              "visible": true,
+              "x": 740,
+              "y": 400,
               "z": 0
             },
             {

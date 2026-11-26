@@ -41,7 +41,7 @@ def test_carga_completa_e_idempotente(documento, autor):
     assert version.scene_maps.count() == 24
     assert version.characters.count() == 13
     assert version.clinical_tools.count() == 5
-    assert sum(sala.map_objects.count() for sala in version.scene_maps.all()) == 299
+    assert sum(sala.map_objects.count() for sala in version.scene_maps.all()) == 305
     otro_autor = CustomUser.objects.create_user(email='otro@example.test', password='prueba', role='PROFESOR')
     assert cargar(plan, otro_autor).pk == version.pk
     assert SimulationCase.objects.count() == 1
