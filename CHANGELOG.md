@@ -19,7 +19,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 
 ## [0.7.0] - 2026-11-26
 
-Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS de 35,8 y ninguna logró enviar un caso a revisión. Esta versión quita lo que impedía terminar, hace que el editor diga la verdad, guía al estudiante y al docente, y pule el juego y la accesibilidad. Trae también las sesiones del docente con sus correos, la recuperación de contraseña, el nuevo acceso, la edición compartida de casos entre docentes, la IA coautora (fase 1) y los avatares de Karen y Sara.
+Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS de 35,8 y ninguna logró enviar un caso a revisión. Esta versión quita lo que impedía terminar, hace que el editor diga la verdad, guía al estudiante y al docente, y pule el juego y la accesibilidad. Trae también las sesiones del docente con sus correos, la recuperación de contraseña, el nuevo acceso, la edición compartida de casos entre docentes, la IA coautora (fase 1), los avatares de Karen y Sara y el caso insignia lineal con cinemática.
 
 ### Añadido
 - **Sesiones del docente:** un grupo, un caso de la biblioteca y un horario, con estados programada, en curso, pausada, finalizada y cancelada (#87).
@@ -30,6 +30,8 @@ Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS d
 - **IA coautora, fase 1:** antes de construir, la IA aclara la idea con hasta 6 preguntas con opciones y acuerda con el docente una ficha del caso; en el editor, el panel de la IA tiene «Construir juntos» y «Pedir un cambio», se acopla o flota y se mueve también con teclado (#99).
 - **Avatares elegibles de Karen y Sara**, con bata y sin ella, hechos con su permiso escrito y solo con su nombre de pila (#101).
 - **`sembrar_demostracion --docentes`:** deja los grupos sembrados a cargo de docentes reales que ya existen (#84).
+- **Caso insignia SIM-VBG-002 lineal (2.0.7):** tres capítulos del hospital a la comisaría con una sola línea del tiempo, tres finales según lo que se hizo y uno de «Recorrido incompleto», cinemática en pixel art que nunca muestra el ataque, tutor al inicio y entre capítulos, y herramientas que ya no se pueden perder (#100).
+- **Portada por versión de caso:** cualquier docente la sube desde «Datos» (PNG, JPEG o WebP verificados por contenido, hasta 2 MB, sin metadatos y auditada); el caso insignia trae la suya (#100).
 - **«Asignar a un grupo» desde el propio caso publicado**, en la lista de casos y en el editor (#89).
 - **Permiso de autoría visible:** el docente sin permiso sabe qué le falta y a quién pedirlo; la administración lo da con un clic o al aprobar la cuenta (#89).
 - **Avance por caso en el grupo:** cuántos estudiantes terminaron cada caso asignado y cuántos lo tienen en curso, con enlace a sus intentos; «Invitar estudiantes» y «Asignar un caso» en la cabecera del grupo (#89).
@@ -79,9 +81,11 @@ Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS d
 ### Migraciones
 - `sesiones/0003_sesiones_con_grupo_y_estados`, `sesiones/0004_quitar_espacio_academico` y `sesiones/0005_recordatorio_enviado_en` (#87, #95, #98).
 - `simulation/0017_acuerdo_de_coautoria` (#99).
+- `simulation/0017_portada_de_version` y `simulation/0018_une_coautoria_y_portada`, que une las dos 0017 (#100).
 
 ### Operación
 - Programar `python manage.py recordar_sesiones` cada 5 minutos, junto a `cerrar_sesiones_vencidas` (#98).
+- Dependencia nueva: `Pillow==13.0.0` en `requirements.txt`; el despliegue tiene que instalarla (#100).
 
 ## [0.6.2] - 2026-11-23
 
