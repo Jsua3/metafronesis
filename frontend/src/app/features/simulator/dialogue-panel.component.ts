@@ -46,7 +46,7 @@ const medirVentana = () => typeof window === 'undefined'
     @if (dialogue(); as d) {
       <div #dialogueBox
         cdkTrapFocus
-        [cdkTrapFocusAutoCapture]="true"
+        [cdkTrapFocusAutoCapture]="!encuadrando()"
         class="dialogue-strip"
         [class.strip--angosta]="angosta()"
         [class.dialogue-strip--side]="mode() === 'side'"

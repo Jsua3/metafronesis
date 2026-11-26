@@ -186,6 +186,11 @@ describe('DialoguePanelComponent - integración renderizada', () => {
     }
   });
 
+  it('la trampa de foco no captura mientras las fichas esperan (sin aviso de cdkFocusInitial sobre un grupo inerte)', () => {
+    expect(source).toContain(`[cdkTrapFocusAutoCapture]="!encuadrando()"`);
+    expect(source).toMatch(/<div class="choices"[^>]*cdkFocusInitial/);
+  });
+
   it('abre al confirmar y cancela el plazo de esa fase', () => {
     vi.useFakeTimers();
     try {
