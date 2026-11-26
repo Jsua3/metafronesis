@@ -17,6 +17,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
 - Que mover una pieza en el editor se vea al instante: hoy la sala se rearma entera (ya sin parpadeo, desde el #75).
 
+## [0.7.1] - 2026-11-27
+
+Respuesta inmediata en el juego y en el editor. Una tercera medición con las mismas personas simuladas sobre la 0.7.0 dio 76 % menos errores de acción (de 83 a 20), pero la sensación de uso no mejoró: la gente seguía sin saber si su acción había hecho algo. Esta versión hace que cada acción responda al instante y diga qué viene después.
+
+### Cambiado
+- **Juego:** «Hablar con X» desde lejos responde al instante con «Yendo hacia… Pulsa para cancelar» (Esc o una segunda pulsación cancelan) y, si la persona ya está al alcance, la conversación se abre sin caminar. El botón del diálogo dice lo que hará («Seguir leyendo (n de m)», «Ver las opciones», «Volver al mapa») y las consecuencias seguidas se numeran. Junto a las opciones dice «haz clic o pulsa su letra» (#107).
+- **Editor:** «Crear la escena que sigue» y, aparte, «Terminar el caso aquí: crear la escena final», con una frase que explica qué es una escena final. «Antes de decidir» tiene texto visible, y los controles de la respuesta miden 44 px y quedan separados en pantalla táctil (#105).
+
+### Corregido
+- El editor no tenía dónde escribir la pregunta de decisión de cada escena, que el servidor exige: el aviso «La escena necesita una pregunta» no se podía resolver. Ahora el guion la ofrece, separada del objetivo (#105).
+- La barra de estado del editor mostraba avisos ya resueltos: la narración y el objetivo entran al estado al escribir, y «Enviar» dice que la comprobación está pendiente en vez de mostrar el resultado viejo (#105).
+- En el juego, el objetivo se adelantaba a la pantalla mientras seguía visible la reacción de la persona; ahora cambia al volver al mapa (#107).
+- «Estado» y «Ordenar por» de Usuarios tenían un nombre accesible con todas sus opciones; el botón para ver la contraseña no pasaba a «Ocultar contraseña» (#106).
+
 ## [0.7.0] - 2026-11-26
 
 Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS de 35,8 y ninguna logró enviar un caso a revisión. Esta versión quita lo que impedía terminar, hace que el editor diga la verdad, guía al estudiante y al docente, y pule el juego y la accesibilidad. Trae también las sesiones del docente con sus correos, la recuperación de contraseña, el nuevo acceso, la edición compartida de casos entre docentes, la IA coautora (fase 1), los avatares de Karen y Sara y el caso insignia lineal con cinemática.
