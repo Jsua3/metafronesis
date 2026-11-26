@@ -53,7 +53,7 @@ let nextGoalCardId = 0;
             @if (guia().siguienteLugar; as lugar) {
               <!-- BORRADOR: texto pendiente de Psicología. -->
               <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)">
-                {{ actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
+                {{ walkLabel(lugar.key, lugar.label) ?? actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
             }
           }
           <!-- La guía escrita en el caso: la lista de pasos con su marca en texto (nunca solo color). -->
@@ -67,7 +67,7 @@ let nextGoalCardId = 0;
                   @if ($index === pasoActual() && !guia().textoSalida && guia().siguienteLugar; as lugar) {
                     <!-- BORRADOR: texto pendiente de Psicología. -->
                     <button type="button" class="goal-card__ir goal-card__ir--en-paso u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)">
-                      {{ actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
+                      {{ walkLabel(lugar.key, lugar.label) ?? actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
                   }
                 </li>
               }
@@ -192,6 +192,11 @@ export class SceneGoalCardComponent {
   protected readonly bodyId = `goal-card-body-${nextGoalCardId++}`;
 
   readonly guia = input.required<GuiaEscena>();
+  readonly walkingKey = input<string | null>(null);
+  // BORRADOR: texto pendiente de Psicología.
+  protected walkLabel(key: string, label: string): string | null {
+    return this.walkingKey() === key ? `Yendo hacia ${label}… Pulsa para cancelar` : null;
+  }
   readonly hintAttempt = input<HintAttemptRef | null>(null);
   /** Pantalla baja o táctil horizontal: la ficha pide menos sitio y arranca plegada. */
   readonly compact = input(false);

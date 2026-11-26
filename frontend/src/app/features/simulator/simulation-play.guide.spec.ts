@@ -268,13 +268,28 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     expect(removed.filter(n => n === primary || n === secondary || (n instanceof Element && !!n.querySelector('button')))).toHaveLength(0);
   }, 20000);
 
+  it('conserva el boton de la lista para cancelar la caminata', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const { fixture, component } = montarConMundo({ goal: 'Hablar', lugares: [{ key: person.key, label: person.label, kind: 'person' }] });
+    const world = (component as any).gameWorld;
+    vi.spyOn(world, 'walkToKey').mockReturnValue(true);
+    world.cancelWalk = vi.fn();
+    component.openPlaces(); fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('app-world-places-list .places__item') as HTMLButtonElement;
+    button.click(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-world-places-list .places__item')).toBe(button);
+    expect(button.textContent).toContain('Yendo hacia');
+    button.click(); fixture.detectChanges();
+    expect(button.textContent).toContain('Hablar con');
+    expect(world.cancelWalk).toHaveBeenCalled();
+  });
+
   it('una persona lejana inicia la caminata y solo interactúa al llegar', () => {
     const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
     const { component } = montarConMundo();
     const world = (component as any).gameWorld;
     const walk = vi.spyOn(world, 'walkToKey').mockReturnValue(true);
     const open = vi.spyOn(component, 'openInteraction');
-    component.nearbyInteraction.set(person);
     (component as any).requestInteraction(person);
     expect(walk).toHaveBeenCalledWith(person.key);
     expect(open).not.toHaveBeenCalled();

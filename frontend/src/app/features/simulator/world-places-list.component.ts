@@ -30,7 +30,7 @@ import { actionForPlace, PlaceCandidate } from './world-places.util';
             <li>
               <button type="button" class="places__item u-ficha" (click)="choose.emit(place)">
                 <!-- BORRADOR: texto pendiente de Psicología. -->
-                <span class="places__name">{{ actionForPlace(place.kind, place.label) }}</span>@if (place.siguiente) {
+                <span class="places__name">{{ walkingKey() === place.key ? 'Yendo hacia ' + place.label + '… Pulsa para cancelar' : actionForPlace(place.kind, place.label) }}</span>@if (place.siguiente) {
                   {{ ' ' }}<span class="places__next" data-places-next>{{ nextLabel }}</span>
                 }@else {
                   {{ ' ' }}<span class="places__note">Opcional: puede servirte más adelante</span>
@@ -135,6 +135,7 @@ export class WorldPlacesListComponent {
   protected readonly actionForPlace = actionForPlace;
   /** Lo que se ofrece (ya filtrado por `selectPlaces`: personas, puertas y objetos examinados). */
   readonly places = input<readonly PlaceCandidate[]>([]);
+  readonly walkingKey = input<string | null>(null);
   /** Hay una salida segura pedida que espera: el botón «Salida segura» dice «Pausando…». */
   readonly pausing = input(false);
   readonly choose = output<PlaceCandidate>();
