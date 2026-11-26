@@ -64,6 +64,8 @@ AUDIT_TAXONOMY: dict[str, str] = {
     "RUBRIC_SAVED": "rubrica.evaluar",
     "ANALYTICS_VIEWED": "analitica.ver",
     "CASE_CREATED": "caso.crear",
+    "CASE_COVER_UPDATED": "caso.actualizar_portada",
+    "CASE_COVER_REMOVED": "caso.quitar_portada",
     "CASE_IMPORTED": "caso.importar",
     "CASE_SUBMITTED": "caso.enviar_revision",
     "CASE_APPROVED": "caso.aprobar",

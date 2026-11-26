@@ -20,7 +20,7 @@ from rest_framework.test import APIClient
 
 from psychosim.settings import base as ajustes_base
 from shared import surface
-from shared.body_limit import CASE_IMPORT_ROUTE, MULTIPART_IMPORT_ROUTE, BodyLimitMiddleware, BodyTooLarge
+from shared.body_limit import CASE_COVER_ROUTE, CASE_IMPORT_ROUTE, MULTIPART_IMPORT_ROUTE, BodyLimitMiddleware, BodyTooLarge
 
 pytestmark = [pytest.mark.req("RNF-002"), pytest.mark.security]
 
@@ -226,6 +226,21 @@ def test_la_importacion_de_casos_tiene_un_tope_propio_mas_holgado_que_el_json_co
     _afirmar_413(BodyLimitMiddleware(_vista_que_no_debe_correr)(
         _peticion(IMPORTACION_DE_CASOS, flujo=_Flujo(de_mas, 2 * MIB), CONTENT_LENGTH=str(de_mas))
     ))
+
+
+def test_la_portada_tiene_un_tope_propio_que_deja_espacio_para_multipart():
+    ruta = "/api/authoring/cases/1/cover"
+    tope = settings.SIEP_MAX_CASE_COVER_BODY_BYTES
+    assert tope > 2 * MIB
+    exacta = _peticion(ruta, flujo=_Flujo(tope, tope), CONTENT_LENGTH=str(tope))
+    assert BodyLimitMiddleware(_vista_sin_cuerpo)(exacta).status_code == 200
+    excedida = _peticion(ruta, flujo=_Flujo(tope + 1, tope), CONTENT_LENGTH=str(tope + 1))
+    _afirmar_413(BodyLimitMiddleware(_vista_que_no_debe_correr)(excedida))
+
+    inventario = surface.render_inventory()["routes"]
+    subidas = [fila for fila in inventario if fila["body"] == "multipart-case-cover"]
+    assert len(subidas) == 1 and subidas[0]["method"] == "PUT"
+    assert CASE_COVER_ROUTE.fullmatch("/" + re.sub(r"<[^>]+>", "1", subidas[0]["route"]))
 
 
 def test_solo_la_importacion_de_casos_cae_en_su_tope():

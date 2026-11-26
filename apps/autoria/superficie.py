@@ -30,6 +30,8 @@ AUDITORIA_POR_RUTA = {
     ("api/authoring/cases/<int:case_version_id>/hints/<int:hint_id>", "PUT"): "ADMIN_UPDATE_HINT",
     ("api/authoring/cases/<int:case_version_id>/hints/<int:hint_id>", "DELETE"): "ADMIN_DELETE_HINT",
     ("api/authoring/cases/<int:case_version_id>/editor", "GET"): "EXENTO: lectura de un caso visible para su autora o el administrador",
+    ("api/authoring/cases/<int:case_version_id>/cover", "PUT"): "CASE_COVER_UPDATED",
+    ("api/authoring/cases/<int:case_version_id>/cover", "DELETE"): "CASE_COVER_REMOVED",
     ("api/authoring/cases/<int:case_version_id>/plan", "GET"): "EXENTO: lectura del plano de un caso visible",
     ("api/authoring/cases/<int:case_version_id>/checklist", "PUT"): "ADMIN_CHECKLIST_UPDATE",
     ("api/authoring/cases/import", "POST"): "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED",

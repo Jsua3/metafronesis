@@ -472,6 +472,9 @@ SIEP_RETENTION_ACCESS_REQUEST_DAYS = _entero_env("SIEP_RETENTION_ACCESS_REQUEST_
 
 #: S2-6a · tope del cuerpo de una petición, en bytes: por encima, 413 sin leerla (shared/body_limit.py).
 SIEP_MAX_BODY_BYTES = _entero_env("SIEP_MAX_BODY_BYTES", default=1024 * 1024, minimo=1)
+# El cuerpo multipart deja margen para la envoltura. El archivo mismo tiene su tope aparte.
+SIEP_MAX_CASE_COVER_BYTES = 2 * 1024 * 1024
+SIEP_MAX_CASE_COVER_BODY_BYTES = SIEP_MAX_CASE_COVER_BYTES + 64 * 1024
 #: S2-6a · tope del sobre de la importación de estudiantes: el archivo (IMPORT_MAX_BYTES, 2 MiB) más el multipart.
 SIEP_MAX_IMPORT_BODY_BYTES = _entero_env("SIEP_MAX_IMPORT_BODY_BYTES", default=3 * 1024 * 1024, minimo=1)
 #: S2-6a · tope del cuerpo de la importación de CASOS (JSON). El importador tiene su propio límite de 1 MiB (``casedef`` ``MAX_BYTES``)

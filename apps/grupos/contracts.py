@@ -5,6 +5,7 @@ prueba ``apps/simulation/tests/test_openapi_matches_responses.py`` contra la res
 """
 from rest_framework import serializers
 
+from apps.simulation.serializers.portadas import PortadaSerializer
 from shared.openapi import ErrorEnvelopeSerializer
 
 from .access import REASONS as ACCESS_REASONS
@@ -55,7 +56,7 @@ class AssignmentProgressSerializer(serializers.Serializer):
     inProgress = serializers.IntegerField(help_text="Estudiantes con intento abierto que aún no la terminaron.")
 
 
-class AssignmentSerializer(serializers.Serializer):
+class AssignmentSerializer(PortadaSerializer):
     """Una versión de caso asignada, con su ventana de apertura y cierre (C7)."""
 
     id = serializers.IntegerField()

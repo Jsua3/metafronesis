@@ -8,6 +8,7 @@ from .mundo_views import MundoView, MapaView, MapasView, ObjetoView, ObjetosView
 from .dialogos_views import DialogoView, DialogosView, HerramientaView, HerramientasView, OrdenNodosView, PersonajeView, PersonajesView
 
 from .reglas_views import AceptarView, FinalesView, HitosView, RiesgoView, RubricaView
+from .portadas import PortadaView
 
 urlpatterns = [
     path("cases/<int:case_version_id>/rules/milestones", HitosView.as_view()),
@@ -33,6 +34,7 @@ urlpatterns = [
     path("cases/<int:case_version_id>/maps/<int:map_id>/hints", PistasView.as_view()),
     path("cases/<int:case_version_id>/hints/<int:hint_id>", PistaView.as_view()),
     path("cases/<int:case_version_id>/editor", EditorView.as_view()),
+    path("cases/<int:case_version_id>/cover", PortadaView.as_view()),
     path("cases/<int:case_version_id>/checklist", ChecklistView.as_view()),
     path("cases/<int:case_version_id>/plan", PlanoView.as_view()),
     path("cases/import", ImportarCasoView.as_view()),
