@@ -168,7 +168,9 @@ export function ladoDelRetrato(dpr: number, estrecha: boolean): number {
     @keyframes tutor-funde { from { opacity: 0; } }
     @keyframes tutor-sube { from { opacity: 0; transform: translateY(6px); } }
     @media (prefers-reduced-motion: reduce) {
-      :host, .tutor__tarjeta, .tutor__linea, .tutor__paso { animation-duration: 1ms; }
+      :host, .tutor__tarjeta { animation-duration: 1ms; }
+      /* Los pasos traen un retraso escalonado en línea: con movimiento reducido no hay animación alguna. */
+      .tutor__linea, .tutor__paso { animation: none; }
     }
   `],
 })

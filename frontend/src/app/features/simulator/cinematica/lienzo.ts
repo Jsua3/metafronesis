@@ -152,7 +152,7 @@ export class LienzoDeCinematica {
     const recetas = [...new Set(planos.flatMap(recetasDelPlano))];
     const kit = Promise.all(recetas.map(r => this.cargarHojas(r)));
     if (planos.some(p => p.escena === 'urgencias-llegada')) {
-      cargarImagen(`${this.base}${urlDePieza('piezas/muebles/hospital/camilla.png')}`).then(img => { this.camilla = img; }, () => undefined);
+      cargarImagen(`${this.base}${urlDePieza('piezas/muebles/hospital/camilla.png')}`).then(img => { if (!this.destruido) this.camilla = img; }, () => undefined);
     }
     let manifiesto: ManifiestoDePiezas | null = null;
     try {
@@ -175,6 +175,8 @@ export class LienzoDeCinematica {
           .then(img => { const px = pixelesDe(img); if (px) imagenes.set(r, px); }, () => undefined)));
         if (this.destruido) return;
         await respirar();
+        // La pausa deja correr al navegador: la cinemática pudo cerrarse entretanto.
+        if (this.destruido) return;
         try {
           this.guardarDecorado(pintarDecorado(clave, manifiesto, imagenes));
         } catch {
@@ -206,7 +208,7 @@ export class LienzoDeCinematica {
   private async cargarHojas(receta: string): Promise<void> {
     try {
       const [idle, walk] = await Promise.all(['idle', 'walk'].map(h => cargarImagen(`${this.base}${KIT_ASSETS}/${receta}/${h}.png`)));
-      this.hojas.set(receta, { idle, walk });
+      if (!this.destruido) this.hojas.set(receta, { idle, walk });
     } catch {
       // Sin su hoja, esa persona no se dibuja; la escena sigue.
     }
@@ -214,13 +216,17 @@ export class LienzoDeCinematica {
 
   /** Ajusta la resolución del lienzo a la vista (más un píxel de margen por lado para el paneo suave). */
   ajustar(medida: MedidaDeVista): void {
-    this.medida = medida;
     const w = medida.ancho + 2, h = medida.alto + 2;
+    const mismoTamano = this.capa !== null && this.canvas.width === w && this.canvas.height === h && this.medida.ancho === medida.ancho;
+    this.medida = medida;
+    if (mismoTamano) return;
     if (this.canvas.width !== w) this.canvas.width = w;
     if (this.canvas.height !== h) this.canvas.height = h;
     if (this.ctx) this.ctx.imageSmoothingEnabled = false;
     this.capa = lienzo(w, h);
     this.vineta = this.pintarVineta(w, h);
+    // Las capas de luz dependen del ancho de la vista: las del tamaño anterior ya no sirven (y no deben quedar retenidas).
+    this.capasDeLuz.clear();
   }
 
   get vista(): { ancho: number; alto: number } {
@@ -249,6 +255,10 @@ export class LienzoDeCinematica {
     this.destruido = true;
     this.decorados.clear();
     this.hojas.clear();
+    this.capasDeLuz.clear();
+    this.camilla = null;
+    this.capa = null;
+    this.vineta = null;
   }
 
   // ── Un cuadro ──────────────────────────────────────────────────────────────────────────────────────────────────────

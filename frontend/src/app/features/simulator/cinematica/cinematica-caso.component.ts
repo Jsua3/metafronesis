@@ -279,6 +279,8 @@ export class CinematicaCasoComponent {
     this.consulta?.addEventListener('change', cambio);
     const destroy = inject(DestroyRef);
     destroy.onDestroy(() => {
+      // Primero: una preparación del arte que termine después no debe arrancar el reloj ni pedir cuadros.
+      this.acabada = true;
       this.consulta?.removeEventListener('change', cambio);
       this.detener();
       this.temporizadores.forEach(t => window.clearTimeout(t));

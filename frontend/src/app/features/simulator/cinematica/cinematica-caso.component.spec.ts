@@ -149,4 +149,19 @@ describe('CinematicaCasoComponent', () => {
     expect((fixture.nativeElement as HTMLElement).classList.contains('cine--reducida')).toBe(true);
     expect(component.retrasoDe(5)).toBe(0);
   });
+
+  it('si se destruye antes de que el arte termine de prepararse, no arranca el reloj ni pide cuadros', async () => {
+    const otra = TestBed.createComponent(CinematicaCasoComponent);
+    otra.componentRef.setInput('cinematica', CINEMATICA);
+    const pedidos = vi.spyOn(window, 'requestAnimationFrame');
+    pedidos.mockClear();
+    otra.detectChanges();
+    otra.destroy();
+    // La preparación (sin lienzo en jsdom) se resuelve en una microtarea y el respaldo, a los 2,5 s.
+    await Promise.resolve();
+    await Promise.resolve();
+    vi.advanceTimersByTime(3000);
+    expect(pedidos).not.toHaveBeenCalled();
+    pedidos.mockRestore();
+  });
 });
