@@ -51,6 +51,7 @@ import { CommentBubbleComponent } from './comment-bubble.component';
 import { RehearsalGoneComponent } from './rehearsal-gone.component';
 import { RehearsalPanelComponent } from './rehearsal-panel.component';
 import { type GuiaEscena, GUIA_VACIA, armarGuia, avisarOpcionNueva, leerGuiaAutorada } from './caso/guia';
+import { identidadDelTutor } from './portrait-resolver.util';
 import { leerAcompanantes } from './caso/acompanantes';
 import { DialoguePanelComponent } from './dialogue-panel.component';
 import { CameraMoment, GameWorldComponent, NPC_KEY_PREFIX, PlacaDeInterfaz } from './game-world.component';
@@ -90,9 +91,9 @@ import { AuthService } from '../../core/auth/auth.service';
 import { resolveViewMode, SimulationViewMode } from './simulation-view-mode.util';
 import { IntroGateStep, introCardLines, resolveIntroStep } from './intro-gate.util';
 import { COARSE_POINTER_QUERY, matchesMedia, watchMedia } from './pointer-modality.util';
-import { UiButton } from '../../shared/ui/button/ui-button';
 import { loadingPhase } from '../../shared/ui/skeleton/loading-phase';
 import { UiErrorKind } from '../../shared/ui/state/state-copy';
+import { UiButton } from '../../shared/ui/button/ui-button';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { UiScopeNotice } from '../../shared/ui/scope-notice/ui-scope-notice';
@@ -160,7 +161,7 @@ const PLACAS_SOBRE_EL_MUNDO = [
   'app-simulation-hud .hud-case', 'app-simulation-hud .hud-strip',
   'app-minimapa .minimapa__lugar', 'app-minimapa .minimapa__abrir', 'app-minimapa .minimapa__alternar',
   '.bottom-zone', '.bottom-zone .tool-dock-wrap', '.bottom-zone .tool-notice', '.right-panel',
-  'ui-toast-host [role="alert"]',
+  'ui-toast-host [role="alert"]', '.settings-menu', 'app-comment-bubble .bubble',
   '.dialogue-cinematic .placa', '.dialogue-cinematic .panel-head', '.dialogue-cinematic .strip-body',
   'app-reaction-director .reaction-strip', 'app-game-world .touch-dpad', 'app-game-world .touch-interact',
 ].join(', ');
@@ -241,10 +242,10 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         <!-- Un fallo nunca se traga: mensaje, reintento (vuelve a pedir lo que falló) y una salida. Con un intento en
              curso la salida es el «Salida segura» del pie, que queda fuera de esta capa. -->
         <div class="game-failure">
-          <ui-error-state blocking autofocus [kind]="errorKind()" [message]="error()" [status]="errorStatus()"
+          <ui-error-state botonesDeJuego blocking autofocus [kind]="errorKind()" [message]="error()" [status]="errorStatus()"
             (retry)="retryFromError()" />
           @if (!footerExit()) {
-            <a ui-button variant="secondary" routerLink="/portal/simulador">Volver al simulador</a>
+            <a class="u-boton" routerLink="/portal/simulador">Volver al simulador</a>
           }
         </div>
       }
@@ -283,11 +284,11 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
             </div>
 
             <footer class="case-intro-card__actions">
-              <a ui-button variant="ghost" routerLink="/portal/simulador">Volver al catálogo</a>
+              <a class="u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
               <div class="case-intro-card__buttons">
                 <!-- RN-07: empezar de nuevo nombra lo que se pierde y «Continuar» (conservar el intento) es lo seguro. -->
-                <button ui-button variant="secondary" type="button" (click)="requestNewAttempt()">Iniciar nuevo intento</button>
-                <button cdkFocusInitial ui-button variant="primary" type="button" (click)="resumeAttempt()">
+                <button class="u-boton" type="button" (click)="requestNewAttempt()">Iniciar nuevo intento</button>
+                <button cdkFocusInitial class="u-boton u-boton--principal" type="button" (click)="resumeAttempt()">
                   {{ active.status === 'PAUSED' ? 'Reanudar intento en pausa' : 'Continuar intento en progreso' }}
                 </button>
               </div>
@@ -325,10 +326,10 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               </div>
 
               <footer class="case-intro-card__actions">
-                <button ui-button type="button" variant="ghost" (click)="declineContentWarning()">
+                <button type="button" class="u-boton" (click)="declineContentWarning()">
                   Volver al catálogo
                 </button>
-                <button ui-button type="button" variant="primary" cdkFocusInitial
+                <button ui-button type="button" class="u-boton u-boton--principal" cdkFocusInitial
                   [loading]="consentState() === 'saving'" (click)="acceptContentWarning()">
                   Continuar
                 </button>
@@ -349,7 +350,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <footer class="case-intro-card__actions">
                 <div class="case-intro-card__buttons">
                   <app-safe-exit-button variante="placa" [pausing]="pausing()" (pause)="pauseFromOverlay()" />
-                  <button cdkFocusInitial class="psy-button psy-button--primary cambio-de-lugar__ir" type="button" (click)="irAlLugar()">
+                  <button cdkFocusInitial class="u-boton u-boton--principal cambio-de-lugar__ir" type="button" (click)="irAlLugar()">
                     Ir a {{ cambio.lugar }}
                   </button>
                 </div>
@@ -377,7 +378,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <header class="case-intro-card__header">
                 <p class="psy-eyebrow">Primera escena</p>
                 <h2 id="case-intro-title">Antes de comenzar</h2>
-                <button type="button" class="intro-music-toggle" [attr.aria-pressed]="musicMuted()" (click)="toggleMusicMute()">
+                <button type="button" class="intro-music-toggle u-boton" [attr.aria-pressed]="musicMuted()" (click)="toggleMusicMute()">
                   <mat-icon aria-hidden="true">{{ musicMuted() ? 'music_off' : 'music_note' }}</mat-icon>
                   <span>Silenciar música</span>
                 </button>
@@ -392,7 +393,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <footer class="case-intro-card__actions">
                 <div class="case-intro-card__buttons">
                   <app-safe-exit-button variante="placa" [pausing]="pausing()" (pause)="pauseFromOverlay()" />
-                  <button cdkFocusInitial class="psy-button psy-button--primary" type="button" (click)="continueFromCaseIntro()">
+                  <button cdkFocusInitial class="u-boton u-boton--principal" type="button" (click)="continueFromCaseIntro()">
                     Continuar
                   </button>
                 </div>
@@ -450,7 +451,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               (toggleSfx)="toggleSfxMute()"
               (toggleReduceMotion)="toggleReduceMotion()"
               [instantText]="instantText.enabled()" (toggleInstantText)="toggleInstantText()"
-              (openControls)="openControls()" (openHelp)="openHelp()" (helpReset)="resetHelpCard()" />
+              (openControls)="openControls()" (openHelp)="openHelp()" (helpReset)="resetHelpCard()"
+              [fichaDisponible]="mode() !== 'rehearsal' && !busy() && !fadeActive()" (openCaseBrief)="verFichaDelCaso()" />
             @if (world() && !cinemaBars()) {
               <!-- Minimapa (bloque M1, §5.3): abre el plano completo (también con M). Con las franjas de cine se va. -->
               <app-minimapa [plano]="placePlan()" [actual]="placeRoom()" [destino]="placeTarget()" [cercana]="cameraSettings.cercana()"
@@ -485,7 +487,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 [scenarioConfig]="scenarioConfig()"
                 [viewedNpcKeys]="viewedNpcKeys()" [shortcuts]="shortcuts.enabled()"
                 [nearbyInteraction]="nearbyInteraction()" [selectedInteractionKey]="selectedInteraction()?.key ?? null"
-                [motionPaused]="worldMotionPaused()"
+                [motionPaused]="worldMotionPaused()" [nombreDeQuienJuega]="nombreDeQuienJuega()"
                 [sfxMuted]="sfxMuted()"
                 [reduceMotion]="reduceMotion()"
                 [activation]="attempt()?.persona?.activation ?? 'CALM'"
@@ -581,6 +583,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               <button type="button" class="context-bar__interaction u-ficha u-sombra"
                 [class.context-bar__interaction--exit]="action.obj.type === 'EXIT'"
                 [class.context-bar__interaction--locked]="action.verb.locked"
+                [attr.data-mundo-foco]="action.obj.key"
                 (click)="requestInteraction(action.obj)" [attr.title]="action.title">
                 <!-- Sin aria-label: el nombre sale del contenido y empieza por lo que se lee en pantalla (WCAG 2.5.3); «Interactuar:»
                      y «bloqueada:» van solo para lectores, así se oye lo mismo que anuncia la región viva (action.ariaLabel). -->
@@ -598,6 +601,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               @if (contextAlso(); as also) {
                 <button type="button" class="context-bar__interaction context-bar__interaction--secondary u-ficha u-sombra"
                   [class.context-bar__interaction--locked]="also.verb.locked"
+                  [attr.data-mundo-foco]="also.obj.key"
                   (click)="requestInteraction(also.obj)" [attr.title]="also.title" [attr.aria-label]="'También: ' + also.verb.text + (actionStepLabel(also.obj.key) ? '. ' + actionStepLabel(also.obj.key) : '')">
                   @if (also.verb.locked) { <app-pixel-icono class="context-bar__lock" nombre="candado" /> }
                   <span class="context-bar__also">También:</span>
@@ -1056,32 +1060,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       font-weight: 800;
       letter-spacing: .04em;
     }
-    .intro-music-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      width: fit-content;
-      min-height: 44px;
-      padding: 0 14px;
-      border: 1px solid rgba(108,192,199,.32);
-      border-radius: 999px;
-      color: #bdeef2;
-      background: rgba(108,192,199,.1);
-      font: inherit;
-      font-size: var(--ds-type-body-s-size);
-      font-weight: 700;
-      cursor: pointer;
-      transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
-    }
-    .intro-music-toggle[aria-pressed="true"] {
-      color: rgba(244,247,251,.7);
-      border-color: rgba(244,247,251,.24);
-      background: transparent;
-    }
+    .intro-music-toggle { width: fit-content; }
     .intro-music-toggle mat-icon { width: 18px; height: 18px; font-size: 18px; }
-    @media (hover: hover) and (pointer: fine) {
-      .intro-music-toggle:hover { background: rgba(108,192,199,.18); }
-    }
     @keyframes case-intro-fade { from { opacity: 0; } }
     @keyframes case-intro-rise { from { opacity: 0; transform: translateY(var(--ds-space-3)); } }
     /* Con movimiento reducido solo el fundido: nada se desplaza. */
@@ -1117,7 +1097,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       font-size: var(--ds-type-caption-size);
       line-height: 1.4;
     }
-    .case-intro-card__actions .psy-button {
+    .case-intro-card__actions .u-boton {
       flex-shrink: 0;
       min-width: 140px;
     }
@@ -1238,7 +1218,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         display: grid;
         justify-items: stretch;
       }
-      .case-intro-card__actions .psy-button { width: 100%; }
+      .case-intro-card__actions .u-boton { width: 100%; }
       /* El principal arriba y «Salida segura» debajo, cada uno en su fila. */
       .case-intro-card__buttons { flex-direction: column-reverse; align-items: stretch; }
     }
@@ -2241,6 +2221,18 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   private esArranqueVigente(numero: number): boolean {
     return !this.destroyed && numero === this.arranque();
+  }
+
+  /** Sincroniza también la posición más reciente antes de salir a leer la ficha. */
+  verFichaDelCaso(): void {
+    const intento = this.attempt();
+    if (!intento || this.mode() === 'rehearsal' || this.busy() || this.fadeActive()) return;
+    this.busy.set(true);
+    this.withSyncedPosition(() => {
+      void this.router.navigate(['/portal/simulador', intento.caseVersionId, 'ficha'])
+        .catch(() => this.showActionError('No pudimos abrir la ficha del caso.'))
+        .finally(() => this.busy.set(false));
+    });
   }
 
   /** «Volver a la ficha» (o al editor, en ensayo) desde un umbral lento: lo que estaba en curso se descarta al salir. */
@@ -4258,21 +4250,25 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
    * Devuelve `null` si no hay nada que decir.
    */
   private buildConsequenceDialogue(decision: SimulationDecisionResult): DialogueState | null {
+    const mundo = this.world();
+    const tutor = identidadDelTutor(mundo?.map.ambient?.['tutor']) ?? identidadDelTutor(mundo?.tutorInicial);
+    const hablante = tutor?.nombre ?? CONSEQUENCE_SPEAKER;
     const text = decision.consequence?.text?.trim() ?? '';
     const lines: DialogueState['lines'] = [];
     if (text) {
-      lines.push({ order: 1, speakerName: CONSEQUENCE_SPEAKER, text, emotion: 'neutral' });
+      lines.push({ order: 1, speakerName: hablante, text, emotion: 'neutral' });
     }
     if (decision.retry) {
-      lines.push({ order: lines.length + 1, speakerName: text ? '' : CONSEQUENCE_SPEAKER, text: RETRY_NOTICE, emotion: 'neutral' });
-    } else if (text) {
+      lines.push({ order: lines.length + 1, speakerName: text ? '' : hablante, text: RETRY_NOTICE, emotion: 'neutral' });
+    } else if (text || tutor) {
       // Sin cifras: «puntaje» convierte el caso en un marcador.
       lines.push({ order: lines.length + 1, speakerName: '', text: ORIENTATION_COPY.notices.supervision, emotion: 'neutral' });
     }
     if (!lines.length) return null;
     return {
-      key: `consequence-${Date.now()}`, speakerName: CONSEQUENCE_SPEAKER,
-      hidePortrait: true,
+      key: `consequence-${Date.now()}`, speakerName: hablante,
+      hidePortrait: !tutor,
+      ...(tutor ? { tutor: { rol: tutor.rol }, recipeId: tutor.recipeId } : {}),
       portraitKey: null,
       emotion: 'neutral',
       lines, choices: []

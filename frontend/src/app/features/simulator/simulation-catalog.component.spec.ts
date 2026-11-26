@@ -80,13 +80,18 @@ describe('Casos del estudiante', () => {
   it('lo abierto se continúa directo; sin empezar abre la ficha; el estado va en palabras', async () => {
     const { fixture, host, navegar } = await render([entrada(1), entrada(2)], [intento({ status: 'PAUSED' })]);
     const botones = Array.from(host.querySelectorAll<HTMLButtonElement>('.cs-acciones button'));
-    expect(botones).toHaveLength(2);
+    expect(botones).toHaveLength(3);
     expect(botones[0].textContent).toContain('Continuar');
-    expect(botones[1].textContent).toContain('Empezar');
+    expect(botones[1].textContent).toContain('Ver ficha');
+    expect(botones[1].classList).toContain('ui-button--secondary');
+    expect(botones[2].textContent).toContain('Empezar');
     botones[0].click();
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1], expect.objectContaining({ queryParams: { intento: 'continuar' } }));
     await fixture.whenStable();
     botones[1].click();
+    expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'ficha'], expect.anything());
+    await fixture.whenStable();
+    botones[2].click();
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 2, 'ficha'], expect.anything());
     expect(host.textContent).toContain('En pausa');
     expect(host.textContent).toContain('Sin empezar');

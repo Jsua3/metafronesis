@@ -80,8 +80,7 @@ function salaMinima(soporte: MuebleDeSala, sujeto: MapObjectState, colisiones: S
     walk: WalkState;
     markers: Map<string, Dibujo & Record<string, unknown>>;
     markerLabels: Map<string, Dibujo>;
-    targetRing: { ring: Dibujo };
-    nearRing: { ring: Dibujo };
+    dibujosDeMarcador: Map<string, Dibujo>;
     markerPrompt: Dibujo;
     stepMark: Dibujo;
     personWalkers: Map<string, unknown>;
@@ -216,7 +215,6 @@ describe('sala con muebles de apoyo', () => {
     escena.setCameraMoment({ tipo: 'conversacion', clave: interlocutora.key }, 0);
     interno.updateNearestInteraction(true);
     expect(callbacks.onProximity).toHaveBeenLastCalledWith(expect.objectContaining({ key: interlocutora.key }));
-    expect(interno.nearRing.ring).toMatchObject({ x: interlocutora.x });
     expect(interno.markerPrompt.setText).toHaveBeenLastCalledWith('E · Hablar con Yuliana');
     expect(callbacks.onProximityAlso).toHaveBeenLastCalledWith(null);
 
@@ -248,7 +246,7 @@ describe('sala con muebles de apoyo', () => {
     const llegada = interno.apoyosDeLaSala.get(persona.key)!.llegada;
     Object.assign(interno.player, llegada);
     interno.updateNearestInteraction(true);
-    expect(interno.nearRing.ring).toMatchObject({ x: marker.x, y: marker.y + 19 });
+    expect(interno.dibujosDeMarcador.get(persona.key)).toBe(acueste);
     expect(interno.markerLabels.get(persona.key)).toMatchObject({ x: marker.x, y: marker.y - 18, alpha: 1 });
     expect(interno.markerPrompt).toMatchObject({ x: llegada.x, y: llegada.y + 12 });
     escena.interactNearest();
@@ -277,12 +275,10 @@ describe('sala con muebles de apoyo', () => {
     expect(interno.wouldCollide(336, 322)).toBe(true);
     expect(tickWalk(interno.walk, llegada, 16).arrived).toBe(true);
     escena.setOrientation({ nextTargetKey: informe.key, doorStates: {}, dimmedKeys: new Set() });
-    expect(interno.targetRing.ring).toMatchObject({ x: marca.x, y: marca.y });
-    expect(interno.targetRing.ring.depth).toBeGreaterThan(actorDepth(escritorio.y) + 0.01);
-    expect(interno.targetRing.ring.depth).toBeLessThan(marca.depth);
+    expect(interno.dibujosDeMarcador.get(informe.key)).toBe(marca.hijos[2]);
+    expect(interno.stepMark).toMatchObject({ x: marca.x - 22, y: marca.y });
     Object.assign(interno.player, llegada);
     interno.updateNearestInteraction(true);
-    expect(interno.nearRing.ring).toMatchObject({ x: marca.x, y: marca.y });
     expect(interno.markerLabels.get(informe.key)).toMatchObject({ x: marca.x, y: marca.y - 32, alpha: 1 });
     expect(interno.markerPrompt).toMatchObject({ x: llegada.x, y: llegada.y + 12 });
     interno.finishWalkGoal('arrived');

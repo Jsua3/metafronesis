@@ -342,10 +342,10 @@ describe('GameHelpComponent (T3.2)', () => {
 
     it('los botones miden 44 px como mínimo y tienen anillo de foco visible', () => {
       const css = source.slice(source.indexOf('styles: ['));
-      const body = ruleBody(css, '.help-btn');
+      const body = ruleBody(css, '.help-btn:not(.pixel-juego *)');
       expect(body).toMatch(/min-height:\s*44px;/);
       expect(body).toMatch(/min-width:\s*44px;/);
-      expect(ruleBody(css, '.help-btn:focus-visible')).toMatch(/outline:\s*3px solid #c9b3ff;/);
+      expect(ruleBody(css, '.help-btn:not(.pixel-juego *):focus-visible')).toMatch(/outline:\s*3px solid #c9b3ff;/);
     });
 
     it('el texto contrasta con el fondo de la tarjeta (AA) incluso sobre el peor mapa', () => {
@@ -360,7 +360,7 @@ describe('GameHelpComponent (T3.2)', () => {
       const css = source.slice(source.indexOf('styles: ['));
       expect(ruleBody(css, '.help-card')).toContain('background: rgba(8,12,18,.96);');
       expect(ruleBody(css, '.help-card')).toContain('color: rgba(232,240,244,.92);');
-      expect(ruleBody(css, '.help-btn--primary')).toContain('background: #b69cff; color: #0b0f1a;');
+      expect(ruleBody(css, '.help-btn--primary:not(.pixel-juego *)')).toContain('background: #b69cff; color: #0b0f1a;');
     });
 
     it('el texto informativo no baja de 12 px (0,75 rem)', () => {

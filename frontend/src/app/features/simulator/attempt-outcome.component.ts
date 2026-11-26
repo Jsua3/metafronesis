@@ -61,11 +61,11 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
           @if (positionNote()) { <p class="oc-pause-note" role="status">{{ positionNote() }}</p> }
           <div class="oc-actions oc-actions--pause">
             <!-- BORRADOR: texto pendiente de Psicología. Pausa reanudable real: mismo intento. -->
-            <button type="button" class="oc-btn oc-btn--go u-ficha u-ficha--primaria" cdkFocusInitial (click)="resume.emit()">Volver al juego</button>
+            <button type="button" class="oc-btn u-boton u-boton--principal" cdkFocusInitial (click)="resume.emit()">Volver al juego</button>
             @if (mode() === 'rehearsal') {
-              <a class="oc-btn oc-btn--line u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
+              <a class="oc-btn u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
             } @else {
-              <a class="oc-btn oc-btn--line u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
+              <a class="oc-btn u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
             }
           </div>
           @if (supportResources().length) {
@@ -87,28 +87,28 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
           <footer class="oc-actions">
             @if (mode() === 'rehearsal') {
               <!-- Ensayo (DSL-10): se repite o se vuelve al editor; nada de catálogo ni de portal de estudiantes. -->
-              <button type="button" class="oc-btn oc-btn--go" (click)="retry.emit()">{{ draft.rehearsalRestart.text }}</button>
-              <a class="oc-btn oc-btn--line" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
+              <button type="button" class="oc-btn u-boton u-boton--principal" (click)="retry.emit()">{{ draft.rehearsalRestart.text }}</button>
+              <a class="oc-btn u-boton" [routerLink]="editorLink()">{{ draft.rehearsalBackToEditor.text }}</a>
             } @else if (status() === 'REPLACED') {
               <!-- Ya existe un intento más nuevo: «reintentar» (forceNew) también lo reemplazaría. -->
-              <a class="oc-btn oc-btn--go" routerLink="/portal/simulador">Volver al catálogo</a>
+              <a class="oc-btn u-boton u-boton--principal" routerLink="/portal/simulador">Volver al catálogo</a>
             } @else if (status() === 'SAFE_EXITED') {
               <!-- Cierre terminal honesto: la única continuación es un intento nuevo. -->
-              <button type="button" class="oc-btn oc-btn--go" (click)="retry.emit()">Iniciar un nuevo intento</button>
-              <a class="oc-btn oc-btn--line" routerLink="/portal/simulador">Volver al catálogo</a>
+              <button type="button" class="oc-btn u-boton u-boton--principal" (click)="retry.emit()">Iniciar un nuevo intento</button>
+              <a class="oc-btn u-boton" routerLink="/portal/simulador">Volver al catálogo</a>
             } @else {
               @if (cierreLink(); as cierre) {
                 <!-- Etapa 1 del cierre (DISENO §4.5): el análisis largo vive en la página del portal. La transición de salida
                      (el mundo se funde y llega la página) la decide el router por la ruta; el estado lleva el título al encabezado. -->
-                <a class="oc-btn oc-btn--go" [routerLink]="cierre" [state]="{ umbral: { titulo: report()?.caseTitle ?? '' } }">Ver tu recorrido</a>
-                <button type="button" class="oc-btn oc-btn--line" (click)="retry.emit()">Reintentar caso</button>
+                <a class="oc-btn u-boton u-boton--principal" [routerLink]="cierre" [state]="{ umbral: { titulo: report()?.caseTitle ?? '' } }">Ver tu recorrido</a>
+                <button type="button" class="oc-btn u-boton" (click)="retry.emit()">Reintentar caso</button>
               } @else {
-                <button type="button" class="oc-btn oc-btn--go" (click)="retry.emit()">Reintentar caso</button>
+                <button type="button" class="oc-btn u-boton u-boton--principal" (click)="retry.emit()">Reintentar caso</button>
               }
-              <a class="oc-btn oc-btn--line" routerLink="/portal/simulador">Volver al simulador</a>
+              <a class="oc-btn u-boton" routerLink="/portal/simulador">Volver al simulador</a>
             }
             @if (mode() !== 'rehearsal') {
-              <a class="oc-btn oc-btn--line" routerLink="/portal/dashboard">Volver al portal</a>
+              <a class="oc-btn u-boton" routerLink="/portal/dashboard">Volver al portal</a>
             }
           </footer>
         }
@@ -191,12 +191,12 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
                 </div>
                 <p class="oc-selfcheck__note">{{ draft.selfAssessLocalNote.text }}</p>
                 <div class="oc-selfcheck__actions">
-                  <button type="button" class="oc-btn oc-btn--go" (click)="collapseSelfCheck()">{{ draft.selfAssessDone.text }}</button>
-                  <button type="button" class="oc-btn oc-btn--line" (click)="collapseSelfCheck()">{{ draft.selfAssessSkip.text }}</button>
+                  <button type="button" class="oc-btn u-boton u-boton--principal" (click)="collapseSelfCheck()">{{ draft.selfAssessDone.text }}</button>
+                  <button type="button" class="oc-btn u-boton" (click)="collapseSelfCheck()">{{ draft.selfAssessSkip.text }}</button>
                 </div>
               } @else {
                 <p class="oc-selfcheck__note">{{ draft.selfAssessCollapsed.text }}</p>
-                <button #selfEdit type="button" class="oc-btn oc-btn--line" (click)="reopenSelfCheck()">{{ draft.selfAssessEdit.text }}</button>
+                <button #selfEdit type="button" class="oc-btn u-boton" (click)="reopenSelfCheck()">{{ draft.selfAssessEdit.text }}</button>
               }
             </section>
           }
@@ -266,7 +266,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
                   <div aria-busy="true"><ui-skeleton shape="card" [lines]="3" /></div>
                 }
                 @case ('error') {
-                  <ui-error-state [kind]="errorKind()" [status]="errorStatus()" [message]="draft.decisionsError.text" (retry)="reloadDecisions()" />
+                  <ui-error-state botonesDeJuego [kind]="errorKind()" [status]="errorStatus()" [message]="draft.decisionsError.text" (retry)="reloadDecisions()" />
                 }
                 @case ('empty') {
                   <ui-empty-state kind="no-results" [title]="draft.decisionsEmpty.text" [description]="draft.decisionsEmptyHint.text" />
@@ -504,21 +504,6 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
     .oc-btn {
       display: inline-flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer; text-decoration: none;
     }
-    /* Aspecto del cierre. La pausa no lo lleva: sus acciones son las piezas de pixel u-boton y u-ficha de la hoja común (U1). */
-    .outcome:not(.outcome--pause) .oc-btn {
-      padding: 8px 20px; border-radius: 12px; font-weight: 900;
-      border: 1px solid var(--sim-border, rgba(182,156,255,.22)); background: var(--sim-surface-2, rgba(18,24,42,.6)); color: var(--sim-ink, #F4F7FB);
-    }
-    .outcome:not(.outcome--pause) .oc-btn--line { background: transparent; color: var(--sim-ink-soft, rgba(244,247,251,.74)); }
-    .outcome:not(.outcome--pause) .oc-btn--go { background: linear-gradient(90deg, var(--sim-purple, #7C4DFF), #6336e0); border-color: transparent; color: #fff; }
-    /* Hover solo con puntero fino (un híbrido táctil no queda pegado) y estilo de pulsado en todas las acciones. */
-    @media (hover: hover) and (pointer: fine) {
-      .outcome:not(.outcome--pause) .oc-btn:hover { border-color: rgba(182,156,255,.55); background: rgba(124,77,255,.18); }
-      .outcome:not(.outcome--pause) .oc-btn--go:hover { filter: brightness(1.08); }
-    }
-    .outcome:not(.outcome--pause) .oc-btn:active { transform: translateY(1px); }
-    .outcome:not(.outcome--pause) .oc-btn:focus-visible, .outcome:not(.outcome--pause) .oc-details summary:focus-visible { outline: 3px solid #C9B3FF; outline-offset: 3px; }
-
     /* Pausa calmada: acciones arriba, sin tablero en primer plano. */
     .oc-pause-note { margin: 0; max-width: 60ch; font-size: var(--ds-type-body-s-size); line-height: 1.5; color: var(--sim-ink-soft, rgba(244,247,251,.74)); }
     .oc-pause-copy { margin: 0; max-width: 60ch; font-size: 1rem; line-height: 1.6; color: var(--sim-ink-soft, rgba(244,247,251,.74)); }

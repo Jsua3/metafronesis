@@ -1,3 +1,5 @@
+import { leerConversaciones, type PasoEnPareja, RelojDeConversacion, rutaEnPareja } from './caso/conversaciones';
+import { ContornoDeDibujo, partesDelContorno } from './sala/contorno';
 import { DOOR_REARM_DISTANCE } from './door-rearm.util';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, NgZone, OnChanges, OnDestroy, SimpleChanges, ViewChild, computed, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
@@ -88,7 +90,7 @@ import {
 import { GAZE_HOLD_MS } from './gaze.util';
 import { MS_POR_PASO_DE_MIRADA, Mirada, actualizarMirada, direccionDeVector, miradaInicial, mirarHacia, orientacionDeDato, pasosDeGiro } from './direccion-ocho';
 import {
-  PERSON_PAUSE_MIN_MS, PersonWalkEnv, PersonWalkState, bodyBlocks, parsePersonMovement, personFacing, personWalkBounds, resumePersonWalk,
+  PERSON_PAUSE_MIN_MS, PERSON_WALK_SPEED_PX_S, PersonWalkEnv, PersonWalkState, bodyBlocks, parsePersonMovement, personFacing, personWalkBounds, resumePersonWalk,
   randomPersonPause, startPersonWalk, tickPersonWalk,
 } from './person-walk.util';
 import { COARSE_POINTER_QUERY, matchesMedia } from './pointer-modality.util';
@@ -206,6 +208,7 @@ interface WorldCallbacks {
   /** Fin de la precarga; lista las claves esenciales que fallaron (vacía si todo cargó). */
   onLoadComplete: (criticalFailures: string[]) => void;
   /** Recetas de las personas de la sala inicial: solo esas se precargan; el resto se trae en segundo plano (modo aula). */
+  nombreDeQuienJuega?: () => string;
   recetasIniciales?: () => readonly string[] | null;
   reduceMotion:  boolean;
   sfxMuted:       boolean;
@@ -282,19 +285,21 @@ const VISTA_MINIMA_PX = 64;
 const BOOT_WATCHDOG_MS = 25_000;
 
 /** Una mirada sostenida: cómo miraba antes, cómo mira ahora, sus avisos pendientes y cómo se suelta (`restore`: volver a como miraba). */
+interface ConversacionEnSala {
+  reloj: RelojDeConversacion;
+  posiciones?: PasoEnPareja;
+  vistas?: [ViewId, ViewId];
+  burbuja?: Phaser.GameObjects.Text;
+  cola?: Phaser.GameObjects.Rectangle;
+  pasos: PasoEnPareja[];
+  meta: number;
+  avance: number;
+}
+
 interface Gaze { base: ViewId; current: ViewId; timers: Array<{ remove(): void }>; end: (restore?: boolean) => void }
 const NO_KEYS: ReadonlySet<string> = new Set<string>();
 /** El informe de cercanía cuando ningún objeto tiene hoja: lo que se publica al quedarse sin animaciones. */
 const NO_PROXIMITY_REPORT = JSON.stringify({ playing: null, frames: {} });
-/** Anillo estático bajo el siguiente destino del proceso: trazo claro con halo oscuro (contraste en cualquier piso). */
-const RING_COLOR = 0xcdbcff;
-const RING_HALO_COLOR = 0x0b0f1a;
-/**
- * Anillo de cercanía (P9): blanco, más ancho, de trazo grueso y con relleno tenue. No se parece al anillo lila del siguiente
- * paso ni por color ni por forma (el relleno y el grosor lo distinguen sin depender del tono): dice «ya estás lo bastante
- * cerca; E actúa sobre esto».
- */
-const NEAR_RING_COLOR = 0xffffff;
 /** Marca del siguiente paso (P9): una flecha estática a la izquierda del destino y a qué altura del suelo (px del mundo). */
 const STEP_MARK_GLYPH = '▶';
 const STEP_MARK_SIDE_PX = 22;
@@ -391,7 +396,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private compactLabels = false;
   // ── Ratón (F6-7, VD-5): contorno, verbo y cursor solo sobre lo que el jugador ya podría saber ──
   private hoverKey: string | null = null;
-  private hoverOutline?: Phaser.GameObjects.Graphics;
   private hoverLabel?: Phaser.GameObjects.Text;
   /** Lo ya examinado (objetos inspeccionados y personas con las que ya habló): se resalta aunque esté lejos. */
   private examinedKeys: ReadonlySet<string> = NO_KEYS;
@@ -407,11 +411,17 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * caminata ya en marcha (un diálogo, la bitácora) sí la suelta.
    */
   private walkWaitsForResume = false;
-  private targetRing?: { halo: Phaser.GameObjects.Ellipse; ring: Phaser.GameObjects.Ellipse };
+  private readonly dibujosDeMarcador = new Map<string, Phaser.GameObjects.GameObject>();
+  private readonly contornos = new Map<string, ContornoDeDibujo>();
+  private readonly clavesDeContorno = new Set<string>();
+  private conversaciones: ConversacionEnSala[] = [];
+  private readonly personasQueConversan = new Set<string>();
+  private conversacionesMontadas = false;
+  private focoHasta = 0;
+  private focoClave: string | null = null;
+  private focoDeTeclado: string | null = null;
   /** Flecha del siguiente paso (P9): estática, junto al destino; la mueve con él `updateNearestInteraction` si camina. */
   private stepMark?: Phaser.GameObjects.Text;
-  /** Anillo de cercanía (P9): bajo el candidato principal, el mismo sobre el que actúan E y «Interactuar». */
-  private nearRing?: { halo: Phaser.GameObjects.Ellipse; ring: Phaser.GameObjects.Ellipse };
   /** «E · Revisar …» junto a un marcador cercano (P9); las personas usan su propia pista y las puertas su rótulo. */
   private markerPrompt?: Phaser.GameObjects.Text;
   /** Indicador de borde (P9): hacia dónde queda el siguiente paso cuando está fuera de la vista. Una sola pieza, reposicionada. */
@@ -696,11 +706,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
           new Set(Object.keys(this.doorStates).filter(clave => this.doorStates[clave] === 'locked')), this.callbacks.reduceMotion);
         this.sombrasConSilueta(this.salaPorPiezas);
       }
+      this.actualizarContornos(time);
       return;
     }
     // Sin captura de Phaser, las teclas también llegan mientras se escribe en la bitácora o se
     // activa un botón. El foco se lee una vez por cuadro y decide qué teclas cuentan.
     const focus = document.activeElement;
+    const foco = focus?.getAttribute('data-mundo-foco') ?? null;
+    this.focoDeTeclado = foco && focus?.matches(':focus-visible') ? foco : null;
     // Escribiendo o con el foco en una región con scroll (sus flechas la desplazan, H-12) el jugador no camina.
     const typing = isTextEntryTarget(focus) || isScrollRegionTarget(focus);
     // Con una capa abierta (diálogo, decisión, plano del lugar, bitácora…: `motionPaused`) el jugador tampoco camina.
@@ -797,6 +810,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.interactionCooldown = this.INTERACTION_COOLDOWN_MS;
       this.interactNearest();
     }
+    this.actualizarConversaciones(delta);
     this.updateNearestInteraction();
     this.updateAmbientMovers(time, delta);
     this.updateNpcMovers(time, delta);
@@ -822,6 +836,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.sombrasConSilueta(this.salaPorPiezas);
       this.salaPorPiezas.cerca(this.nearestKey);
     }
+    this.actualizarContornos(time);
   }
 
   /**
@@ -945,6 +960,17 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       // (la histéresis de checkDbDoorTriggers re-arma al superar doorRearmDist).
       this.dbDoorArmed = false;
     }
+    const anterior = this.world?.map.ambient?.['conversaciones'];
+    const proximas = world.map.ambient?.['conversaciones'];
+    if (roomChanged || this.world?.attemptId !== world.attemptId || JSON.stringify(anterior) !== JSON.stringify(proximas)) {
+      const personas = new Set((world.objects ?? []).filter(o => o.type === 'PERSON').map(o => o.key));
+      this.conversaciones = leerConversaciones(proximas, personas, this.callbacks.nombreDeQuienJuega?.())
+        .map(datos => ({ reloj: new RelojDeConversacion(datos), pasos: [], meta: 0, avance: 0 }));
+      this.personasQueConversan.clear();
+      for (const { reloj } of this.conversaciones) {
+        for (const clave of reloj.datos.personas) this.personasQueConversan.add(clave);
+      }
+    }
     this.world = world;
     if (roomChanged) {
       this.nearestKey = null;
@@ -974,6 +1000,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (paused) {
       this.setHeldDirection(null); // un overlay tapa los controles: no seguir caminando detrás
       this.setHover(null);
+      for (const { reloj, burbuja, cola, vistas } of this.conversaciones) {
+        burbuja?.setVisible(false);
+        cola?.setVisible(false);
+        if (vistas) reloj.datos.personas.forEach((clave, i) => {
+          const actor = this.actorOf(clave);
+          if (actor && !this.gesturing.has(clave)) this.poseDeMarcador(actor, vistas[i], false);
+        });
+      }
     }
     this.settlePersonWalkerPoses();
     this.applyCrisisState();
@@ -1108,7 +1142,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.dimmedKeys = next.dimmedKeys;
     if (!this.ready || !this.world) return;
     if (doorsChanged) this.applyDoorStates();
-    if (targetChanged || dimmedChanged) this.syncTargetRing();
+    if (targetChanged || dimmedChanged) this.syncStepMark();
     // El conjunto de rótulos puede cambiar sin que el jugador se mueva (nuevo destino u objeto atenuado).
     this.updateNearestInteraction(true);
     this.refreshMarkerStates();
@@ -1334,23 +1368,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private drawHover(): void {
     const anchor = this.hoverKey === null ? null : this.hoverAnchor(this.hoverKey);
     if (!anchor) {
-      this.hoverOutline?.setVisible(false);
       this.hoverLabel?.setVisible(false);
       return;
     }
-    const outline = this.hoverOutline?.active
-      ? this.hoverOutline
-      : (this.hoverOutline = this.add.graphics().setDepth(LABEL_DEPTH));
-    const left = anchor.x - HOVER_HIT.halfWidth;
     const top = anchor.y - HOVER_HIT.above;
-    const width = HOVER_HIT.halfWidth * 2;
-    const height = HOVER_HIT.above + HOVER_HIT.below;
-    outline.clear();
-    outline.lineStyle(4, RING_HALO_COLOR, 0.85).strokeRect(left - 1, top - 1, width + 2, height + 2);
-    // Una puerta bloqueada lo dice también en el rótulo: el contorno no depende solo del color.
-    outline.lineStyle(2, RING_COLOR, 1).strokeRect(left, top, width, height);
-    outline.setVisible(true);
-
     const label = this.hoverLabel?.active
       ? this.hoverLabel
       : (this.hoverLabel = this.add.text(0, 0, '', {
@@ -1362,13 +1383,41 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   focus(key: string) {
-    const m = this.markers.get(key);
-    if (!m || this.callbacks.reduceMotion) return;
-    // Un marcador con sprite de pixel art (una persona del kit, una puerta, una herramienta) no se
-    // escala: el pulso va a su anillo.
-    const bag = m as unknown as Record<string, unknown>;
-    const target = bag['__kitSprite'] === true || bag['__pixelSprite'] === true ? bag['__pulse'] : m;
-    this.tweens.add({ targets: target, scale: 1.16, duration: 140, yoyo: true, repeat: 2, ease: 'Sine.easeInOut' });
+    this.focoClave = key;
+    this.focoHasta = (this.time?.now ?? 0) + 840;
+  }
+
+  /** El contorno sigue al dibujo y su cuadro vivo; el alcance conserva su punto de piso. */
+  private actualizarContornos(tiempo: number): void {
+    const claves = this.clavesDeContorno;
+    claves.clear();
+    if (this.nearestKey) claves.add(this.nearestKey);
+    if (this.nextTargetKey) claves.add(this.nextTargetKey);
+    if (this.selectedKey) claves.add(this.selectedKey);
+    if (this.focoDeTeclado) claves.add(this.focoDeTeclado);
+    if (this.hoverKey) claves.add(this.hoverKey);
+    if (tiempo < this.focoHasta && this.focoClave) claves.add(this.focoClave);
+    for (const [clave, contorno] of this.contornos) {
+      if (!claves.has(clave) || this.dimmedKeys.has(clave)) contorno.dibujo.setVisible(false);
+    }
+    for (const clave of claves) {
+      if (!clave || this.dimmedKeys.has(clave)) continue;
+      const marcador = this.actorOf(clave);
+      const mueble = this.salaPorPiezas?.spriteDeMueble(clave);
+      const dibujo = mueble ?? this.dibujosDeMarcador.get(clave);
+      let contorno = this.contornos.get(clave);
+      if (!dibujo || !this.disponible(marcador)) {
+        contorno?.dibujo.setVisible(false);
+        continue;
+      }
+      if (!contorno) {
+        const partes = partesDelContorno(dibujo);
+        if (!partes.length) continue;
+        contorno = new ContornoDeDibujo(this, partes);
+        this.contornos.set(clave, contorno);
+      }
+      contorno.actualizar(mueble ?? marcador!);
+    }
   }
 
   /** Termina los gestos en curso: promesa resuelta y persona en su sitio. */
@@ -1594,6 +1643,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const avisos = this.haDadoUnPaso() && !this.coreografia && !this.motionPaused;
     this.ubicarAvisosHeredados(avisos, ocupadas);
     this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null, ocupadas);
+    if (this.conversaciones.length) {
+      this.reservarDestinoDeConversaciones(ocupadas, zoomCss);
+      this.ubicarConversaciones(ocupadas, zoomCss);
+    }
     const faseLista = this.camTravel === null && asentada(next, objetivo) ? this.camFase : null;
     if (this.camFase !== this.camFaseLista && (faseLista || this.camFase === null)) {
       this.camFaseLista = faseLista;
@@ -2694,6 +2747,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const container = this.add.container(pos.x, pos.y, parts);
       this.setFeetOffset(container, 0);   // pies = origen del contenedor
       this.npcMarkers.set(npc.key, container);
+      this.dibujosDeMarcador.set(this.npcKeyOf(npc.key), figure);
       const bag = container as unknown as Record<string, unknown>;
       bag['__npcConfig'] = npc;
       bag['__hintSprite'] = hint;
@@ -2899,10 +2953,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     }
     const flecha = this.edgeArrow;
     if (flecha?.visible) colocar(flecha, flecha.x, flecha.y);
-    const anillo = this.targetRing?.ring;
     const puntero = this.stepMark;
-    if (this.nextTargetKey && anillo?.visible && puntero) {
-      colocar(puntero, anillo.x - STEP_MARK_SIDE_PX, anillo.y - this.stepMarkLift(this.nextTargetKey));
+    if (this.nextTargetKey && puntero) {
+      const punto = this.puntoDeLaFlecha(this.nextTargetKey);
+      if (punto) colocar(puntero, punto.x, punto.y);
     }
   }
 
@@ -3480,6 +3534,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     }
     this.markers.set(object.key, marker);
     this.markerData.set(object.key, object);
+    this.dibujosDeMarcador.set(object.key, main);
     if (art?.animation) this.proximityAnimations.set(object.key, art.animation);
     const bag = marker as unknown as Record<string, unknown>;
     bag['__kitSprite'] = personVisual !== null;
@@ -3606,7 +3661,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     });
   }
 
-  /** Dónde pisa un candidato (para el anillo): los pies de la persona o el contacto del marcador con el piso. */
+  /** Los pies de la persona o el contacto del marcador con el piso. */
   private feetOf(key: string): { x: number; y: number } | null {
     if (!this.disponible(this.actorOf(key))) return null;
     const apoyo = this.apoyosDeLaSala.get(key);
@@ -3615,7 +3670,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const npc = this.npcMarkers.get(key.slice(NPC_KEY_PREFIX.length));
       return npc ? { x: npc.x, y: npc.y } : null;
     }
-    // Posición de reposo del marcador (la del dato, no la del icono que flota): el anillo es estático.
+    // Posición de reposo del marcador: la flotación del icono queda en el dibujo.
     const obj = this.markerData.get(key);
     return obj && this.markers.has(key) ? { x: obj.x, y: obj.y + markerFeetOffsetY(obj) } : null;
   }
@@ -3638,60 +3693,30 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     } };
   }
 
-  /** El anillo queda entre el mueble y lo que se apoya en él. El alcance sigue en el borde caminable. */
-  private ubicarAnillo(key: string, feet: Punto, par: NonNullable<typeof this.targetRing>, profundidad: number): Punto {
+  /** La flecha conserva su lugar junto al dibujo, separado del punto accesible del mueble. */
+  private puntoDeLaFlecha(key: string): Punto | null {
+    if (this.dimmedKeys.has(key)) return null;
+    const pies = this.markerMoves(key) && !this.apoyosDeLaSala.has(key) ? this.cuerpoVivo(key) ?? this.feetOf(key) : this.feetOf(key);
+    if (!pies) return null;
     const apoyo = this.apoyosDeLaSala.get(key);
-    const punto = apoyo ? { x: apoyo.dibujo.x, y: apoyo.dibujo.y + (apoyo.cama ? FILAS_DE_CABEZA - 4 : 0) } : feet;
-    const depth = apoyo ? profundidadSobre(apoyo.mueble.y) - (par === this.nearRing ? 0.003 : 0.006) : profundidad;
-    par.halo.setDepth(depth);
-    par.ring.setDepth(depth + (apoyo ? 0.001 : 0.01));
-    const escala = apoyo ? 0.6 : 1;
-    if (par.ring.x !== punto.x || par.ring.y !== punto.y) {
-      par.halo.setPosition(punto.x, punto.y);
-      par.ring.setPosition(punto.x, punto.y);
-    }
-    par.halo.setScale(escala).setVisible(true);
-    par.ring.setScale(escala).setVisible(true);
-    return punto;
+    const punto = apoyo?.dibujo ?? pies;
+    return { x: punto.x - STEP_MARK_SIDE_PX,
+      y: punto.y + (apoyo?.cama ? FILAS_DE_CABEZA - 4 : 0) - this.stepMarkLift(key) };
   }
 
-  /**
-   * Anillo estático bajo el siguiente destino: creado una vez por sala y reposicionado al cambiar la clave.
-   * Sin animación (tampoco con movimiento normal): no hay tween ni trabajo por cuadro. Va bajo los
-   * actores (profundidad de entorno), con halo oscuro para que se lea sobre cualquier piso.
-   */
-  private syncTargetRing(): void {
-    const key = this.nextTargetKey;
-    const feet = key !== null && !this.dimmedKeys.has(key) ? this.feetOf(key) : null;
-    if (!feet) {
-      this.targetRing?.halo.setVisible(false);
-      this.targetRing?.ring.setVisible(false);
+  private syncStepMark(): void {
+    const punto = this.nextTargetKey ? this.puntoDeLaFlecha(this.nextTargetKey) : null;
+    if (!punto) {
       this.stepMark?.setVisible(false);
       return;
     }
-    if (!this.targetRing || !this.targetRing.ring.scene) {
-      const depth = DEPTH.ENVIRONMENT + 0.5;
-      const halo = this.add.ellipse(0, 0, 70, 26).setStrokeStyle(4, RING_HALO_COLOR, 0.85).setDepth(depth);
-      const ring = this.add.ellipse(0, 0, 68, 24).setStrokeStyle(2, RING_COLOR, 0.9).setDepth(depth + 0.01);
-      this.targetRing = { halo, ring };
-    }
-    const punto = this.ubicarAnillo(key!, feet, this.targetRing, DEPTH.ENVIRONMENT + 0.5);
-    this.syncStepMark(key!, punto);
-  }
-
-  /**
-   * La flecha del siguiente paso (P9): una forma estática (▶) a la izquierda del destino y a media altura de su cuerpo, con
-   * halo oscuro; no tapa su nombre ni la cabeza (el rótulo va encima) y no se anima. Se crea una vez por sala.
-   */
-  private syncStepMark(key: string, feet: { x: number; y: number }): void {
     if (!this.stepMark || !this.stepMark.scene) {
       this.stepMark = this.add.text(0, 0, STEP_MARK_GLYPH, {
         fontFamily: WORLD_LABEL_FONT_FAMILY, fontSize: '14px', color: '#cdbcff', fontStyle: 'bold',
         stroke: '#0b0f1a', strokeThickness: 4,
       }).setOrigin(1, 0.5).setDepth(LABEL_DEPTH);
     }
-    const lift = this.stepMarkLift(key);
-    this.stepMark.setPosition(feet.x - STEP_MARK_SIDE_PX, feet.y - lift).setVisible(true);
+    this.stepMark.setPosition(punto.x, punto.y).setVisible(true);
   }
 
   /** A qué altura de sus pies va la flecha: más arriba para una persona o una puerta que para un objeto bajo. */
@@ -3700,28 +3725,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (key.startsWith(NPC_KEY_PREFIX)) return STEP_MARK_LIFT.person;
     const type = this.markerData.get(key)?.type;
     return type === 'PERSON' ? STEP_MARK_LIFT.person : type === 'EXIT' ? STEP_MARK_LIFT.door : STEP_MARK_LIFT.object;
-  }
-
-  /**
-   * Anillo de cercanía (P9): bajo el candidato principal (`nearestKey`), el mismo sobre el que actúan E y «Interactuar», con
-   * trazo grueso y relleno tenue. Se crea una vez; aparece al entrar en el radio de interacción y se va al salir. Sin
-   * animación. Lo atenuado (decisiones de otras etapas) no lleva anillo, como el del destino.
-   */
-  private syncNearRing(): void {
-    const key = this.nearestKey;
-    const feet = key !== null && !this.dimmedKeys.has(key) ? this.feetOf(key) : null;
-    if (!feet) {
-      this.nearRing?.halo.setVisible(false);
-      this.nearRing?.ring.setVisible(false);
-      return;
-    }
-    if (!this.nearRing || !this.nearRing.ring.scene) {
-      const depth = DEPTH.ENVIRONMENT + 0.6;
-      const halo = this.add.ellipse(0, 0, 88, 34).setStrokeStyle(6, RING_HALO_COLOR, 0.85).setDepth(depth);
-      const ring = this.add.ellipse(0, 0, 84, 30, NEAR_RING_COLOR, 0.14).setStrokeStyle(3, NEAR_RING_COLOR, 1).setDepth(depth + 0.01);
-      this.nearRing = { halo, ring };
-    }
-    this.ubicarAnillo(key!, feet, this.nearRing, DEPTH.ENVIRONMENT + 0.6);
   }
 
   /**
@@ -3781,16 +3784,21 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.apoyosDeLaSala.clear();
     this.mueblesConApoyo.clear();
     this.cobijas.clear();
-    this.targetRing = undefined;
+    this.conversacionesMontadas = false;
+    for (const conversacion of this.conversaciones) {
+      conversacion.burbuja = undefined;
+      conversacion.cola = undefined;
+    }
+    this.dibujosDeMarcador.clear();
+    this.contornos.clear();
+    this.focoClave = this.focoDeTeclado = null;
     this.stepMark = undefined;
-    this.nearRing = undefined;
     this.markerPrompt = undefined;
     this.edgeArrow = undefined;
     this.edgeState = '';
     this.walkInteractKey = null;
     this.revealed.length = 0;
     // El contorno y el verbo del puntero también los destruye `children.removeAll`: se vuelven a crear al usarlos.
-    this.hoverOutline = undefined;
     this.hoverLabel = undefined;
     this.hoverKey = null;
     this.keyPersonIndicator = undefined;
@@ -3851,7 +3859,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   /** Un marcador que se mueve (vaivén ambiental o persona que camina): su posición viva es la del contenedor, no la del dato. */
   private markerMoves(key: string): boolean {
-    return this.ambientMovers.has(key) || this.personWalkers.has(key);
+    return this.ambientMovers.has(key) || this.personWalkers.has(key) || this.personasQueConversan.has(key);
   }
 
   /**
@@ -3900,6 +3908,151 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const sprite = (bag['__personSprite'] ?? bag['__npcSprite']) as Phaser.GameObjects.Sprite | undefined;
     const visual = (bag['__personVisual'] ?? bag['__npcVisual']) as CharacterVisual | undefined;
     if (sprite && visual) playKitPose(sprite, visual, direction, walking, this.callbacks.reduceMotion);
+  }
+
+  private actualizarConversaciones(delta: number): void {
+    if (!this.conversaciones.length) return;
+    if (!this.conversacionesMontadas) {
+      this.conversacionesMontadas = true;
+      for (const clave of this.personasQueConversan) {
+        this.personWalkers.delete(clave);
+        this.ambientMovers.delete(clave);
+      }
+    }
+    if (this.motionPaused || this.camFase !== null) return;
+    for (const conversacion of this.conversaciones) {
+      const [a, b] = conversacion.reloj.datos.personas;
+      const primero = this.marcasDeConversacion(a);
+      const segundo = this.marcasDeConversacion(b);
+      if (!primero || !segundo || this.conversacionOcupada(conversacion)) {
+        conversacion.burbuja?.setVisible(false);
+        conversacion.cola?.setVisible(false);
+        continue;
+      }
+      const actores = [primero, segundo] as const;
+      conversacion.posiciones ??= [{ x: primero.x, y: primero.y }, { x: segundo.x, y: segundo.y }];
+      const anterior = conversacion.posiciones;
+      if (conversacion.reloj.datos.modo === 'caminan' && !this.callbacks.reduceMotion
+         && !this.apoyosDeLaSala.get(a)?.cama && !this.apoyosDeLaSala.get(b)?.cama) {
+        this.caminarEnConversacion(conversacion, actores, delta);
+      }
+      const [p, q] = conversacion.posiciones;
+      const hacia = (i: number, desde: Punto, hasta: Punto, otro: Punto) =>
+        direccionDeVector(hasta.x - desde.x, hasta.y - desde.y, conversacion.vistas?.[i] ?? null)
+          ?? direccionDeVector(otro.x - hasta.x, otro.y - hasta.y, null) ?? 'down';
+      conversacion.vistas = [hacia(0, anterior[0], p, q), hacia(1, anterior[1], q, p)];
+      actores.forEach((actor, i) => {
+        const posicion = conversacion.posiciones![i];
+        if (actor.x !== posicion.x || actor.y !== posicion.y) {
+          actor.setPosition(posicion.x, posicion.y);
+          this.ysort(actor);
+        }
+        this.poseDeMarcador(actor, conversacion.vistas![i], anterior[i] !== posicion);
+      });
+      conversacion.reloj.avanzar(delta);
+    }
+  }
+
+  private conversacionOcupada(conversacion: ConversacionEnSala): boolean {
+    return conversacion.reloj.datos.personas.some(clave => clave === this.selectedKey || this.gesturing.has(clave));
+  }
+
+  private marcasDeConversacion(clave: string): Phaser.GameObjects.Container | null {
+    const marcador = this.actorOf(clave);
+    return marcador && this.disponible(marcador) ? marcador : null;
+  }
+
+  private caminarEnConversacion(conversacion: ConversacionEnSala,
+    actores: readonly [Phaser.GameObjects.Container, Phaser.GameObjects.Container], delta: number): void {
+    const [clave] = conversacion.reloj.datos.personas;
+    const objeto = this.markerData.get(clave);
+    if (!objeto || !this.world || !conversacion.posiciones) return;
+    const pies = actores.map(a => Number((a as unknown as Record<string, unknown>)['__feetOffset'] ?? 0));
+    const desde = conversacion.posiciones.map((p, i) => ({ x: p.x, y: p.y + pies[i] })) as [Punto, Punto];
+    if (conversacion.avance < 0) {
+      conversacion.avance += delta;
+      return;
+    }
+    if (!conversacion.pasos.length) {
+      // En la pausa entre frases pueden terminar un tramo, pero arrancan el siguiente con la vuelta nueva.
+      if (!conversacion.reloj.linea) return;
+      const movimiento = parsePersonMovement(objeto.metadata?.['movimiento']);
+      const origen = { x: objeto.x, y: objeto.y };
+      const metas = movimiento.tipo === 'ruta'
+        ? [...movimiento.puntos, ...(movimiento.modo === 'ida-y-vuelta' ? movimiento.puntos.slice(1, -1).reverse() : [])]
+        : movimiento.tipo === 'va-y-viene' ? [movimiento.hasta, origen]
+        : [{ x: origen.x + 64, y: origen.y }, origen, { x: origen.x - 64, y: origen.y }, origen];
+      const meta = metas[conversacion.meta++ % metas.length];
+      conversacion.pasos = rutaEnPareja(desde, { x: meta.x, y: meta.y + pies[0] }, {
+        limites: { minX: 0, minY: 0, maxX: this.world.map.width, maxY: this.world.map.height },
+        bloqueado: (x, y) => this.wouldCollide(x, y),
+      });
+      if (!conversacion.pasos.length) {
+        // Si no cabe el par, deja tiempo antes de buscar otro tramo (el A* no corre por cuadro).
+        conversacion.avance = -1000;
+      }
+      return;
+    }
+    const meta = conversacion.pasos[0];
+    const largo = Math.max(...meta.map((p, i) => Math.hypot(p.x - desde[i].x, p.y - desde[i].y)));
+    const fraccion = largo ? Math.min(1, delta * PERSON_WALK_SPEED_PX_S / 1000 / largo) : 1;
+    conversacion.posiciones = meta.map((p, i) => {
+      const x = desde[i].x + (p.x - desde[i].x) * fraccion;
+      const y = desde[i].y + (p.y - desde[i].y) * fraccion - pies[i];
+      return x === desde[i].x && y === desde[i].y - pies[i] ? conversacion.posiciones![i] : { x, y };
+    }) as [Punto, Punto];
+    if (fraccion === 1) conversacion.pasos.shift();
+  }
+
+  private reservarDestinoDeConversaciones(ocupadas: CajaDePlaca[], zoomCss: number): void {
+    const clave = this.nextTargetKey;
+    const dibujo = clave && (this.salaPorPiezas?.spriteDeMueble(clave) ?? this.dibujosDeMarcador.get(clave));
+    const destino = dibujo && 'getBounds' in dibujo
+      ? dibujo as Phaser.GameObjects.Container | Phaser.GameObjects.Sprite : null;
+    for (const pieza of [destino, this.hoverLabel]) {
+      if (!pieza || !pieza.visible) continue;
+      const caja = pieza.getBounds();
+      ocupadas.push({ ...this.proyectarAviso(caja), ancho: caja.width * zoomCss, alto: caja.height * zoomCss });
+    }
+  }
+
+  /** Se colocan al final de la ronda de rótulos. Solo se desplazan dentro de la cercanía de quien habla. */
+  private ubicarConversaciones(ocupadas: CajaDePlaca[], zoomCss: number): void {
+    for (const conversacion of this.conversaciones) {
+      const linea = conversacion.reloj.linea;
+      const cuerpo = linea ? this.cuerpoVivo(linea.quien) : null;
+      const enFondo = cuerpo && !this.motionPaused && !this.coreografia && this.camFase === null
+        && !this.conversacionOcupada(conversacion);
+      if (!enFondo || !linea) {
+        conversacion.burbuja?.setVisible(false);
+        conversacion.cola?.setVisible(false);
+        continue;
+      }
+      const burbuja = conversacion.burbuja ??= this.add.text(0, 0, '', {
+        fontFamily: WORLD_FONT_FAMILY, fontSize: '12px', color: '#e2d7ed', backgroundColor: '#332b42',
+        padding: { x: 5, y: 3 }, align: 'center', wordWrap: { width: 135 },
+      }).setOrigin(.5, 1).setAlpha(.86).setDepth(LABEL_DEPTH - .01);
+      if (burbuja.text !== linea.texto) burbuja.setText(linea.texto);
+      const cola = conversacion.cola ??= this.add.rectangle(0, 0, 5, 4, 0x332b42, .86)
+        .setOrigin(.5, 0).setDepth(LABEL_DEPTH - .01);
+      burbuja.setScale(1 / zoomCss);
+      cola.setScale(1 / zoomCss);
+      const ancla = { x: cuerpo.x, y: cuerpo.y - (cuerpo.cuerpo?.alto ?? ALTO_CUERPO) - 6 / zoomCss };
+      const pantalla = this.proyectarAviso(ancla);
+      const caja = { x: pantalla.x - burbuja.width / 2, y: pantalla.y - burbuja.height - 4,
+        ancho: burbuja.width, alto: burbuja.height + 4 };
+      const posicion = situarAviso(caja, this.vistaParaAvisos(), ocupadas);
+      if (!posicion || Math.abs(posicion.x - caja.x) > 44 || Math.abs(posicion.y - caja.y) > 26) {
+        burbuja.setVisible(false);
+        cola.setVisible(false);
+        continue;
+      }
+      const x = ancla.x + (posicion.x - caja.x) / zoomCss;
+      const y = ancla.y + (posicion.y - caja.y - 4) / zoomCss;
+      burbuja.setPosition(x, y).setVisible(true);
+      cola.setPosition(ancla.x, y).setVisible(true);
+      ocupadas.push({ ...caja, ...posicion });
+    }
   }
 
   /**
@@ -4335,8 +4488,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const list = this.candidates;
     list.length = 0;
     let anyInRange = false;
-    let targetX = 0, targetY = 0, targetSeen = false;
-    let nearX = 0, nearY = 0, nearSeen = false;
     const haDadoUnPaso = this.haDadoUnPaso();
     // Un objeto atenuado nunca es el destino: ni anillo ni rótulo fijo (lo atenuado no llama la atención).
     const target = this.nextTargetKey !== null && !this.dimmedKeys.has(this.nextTargetKey) ? this.nextTargetKey : null;
@@ -4361,8 +4512,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       c.key = this.npcKeyOf(key); c.kind = 'npc'; c.exit = false;
       c.distance = Math.hypot(px - container.x, py - container.y); c.radius = NPC_INTERACT_RADIUS;
       if (c.distance <= c.radius) anyInRange = true;
-      if (c.key === target) { targetSeen = true; targetX = container.x; targetY = container.y; }
-      if (c.key === this.nearestKey) { nearSeen = true; nearX = container.x; nearY = container.y; }
       list.push(c);
     }
     // Las zonas ambientales son sabor de último recurso: solo cuentan si nada más está a su alcance.
@@ -4388,22 +4537,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       this.revealed = this.revealScratch;
       this.revealScratch = swap;
     }
-    // Un destino que se mueve (una persona que deambula) arrastra su anillo; el de un marcador queda
-    // quieto en su sitio (la flotación suave del icono no lo mueve).
-    const ring = this.targetRing?.ring;
-    if (targetSeen && ring && (ring.x !== targetX || ring.y !== targetY)) {
-      this.targetRing!.halo.setPosition(targetX, targetY);
-      ring.setPosition(targetX, targetY);
-    }
-    if (targetSeen && this.stepMark && !this.camState) {
-      this.stepMark.setPosition(targetX - STEP_MARK_SIDE_PX, targetY - STEP_MARK_LIFT.person);
-    }
-    const near = this.nearRing?.ring;
-    if (nearSeen && near && (near.x !== nearX || near.y !== nearY)) {
-      this.nearRing!.halo.setPosition(nearX, nearY);
-      near.setPosition(nearX, nearY);
-    }
-
+    if (target && (target.startsWith(NPC_KEY_PREFIX) || this.markerMoves(target))) this.syncStepMark();
     const primaryChanged = primaryKey !== this.nearestKey;
     if (primaryChanged) {
       this.nearestKey = primaryKey;
@@ -4461,8 +4595,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.syncLabelScale();
     this.syncProximityAnimations();
     const revealed = this.revealed;
-    this.syncTargetRing();
-    this.syncNearRing();
+    this.syncStepMark();
     this.syncMarkerPrompt();
     this.applyDoorStates();
     this.followLabels.length = 0;
@@ -4579,29 +4712,29 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       <div class="world-load-warning" role="alert">
         <p>Parte del mapa no cargó y la sala se ve simplificada.</p>
         <div class="world-load-warning__actions">
-          <button type="button" class="psy-button" (click)="retryLoad()">Reintentar</button>
-          <button type="button" class="psy-button psy-button--ghost" (click)="dismissLoadWarning()">Seguir así</button>
+          <button type="button" class="u-boton u-boton--principal" (click)="retryLoad()">Reintentar</button>
+          <button type="button" class="u-boton" (click)="dismissLoadWarning()">Seguir así</button>
         </div>
       </div>
     }
     <div class="touch-controls" role="group" aria-label="Controles táctiles">
       <div class="touch-dpad">
-        <button type="button" class="psy-icon-button touch-btn touch-btn--up" aria-label="Mover arriba"
+        <button type="button" class="u-boton u-boton--icono touch-btn touch-btn--up" aria-label="Mover arriba"
           (pointerdown)="holdDirection($event, 'up')" (pointerup)="releaseDirection()"
           (pointercancel)="releaseDirection()" (lostpointercapture)="releaseDirection()"
           (contextmenu)="$event.preventDefault()"
           (click)="keyboardNudge($event, 'up')"><mat-icon>keyboard_arrow_up</mat-icon></button>
-        <button type="button" class="psy-icon-button touch-btn touch-btn--left" aria-label="Mover izquierda"
+        <button type="button" class="u-boton u-boton--icono touch-btn touch-btn--left" aria-label="Mover izquierda"
           (pointerdown)="holdDirection($event, 'left')" (pointerup)="releaseDirection()"
           (pointercancel)="releaseDirection()" (lostpointercapture)="releaseDirection()"
           (contextmenu)="$event.preventDefault()"
           (click)="keyboardNudge($event, 'left')"><mat-icon>keyboard_arrow_left</mat-icon></button>
-        <button type="button" class="psy-icon-button touch-btn touch-btn--right" aria-label="Mover derecha"
+        <button type="button" class="u-boton u-boton--icono touch-btn touch-btn--right" aria-label="Mover derecha"
           (pointerdown)="holdDirection($event, 'right')" (pointerup)="releaseDirection()"
           (pointercancel)="releaseDirection()" (lostpointercapture)="releaseDirection()"
           (contextmenu)="$event.preventDefault()"
           (click)="keyboardNudge($event, 'right')"><mat-icon>keyboard_arrow_right</mat-icon></button>
-        <button type="button" class="psy-icon-button touch-btn touch-btn--down" aria-label="Mover abajo"
+        <button type="button" class="u-boton u-boton--icono touch-btn touch-btn--down" aria-label="Mover abajo"
           (pointerdown)="holdDirection($event, 'down')" (pointerup)="releaseDirection()"
           (pointercancel)="releaseDirection()" (lostpointercapture)="releaseDirection()"
           (contextmenu)="$event.preventDefault()"
@@ -4609,7 +4742,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       </div>
       <!-- Sin [disabled] ni aria-disabled (Playwright los toma por «no habilitado» y el e2e táctil no podría
            tocar): sin nada cerca el toque se acepta y la escena avisa (nothingNearby). -->
-      <button type="button" class="psy-button psy-button--glass touch-interact"
+      <button type="button" class="u-boton u-boton--principal touch-interact"
         [class.touch-interact--idle]="!interactLabel()"
         [attr.aria-label]="'Interactuar: ' + (interactLabel() ?? 'Acércate a algo')"
         (click)="interactNearest()"><mat-icon aria-hidden="true">touch_app</mat-icon><span class="touch-interact__label">{{ interactLabel() ?? 'Acércate a algo' }}</span></button>
@@ -4654,7 +4787,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     .touch-btn--right { grid-area: 2 / 3; }
     .touch-btn--down { grid-area: 3 / 2; }
     .touch-btn {
-      background: rgba(8,12,18,.7); border-color: rgba(79,163,165,.3); color: #4fa3a5;
       /* Mantener pulsado no debe hacer scroll, zoom, seleccionar texto ni abrir el menú largo. */
       touch-action: none;
       user-select: none;
@@ -4673,9 +4805,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       text-align: center;
     }
     .touch-interact__label { overflow-wrap: anywhere; }
-    /* Sin nada cerca (el estado más frecuente): texto oscuro sobre el vidrio claro (>= 4,5:1 incluso sobre un mundo negro,
-       el peor fondo) y borde discontinuo: el reposo no se distingue solo por el tono. En anchos < 700 px manda el fondo oscuro. */
-    .touch-interact--idle { color: #10131a; border-style: dashed; }
+    .touch-interact--idle { outline: 1px dashed var(--pixel-tinta-suave); }
     /* Aparece solo si la carga pasa de 300 ms: con caché caliente no parpadea. */
     .world-loading {
       position: absolute;
@@ -4734,14 +4864,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     /* La cruceta sigue a la ENTRADA real (F6-7): el primer toque la muestra y mover el ratón la oculta; sin entrada
        aún, vale el puntero principal. Lo decide la clase touch-input del anfitrión. */
     :host(.touch-input) .touch-controls { display: grid; }
-    /* En anchos cortos (< 700 px) la cruz ya no cabe en las bandas negras y se encima al mundo:
-       se hace semitransparente para que el piso se siga viendo por debajo. */
-    @media (max-width: 699px) {
-      :host(.touch-input) .touch-btn { background: rgba(8,12,18,.45); border-color: rgba(79,163,165,.55); }
-      /* Fondo oscuro translúcido: el texto pasa a claro (el vidrio claro de escritorio lleva texto oscuro). */
-      :host(.touch-input) .touch-interact { background: rgba(8,12,18,.6); border-color: rgba(232,240,244,.5); color: #e8f0f4; }
-      :host(.touch-input) .touch-interact--idle { color: rgba(232,240,244,.8); border-style: dashed; }
-    }
   `]
 })
 export class GameWorldComponent implements OnChanges, OnDestroy {
@@ -4767,6 +4889,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
     : 'Mapa explorable de la simulación. Usa las flechas para moverte, Enter para interactuar.'));
   /** true mientras hay diálogo/journal/outcome: congela NPCs y ambient. */
   readonly motionPaused = input(false);
+  readonly nombreDeQuienJuega = input('');
   readonly sfxMuted = input(false);
   readonly reduceMotion = input<boolean | null>(null);
   /** Activación de la persona (serena, tensa o en crisis): mueve la viñeta de crisis. */
@@ -5183,6 +5306,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
           if (!this.renderReady()) this.armBootWatchdog();
         }),
         onArtLoading: () => this.onArtLoading(),
+        nombreDeQuienJuega: () => this.nombreDeQuienJuega(),
         recetasIniciales: () => {
           const objetos = this.world()?.objects;
           if (!objetos) return null;

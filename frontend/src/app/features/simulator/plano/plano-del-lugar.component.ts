@@ -70,7 +70,7 @@ const PUERTA_GROSOR = 14;
         @for (item of lista(); track item.clave) {
           <li [attr.aria-current]="item.actual ? 'location' : null">
             @if (elegible()) {
-              <button type="button" class="plano__sala" (click)="salaElegida.emit(item.clave)">{{ item.texto }}</button>
+              <button type="button" class="plano__sala u-boton" (click)="salaElegida.emit(item.clave)">{{ item.texto }}</button>
             } @else {
               {{ item.texto }}
             }
@@ -102,9 +102,10 @@ const PUERTA_GROSOR = 14;
     .sala--elegible { cursor: pointer; }
     .rota circle { fill: none; stroke: var(--ds-danger); stroke-width: 3; stroke-dasharray: 6 4; }
     .rota text { fill: var(--ds-danger-hover); font-weight: 700; }
-    .plano__sala { display: block; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; font: inherit; color: var(--ds-text-1);
+    .plano__sala { width: 100%; text-align: left; }
+    .plano__sala:not(.pixel-juego *) { display: block; min-height: 44px; padding: 8px 12px; font: inherit; color: var(--ds-text-1);
       background: var(--ds-surface-1, transparent); border: 1px solid var(--ds-border-strong, currentColor); border-radius: 8px; cursor: pointer; }
-    .plano__sala:active { transform: translateY(1px); }
+    .plano__sala:not(.pixel-juego *):active { transform: translateY(1px); }
     .plano__rota { display: block; color: var(--ds-danger-hover); font-weight: 600; }
   `],
 })

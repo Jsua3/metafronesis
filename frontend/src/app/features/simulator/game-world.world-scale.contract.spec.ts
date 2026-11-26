@@ -41,9 +41,9 @@ describe('game-world: puertas, herramientas y objetos a escala 1 (spec §13.1, d
     expect(source).toContain('const sprite = this.add.sprite(0, artY, sheet.textureKey, 0);');
   });
 
-  it('un marcador con sprite de pixel art no se escala al acercarse ni al enfocarlo: el pulso va a su anillo', () => {
+  it('un marcador con sprite de pixel art no se escala al acercarse ni al enfocarlo: el foco activa el contorno', () => {
     expect(source).toContain("bag['__pixelSprite'] = pixelSprite;");
     expect(body('private refreshMarkerStates() {')).toContain("pixelSprite: bag['__pixelSprite'] === true");
-    expect(body('focus(key: string) {')).toContain("bag['__kitSprite'] === true || bag['__pixelSprite'] === true ? bag['__pulse'] : m");
+    expect(body('focus(key: string) {')).toContain('this.focoClave = key;');
   });
 });

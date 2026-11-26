@@ -23,7 +23,6 @@ import {
   isFinalDialogueLine,
   nextDialogueLineIndex,
 } from './dialogue-progression.util';
-import { UiButton } from '../../shared/ui/button/ui-button';
 import { DRAFT_COPY } from './draft-copy';
 import { isSystemVoice, resolvePortraitAsset } from './portrait-resolver.util';
 import { escalaDelRetrato } from './pixel/tramos';
@@ -41,7 +40,7 @@ const medirVentana = () => typeof window === 'undefined'
 @Component({
   selector: 'app-dialogue-panel',
   standalone: true,
-  imports: [A11yModule, CommonModule, KitFigureComponent, SafeExitButtonComponent, SceneHintComponent, UiButton],
+  imports: [A11yModule, CommonModule, KitFigureComponent, SafeExitButtonComponent, SceneHintComponent],
   template: `
     @if (dialogue(); as d) {
       <div #dialogueBox
@@ -71,7 +70,7 @@ const medirVentana = () => typeof window === 'undefined'
             <p class="panel-head__aviso">{{ avisoBreve() }}</p>
           }
           <div class="panel-head__row">
-            <button type="button" class="panel-back" (click)="close.emit()">
+            <button type="button" class="panel-back u-boton" (click)="close.emit()">
               <span class="panel-back__arrow" aria-hidden="true">◀</span> Volver al mapa
             </button>
             <app-safe-exit-button class="panel-head__exit" data-hide-key variante="placa" [pausing]="pausing()" (pause)="safeExit.emit()" />
@@ -86,8 +85,9 @@ const medirVentana = () => typeof window === 'undefined'
 
         <div class="strip-main">
           <!-- La placa de quien habla: nombre en su pestaña, retrato que asoma sobre el marco, estado y la línea. -->
-          <section class="placa">
+          <section class="placa" [class.placa--tutor]="d.tutor">
             <p class="speaker-name">{{ activeSpeakerName(d) }}
+              @if (d.tutor?.rol; as rol) { <span class="speaker-role">{{ rol }}</span> }
               @if (showsEmotionCue(d) && emotionLabel(activeEmotion(d)); as em) {
                 <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">
                   @if (ocultarRetrato(d)) {
@@ -131,14 +131,14 @@ const medirVentana = () => typeof window === 'undefined'
                 }
 
                 <!-- BORRADOR: texto pendiente de Psicología. -->
-                <button type="button" class="instant-setting" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
+                <button type="button" class="instant-setting u-boton" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
                 <div class="placa-pie">
                   @if (paginas().length > 1) {
                     <!-- Parlamento en páginas (V5): cuántas van y cuántas son, a la izquierda y antes de todo botón (al lado
                          de «Saltar» quedaba tapado; V6). El lector tiene el texto entero arriba. -->
                     <span class="placa-pagina" aria-hidden="true">{{ cuentaDePaginas() }}</span>
                   }
-                  <button type="button" class="close-btn" ui-button variant="primary" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
+                  <button type="button" class="close-btn u-boton u-boton--principal" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
                     (click)="continuarDialogo()">
                     Continuar <span aria-hidden="true">▶</span>
                   </button>
@@ -237,7 +237,7 @@ const medirVentana = () => typeof window === 'undefined'
     .strip-body[data-encuadrando], .strip-body[data-encuadrando] * { visibility: hidden; animation: none; }
 
     /* Marco de pixel art: borde de 4 px de mundo por lado y relleno con trama, sin esquinas suavizadas. */
-    .placa-cuerpo, .speaker-name, .panel-back, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
+    .placa-cuerpo, .speaker-name, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
       border-style: solid;
       border-width: calc(4 * var(--px));
       border-image: var(--m) 4 / calc(4 * var(--px)) stretch;
@@ -386,7 +386,6 @@ const medirVentana = () => typeof window === 'undefined'
       color: #ffcd82;
     }
     .panel-back {
-      --m: var(--marco-placa); --t: var(--trama-placa);
       display: inline-flex;
       align-items: center;
       gap: 10px;
@@ -415,13 +414,11 @@ const medirVentana = () => typeof window === 'undefined'
       color: var(--tinta);
     }
     .close-btn::before { content: 'Enter'; }
-    /* «Volver al mapa» con los estados de la placa-botón, como «Salida segura» y «Ver pista»: sobre enciende el canto y
-       pulsada invierte el bisel; el foco es el anillo global de la piel, el mismo en las tres. */
     @media (hover: hover) and (pointer: fine) {
-      .panel-back:hover { --m: var(--marco-placa-sobre); --t: var(--trama-placa-sobre); color: #ffcd82; }
       .panel-back::before, .close-btn::before { display: inline-block; }
     }
-    .panel-back:active { transform: translateY(var(--px)); --m: var(--marco-placa-pulsada); --t: var(--trama-placa-pulsada); }
+    .speaker-role { margin-inline-start: .6em; font-family: var(--pixel-f-texto); font-size: var(--pixel-letra-chica); font-weight: 500; }
+    .placa--tutor { --retrato: 64px; }
     .panel-back__arrow { font-size: .75em; }
 
     /* La placa. */
@@ -531,8 +528,7 @@ const medirVentana = () => typeof window === 'undefined'
     }
     .pulso[data-activation="CALM"] { background-image: var(--pulso-CALM); animation-duration: 2s; animation-iteration-count: 2; }
     .pulso[data-activation="CRISIS"] { background-image: var(--pulso-CRISIS); animation-duration: .5s; animation-iteration-count: 8; }
-    .instant-setting { font: inherit; font-size: .82em; color: #ffdfab; background: #302942; border: 1px solid #cbb38d; border-radius: 4px; padding: 6px 10px; cursor: pointer; }
-    .instant-setting:focus-visible { outline: 3px solid #ffdfab; outline-offset: 2px; }
+    .instant-setting { font-size: .82em; align-self: flex-start; }
     .dialogue-text {
       line-height: 1.6;
       margin: 0;
@@ -561,17 +557,7 @@ const medirVentana = () => typeof window === 'undefined'
       align-items: center;
       gap: 8px;
       min-height: 44px;
-      padding: 0 2px;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      color: var(--tinta);
-      font: inherit;
       font-size: .9em;
-      font-weight: 600;
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .dialogue-strip .close-btn:hover { background: transparent; color: var(--luz); }
     }
 
     /* Las fichas de respuesta. */
@@ -1094,6 +1080,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       recipeId: sameSpeaker ? d.recipeId ?? null : null,
       portraitKey: sameSpeaker ? d.portraitKey : null,
       speakerName: lineSpeaker || treeSpeaker,
+      soloReceta: !!d.tutor,
       emotion: line?.emotion?.trim() || d.emotion?.trim() || 'neutral',
     });
     return asset && this.failedPortrait() !== asset ? asset : null;
@@ -1101,7 +1088,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /** Solo abre la ventanilla cuando existe una cara del kit para el hablante de esta línea. */
   ocultarRetrato(d: DialogueState): boolean {
-    return d.hidePortrait === true || (!this.portraitSrc(d) && !this.visualDeHablante(d));
+    return d.hidePortrait === true || (!this.portraitSrc(d) && (!!d.tutor || !this.visualDeHablante(d)));
   }
 
   activeSpeakerName(d: DialogueState): string {

@@ -84,7 +84,7 @@ let nextGoalCardId = 0;
             <!-- Con la guía escrita, los pasos ya dicen con quién hablar: «En esta sala» queda plegada (la ficha no tapa la sala). -->
             @if (guia().pasos) {
               <details class="goal-card__sala">
-                <summary class="goal-card__list-title goal-card__sala-titulo">{{ copy.roomListTitle.text }} · {{ guia().enEstaSala.length }}</summary>
+                <summary class="goal-card__list-title goal-card__sala-titulo u-boton">{{ copy.roomListTitle.text }} · {{ guia().enEstaSala.length }}</summary>
                 <ul class="goal-card__list">
                   @for (el of guia().enEstaSala; track el.key) {
                     <li class="goal-card__item">{{ el.label }} · <span class="goal-card__mark" [class.goal-card__mark--hecha]="el.visto">{{ mark(el) }}</span></li>

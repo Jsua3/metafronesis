@@ -36,7 +36,7 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
           <h2 id="journal-heading">Bitácora reflexiva</h2>
           <p class="psy-eyebrow sheet-sub">Razonamiento ético y formativo</p>
         </div>
-        <button cdkFocusInitial class="sheet-close psy-icon-button" type="button" aria-label="Cerrar bitácora y continuar la simulación" (click)="onCloseClick()">
+        <button cdkFocusInitial class="sheet-close u-boton u-boton--icono" type="button" aria-label="Cerrar bitácora y continuar la simulación" (click)="onCloseClick()">
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -58,7 +58,7 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
 
           <!-- Nunca «disabled»: sin texto queda aria-disabled y dice por qué (se lee por aria-describedby y sale en un
                globo); guardando o con una acción en curso queda ocupado, sin doble envío. -->
-          <button ui-button variant="primary" type="button" icon="encrypted"
+          <button ui-button class="u-boton u-boton--principal" variant="primary" type="button" icon="encrypted"
             [loading]="saveState() === 'saving' || (disabled() && !!text.trim())"
             [disabledReason]="text.trim() ? null : saveReason"
             (click)="save.emit(text)">
@@ -107,7 +107,7 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
         <div class="footer-actions">
           <!-- REGLA-004: la bitácora tampoco atrapa; la pausa nunca depende de «disabled». -->
           <app-safe-exit-button data-hide-key [pausing]="pausing()" (pause)="safeExit.emit()" />
-          <button class="psy-button psy-button--ghost continue-btn" type="button" (click)="onCloseClick()">
+          <button class="u-boton continue-btn" type="button" (click)="onCloseClick()">
             Continuar simulación
           </button>
         </div>
@@ -161,12 +161,7 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
       font-size: 1.1rem;
       color: rgba(232,240,244,.95);
     }
-    .sheet-close {
-      background: rgba(255,255,255,.06);
-      border-color: rgba(255,255,255,.1);
-      color: rgba(232,240,244,.5);
-      flex-shrink: 0;
-    }
+    .sheet-close { flex-shrink: 0; }
     .sheet-sub { color: rgba(182,156,255,.82); margin: 2px 0 0; }
 
     .journal-columns {

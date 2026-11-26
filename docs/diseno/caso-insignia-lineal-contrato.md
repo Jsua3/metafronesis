@@ -61,6 +61,7 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
 - Con movimiento reducido, la tarjeta solo funde su opacidad y los pasos se muestran juntos.
 - Se muestra **una vez por intento y por sala**. En la sala inicial va después de la cinemática; en las demás, al entrar y antes de la nota de capítulo.
 - La salida segura sigue disponible.
+- En la retroalimentación inmediata de cada decisión, una figura compacta muestra el tutor de la sala con su nombre, rol y receta. Si la sala no trae tutor, la respuesta del mundo incluye la identidad del tutor del mapa inicial en `tutorInicial`, incluso al reanudar. Sin tutor en el caso se conserva la voz habitual.
 
 ## 3. `ambiente.guia` (en cada sala)
 
@@ -87,7 +88,7 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
   - `{"used": clave}` consulta `world.usedToolKeysHere` cuando está presente, incluso si es `[]`. Este campo opcional recoge los usos del nodo actual. Si falta, se consulta `world.usedToolKeys` para mantener la compatibilidad con respuestas anteriores.
     - Si `clave` incluye `@` (por ejemplo, `PAP@camilo`), debe coincidir exactamente con uno de los usos.
     - Si `clave` solo lleva el código (por ejemplo, `PAP`), coincide con ese código o con cualquier uso que empiece por `PAP@`.
-- `lugar` es la clave de un objeto de la sala. «Ir allí» aparece junto al primer paso pendiente con destino disponible y el anillo señala ese mismo destino. Si no se puede resolver ningún destino pendiente, la ficha puede ofrecer una puerta abierta como acción aparte.
+- `lugar` es la clave de un objeto de la sala. «Ir allí» aparece junto al primer paso pendiente con destino disponible y el contorno lila señala ese mismo destino. Si no se puede resolver ningún destino pendiente, la ficha puede ofrecer una puerta abierta como acción aparte.
 - La cuenta solo suma hechos verificados. Una indicación sin `hecho` puede quedar como información cuando se verifica un paso posterior. Los pasos verificables siguen pendientes hasta que se cumpla su propio hecho.
 
 ## 4. `metadatos.acompanantes` en un objeto `EXIT`
@@ -133,7 +134,7 @@ En una sala por piezas, `cama` y `mueble` señalan por clave exacta un `PROP` vi
 
 - La almohada y el pliegue se ajustan al cuadro de cada cama (recuperación del hospital, sencilla y doble de casa). La cabeza usa las primeras 23 filas del primer cuadro de reposo de frente del kit. La cobija cubre el borde del recorte, usa la paleta de la cama y alterna dos cuadros de píxel entero cada 2,5 segundos. Con movimiento reducido se queda en el primero. La iluminación y la sombra de piso vienen de la sala y de la cama.
 - La persona permanece acostada durante el paseo del mundo, la conversación, las reacciones y una salida con acompañantes. Conserva su receta y sus retratos. Se dibuja la primera persona con visual disponible que ocupe cada cama. Las referencias restantes conservan su dibujo de pie.
-- Sus coordenadas del caso deben quedar cerca de la cama para que el servidor pueda validar la interacción. En pantalla, la cabeza toma la posición de la almohada y el nombre de proximidad y los anillos quedan junto al borde accesible.
+- Sus coordenadas del caso deben quedar cerca de la cama para que el servidor pueda validar la interacción. En pantalla, la cabeza toma la posición de la almohada y el nombre de proximidad queda junto al borde accesible y el contorno sigue la cabeza visible y la cobija.
 
 ### Objeto sobre un mueble
 
@@ -144,4 +145,25 @@ En una sala por piezas, `cama` y `mueble` señalan por clave exacta un `PROP` vi
 - `x` e `y` son el punto de contacto con el tablero ya proyectado en la rejilla de la sala. El cliente los redondea al píxel más cercano. La base del dibujo se coloca en ese punto, adelante del mueble y de sus capas de brillo. El objeto conserva la luz de la sala.
 - Para situarlo, toma el apoyo del mueble que usa el dibujo. El borde superior del cuadro queda en `yMueble − anclaY`, donde `anclaY` es la segunda coordenada de `apoyo` en el arte o el alto del cuadro. Cada tablero declara en el frontend su intervalo de filas útiles, medido sobre el arte. Una fila `f` del tablero queda en `yMueble − anclaY + f`, a una altura visual de `anclaY − f` píxeles sobre el apoyo de piso. El escritorio de comisaría y el de universidad usan las filas 22 a 28 de su cuadro de 68 px. Con el escritorio de comisaría en `y = 312`, se puede usar `y = 266…272`. El escritorio del hospital usa las filas 7 a 12 de su cuadro de 57 px. En ambos ejes el punto debe caer sobre el tablero, con un margen lateral de cuatro píxeles respecto del arte. Fuera de esas filas o ese ancho se conserva el dibujo de piso.
 
-Al cargar la sala, el cliente toma el primer borde al que puede llegar desde la posición del jugador, probando el frente, los laterales y el fondo de la huella. Ese punto de piso sirve para la cercanía, el rótulo, los anillos y «Ir a…». El clic o toque puede apuntar al dibujo y la caminata también termina en ese borde. Se conservan la clave del objeto y sus acciones del caso.
+Al cargar la sala, el cliente toma el primer borde al que puede llegar desde la posición del jugador, probando el frente, los laterales y el fondo de la huella. Ese punto de piso sirve para la cercanía y «Ir a…». El contorno sigue el dibujo sobre el tablero y el rótulo se coloca sin tapar el objeto. El clic o toque puede apuntar al dibujo y la caminata también termina en ese borde. Se conservan la clave del objeto y sus acciones del caso.
+
+## 8. `ambiente.conversaciones` (en cada sala)
+
+```json
+"conversaciones": [
+  {
+    "personas": ["fig-mano", "fig-senora"],
+    "lineas": [
+      {"quien": "fig-mano", "texto": "¿Usted también lleva rato esperando?"},
+      {"quien": "fig-senora", "texto": "Desde las nueve, con mi esposo."}
+    ],
+    "pausaMs": 9000,
+    "modo": "quietos"
+  }
+]
+```
+
+- `personas` contiene dos claves distintas de objetos `PERSON` de la sala. La conversación se omite si falta una persona o queda sin líneas válidas. Cada línea identifica a una de las dos con `quien` y trae un `texto` que admite `{nombre}`.
+- En `quietos` las dos personas se miran. En `caminan` siguen la ruta de la primera con separación lateral y rodean los obstáculos. Se usa su `metadatos.movimiento` si trae una ruta o un punto de vuelta. Si falta, se prueban trayectos cortos cerca de su posición. Si el par no cabe o está activo el ajuste de movimiento reducido, se quedan quietas.
+- Cada frase aparece durante 400 ms por palabra, con un mínimo de 2,5 s. Las frases siguen el orden escrito y, al acabar la vuelta, esperan `pausaMs` (9000 ms por defecto).
+- Las burbujas van sobre quien habla y ceden su sitio a la interfaz, los rótulos y el destino de la guía. Mientras hay diálogo, decisión, reacción, cinemática o tutor en pantalla, se ocultan y se pausa el reloj. La jugadora puede abrir el diálogo propio de cualquier participante como siempre.

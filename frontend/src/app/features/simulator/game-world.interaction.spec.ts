@@ -59,9 +59,12 @@ interface SceneProbe {
   sound: { play: Mock };
   add: { ellipse: Mock; text: Mock };
   nearestKey: string | null;
+  focoDeTeclado: string | null;
   alsoKey: string | null;
   revealed: string[];
-  targetRing?: { halo: FakeNode; ring: FakeNode };
+  contornos: Map<string, { dibujo: FakeNode; actualizar(marca: FakeNode): void }>;
+  dibujosDeMarcador: Map<string, FakeNode>;
+  actualizarContornos(tiempo: number): void;
   updateNearestInteraction(suppressSound?: boolean): void;
   interactNearest(): void;
   caminarALaPuerta(op: { puertaKey: string; puerta: { x: number; y: number }; acompanantes: string[]; jugador: boolean }): Promise<void>;
@@ -142,6 +145,17 @@ function crearEscena(player = { x: 480, y: 430 }): Harness {
   scene.add = { ellipse: vi.fn(() => { const e = node(); ellipses.push(e); return e; }), text: vi.fn(() => node()) };
   nodes['#ellipses'] = ellipses as unknown as FakeNode;
   return { scene, callbacks, nodes };
+}
+
+/** Doble del dibujo de alfa: aquí se prueba quién se realza y dónde, en contorno.spec.ts los píxeles. */
+function probarContorno(h: Harness, clave: string): FakeNode {
+  const dibujo = node();
+  h.scene.dibujosDeMarcador.set(clave, h.nodes[clave]);
+  h.scene.contornos.set(clave, {
+    dibujo, actualizar: marca => dibujo.setPosition(marca.x, marca.y).setVisible(true),
+  });
+  h.scene.actualizarContornos(0);
+  return dibujo;
 }
 
 const move = (h: Harness, x: number, y: number) => { h.scene.player.x = x; h.scene.player.y = y; h.scene.updateNearestInteraction(true); };
@@ -311,50 +325,20 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
   const orient = (h: Harness, over: Partial<{ nextTargetKey: string | null; doorStates: Record<string, 'open' | 'locked'>; dimmedKeys: ReadonlySet<string> }> = {}) =>
     h.scene.setOrientation({ nextTargetKey: null, doorStates: {}, dimmedKeys: new Set(), ...over });
 
-  it('el destino lleva un solo anillo (anillo y halo), estático, creado una vez y reposicionado', () => {
+  it('el destino activa el contorno en el dibujo, lo sigue por cuadro y lo retira al dejar de ser destino', () => {
     const h = crearEscena();
+    const contorno = probarContorno(h, 'tool-pap');
+    expect(contorno.visible).toBe(false);
     orient(h, { nextTargetKey: 'tool-pap' });
-    const ellipses = h.nodes['#ellipses'] as unknown as FakeNode[];
-    expect(ellipses).toHaveLength(2);
-    expect(h.scene.targetRing?.ring.x).toBe(318);
-    expect(h.scene.targetRing?.ring.y).toBe(428); // pies del marcador: y + 16
-    orient(h, { nextTargetKey: 'npc:enfermera-urgencias' });
-    expect(ellipses).toHaveLength(2);
-    expect([h.scene.targetRing?.ring.x, h.scene.targetRing?.ring.y]).toEqual([560, 330]);
-    orient(h, { nextTargetKey: null });
-    expect(h.scene.targetRing?.ring.visible).toBe(false);
-    expect(h.scene.targetRing?.halo.visible).toBe(false);
-  });
-
-  it('el anillo de un marcador queda quieto aunque el icono flote; el de una persona que camina la sigue', () => {
-    const h = crearEscena();
-    orient(h, { nextTargetKey: 'tool-pap' });
-    const ring = h.scene.targetRing!.ring;
-    const placed = ring.setPosition.mock.calls.length;
-    h.nodes['tool-pap'].y = 409; // la flotación suave del marcador (tween) lo sube unos píxeles
-    move(h, 330, 420);
-    move(h, 331, 421);
-    expect(ring.setPosition.mock.calls.length).toBe(placed);
-    expect([ring.x, ring.y]).toEqual([318, 428]);
-    orient(h, { nextTargetKey: 'npc:enfermera-urgencias' });
-    h.nodes['npc:enfermera-urgencias'].x = 570; h.nodes['npc:enfermera-urgencias'].y = 335;
-    move(h, 559, 373);
-    expect([h.scene.targetRing!.ring.x, h.scene.targetRing!.ring.y]).toEqual([570, 335]);
-  });
-
-  it('un destino que no existe en la sala no inventa anillo', () => {
-    const h = crearEscena();
-    orient(h, { nextTargetKey: 'tool-spikes' });
+    h.scene.actualizarContornos(0);
+    expect(contorno).toMatchObject({ x: 318, y: 412, visible: true });
+    h.nodes['tool-pap'].y -= 3;
+    h.scene.actualizarContornos(16);
+    expect(contorno.y).toBe(409);
+    orient(h);
+    h.scene.actualizarContornos(32);
+    expect(contorno.visible).toBe(false);
     expect(h.scene.add.ellipse).not.toHaveBeenCalled();
-    expect(h.scene.targetRing).toBeUndefined();
-  });
-
-  it('el anillo no usa tweens ni animación (también con movimiento normal)', () => {
-    const h = crearEscena();
-    (h.scene as unknown as { tweens: { add: Mock } }).tweens = { add: vi.fn() };
-    orient(h, { nextTargetKey: 'tool-pap' });
-    move(h, 330, 420);
-    expect((h.scene as unknown as { tweens: { add: Mock } }).tweens.add).not.toHaveBeenCalled();
   });
 
   it('el rótulo del destino se ve aunque esté lejos y se oculta al cambiar de destino', () => {
@@ -414,7 +398,8 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     h.scene.updateNearestInteraction(true);
     h.scene.updateNearestInteraction(true);
     expect(h.nodes['tool-pap'].setAlpha.mock.calls.length).toBe(alphaCalls); // por cuadro no se repinta
-    expect(h.scene.add.ellipse).toHaveBeenCalledTimes(2);
+    expect(h.scene.add.ellipse).not.toHaveBeenCalled();
+    expect(h.scene.add.text).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -436,14 +421,16 @@ describe('los avisos y las acciones al cruzar una puerta', () => {
     h.callbacks.reduceMotion = true;
     h.scene.setOrientation({ nextTargetKey: key, doorStates: {}, dimmedKeys: new Set() });
     expect(h.scene.nearestKey).toBe(key);
-    expect(h.scene.targetRing?.ring.visible).toBe(true);
+    const contorno = probarContorno(h, key);
+    expect(contorno.visible).toBe(true);
     const caminata = h.scene.caminarALaPuerta({
       puertaKey: 'puerta-sala-escucha', puerta: { x: 838, y: 424 }, acompanantes: [key], jugador: false,
     });
     expect(actor.visible).toBe(true);
     expect((actor['__labelSprite'] as FakeNode).alpha).toBe(0);
     expect((actor['__hintSprite'] as FakeNode).alpha).toBe(0);
-    expect(h.scene.targetRing?.ring.visible).toBe(false);
+    h.scene.actualizarContornos(0);
+    expect(contorno.visible).toBe(false);
     expect(h.callbacks.onProximity).toHaveBeenLastCalledWith(null);
     expect(h.scene.placeCandidates().map(p => p.key)).not.toContain(key);
     h.scene.interactNearest();
@@ -503,15 +490,14 @@ describe('DataDrivenWorldScene: los rótulos se dibujan sobre los actores y sigu
     expect(source).toContain('const LABEL_DEPTH = DEPTH.UI - 1;');
     expect(source).toMatch(/const marker = this\.add\.container\([^\n]+, \[markerShadow, pulse, main\]\);/);
     expect(source).not.toMatch(/this\.add\.container\([^)]*\[[^\]]*\blabel\b[^\]]*\]\)/);
-    // Tres de rótulos (marcador, nombre y pista de una persona), dos del ratón (F6-7: contorno y verbo al pasar) y el
+    // Tres de rótulos (marcador, nombre y pista de una persona), el verbo del ratón al pasar y el
     // chevrón con el nombre de la persona clave (P6), la flecha del siguiente paso y la frase «E · …» de un marcador cercano y el indicador de borde del destino fuera de cuadro (P9).
-    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(9);
+    expect(source.match(/\.setDepth\(LABEL_DEPTH\)/g) ?? []).toHaveLength(8);
   });
 });
 
 /** Lo privado que los casos de orientarse en el juego (P9) ejercitan, más allá de `SceneProbe`. */
 interface OrientacionProbe extends SceneProbe {
-  nearRing?: { halo: FakeNode; ring: FakeNode };
   stepMark?: FakeNode;
   markerPrompt?: FakeNode;
   walk: { target: { x: number; y: number; radius: number } | null };
@@ -531,67 +517,50 @@ describe('DataDrivenWorldScene: proximidad visible (P9)', () => {
   const probe = (h: Harness) => h.scene as unknown as OrientacionProbe;
   const hintOf = (h: Harness, npc: string) => h.nodes[`npc:${npc}`]['__hintSprite'] as FakeNode;
 
-  it('al entrar en el radio de una persona aparece su anillo de cercanía y «E · Hablar con …» junto a ella', () => {
+  it('E actúa sobre la persona cercana que tiene el contorno y la frase, con un solo contorno aunque también sea el destino', () => {
     const h = crearEscena();
-    expect(probe(h).nearRing).toBeUndefined();
-    move(h, 559, 373); // 43 px de la enfermera
-    expect(h.scene.nearestKey).toBe('npc:enfermera-urgencias');
-    const ring = probe(h).nearRing!;
-    expect([ring.ring.x, ring.ring.y, ring.ring.visible]).toEqual([560, 330, true]);
-    expect(hintOf(h, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('E · Hablar con Enfermera de urgencias');
-    expect(hintOf(h, 'enfermera-urgencias').alpha).toBe(1);
-  });
-
-  it('al salir del radio el anillo y la frase desaparecen', () => {
-    const h = crearEscena();
+    const clave = 'npc:enfermera-urgencias';
+    const contorno = probarContorno(h, clave);
+    const actualizar = vi.spyOn(h.scene.contornos.get(clave)!, 'actualizar');
     move(h, 559, 373);
+    orient(h, { nextTargetKey: clave });
+    h.scene.actualizarContornos(0);
+    expect(actualizar).toHaveBeenCalledTimes(1);
+    expect(contorno).toMatchObject({ x: 560, y: 330, visible: true });
+    expect(hintOf(h, 'enfermera-urgencias').setText).toHaveBeenLastCalledWith('E · Hablar con Enfermera de urgencias');
+    h.scene.interactNearest();
+    expect(h.callbacks.onNpcInteract).toHaveBeenCalledWith(expect.objectContaining({ key: 'enfermera-urgencias' }));
+    orient(h);
     move(h, 480, 430);
-    expect(h.scene.nearestKey).toBeNull();
-    expect(probe(h).nearRing!.ring.visible).toBe(false);
-    expect(probe(h).nearRing!.halo.visible).toBe(false);
+    h.scene.actualizarContornos(16);
+    expect(contorno.visible).toBe(false);
     expect(hintOf(h, 'enfermera-urgencias').alpha).toBe(0);
   });
 
-  it('el anillo de cercanía se crea una vez (anillo y halo) y sigue al candidato, aunque camine', () => {
+  it('la acción con foco de teclado realza su persona hasta que se mueve el foco', () => {
     const h = crearEscena();
-    const ellipses = h.nodes['#ellipses'] as unknown as FakeNode[];
-    move(h, 559, 373);
-    expect(ellipses).toHaveLength(2);
-    h.nodes['npc:enfermera-urgencias'].x = 566; h.nodes['npc:enfermera-urgencias'].y = 334;
-    move(h, 560, 376);
-    expect(ellipses).toHaveLength(2);
-    expect([probe(h).nearRing!.ring.x, probe(h).nearRing!.ring.y]).toEqual([566, 334]);
+    const clave = 'npc:enfermera-urgencias';
+    const contorno = probarContorno(h, clave);
+    h.callbacks.reduceMotion = true;
+    h.scene.focoDeTeclado = clave;
+    h.scene.actualizarContornos(0);
+    expect(contorno.visible).toBe(true);
+    h.scene.focoDeTeclado = null;
+    h.scene.actualizarContornos(16);
+    expect(contorno.visible).toBe(false);
   });
 
-  it('el anillo de cercanía no se parece al del siguiente paso: otro trazo, otro relleno, y conviven', () => {
+  it('lo atenuado no se ilumina aunque quede al alcance', () => {
     const h = crearEscena();
-    orient(h, { nextTargetKey: 'npc:enfermera-urgencias' });
-    move(h, 559, 373);
-    const ellipses = h.nodes['#ellipses'] as unknown as FakeNode[];
-    expect(ellipses).toHaveLength(4);
-    expect(probe(h).nearRing!.ring).not.toBe(h.scene.targetRing!.ring);
-    const llamadas = h.scene.add.ellipse.mock.calls as number[][];
-    const [, , ancho, alto, relleno, opacidad] = llamadas[3];
-    expect([ancho, alto, relleno, opacidad]).toEqual([84, 30, 0xffffff, 0.14]);   // la cercanía lleva relleno tenue
-    expect(llamadas[1].length).toBe(4);                                          // el del siguiente paso, solo trazo
-  });
-
-  it('lo atenuado (otra etapa) no lleva anillo de cercanía', () => {
-    const h = crearEscena();
-    orient(h, { dimmedKeys: new Set(['zona-restringida']) });
+    const clave = 'zona-restringida';
+    const contorno = probarContorno(h, clave);
     move(h, 660, 330);
-    expect(h.scene.nearestKey).toBe('zona-restringida');
-    expect(probe(h).nearRing).toBeUndefined();
-  });
-
-  it('E y «Interactuar» actúan sobre ese mismo candidato resaltado', () => {
-    const h = crearEscena();
-    move(h, 559, 373);
-    const resaltado = probe(h).nearRing!.ring;
-    h.scene.interactNearest();
-    expect(h.callbacks.onNpcInteract).toHaveBeenCalledTimes(1);
-    expect((h.callbacks.onNpcInteract.mock.calls[0][0] as NpcConfig).key).toBe('enfermera-urgencias');
-    expect([resaltado.x, resaltado.y]).toEqual([560, 330]);
+    h.scene.actualizarContornos(0);
+    expect(contorno.visible).toBe(true);
+    orient(h, { dimmedKeys: new Set([clave]) });
+    h.scene.actualizarContornos(16);
+    expect(h.scene.nearestKey).toBe(clave);
+    expect(contorno.visible).toBe(false);
   });
 
   it('con puntero táctil o sin atajos la frase no menciona la tecla', () => {
@@ -655,7 +624,7 @@ describe('DataDrivenWorldScene: la flecha del siguiente paso (P9)', () => {
     h.scene.setOrientation({ nextTargetKey, doorStates: {}, dimmedKeys: new Set() });
   const flecha = (h: Harness) => (h.scene as unknown as OrientacionProbe).stepMark!;
 
-  it('el destino lleva una flecha estática junto a él (además del anillo) y se retira al cambiar a nada', () => {
+  it('el destino lleva una flecha estática junto a él y se retira al cambiar a nada', () => {
     const h = crearEscena();
     orient(h, 'npc:enfermera-urgencias');
     expect((h.scene.add.text.mock.calls as unknown[][])[0].slice(2, 3)).toEqual(['▶']);
