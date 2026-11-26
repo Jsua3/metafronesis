@@ -167,4 +167,30 @@ describe('app-public-bar', () => {
     expect(radios().map(r => r.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
     TestBed.inject(TemaService).fijar('sistema');
   });
+  // UA-E18 (medición 0.7.0): sin nodos con nombre entre el logo y los demás enlaces, el lector los leía como hijos del logo
+  // (un «menú desplegable» del que no se sale con Tab). Cada módulo es un grupo con nombre.
+  it('el logo es un enlace sin hijos y los módulos son grupos con nombre, en la portada y en el acceso', async () => {
+    for (const Host of [LandingHost, LoginHost]) {
+      const fixture = TestBed.createComponent(Host);
+      await fixture.whenStable();
+      const header = (fixture.nativeElement as HTMLElement).querySelector('header.cromo')!;
+      const logo = header.querySelector('a.modulo-logo')!;
+      expect(logo.getAttribute('aria-label')).toBe('Metafrónesis: ir al inicio');
+      expect(logo.querySelector('a, button, [role]')).toBeNull();
+      // En la portada el módulo de cuenta es el propio enlace «Ingresar»; en el acceso es un grupo (tema y regreso).
+      const cuenta = header.querySelector('.modulo-cuenta')!;
+      if (cuenta.tagName === 'A') {
+        expect(cuenta.querySelector('a, button, [role]')).toBeNull();
+      } else {
+        expect(cuenta.getAttribute('role')).toBe('group');
+        expect(cuenta.getAttribute('aria-label')).toBeTruthy();
+      }
+      const principal = header.querySelector('.modulo-principal');
+      if (principal) {
+        expect(principal.getAttribute('role')).toBe('group');
+        expect(principal.getAttribute('aria-label')).toBe('Secciones de la portada');
+      }
+      fixture.destroy();
+    }
+  });
 });

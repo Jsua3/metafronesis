@@ -21,7 +21,9 @@
       <h2 class="sd-invitacion__titulo">{{ invitacionTitulo() }}</h2>
       <p class="sd-invitacion__ayuda">{{ copy.invitaciones.ayuda }}</p>
     </div>
-    <a ui-button variant="secondary" routerLink="/portal/invitaciones">{{ copy.invitaciones.accion }}</a>
+    <!-- Sin un caso que jugar, aceptar la invitación ES lo que sigue: acción principal (UA-E27). Con un caso listo manda el
+         caso y esta queda secundaria; en ambos casos va antes que lo demás en el orden de foco. -->
+    <a ui-button [variant]="siguiente() ? 'secondary' : 'primary'" routerLink="/portal/invitaciones">{{ copy.invitaciones.accion }}</a>
   </ui-card>
 }
 

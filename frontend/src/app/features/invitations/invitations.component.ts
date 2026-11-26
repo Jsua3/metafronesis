@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
+import { encabezadoPrincipal, enfocarPorPrograma, focoPerdido } from '../../core/a11y/foco.util';
 import { apiErrorMessage } from '../../core/api/api-error.util';
 import { CaseAccessCache } from '../../core/api/case-access.cache';
 import { Invitation, InvitationsApi } from '../../core/api/invitations.api';
@@ -282,6 +283,7 @@ export class InvitationsComponent {
         this.badges.fijar('invitaciones', this.pendientes().length);
         this.error.set(null);
         this.loading.set(false);
+        this.recuperarFoco();
       },
       error: (err: { status?: number } | null) => {
         this.error.set(err ?? {});
@@ -298,6 +300,18 @@ export class InvitationsComponent {
       // Lo que se anuncia: que entró y qué sigue, en una sola frase (la tarjeta no es una región viva).
       this.actionStatus.set(`Te uniste a ${updated.groupName}. ${confirmacion.texto}`);
     });
+  }
+
+  /**
+   * Responder (rechazar, salir, o recargar tras un 409) quita de la pantalla la tarjeta o el menú donde estaba el foco, y
+   * el foco caía a `<body>`: quien usa teclado o lector tenía que recorrer otra vez toda la barra (UA-E28). Si se perdió, va
+   * al encabezado de la pantalla, como al llegar a ella; si el diálogo ya lo devolvió a un control vivo, no se toca. Aceptar
+   * lleva el suyo a «Ver mis casos» (`alExito`), que se pinta en el mismo ciclo.
+   */
+  private recuperarFoco(): void {
+    afterNextRender(() => {
+      if (focoPerdido()) enfocarPorPrograma(encabezadoPrincipal(document));
+    }, { injector: this.injector });
   }
 
   protected async decline(item: Invitation): Promise<void> {
@@ -348,6 +362,7 @@ export class InvitationsComponent {
         // Aceptar o salir cambia los casos que ve la persona: lo que la caché sabía ya no vale.
         if (updated.status === 'ACTIVE' || updated.status === 'REMOVED') this.cache.vaciar();
         alExito?.(updated);
+        this.recuperarFoco();
         this.notify.success(success);
       },
       error: (err: unknown) => {
