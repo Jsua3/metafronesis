@@ -40,6 +40,9 @@
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
+}
+
+.ui-portada-caso__imagen--pixel {
   image-rendering: pixelated;
 }
 
@@ -93,8 +96,8 @@
 
 // La firma de tres píxeles de la marca (cian, azul y el violeta del tema) en la esquina: el punto de encuentro entre el
 // expediente y el simulador. Solo donde hay sitio para que se lea como firma y no como ruido.
-:host(.ui-portada-caso--tarjeta)::after,
-:host(.ui-portada-caso--heroe)::after {
+:host(.ui-portada-caso--tarjeta:not(.ui-portada-caso--portal))::after,
+:host(.ui-portada-caso--heroe:not(.ui-portada-caso--portal))::after {
   content: '';
   position: absolute;
   inset-block-start: var(--ds-space-3);

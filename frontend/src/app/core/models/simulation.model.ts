@@ -11,11 +11,10 @@ export interface CatalogItem {
   /** La decisión de acceso del servidor (asignación, ventana y secuencia); `unlocked` sigue diciendo lo mismo en pocas palabras. */
   access?: CaseAccess;
   /**
-   * BK-1 · URL del fondo en pixel art de la sala donde empieza el caso, o `null` si esa sala se arma por piezas, no tiene
-   * fondo o el fondo no es una ruta permitida (la interfaz pinta su composición de respaldo). Opcional: un servidor
-   * anterior a BK no lo manda y ninguna pantalla puede romperse por eso.
+   * URL pública de la portada de la versión. Sin imagen, la interfaz muestra la puerta de respaldo.
    */
   portada?: string | null;
+  portadaPixelArt?: boolean;
   /** BK-1 · Cuántas escenas tiene el caso (estructura del caso, no una medida). Opcional, como `portada`. */
   escenas?: number;
 }
@@ -59,8 +58,9 @@ export interface CaseBrief {
   escenas?: number;
   /** Dónde empieza: «Empiezas en {lugar}». `null` si el caso no tiene escena de inicio. */
   inicio?: CaseBriefStart | null;
-  /** Fondo de la sala de inicio (ver `CatalogItem.portada`). */
+  /** Portada de la versión (ver `CatalogItem.portada`). */
   portada?: string | null;
+  portadaPixelArt?: boolean;
   /** Los temas sensibles que declara el caso («En este caso aparecen:»); vacía si no declara ninguno. */
   temasSensibles?: string[];
   /** Si el recorrido se valora con una rúbrica (asignada, propia de la versión o la predeterminada del sitio). */
@@ -104,8 +104,9 @@ export interface SimulationCaseSummary {
   updatedAt?: string | null;
   /** Escenas con narración y, si no son un final, al menos una respuesta: «3 de 5 escenas con guion». */
   escenasConGuion?: number;
-  /** Fondo de la sala de inicio (ver `CatalogItem.portada`). */
+  /** Portada de la versión (ver `CatalogItem.portada`). */
   portada?: string | null;
+  portadaPixelArt?: boolean;
   // Autoría compartida: solo la lista de autoría los trae.
   /** Quien creó el caso; no cambia aunque otros docentes publiquen versiones nuevas. */
   autor?: PersonaCaso;
@@ -1163,6 +1164,8 @@ export interface PublicationChecklistView {
 
 export interface CaseEditorView {
   estimatedMinutes?: number | null;
+  portada?: string | null;
+  portadaPixelArt?: boolean;
   caseVersionId: number;
   /** Revisión del borrador (E2-6): viaja en `X-Case-Revision` en cada mutación y la respuesta trae la siguiente. */
   revision: number;

@@ -147,7 +147,8 @@
 <!-- La portada (la que viaja al umbral: DP-10) y el estado del caso en palabras. -->
 <ng-template #cabezaEntrada>
   @if (brief(); as b) {
-    <ui-portada-caso class="ficha__portada" tamano="tarjeta" [umbral]="true" [titulo]="b.title" [portada]="b.portada" />
+    <ui-portada-caso class="ficha__portada" tamano="tarjeta" [umbral]="true" [titulo]="b.title"
+      [portada]="b.portada" [pixelArt]="b.portadaPixelArt ?? true" />
   }
   <p class="ficha__estado" [attr.data-tono]="estado().tono">
     <span class="ficha__estado-etiqueta">{{ estado().etiqueta }}</span>

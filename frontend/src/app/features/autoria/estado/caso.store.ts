@@ -1728,6 +1728,34 @@ export class CasoStore {
 
   // ─── Datos del caso ─────────────────────────────────────────────────────────
 
+  async cambiarPortada(archivo: File | null, pixelArt: boolean): Promise<void> {
+    const sesion = this.sesion;
+    if (!sesion || this.soloLectura()) throw new Error('La portada solo se puede cambiar en un borrador guardado.');
+    let confirmada = false;
+    let fallo: unknown;
+    this.ejecutar({
+      nombre: 'la portada del caso',
+      aplicar: () => undefined,
+      enviar: async (despues, s) => {
+        try {
+          const peticion = archivo
+            ? s.api.updateCover(s.caseVersionId, archivo, pixelArt, s.revision)
+            : s.api.removeCover(s.caseVersionId, s.revision);
+          const { portada, portadaPixelArt, revision } = await firstValueFrom(peticion);
+          Object.assign(despues, { portada, portadaPixelArt });
+          Object.assign(s.vista, { portada, portadaPixelArt, revision });
+          s.revision = revision;
+          confirmada = true;
+        } catch (error) {
+          fallo = error;
+          throw error;
+        }
+      },
+    });
+    await this.sincronizado();
+    if (this.sesion !== sesion || !confirmada) throw fallo ?? new Error('No se pudo cambiar la portada.');
+  }
+
   /**
    * El contexto que lee el estudiante y los objetivos de aprendizaje del caso (texto plano; el servidor pone los topes).
    * `extra` (opcional) lleva los temas sensibles (RK-7) y el nombre (RK-8); lo que no se pasa no se toca.
