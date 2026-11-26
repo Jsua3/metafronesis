@@ -1,6 +1,6 @@
 import {
   DURACION_MAXIMA_MS, DURACION_MINIMA_MS, VistosDelIntento, duracionConNombre, esRecetaValida, leerCinematica, leerTutor, lineaDeLosPasos, marcaDeCinematica,
-  marcaDeTutor, tiempoDeLectura,
+  marcaDeTutor, programarBurbujas, tiempoDeLectura,
 } from './lectura';
 
 describe('cinematica/lectura', () => {
@@ -26,11 +26,66 @@ describe('cinematica/lectura', () => {
       expect(c?.planos[2].subtitulo).toBe('');
     });
 
-    it('un plano nunca dura menos que su tiempo de lectura (15 palabras cada 4 s)', () => {
+    it('da seis segundos por quince palabras y al menos tres y medio a un texto corto', () => {
+      expect(tiempoDeLectura('una dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince')).toBe(6000);
+      expect(tiempoDeLectura('Una frase.')).toBe(3500);
+      expect(tiempoDeLectura('  ')).toBe(0);
+    });
+
+    it('reserva el margen de entrada además de la lectura del subtítulo', () => {
       const largo = 'una dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince dieciséis diecisiete dieciocho diecinueve veinte';
       const c = leerCinematica({ cinematica: { planos: [{ escena: 'barrio', subtitulo: largo, duracionMs: 2000 }] } });
-      expect(c?.planos[0].duracionMs).toBeGreaterThanOrEqual(Math.ceil(20 * 4000 / 15));
-      expect(c?.planos[0].duracionMs).toBe(tiempoDeLectura(largo));
+      expect(c?.planos[0].duracionMs).toBe(9800);
+    });
+
+    it('lee hasta cuatro intervenciones válidas y conserva el orden y la plantilla', () => {
+      const c = leerCinematica({ cinematica: { planos: [{
+        escena: 'casa-ventana', siluetas: ['mujer-telefono', 'nina'], burbujas: [
+          { quien: 'hombre', texto: 'Fuera del plano.' },
+          { quien: 'nina', texto: '  ' },
+          { quien: 'mujer-telefono', texto: ' Hola, {nombre}. ' },
+          { quien: 'telefono', texto: 'Aquí te espero.' },
+          { quien: 'nina', texto: 'A'.repeat(61), grito: true },
+          { quien: 'mujer-telefono', texto: 'Hasta mañana.' },
+          { quien: 'nina', texto: 'Quinta.' },
+        ],
+      }] } });
+      expect(c?.planos[0]).toMatchObject({
+        siluetas: ['mujer-telefono', 'nina'],
+        burbujas: [
+          { quien: 'mujer-telefono', texto: 'Hola, {nombre}.' },
+          { quien: 'telefono', texto: 'Aquí te espero.' },
+          { quien: 'nina', texto: 'A'.repeat(60), grito: true },
+          { quien: 'mujer-telefono', texto: 'Hasta mañana.' },
+        ],
+      });
+      expect(c!.planos[0].duracionMs).toBeGreaterThanOrEqual(14_000);
+    });
+
+    it('solo admite el teléfono con quien lo sostiene y las recetas presentes en el plano', () => {
+      const c = leerCinematica({ cinematica: { planos: [{
+        escena: 'calle-emergencia', personas: ['vecina'], burbujas: [
+          { quien: 'telefono', texto: '¿Aló?' },
+          { quien: 'abuela-familia', texto: '¿Dónde?' },
+          { quien: 'vecina', texto: '¡Manden a alguien!' },
+        ],
+      }, {
+        escena: 'calle-emergencia', personas: ['telefono'],
+        burbujas: [{ quien: 'telefono', texto: '¿Aló?' }],
+      }] } });
+      expect(c?.planos[0]).toMatchObject({ burbujas: [{ quien: 'vecina', texto: '¡Manden a alguien!' }] });
+      expect(c?.planos[1]).toMatchObject({ burbujas: [] });
+    });
+
+    it('reparte el tiempo libre y da a cada intervención un tramo completo de lectura', () => {
+      const c = leerCinematica({ cinematica: { planos: [{
+        escena: 'casa-ventana', duracionMs: 10_850, siluetas: ['hombre', 'mujer'],
+        burbujas: [{ quien: 'hombre', texto: 'Hola, {nombre}.' }, { quien: 'mujer', texto: 'Buenos días.' }],
+      }] } })!;
+      expect(programarBurbujas(c.planos[0], 'Ana María')).toEqual([
+        { quien: 'hombre', texto: 'Hola, Ana.', desde: 1850, hasta: 5350 },
+        { quien: 'mujer', texto: 'Buenos días.', desde: 6350, hasta: 9850 },
+      ]);
     });
 
     it('acota la duración pedida y da un respiro al plano sin texto ni duración', () => {
@@ -136,12 +191,18 @@ describe('cinematica/lectura', () => {
   it('el ritmo de lectura prevalece sobre el máximo de la duración pedida', () => {
     const subtitulo = Array(120).fill('sí').join(' ');
     const c = leerCinematica({ cinematica: { planos: [{ escena: 'barrio', subtitulo, duracionMs: 60_000 }] } });
-    expect(c?.planos[0].duracionMs).toBe(33_800);
+    expect(c?.planos[0].duracionMs).toBe(49_800);
   });
 
   it('mide el texto que queda después de aplicar la plantilla del nombre', () => {
     const c = leerCinematica({ cinematica: { planos: [{ escena: 'titulo', subtitulo: 'Hola, {nombre}.' }] } })!;
-    expect(duracionConNombre(c.planos[0], '')).toBe(tiempoDeLectura('Hola.'));
-    expect(duracionConNombre(c.planos[0], 'Ana María')).toBe(tiempoDeLectura('Hola, Ana.'));
+    expect(duracionConNombre(c.planos[0], '')).toBe(5300);
+    expect(duracionConNombre(c.planos[0], 'Ana María')).toBe(5300);
+    const conBurbuja = leerCinematica({ cinematica: { planos: [{
+      escena: 'casa-ventana', siluetas: ['nina'], burbujas: [
+        { quien: 'nina', texto: '¿{nombre}?' }, { quien: 'nina', texto: 'Hola.' },
+      ],
+    }] } })!.planos[0];
+    expect(duracionConNombre(conBurbuja, '')).toBeLessThan(duracionConNombre(conBurbuja, 'Ana María'));
   });
 });

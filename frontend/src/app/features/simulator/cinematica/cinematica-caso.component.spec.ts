@@ -36,9 +36,13 @@ describe('CinematicaCasoComponent', () => {
       imports: [CinematicaCasoComponent],
       providers: [{ provide: LiveRegionAnnouncer, useValue: { announce: (t: string) => anuncios.push(t) } }],
     });
+    await montar();
+  });
+
+  async function montar(cinematica = CINEMATICA): Promise<void> {
     fixture = TestBed.createComponent(CinematicaCasoComponent);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('cinematica', CINEMATICA);
+    fixture.componentRef.setInput('cinematica', cinematica);
     fixture.componentRef.setInput('nombre', 'Ana María');
     component.terminada.subscribe(f => fines.push(f));
     component.salidaSegura.subscribe(() => salidas++);
@@ -49,7 +53,7 @@ describe('CinematicaCasoComponent', () => {
     await Promise.resolve();
     vi.advanceTimersByTime(400);
     fixture.detectChanges();
-  });
+  }
 
   afterEach(() => {
     fixture.destroy();
@@ -81,6 +85,27 @@ describe('CinematicaCasoComponent', () => {
     expect(texto()).toContain('Viernes, 4 de la tarde.');
     expect(anuncios).toContain('Plano 1 de 3. Viernes, 4 de la tarde.');
     expect(fixture.nativeElement.querySelector('#cine-texto').textContent).toContain('Flecha izquierda');
+  });
+
+  it('anuncia la narración y las voces del plano juntas y en orden', async () => {
+    fixture.destroy();
+    anuncios.length = 0;
+    await montar(leerCinematica({ cinematica: {
+      id: 'sim-vbg-002-intro',
+      planos: [CINEMATICA.planos[0], {
+        escena: 'casa-ventana', siluetas: ['hombre', 'mujer'], subtitulo: 'Esa tarde.',
+        burbujas: [
+          { quien: 'hombre', nombre: 'Edwin', texto: '¡Sin mí no eres nadie!', grito: true },
+          { quien: 'mujer', texto: 'Ya no más, Edwin.' },
+        ],
+      }],
+    } })!);
+    tecla('Enter');
+    vi.advanceTimersByTime(400);
+    fixture.detectChanges();
+    expect(anuncios.slice(1)).toEqual(['Plano 2 de 2. Esa tarde. Edwin grita: ¡Sin mí no eres nadie! La mujer: Ya no más, Edwin.']);
+    expect(fixture.nativeElement.querySelector('.cine__burbujas').getAttribute('aria-hidden')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.cine__subtitulo').getAttribute('aria-hidden')).toBe('true');
   });
 
   it('Enter pasa de plano; el negro pide silencio y el título lleva el nombre de pila', () => {

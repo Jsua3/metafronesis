@@ -7,14 +7,27 @@
  * Pura: sin Angular ni DOM. La memoria de «ya visto» va aparte, al final, con su almacenamiento inyectable.
  */
 import type {
-  EscenaDeCinematica, MomentoDeCinematica, PasoDelTutor, SiluetaDeCinematica,
+  EscenaDeCinematica, MomentoDeCinematica, PasoDelTutor,
 } from '../../../core/models/simulation.model';
 import { conNombre } from '../caso/plantilla-nombre';
 
 export const ESCENAS_DE_CINEMATICA: readonly EscenaDeCinematica[] = Object.freeze([
   'barrio', 'casa-ventana', 'negro', 'calle-emergencia', 'urgencias-llegada', 'urgencias-familia', 'titulo',
 ]);
-const SILUETAS: readonly SiluetaDeCinematica[] = ['hombre', 'mujer', 'nina'];
+const SILUETAS = ['hombre', 'mujer', 'mujer-telefono', 'nina'] as const;
+export type SiluetaLeida = typeof SILUETAS[number];
+
+export interface BurbujaLeida {
+  quien: string;
+  texto: string;
+  grito?: true;
+  nombre?: string;
+}
+
+export interface BurbujaEnTiempo extends BurbujaLeida {
+  desde: number;
+  hasta: number;
+}
 
 /** Mínimo del plano y máximo de la duración pedida por el caso. */
 export const DURACION_MINIMA_MS = 1500;
@@ -41,7 +54,8 @@ export interface PlanoLeido {
   duracionMs: number;
   /** Duración base antes de calcular la lectura del texto con el nombre de quien juega. */
   duracionBaseMs?: number;
-  siluetas: SiluetaDeCinematica[];
+  siluetas: SiluetaLeida[];
+  burbujas?: BurbujaLeida[];
   /** null: lo que la escena hace por omisión. */
   luzVentana: boolean | null;
   /**
@@ -79,15 +93,55 @@ function palabras(t: string): number {
   return t.split(/\s+/).filter(Boolean).length;
 }
 
-/** Lo que tarda en leerse un subtítulo, con el margen de su aparición y del fundido. 0 si no hay texto. */
-export function tiempoDeLectura(subtitulo: string): number {
-  const n = palabras(subtitulo);
-  return n ? Math.ceil(n * 4000 / 15) + MARGEN_DE_LECTURA_MS : 0;
+/** Lo que tarda en leerse un texto que ya se ve entero. */
+export function tiempoDeLectura(t: string): number {
+  const n = palabras(t);
+  return n ? Math.max(3500, n * 400) : 0;
+}
+
+function intervenciones(plano: PlanoLeido, nombre: string): BurbujaLeida[] {
+  return (plano.burbujas ?? [])
+    .map(b => ({ ...b, texto: conNombre(b.texto, nombre) }))
+    .filter(b => b.texto.trim());
+}
+
+/** Deja entrar el plano y, cuando alguien llega caminando, deja que entre en cuadro. */
+function entradaDeBurbujas(plano: PlanoLeido): number {
+  if (plano.escena === 'urgencias-familia') return 2100;
+  if (plano.escena === 'casa-ventana' && plano.momento === 'noche') {
+    return plano.siluetas.length === 1 && plano.siluetas[0] !== 'nina' ? 3600 : 1700;
+  }
+  return 850;
+}
+
+function duracionDeLectura(plano: PlanoLeido, subtitulo: string, burbujas: readonly BurbujaLeida[]): number {
+  const lectura = tiempoDeLectura(subtitulo);
+  const conversacion = burbujas.reduce((ms, b) => ms + tiempoDeLectura(b.texto), 0);
+  return Math.max(
+    plano.duracionBaseMs ?? plano.duracionMs,
+    lectura && lectura + MARGEN_DE_LECTURA_MS,
+    conversacion && conversacion + entradaDeBurbujas(plano),
+  );
 }
 
 /** Al montar, el reloj y la animación usan la duración del texto que realmente se muestra. */
 export function duracionConNombre(plano: PlanoLeido, nombre: string): number {
-  return Math.max(plano.duracionBaseMs ?? plano.duracionMs, tiempoDeLectura(conNombre(plano.subtitulo, nombre)));
+  return duracionDeLectura(plano, conNombre(plano.subtitulo, nombre), intervenciones(plano, nombre));
+}
+
+/** Las intervenciones se leen de una en una. El tiempo sobrante se reparte en silencios. */
+export function programarBurbujas(plano: PlanoLeido, nombre: string): BurbujaEnTiempo[] {
+  const burbujas = intervenciones(plano, nombre);
+  const entrada = entradaDeBurbujas(plano);
+  const lectura = burbujas.reduce((ms, b) => ms + tiempoDeLectura(b.texto), 0);
+  const hueco = Math.max(0, plano.duracionMs - entrada - lectura) / (burbujas.length + 1);
+  let desde = entrada + hueco;
+  return burbujas.map(b => {
+    const hasta = desde + tiempoDeLectura(b.texto);
+    const intervalo = { ...b, desde, hasta };
+    desde = hasta + hueco;
+    return intervalo;
+  });
 }
 
 /** Las escenas de noche por naturaleza: de noche si el caso no dice otra cosa. */
@@ -105,16 +159,42 @@ function leerPlano(x: unknown): PlanoLeido | null {
   const pedida = typeof x['duracionMs'] === 'number' && Number.isFinite(x['duracionMs']) ? x['duracionMs'] : 0;
   const base = pedida > 0 ? pedida : subtitulo ? 0 : DURACION_SIN_TEXTO_MS;
   const duracionBaseMs = Math.round(Math.min(DURACION_MAXIMA_MS, Math.max(DURACION_MINIMA_MS, base)));
-  const duracionMs = Math.max(duracionBaseMs, tiempoDeLectura(subtitulo));
   const siluetas = Array.isArray(x['siluetas'])
-    ? (x['siluetas'] as unknown[]).filter((s): s is SiluetaDeCinematica => typeof s === 'string' && (SILUETAS as readonly string[]).includes(s)).slice(0, 3)
+    ? (x['siluetas'] as unknown[]).filter((s): s is SiluetaLeida => typeof s === 'string' && (SILUETAS as readonly string[]).includes(s)).slice(0, 3)
     : [];
   const luzVentana = typeof x['luzVentana'] === 'boolean' ? x['luzVentana'] : null;
   const lista = x['personas'];
   const cantidad = e === 'urgencias-familia' ? 3 : e === 'calle-emergencia' ? 1 : 0;
   const posiciones = Array.isArray(lista) && (e !== 'urgencias-familia' || lista.length === cantidad) ? lista.slice(0, cantidad) : [];
   const personas = Array.from(posiciones, (r: unknown) => typeof r === 'string' && RECETA_VALIDA.test(r) ? r : null);
-  return { escena: e, momento, subtitulo, duracionMs, duracionBaseMs, siluetas, luzVentana, personas };
+  const voces = new Set<string | null>(personas);
+  voces.delete('telefono');
+  if (e === 'casa-ventana' && luzVentana !== false) {
+    siluetas.forEach(s => voces.add(s));
+    if (siluetas.includes('mujer-telefono')) voces.add('telefono');
+  }
+  const burbujas = leerBurbujas(x['burbujas'], voces);
+  const plano: PlanoLeido = { escena: e, momento, subtitulo, duracionMs: duracionBaseMs, duracionBaseMs,
+    siluetas, luzVentana, personas, burbujas };
+  plano.duracionMs = duracionDeLectura(plano, subtitulo, burbujas);
+  return plano;
+}
+
+function leerBurbujas(datos: unknown, voces: ReadonlySet<string | null>): BurbujaLeida[] {
+  const burbujas: BurbujaLeida[] = [];
+  if (!Array.isArray(datos)) return burbujas;
+  for (const dato of datos) {
+    if (!esObjeto(dato) || typeof dato['quien'] !== 'string' || !voces.has(dato['quien'])) continue;
+    const frase = texto(dato['texto'], 60).trimEnd();
+    if (!frase) continue;
+    const burbuja: BurbujaLeida = { quien: dato['quien'], texto: frase };
+    if (dato['grito'] === true) burbuja.grito = true;
+    const nombre = texto(dato['nombre'], 60).trimEnd();
+    if (nombre) burbuja.nombre = nombre;
+    burbujas.push(burbuja);
+    if (burbujas.length === 4) break;
+  }
+  return burbujas;
 }
 
 /** `ambient.cinematica` validada, o null si no hay o no trae ningún plano que se pueda dibujar. */

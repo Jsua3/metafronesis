@@ -20,6 +20,10 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
       "escena": "casa-ventana",
       "momento": "tarde",
       "siluetas": ["hombre", "mujer"],
+      "burbujas": [
+        { "quien": "hombre", "nombre": "Edwin", "texto": "¡Sin mí no eres nadie!", "grito": true },
+        { "quien": "mujer", "texto": "Ya no más, Edwin." }
+      ],
       "subtitulo": "…",
       "duracionMs": 7000
     }
@@ -29,17 +33,23 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
 
 - `escena` es uno de estos valores. Son genéricos y se dibujan con el arte del juego, no con imágenes del caso:
   - `barrio`
-  - `casa-ventana` (fachada con ventana; `siluetas` opcional: `hombre`, `mujer`, `nina`; `luzVentana` opcional, booleano). Dos adultos: él, una cabeza más alto, se acerca y ella retrocede. De noche, con un solo adulto y la luz encendida, la luz se enciende primero y la persona entra caminando al cuarto. De noche, por fuera, los vidrios muestran un cuarto en penumbra, nunca el cielo.
-  - `negro`
+  - `casa-ventana` muestra la fachada con la ventana. Admite `luzVentana` como booleano opcional y `siluetas` con `hombre`, `mujer`, `mujer-telefono` con la mano y el teléfono al oído, o `nina`. Él es una cabeza más alto y se acerca mientras ella retrocede. De noche los vidrios muestran un cuarto en penumbra. Cuando hay un solo adulto, la luz se enciende antes de que entre caminando.
+  - `negro` (corte inmediato y silencio durante la agresión, que queda fuera de cuadro).
   - `calle-emergencia` (de noche, con luces rojas y azules sobre las paredes)
   - `urgencias-llegada` (entrada de urgencias con una camilla que entra)
   - `urgencias-familia` (llegada de tres personas)
   - `titulo` (pantalla de título con el subtítulo grande)
 - `personas` (opcional) trae las recetas del kit por papel y en orden. En `urgencias-familia` se esperan exactamente tres posiciones. Una lista de otra longitud usa el reparto genérico. En `calle-emergencia` se lee la primera posición para la vecina. Cada posición usa su receta genérica si falta una clave válida (`[a-z0-9-]`) o alguna hoja del kit.
+- `burbujas` es opcional. El reproductor muestra una a la vez y usa las primeras cuatro intervenciones válidas en el orden escrito. Se descartan las vacías y las de un hablante que no aparece en el plano.
+  - `quien` corresponde a una de las siluetas visibles en la ventana o a una receta de `personas` del plano. `telefono` indica una voz fuera de cuadro y requiere la silueta `mujer-telefono`. Su burbuja apunta a un auricular de píxel junto a esa figura.
+  - `texto` admite `{nombre}` y se recorta a 60 caracteres antes de aplicar la plantilla.
+  - `grito: true` añade un borde dentado, dos signos de exclamación y trazos de tensión alrededor de la cabeza o del auricular. Si quien grita tiene figura en cuadro, se sacude muy levemente durante menos de 300 ms. Con movimiento reducido los signos quedan quietos.
+  - El anuncio del plano para quien usa lector de pantalla incluye el subtítulo y las intervenciones en orden, identificadas por hablante.
+    `nombre` es opcional, admite `{nombre}` y da el nombre del hablante al lector de pantalla (por ejemplo «Edwin grita»). Si falta, se anuncia el papel de `quien`.
 - `momento` vale `tarde` o `noche`.
-- `duracionMs` pide hasta 30 segundos por plano. El tiempo de lectura del subtítulo visible (unas 15 palabras cada 4 s más un margen de entrada) puede prolongar el plano. El cálculo usa el texto tras aplicar la plantilla del nombre.
+- `duracionMs` pide hasta 30 segundos por plano. El tiempo efectivo es el mayor entre lo pedido, la lectura del subtítulo con su margen de aparición y la suma de las lecturas de las burbujas con el tiempo de entrada en cuadro. El subtítulo y las burbujas pueden coincidir. Cada texto tiene 400 ms por palabra, con un mínimo de 3,5 s, después de aplicar la plantilla del nombre.
 - Se reproduce **una vez por intento**, después del consentimiento y antes del tutor.
-- Los botones permiten saltar y pausar. En pausa, navegar muestra entero el plano de destino. Al reanudar, un fundido que quedó en curso sigue desde donde se detuvo. Con movimiento reducido, los planos fijos conservan los fundidos.
+- Los planos avanzan solos. Enter o flecha derecha adelantan y flecha izquierda vuelve al plano anterior. Los botones permiten saltar la cinemática y pausar su reloj. En pausa, navegar muestra entero el subtítulo de destino. Al reanudar, un fundido que quedó en curso sigue desde donde se detuvo. Con movimiento reducido, los planos fijos conservan los fundidos.
 
 ## 2. `ambiente.tutor` (en la sala inicial y en la primera sala de cada capítulo)
 

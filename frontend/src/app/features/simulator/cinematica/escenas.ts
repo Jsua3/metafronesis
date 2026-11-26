@@ -15,7 +15,7 @@
  */
 import type { MomentoDeCinematica } from '../../../core/models/simulation.model';
 import type { ViewId } from '../../character/kit/kit-engine';
-import type { PlanoLeido } from './lectura';
+import type { BurbujaEnTiempo, PlanoLeido, SiluetaLeida } from './lectura';
 
 export type Decorado = 'calle' | 'urgencias' | 'negro' | 'titulo';
 
@@ -28,6 +28,8 @@ export interface ActorEnCuadro {
   cuadro: number;
   x: number;
   y: number;
+  silueta?: SiluetaLeida;
+  conTelefono?: boolean;
   /** Sombra larga del sol de la tarde, tendida en el piso. */
   sombraLarga?: boolean;
 }
@@ -61,6 +63,13 @@ export interface CuadroDeCinematica {
    * haz rojo y el azul recorren la fachada en sentidos contrarios. Sin barrido (movimiento reducido), un tinte quieto.
    */
   luces: { rojo: number; azul: number; barrido?: number };
+  burbuja?: BurbujaEnCuadro;
+}
+
+export interface BurbujaEnCuadro extends BurbujaEnTiempo {
+  actor: ActorEnCuadro;
+  /** Desplazamiento en píxeles del decorado; solo se altera la figura que habla. */
+  sacudida: number;
 }
 
 /** Lo que mide la vista en píxeles del decorado (sin acercamiento): el guion lo usa para entrar y salir de cuadro. */
@@ -70,7 +79,9 @@ export interface VistaDeCinematica {
 }
 
 /** Las recetas del kit que pide cada silueta (genéricas: hombre, mujer, niña). */
-export const RECETA_DE_SILUETA = { hombre: 'andres', mujer: 'sobreviviente', nina: 'nina-casa' } as const;
+export const RECETA_DE_SILUETA = {
+  hombre: 'andres', mujer: 'sobreviviente', 'mujer-telefono': 'sobreviviente', nina: 'nina-casa',
+} as const;
 const PASEANTES = ['paciente-espera', 'vecina'] as const;
 const VECINA = 'vecina';
 const EQUIPO_DE_URGENCIAS = ['medico-guardia', 'enfermera-urgencias'] as const;
@@ -169,12 +180,12 @@ function casaVentana(plano: PlanoLeido, ms: number, reducido: boolean): CuadroDe
   // izquierdo del cristal hasta quedar de frente. Es lo único que se ve: la agresión nunca se muestra.
   if (plano.momento === 'noche' && adultos.length === 1 && !pocas.includes('nina')) {
     const s = adultos[0];
-    const llega = CALLE.ventana.x - 4, desde = CALLE.ventana.x - 46;
+    const llega = CALLE.ventana.x - (s === 'mujer-telefono' ? 16 : 4), desde = CALLE.ventana.x - 46;
     const t0 = 1900, dura = 1700;
     const f = reducido ? 1 : Math.min(1, Math.max(0, (ms - t0) / dura));
     if (reducido || ms >= t0) {
       siluetas.push({
-        receta: RECETA_DE_SILUETA[s as 'hombre' | 'mujer'],
+        receta: RECETA_DE_SILUETA[s], silueta: s, conTelefono: s === 'mujer-telefono',
         hoja: f < 1 ? 'walk' : 'idle',
         vista: f < 1 ? 'right' : 'down-right',
         cuadro: reducido ? 0 : f < 1 ? cuadroDeHoja('walk', ms, 8) : cuadroDeHoja('idle', ms, fps),
@@ -190,11 +201,11 @@ function casaVentana(plano: PlanoLeido, ms: number, reducido: boolean): CuadroDe
     // la tensión se dice con la distancia, nunca con un golpe.
     const solo = adultos.length === 1;
     const izquierda = n === 0;
-    const base = solo ? CALLE.ventana.x - 2 : izquierda ? 212 : 250;
+    const base = solo ? CALLE.ventana.x - (s === 'mujer-telefono' ? 16 : 2) : izquierda ? 212 : 250;
     // Él avanza (8 px) y ella retrocede (6 px) hasta quedar contra el marco: la distancia que se cierra es la amenaza.
     const deriva = reducido || solo ? 0 : izquierda ? Math.round(8 * suave(t * 1.5)) : Math.round(6 * suave((t - 0.2) * 1.6));
     siluetas.push({
-      receta: RECETA_DE_SILUETA[s as 'hombre' | 'mujer'],
+      receta: RECETA_DE_SILUETA[s], silueta: s, conTelefono: s === 'mujer-telefono',
       hoja: 'idle',
       vista: solo ? 'down-left' : izquierda ? 'right' : 'left',
       cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, fps, n * 333),
@@ -207,7 +218,7 @@ function casaVentana(plano: PlanoLeido, ms: number, reducido: boolean): CuadroDe
     // La niña juega en el suelo: solo asoma la cabeza sobre el antepecho y se mueve un poco, distinta cada vez.
     const vaiven = reducido ? 0 : Math.round(Math.sin(ms / 640) * 2);
     siluetas.push({
-      receta: RECETA_DE_SILUETA.nina,
+      receta: RECETA_DE_SILUETA.nina, silueta: 'nina',
       hoja: 'idle',
       vista: reducido || Math.floor(ms / 2600) % 2 === 0 ? 'down-left' : 'left',
       cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, fps),
@@ -219,15 +230,20 @@ function casaVentana(plano: PlanoLeido, ms: number, reducido: boolean): CuadroDe
   return cuadro;
 }
 
-function calleEmergencia(plano: PlanoLeido, ms: number, reducido: boolean): CuadroDeCinematica {
+function calleEmergencia(plano: PlanoLeido, ms: number, vista: VistaDeCinematica, reducido: boolean): CuadroDeCinematica {
   const t = reducido ? 0.5 : ms / plano.duracionMs;
   const cuadro = vacio('calle', 'noche');
-  cuadro.camara = { x: reducido ? 620 : entre(650, 590, suave(t)), y: CALLE.centroY, zoom: 1 };
+  const xVecina = 905;
+  const centro = reducido ? 620 : entre(650, 590, suave(t));
+  cuadro.camara = {
+    x: plano.burbujas?.length ? Math.max(centro, xVecina - vista.ancho * 0.30) : centro,
+    y: CALLE.centroY, zoom: 1,
+  };
   // La casa sigue con la luz encendida; la vecina mira hacia ella desde el andén.
   cuadro.ventana = { luz: 1, siluetas: [] };
   const vecina = plano.personas[0] ?? VECINA;
   cuadro.actores.push({ receta: vecina, recetaDeRespaldo: VECINA, hoja: 'idle', vista: 'left',
-    cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, 3), x: 905, y: CALLE.anden[0] + 6 });
+    cuadro: reducido ? 0 : cuadroDeHoja('idle', ms, 3), x: xVecina, y: CALLE.anden[0] + 6 });
   if (reducido) {
     cuadro.luces = { rojo: 0.45, azul: 0.45 };
   } else {
@@ -300,11 +316,28 @@ function urgenciasFamilia(plano: PlanoLeido, ms: number, vista: VistaDeCinematic
 }
 
 /** El cuadro de un plano a los `ms` de empezar. */
-export function cuadroDelPlano(plano: PlanoLeido, ms: number, vista: VistaDeCinematica, reducido: boolean): CuadroDeCinematica {
+export function cuadroDelPlano(
+  plano: PlanoLeido, ms: number, vista: VistaDeCinematica, reducido: boolean, burbuja?: BurbujaEnTiempo,
+): CuadroDeCinematica {
+  const cuadro = componerCuadro(plano, ms, vista, reducido);
+  if (!burbuja || ms < burbuja.desde || ms >= burbuja.hasta) return cuadro;
+  const voz = burbuja.quien;
+  const actor = cuadro.ventana?.siluetas.find(s => voz === 'telefono' ? s.conTelefono : s.silueta === voz)
+    ?? cuadro.actores.find(a => a.receta === voz);
+  if (actor) {
+    const edad = ms - burbuja.desde;
+    const sacudida = burbuja.grito && voz !== 'telefono' && !reducido && edad < 240
+      ? [1, -1, 1, 0][Math.floor(edad / 60)] : 0;
+    cuadro.burbuja = { ...burbuja, actor, sacudida };
+  }
+  return cuadro;
+}
+
+function componerCuadro(plano: PlanoLeido, ms: number, vista: VistaDeCinematica, reducido: boolean): CuadroDeCinematica {
   switch (plano.escena) {
     case 'barrio': return barrio(plano, ms, reducido);
     case 'casa-ventana': return casaVentana(plano, ms, reducido);
-    case 'calle-emergencia': return calleEmergencia(plano, ms, reducido);
+    case 'calle-emergencia': return calleEmergencia(plano, ms, vista, reducido);
     case 'urgencias-llegada': return urgenciasLlegada(plano, ms, vista, reducido);
     case 'urgencias-familia': return urgenciasFamilia(plano, ms, vista, reducido);
     case 'titulo': return vacio('titulo', plano.momento);
