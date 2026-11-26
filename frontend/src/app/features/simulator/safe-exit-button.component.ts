@@ -92,9 +92,9 @@ import { MatIconModule } from '@angular/material/icon';
       border-width: calc(4 * var(--px));
       border-image: var(--m) 4 / calc(4 * var(--px)) stretch;
       border-radius: 0;
-      background: #2e161c var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
+      background: var(--pixel-brasa) var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
       image-rendering: pixelated;
-      color: #ffd6c4;
+      color: var(--pixel-brasa-tinta);
       font-size: var(--tam-boton);
       font-weight: 700;
       letter-spacing: .02em;
@@ -111,14 +111,14 @@ import { MatIconModule } from '@angular/material/icon';
     }
     .safe-exit-btn--placa:active {
       --m: var(--marco-salida-pulsada); --t: var(--trama-salida-pulsada);
-      background: #22100f var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
+      background: var(--pixel-brasa-hundida) var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
       transform: translateY(var(--px));
     }
     @media (hover: hover) and (pointer: fine) {
       .safe-exit-btn--placa:hover:not(:active) {
         --m: var(--marco-salida-sobre); --t: var(--trama-salida-sobre);
-        background: #3e1c22 var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
-        color: #fff1ea;
+        background: var(--pixel-brasa-alzada) var(--t) 0 0 / calc(8 * var(--px)) repeat padding-box;
+        color: var(--pixel-brasa-tinta-sobre);
       }
     }
     @media (prefers-reduced-motion: reduce) {

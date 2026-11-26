@@ -51,7 +51,7 @@ async function enfocar(id: string): Promise<void> {
       control.focus();
       // Resalte sin animación: también respeta la preferencia de reducir movimiento.
       const anterior = control.style.outline;
-      control.style.outline = '3px solid var(--guia, #7654a3)';
+      control.style.outline = '3px solid var(--ds-info)';
       setTimeout(() => { control.style.outline = anterior; }, 2000);
       return;
     }

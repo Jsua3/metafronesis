@@ -311,7 +311,10 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
         padding: var(--pixel-px) calc(4 * var(--pixel-px)) calc(2 * var(--pixel-px)); background: var(--pixel-penumbra);
         box-shadow: 0 0 0 var(--pixel-px) var(--pixel-contorno); visibility: hidden;
       }
-      .hud-persona:hover .hud-persona-label, .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
+      .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
+      @media (hover: hover) {
+        .hud-persona:hover .hud-persona-label { visibility: visible; }
+      }
     }
     /* Teléfono en vertical: el catálogo sigue a un toque en Ajustes («Catálogo»). */
     @media (max-width: 480px) {
