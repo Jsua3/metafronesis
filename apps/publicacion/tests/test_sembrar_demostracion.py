@@ -143,3 +143,54 @@ def test_la_salida_no_contiene_la_clave_y_si_los_correos(admin, clave):
     salida = sembrar(admin, "--confirmar")
     assert clave not in salida
     assert "laura.mendoza" + DOMINIO in salida and "valentina.rios" + DOMINIO in salida
+
+
+def _docente_real(correo):
+    return CustomUser.objects.create_user(email=correo, password=secrets.token_urlsafe(20), role=PROFESOR,
+                                          nombre="Docente", apellido="Real")
+
+
+def _como(usuario):
+    cliente = APIClient()
+    cliente.force_authenticate(usuario)
+    return cliente
+
+
+@pytest.mark.req("SIEP-234")
+def test_docentes_reales_quedan_como_duenas_de_los_grupos_y_ven_sus_reportes(admin, clave):
+    ana, beto = _docente_real("ana.real@example.test"), _docente_real("beto.real@example.test")
+    salida = sembrar(admin, "--confirmar", "--docentes", f"{ana.email}, {beto.email}")
+    duenos = list(Grupo.objects.filter(codigo__startswith="DEMO-").order_by("pk").values_list("profesor__email", flat=True))
+    assert duenos == [ana.email, beto.email, ana.email]
+    version = CaseVersion.objects.get(simulation_case__code="SIM-VBG-002")
+    for docente in (ana, beto):
+        assert set(CaseAssignment.objects.filter(case_version=version, grupo__profesor=docente).values_list("grupo__codigo", flat=True))
+        grupo = Grupo.objects.filter(profesor=docente).first()
+        respuesta = _como(docente).get(f"/api/reportes/grupo/{grupo.pk}", {"caseVersionId": version.pk})
+        assert respuesta.status_code == 200
+    assert ana.email in salida and clave not in salida
+
+
+@pytest.mark.req("SIEP-234")
+def test_con_docentes_reales_sobre_una_siembra_previa_los_grupos_cambian_de_duena(admin, clave):
+    sembrar(admin, "--confirmar")
+    ana = _docente_real("ana.real@example.test")
+    salida = sembrar(admin, "--confirmar", "--docentes", ana.email)
+    assert set(Grupo.objects.filter(codigo__startswith="DEMO-").values_list("profesor__email", flat=True)) == {ana.email}
+    assert "ahora es de ana.real@example.test" in salida
+    assert GrupoEstudiante.objects.filter(grupo__codigo__startswith="DEMO-").count() == 16
+
+
+@pytest.mark.req("SIEP-234")
+@pytest.mark.parametrize("problema", ["no-existe@example.test", "estudiante", "cuatro"])
+def test_docentes_invalidos_se_niegan_sin_escribir(admin, clave, problema):
+    if problema == "estudiante":
+        correos = CustomUser.objects.create_user(email="alumna@example.test", password=secrets.token_urlsafe(20),
+                                                 role=ESTUDIANTE, nombre="A", apellido="B").email
+    elif problema == "cuatro":
+        correos = ",".join(_docente_real(f"d{i}@example.test").email for i in range(4))
+    else:
+        correos = problema
+    with pytest.raises(CommandError, match="--docentes"):
+        sembrar(admin, "--confirmar", "--docentes", correos)
+    assert not Grupo.objects.exists() and not cuentas_demo().exists()
