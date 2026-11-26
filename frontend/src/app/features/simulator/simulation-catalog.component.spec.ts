@@ -81,6 +81,17 @@ describe('Casos del estudiante', () => {
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'cierre', 'abc']);
   });
 
+  it('terminado con resultado también ofrece «Ver ficha», para volver a practicar desde la ficha', async () => {
+    const { fixture, host, navegar } = await render([entrada(1, { completed: true })], [intento()]);
+    const botones = Array.from(host.querySelectorAll<HTMLButtonElement>('.cs-acciones button'));
+    const ficha = botones.find(b => b.textContent?.includes('Ver ficha'));
+    expect(ficha).toBeDefined();
+    expect(ficha!.classList).toContain('ui-button--secondary');
+    await fixture.whenStable();
+    ficha!.click();
+    expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'ficha'], expect.anything());
+  });
+
   it('al volver del recorrido devuelve el foco a la accion del caso', async () => {
     sessionStorage.setItem('siep.catalogo.retorno', '1');
     const foco = vi.spyOn(HTMLElement.prototype, 'focus');

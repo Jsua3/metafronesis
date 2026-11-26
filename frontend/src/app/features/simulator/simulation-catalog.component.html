@@ -73,6 +73,8 @@
                       <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
                     } @else if (card.estado.clave === 'terminado' && card.recorrido) {
                       <button ui-button type="button" icon="description" [attr.aria-label]="copy.acciones.recorrido + ' de «' + card.item.title + '»'" (click)="openReport(card.recorrido)">{{ copy.acciones.recorrido }}</button>
+                      <!-- Terminado también lleva a la ficha: desde ahí se vuelve a practicar («Comenzar») y se ve la portada. -->
+                      <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
                     } @else if (card.estado.clave === 'terminado') {
                       <button ui-button type="button" variant="secondary" [attr.aria-label]="copy.acciones.ficha + ' de «' + card.item.title + '»'" (click)="openCase(card, false)">{{ copy.acciones.ficha }}</button>
                     } @else if (card.estado.clave === 'sin-empezar') {
