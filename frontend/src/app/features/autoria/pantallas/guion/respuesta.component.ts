@@ -100,30 +100,30 @@ export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolea
     <div class="ficha__destino" [id]="'destino-' + r.id">
       <label [for]="'rl' + i" class="ficha__destino-rotulo">Lleva a…</label>
       <!-- BORRADOR: pendiente de aprobación de Psicología. -->
-      <p class="nota">Elige la escena que sigue. Para terminar el caso, crea o elige una escena final abajo. Sin destino, esta respuesta queda solo en esta pantalla.</p>
+      <p class="nota">Elige la escena que sigue. Si creas una escena desde aquí, queda conectada a esta respuesta. Sin destino, esta respuesta queda solo en esta pantalla.</p>
       @if (recuperada()) { <p class="nota" role="status">Recuperamos lo que escribiste en esta respuesta.</p> }
       @if (!respaldoDisponible()) { <p class="nota" role="alert">No pudimos guardar una copia en este dispositivo. Mantén abierta esta pantalla hasta completar y guardar la respuesta.</p> }
       <select [id]="'rl' + i" [attr.data-respuesta-destino]="r.id" class="campo" (change)="destino.emit($any($event.target).value)">
         <option value="" [selected]="!r.destinoId">Ninguna escena todavía</option>
         @for (d of destinos(); track d.id) { <option [value]="d.id" [selected]="d.id === r.destinoId">{{ d.etiqueta }}</option> }
-        <option value="nueva">Crear una escena nueva ahora</option>
+        <option value="nueva">Crear y conectar una escena nueva</option>
       </select>
     </div>
     @if (!r.destinoId) {
       <!-- BORRADOR: pendiente de aprobación de Psicología. -->
-      <button type="button" class="boton boton-secundario" (click)="crearEscena.emit()">Crear la escena siguiente</button>
+      <button type="button" class="boton boton-secundario" (click)="crearEscena.emit()">Crear la escena que sigue</button>
     }
       <!-- Abierto solo mientras falta el destino: con destino elegido queda a mano, plegado, sin llenar cada ficha. -->
-      <details [open]="!r.destinoId">
+      <details class="cierre" [open]="!r.destinoId">
         <summary>Terminar el caso con esta respuesta</summary>
-        <p class="nota">El estudiante llegará a una escena final y el caso terminará. Crea una o usa una existente; después revisa su contenido y los demás pendientes para enviar el caso.</p>
+        <p class="nota">El caso termina al llegar a ella; no tiene respuestas. El estudiante llegará a una escena final y el caso terminará. Crea una o usa una existente; después revisa su contenido y los demás pendientes para enviar el caso.</p>
         @for (d of destinosFinales(); track d.id) {
           <button type="button" class="boton boton-secundario" (click)="destino.emit(d.id)">Usar {{ d.etiqueta }}</button>
         }
         @for (d of destinosConvertibles(); track d.id) {
           <button type="button" class="boton boton-secundario" (click)="convertirFinal.emit(d.id)">Convertir {{ d.etiqueta }} en final y usarla</button>
         }
-        <button type="button" class="boton boton-secundario" data-accion="terminar-respuesta" (click)="crearFinal.emit()">Crear escena final</button>
+        <button type="button" class="boton boton-secundario" data-accion="terminar-respuesta" (click)="crearFinal.emit()">Terminar el caso aquí: crear la escena final</button>
         <p class="nota">Solo se pueden convertir escenas sin respuestas: al llegar a una escena final el estudiante ya no toma decisiones.</p>
       </details>
     @if (creada(); as c) {

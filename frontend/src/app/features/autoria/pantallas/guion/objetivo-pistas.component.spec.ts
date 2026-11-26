@@ -53,12 +53,12 @@ describe('ObjetivoPistasComponent', () => {
     expect(raiz.querySelector('#pistas-escena')).not.toBeNull();
   });
 
-  it('el objetivo se guarda al salir del campo, no en cada tecla, y recortado', async () => {
+  it('el objetivo se refleja al escribir y se normaliza al salir del campo', async () => {
     const { escena, raiz, listo, escribir } = await montar();
     const campo = raiz.querySelector<HTMLInputElement>('#objetivo-escena')!;
     escribir(campo, '  Escuchar sin juzgar  ', 'input');
     await listo();
-    expect(escena().objetivo ?? '').toBe('');
+    expect(escena().objetivo).toBe('  Escuchar sin juzgar  ');
     expect(raiz.querySelector('#objetivo-cuenta')!.textContent).toContain('23 de 200');
 
     escribir(campo, '  Escuchar sin juzgar \n'); // el campo de una línea ya descarta el salto

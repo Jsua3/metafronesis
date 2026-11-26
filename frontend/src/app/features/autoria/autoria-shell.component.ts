@@ -200,7 +200,8 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
         <button estudioEstadoInicio type="button" class="est-dato-boton" [class.estado-pendientes]="progreso.totalPendientes()"
                 [attr.title]="textoPendientes()" [attr.aria-label]="textoPendientes()" aria-haspopup="dialog" (click)="abrirPendientes($event)">
           <span class="marca-estado" aria-hidden="true" [attr.data-estado]="progreso.totalPendientes() ? 'con-pendientes' : 'lista'"></span>
-          {{ store.revisionPendiente() ? 'Revisión pendiente' : progreso.totalPendientes() + ' por resolver' }}
+          <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+          {{ store.revisionPendiente() ? 'Comprobación pendiente' : progreso.totalPendientes() + ' por resolver' }}
         </button>
       }
       <!-- La pasarela: el siguiente paso, a la vista en todas las pantallas (antes solo en el Explorador de Historia). -->
