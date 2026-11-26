@@ -437,6 +437,40 @@ DATA_INVENTORY: dict[str, dict] = {
             "document_json": [],
         },
     },
+    "authoring_coauthor_agreements": {
+        "purpose": (
+            "La conversación de la IA coautora con un docente (SIEP-269): la idea que contó, las preguntas que le hizo la IA con "
+            "sus respuestas y la ficha «Lo que acordamos». Solo la ve quien la empezó."
+        ),
+        "retention": (
+            "Sin plazo definido (SD-9, pendiente de la institución). Se borra con la cuenta; la idea y las respuestas pueden traer "
+            "lo que el docente decidió contar, aunque el servidor rechaza correos, teléfonos y documentos de identidad."
+        ),
+        "default": None,
+        "columns": {
+            "id": TECHNICAL,
+            "owner_id": (PERSONAL, "docente que conversa con la IA"),
+            "lugar_id": TECHNICAL,
+            "case_version_id": TECHNICAL,
+            "idea": (SENSITIVE, "texto libre del docente sobre el caso que quiere construir"),
+            "turns_json": (SENSITIVE, "preguntas de la IA y respuestas del docente, que pueden ser texto libre"),
+            "question_json": (SENSITIVE, "pregunta pendiente que escribió el modelo a partir de la idea del docente"),
+            "agreement_json": (SENSITIVE, "ficha del caso acordada a partir de la idea y las respuestas del docente"),
+            "status": TECHNICAL,
+            "calls": TECHNICAL,
+            "busy_since": TECHNICAL,
+            "generation_id": TECHNICAL,
+            "created_at": TECHNICAL,
+            "updated_at": TECHNICAL,
+        },
+        "exits": {
+            "owner_id": [],
+            "idea": ["api"],
+            "turns_json": ["api"],
+            "question_json": ["api"],
+            "agreement_json": ["api"],
+        },
+    },
     "rubrics": {
         "purpose": "Rúbricas de evaluación: nombre, versión y docente que las creó.",
         "retention": "Mientras exista la rúbrica (SD-9, pendiente de la institución).",

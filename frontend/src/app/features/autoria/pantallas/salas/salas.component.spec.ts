@@ -43,7 +43,7 @@ describe('SalasComponent', () => {
     expect(grupo.querySelector('legend')!.textContent).toContain('¿Cómo quieres empezar?');
     const radios = [...grupo.querySelectorAll<HTMLInputElement>('input[type="radio"]')];
     expect(radios.map((r) => r.value)).toEqual(['describe', 'a-mano']);
-    expect(grupo.textContent).toContain('La IA arma un borrador completo a partir de tu descripción. Tú lo revisas y lo cambias.');
+    expect(grupo.textContent).toContain('Le cuentas tu idea a la IA, te hace unas preguntas y arma el borrador con lo que acuerden. Tú lo revisas y lo cambias.');
     expect(grupo.textContent).toContain('Eliges las salas y escribes tú cada escena.');
 
     // «a mano» es lo de hoy: ideas, lista de salas y barra de crear

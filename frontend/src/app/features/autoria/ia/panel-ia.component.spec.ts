@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { AuthoringApi } from '../../../core/api/authoring.api';
+import { CoautoriaApi } from '../../../core/api/coautoria.api';
 import { CasoStore } from '../estado/caso.store';
 import type { CasoBorrador } from '../modelo/caso';
 import { copiarEscenarioAlCaso } from '../modelo/copiar';
@@ -35,7 +36,8 @@ interface Api {
   assistantPropose: ReturnType<typeof vi.fn>;
 }
 
-async function montar(api: Partial<Api> = {}) {
+/** Monta el panel; por defecto abre «Pedir un cambio», que es donde viven las propuestas por partes. */
+async function montar(api: Partial<Api> = {}, pestana: 'Construir juntos' | 'Pedir un cambio' = 'Pedir un cambio') {
   TestBed.resetTestingModule();
   const completa = {
     assistantStatus: vi.fn(() => of({ enabled: true, mode: 'connected', remainingToday: 7 })),
@@ -44,7 +46,10 @@ async function montar(api: Partial<Api> = {}) {
   };
   await TestBed.configureTestingModule({
     imports: [PanelIaComponent],
-    providers: [provideRouter([]), { provide: AuthoringApi, useValue: completa }],
+    providers: [
+      provideRouter([]), { provide: AuthoringApi, useValue: completa },
+      { provide: CoautoriaApi, useValue: { iniciar: vi.fn(() => of(null)) } },
+    ],
   }).compileComponents();
   const store = TestBed.inject(CasoStore);
   store.fijar(caso());
@@ -53,6 +58,8 @@ async function montar(api: Partial<Api> = {}) {
   fixture.detectChanges();
   const raiz = fixture.nativeElement as HTMLElement;
   const listo = async () => { await fixture.whenStable(); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
+  await listo();
+  [...raiz.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((b) => b.textContent?.trim() === pestana)!.click();
   await listo();
   return { fixture, store, raiz, listo, api: completa };
 }
@@ -171,12 +178,31 @@ describe('PanelIaComponent', () => {
     expect(raiz.querySelectorAll('input[type="checkbox"]').length).toBeGreaterThan(0);
     store.fijar({ ...caso(), id: '42' });
     await listo();
+    // Con otro caso guardado, el panel vuelve a «Construir juntos»; en «Pedir un cambio» no queda nada del caso anterior.
+    expect(raiz.querySelector('[role="tab"][aria-selected="true"]')!.textContent!.trim()).toBe('Construir juntos');
+    boton(raiz, 'Pedir un cambio').click();
+    await listo();
     expect(raiz.querySelectorAll('input[type="checkbox"]').length).toBe(0);
     expect(raiz.querySelector('[role="log"]')!.textContent!.trim()).toBe('');
   });
 });
 
 describe('contextoDeRuta', () => {
+  it('abre en «Construir juntos»: la IA pide la idea y las dos pestañas se alternan', async () => {
+    TestBed.resetTestingModule();
+    const { raiz, listo } = await montar({}, 'Construir juntos');
+    const pestanas = [...raiz.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+
+    expect(pestanas.map((p) => p.getAttribute('aria-selected'))).toEqual(['true', 'false']);
+    expect(raiz.textContent).toContain('Cuéntale a la IA el caso que quieres construir');
+    expect(raiz.querySelector('#iaq')).toBeNull();
+
+    pestanas[1].click();
+    await listo();
+    expect(raiz.querySelector('#iaq')).not.toBeNull();
+    expect(raiz.querySelector('[role="tabpanel"]')!.getAttribute('aria-labelledby')).toBe('tab-pedir');
+  });
+
   it('lee la pantalla y el elemento de la dirección del editor en el programa', () => {
     expect(contextoDeRuta('/portal/casos/41/editor')).toEqual({ pantalla: 'mapa', seleccion: null });
     expect(contextoDeRuta('/portal/casos/41/editor/escena/12?x=1')).toEqual({ pantalla: 'guion', seleccion: '12' });
