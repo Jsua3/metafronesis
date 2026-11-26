@@ -1,0 +1,25 @@
+{
+  "id": "esposo-fiebre",
+  "displayName": "Señor con fiebre",
+  "kind": "figurante",
+  "complexion": "b",
+  "pieces": {
+    "hair": "corto-rizado",
+    "face": "sereno",
+    "top": "sueter",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "canoso",
+    "top": "gris-oscuro",
+    "inner": "blanco",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

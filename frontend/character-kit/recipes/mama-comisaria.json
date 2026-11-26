@@ -1,0 +1,24 @@
+{
+  "id": "mama-comisaria",
+  "displayName": "Señora con su hijo",
+  "kind": "npc",
+  "complexion": "a",
+  "pieces": {
+    "hair": "cola-caballo",
+    "face": "sereno",
+    "top": "blusa",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-3",
+    "hair": "negro",
+    "top": "azul",
+    "bottom": "carbon",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}
