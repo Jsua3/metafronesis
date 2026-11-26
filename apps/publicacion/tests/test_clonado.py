@@ -52,11 +52,20 @@ def test_clon_usa_la_siguiente_version_menor_libre(caso):
     assert CaseVersion.objects.get(pk=respuesta.data['data']['versionId']).semantic_version == '1.2.0'
 
 
-def test_clon_de_caso_ajeno_404(caso):
+def test_clon_de_la_archivada_ajena_404_y_de_la_publicada_ajena_201(caso):
     from apps.users.models import CustomUser
     from shared.policies import PROFESOR
+    from apps.users.models import PermisoDeAutoria
     otro = CustomUser.objects.create_user(email='otro-clon@example.test', password='test-only', role=PROFESOR)
-    caso['version'].status = 'PUBLISHED'
+    PermisoDeAutoria.objects.create(docente=otro, otorgado_por=caso['autor'])
+    caso['version'].status = 'ARCHIVED'
     caso['version'].save()
     caso['cliente'].force_authenticate(otro)
     assert clonar(caso).status_code == 404
+    # Autoría compartida: de una publicada ajena sale un borrador del otro docente; el caso conserva su autor.
+    caso['version'].status = 'PUBLISHED'
+    caso['version'].save()
+    respuesta = clonar(caso)
+    assert respuesta.status_code == 201
+    clon = CaseVersion.objects.get(pk=respuesta.data['data']['versionId'])
+    assert clon.created_by_id == otro.pk and clon.simulation_case.created_by_id == caso['autor'].pk

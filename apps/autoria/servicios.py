@@ -6,9 +6,9 @@ from apps.biblioteca.services import copiar_al_caso, lugares
 from apps.simulation.models import DecisionOption, SimulationNode
 from shared.jsonutils import read_map, read_string_list
 from apps.simulation.services.audit_service import auditable
-from apps.users.permisos import exigir_autoria
+from apps.users.permisos import exigir_autoria, puede_autorar
 from .constructor import ConstructorDeBorrador
-from . import contenido, guardas
+from . import autoria, contenido, guardas
 
 
 def ficha(version):
@@ -37,8 +37,21 @@ def crear_borrador(autor, datos: dict):
     return constructor.construir()
 
 
+def fila(usuario, version, editores, autoriza) -> dict:
+    """Una fila de la lista de casos: el resumen, el autor, quién más lo editó y lo que quien pide puede hacer con ella
+    (la interfaz no repite las reglas de ``autoria.py``)."""
+    caso = version.simulation_case
+    return {**resumen(version), "caseId": caso.pk, "semanticVersion": version.semantic_version,
+            "autor": autoria.persona(caso.created_by), "editadoPor": editores.get(caso.pk, []),
+            "puedeEditar": autoria.puede_editar(usuario, version),
+            "puedeCrearVersion": autoria.puede_crear_version(usuario, version, autoriza)}
+
+
 def listar(usuario) -> list[dict]:
-    return [resumen(v) for v in guardas.versiones_visibles(usuario).order_by("pk")]
+    versiones = list(guardas.versiones_visibles(usuario).select_related("simulation_case__created_by").order_by("pk"))
+    editores = autoria.editores_por_caso(v.simulation_case_id for v in versiones)
+    autoriza = puede_autorar(usuario)
+    return [fila(usuario, v, editores, autoriza) for v in versiones]
 
 
 def _decision(opcion):

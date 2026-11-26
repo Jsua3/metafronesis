@@ -56,7 +56,9 @@ describe('draft-copy: textos en borrador pendientes de Psicología', () => {
     // B4b (rediseño 2026-11-21): sale la nota sensible de la ficha (ya no es verdad: el aviso va en la ficha) y entran
     // cuatro que se validan (el contrato de ficción, la rúbrica formativa, el apoyo pendiente y la frase junto a «Comenzar»):
     // 107 − 1 + 4. Los avisos de error del registro, el sonido y los tres del umbral solo se conocen.
-    expect(list.filter(entry => entry.review === 'validar')).toHaveLength(110);
+    // P9 (orientarse en el juego): entran cuatro que se validan: las marcas «sin hablar todavía» y «tu siguiente paso» de la
+    // ficha, la etiqueta «Siguiente paso» de «Ir a…» y el botón «Ir allí»: 110 + 4.
+    expect(list.filter(entry => entry.review === 'validar')).toHaveLength(114);
   });
 
   // req: ETH-01, SIEP-RF-05 (S3-2b)

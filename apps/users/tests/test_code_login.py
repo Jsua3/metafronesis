@@ -21,7 +21,7 @@ def acceso():
     caso = SimulationCase.objects.create(code="M5", title="Caso", created_by=docente)
     version = CaseVersion.objects.create(simulation_case=caso, semantic_version="1.0.0", created_by=docente)
     ahora = timezone.now()
-    sesion = Sesion.objects.create(case_version=version, creada_por=docente, espacio_academico="Curso", inicio=ahora, fin=ahora + timedelta(hours=1), tiempo_maximo_min=30)
+    sesion = Sesion.objects.create(case_version=version, creada_por=docente, inicio=ahora, fin=ahora + timedelta(hours=1), tiempo_maximo_min=30)
     Convocatoria.objects.create(sesion=sesion, estudiante=estudiante, codigo_hash=make_password("ABC23456"))
     return APIClient(), estudiante, sesion
 

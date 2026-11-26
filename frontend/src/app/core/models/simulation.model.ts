@@ -83,6 +83,12 @@ export interface HintState {
   reason?: HintReason;
 }
 
+/** Una persona en la autoría compartida de un caso (autor o «editado por»). */
+export interface PersonaCaso {
+  id: number;
+  nombre: string;
+}
+
 export interface SimulationCaseSummary {
   caseVersionId: number;
   code: string;
@@ -100,6 +106,15 @@ export interface SimulationCaseSummary {
   escenasConGuion?: number;
   /** Fondo de la sala de inicio (ver `CatalogItem.portada`). */
   portada?: string | null;
+  // Autoría compartida: solo la lista de autoría los trae.
+  /** Quien creó el caso; no cambia aunque otros docentes publiquen versiones nuevas. */
+  autor?: PersonaCaso;
+  /** Quienes, sin ser el autor, crearon alguna versión del caso, en el orden de su primera versión. */
+  editadoPor?: PersonaCaso[];
+  /** El servidor dice si quien mira puede editar esta versión (un borrador que creó él). */
+  puedeEditar?: boolean;
+  /** El servidor dice si quien mira puede crear una versión nueva a partir de esta (clonarla). */
+  puedeCrearVersion?: boolean;
 }
 
 export interface ProgressMapNode {
@@ -1085,10 +1100,15 @@ export interface PublicationChecklistView {
 }
 
 export interface CaseEditorView {
+  estimatedMinutes?: number | null;
   caseVersionId: number;
   /** Revisión del borrador (E2-6): viaja en `X-Case-Revision` en cada mutación y la respuesta trae la siguiente. */
   revision: number;
   title: string;
+  /** Quien creó el caso (autoría compartida); ausente con un servidor que aún no lo manda. */
+  autor?: PersonaCaso;
+  /** Quienes, sin ser el autor, crearon alguna versión del caso, en el orden de su primera versión. */
+  editadoPor?: PersonaCaso[];
   semanticVersion: string;
   status: string;
   /** El contexto de la ficha del caso (E3-4). */
@@ -1186,6 +1206,7 @@ export interface CharacterUpsertRequest {
 
 /** La ficha del caso: ausente = no se toca; `[]` vacía los objetivos. */
 export interface BriefUpdateRequest {
+  estimatedMinutes?: number | null;
   context?: string;
   learningObjectives?: string[];
   /**

@@ -140,8 +140,8 @@ describe('GuionComponent · teclado, anclas y facetas', () => {
     expect(raiz.querySelector('fieldset.competencias')).toBeNull(); // la faceta está cerrada
     document.getElementById(`competencias-${r.id}`)!.focus(); // lo que hace «Llévame ahí»
     await listo();
-    await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('FIELDSET'));
-    expect(document.activeElement?.id).toBe(`competencias-${r.id}`);
+    await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'));
+    expect(document.activeElement?.closest('fieldset')?.id).toBe(`competencias-${r.id}`);
     expect(raiz.querySelector(`button.faceta[aria-controls="faceta-criterios-${r.id}"]`)!.getAttribute('aria-expanded')).toBe('true');
     fixture.nativeElement.remove();
   });

@@ -23,6 +23,17 @@ describe('casoDesdeApi: de lo que entrega el servidor al borrador del editor', (
       expect(caso.inicioId).toBe(String(editor.nodes[0].id));
     });
 
+    it('sin autoría en el servidor el borrador no la inventa', () => {
+      expect(caso.autor).toBeUndefined();
+      expect(caso.editadoPor).toBeUndefined();
+    });
+
+    it('la autoría compartida llega con los nombres: el autor y quienes más crearon versiones', () => {
+      const conAutoria = casoDesdeApi({ ...editor, autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }] }, mundos, universidad);
+      expect(conAutoria.autor).toBe('Ana');
+      expect(conAutoria.editadoPor).toEqual(['Beto']);
+    });
+
     it('el lugar se deduce de las salas y cada sala dice de dónde salió', () => {
       expect(caso.lugarId).toBe('universidad');
       expect(caso.salas.map((s) => s.id)).toEqual(SALAS);

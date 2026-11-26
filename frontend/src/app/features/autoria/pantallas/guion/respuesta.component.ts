@@ -1,9 +1,11 @@
+import { GLOSARIO } from '../../modelo/glosario';
 import {
   ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, input, linkedSignal, output, signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { UiMenu, type UiMenuItem } from '../../../../shared/ui/menu/ui-menu';
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
 import { motivoSinGuardar } from '../../estado/persistir';
 import { AutoAltoDirective } from '../../marco/auto-alto.directive';
 import type { ClaseRespuesta, CompetenciaCaso, EfectosRespuesta, Escena, Hito, Reaccion, Respuesta } from '../../modelo/caso';
@@ -33,7 +35,7 @@ const PASOS_VINCULO = [{ valor: -1, nombre: 'Se cierra' }, { valor: 0, nombre: '
 const PASOS_ACTIVACION = [{ valor: -1, nombre: 'Se calma' }, { valor: 0, nombre: 'Sin cambio' }, { valor: 1, nombre: 'Se tensa' }];
 
 /** Una escena a la que puede llevar la respuesta, como se lee en «Lleva a…»: «N · Título». */
-export interface DestinoPosible { id: string; etiqueta: string }
+export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolean; convertible?: boolean }
 
 /**
  * La ficha de una respuesta (EDITOR.md §3.4.1). Arriba, lo que el servidor exige para guardarla (texto, clase, destino; razón
@@ -48,7 +50,7 @@ export interface DestinoPosible { id: string; etiqueta: string }
  */
 @Component({
   selector: 'app-respuesta',
-  imports: [AutoAltoDirective, ReaccionComponent, RouterLink, SelectorCondicionComponent, UiMenu],
+  imports: [AutoAltoDirective, ReaccionComponent, RouterLink, SelectorCondicionComponent, UiMenu, UiAyudaBreve],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'ficha-respuesta', '[class.marca-ia]': 'respuesta().marcaIa', '(keydown)': 'alTeclear($event)' },
   template: `
@@ -58,7 +60,7 @@ export interface DestinoPosible { id: string; etiqueta: string }
       <span class="ficha__letra" aria-hidden="true">{{ letra() }}</span>
       <label class="solo-lector" [for]="'rt' + i">Respuesta {{ i + 1 }}</label>
       <textarea autoAlto [id]="'rt' + i" class="campo ficha__texto" rows="1" [value]="r.texto" placeholder="Lo que puede responder el estudiante"
-                (change)="editarTexto('texto', $any($event.target).value)"></textarea>
+                (input)="editarTexto('texto', $any($event.target).value)" (change)="editarTexto('texto', $any($event.target).value)"></textarea>
       <ui-menu class="ficha__mas" iconOnly [label]="'Más acciones de la respuesta ' + (i + 1)" [items]="acciones()" (itemSelected)="alElegir($event)" />
     </div>
     @if (r.marcaIa) {
@@ -69,7 +71,9 @@ export interface DestinoPosible { id: string; etiqueta: string }
       </div>
     }
 
-    <fieldset class="clasificacion" (focusin)="alEntrarEnClase(r.clase)" (focusout)="alSalirDeClase($event)">
+    <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+    <span>Clases de respuesta <ui-ayuda-breve termino="Clases de respuesta" [explicacion]="glosario['Clases de respuesta']" /></span>
+    <fieldset class="clasificacion" [id]="'clase-' + r.id" (focusin)="alEntrarEnClase(r.clase)" (focusout)="alSalirDeClase($event)">
       <legend class="solo-lector">Clasificación de la respuesta {{ i + 1 }}</legend>
       @for (c of clases; track c.valor) {
         <label class="opcion" [class]="'opcion ' + c.valor">
@@ -83,30 +87,45 @@ export interface DestinoPosible { id: string; etiqueta: string }
     @if (consecuencia(); as texto) { <p class="nota consecuencia" [id]="'rcc' + i">{{ texto }}</p> }
 
     @if (r.clase === 'CONTRAINDICATED') {
-      <div class="campo-rotulado">
+      <div class="campo-rotulado" [id]="'razon-' + r.id">
         <label [for]="'rz' + i" class="rotulo">Por qué es contraindicada</label>
         <textarea autoAlto [id]="'rz' + i" class="campo" rows="1" [value]="r.razon" [attr.aria-invalid]="r.razon.trim() ? null : 'true'"
-                  [attr.aria-describedby]="r.razon.trim() ? null : 'rzn' + i" (change)="editarTexto('razon', $any($event.target).value)"></textarea>
+                  [attr.aria-describedby]="r.razon.trim() ? null : 'rzn' + i" (input)="editarTexto('razon', $any($event.target).value)" (change)="editarTexto('razon', $any($event.target).value)"></textarea>
       </div>
       @if (!r.razon.trim()) {
         <p [id]="'rzn' + i" class="nota">Explica por qué esta respuesta puede hacerle daño a la persona.</p>
       }
     }
 
-    <div class="ficha__destino">
+    <div class="ficha__destino" [id]="'destino-' + r.id">
       <label [for]="'rl' + i" class="ficha__destino-rotulo">Lleva a…</label>
-      <select [id]="'rl' + i" class="campo" (change)="destino.emit($any($event.target).value)">
-        <option value="" [selected]="!r.destinoId && !pendiente()">Ninguna escena todavía</option>
+      <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+      <p class="nota">Elige la escena que sigue. Para terminar el caso, crea o elige una escena final abajo. Sin destino, esta respuesta queda solo en esta pantalla.</p>
+      @if (recuperada()) { <p class="nota" role="status">Recuperamos lo que escribiste en esta respuesta.</p> }
+      @if (!respaldoDisponible()) { <p class="nota" role="alert">No pudimos guardar una copia en este dispositivo. Mantén abierta esta pantalla hasta completar y guardar la respuesta.</p> }
+      <select [id]="'rl' + i" [attr.data-respuesta-destino]="r.id" class="campo" (change)="destino.emit($any($event.target).value)">
+        <option value="" [selected]="!r.destinoId">Ninguna escena todavía</option>
         @for (d of destinos(); track d.id) { <option [value]="d.id" [selected]="d.id === r.destinoId">{{ d.etiqueta }}</option> }
-        <option value="nueva" [selected]="pendiente()">Una escena nueva</option>
+        <option value="nueva">Crear una escena nueva ahora</option>
       </select>
     </div>
-    @if (pendiente()) {
-      <div class="acciones">
-        <button type="button" class="boton boton-secundario crear-escena-nueva" (click)="crearEscena.emit()">Crear la escena nueva</button>
-        <span class="nota">Elegir en la lista no crea nada; el botón sí.</span>
-      </div>
+    @if (!r.destinoId) {
+      <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+      <button type="button" class="boton boton-secundario" (click)="crearEscena.emit()">Crear la escena siguiente</button>
     }
+      <!-- Abierto solo mientras falta el destino: con destino elegido queda a mano, plegado, sin llenar cada ficha. -->
+      <details [open]="!r.destinoId">
+        <summary>Terminar el caso con esta respuesta</summary>
+        <p class="nota">El estudiante llegará a una escena final y el caso terminará. Crea una o usa una existente; después revisa su contenido y los demás pendientes para enviar el caso.</p>
+        @for (d of destinosFinales(); track d.id) {
+          <button type="button" class="boton boton-secundario" (click)="destino.emit(d.id)">Usar {{ d.etiqueta }}</button>
+        }
+        @for (d of destinosConvertibles(); track d.id) {
+          <button type="button" class="boton boton-secundario" (click)="convertirFinal.emit(d.id)">Convertir {{ d.etiqueta }} en final y usarla</button>
+        }
+        <button type="button" class="boton boton-secundario" data-accion="terminar-respuesta" (click)="crearFinal.emit()">Crear escena final</button>
+        <p class="nota">Solo se pueden convertir escenas sin respuestas: al llegar a una escena final el estudiante ya no toma decisiones.</p>
+      </details>
     @if (creada(); as c) {
       <div role="group" aria-label="Escena creada" class="creada">
         <p>Se creó «{{ c.titulo }}», conectada a la respuesta {{ i + 1 }}. Usa la misma sala que esta escena; puedes cambiarla después.</p>
@@ -117,7 +136,7 @@ export interface DestinoPosible { id: string; etiqueta: string }
     <div class="campo-rotulado">
       <label [for]="'rf' + i" class="rotulo">Lo que lee el estudiante después de elegir</label>
       <textarea autoAlto [id]="'rf' + i" class="campo" rows="1" [value]="r.retroalimentacion"
-                (change)="editarTexto('retroalimentacion', $any($event.target).value)"></textarea>
+                (input)="editarTexto('retroalimentacion', $any($event.target).value)" (change)="editarTexto('retroalimentacion', $any($event.target).value)"></textarea>
     </div>
 
     <!-- Las cinco facetas: el valor se lee sin abrir; abrir una cierra la otra (grupo de revelado). -->
@@ -136,7 +155,7 @@ export interface DestinoPosible { id: string; etiqueta: string }
 
     @if (abierta('pasos')) {
       <fieldset class="faceta-panel hitos" [id]="'faceta-pasos-' + r.id">
-        <legend>Pasos profesionales que cumple</legend>
+        <legend>Pasos profesionales que cumple</legend><ui-ayuda-breve termino="Pasos profesionales" [explicacion]="glosario['Pasos profesionales']" />
         @for (h of hitos(); track h.clave) {
           <label class="casilla">
             <input type="checkbox" [checked]="r.efectos.hitos?.includes(h.clave) ?? false"
@@ -146,11 +165,12 @@ export interface DestinoPosible { id: string; etiqueta: string }
         } @empty {
           <p class="nota">Este caso todavía no tiene pasos profesionales.</p>
         }
+        <a class="enlace" [routerLink]="rutas.a('/editor/evaluacion')">Ver todos los pasos</a>
       </fieldset>
     }
     @if (abierta('criterios')) {
       <fieldset class="faceta-panel competencias" [id]="'competencias-' + r.id" tabindex="-1">
-        <legend>Criterios de la rúbrica que evidencia (uno o dos)</legend>
+        <legend>Criterios de la rúbrica que evidencia (uno o dos)</legend><ui-ayuda-breve termino="Criterios sin rúbrica" [explicacion]="glosario['Criterios sin rúbrica']" />
         @for (c of competencias(); track c.codigo) {
           <label class="casilla">
             <input type="checkbox" [checked]="marcadas().includes(c.codigo)"
@@ -211,14 +231,15 @@ export interface DestinoPosible { id: string; etiqueta: string }
   styleUrl: './respuesta.component.scss',
 })
 export class RespuestaComponent {
+  protected readonly glosario = GLOSARIO;
+  readonly recuperada = input(false);
+  readonly respaldoDisponible = input(true);
   readonly respuesta = input.required<Respuesta>();
   readonly indice = input.required<number>();
   readonly escena = input.required<Escena>();
   readonly destinos = input.required<readonly DestinoPosible[]>();
   readonly hitos = input.required<readonly Hito[]>();
   readonly competencias = input.required<readonly CompetenciaCaso[]>();
-  /** La docente eligió «Una escena nueva» y falta pulsar «Crear la escena nueva». */
-  readonly pendiente = input(false);
   readonly creada = input<{ escenaId: string; titulo: string } | null>(null);
   /** «Ver todo abierto» del guion: abre las cinco facetas a la vez. */
   readonly todoAbierto = input(false);
@@ -232,6 +253,8 @@ export class RespuestaComponent {
   /** El valor de «Lleva a…»: el id de una escena, `''` (ninguna) o `'nueva'`. */
   readonly destino = output<string>();
   readonly crearEscena = output<void>();
+  readonly crearFinal = output<void>();
+  readonly convertirFinal = output<string>();
   readonly aceptar = output<void>();
   readonly descartar = output<void>();
   readonly duplicar = output<void>();
@@ -241,6 +264,8 @@ export class RespuestaComponent {
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
   protected readonly clases = CLASES;
+  protected readonly destinosFinales = computed(() => this.destinos().filter((d) => d.esFinal && d.id !== this.escena().id));
+  protected readonly destinosConvertibles = computed(() => this.destinos().filter((d) => d.convertible && d.id !== this.escena().id));
   protected readonly nombreClase = NOMBRE_CLASE;
   protected readonly facetas = FACETAS;
   protected readonly pasosVinculo = PASOS_VINCULO;
@@ -325,7 +350,7 @@ export class RespuestaComponent {
     afterNextRender(() => {
       const el = document.getElementById(ancla);
       el?.scrollIntoView?.({ block: 'center' });
-      el?.focus();
+      (el?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])') ?? el)?.focus();
     }, { injector: this.injector });
   }
 

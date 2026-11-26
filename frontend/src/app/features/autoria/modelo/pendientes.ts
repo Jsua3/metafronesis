@@ -24,14 +24,17 @@ export interface Pendiente extends Falta {
 }
 
 /** Una escena «por escribir»: sin una sola línea y sin una sola respuesta. */
-export function estaVacia(escena: Pick<Escena, 'lineas' | 'respuestas'>): boolean {
-  return escena.lineas.length === 0 && escena.respuestas.length === 0;
+export function estaVacia(escena: Pick<Escena, 'lineas' | 'respuestas' | 'narracion'>): boolean {
+  return !escena.narracion.trim() && escena.lineas.length === 0 && escena.respuestas.length === 0;
 }
 
 const escenaDeRuta = (ruta: string): string | null => /\/escena\/([^/?]+)/.exec(ruta)?.[1] ?? null;
 
 /** La etapa de una falta, por su regla y por adónde lleva. */
 function etapaDe(f: Falta, aviso: Aviso | undefined): Etapa {
+  if (f.ir.ruta === '/editor/datos') return 'datos';
+  if (f.codigo === 'CASE_NO_RUBRIC' || f.codigo === 'RUBRIC_WEIGHTS') return 'evaluacion';
+  if (f.ir.ruta === '/editor/evaluacion' || f.ir.ruta === '/editor/rubrica') return 'evaluacion';
   if (f.codigo === 'CHECKLIST_INCOMPLETE') return 'enviar';
   if (f.ir.ruta.startsWith('/editor/sala/')) return 'lugar';
   if (aviso?.tipo === 'final-sin-hito') return 'evaluacion';
@@ -49,21 +52,21 @@ function etapaDe(f: Falta, aviso: Aviso | undefined): Etapa {
  * - `milestone-unreachable`, mientras ninguna respuesta marque algún hito o queden escenas vacías → por escribir.
  * - `CHECKLIST_INCOMPLETE` → etapa Enviar; es trabajo por hacer (no algo mal escrito) y solo se muestra allí.
  */
-export function clasificarPendientes(caso: CasoBorrador): Pendiente[] {
+export function clasificarPendientes(caso: CasoBorrador, todasLasFaltas: Falta[] = puedeEnviar(caso).faltas): Pendiente[] {
   const avisos = revisarCaminos(caso);
   const vacias = new Set(caso.escenas.filter(estaVacia).map((e) => e.id));
   const quedanVacias = vacias.size > 0;
   const algunHitoMarcado = caso.escenas.some((e) => e.respuestas.some((r) => (r.efectos.hitos ?? []).length > 0));
 
-  const faltas = puedeEnviar(caso).faltas.map((f, i): Pendiente => {
+  const faltas = todasLasFaltas.map((f, i): Pendiente => {
     // `puedeEnviar` arma su lista empezando por los avisos de caminos, en el mismo orden: la i-ésima falta es el i-ésimo aviso.
-    const aviso = i < avisos.length ? avisos[i] : undefined;
+    const aviso = avisos.find(a => a.mensaje === f.mensaje);
     const escenaId = aviso?.escenaId ?? escenaDeRuta(f.ir.ruta);
     const porEscribir =
       (aviso?.tipo === 'sin-salida' && aviso.escenaId !== null && vacias.has(aviso.escenaId))
       || ((aviso?.tipo === 'inalcanzable' || aviso?.tipo === 'sin-final') && quedanVacias)
       || (f.codigo === 'milestone-unreachable' && (!algunHitoMarcado || quedanVacias))
-      || f.codigo === 'CHECKLIST_INCOMPLETE';
+      || f.codigo === 'CHECKLIST_INCOMPLETE' || f.codigo === 'CONTENT_PLACEHOLDER';
     return { ...f, escenaId, etapa: etapaDe(f, aviso), tipo: porEscribir ? 'por-escribir' : 'por-corregir' };
   });
 

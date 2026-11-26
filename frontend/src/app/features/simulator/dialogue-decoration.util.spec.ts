@@ -5,9 +5,6 @@ import {
   DecorationCtx, activeDecisionObjectKeys, decorateDialogueState, otherStageDecisionKeys,
 } from './dialogue-decoration.util';
 import { CopyContext } from './evidence-copy.util';
-import { DRAFT_COPY } from './draft-copy';
-
-const STALE = DRAFT_COPY.noStepNow.text;
 
 function choice(key: string, decisionOptionId: number | null, extra: Partial<DialogueChoiceState> = {}): DialogueChoiceState {
   return { key, text: `Opción ${key}`, decisionOptionId, requiredToolCode: null, effect: {}, ...extra };
@@ -84,7 +81,7 @@ describe('decorateDialogueState: filtro por etapa', () => {
     const out = decorateDialogueState(H2, ctxWith({ nodeOptionIds: [101, 102, 103] }));
     expect(out.stale).toBe(true);
     expect(out.choices).toEqual([]);
-    expect(out.lines.at(-1)).toEqual({ order: 2, speakerName: '', text: STALE, emotion: 'neutral' });
+    expect(out.lines).toEqual(H2.lines);
     expect(out.lines[0]).toEqual(H2.lines[0]);
     expect(out.notice).toBeUndefined();
   });
@@ -174,7 +171,7 @@ describe('decorateDialogueState: herramienta ausente, ausencia de líneas extra 
   it('una conversación sin decisiones ofrecidas dice que por ahora no hay nada que decidir', () => {
     const d = decorateDialogueState(H1, ctxWith({ nodeOptionIds: [999], notice: null }));
     expect(d.stale).toBe(true);
-    expect(d.lines.at(-1)!.text).toBe('Por ahora no hay nada que decidir en esta conversación.');
+    expect(d.lines).toEqual(H1.lines);
   });
 
   it('no muta la conversación de entrada y es idempotente', () => {

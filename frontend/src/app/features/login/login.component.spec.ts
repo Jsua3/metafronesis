@@ -9,6 +9,7 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { TemaService } from '../../core/tema/tema.service';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
+import { LOGIN_REMEMBER_EMAIL_KEY } from './login-assets.config';
 import { LoginComponent } from './login.component';
 
 @Component({ template: '' })
@@ -44,7 +45,7 @@ describe('LoginComponent', () => {
         ...extraProviders,
         provideZonelessChangeDetection(),
         provideRouter([{ path: '**', component: Screen }]),
-        { provide: AuthService, useValue: { login, googleConfig: () => googleConfig(), requestAccess: (payload: unknown) => requestAccess(payload),
+        { provide: AuthService, useValue: { login, demoConfig: () => of({ enabled: false }), googleConfig: () => googleConfig(), requestAccess: (payload: unknown) => requestAccess(payload),
           requestPasswordReset: (email: string) => (requestPasswordReset as unknown as (e: string) => Observable<unknown>)(email) } },
         { provide: UiDialog, useValue: { sheet: vi.fn() } },
       ],
@@ -125,6 +126,27 @@ describe('LoginComponent', () => {
     expect(text(remember)).toBe('Recordar mi correo');
     expect(remember.querySelector('input[type="checkbox"]')).not.toBeNull();
     expect(host().querySelector('ui-scope-notice')).not.toBeNull();
+  });
+
+  // En un aula con equipos compartidos, guardar el correo es decisión de quien lo usa, no un valor por defecto.
+  it('«Recordar mi correo» parte desmarcado y no deja un correo escrito de otra persona', async () => {
+    await render();
+    expect(form().querySelector<HTMLInputElement>('label.ui-check input[type="checkbox"]')!.checked).toBe(false);
+    expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('');
+  });
+
+  it('«Recordar mi correo» sigue marcado si esa persona ya lo había pedido (hay un correo guardado)', async () => {
+    localStorage.setItem(LOGIN_REMEMBER_EMAIL_KEY, 'ana@cue.edu.co');
+    try {
+      await render();
+      expect(form().querySelector<HTMLInputElement>('label.ui-check input[type="checkbox"]')!.checked).toBe(true);
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('');
+      button('Usar mi correo recordado').click();
+      await fixture.whenStable();
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('ana@cue.edu.co');
+    } finally {
+      localStorage.removeItem(LOGIN_REMEMBER_EMAIL_KEY);
+    }
   });
 
   it('al recibir el foco tras enviar vacío, el campo ya dice que es inválido y por qué (revisión de F4, I-3)', async () => {
@@ -404,5 +426,282 @@ describe('LoginComponent', () => {
     const file = join(__dirname, '..', '..', '..', 'assets/images/institution/escena-portada.webp');
     expect(existsSync(file)).toBe(true);
     expect(statSync(file).size).toBeLessThan(40 * 1024);
+  });
+
+  // Rediseño de la interacción (2026-11-22): todo responde a la persona y nada corre solo.
+  describe('interacción', () => {
+    const page = () => host().querySelector<HTMLElement>('.acceso')!;
+    const scene = () => host().querySelector<HTMLElement>('.acceso__scene')!;
+    const eyebrow = () => host().querySelector<HTMLElement>('.acceso__producto')!;
+    const passwordMessage = () => host().querySelector('#login-password')!.closest('ui-field')!.querySelector<HTMLElement>('.ui-field__message')!;
+    const caps = (type: 'keydown' | 'keyup', on: boolean) =>
+      host().querySelector<HTMLInputElement>('#login-password')!.dispatchEvent(new KeyboardEvent(type, { key: 'a', modifierCapsLock: on, bubbles: true }));
+
+    it('el fondo de objetos de la portada está detrás, es decorativo y no es un canvas (nada se mueve solo)', async () => {
+      await render();
+      const doodles = host().querySelector('app-doodles')!;
+      expect(doodles).not.toBeNull();
+      expect(doodles.getAttribute('aria-hidden')).toBe('true');
+      expect(doodles.querySelector('canvas, video')).toBeNull();
+    });
+
+    it('en la solicitud de acceso, elegir el rol cambia el retrato y lleva la cámara al paso que le toca (sin tocar la imagen única)', async () => {
+      await render();
+      // El inicio de sesión ya no pide el rol (lo trae la cuenta): la escena abre en «Simula» y no hay retrato de perfil.
+      expect(scene().getAttribute('data-paso')).toBe('simula');
+      expect(host().querySelector('.acceso__avatar')).toBeNull();
+
+      button('Solicitar acceso').click();
+      await fixture.whenStable();
+      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('camila/bata/portrait-alegre.png');
+
+      button('Docente').click();
+      await fixture.whenStable();
+      expect(scene().getAttribute('data-paso')).toBe('evalua');
+      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('docente-universidad/portrait-alegre.png');
+
+      button('Administrador').click();
+      await fixture.whenStable();
+      expect(scene().getAttribute('data-paso')).toBe('simula');
+      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('funcionaria-recepcion/portrait-alegre.png');
+
+      button('Estudiante').click();
+      await fixture.whenStable();
+      expect(scene().getAttribute('data-paso')).toBe('aprende');
+      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('camila/bata/portrait-alegre.png');
+
+      // Retrato, rótulo, brillo y detalles de la escena son decoración: el texto del paso lo dice todo y la escena sigue
+      // siendo UNA imagen.
+      for (const selector of ['.rotulo', '.brillo', '.opciones', '.nota', '.resalte', '.acceso__avatar']) {
+        expect(host().querySelector(selector)!.getAttribute('aria-hidden')).toBe('true');
+      }
+      expect(host().querySelectorAll('.acceso__panel img')).toHaveLength(1);
+    });
+
+    // El recorrido de la ventana: la cámara pasa por los cuatro pilares. Avanza solo, pero se pausa, espera a quien escribe y
+    // con «movimiento reducido» no corre (WCAG 2.2.2).
+    describe('recorrido de la ventana', () => {
+      const fichas = () => [...host().querySelectorAll<HTMLButtonElement>('.acceso__paso')];
+      const activa = () => fichas().findIndex(ficha => ficha.classList.contains('acceso__paso--activo'));
+      const lista = () => host().querySelector<HTMLElement>('.acceso__pillars')!;
+      const rotulo = () => text(host().querySelector('.rotulo'));
+      /** El botón de pausa trae un icono: se lee lo que se oye (sin lo decorativo), como en la portada. */
+      const pausa = () => host().querySelector<HTMLButtonElement>('.acceso__pausa')!;
+      /** Lo que hace el navegador al terminar la barra del paso (Angular antepone su prefijo al nombre de la animación). */
+      const terminaBarra = async (indice: number) => {
+        const evento = Object.assign(new Event('animationend', { bubbles: true }), { animationName: '_ngcontent-xyz_acceso-avance' });
+        fichas()[indice].dispatchEvent(evento);
+        await fixture.whenStable();
+      };
+
+      it('arranca en «Simula»: cuatro pasos como botones, el primero activo y el rótulo del caso ficticio', async () => {
+        await render();
+        expect(fichas().map(ficha => text(ficha.querySelector('strong')))).toEqual(['Simula', 'Decide', 'Evalúa', 'Aprende']);
+        expect(activa()).toBe(0);
+        expect(fichas().map(ficha => ficha.getAttribute('aria-current'))).toEqual(['step', null, null, null]);
+        expect(rotulo()).toBe('Caso ficticio');
+        expect(lista().getAttribute('data-pausa')).toBe('false');
+      });
+
+      it('al terminar la barra de un paso pasa al siguiente y, después del último, vuelve al primero', async () => {
+        await render();
+        for (const esperado of [1, 2, 3, 0]) {
+          await terminaBarra(activa());
+          expect(activa()).toBe(esperado);
+        }
+        expect(scene().getAttribute('data-paso')).toBe('simula');
+      });
+
+      it('la barra de un paso que ya no es el activo no mueve nada', async () => {
+        await render();
+        await terminaBarra(2);
+        expect(activa()).toBe(0);
+      });
+
+      it('elegir un paso a mano lo muestra y pausa el recorrido hasta pulsar «Reanudar recorrido»', async () => {
+        await render();
+        fichas()[2].click();
+        await fixture.whenStable();
+        expect(activa()).toBe(2);
+        expect(scene().getAttribute('data-paso')).toBe('evalua');
+        expect(rotulo()).toBe('Rúbrica formativa');
+        expect(lista().getAttribute('data-pausa')).toBe('true');
+
+        expect(spoken(pausa())).toBe('Reanudar recorrido');
+        pausa().click();
+        await fixture.whenStable();
+        expect(lista().getAttribute('data-pausa')).toBe('false');
+        expect(spoken(pausa())).toBe('Pausar recorrido');
+      });
+
+      it('el botón pausa y reanuda; en pausa, aunque la barra termine, no se cambia de paso', async () => {
+        await render();
+        expect(spoken(pausa())).toBe('Pausar recorrido');
+        pausa().click();
+        await fixture.whenStable();
+        expect(lista().getAttribute('data-pausa')).toBe('true');
+        expect(spoken(pausa())).toBe('Reanudar recorrido');
+        await terminaBarra(0);
+        expect(activa()).toBe(0);
+
+        pausa().click();
+        await fixture.whenStable();
+        await terminaBarra(0);
+        expect(activa()).toBe(1);
+      });
+
+      it('escribir en el formulario detiene el recorrido sin tocar el botón, y salir del formulario lo reanuda', async () => {
+        await render();
+        const correo = host().querySelector<HTMLInputElement>('#login-email')!;
+        correo.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        await fixture.whenStable();
+        expect(lista().getAttribute('data-pausa')).toBe('true');
+        expect(spoken(pausa())).toBe('Pausar recorrido'); // la persona no pausó nada: el botón sigue ofreciendo pausar
+        await terminaBarra(0);
+        expect(activa()).toBe(0);
+
+        correo.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+        await fixture.whenStable();
+        expect(lista().getAttribute('data-pausa')).toBe('false');
+      });
+
+      it('pasar de un campo del formulario a otro no reanuda el recorrido entre medias', async () => {
+        await render();
+        const correo = host().querySelector<HTMLInputElement>('#login-email')!;
+        const clave = host().querySelector<HTMLInputElement>('#login-password')!;
+        correo.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        correo.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: clave }));
+        await fixture.whenStable();
+        expect(lista().getAttribute('data-pausa')).toBe('true');
+      });
+
+      it('con «movimiento reducido» no hay botón de pausa ni avance solo, y los pasos se eligen a mano', async () => {
+        window.matchMedia = ((query: string) => ({
+          matches: query.includes('reduce'), media: query, addEventListener: () => undefined, removeEventListener: () => undefined,
+          addListener: () => undefined, removeListener: () => undefined,
+        })) as unknown as typeof window.matchMedia;
+        await render();
+        expect(host().querySelector('.acceso__pausa')).toBeNull();
+        await terminaBarra(0);
+        expect(activa()).toBe(0);
+
+        fichas()[3].click();
+        await fixture.whenStable();
+        expect(activa()).toBe(3);
+        expect(scene().getAttribute('data-paso')).toBe('aprende');
+      });
+
+      it('la escena de la ventana no usa video, canvas ni autoplay: el movimiento es CSS y se detiene', async () => {
+        await render();
+        expect(scene().querySelector('video, canvas, [autoplay]')).toBeNull();
+        expect(host().querySelector('.acceso__pausa')).not.toBeNull();
+      });
+    });
+
+    it('los tres píxeles de la marca se encienden con el correo, la contraseña y el formulario completo; al solicitar acceso quedan encendidos', async () => {
+      await render();
+      const lit = () => ['correo', 'clave', 'lista'].filter(step => eyebrow().classList.contains(`acceso__producto--${step}`));
+      expect(eyebrow().classList.contains('acceso__producto--avance')).toBe(true);
+      expect(lit()).toEqual([]);
+
+      fixture.componentInstance.form.controls.email.setValue('ana@cue.edu.co');
+      await fixture.whenStable();
+      expect(lit()).toEqual(['correo']);
+
+      fixture.componentInstance.form.controls.password.setValue('secreta');
+      await fixture.whenStable();
+      expect(lit()).toEqual(['correo', 'clave', 'lista']);
+
+      // Un correo sin forma de correo no cuenta, aunque haya contraseña.
+      fixture.componentInstance.form.controls.email.setValue('ana');
+      await fixture.whenStable();
+      expect(lit()).toEqual(['clave']);
+
+      button('Solicitar acceso').click();
+      await fixture.whenStable();
+      expect(eyebrow().classList.contains('acceso__producto--avance')).toBe(false);
+    });
+
+    it('con el formulario completo el botón gana luz, pero nunca se deshabilita ni cambia de texto', async () => {
+      await render();
+      expect(submit().classList.contains('acceso__submit--lista')).toBe(false);
+      fixture.componentInstance.form.patchValue({ email: 'ana@cue.edu.co', password: 'secreta' });
+      await fixture.whenStable();
+      expect(submit().classList.contains('acceso__submit--lista')).toBe(true);
+      expect(submit().disabled).toBe(false);
+      expect(text(submit())).toBe('Ingresar');
+    });
+
+    it('Bloq Mayús se avisa en el campo de la contraseña y en la región de estado, y se retira al apagarlo o salir del campo', async () => {
+      await render();
+      const status = () => text(host().querySelector('.acceso__estado'));
+      expect(passwordMessage().hidden).toBe(true);
+
+      caps('keydown', true);
+      await fixture.whenStable();
+      expect(text(passwordMessage())).toBe('Bloq Mayús está activado.');
+      expect(passwordMessage().hidden).toBe(false);
+      expect(status()).toBe('Bloq Mayús está activado.');
+
+      caps('keyup', false);
+      await fixture.whenStable();
+      expect(passwordMessage().hidden).toBe(true);
+      expect(status()).toBe('');
+
+      caps('keydown', true);
+      host().querySelector('#login-password')!.dispatchEvent(new Event('blur'));
+      await fixture.whenStable();
+      expect(passwordMessage().hidden).toBe(true);
+    });
+
+    it('el aviso de Bloq Mayús no pisa «Ingresando…» de la región de estado', async () => {
+      login = vi.fn(() => new Subject<unknown>());
+      await render();
+      fixture.componentInstance.form.setValue({ email: 'ana@cue.edu.co', password: 'secreta', remember: false });
+      submit().click();
+      await fixture.whenStable();
+      expect(text(host().querySelector('.acceso__estado'))).toBe('Ingresando…');
+      caps('keydown', true);
+      await fixture.whenStable();
+      expect(text(host().querySelector('.acceso__estado'))).toBe('Ingresando…');
+    });
+
+    it('la luz del puntero solo sigue al ratón: un toque no escribe nada y con movimiento reducido tampoco', async () => {
+      vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callback(0); return 1; });
+      try {
+        await render();
+        const move = (pointerType: string) => page().dispatchEvent(
+          Object.assign(new Event('pointermove', { bubbles: true }), { pointerType, clientX: 120, clientY: 80 }));
+
+        move('touch');
+        expect(page().style.getPropertyValue('--luz')).toBe('');
+
+        move('mouse');
+        expect(page().style.getPropertyValue('--luz')).toBe('1');
+        expect(page().style.getPropertyValue('--mx')).toBe('120px');
+        expect(host().querySelector<HTMLElement>('.acceso__card')!.style.getPropertyValue('--gx')).not.toBe('');
+        expect(scene().style.getPropertyValue('--nx')).not.toBe('');
+
+        page().dispatchEvent(new Event('pointerleave'));
+        expect(page().style.getPropertyValue('--luz')).toBe('0');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('con «movimiento reducido» el puntero no mueve nada', async () => {
+      vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callback(0); return 1; });
+      window.matchMedia = ((query: string) => ({
+        matches: query.includes('reduce'), media: query, addEventListener: () => undefined, removeEventListener: () => undefined,
+        addListener: () => undefined, removeListener: () => undefined,
+      })) as unknown as typeof window.matchMedia;
+      try {
+        await render();
+        page().dispatchEvent(Object.assign(new Event('pointermove', { bubbles: true }), { pointerType: 'mouse', clientX: 50, clientY: 50 }));
+        expect(page().style.getPropertyValue('--luz')).toBe('');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
   });
 });

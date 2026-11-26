@@ -88,3 +88,47 @@ def test_no_asocia_recursos_ajenos_o_inexistentes(datos):
     assert datos["cliente"].put("/api/rubrics/case-versions/999999", {"rubricId": rubrica.pk}, format="json").status_code == 404
     datos["cliente"].force_authenticate(datos["admin"])
     assert datos["cliente"].put(ruta, {"rubricId": rubrica.pk}, format="json").status_code == 200
+
+
+def test_lectura_rubrica_de_version_y_permisos(datos):
+    cliente, version = datos["cliente"], datos["version"]
+    rubrica_id = cliente.post("/api/rubrics", datos["cuerpo"], format="json").data["data"]["id"]
+    ruta = f"/api/rubrics/case-versions/{version.pk}"
+    assert cliente.put(ruta, {"rubricId": rubrica_id}, format="json").status_code == 200
+    respuesta = cliente.get(ruta)
+    assert respuesta.status_code == 200
+    assert respuesta.data["data"]["id"] == rubrica_id
+    assert respuesta.data["data"]["criteria"][0]["title"] == "EMPATIA"
+    cliente.force_authenticate(datos["otro"])
+    assert cliente.get(ruta).status_code == 404
+    cliente.force_authenticate(datos["admin"])
+    assert cliente.get(ruta).status_code == 200
+    cliente.force_authenticate(datos["estudiante"])
+    assert cliente.get(ruta).status_code == 403
+
+
+def test_lectura_sin_rubrica_es_404(datos):
+    assert datos["cliente"].get(f"/api/rubrics/case-versions/{datos['version'].pk}").status_code == 404
+
+
+def test_lectura_de_rubrica_propia_de_la_version(datos):
+    rubrica = Rubric.objects.create(name="Propia", created_by=datos["docente"], case_version=datos["version"])
+    respuesta = datos["cliente"].get(f"/api/rubrics/case-versions/{datos['version'].pk}")
+    assert respuesta.status_code == 200
+    assert respuesta.data["data"]["id"] == rubrica.pk
+
+
+def test_dueno_lee_rubrica_de_version_clonada_por_admin(datos):
+    cliente, version = datos["cliente"], datos["version"]
+    rubrica = Rubric.objects.create(name="Propia", created_by=datos["docente"])
+    SimulationRubricAssignment.objects.create(case_version=version, rubric=rubrica, assigned_by=datos["docente"])
+    version.status = "PUBLISHED"
+    version.save(update_fields=["status"])
+    cliente.force_authenticate(datos["admin"])
+    clon = cliente.post(f"/api/authoring/cases/{version.pk}/clone-version", {}, format="json")
+    assert clon.status_code == 201
+    ruta = f"/api/rubrics/case-versions/{clon.data['data']['versionId']}"
+    cliente.force_authenticate(datos["docente"])
+    assert cliente.get(ruta).status_code == 200
+    cliente.force_authenticate(datos["otro"])
+    assert cliente.get(ruta).status_code == 404

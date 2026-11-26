@@ -113,3 +113,30 @@ describe('PlanoCompletoComponent', () => {
     expect(cerrado).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('MinimapaComponent: el siguiente paso (P9)', () => {
+  it('el botón del plano lo dice en su nombre accesible y el plano lo marca', () => {
+    const { fixture, el } = minimapa();
+    fixture.componentRef.setInput('destino', { tipo: 'persona', etiqueta: 'Vigilante', sala: 'pasillo' });
+    fixture.detectChanges();
+    expect(el.querySelector('[data-minimapa-abrir]')!.getAttribute('aria-label')).toContain('Siguiente paso: habla con Vigilante');
+    expect(el.querySelector('polygon.destino')).not.toBeNull();
+  });
+
+  it('el plano completo recibe el mismo destino y marca la sala y la puerta', () => {
+    TestBed.resetTestingModule();
+    const fixture = TestBed.createComponent(PlanoCompletoComponent);
+    fixture.componentRef.setInput('plano', PLANO);
+    fixture.componentRef.setInput('actual', 'pasillo');
+    fixture.componentRef.setInput('destino', { tipo: 'puerta', etiqueta: 'Triaje', sala: 'pasillo', puerta: 'a-triaje', haciaSala: 'triaje' });
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('g[data-sala="triaje"] polygon.destino')).not.toBeNull();
+    expect(el.querySelector('.puerta--destino')).not.toBeNull();
+  });
+
+  it('a 1366×768 el plano completo deja ver el mundo: tope de ancho y alto menores que los de siempre', () => {
+    const fuente = readFileSync(join(__dirname, 'minimapa.component.ts'), 'utf-8');
+    expect(fuente).toMatch(/@media \(max-height: 800px\) and \(min-width: 561px\) \{ \.plano-dialogo \{ width: min\(780px, 70vw\); max-height: min\(560px, 76vh\); \} \}/);
+  });
+});

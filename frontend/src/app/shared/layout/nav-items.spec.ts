@@ -4,8 +4,11 @@ describe('navegación de la ola 1', () => {
   it('ESTUDIANTE ve Inicio, Casos, Mi personaje y Grupos, en ese orden', () => {
     expect(navItemsFor('ESTUDIANTE').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/simulador', '/portal/personaje', '/portal/invitaciones']);
   });
-  it('PROFESOR ve Inicio, Revisión, Casos, Grupos, Reportes y Rúbricas, en ese orden', () => {
-    expect(navItemsFor('PROFESOR').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/docente/trazabilidad', '/portal/casos', '/portal/grupos', '/portal/reportes', '/portal/rubricas']);
+  it('PROFESOR ve Inicio, Revisión, Casos, Sesiones, Grupos, Reportes y Rúbricas, en ese orden', () => {
+    expect(navItemsFor('PROFESOR').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/docente/trazabilidad', '/portal/casos', '/portal/sesiones', '/portal/grupos', '/portal/reportes', '/portal/rubricas']);
+  });
+  it('Sesiones es solo del docente', () => {
+    expect(rolesFor('sesiones')).toEqual(['PROFESOR']);
   });
   it('ADMIN ve Inicio, Usuarios, Casos, Revisión, Reportes y Rúbricas, en ese orden', () => {
     expect(navItemsFor('ADMIN').map(item => item.route)).toEqual(['/portal/dashboard', '/portal/admin/usuarios', '/portal/casos', '/portal/docente/trazabilidad', '/portal/reportes', '/portal/rubricas']);

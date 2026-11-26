@@ -21,6 +21,7 @@ export type UserRole = 'ADMIN' | 'PROFESOR' | 'ESTUDIANTE';
 export interface NavItem {
   id: string;
   label: string;
+  descripcion?: string;
   /** Rótulo de la pestaña inferior cuando el de la barra no cabe a 390 px («Mi personaje» → «Personaje»). */
   etiquetaCorta?: string;
   route: string;
@@ -34,21 +35,24 @@ export interface NavItem {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   // SIEP-239 y SIEP-241: cada rol tiene su inicio (el del estudiante y el del personal son pantallas distintas).
-  { id: 'panel', label: 'Inicio', route: '/portal/dashboard', icon: 'home', roles: ['ESTUDIANTE', 'PROFESOR', 'ADMIN'], fold: [], order: 5 },
+  // BORRADOR: texto pendiente de Psicología.
+  { id: 'panel', label: 'Inicio', descripcion: 'Consulta lo que tienes por hacer y el estado de tus grupos.', route: '/portal/dashboard', icon: 'home', roles: ['ESTUDIANTE', 'PROFESOR', 'ADMIN'], fold: [], order: 5 },
   { id: 'usuarios', label: 'Usuarios', route: '/portal/admin/usuarios', icon: 'manage_accounts', roles: ['ADMIN'], fold: [], order: 15 },
   // «Revisión» (antes «Trazabilidad», que se partía en dos líneas en las pestañas). Para el administrador es secundaria
   // y va después de «Casos».
-  { id: 'trazabilidad', label: 'Revisión', route: '/portal/docente/trazabilidad', icon: 'fact_check', roles: ['PROFESOR', 'ADMIN'], fold: ['ADMIN'], order: 20, orden: { ADMIN: 35 } },
+  { id: 'trazabilidad', label: 'Revisión', descripcion: 'Revisa y comenta los intentos que tus estudiantes hicieron a su ritmo.', route: '/portal/docente/trazabilidad', icon: 'fact_check', roles: ['PROFESOR', 'ADMIN'], fold: ['ADMIN'], order: 20, orden: { ADMIN: 35 } },
   { id: 'simulador', label: 'Casos', route: '/portal/simulador', icon: 'play_circle', roles: ['ESTUDIANTE'], fold: [], order: 25 },
   { id: 'personaje', label: 'Mi personaje', etiquetaCorta: 'Personaje', route: '/portal/personaje', icon: 'face', roles: ['ESTUDIANTE'], fold: [], order: 28 },
   // E2-4 y P6: el profesor y el administrador entran a sus casos (lista, crear desde un lugar y el editor); el profesor
   // solo ve y edita lo suyo (lo hace cumplir el servidor).
-  { id: 'casos', label: 'Casos', route: '/portal/casos', icon: 'edit_square', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 30 },
-  { id: 'grupos', label: 'Grupos', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
+  { id: 'casos', label: 'Casos', descripcion: 'Crea y edita casos de simulación.', route: '/portal/casos', icon: 'edit_square', roles: ['PROFESOR', 'ADMIN'], fold: [], order: 30 },
+  // Sesiones de clase: un grupo, un caso de la biblioteca y un horario que el docente guía en vivo.
+  { id: 'sesiones', label: 'Sesiones', descripcion: 'Programa clases en vivo con hora para jugar un caso a la vez.', route: '/portal/sesiones', icon: 'event', roles: ['PROFESOR'], fold: [], order: 35 },
+  { id: 'grupos', label: 'Grupos', descripcion: 'Invita estudiantes y asígnales casos para hacer a su ritmo.', route: '/portal/grupos', icon: 'groups', roles: ['PROFESOR'], fold: [], order: 40 },
   // E2-10 (C5): la bandeja del estudiante. Se llama «Grupos» porque muestra sus invitaciones Y sus membresías.
   { id: 'invitaciones', label: 'Grupos', route: '/portal/invitaciones', icon: 'groups', roles: ['ESTUDIANTE'], fold: [], order: 40 },
-  { id: 'reportes', label: 'Reportes', route: '/portal/reportes', icon: 'analytics', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 50 },
-  { id: 'rubricas', label: 'Rúbricas', route: '/portal/rubricas', icon: 'grading', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 60 },
+  { id: 'reportes', label: 'Reportes', descripcion: 'Consulta los resultados de un grupo en un caso.', route: '/portal/reportes', icon: 'analytics', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 50 },
+  { id: 'rubricas', label: 'Rúbricas', descripcion: 'Consulta los criterios para valorar los intentos.', route: '/portal/rubricas', icon: 'grading', roles: ['PROFESOR', 'ADMIN'], fold: ['PROFESOR', 'ADMIN'], order: 60 },
 ];
 
 /** Posición del destino para un rol. */

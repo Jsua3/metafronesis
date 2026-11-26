@@ -1,3 +1,4 @@
+import { CasoStore } from '../../estado/caso.store';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -362,7 +363,7 @@ describe('AvanceComponent', () => {
   });
 
   describe('listo y fallo', () => {
-    it('listo enfoca el título, dice que no quedó nada por resolver, no navega solo y «Abrir mi caso» abre el editor', async () => {
+    it('listo enfoca el título, muestra los pendientes del mismo borrador, no navega solo y «Abrir mi caso» abre el editor', async () => {
       const { raiz, hasta, ir, navegar } = await montar();
       await ir();
       await hasta(() => !!boton(raiz(), 'Abrir mi caso'));
@@ -371,10 +372,12 @@ describe('AvanceComponent', () => {
       const h1 = raiz().querySelector('h1')!;
       expect(h1.textContent).toContain('Tu caso está listo como borrador');
       expect(raiz().textContent).toContain('Lo marcado «Sugerido por la IA» espera tu revisión.');
-      expect(raiz().textContent).toContain('Sin faltas: no quedó nada por resolver.');
+      await hasta(() => raiz().textContent!.includes('por resolver antes de enviar'));
+      await hasta(() => raiz().textContent?.includes('por resolver antes de enviar') ?? false);
+      expect(raiz().textContent).toContain(`${TestBed.inject(CasoStore).totalPendientes()} por resolver antes de enviar`);
       await hasta(() => document.activeElement === h1);
       for (const li of raiz().querySelectorAll('li.parte')) expect(li.textContent).toMatch(/✓.*Hecha/s);
-      expect(parte(raiz(), 'Revisión de las reglas del caso')!.textContent).toContain('Sin faltas.');
+      expect(parte(raiz(), 'Revisión de las reglas del caso')!.textContent).toContain('falta revisar el borrador en el editor.');
       expect(raiz().querySelector('[role="progressbar"]')).toBeNull();
       expect(anuncio(raiz())).toBe('');
       expect(boton(raiz(), 'Cancelar y empezar de nuevo')).toBeUndefined();
@@ -406,9 +409,10 @@ describe('AvanceComponent', () => {
       g.liberar('scene', 'consulta');
       await hasta(() => !!boton(raiz(), 'Abrir mi caso'));
 
-      expect(raiz().textContent).toContain('Queda 1 cosa por resolver en el editor.');
+      await hasta(() => raiz().textContent?.includes('por resolver antes de enviar') ?? false);
+      expect(raiz().textContent).toContain(`${TestBed.inject(CasoStore).totalPendientes()} por resolver antes de enviar`);
       const reglas = parte(raiz(), 'Revisión de las reglas del caso')!;
-      expect(reglas.textContent).toContain('1 cosa por resolver en el editor:');
+      expect(reglas.textContent).toContain('Observaciones de la generación');
       expect(reglas.textContent).toContain('Una respuesta no tiene reacción.');
       expect(raiz().textContent).not.toContain('DSL.');
       expect(parte(raiz(), 'Corrección de 1 escena (ronda 1 de 2)')!.textContent).toMatch(/✓.*Hecha/s);

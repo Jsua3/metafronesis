@@ -44,7 +44,7 @@ describe('bloque H: login (contraste)', () => {
     const html = source('../app/features/login/login.component.html');
     expect(field).toMatch(/&::placeholder \{\s*color: var\(--ds-text-2\);\s*opacity: 1;/);
     expect(field).toContain('border: 1px solid var(--ds-border-strong);');
-    expect((html.match(/<input uiControl /g) ?? []).length).toBe(5);
+    expect((html.match(/<input uiControl /g) ?? []).length).toBe(6); // 2 del acceso, 3 de la solicitud y 1 del olvido de contraseña
     expect(contrastRatio(muted, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio('#6F8296', '#FFFFFF')).toBeGreaterThanOrEqual(3);
   });

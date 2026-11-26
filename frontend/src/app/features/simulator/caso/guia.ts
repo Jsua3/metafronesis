@@ -36,10 +36,23 @@ export interface GuiaEscena {
   /** Pasos de la sala ya hechos y en total (personas y herramientas): la tarjeta dice «2 de 6». */
   hechos: number;
   total: number;
+  /**
+   * A quién o a qué apunta el siguiente paso, con la clave que usa el mundo (la de un marcador o `npc:{clave}`): el anillo y la
+   * marca del mundo, el plano y «Ir a…» salen de aquí, de modo que el texto del paso y lo que se marca nunca se contradicen.
+   * `null` si el paso no apunta a nadie (nada que proponer).
+   */
+  siguienteLugar: LugarDelPaso | null;
+}
+
+/** Hacia dónde apunta el siguiente paso: una persona, una herramienta o la puerta por la que seguir. */
+export interface LugarDelPaso {
+  key: string;
+  label: string;
+  tipo: 'persona' | 'herramienta' | 'puerta';
 }
 
 /** Antes de que haya escena: sin objetivo y sin nada por conocer. */
-export const GUIA_VACIA: GuiaEscena = { objetivo: '', enEstaSala: [], quedaPorConocer: false, siguiente: null, hechos: 0, total: 0 };
+export const GUIA_VACIA: GuiaEscena = { objetivo: '', enEstaSala: [], quedaPorConocer: false, siguiente: null, hechos: 0, total: 0, siguienteLugar: null };
 
 /** Una herramienta en la sala (un marcador de tipo TOOL) y si ya está en el inventario. */
 export interface HerramientaSala {
@@ -55,15 +68,16 @@ export const pasoSalida = (puerta: string): string =>
 /** El siguiente paso y la cuenta, con las personas, las herramientas y las puertas de la sala (módulo puro). */
 function siguientePaso(personas: readonly ElementoSala[], herramientas: readonly HerramientaSala[], lugares: readonly PlaceCandidate[]) {
   const pasos = [
-    ...personas.map(p => ({ texto: `Habla con ${p.label}`, hecho: p.visto })),
-    ...herramientas.map(h => ({ texto: `Recoge la herramienta «${h.label}»`, hecho: h.recogida })),
+    ...personas.map(p => ({ texto: `Habla con ${p.label}`, hecho: p.visto, lugar: { key: p.key, label: p.label, tipo: 'persona' } as LugarDelPaso })),
+    ...herramientas.map(h => ({ texto: `Recoge la herramienta «${h.label}»`, hecho: h.recogida, lugar: { key: h.key, label: h.label, tipo: 'herramienta' } as LugarDelPaso })),
   ];
   const hechos = pasos.filter(p => p.hecho).length;
   const pendiente = pasos.find(p => !p.hecho);
   // Con todo hecho, la primera puerta sin aviso (las cerradas lo traen: «se abre más adelante»).
   const puerta = lugares.find(l => l.kind === 'door' && !l.note && l.label.trim() !== '');
   const siguiente = pendiente?.texto ?? (puerta ? pasoSalida(puerta.label.trim()) : null);
-  return { siguiente, hechos, total: pasos.length };
+  const siguienteLugar: LugarDelPaso | null = pendiente?.lugar ?? (puerta ? { key: puerta.key, label: puerta.label.trim(), tipo: 'puerta' } : null);
+  return { siguiente, hechos, total: pasos.length, siguienteLugar };
 }
 
 const PREFIJO_NPC = 'npc:';

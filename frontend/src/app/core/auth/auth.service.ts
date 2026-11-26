@@ -1,3 +1,4 @@
+import { limpiarTodosLosBorradores } from '../../features/autoria/estado/borradores-respuesta';
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -65,6 +66,11 @@ export class AuthService {
     return this.http.post<ApiResponse<{ status: string }>>(`${this.API}/access-request`, payload);
   }
 
+  demoConfig() {
+    return this.http.get<ApiResponse<{ enabled: boolean }>>(`${this.API}/demo/config`)
+      .pipe(map(res => res.data));
+  }
+
   googleConfig() {
     return this.http.get<ApiResponse<{ clientId: string; enabled: boolean }>>(`${this.API}/google/config`)
       .pipe(map(res => res.data));
@@ -80,6 +86,7 @@ export class AuthService {
   }
 
   clearSession(): void {
+    limpiarTodosLosBorradores();
     localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
   }

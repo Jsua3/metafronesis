@@ -1,3 +1,4 @@
+import { reducedMotionQuery } from '../../../core/a11y/reduced-motion';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, afterEveryRender, afterNextRender,
   booleanAttribute, effect, inject, input, signal,
@@ -74,7 +75,8 @@ export class UiGlassBar {
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly isFinePointer = media('(hover: hover) and (pointer: fine)', true);
-  private readonly prefersReducedMotion = media('(prefers-reduced-motion: reduce)', false);
+  private readonly motionQuery = reducedMotionQuery();
+  private readonly prefersReducedMotion = () => this.motionQuery?.matches ?? false;
   private readonly isDesktop = media('(min-width: 64rem)', true);
   private readonly wide = signal(this.isDesktop());
   /** Ancho de escritorio (≥ 64rem, la misma media que el CSS de la barra). La barra inferior lo lee para esconderse. */

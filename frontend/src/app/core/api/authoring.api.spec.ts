@@ -171,6 +171,22 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       expect(lista).toEqual([{ caseVersionId: 5, code: 'A', title: 'Título', description: '', semanticVersion: '', nodeCount: 0, status: 'DRAFT' }]);
     });
 
+    it('la lista trae el caso, la versión y la autoría compartida que manda el servidor', () => {
+      let lista: unknown;
+      api.listAuthoringCases().subscribe(l => (lista = l));
+      http.expectOne('/api/authoring/cases').flush({
+        data: [{
+          versionId: 7, status: 'PUBLISHED', revision: 4, brief: { code: 'B', title: 'Ajeno', description: 'Uno' },
+          caseId: 3, semanticVersion: '1.0.0', autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }],
+          puedeEditar: false, puedeCrearVersion: true,
+        }],
+      });
+      expect(lista).toEqual([{
+        caseVersionId: 7, code: 'B', title: 'Ajeno', description: 'Uno', semanticVersion: '1.0.0', nodeCount: 0, status: 'PUBLISHED',
+        caseId: 3, autor: { id: 1, nombre: 'Ana' }, editadoPor: [{ id: 2, nombre: 'Beto' }], puedeEditar: false, puedeCrearVersion: true,
+      }]);
+    });
+
     it('clonar devuelve el editor de la copia', () => {
       let recibida: unknown;
       api.cloneCaseVersion(9).subscribe(v => (recibida = v));
@@ -186,12 +202,14 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
       api.validateCase(9).subscribe(v => (validacion = v));
       http.expectOne('/api/authoring/cases/9/validate').flush({ data: { valid: false, problems: [
         { code: 'NODE_NO_QUESTION', where: 'nodes/12', message: 'La escena necesita una pregunta.' },
+        { code: 'CONTENT_PLACEHOLDER', where: 'nodes/12/dialogue/2', message: 'Relleno' },
         { code: 'CASE_NO_START', where: 'case', message: 'El caso necesita una escena inicial.' },
       ] } });
       expect(validacion).toEqual({
         canPublish: false,
         issues: [
           { code: 'NODE_NO_QUESTION', severity: 'error', message: 'La escena necesita una pregunta.', path: 'nodes/12', nodeId: 12 },
+          { code: 'CONTENT_PLACEHOLDER', severity: 'error', message: 'Relleno', path: 'nodes/12/dialogue/2', nodeId: 12 },
           { code: 'CASE_NO_START', severity: 'error', message: 'El caso necesita una escena inicial.', path: 'case' },
         ],
       });

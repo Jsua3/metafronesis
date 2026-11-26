@@ -164,9 +164,50 @@ def remove(grupo, student_id):
 
 
 # ─── Vista (C5) ───────────────────────────────────────────────────────────────────────────
-def invitation_view(row):
-    """``Invitation``: ``id`` es el ``groupId`` (la membresía es ``(grupo, actor)``, R10)."""
+def cases_by_group(group_ids):
+    """Cuántos casos publicados tiene asignados cada grupo activo: ``{grupo_id: n}`` (sin entrada = cero).
+
+    Cuenta lo mismo que ve el catálogo del estudiante (``progression.access.catalog``): asignaciones activas de la
+    versión PUBLICADA, validada y de un caso activo, una vez por versión. Es un dato del grupo, no de otras personas.
+    """
+    from django.db.models import Count
+
+    from .models import CaseAssignment
+
+    ids = list(group_ids)
+    if not ids:
+        return {}
+    rows = (
+        CaseAssignment.objects.filter(
+            active=True,
+            grupo_id__in=ids,
+            grupo__activo=True,
+            case_version__status="PUBLISHED",
+            case_version__simulation_case__active=True,
+            case_version__validated_at__isnull=False,
+        )
+        .exclude(case_version__definition_hash="")
+        .exclude(case_version__definition_hash__isnull=True)
+        .values("grupo_id")
+        .annotate(n=Count("case_version_id", distinct=True))
+    )
+    return {row["grupo_id"]: row["n"] for row in rows}
+
+
+def invitation_view(row, cases_count=None):
+    """``Invitation``: ``id`` es el ``groupId`` (la membresía es ``(grupo, actor)``, R10).
+
+    ``casesCount``: cuántos casos tiene asignados el grupo, solo si la persona ya es miembro (``ACTIVE``); antes de
+    aceptar, o ya fuera del grupo, es ``None`` (no se adelanta lo que el grupo contiene). Quien arma una lista pasa
+    ``cases_count`` ya calculado para no preguntar fila por fila.
+    """
     teacher = row.grupo.profesor
+    if str(row.status) != ACTIVE:
+        count = None
+    elif cases_count is not None:
+        count = cases_count
+    else:
+        count = cases_by_group([row.grupo_id]).get(row.grupo_id, 0)
     return {
         "id": row.grupo_id,
         "groupId": row.grupo_id,
@@ -174,15 +215,17 @@ def invitation_view(row):
         "teacherName": f"{teacher.nombre} {teacher.apellido}".strip(),
         "invitedAt": row.invited_at.isoformat() if row.invited_at else None,
         "status": str(row.status),
+        "casesCount": count,
     }
 
 
 def invitations_of(student):
     """Las invitaciones del estudiante: pendientes y respondidas (no las retiradas)."""
-    rows = (
+    rows = list(
         GrupoEstudiante.objects.select_related("grupo__profesor")
         .filter(estudiante_id=student.id)
         .exclude(status=REMOVED)
         .order_by("-invited_at", "-grupo_id")
     )
-    return [invitation_view(row) for row in rows]
+    counts = cases_by_group(row.grupo_id for row in rows if str(row.status) == ACTIVE)
+    return [invitation_view(row, counts.get(row.grupo_id, 0)) for row in rows]

@@ -13,7 +13,7 @@ import { UiGlassBar } from './ui-glass-bar';
   template: `
     @if (shown()) {
       <header ui-glass-bar label="Navegación principal">
-        <a class="modulo modulo-logo" href="/inicio">SIEP</a>
+        <a class="modulo modulo-logo" href="/inicio">Metafrónesis</a>
         <div class="modulo modulo-principal">
           <a class="nav-enlace" href="/a">A</a>
           <a class="nav-enlace control-plegable" href="/b">B</a>
@@ -32,7 +32,7 @@ class Host {
   imports: [UiGlassBar],
   template: `
     <header ui-glass-bar label="Navegación principal" navSkip>
-      <a class="modulo modulo-logo" href="/inicio">SIEP</a>
+      <a class="modulo modulo-logo" href="/inicio">Metafrónesis</a>
       <div class="modulo modulo-principal"><a class="nav-enlace" href="/a">A</a><a class="nav-enlace" href="/b">B</a></div>
       <div class="modulo modulo-cuenta"><span>Cuenta</span></div>
     </header>
@@ -74,7 +74,7 @@ function mockPhone(): { viewport: EventTarget & { height: number }; restore: () 
   imports: [UiGlassBar],
   template: `
     <header ui-glass-bar label="Navegación principal" navSkip>
-      <a class="modulo modulo-logo" href="/inicio">SIEP</a>
+      <a class="modulo modulo-logo" href="/inicio">Metafrónesis</a>
       <div class="modulo modulo-principal"><a class="nav-enlace" href="/a">A</a></div>
       <div class="modulo modulo-cuenta"><span>Cuenta</span></div>
       <nav class="modulo-inferior" aria-label="Navegación principal"><a class="pestana" href="/a">A</a><a class="pestana" href="/b">B</a></nav>

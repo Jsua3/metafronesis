@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error.util';
+import { CaseAccessCache } from '../../core/api/case-access.cache';
 import { Invitation, InvitationsApi } from '../../core/api/invitations.api';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { NavBadgesService } from '../../shared/layout/nav-badges.service';
@@ -16,6 +18,7 @@ import { UiSkeleton } from '../../shared/ui/skeleton/ui-skeleton';
 import { errorKindFromStatus, uiDataState } from '../../shared/ui/state/ui-data-state';
 import { UiVacioIlustrado } from '../../shared/ui/vacio-ilustrado/ui-vacio-ilustrado';
 import { UiErrorState } from '../../shared/ui/state/ui-error-state';
+import { ConfirmacionIngreso, confirmacionIngreso } from '../dashboard/student-guidance.util';
 import { formatDate } from './format-date.util';
 
 /** Lo que dice la pantalla; aparte para que quien redacta lo revise sin abrir la plantilla. */
@@ -29,7 +32,11 @@ const GRUPOS_COPY = {
     ayuda: 'Cuando tu docente te invite a un grupo, aparecerá aquí.',
   },
   miembro: { titulo: 'Grupos a los que perteneces', vacio: 'Aún no perteneces a ningún grupo.', ayuda: 'Acepta una invitación para entrar a un grupo.' },
-  vacio: { titulo: 'Aún no perteneces a ningún grupo', texto: 'Tu docente te invitará; la invitación aparecerá aquí.' },
+  vacio: {
+    titulo: 'Aún no perteneces a ningún grupo',
+    texto: 'Los casos los asigna tu docente a tu grupo. Pídele que te invite con tu correo: la invitación aparecerá aquí y, al aceptarla, verás tus casos.',
+  },
+  ingreso: { accion: 'Ver mis casos' },
   error: 'No pudimos cargar tus grupos.',
   cargando: 'Cargando tus grupos…',
 } as const;
@@ -41,12 +48,14 @@ const GRUPOS_COPY = {
  * debajo (salir, con confirmación y nunca a un clic, desde un menú). Una invitación que ya no está vigente (409) se dice
  * y la lista se vuelve a pedir. Escribe el número de pendientes en la insignia de la barra (`NavBadgesService`).
  *
- * Al cambiar de grupo cambian los casos asignados: se vacía la caché de acceso, que si no seguiría mostrando por hasta
- * un minuto los casos de antes.
+ * Al cambiar de grupo cambian los casos asignados: se vacía la caché de acceso (`CaseAccessCache.vaciar()`), que si no
+ * seguiría mostrando por hasta un minuto los casos de antes. Al ACEPTAR, una tarjeta dice el nombre del grupo y qué sigue:
+ * «Ver mis casos» si el grupo ya tiene casos, o por qué todavía no los hay (los asigna el docente). El número sale de la
+ * respuesta de aceptar (`casesCount`, del grupo, no del catálogo mezclado de todos sus grupos).
  */
 @Component({
   selector: 'app-invitations',
-  imports: [UiButton, UiCabeceraIlustrada, UiCard, UiErrorState, UiMenu, UiSection, UiSkeleton, UiVacioIlustrado],
+  imports: [RouterLink, UiButton, UiCabeceraIlustrada, UiCard, UiErrorState, UiMenu, UiSection, UiSkeleton, UiVacioIlustrado],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Cabecera ilustrada (ronda 3): el buzón de bienestar y el carné que da acceso. Sin invitaciones, la escena pasa al
@@ -55,6 +64,17 @@ const GRUPOS_COPY = {
       [escena]="state() === 'empty' ? null : 'invitacion'" />
 
     <p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+    <!-- Aceptaste: el grupo y qué sigue. Lo que se anuncia a lectores de pantalla ya sale de la región de estado de arriba. -->
+    @if (ingreso(); as ingresoActual) {
+      <ui-card class="inv-ingreso" superficie="tinte">
+        <div class="inv-item__text">
+          <h2 class="inv-item__title">{{ ingresoActual.titulo }}</h2>
+          <p class="inv-item__meta">{{ ingresoActual.texto }}</p>
+        </div>
+        <a #verMisCasos ui-button [variant]="ingresoActual.conCasos ? 'primary' : 'secondary'" routerLink="/portal/simulador">{{ copy.ingreso.accion }}</a>
+      </ui-card>
+    }
 
     @switch (state()) {
       @case ('loading') {
@@ -85,7 +105,7 @@ const GRUPOS_COPY = {
                     </div>
                     <div class="inv-item__actions">
                       <button ui-button type="button" [loading]="busy() === item.groupId"
-                        [attr.aria-label]="'Aceptar la invitación a ' + item.groupName" (click)="accept(item)">Aceptar</button>
+                        [attr.aria-label]="busy() === item.groupId ? 'Aceptando invitación…' : 'Aceptar la invitación a ' + item.groupName" (click)="accept(item)">{{ busy() === item.groupId ? 'Aceptando…' : 'Aceptar' }}</button>
                       <button ui-button type="button" variant="secondary"
                         [attr.aria-label]="'Rechazar la invitación a ' + item.groupName" (click)="decline(item)">Rechazar</button>
                     </div>
@@ -194,6 +214,13 @@ const GRUPOS_COPY = {
       color: var(--ds-text-1);
       font-weight: var(--ds-type-h3-weight);
     }
+    .inv-ingreso {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ds-space-4);
+    }
     .inv-item__actions {
       display: flex;
       flex-wrap: wrap;
@@ -206,6 +233,7 @@ export class InvitationsComponent {
   private readonly dialog = inject(UiDialog);
   private readonly notify = inject(NotificationService);
   private readonly badges = inject(NavBadgesService);
+  private readonly cache = inject(CaseAccessCache);
 
   protected readonly copy = GRUPOS_COPY;
   protected readonly invitations = signal<Invitation[]>([]);
@@ -217,6 +245,8 @@ export class InvitationsComponent {
   private readonly error = signal<{ status?: number } | null>(null);
   /** El grupo cuya respuesta está en curso: sus botones esperan y nada se envía dos veces. */
   protected readonly busy = signal<number | null>(null);
+  /** La confirmación de la última invitación aceptada; se quita al responder otra o al salir de un grupo. */
+  protected readonly ingreso = signal<ConfirmacionIngreso | null>(null);
   private readonly actionStatus = signal('');
 
   protected readonly state = uiDataState({
@@ -229,6 +259,7 @@ export class InvitationsComponent {
   protected readonly errorKind = computed(() => errorKindFromStatus(this.error()?.status));
   protected readonly errorStatus = computed(() => this.error()?.status ?? null);
 
+  private readonly injector = inject(Injector);
   private confirming = false;
 
   constructor() {
@@ -260,7 +291,13 @@ export class InvitationsComponent {
   }
 
   protected accept(item: Invitation): void {
-    this.respond(item, this.api.accept(item.groupId), `Te uniste a ${item.groupName}.`);
+    this.respond(item, this.api.accept(item.groupId), `Te uniste a ${item.groupName}.`, updated => {
+      const confirmacion = confirmacionIngreso(updated);
+      this.ingreso.set(confirmacion);
+      afterNextRender(() => document.querySelector<HTMLElement>('.inv-ingreso a')?.focus(), { injector: this.injector });
+      // Lo que se anuncia: que entró y qué sigue, en una sola frase (la tarjeta no es una región viva).
+      this.actionStatus.set(`Te uniste a ${updated.groupName}. ${confirmacion.texto}`);
+    });
   }
 
   protected async decline(item: Invitation): Promise<void> {
@@ -297,16 +334,20 @@ export class InvitationsComponent {
   }
 
   /** Envía la respuesta y pone en la lista la invitación que devuelve el servidor (sin recargar a ciegas). */
-  private respond(item: Invitation, request: Observable<Invitation>, success: string): void {
+  private respond(item: Invitation, request: Observable<Invitation>, success: string, alExito?: (updated: Invitation) => void): void {
     if (this.busy() !== null) return;
     this.busy.set(item.groupId);
-    this.actionStatus.set('');
+    this.actionStatus.set('Procesando tu respuesta…');
+    this.ingreso.set(null);
     request.subscribe({
       next: updated => {
         this.invitations.update(list => list.map(entry => (entry.groupId === updated.groupId ? updated : entry)));
         this.badges.fijar('invitaciones', this.pendientes().length);
         this.busy.set(null);
         this.actionStatus.set(success);
+        // Aceptar o salir cambia los casos que ve la persona: lo que la caché sabía ya no vale.
+        if (updated.status === 'ACTIVE' || updated.status === 'REMOVED') this.cache.vaciar();
+        alExito?.(updated);
         this.notify.success(success);
       },
       error: (err: unknown) => {

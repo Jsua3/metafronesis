@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from django.contrib.auth import get_user_model
 from django.core.validators import validate_email
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, IntegerField, Sum
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast
 from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.simulation.models import CaseVersion, SimulationNode
@@ -23,7 +25,7 @@ from .import_contract import (
 )
 from shared import policies
 
-from . import memberships, notifications
+from . import assignment_service, memberships, notifications
 from .lector_xlsx import _cell_text, _parse_student_import
 from .models import Grupo, CaseAssignment, GrupoEstudiante, MembershipStatus
 from shared.policies import ESTUDIANTE
@@ -75,7 +77,18 @@ def grupo_dto(grupo, counts=None):
 def _grupo_dtos(grupos):
     grupos = list(grupos)
     counts = _membership_counts([g.id for g in grupos])
-    return [grupo_dto(g, counts) for g in grupos]
+    resumenes = {g.id: {"asignados": 0, "terminados": 0, "oportunidades": 0} for g in grupos}
+    # Una consulta para todos los grupos visibles. La misma definición que GET /assignments:
+    # membresía activa actual, sin ensayos y una finalización por persona y versión.
+    rows = (assignment_service.assignments_with_progress().filter(grupo_id__in=resumenes)
+            .order_by().values('grupo_id')
+            .annotate(asignados=Count('id'),
+                      terminados=Sum(Cast(KeyTextTransform('completed', 'progress'), IntegerField())),
+                      oportunidades=Sum(Cast(KeyTextTransform('students', 'progress'), IntegerField()))))
+    for row in rows:
+        resumenes[row['grupo_id']] = {"asignados": row['asignados'], "terminados": row['terminados'] or 0,
+                                      "oportunidades": row['oportunidades'] or 0}
+    return [{**grupo_dto(g, counts), "resumenCasos": resumenes[g.id]} for g in grupos]
 
 
 def listar_de_profesor(profesor_id):
@@ -86,8 +99,9 @@ def listar_activos():
     return _grupo_dtos(Grupo.objects.filter(activo=True).order_by("nombre", "codigo"))
 
 
-def _require_grupo(grupo_id, profesor):
-    grupo = Grupo.objects.filter(pk=grupo_id).first()
+def _require_grupo(grupo_id, profesor, *, lock=False):
+    queryset = Grupo.objects.select_for_update() if lock else Grupo.objects
+    grupo = queryset.filter(pk=grupo_id).first()
     if not grupo:
         raise NotFound(f"Grupo no encontrado: {grupo_id}")
     if grupo.profesor_id != profesor.id:
@@ -387,7 +401,7 @@ def actualizar(grupo_id, nombre, codigo, profesor):
 @auditable("GROUP_DELETED", "GRUPO", 0, context=lambda args, kwargs, result: {"groupId": result["id"]})
 @transaction.atomic
 def eliminar(grupo_id, profesor):
-    grupo = _require_grupo(grupo_id, profesor)
+    grupo = _require_grupo(grupo_id, profesor, lock=True)
     # Las uniones se borran por el ORM antes que el grupo: en una base restaurada de un volcado
     # anterior a E0-8 sus FK son NO ACTION y no existe el ON DELETE CASCADE de la BD nueva.
     CaseAssignment.objects.filter(grupo_id=grupo.id).delete()
@@ -441,7 +455,7 @@ def _contexto_de_la_asignacion(args, kwargs, result):
 @auditable("asignacion.crear", "ASSIGNMENT", -1, context=_contexto_de_la_asignacion)
 @transaction.atomic
 def asignar_caso(grupo_id, case_version_id, profesor):
-    grupo = _require_grupo(grupo_id, profesor)
+    grupo = _require_grupo(grupo_id, profesor, lock=True)
     version = (
         CaseVersion.objects.filter(pk=case_version_id)
         .select_related("simulation_case")
@@ -452,7 +466,8 @@ def asignar_caso(grupo_id, case_version_id, profesor):
     if version.status != "PUBLISHED" or not version.simulation_case.active:
         raise ValidationError("Solo se pueden asignar casos publicados y activos")
     assignment, created = CaseAssignment.objects.get_or_create(
-        grupo_id=grupo.id, case_version_id=version.id, defaults={"assigned_by": profesor}
+        grupo_id=grupo.id, case_version_id=version.id,
+        defaults={"assigned_by": profesor, "sort_order": assignment_service.next_sort_order(grupo.id)},
     )
     if not created and not assignment.active:
         # La ruta heredada no conoce la pausa: asignar de nuevo la reactiva.
@@ -464,6 +479,6 @@ def asignar_caso(grupo_id, case_version_id, profesor):
 @auditable("asignacion.eliminar", "ASSIGNMENT", -1, context=_contexto_de_la_asignacion)
 @transaction.atomic
 def quitar_caso(grupo_id, case_version_id, profesor):
-    grupo = _require_grupo(grupo_id, profesor)
+    grupo = _require_grupo(grupo_id, profesor, lock=True)
     CaseAssignment.objects.filter(grupo_id=grupo.id, case_version_id=case_version_id).delete()
     return listar_casos_asignados(grupo.id, profesor)

@@ -1,29 +1,39 @@
-<!-- Rediseño Metafrónesis 2026-11-20: la piel (claro u oscuro) la pone el tema en el contenedor de la página (REGLA-010). -->
+<!-- Rediseño Metafrónesis 2026-11-20: la piel (claro u oscuro) la pone el tema en el contenedor de la página (REGLA-010).
+     Rediseño de la interacción 2026-11-22: fondo de objetos como el de la portada, escena que sigue al perfil y píxeles de
+     la marca que se encienden con el formulario; todo responde a la persona y nada corre solo. -->
 <div class="acceso publico" [attr.data-skin]="tema.piel()">
+  <!-- Los objetos del simulador de la portada, quietos detrás de las tarjetas: solo la luz del cursor enciende las figuras
+       que roza (sin ratón, no se mueve nada). Decorativo (aria-hidden). -->
+  <app-doodles desde="#main-content" hasta="#main-content" intensidad="suave" borde="corto" />
   <app-public-bar mode="acceso" />
 
   <main class="acceso__main" id="main-content" tabindex="-1">
     <div class="acceso__layout">
       <section class="acceso__card" aria-labelledby="acceso-titulo">
-        <p class="pub-etiqueta acceso__producto">{{ brand.shortName }} · Simulador de Psicología</p>
+        <!-- Los tres píxeles de la marca (cian, azul, violeta) van apagados y se encienden con el correo, la contraseña y
+             el formulario completo: un avance que se ve sin leerlo. Al solicitar acceso quedan encendidos, como en toda
+             etiqueta de la marca. -->
+        <p class="pub-etiqueta acceso__producto" [class.acceso__producto--avance]="!showRegister()"
+          [class.acceso__producto--correo]="emailReady()" [class.acceso__producto--clave]="passwordReady()"
+          [class.acceso__producto--lista]="ready()">{{ brand.shortName }} · Simulador de Psicología</p>
 
         <!-- Región de estado SIEMPRE presente (una que nace con su texto no se anuncia): «Ingresando…», «Enviando
              solicitud…», el resultado de la solicitud y el fallo de Google. -->
-        <p class="acceso__estado sr-only" role="status" aria-live="polite">{{ announcement() }}</p>
+        <p class="acceso__estado" [class.sr-only]="!demoLoading()" role="status" aria-live="polite">{{ announcement() }}</p>
 
         <!-- Un formulario a la vista: al alternar, el foco va al encabezado del nuevo (nunca a body). -->
         @if (showForgot()) {
           <!-- BORRADOR: textos nuevos, pendientes de la aprobación de Psicología -->
-          <form class="acceso__form" [formGroup]="forgotForm" (ngSubmit)="onForgotSubmit()" novalidate>
+          <form class="acceso__form" [class.acceso__form--cambia]="switched()" [formGroup]="forgotForm" (ngSubmit)="onForgotSubmit()" novalidate>
             <div class="acceso__titulos">
               <h1 #heading id="acceso-titulo" tabindex="-1">Recuperar contraseña</h1>
               <p class="acceso__subtitle">Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva. El enlace vence en 30 minutos.</p>
             </div>
 
             <div class="acceso__campos">
-              <ui-field label="Correo institucional" required
+              <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(forgotForm.controls.email, { required: 'Escribe el correo de tu cuenta.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, forgotTried())">
-                <input uiControl id="olvido-email" type="email" formControlName="email" autocomplete="email" placeholder="nombre@institucion.edu.co" />
+                <input uiControl id="olvido-email" type="email" formControlName="email" autocomplete="email" />
               </ui-field>
             </div>
 
@@ -48,9 +58,9 @@
             </p>
           </form>
         } @else if (!showRegister()) {
-          <form class="acceso__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+          <form class="acceso__form" [class.acceso__form--cambia]="switched()" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
             <div class="acceso__titulos">
-              <h1 #heading id="acceso-titulo" tabindex="-1">Iniciar sesión</h1>
+              <h1 #heading id="acceso-titulo" tabindex="-1">Iniciar <span class="acceso__acento">sesión</span></h1>
               <p class="acceso__subtitle">Entra con el correo que te dio la universidad.</p>
             </div>
             @if (sessionExpired) {
@@ -61,30 +71,21 @@
             }
 
             <!-- El rol ya no se elige al entrar: lo trae la cuenta. Se elige al solicitar acceso. -->
-            @if (demo(); as demo) {
-              <div class="acceso__demo">
-                <span>Usar demo:</span>
-                @for (role of roles; track role.id) {
-                  <button type="button" class="acceso__link" [attr.aria-label]="'Usar la cuenta demo de ' + role.label" [title]="demo[role.id].email"
-                          (click)="fillDemoCredentials(role.id)">{{ role.label }}</button>
-                }
-              </div>
-            }
-
             <div class="acceso__campos">
-              <ui-field label="Correo institucional" required
+              <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(form.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, signInTried())">
-                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" placeholder="nombre@institucion.edu.co" />
+                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" />
               </ui-field>
               <ui-field label="Contraseña" required revealable
+                [hint]="capsLock() ? 'Bloq Mayús está activado.' : null"
                 [error]="fieldError(form.controls.password, { required: 'Escribe tu contraseña.' }, signInTried())">
-                <input uiControl id="login-password" type="password" formControlName="password" autocomplete="current-password" />
+                <input uiControl id="login-password" type="password" formControlName="password" autocomplete="current-password"
+                  (keydown)="onPasswordKey($event)" (keyup)="onPasswordKey($event)" (blur)="clearCapsLock()" />
               </ui-field>
             </div>
 
             <div class="acceso__row">
               <label ui-check><input type="checkbox" formControlName="remember" /> Recordar mi correo</label>
-              <button type="button" class="acceso__link" (click)="openForgot()">¿Olvidaste tu contraseña?</button>
             </div>
 
             @if (error()) {
@@ -94,7 +95,16 @@
               </div>
             }
 
-            <button ui-button type="submit" variant="primary" size="lg" class="acceso__submit" [loading]="loading()">Ingresar</button>
+            <!-- Con el formulario completo el botón gana luz (no se deshabilita nunca por lo contrario: H-21). -->
+            <button ui-button type="submit" variant="primary" size="lg" class="acceso__submit" [class.acceso__submit--lista]="ready()" [loading]="loading()">Ingresar</button>
+
+            <p class="acceso__switch">
+              <button type="button" class="acceso__link" (click)="openForgot()">¿Olvidaste tu contraseña?</button>
+            </p>
+            <p class="acceso__switch">
+              ¿Aún no tienes cuenta?
+              <button type="button" class="acceso__link" (click)="openSignUp()">Solicitar acceso</button>
+            </p>
 
             @if (googleEnabled()) {
               <div class="acceso__divider" role="separator"><span>o</span></div>
@@ -109,18 +119,24 @@
               <p class="acceso__google-status">El acceso con Google no está disponible ahora.</p>
             }
 
-            <p class="acceso__switch">
-              ¿Aún no tienes cuenta?
-              <button type="button" class="acceso__link" (click)="openSignUp()">Solicitar acceso</button>
-            </p>
+            @if (correoRecordado) {
+              <button type="button" class="acceso__link" (click)="useRememberedEmail()">Usar mi correo recordado</button>
+            }
+            @if (demo()) {
+              <div class="acceso__demo">
+                <button ui-button type="button" variant="secondary" [loading]="demoLoading()"
+                  [disabledReason]="loading() && !demoLoading() ? 'Estamos iniciando sesión.' : null"
+                  (click)="fillDemoCredentials('ESTUDIANTE')">Entrar como estudiante de demostración</button>
+              </div>
+            }
 
             <!-- Alcance (RN-01) al pie: la portada ya dijo qué es SIEP; aquí queda como nota sin empujar el formulario. -->
             <ui-scope-notice />
           </form>
         } @else {
-          <form class="acceso__form" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" novalidate>
+          <form class="acceso__form" [class.acceso__form--cambia]="switched()" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" novalidate>
             <div class="acceso__titulos">
-              <h1 #heading id="acceso-titulo" tabindex="-1">Solicitar acceso</h1>
+              <h1 #heading id="acceso-titulo" tabindex="-1">Solicitar <span class="acceso__acento">acceso</span></h1>
               <p class="acceso__subtitle">Déjanos tus datos y el equipo académico revisará tu solicitud. Te responderemos por correo.</p>
             </div>
 
@@ -132,7 +148,14 @@
                   <button type="button" class="acceso__role" [attr.aria-pressed]="selectedRole() === role.id" (click)="selectRole(role.id)">{{ role.label }}</button>
                 }
               </div>
-              <p class="acceso__role-hint">{{ activeRole().hint }}</p>
+              <!-- El retrato del perfil es el mismo de su tarjeta en la portada («Roles en el sistema»); al cambiar de
+                   perfil se crea de nuevo y entra por pasos, como los sprites del simulador. Decorativo. -->
+              <div class="acceso__perfil-detalle">
+                @for (role of [activeRole()]; track role.id) {
+                  <img class="pub-avatar acceso__avatar" [src]="role.avatar" width="64" height="64" alt="" aria-hidden="true" />
+                }
+                <p class="acceso__role-hint">{{ activeRole().hint }}</p>
+              </div>
             </div>
 
             <div class="acceso__campos">
@@ -142,7 +165,7 @@
               <ui-field label="Apellido" required [error]="fieldError(registerForm.controls.apellido, { required: 'Escribe tu apellido.' }, requestTried())">
                 <input uiControl id="registro-apellido" type="text" formControlName="apellido" autocomplete="family-name" />
               </ui-field>
-              <ui-field label="Correo institucional" required
+              <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(registerForm.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, requestTried())">
                 <input uiControl id="registro-email" type="email" formControlName="email" autocomplete="email" />
               </ui-field>
@@ -179,18 +202,23 @@
         }
       </section>
 
-      <!-- Una ventana del simulador (como la vista previa de la portada): la escena real, fija, y lo que hace SIEP.
-           Sigue el modo de la página; nada se mueve solo. -->
+      <!-- Una ventana del simulador (como la vista previa de la portada): la escena real y lo que hace SIEP. La escena es una
+           sola imagen, y una cámara la recorre por los cuatro pilares (el recorrido: se pausa, se detiene mientras se escribe y
+           con «movimiento reducido» no corre); elegir el perfil la lleva al paso que le toca. -->
       <aside class="acceso__panel" aria-label="Sobre el simulador">
         <div class="acceso__ventana">
           <span class="acceso__ventana-puntos" aria-hidden="true"></span>
           <p class="acceso__panel-eyebrow">{{ activeRole().previewCase }} · {{ activeRole().previewScene }}</p>
+          <!-- La pausa va en la barra de la ventana: a la vista con la escena que controla (al pie del panel quedaba fuera de
+               la pantalla en un portátil) y antes de ella en el orden de lectura (WCAG 2.2.2). -->
+          @if (recorridoAutomatico) {
+            <button ui-button type="button" variant="secondary" size="sm" class="acceso__pausa"
+              [icon]="recorridoPausado() ? 'play_arrow' : 'pause'" (click)="alternarRecorrido()">
+              <span class="acceso__pausa-texto">{{ recorridoPausado() ? 'Reanudar recorrido' : 'Pausar recorrido' }}</span>
+            </button>
+          }
         </div>
-        <div class="acceso__scene">
-          <img [src]="loginHeroImage" decoding="async"
-            alt="Escena del simulador: una psicóloga en formación escucha a una consultante en un consultorio con el letrero «Espacio seguro»"
-            width="581" height="415" />
-        </div>
+        <app-acceso-escena [imagen]="loginHeroImage" [paso]="paso()" />
         <div class="acceso__panel-texto">
           @if (showRegister()) {
             <h2>¿Primera vez en {{ brand.shortName }}?</h2>
@@ -200,9 +228,17 @@
             <p>{{ activeRole().narrative }}</p>
           }
         </div>
-        <ul class="acceso__pillars" aria-label="Qué haces en SIEP">
-          @for (pillar of pedagogyPillars; track pillar.key) {
-            <li><strong>{{ pillar.title }}</strong> <span>{{ pillar.description }}</span></li>
+        <!-- Cada pilar es un paso del recorrido: un botón que lleva la escena a ese paso. El activo lleva su barra de progreso;
+             cuando termina, el recorrido avanza (login.component.ts). -->
+        <ul class="acceso__pillars" [attr.aria-label]="'Qué haces en ' + brand.shortName" [attr.data-pausa]="recorridoPausado() || formularioActivo()">
+          @for (pillar of pedagogyPillars; track pillar.key; let i = $index) {
+            <li>
+              <button type="button" class="acceso__paso" [class.acceso__paso--activo]="i === paso()"
+                [attr.aria-current]="i === paso() ? 'step' : null"
+                (click)="elegirPaso(i)" (animationend)="alTerminarPaso($event, i)">
+                <strong>{{ pillar.title }}</strong> <span>{{ pillar.description }}</span>
+              </button>
+            </li>
           }
         </ul>
       </aside>

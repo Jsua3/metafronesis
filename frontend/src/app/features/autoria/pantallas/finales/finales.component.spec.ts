@@ -187,3 +187,12 @@ describe('FinalesComponent', () => {
     });
   });
 });
+
+it('las anclas llevan al modo de finales y al texto del final', async () => {
+  const { raiz, store, listo } = await montar();
+  store.agregarFinal();
+  await listo();
+  const id = store.caso()!.finales[0].id;
+  expect(raiz.querySelector('#final-por-defecto')).toBeTruthy();
+  expect(raiz.querySelector(`[id="texto-final-${id}"]`)).toBeInstanceOf(HTMLTextAreaElement);
+});

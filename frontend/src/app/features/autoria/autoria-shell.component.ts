@@ -1,3 +1,4 @@
+import { AsignarDesdeCasoComponent } from '../grupos/asignar-desde-caso.component';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked,
   viewChild,
@@ -10,7 +11,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import type { CanLeave } from '../../core/navigation/can-leave.guard';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { UiGlassBar } from '../../shared/ui/glass-bar/ui-glass-bar';
-import { roleLabel } from '../../shared/ui/labels';
+import { autorLabel, editadoPorLabel, roleLabel } from '../../shared/ui/labels';
 import { UiMenu, UiMenuItem } from '../../shared/ui/menu/ui-menu';
 import { TemaSelectorComponent } from '../../shared/ui/tema/tema-selector.component';
 
@@ -56,7 +57,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
 @Component({
   selector: 'app-autoria-shell',
   imports: [
-    RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
+    AsignarDesdeCasoComponent, RouterOutlet, RouterLink, PanelIaComponent, BuscadorComponent, FocoGuiaComponent, AvisosGuardadoComponent,
     UiGlassBar, UiMenu, TemaSelectorComponent, HiloDelCasoComponent, RielDeEscenasComponent,
     EstudioMarcoComponent, ExploradorBibliotecaComponent, TutorialCapaComponent,
   ],
@@ -80,7 +81,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
            (DG-6); lo que no cabe cede por ancho, con su nombre completo para el lector. -->
       <div class="modulo modulo-principal ds-motion">
         @if (store.caso(); as caso) {
-          <p class="caso-actual" [attr.title]="caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
+          <p class="caso-actual" [attr.title]="autoriaDelCaso() ? caso.titulo + ' · ' + autoriaDelCaso() : caso.titulo"><span class="solo-lector">Caso: </span>{{ caso.titulo }}</p>
           <app-hilo-del-caso />
         } @else {
           <span class="contexto-editor">Editor de casos</span>
@@ -94,29 +95,33 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
                  «Escena nueva» la crea después de la actual y abre su guion; lo demás lleva a su control con el foco puesto. -->
             <ui-menu class="menu-agregar" label="Agregar" icon="add" align="start" [items]="opcionesAgregar()" (itemSelected)="agregar($event)" />
           }
+          <!-- «Asignar» es una acción, no parte del «dónde estoy»: va con las herramientas, antes de «Probar» (SIEP-259). -->
+          @if (store.caso(); as caso) {
+            @if (caso.estado === 'PUBLISHED') { <app-asignar-desde-caso [caseId]="+caso.id" [publicado]="true" [titulo]="caso.titulo" [compacto]="true" /> }
+          }
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
             <a class="boton-barra enlace-probar" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar"
-               aria-label="Probar el caso en el juego (con Ctrl o clic central se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
+               aria-label="Probar el caso en el juego (se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
             <button type="button" class="boton-barra boton-pendientes" data-accion="ver-pendientes" aria-haspopup="dialog"
                     [attr.title]="textoPendientes()" (click)="abrirPendientes($event)">
               <!-- El nombre es el texto para lectores («Pendientes: …», empieza por la palabra visible), no un aria-label:
                    Axe pegaba la palabra con la cifra de la insignia y lo daba por distinto. -->
               <span class="solo-lector">{{ textoPendientes() }}</span>
               <span aria-hidden="true">Pendientes</span>
-              <span class="insignia" [class.insignia--cero]="!progreso.porCorregir().length" aria-hidden="true">{{ progreso.porCorregir().length }}</span>
+              <span class="insignia" [class.insignia--cero]="!progreso.totalPendientes()" aria-hidden="true">{{ store.revisionPendiente() ? '?' : progreso.totalPendientes() }}</span>
             </button>
           }
           <div role="group" aria-label="Ayuda" class="barra-ayuda">
             <!-- «Buscar» y «Guía» se funden en una sola «Ayuda» (§4.1): abrían casi el mismo diálogo con las mismas acciones. Se
                  conservan las dos entradas de la guía (data-accion «buscar» y «guia») sobre este botón. -->
-            <button type="button" class="boton-barra" data-accion="buscar guia" title="Busca una acción o pregúntale a la guía"
-                    aria-haspopup="dialog" (click)="abrirBuscador('buscar', $event)">Ayuda</button>
+            <button type="button" class="boton-barra" data-accion="buscar guia" title="Ayuda: busca una acción o pregúntale a la guía"
+                    aria-label="Ayuda" aria-haspopup="dialog" (click)="abrirBuscador('buscar', $event)"><svg class="barra-ayuda__icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.7 2.2c-.8.5-1.2 1-1.2 2M12 17h.01" /></svg><span class="barra-ayuda__texto">Ayuda</span></button>
             @if (store.caso() && iaDisponible()) {
-              <button type="button" class="boton-barra" data-accion="pedir-a-la-ia aceptar-ia" title="Escribe o cambia el caso por ti; tú apruebas"
-                      [attr.aria-expanded]="iaAbierta() && !store.soloLectura()" aria-controls="panel-ia" [disabled]="store.soloLectura()"
+              <button type="button" class="boton-barra" data-accion="pedir-a-la-ia aceptar-ia" title="Asistente de IA: escribe o cambia el caso por ti; tú apruebas"
+                      aria-label="Asistente de IA" [attr.aria-expanded]="iaAbierta() && !store.soloLectura()" aria-controls="panel-ia" [disabled]="store.soloLectura()"
                       [attr.aria-describedby]="store.soloLectura() ? 'aviso-ia' : null" (click)="alternarIa()" #botonIa>
-                Asistente<span class="solo-lector"> de IA</span>
+                <svg class="barra-ayuda__icono" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" /></svg><span class="barra-ayuda__texto">Asistente<span class="solo-lector"> de IA</span></span>
               </button>
             }
           </div>
@@ -167,6 +172,12 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
             </div>
           </div>
         } @else {
+          <!-- Autoría compartida: el autor del caso (no cambia) y quiénes más crearon versiones. En la barra solo cabe el
+               nombre del caso (lo lleva su título emergente); aquí se lee siempre, sobre la pantalla. -->
+          <!-- BORRADOR: texto pendiente de Psicología (VD-23). -->
+          @if (autoriaDelCaso(); as autoria) {
+            <p class="caso-autoria">{{ autoria }}</p>
+          }
           @if (store.soloLectura()) {
             <p class="solo-lectura" role="note">{{ textoSoloLectura() }}</p>
           }
@@ -186,14 +197,14 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
         <app-avisos-guardado estudioEstadoInicio class="est-dato guardado-estado" parte="estado" />
       }
       @if (store.caso()) {
-        <button estudioEstadoInicio type="button" class="est-dato-boton" [class.estado-pendientes]="progreso.porCorregir().length"
-                aria-haspopup="dialog" (click)="abrirPendientes($event)">
-          <span class="marca-estado" aria-hidden="true" [attr.data-estado]="progreso.porCorregir().length ? 'con-pendientes' : 'lista'"></span>
-          {{ textoPendientes() }}
+        <button estudioEstadoInicio type="button" class="est-dato-boton" [class.estado-pendientes]="progreso.totalPendientes()"
+                [attr.title]="textoPendientes()" [attr.aria-label]="textoPendientes()" aria-haspopup="dialog" (click)="abrirPendientes($event)">
+          <span class="marca-estado" aria-hidden="true" [attr.data-estado]="progreso.totalPendientes() ? 'con-pendientes' : 'lista'"></span>
+          {{ store.revisionPendiente() ? 'Revisión pendiente' : progreso.totalPendientes() + ' por resolver' }}
         </button>
       }
       <!-- La pasarela: el siguiente paso, a la vista en todas las pantallas (antes solo en el Explorador de Historia). -->
-      @if (store.caso() && progreso.siguiente(); as paso) {
+      @if (store.caso() && !store.soloLectura() && progreso.siguiente(); as paso) {
         <button estudioEstadoInicio type="button" class="est-dato-boton est-siguiente" (click)="llevar(paso)">
           <span class="est-siguiente__rotulo">Siguiente:</span><span class="est-siguiente__texto">{{ paso.texto }}</span><span aria-hidden="true">→</span>
         </button>
@@ -218,7 +229,14 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     </ng-template>
 
     <!-- «Deshacer» de los borrados del guion (EDITOR.md §4.6). El contenedor está siempre para que el lector anuncie el aviso. -->
-    <div class="deshacer-zona" role="status">
+    <div class="deshacer-zona" role="status" aria-live="polite">
+      @if (store.avisoEnsayo(); as aviso) { <p class="deshacer">{{ aviso }}</p> }
+      @if (store.puedeDeshacerPropuesta()) {
+        <div class="deshacer" data-deshacer-ia>
+          <span>Cambio del asistente aplicado.</span>
+          <button type="button" class="deshacer__accion" (click)="store.deshacerPropuesta()">Deshacer</button>
+        </div>
+      }
       @if (deshacer.aviso(); as aviso) {
         <div class="deshacer">
           <span class="deshacer__texto">{{ aviso.texto }}</span>
@@ -242,14 +260,21 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
       margin: 0; padding: 0 0.625rem 0 0.25rem; max-inline-size: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       border-inline-end: 1px solid var(--l-filo-fuerte); font-weight: 700; color: var(--asb-cromo-tinta);
       /* Un nombre largo cede con puntos suspensivos antes de que el hilo se monte sobre las herramientas. */
-      flex: 0 1 auto; min-inline-size: 3rem;
+      flex: 1 1 12rem; min-inline-size: 0;
     }
     @media (min-width: 64rem) { app-hilo-del-caso { flex: none; } }
+    @media (min-width: 75rem) { .caso-actual { min-inline-size: 11ch; } }
     .contexto-editor { padding: 0 0.75rem; font-weight: 700; color: var(--asb-cromo-tinta); white-space: nowrap; }
     /* A 390 px el rótulo no cabe junto a «‹ Casos» y la cuenta (se pisaba con el menú): el título de la página ya lo dice. */
     @media (max-width: 29.999rem) { .contexto-editor { display: none; } }
     .barra-ayuda { display: flex; flex-wrap: nowrap; gap: 0.125rem; }
-    @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { display: none; } }
+    .barra-ayuda__icono { display: none; width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    @media (min-width: 64rem) and (max-width: 99.999rem) {
+      .barra-ayuda__texto { display: none; }
+      .barra-ayuda__icono { display: block; }
+      .barra-ayuda .boton-barra { min-inline-size: 2.75rem; justify-content: center; padding-inline: 0.5rem; }
+    }
+    @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { max-inline-size: 16rem; } }
 
     /* «Probar» es la acción de la barra: lleva el tinte de marca sobre el vidrio (sin filo), como la acción de una barra
        de iOS; el botón sólido de cada pantalla sigue siendo uno solo. */
@@ -282,6 +307,8 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     /* La sala encaja su lienzo en el alto que queda: necesita un alto definido en toda la cadena (sin esto el lienzo
        medía 89 px dentro del estudio, medido el 2026-11-22). Las demás pantallas crecen con su contenido y desplazan. */
     .marco-pantalla:has(> app-sala) { block-size: 100%; }
+    /* La autoría del caso: una línea de apoyo, discreta, sobre la pantalla. */
+    .caso-autoria { margin: 0.75rem 1rem 0; color: var(--ds-text-2); font-size: var(--autoria-texto-14); overflow-wrap: anywhere; }
     /* Aviso de solo lectura: un aviso de verdad (filo, icono de candado en píxeles y texto), igual en claro y en oscuro. */
     .solo-lectura {
       display: flex; align-items: center; gap: 0.625rem; margin: 0.75rem 1rem 0; padding: 0.5rem 0.875rem;
@@ -409,8 +436,8 @@ export class AutoriaShellComponent implements CanLeave {
   protected readonly iaDisponible = computed(() => this.ia.estado() !== 'apagado');
   /** «Pendientes: 2 por corregir», lo que oye el lector y dice el globo del botón. */
   protected readonly textoPendientes = computed(() => {
-    const n = this.progreso.porCorregir().length;
-    return n === 0 ? 'Pendientes: nada por corregir' : n === 1 ? 'Pendientes: 1 por corregir' : `Pendientes: ${n} por corregir`;
+    const n = this.progreso.totalPendientes();
+    return this.store.revisionPendiente() ? 'Pendientes: falta completar la revisión' : `Pendientes: ${n} por resolver antes de enviar`;
   });
   /**
    * Las pantallas no se pueden cambiar si el caso ya no es un borrador. Siguen vivos los
@@ -489,12 +516,22 @@ export class AutoriaShellComponent implements CanLeave {
     return `${usuario?.nombre ?? ''} ${usuario?.apellido ?? ''}`.trim() || 'Cuenta institucional';
   });
   protected readonly rolCuenta = computed(() => roleLabel(this.auth.currentUser()?.role));
+  /** «Autor: Ana · Editado por: Beto, Carla» del caso abierto; vacío si el servidor no dice quién lo creó. */
+  protected readonly autoriaDelCaso = computed(() => {
+    const caso = this.store.caso();
+    return [autorLabel(caso?.autor), editadoPorLabel(caso?.editadoPor)].filter(Boolean).join(' · ');
+  });
   private origenBuscador: HTMLElement | null = null;
   private readonly botonIa = viewChild<ElementRef<HTMLButtonElement>>('botonIa');
   private readonly cabecera = viewChild<unknown, ElementRef<HTMLElement>>('cabecera', { read: ElementRef });
   private readonly injector = inject(Injector);
 
   constructor() {
+    effect(() => {
+      const caso = this.store.caso();
+      if (!caso || this.store.guardando() || this.store.haySinGuardar()) return;
+      untracked(() => { void this.store.revisarConServidor().catch(() => {}); });
+    });
     injectComandosDelCaso({
       buscarEnLaAyuda: () => this.abrirBuscador('buscar'),
       preguntarALaGuia: () => this.abrirBuscador('preguntar'),

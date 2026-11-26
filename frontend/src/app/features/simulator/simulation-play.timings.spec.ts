@@ -113,11 +113,11 @@ describe('SimulationPlayComponent: tiempos de la pantalla de juego (A-03b)', () 
   const advance = (ms: number) => { vi.advanceTimersByTime(ms); };
 
   describe('avisos que se apagan solos', () => {
-    it('«no hay nada cerca» se apaga a los 2500 ms', () => {
+    it('«no hay nada cerca» se apaga a los 4500 ms (la frase es larga: tiempo para leerla)', () => {
       component.showNothingNearby();
       expect(component.nothingNearbyNote()).toBe(ORIENTATION_COPY.now.nothingNearby);
 
-      advance(2499);
+      advance(4499);
       expect(component.nothingNearbyNote()).toBe(ORIENTATION_COPY.now.nothingNearby);
       advance(1);
       expect(component.nothingNearbyNote()).toBe('');

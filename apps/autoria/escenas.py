@@ -33,6 +33,8 @@ def _aplicar(version, nodo, datos):
     if "comments" in datos:
         personajes = set(CaseCharacter.objects.filter(case_version=version).values_list("character_key", flat=True))
         nodo.comments_json = json.dumps(contenido.comentarios(datos["comments"], personajes), ensure_ascii=False)
+    if "aiSuggested" in datos:
+        nodo.ai_suggested = datos["aiSuggested"]
     nodo.save()
 
 

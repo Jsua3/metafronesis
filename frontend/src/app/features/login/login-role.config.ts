@@ -9,7 +9,11 @@ export interface LoginRoleOption {
   narrative: string;
   previewCase: string;
   previewScene: string;
+  /** Retrato del kit del simulador: el mismo que la tarjeta de este rol en la portada («Roles en el sistema»). */
+  avatar: string;
 }
+
+const RETRATO = (ruta: string) => `assets/characters/kit/${ruta}/portrait-alegre.png`;
 
 export const LOGIN_ROLES: LoginRoleOption[] = [
   {
@@ -22,6 +26,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
       'Entrena decisiones en casos de VBG, feminicidio, NNA y rutas de protección con retroalimentación formativa.',
     previewCase: 'SIM-VBG-001',
     previewScene: 'Hospital · Comisaría',
+    avatar: RETRATO('camila/bata'),
   },
   {
     id: 'PROFESOR',
@@ -33,6 +38,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
       'Supervisa intentos, evalúa competencias y acompaña el aprendizaje con evidencia clínica trazable.',
     previewCase: 'Panel docente',
     previewScene: 'Grupos · Reportes',
+    avatar: RETRATO('docente-universidad'),
   },
   {
     id: 'ADMIN',
@@ -44,6 +50,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
       'Configura la plataforma, publica versiones de casos y garantiza el acceso seguro por rol.',
     previewCase: 'Autoría',
     previewScene: 'Usuarios · Casos',
+    avatar: RETRATO('funcionaria-recepcion'),
   },
 ];
 

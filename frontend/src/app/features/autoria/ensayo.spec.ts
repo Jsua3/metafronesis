@@ -29,7 +29,7 @@ describe('ensayo · abrir el juego real en otra pestaña', () => {
     expect(pestana.opener).toBeNull();
   });
 
-  it('si el navegador bloquea la pestaña, navega en la misma tras guardar', async () => {
+  it('si el navegador bloquea la pestaña, conserva el editor', async () => {
     const abrir = vi.fn(() => null);
     const navegar = vi.fn();
     const guardado = diferido();
@@ -37,7 +37,7 @@ describe('ensayo · abrir el juego real en otra pestaña', () => {
     expect(navegar).not.toHaveBeenCalled();
     guardado.resolver();
     await p;
-    expect(navegar).toHaveBeenCalledWith('/portal/casos/41/ensayo');
+    expect(navegar).not.toHaveBeenCalled();
   });
 
   it('si la docente cerró la pestaña vacía mientras se guardaba, no hace nada más', async () => {
@@ -80,7 +80,7 @@ describe('ensayo · abrir el juego real en otra pestaña', () => {
     });
   });
 
-  describe('alPulsarProbar · el clic primario va en esta pestaña; Ctrl, Meta, Mayús o el medio, a otra ya sincronizada', () => {
+  describe('alPulsarProbar · todos los clics abren otra pestaña ya sincronizada', () => {
     const clic = (init: Partial<MouseEvent> = {}) => {
       const evento = { button: 0, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, preventDefault: vi.fn(), ...init };
       return evento as unknown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> };
@@ -90,13 +90,16 @@ describe('ensayo · abrir el juego real en otra pestaña', () => {
       return { store: { caso: () => ({ id: '41', titulo: 'T' }), sincronizado: () => Promise.resolve(), error: () => null, conflicto: () => null, navegar } as unknown as Parameters<typeof alPulsarProbar>[1], navegar };
     };
 
-    it('el clic primario (y Enter, que llega como ese mismo clic) navega una sola vez en esta pestaña', async () => {
+    it('el clic primario (y Enter, que llega como ese mismo clic) abre una sola pestaña conservando el editor', async () => {
       const { store, navegar } = tiendaNav();
       const evento = clic();
-      await alPulsarProbar(evento, store, 5);
+      const pestana = { opener: {}, closed: false, location: { href: '' } };
+      const abrir = vi.fn(() => pestana as unknown as Window);
+      await alPulsarProbar(evento, store, 5, abrir);
       expect(evento.preventDefault).toHaveBeenCalledOnce();
-      expect(navegar).toHaveBeenCalledTimes(1);
-      expect(navegar).toHaveBeenCalledWith('/portal/casos/41/ensayo?desde=5', { umbral: { titulo: 'T' } });
+      expect(navegar).not.toHaveBeenCalled();
+      expect(abrir).toHaveBeenCalledOnce();
+      expect(pestana.location.href).toBe('/portal/casos/41/ensayo?desde=5');
     });
 
     it.each([['Alt', { altKey: true }], ['el botón derecho', { button: 2 }]])('con %s deja actuar al navegador', async (_nombre, init) => {

@@ -40,7 +40,7 @@ describe('puedeEnviar con las reglas del modelo de métricas', () => {
     expect(faltasDe(caso)).toEqual([{
       codigo: 'contraindicated-without-reason',
       mensaje: 'La respuesta «Respuesta 2» de la escena «Escena a» es contraindicada y no explica por qué: escribe el motivo de la prohibición.',
-      ir: { ruta: '/editor/escena/a', ancla: 'respuesta-2' },
+      ir: { ruta: '/editor/escena/a', ancla: 'razon-2' },
     }]);
     caso.escenas[0].respuestas[1].razon = 'Puede hacer daño.';
     expect(faltasDe(caso)).toEqual([]);
@@ -173,7 +173,7 @@ describe('faltasDelServidor: lo que dice la compuerta, en lenguaje del docente y
       issue({ code: 'ending-reachability-skipped', severity: 'warning', message: 'Demasiados recorridos.' }),
     ], caso, opciones(caso));
     expect(faltas.map((f) => f.mensaje)).toEqual(['Ningún final aplica a todos.']);
-    expect(faltas[0].ir).toEqual({ ruta: '/editor/finales', accionId: 'definir-finales' });
+    expect(faltas[0].ir).toEqual({ ruta: '/editor/finales', ancla: 'final-por-defecto' });
   });
 
   it('un hallazgo que el editor ya listó por su cuenta no se repite', () => {

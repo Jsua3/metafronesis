@@ -135,3 +135,10 @@ def test_rutas_de_revision_nueva_en_inventario():
     for clave, auditoria in rutas.items():
         assert filas[clave]["audit"] == auditoria
         assert filas[clave]["exposure"] == "role:ADMIN,PROFESOR"
+
+
+def test_lectura_de_rubrica_por_version_en_inventario():
+    filas = {(fila["route"], fila["method"]): fila for fila in _inventario_versionado()["routes"]}
+    fila = filas[("api/rubrics/case-versions/<int:case_version_id>", "GET")]
+    assert fila["exposure"] == "role:ADMIN,PROFESOR"
+    assert fila["audit"].startswith("EXENTO:")

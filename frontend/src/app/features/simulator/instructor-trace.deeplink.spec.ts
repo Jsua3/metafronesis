@@ -16,8 +16,9 @@ const attempt = (attemptId: string): RecentAttempt => ({
   startedAt: '2026-10-10T10:00:00Z',
 });
 
-function openTrace(intento: string | null) {
+function openTrace(intento: string | null, filtro: Record<string, string> = {}) {
   const attemptTrace = vi.fn((id: string) => of({ attemptId: id } as unknown as AttemptTrace));
+  const recentAttempts = vi.fn(() => of([attempt('a-1'), attempt('a-2'), attempt('a-3')]));
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -25,20 +26,24 @@ function openTrace(intento: string | null) {
       {
         provide: InstructorApi,
         useValue: {
-          recentAttempts: () => of([attempt('a-1'), attempt('a-2'), attempt('a-3')]),
+          recentAttempts,
           attemptTrace,
           rubric: () => of({} as never),
         },
       },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(intento ? { intento } : {}) } } },
+      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ ...filtro, ...(intento ? { intento } : {}) }) } } },
     ],
   });
   const component = TestBed.runInInjectionContext(() => new InstructorTraceComponent());
   component.ngOnInit();
-  return { component, attemptTrace };
+  return { component, attemptTrace, recentAttempts };
 }
 
 describe('traza del docente: intento elegido desde el panel (F7-1)', () => {
+  it('solicita al servidor solo los intentos del grupo y caso enlazados', () => {
+    const { recentAttempts } = openTrace(null, { grupo: '3', caseVersionId: '12' });
+    expect(recentAttempts).toHaveBeenCalledWith({ groupId: 3, caseVersionId: 12 });
+  });
   // req: RQ-NEG-006
   it('con ?intento=<id> abre ese intento y no el más reciente', () => {
     const { component, attemptTrace } = openTrace('a-2');

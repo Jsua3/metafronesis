@@ -279,7 +279,7 @@ export async function actualizarEscena(s: SesionServidor, caso: CasoBorrador, es
   if (!escena || nodoId === undefined) return;
   const previo = s.vista.nodes.find((n) => n.id === nodoId);
   const cuerpo = cuerpoNodo(escena, { esInicio: caso.inicioId === escena.id, previo });
-  if (previo && !cuerpo.aiSuggested
+  if (previo && cuerpo.aiSuggested === undefined
     && previo.title === cuerpo.title && previo.narrative === cuerpo.narrative && previo.terminal === cuerpo.terminal && previo.startNode === cuerpo.startNode
     && previo.positionX === cuerpo.positionX && previo.positionY === cuerpo.positionY && previo.intensity === cuerpo.intensity
     && (previo.warningMessage ?? null) === (cuerpo.warningMessage ?? null)
@@ -426,7 +426,7 @@ export const FALTA_CLASE = 'Elige cómo es esta respuesta para guardarla.';
 export function motivoSinGuardar(respuesta: Respuesta): string | null {
   if (!respuesta.clase) return FALTA_CLASE;
   if (respuesta.clase === 'CONTRAINDICATED' && !respuesta.razon.trim()) return 'Escribe por qué es contraindicada para guardarla.';
-  if (respuesta.destinoId === null) return 'Elige a qué escena lleva para guardarla.';
+  if (respuesta.destinoId === null) return 'Elige una escena en «Lleva a…» o crea una escena final para guardar esta respuesta.';
   return null;
 }
 
@@ -530,6 +530,7 @@ export async function guardarFicha(s: SesionServidor, caso: CasoBorrador): Promi
   }
   if (caso.temasSensibles && !igual(s.vista.contentWarnings ?? [], caso.temasSensibles)) cuerpo.contentWarnings = caso.temasSensibles;
   if (caso.titulo.trim() && caso.titulo !== s.vista.title) cuerpo.title = caso.titulo;
+  if (caso.tiempoEstimado !== undefined && caso.tiempoEstimado !== (s.vista.estimatedMinutes ?? null)) cuerpo.estimatedMinutes = caso.tiempoEstimado;
   if (Object.keys(cuerpo).length) await s.guardarFicha(cuerpo);
 }
 

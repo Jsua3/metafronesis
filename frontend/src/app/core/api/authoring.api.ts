@@ -21,6 +21,7 @@ import {
   NodeUpsertRequest,
   RiskLevel,
   RubricAdoptRequest,
+  PersonaCaso,
   SimulationCaseSummary,
   ToolUpsertRequest,
   ValidationIssue,
@@ -97,6 +98,19 @@ interface ResumenServidor {
 }
 
 /**
+ * Una fila de la lista (`servicios.fila`): el resumen con el caso, la versión semántica y la autoría compartida (autor,
+ * «editado por» y lo que quien mira puede hacer con la versión, decidido por el servidor).
+ */
+interface FilaServidor extends ResumenServidor {
+  caseId?: number;
+  semanticVersion?: string;
+  autor?: PersonaCaso;
+  editadoPor?: PersonaCaso[];
+  puedeEditar?: boolean;
+  puedeCrearVersion?: boolean;
+}
+
+/**
  * API de autoría: editor de casos (nodos, decisiones, mapas, objetos, herramientas, checklist), publicación y editor de
  * mundo. Separada de `SimulationService` (Interface Segregation): el jugador no necesita ninguno de estos métodos.
  *
@@ -136,17 +150,25 @@ export class AuthoringApi {
       .pipe(switchMap(response => this.caseEditor(response.data.versionId)));
   }
 
-  /** La lista de casos del autor. El servidor trae versión, estado y ficha; el resto del resumen se completa con vacíos. */
+  /**
+   * Los casos que ve quien autora: los suyos, las versiones que creó en casos ajenos y las publicadas de los demás. El
+   * servidor trae versión, estado, ficha, caso y autoría; el resto del resumen se completa con vacíos.
+   */
   listAuthoringCases() {
-    return this.http.get<ApiResponse<ResumenServidor[]>>(this.API).pipe(map(response => response.data.map((v): SimulationCaseSummary => ({
+    return this.http.get<ApiResponse<FilaServidor[]>>(this.API).pipe(map(response => response.data.map((v): SimulationCaseSummary => ({
       caseVersionId: v.versionId,
       code: v.brief.code,
       title: v.brief.title,
       description: v.brief.description ?? '',
-      // El servidor no manda la versión semántica, el número de escenas ni la fecha de edición en la lista.
-      semanticVersion: '',
+      // El servidor no manda el número de escenas ni la fecha de edición en la lista.
+      semanticVersion: v.semanticVersion ?? '',
       nodeCount: 0,
       status: v.status,
+      ...(v.caseId != null ? { caseId: v.caseId } : {}),
+      ...(v.autor ? { autor: v.autor } : {}),
+      ...(v.editadoPor ? { editadoPor: v.editadoPor } : {}),
+      ...(v.puedeEditar != null ? { puedeEditar: v.puedeEditar } : {}),
+      ...(v.puedeCrearVersion != null ? { puedeCrearVersion: v.puedeCrearVersion } : {}),
     }))));
   }
 
@@ -343,6 +365,7 @@ export class AuthoringApi {
   updateBrief(caseVersionId: number, body: BriefUpdateRequest, revision?: number) {
     const cuerpo: Record<string, unknown> = {};
     if (body.context !== undefined) cuerpo['narrativeContext'] = body.context;
+    if (body.estimatedMinutes !== undefined) cuerpo['estimatedMinutes'] = body.estimatedMinutes;
     if (body.learningObjectives !== undefined) cuerpo['learningObjectives'] = body.learningObjectives;
     if (body.title !== undefined) cuerpo['title'] = body.title;
     if (body.contentWarnings !== undefined) cuerpo['contentWarnings'] = body.contentWarnings;
@@ -487,7 +510,7 @@ export class AuthoringApi {
       `${this.API}/${caseVersionId}/validate`, {})
       .pipe(map((response): CaseValidation => {
         const issues = response.data.problems.map((p): ValidationIssue => {
-          const nodo = /^nodes\/(\d+)$/.exec(p.where);
+          const nodo = /^nodes\/(\d+)(?:\/|$)/.exec(p.where);
           return { code: p.code, severity: 'error', message: p.message, path: p.where, ...(nodo ? { nodeId: Number(nodo[1]) } : {}) };
         });
         return { issues, canPublish: response.data.valid };

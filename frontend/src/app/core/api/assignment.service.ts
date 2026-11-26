@@ -20,12 +20,30 @@ export class AssignmentService {
       .pipe(map(response => response.data));
   }
 
+  /**
+   * Todas las asignaciones de los grupos de la docente (sin `groupId`; el servidor devuelve solo las de SUS grupos, y a la
+   * administración, todas). Sirven para saber qué casos publicados todavía no están asignados a nadie.
+   */
+  listAll() {
+    return this.http.get<ApiDataResponse<Assignment[]>>(this.API).pipe(map(response => response.data));
+  }
+
   create(body: AssignmentCreate) {
     return this.http.post<ApiDataResponse<Assignment>>(this.API, body).pipe(map(response => response.data));
   }
 
   update(assignmentId: number, changes: AssignmentChanges) {
     return this.http.patch<ApiDataResponse<Assignment>>(`${this.API}/${assignmentId}`, changes).pipe(map(response => response.data));
+  }
+
+  /**
+   * Fija el orden de la secuencia del grupo (RN-04): los ids de TODAS sus asignaciones, activas o en pausa, de la primera
+   * a la última. El servidor las numera de una vez y devuelve la lista ya ordenada; si la lista cambió mientras tanto
+   * responde 409 y no toca nada.
+   */
+  reorder(groupId: number, assignmentIds: number[], previousAssignmentIds: number[]) {
+    return this.http.put<ApiDataResponse<Assignment[]>>(`/api/grupos/${groupId}/casos/orden`, { assignmentIds, previousAssignmentIds })
+      .pipe(map(response => response.data));
   }
 
   remove(assignmentId: number) {

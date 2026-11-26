@@ -86,7 +86,7 @@ export const MAXIMO_DESCRIPCION = 2000;
   `,
   styles: `
     .describir, .formulario { display: flex; flex-direction: column; gap: 0.75rem; min-inline-size: 0; }
-    .formulario { max-inline-size: 48rem; }
+    .formulario { max-inline-size: 48rem; padding-block-end: 7rem; }
     .campo { display: flex; flex-direction: column; gap: 0.25rem; }
     .campo label { font-weight: 700; font-size: var(--autoria-texto-16); }
     .campo p, .formulario > p, .retomar p { margin: 0; font-size: var(--autoria-texto-16); line-height: 1.5rem; }

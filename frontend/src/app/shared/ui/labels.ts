@@ -120,6 +120,18 @@ export function objectTypeLabel(type: string | null | undefined): string {
   return lookup(OBJECT_TYPE_LABELS, type, 'Objeto');
 }
 
+// BORRADOR: texto pendiente de Psicología (VD-23).
+/** «Autor: Ana» de un caso (autoría compartida); vacío si no se sabe. */
+export function autorLabel(autor: string | null | undefined): string {
+  return autor ? `Autor: ${autor}` : '';
+}
+
+// BORRADOR: texto pendiente de Psicología (VD-23).
+/** «Editado por: Beto, Carla»: quienes, sin ser el autor, crearon alguna versión del caso; vacío si nadie más. */
+export function editadoPorLabel(editores: readonly string[] | null | undefined): string {
+  return editores?.length ? `Editado por: ${editores.join(', ')}` : '';
+}
+
 /** `plural(1, 'nodo')` → «1 nodo»; `plural(2, 'nodo')` → «2 nodos»; la forma irregular se pasa explícita. */
 export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : pluralForm}`;

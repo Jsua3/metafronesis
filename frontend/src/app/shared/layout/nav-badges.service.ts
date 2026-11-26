@@ -63,10 +63,25 @@ export class NavBadgesService {
     });
   }
 
+  /**
+   * La insignia de «Usuarios» (administración): solicitudes de acceso por revisar + cuentas importadas por aprobar. Es LA
+   * fuente de ese número: la escriben el Inicio y la propia pantalla de Usuarios, y esa pantalla dice la misma cifra en
+   * su resumen. Si alguna de las dos no se pudo leer (`null`) no hay cifra que decir —una suma a medias parecería un
+   * conteo exacto— y la insignia se quita.
+   */
+  fijarUsuarios(solicitudes: number | null, cuentasPorAprobar: number | null): void {
+    this.fijar('usuarios', pendientesDeUsuarios(solicitudes, cuentasPorAprobar) ?? 0);
+  }
+
   /** Pendientes de un destino (0 si no hay). */
   cuenta(id: string): number {
     return this.cuentas()[id] ?? 0;
   }
+}
+
+/** El total de pendientes de Usuarios, o `null` si falta una de las dos cifras. */
+export function pendientesDeUsuarios(solicitudes: number | null, cuentasPorAprobar: number | null): number | null {
+  return solicitudes === null || cuentasPorAprobar === null ? null : solicitudes + cuentasPorAprobar;
 }
 
 /** Lo que se ve en la insignia: más de 99 se abrevia para no ensanchar la pestaña. */
