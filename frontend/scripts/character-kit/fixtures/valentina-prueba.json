@@ -1,0 +1,36 @@
+{
+  "idle": "6fef71e199e544ddc2b0988007f608a534c4c31321365d21c2bf24a15d88ce4d",
+  "walk": "8ed695fc79b0694930f5668c4bd4785b1ecc3cd93ff636e14f34f3be6d64ca30",
+  "portrait-neutral": "38395e33e4aeac091849163c0b1c27a5ab122d72949210534d54c2e81432a87b",
+  "recipe": {
+    "id": "valentina",
+    "displayName": "Valentina",
+    "kind": "jugable",
+    "complexion": "a",
+    "pieces": {
+      "hair": "bob-flequillo",
+      "face": "sereno",
+      "top": "chaqueta-capucha",
+      "bottom": "jean",
+      "shoes": "tenis",
+      "accessories": []
+    },
+    "colors": {
+      "skin": "piel-1",
+      "hair": "castano-oscuro",
+      "top": "verde",
+      "accent": "azul",
+      "inner": "blanco",
+      "bottom": "marino",
+      "shoes": "carbon",
+      "sole": "gris-claro"
+    },
+    "portraits": [
+      "neutral"
+    ],
+    "provenance": {
+      "source": "Kit SIEP",
+      "license": "SIEP-INTERNAL"
+    }
+  }
+}
