@@ -549,12 +549,11 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         </div>
 
         <!-- REGLA-004: mientras el fundido de escena (o la nota de transición) espera al servidor, el pie queda por encima y «Salida segura» se ve y se toca. -->
-        <!-- Salida segura queda en el pie hasta que el cuadro de diálogo toma el relevo. -->
+        <!-- Con el cuadro de diálogo sobre el mundo, el pie se oculta y queda inerte: la franja de abajo es del cuadro. -->
         <footer class="bottom-zone" [class.bottom-zone--above-veils]="footerAboveVeils()"
-          [attr.inert]="pieInerte() ? '' : null"
-          [attr.aria-hidden]="pieInerte() ? 'true' : null"
-          [class.bottom-zone--encuadrando]="esperandoPanel()"
-          [class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic' && !esperandoPanel()"
+          [attr.inert]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? '' : null"
+          [attr.aria-hidden]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? 'true' : null"
+          [class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic'"
           [class.bottom-zone--bajo-reaccion]="reacting()">
           @if (game.status === 'IN_PROGRESS' || reactingToLast()) {
             <!-- La misma implementación que las superposiciones (F6-6, REGLA-004). Sin [disabled]: con una petición
@@ -909,7 +908,6 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
        (con el diálogo abierto el pie ya era inerte y el dock no hace nada): el pie se oculta en vez de quedar debajo, sin
        dejar hueco (visibility, no display: el lienzo no cambia de tamaño al abrir y cerrar). */
     .bottom-zone--bajo-dialogo { visibility: hidden; }
-    .bottom-zone--encuadrando > :not(app-safe-exit-button) { visibility: hidden; }
     /* Lo mismo durante la reacción: la franja ocupa la banda de abajo y trae su «Salida segura» (antes la tapaba y solo
        asomaba un filo); un solo botón a la vista y en el árbol de accesibilidad. */
     .bottom-zone--bajo-reaccion { visibility: hidden; }
@@ -1481,10 +1479,6 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     return !!this.gameWorldRef() && this.viewMode() === 'dialogue-cinematic' && !!dialogo
       && (dialogo.choices.length > 0 || dialogo.key.startsWith('tool-feedback-'));
   });
-  protected readonly esperandoPanel = computed(() =>
-    this.esperarEncuadre() && (this.dialoguePanel()?.encuadrando() ?? true));
-  protected readonly pieInerte = computed(() =>
-    (this.inputBlocked() || this.viewMode() === 'dialogue-cinematic') && !this.esperandoPanel());
   readonly fadeActive   = signal(false);
   /** Avisos del sistema visibles (el anfitrión `ui-toast-host` los pinta y anuncia). */
   private readonly systemNotices = toSignal(this.notifications.messages$, { initialValue: [] });

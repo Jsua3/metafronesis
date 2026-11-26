@@ -45,11 +45,9 @@ const medirVentana = () => typeof window === 'undefined'
   template: `
     @if (dialogue(); as d) {
       <div #dialogueBox
-        [cdkTrapFocus]="!encuadrando()"
-        [cdkTrapFocusAutoCapture]="!encuadrando()"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
         class="dialogue-strip"
-        [attr.data-encuadrando]="encuadrando() ? '' : null"
-        [attr.inert]="encuadrando() ? '' : null"
         [class.strip--angosta]="angosta()"
         [class.dialogue-strip--side]="mode() === 'side'"
         [class.strip--warning]="interaction()?.type === 'WARNING'"
@@ -150,7 +148,9 @@ const medirVentana = () => typeof window === 'undefined'
           </section>
 
           <!-- Las fichas de respuesta, A a D. -->
-          <div class="strip-body">
+          <!-- Las fichas esperan a que la cámara llegue (o a que venza el plazo): ocupan su sitio, invisibles e inertes.
+               La línea que se está leyendo nunca desaparece. -->
+          <div class="strip-body" [attr.data-encuadrando]="encuadrando() ? '' : null" [attr.inert]="encuadrando() ? '' : null">
             @if (choicesVisible() && !d.stale) {
               @let notice = avisoDeOpciones(d);
               @if (notice) {
@@ -234,7 +234,7 @@ const medirVentana = () => typeof window === 'undefined'
       line-height: 1.45;
       animation: strip-rise 160ms steps(3, jump-none) both;
     }
-    .dialogue-strip[data-encuadrando] { visibility: hidden; animation: none; }
+    .strip-body[data-encuadrando], .strip-body[data-encuadrando] * { visibility: hidden; animation: none; }
 
     /* Marco de pixel art: borde de 4 px de mundo por lado y relleno con trama, sin esquinas suavizadas. */
     .placa-cuerpo, .speaker-name, .panel-back, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
@@ -959,7 +959,15 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   readonly encuadreListo = input<object | null>(null);
   /** Cada disposición se mide por separado, también si las opciones aparecen después de leer. */
   readonly faseEncuadre = computed(() => ({ dialogo: this.dialogue(), opciones: this.choicesVisible() }));
-  readonly encuadrando = computed(() => this.esperarEncuadre() && this.encuadreListo() !== this.faseEncuadre());
+  private readonly faseAgotada = signal<object | null>(null);
+  private readonly fasePendiente = computed(() => {
+    const fase = this.faseEncuadre();
+    return this.esperarEncuadre() && fase.dialogo && fase.opciones && this.encuadreListo() !== fase ? fase : null;
+  });
+  readonly encuadrando = computed(() => {
+    const fase = this.fasePendiente();
+    return fase !== null && this.faseAgotada() !== fase;
+  });
   /** Opción ya elegida: pausa breve de confirmación antes de ejecutar. */
   readonly chosenKey = signal<string | null>(null);
   /** La letra de pixel no cargó (ruta o recurso ausente): las opciones muestran su letra en texto. */
@@ -1011,6 +1019,13 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   constructor() {
     this.kit.load().catch(() => undefined);
+    effect(onCleanup => {
+      const fase = this.fasePendiente();
+      if (!fase) return;
+      // El viaje más largo desde el plano general toma 1,4 s. Las fichas también abren si el lienzo no responde.
+      const plazo = setTimeout(() => this.faseAgotada.set(fase), 1600);
+      onCleanup(() => clearTimeout(plazo));
+    });
     // El alto que ocupa el cuadro, publicado en el anfitrión para la cámara (M1): data-alto-ocupado, en px CSS.
     afterNextRender(() => {
       if (typeof ResizeObserver === 'undefined') return;

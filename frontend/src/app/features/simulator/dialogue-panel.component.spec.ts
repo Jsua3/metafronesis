@@ -135,9 +135,13 @@ describe('DialoguePanelComponent - integración renderizada', () => {
     fixture.detectChanges();
 
     const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+    const fichas = banda.querySelector('.strip-body') as HTMLElement;
     expect(banda.querySelector('.choice-btn')).not.toBeNull();
-    expect(banda.hasAttribute('data-encuadrando')).toBe(true);
-    expect(banda.hasAttribute('inert')).toBe(true);
+    expect(fichas.hasAttribute('data-encuadrando')).toBe(true);
+    expect(fichas.hasAttribute('inert')).toBe(true);
+    // La línea que se estaba leyendo no desaparece mientras la cámara llega.
+    expect(banda.hasAttribute('inert')).toBe(false);
+    expect(banda.hasAttribute('data-encuadrando')).toBe(false);
     const ejecutar = vi.fn();
     component.execute.subscribe(ejecutar);
     component.onKeydown(new KeyboardEvent('keydown', { key: 'a' }));
@@ -146,8 +150,67 @@ describe('DialoguePanelComponent - integración renderizada', () => {
 
     fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
     fixture.detectChanges();
-    expect(banda.hasAttribute('inert')).toBe(false);
+    expect(fichas.hasAttribute('inert')).toBe(false);
     expect(banda.contains(document.activeElement)).toBe(true);
+  });
+
+  it('abre al vencer el plazo sin cámara y da un plazo propio a las opciones', () => {
+    vi.useFakeTimers();
+    try {
+      fixture.componentRef.setInput('esperarEncuadre', true);
+      fixture.componentRef.setInput('reduceMotion', true);
+      render(MULTI_LINE_DIALOGUE);
+      const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+      const faseDeLectura = component.faseEncuadre();
+      const avanzarTiempo = (ms: number) => {
+        vi.advanceTimersByTime(ms);
+        fixture.detectChanges();
+      };
+
+      // La lectura no espera a la cámara: el cuadro está a la vista desde el principio.
+      expect(banda.hasAttribute('inert')).toBe(false);
+      expect(banda.hasAttribute('data-encuadrando')).toBe(false);
+
+      component.advanceLine();
+      fixture.componentRef.setInput('encuadreListo', faseDeLectura);
+      fixture.detectChanges();
+      const fichas = () => banda.querySelector('.strip-body') as HTMLElement;
+      avanzarTiempo(1599);
+      expect(banda.querySelector('.choice-btn')).not.toBeNull();
+      expect(fichas().hasAttribute('inert')).toBe(true);
+      expect(banda.hasAttribute('inert')).toBe(false);
+      avanzarTiempo(1);
+      expect(fichas().hasAttribute('inert')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('abre al confirmar y cancela el plazo de esa fase', () => {
+    vi.useFakeTimers();
+    try {
+      fixture.componentRef.setInput('esperarEncuadre', true);
+      fixture.componentRef.setInput('reduceMotion', true);
+      render(MULTI_LINE_DIALOGUE);
+      const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+      const fichas = () => banda.querySelector('.strip-body') as HTMLElement;
+      component.advanceLine();
+      fixture.detectChanges();
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+      expect(fichas().hasAttribute('inert')).toBe(true);
+
+      fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
+      fixture.detectChanges();
+      expect(fichas().hasAttribute('inert')).toBe(false);
+      // El plazo de esa fase quedó cancelado: nada vuelve a cerrar las fichas.
+      vi.advanceTimersByTime(2000);
+      fixture.detectChanges();
+      expect(fichas().hasAttribute('inert')).toBe(false);
+      expect(banda.hasAttribute('inert')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('reemplaza cada control sin sacar el foco del diálogo y oculta opciones intermedias', () => {
@@ -1705,10 +1768,10 @@ describe('DialoguePanelComponent - el aviso breve va dentro del cuadro', () => {
 
   it('con el cuadro sobre el mundo, la barra inferior se oculta sin dejar hueco y queda inerte', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
-    expect(pantalla).toContain(`[class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic' && !esperandoPanel()"`);
-    expect(pantalla).toContain(`[attr.inert]="pieInerte() ? '' : null"`);
+    expect(pantalla).toContain(`[class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic'"`);
     expect(pantalla).toContain('.bottom-zone--bajo-dialogo { visibility: hidden; }');
-    expect(pantalla).toContain('.bottom-zone--encuadrando > :not(app-safe-exit-button) { visibility: hidden; }');
+    // El cuadro nunca se oculta para encuadrar: el pie no tiene que relevarlo.
+    expect(pantalla).not.toContain('bottom-zone--encuadrando');
   });
 
   it('la pantalla no pinta el aviso suelto mientras hay un diálogo sobre el mundo: se lo pasa al cuadro', () => {

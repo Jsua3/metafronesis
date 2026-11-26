@@ -1921,7 +1921,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private salaApartada: EscenaDeSala | null = null;
   /** P2: dónde estaba la cámara al apartar la sala (vuelve ahí si la sala vuelve). */
   private camaraApartada: { x: number; y: number } | null = null;
-  private readonly apoyosDeLaSala = new Map<string, ApoyoDeMueble & { visual?: CharacterVisual }>();
+  private readonly apoyosDeLaSala = new Map<string, ApoyoDeMueble & {
+    visual?: CharacterVisual;
+    arte?: { ancho: number; alto: number };
+  }>();
   private readonly mueblesConApoyo = new Set<MuebleDeSala>();
   private readonly cobijas = new Set<Phaser.GameObjects.Sprite>();
 
@@ -2572,7 +2575,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   private updateNpcMovers(time: number, delta: number) {
-    if (this.motionPaused || this.npcMovers.size === 0) return;
+    if (this.motionPaused || this.camFase !== null || this.npcMovers.size === 0) return;
     for (const mover of this.npcMovers.values()) {
       const container = this.npcMarkers.get(mover.key);
       if (!container || this.gesturing.has(this.npcKeyOf(mover.key))) continue;   // mirando hacia algo o en pleno gesto
@@ -2769,16 +2772,32 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const label = this.markerLabels.get(key);
     const obj = this.markerData.get(key);
     if (!marker || !label || !obj) return;
-    const llegada = this.apoyosDeLaSala.get(key)?.llegada;
+    const sobre = this.rotuloSobreMueble(key, label);
+    if (sobre) {
+      label.setPosition(this.fitLabelX(label, sobre.x), sobre.y);
+      if (key === this.nearestKey) this.placeMarkerPrompt(key);
+      return;
+    }
     const moving = this.markerMoves(key);
-    const x = llegada?.x ?? (moving ? marker.x : obj.x);
+    const x = moving ? marker.x : obj.x;
     // P2: bajo los pies como siempre; si ahí pisa a otra persona o un rótulo visible, sobre la cabeza (rotulo-sin-pisar).
-    const pies = llegada?.y ?? (moving ? marker.y : obj.y) + markerFeetOffsetY(obj);
+    const pies = (moving ? marker.y : obj.y) + markerFeetOffsetY(obj);
     const y = yDelRotulo(x, pies, label.displayWidth, label.displayHeight,
-      obj.type === 'PERSON' && !llegada ? ALTO_DE_PERSONA_PX : 0, this.cajasOcupadas(key));
+      obj.type === 'PERSON' ? ALTO_DE_PERSONA_PX : 0, this.cajasOcupadas(key));
     const lx = this.fitLabelX(label, x);
     if (label.x !== lx || label.y !== y) label.setPosition(lx, y);
     if (key === this.nearestKey) this.placeMarkerPrompt(key);
+  }
+
+  private rotuloSobreMueble(key: string, label: Phaser.GameObjects.Text): Punto | null {
+    const apoyo = this.apoyosDeLaSala.get(key);
+    if (!apoyo) return null;
+    return { x: apoyo.dibujo.x, y: apoyo.dibujo.y - (apoyo.arte?.alto ?? 0) - 4 - label.displayHeight };
+  }
+
+  private anclaAccionSobreMueble(key: string): Punto | null {
+    if (!this.apoyosDeLaSala.has(key) || !this.player) return null;
+    return { x: this.player.x, y: this.player.y + SEPARACION_BAJO_LOS_PIES_PX };
   }
 
   /**
@@ -2801,6 +2820,13 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** La acción al alcance ocupa sitio primero. Cada rótulo se vuelve a probar aunque su dueño esté quieto. */
   private ubicarRotulos(ocupadas: CajaDePlaca[], zoomCss: number): void {
     const vista = this.vistaParaAvisos();
+    for (const [key, { arte, dibujo }] of this.apoyosDeLaSala) {
+      if (!arte || !this.disponible(this.markers.get(key))) continue;
+      const pie = this.proyectarAviso(dibujo);
+      const ancho = arte.ancho * zoomCss;
+      const alto = arte.alto * zoomCss;
+      ocupadas.push({ x: pie.x - ancho / 2, y: pie.y - alto, ancho, alto });
+    }
     const colocar = (texto: Phaser.GameObjects.Text, x: number, y: number, accion = false) => {
       const ancho = texto.displayWidth * zoomCss;
       const alto = texto.displayHeight * zoomCss;
@@ -2819,10 +2845,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       ocupadas.push({ ...caja, ...posicion });
     };
     const anclaDelMarcador = (key: string, obj: MapObjectState, marker: Phaser.GameObjects.Container) => {
-      const llegada = this.apoyosDeLaSala.get(key)?.llegada;
       const moving = this.markerMoves(key);
-      return { x: llegada?.x ?? (moving ? marker.x : obj.x),
-        y: (llegada?.y ?? (moving ? marker.y : obj.y) + markerFeetOffsetY(obj)) + SEPARACION_BAJO_LOS_PIES_PX };
+      return { x: moving ? marker.x : obj.x,
+        y: (moving ? marker.y : obj.y) + markerFeetOffsetY(obj) + SEPARACION_BAJO_LOS_PIES_PX };
     };
     const cerca = this.nearestKey;
     const prompt = this.markerPromptOn ? this.markerPrompt : undefined;
@@ -2831,8 +2856,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const marcador = this.markers.get(cerca);
       const rotulo = this.markerLabels.get(cerca);
       if (objeto && marcador && rotulo) {
-        const { x, y } = anclaDelMarcador(cerca, objeto, marcador);
-        colocar(prompt, x, y + rotulo.displayHeight + 2, true);
+        const juntoALaJugadora = this.anclaAccionSobreMueble(cerca);
+        const { x, y } = juntoALaJugadora ?? anclaDelMarcador(cerca, objeto, marcador);
+        colocar(prompt, x, juntoALaJugadora ? y : y + rotulo.displayHeight + 2, true);
       }
     }
     for (const [key, rotulo] of this.markerLabels) {
@@ -2840,8 +2866,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const objeto = this.markerData.get(key);
       const marcador = this.markers.get(key);
       if (!objeto || !marcador) continue;
-      const { x, y } = anclaDelMarcador(key, objeto, marcador);
-      if (key === cerca && prompt?.visible) {
+      const sobre = this.rotuloSobreMueble(key, rotulo);
+      const { x, y } = sobre ?? anclaDelMarcador(key, objeto, marcador);
+      if (!sobre && key === cerca && prompt?.visible) {
         colocar(rotulo, prompt.x, prompt.y - rotulo.displayHeight - 6 / zoomCss);
       } else {
         colocar(rotulo, x, y);
@@ -3427,7 +3454,13 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     if (painted || apoyo) markerShadow.setVisible(false);
     const marker = this.add.container(apoyo?.dibujo.x ?? object.x, apoyo?.dibujo.y ?? object.y, [markerShadow, pulse, main]);
     this.setFeetOffset(marker, feetY);   // la sombra marca el contacto con el piso
-    if (apoyo) marker.setDepth(profundidadSobre(apoyo.mueble.y));
+    if (apoyo) {
+      marker.setDepth(profundidadSobre(apoyo.mueble.y));
+      if (!apoyo.cama) {
+        const sprite = main as Phaser.GameObjects.Image;
+        apoyo.arte = { ancho: sprite.displayWidth || 24, alto: sprite.displayHeight || 20 };
+      }
+    }
     this.markers.set(object.key, marker);
     this.markerData.set(object.key, object);
     if (art?.animation) this.proximityAnimations.set(object.key, art.animation);
@@ -3574,6 +3607,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private feetForSafeArea(key: string): Sujeto | null {
     const objeto = this.markerData.get(key);
     if (objeto?.type === 'PERSON') return this.cuerpoVivo(key);
+    if (this.apoyosDeLaSala.has(key)) return this.focoDelApoyo(key);
     const pies = this.feetOf(key);
     const rotulo = this.markerLabels.get(key);
     if (!pies || !rotulo?.alpha) return pies;
@@ -3585,6 +3619,23 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       alto: (rotulo.height + (prompt?.height ?? 0)) * escala,
       separacion: SEPARACION_BAJO_LOS_PIES_PX + (prompt ? 2 : 0),
     } };
+  }
+
+  /** El anillo queda entre el mueble y lo que se apoya en él. El alcance sigue en el borde caminable. */
+  private ubicarAnillo(key: string, feet: Punto, par: NonNullable<typeof this.targetRing>, profundidad: number): Punto {
+    const apoyo = this.apoyosDeLaSala.get(key);
+    const punto = apoyo ? { x: apoyo.dibujo.x, y: apoyo.dibujo.y + (apoyo.cama ? FILAS_DE_CABEZA - 4 : 0) } : feet;
+    const depth = apoyo ? profundidadSobre(apoyo.mueble.y) - (par === this.nearRing ? 0.003 : 0.006) : profundidad;
+    par.halo.setDepth(depth);
+    par.ring.setDepth(depth + (apoyo ? 0.001 : 0.01));
+    const escala = apoyo ? 0.6 : 1;
+    if (par.ring.x !== punto.x || par.ring.y !== punto.y) {
+      par.halo.setPosition(punto.x, punto.y);
+      par.ring.setPosition(punto.x, punto.y);
+    }
+    par.halo.setScale(escala).setVisible(true);
+    par.ring.setScale(escala).setVisible(true);
+    return punto;
   }
 
   /**
@@ -3607,14 +3658,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const ring = this.add.ellipse(0, 0, 68, 24).setStrokeStyle(2, RING_COLOR, 0.9).setDepth(depth + 0.01);
       this.targetRing = { halo, ring };
     }
-    const { halo, ring } = this.targetRing;
-    if (ring.x !== feet.x || ring.y !== feet.y) {
-      halo.setPosition(feet.x, feet.y);
-      ring.setPosition(feet.x, feet.y);
-    }
-    halo.setVisible(true);
-    ring.setVisible(true);
-    this.syncStepMark(key!, feet);
+    const punto = this.ubicarAnillo(key!, feet, this.targetRing, DEPTH.ENVIRONMENT + 0.5);
+    this.syncStepMark(key!, punto);
   }
 
   /**
@@ -3659,13 +3704,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       const ring = this.add.ellipse(0, 0, 84, 30, NEAR_RING_COLOR, 0.14).setStrokeStyle(3, NEAR_RING_COLOR, 1).setDepth(depth + 0.01);
       this.nearRing = { halo, ring };
     }
-    const { halo, ring } = this.nearRing;
-    if (ring.x !== feet.x || ring.y !== feet.y) {
-      halo.setPosition(feet.x, feet.y);
-      ring.setPosition(feet.x, feet.y);
-    }
-    halo.setVisible(true);
-    ring.setVisible(true);
+    this.ubicarAnillo(key!, feet, this.nearRing, DEPTH.ENVIRONMENT + 0.6);
   }
 
   /**
@@ -3711,9 +3750,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     const prompt = this.markerPrompt;
     const label = this.markerLabels.get(key);
     if (!prompt || !label || key !== this.nearestKey) return;
-    const y = label.y + label.displayHeight + 2;
-    if (prompt.x !== label.x || prompt.y !== y) prompt.setPosition(label.x, y);
-    prompt.setVisible(this.markerPromptOn && label.visible !== false);
+    const juntoALaJugadora = this.anclaAccionSobreMueble(key);
+    const x = juntoALaJugadora?.x ?? label.x;
+    const y = juntoALaJugadora?.y ?? label.y + label.displayHeight + 2;
+    if (prompt.x !== x || prompt.y !== y) prompt.setPosition(x, y);
+    prompt.setVisible(this.markerPromptOn && (!!juntoALaJugadora || label.visible !== false));
   }
 
   /** Reinicia lo que `children.removeAll` destruye al reconstruir la sala. */
@@ -3993,7 +4034,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * persona) y trata al jugador como un obstáculo móvil.
    */
   private updatePersonWalkers(delta: number): void {
-    if (this.motionPaused || this.callbacks.reduceMotion || this.personWalkers.size === 0) return;
+    if (this.motionPaused || this.camFase !== null || this.callbacks.reduceMotion || this.personWalkers.size === 0) return;
     // Por donde camina: la zona que el encuadre de la sala deja al suelo (el resto es pared pintada) o, sin encuadre, toda la sala.
     const zone = walkableZone(this.world?.map.ambient);
     for (const walker of this.personWalkers.values()) {
@@ -4104,7 +4145,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   private updateAmbientMovers(time: number, delta: number) {
-    if (this.motionPaused || this.callbacks.reduceMotion || this.ambientMovers.size === 0) return;
+    if (this.motionPaused || this.camFase !== null || this.callbacks.reduceMotion || this.ambientMovers.size === 0) return;
     const step = this.AMBIENT_SPEED * (delta / 1000);
     for (const mover of this.ambientMovers.values()) {
       const marker = this.markers.get(mover.key);

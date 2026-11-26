@@ -76,7 +76,9 @@ function salaMinima(soporte: MuebleDeSala, sujeto: MapObjectState, colisiones: S
     walk: WalkState;
     markers: Map<string, Dibujo & Record<string, unknown>>;
     markerLabels: Map<string, Dibujo>;
+    targetRing: { ring: Dibujo };
     nearRing: { ring: Dibujo };
+    markerPrompt: Dibujo;
     personWalkers: Map<string, unknown>;
     apoyosDeLaSala: Map<string, { llegada: { x: number; y: number } }>;
     prepararApoyos(muebles: MuebleDeSala[]): void;
@@ -96,6 +98,7 @@ function salaMinima(soporte: MuebleDeSala, sujeto: MapObjectState, colisiones: S
   const sprite = vi.fn((x: number, y: number, _textura: string, _cuadro: number) => dibujo(x, y));
   const image = vi.fn((x: number, y: number) => dibujo(x, y));
   Object.assign(escena, {
+    ready: true,
     actorVisual: vi.fn(() => visual),
     buildKeyPersonIndicator: vi.fn(),
     buildArtSprite: vi.fn(() => null),
@@ -173,8 +176,9 @@ describe('sala con muebles de apoyo', () => {
     const llegada = interno.apoyosDeLaSala.get(persona.key)!.llegada;
     Object.assign(interno.player, llegada);
     interno.updateNearestInteraction(true);
-    expect(interno.nearRing.ring).toMatchObject(llegada);
-    expect(interno.markerLabels.get(persona.key)).toMatchObject({ x: llegada.x, y: llegada.y + 12, alpha: 1 });
+    expect(interno.nearRing.ring).toMatchObject({ x: marker.x, y: marker.y + 19 });
+    expect(interno.markerLabels.get(persona.key)).toMatchObject({ x: marker.x, y: marker.y - 18, alpha: 1 });
+    expect(interno.markerPrompt).toMatchObject({ x: llegada.x, y: llegada.y + 12 });
     escena.interactNearest();
     expect(callbacks.onInteract).toHaveBeenCalledWith(expect.objectContaining({ key: persona.key }));
   });
@@ -200,6 +204,15 @@ describe('sala con muebles de apoyo', () => {
     expect(pisaElMueble(escritorio, llegada.x, llegada.y)).toBe(false);
     expect(interno.wouldCollide(336, 322)).toBe(true);
     expect(tickWalk(interno.walk, llegada, 16).arrived).toBe(true);
+    escena.setOrientation({ nextTargetKey: informe.key, doorStates: {}, dimmedKeys: new Set() });
+    expect(interno.targetRing.ring).toMatchObject({ x: marca.x, y: marca.y });
+    expect(interno.targetRing.ring.depth).toBeGreaterThan(actorDepth(escritorio.y) + 0.01);
+    expect(interno.targetRing.ring.depth).toBeLessThan(marca.depth);
+    Object.assign(interno.player, llegada);
+    interno.updateNearestInteraction(true);
+    expect(interno.nearRing.ring).toMatchObject({ x: marca.x, y: marca.y });
+    expect(interno.markerLabels.get(informe.key)).toMatchObject({ x: marca.x, y: marca.y - 32, alpha: 1 });
+    expect(interno.markerPrompt).toMatchObject({ x: llegada.x, y: llegada.y + 12 });
     interno.finishWalkGoal('arrived');
     expect(callbacks.onWalkEnded).toHaveBeenCalledWith(informe.key, informe.label, 'arrived');
     expect(callbacks.onInteract).not.toHaveBeenCalled();
