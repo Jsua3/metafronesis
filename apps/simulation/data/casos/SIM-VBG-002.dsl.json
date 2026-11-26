@@ -792,15 +792,18 @@
                   "burbujas": [
                     {
                       "quien": "hombre",
+                      "nombre": "Edwin",
                       "texto": "¡Sin mí no eres nadie!",
                       "grito": true
                     },
                     {
                       "quien": "mujer",
+                      "nombre": "Yuliana",
                       "texto": "Ya no más, Edwin."
                     },
                     {
                       "quien": "hombre",
+                      "nombre": "Edwin",
                       "texto": "¡Mantenida!",
                       "grito": true
                     }
@@ -818,10 +821,12 @@
                   "burbujas": [
                     {
                       "quien": "mujer-telefono",
+                      "nombre": "Yuliana",
                       "texto": "Mamá, mañana me voy con la niña."
                     },
                     {
                       "quien": "telefono",
+                      "nombre": "Gloria, por teléfono",
                       "texto": "Aquí te espero, mija."
                     }
                   ]
@@ -838,6 +843,7 @@
                   "burbujas": [
                     {
                       "quien": "hombre",
+                      "nombre": "Edwin",
                       "texto": "¿Así que te ibas a ir?",
                       "grito": true
                     }
@@ -860,6 +866,7 @@
                   "burbujas": [
                     {
                       "quien": "vecina",
+                      "nombre": "La vecina",
                       "texto": "¡Aló, 123! ¡Manden a alguien, rápido!"
                     }
                   ]
@@ -883,10 +890,12 @@
                   "burbujas": [
                     {
                       "quien": "abuela-familia",
+                      "nombre": "Gloria",
                       "texto": "¿Dónde está mi hija? ¿Y la niña?"
                     },
                     {
                       "quien": "hermano-mayor",
+                      "nombre": "Óscar",
                       "texto": "¡Déjeme pasar!",
                       "grito": true
                     }
