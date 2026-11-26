@@ -52,6 +52,8 @@ Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS d
 - «Da unos pasos…» ya no es un aviso modal; los diálogos se adelantan o se saltan con clic, Espacio o Enter (#93).
 - Juego: el texto se escribe más rápido, «Texto instantáneo» está en el propio diálogo, las páginas son cortas, «Tu decisión se guardó» aparece cuando el servidor lo confirma, una opción bloqueada dice qué herramienta falta y la tarjeta de controles empieza por el clic (#93).
 - Juego: cada botón dice lo que pasa («Hablar con …» camina y abre la conversación; «Ir a …» solo camina), la acción del siguiente paso se marca como tal y las demás como opcionales, y al decidir se ve «Elegiste: …» (#93).
+- Juego: «Ayuda» y «Ajustes» se distinguen sin depender del ícono (texto visible, o signo de interrogación frente a engranaje en pantalla pequeña) (#103).
+- El portal se carga aparte del arranque: el paquete inicial baja de 487,8 kB a 474 kB (#103).
 
 ### Corregido
 - La rúbrica del caso respondía 405 y no dejaba enviar a revisión; ahora `GET /api/rubrics/case-versions/{id}` la devuelve (#88).
