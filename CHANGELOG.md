@@ -23,6 +23,7 @@ Respuesta inmediata en el juego y en el editor. Una tercera medición con las mi
 
 ### Cambiado
 - **Juego:** «Hablar con X» desde lejos responde al instante con «Yendo hacia… Pulsa para cancelar» (Esc o una segunda pulsación cancelan) y, si la persona ya está al alcance, la conversación se abre sin caminar. El botón del diálogo dice lo que hará («Seguir leyendo (n de m)», «Ver las opciones», «Volver al mapa») y las consecuencias seguidas se numeran. Junto a las opciones dice «haz clic o pulsa su letra» (#107).
+- **Juego:** cruzar una puerta es una sola acción, «Pasar a X», que camina y cruza (antes «Ir a la sala» solo caminaba); una puerta cerrada dice por qué en «Ir a…», la ficha y la barra, y el aviso de rearme dice qué hacer (#107).
 - **Editor:** «Crear la escena que sigue» y, aparte, «Terminar el caso aquí: crear la escena final», con una frase que explica qué es una escena final. «Antes de decidir» tiene texto visible, y los controles de la respuesta miden 44 px y quedan separados en pantalla táctil (#105).
 
 ### Corregido
@@ -30,6 +31,7 @@ Respuesta inmediata en el juego y en el editor. Una tercera medición con las mi
 - La barra de estado del editor mostraba avisos ya resueltos: la narración y el objetivo entran al estado al escribir, y «Enviar» dice que la comprobación está pendiente en vez de mostrar el resultado viejo (#105).
 - En el juego, el objetivo se adelantaba a la pantalla mientras seguía visible la reacción de la persona; ahora cambia al volver al mapa (#107).
 - «Estado» y «Ordenar por» de Usuarios tenían un nombre accesible con todas sus opciones; el botón para ver la contraseña no pasaba a «Ocultar contraseña» (#106).
+- Con teclado o lector de pantalla: los enlaces de la barra del portal se leían como hijos del logo, «Volver a iniciar sesión» quedaba al final de «Recuperar contraseña», un error al entrar no recibía el foco y, al rechazar una invitación, el foco caía en la página; en Inicio, sin caso que jugar, la invitación es la acción principal (#106).
 
 ## [0.7.0] - 2026-11-26
 
