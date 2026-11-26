@@ -38,6 +38,7 @@ export const AIRE_PLACA = 6;
 
 export interface Punto { x: number; y: number }
 export interface Sujeto extends Punto {
+  cuerpo?: { mitad: number; alto: number };
   /** Rótulo y acción bajo el objeto: ancho/alto en CSS, separación de los pies en mundo. */
   rotulo?: { ancho: number; alto: number; separacion: number };
 }
@@ -61,15 +62,15 @@ export type Momento =
   /** Plano general al entrar a una sala. */
   | { tipo: 'general' }
   /** Hablar y decidir con una persona: `con` son sus pies. */
-  | { tipo: 'conversacion'; con: Punto }
+  | { tipo: 'conversacion'; con: Sujeto }
   /** La reacción a una respuesta: la cámara va a quien reacciona (`de` son sus pies). */
-  | { tipo: 'reaccion'; de: Punto }
+  | { tipo: 'reaccion'; de: Sujeto }
   /** Revisar un objeto: `en` es su base. */
   | { tipo: 'objeto'; en: Punto };
 
 export interface EntradaCamara {
   /** Pies del personaje del estudiante. */
-  jugador: Punto;
+  jugador: Sujeto;
   sala: Sala;
   vista: Vista;
   momento: Momento;
@@ -81,6 +82,8 @@ export interface EntradaCamara {
   cerca?: Sujeto | null;
   /** Pies del destino del paso actual de la guía, si está en la sala. */
   destino?: Sujeto | null;
+  /** Personas dibujadas en la sala, incluidas las que van de camino a la salida. */
+  cuerpos?: readonly Sujeto[];
 }
 
 export interface EstadoCamara { centro: Punto; zoom: number }
@@ -163,28 +166,32 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
   }
 
   const centro = centroBase(zoom, foco, pies, e, previo);
-  if (momento.tipo === 'general' || !zonaSegura) {
+  if (!zonaSegura && !e.cuerpos?.length) {
     return { centro, zoom };
   }
-  const principales: Sujeto[] = momento.tipo === 'reaccion' ? [momento.de, jugador] : [jugador];
-  if (momento.tipo === 'conversacion') principales.push(momento.con);
-  if (momento.tipo === 'objeto') principales.push(momento.en);
+  const principales = [jugador];
+  const interlocutor = momento.tipo === 'conversacion' ? momento.con : momento.tipo === 'reaccion' ? momento.de : null;
+  if (interlocutor) principales.push(interlocutor);
   const opcionales: Sujeto[] = [];
-  for (const pie of [e.destino, e.cerca]) {
+  for (const pie of [e.destino, e.cerca, momento.tipo === 'objeto' ? momento.en : null]) {
     if (!pie) continue;
-    const igual = (p: Punto) => p.x === pie.x && p.y === pie.y;
+    const igual = (p: Punto) => mismoPunto(p, pie);
     const i = principales.findIndex(igual);
-    if (i >= 0) principales[i] = pie;
+    if (i >= 0) principales[i] = { ...pie, ...principales[i] };
     else if (!opcionales.some(igual)) opcionales.push(pie);
   }
-  // Primero intenta mantener el plano y sus sujetos. Si la franja o las placas los apretaron, abre a otro entero.
+  const resto = (e.cuerpos ?? []).filter(pie => !principales.some(p => mismoPunto(p, pie))
+    && !opcionales.some(p => mismoPunto(p, pie)));
+  // Mantiene el plano si cabe el grupo. Al abrirlo, conserva primero a quien juega, a su interlocutor y al destino.
   for (let k = zoom; k >= 1; k--) {
     const base = k === zoom ? centro : centroBase(k, foco, pies, e, previo);
-    const encuadre = centroLibre(base, k, vista, principales, opcionales);
+    const encuadre = centroLibre(base, k, vista, principales, opcionales, resto);
     if (encuadre) return { centro: encuadre, zoom: k };
   }
   return { centro: esquivarPlacas(centro, zoom, vista, principales), zoom };
 }
+
+const mismoPunto = (a: Punto, b: Punto) => a.x === b.x && a.y === b.y;
 
 function centroBase(zoom: number, foco: Punto, pies: number, e: EntradaCamara, previo: EstadoCamara | null): Punto {
   const { vista, sala, momento } = e;
@@ -225,9 +232,8 @@ export function esquivarPlacas(centro: Punto, zoom: number, vista: Vista, cuerpo
 function huella(pie: Sujeto, centro: Punto, zoom: number, vista: Vista): Caja[] {
   const x = (pie.x - centro.x) * zoom + vista.ancho / 2;
   const y = (pie.y - centro.y) * zoom + vista.alto / 2;
-  const cajas = [{
-    x: x - MEDIO_CUERPO * zoom, y: y - ALTO_CUERPO * zoom, ancho: 2 * MEDIO_CUERPO * zoom, alto: ALTO_CUERPO * zoom,
-  }];
+  const { mitad = MEDIO_CUERPO, alto = ALTO_CUERPO } = pie.cuerpo ?? {};
+  const cajas = [{ x: x - mitad * zoom, y: y - alto * zoom, ancho: 2 * mitad * zoom, alto: alto * zoom }];
   if (pie.rotulo) {
     const { ancho, alto, separacion } = pie.rotulo;
     cajas.push({ x: x - ancho * vista.dpr / 2, y: y + separacion * zoom, ancho: ancho * vista.dpr, alto: alto * vista.dpr });
@@ -237,24 +243,70 @@ function huella(pie: Sujeto, centro: Punto, zoom: number, vista: Vista): Caja[] 
 
 function centroLibre(
   centro: Punto, zoom: number, vista: Vista, principales: readonly Sujeto[], opcionales: readonly Sujeto[],
+  resto: readonly Sujeto[] = [],
 ): Punto | null {
   const placas = vista.placas ?? [];
   const aire = AIRE_PLACA * vista.dpr;
-  const adicionales = opcionales.map(pie => huella(pie, centro, zoom, vista)).filter(([r]) =>
-    r.x < vista.ancho && r.x + r.ancho > 0 && r.y < vista.alto && r.y + r.alto > 0);
+  const pantalla = { x: 0, y: 0, ancho: vista.ancho, alto: vista.alto };
+  const arriba = tapadoArriba(vista);
+  const abajo = tapadoAbajo(vista);
+  const libre = { x: 0, y: arriba, ancho: vista.ancho, alto: vista.alto - arriba - abajo };
+  const opcionalesEnPantalla = opcionales.map(pie => huella(pie, centro, zoom, vista));
+  const adicionales = opcionalesEnPantalla.filter(([r]) => seCruzan(r, pantalla));
+  const personas = resto.map(pie => huella(pie, centro, zoom, vista)[0])
+    .concat(opcionalesEnPantalla.filter(cajas => !adicionales.includes(cajas)).map(([r]) => r));
+  const enCuadro = personas.filter(cuerpo => seCruzan(cuerpo, pantalla));
   const obligatorias = principales.flatMap(pie => huella(pie, centro, zoom, vista));
+  const sinCortes = (cuerpos: readonly Caja[]) => cuerpos.flatMap(r =>
+    [libre, ...placas].flatMap(p => bloqueosDeCorte(r, p)));
+  const fueraDeCuadro = personas.filter(r => !enCuadro.includes(r));
   for (let n = adicionales.length; n >= 0; n--) {
     const cajas = obligatorias.concat(adicionales.slice(0, n).flat());
-    const limite = {
-      izq: Math.max(...cajas.map(r => -r.x)),
-      der: Math.min(...cajas.map(r => vista.ancho - r.ancho - r.x)),
-      sup: Math.max(...cajas.map(r => tapadoArriba(vista) - r.y)),
-      inf: Math.min(...cajas.map(r => vista.alto - tapadoAbajo(vista) - r.alto - r.y)),
+    const resolver = (visibles: readonly Caja[], cortes: readonly Bordes[]) => {
+      const limite = {
+        izq: Math.max(...visibles.map(r => -r.x)),
+        der: Math.min(...visibles.map(r => vista.ancho - r.ancho - r.x)),
+        sup: Math.max(...visibles.map(r => arriba - r.y)),
+        inf: Math.min(...visibles.map(r => vista.alto - abajo - r.alto - r.y)),
+      };
+      return desplazamientoLibre(limite, visibles.flatMap(r => placas.map(p => bloqueoDe(r, p, aire))).concat(cortes));
     };
-    const salida = desplazamientoLibre(limite, cajas.flatMap(r => placas.map(p => bloqueoDe(r, p, aire))));
+    const omitidos = adicionales.slice(n).map(([cuerpo]) => cuerpo);
+    const salida = resolver(cajas.concat(enCuadro), sinCortes(fueraDeCuadro.concat(omitidos)))
+      ?? (enCuadro.length ? resolver(cajas, sinCortes(personas.concat(omitidos))) : null);
     if (salida) return { x: centro.x - salida.x / zoom, y: centro.y - salida.y / zoom };
   }
   return null;
+}
+
+export function seCruzan(a: Caja, b: Caja): boolean {
+  return a.x < b.x + b.ancho && a.x + a.ancho > b.x && a.y < b.y + b.alto && a.y + a.alto > b.y;
+}
+
+/** Un plano sostenido puede conservarse mientras las placas que acaban de aparecer dejen los cuerpos enteros. */
+export function encuadreSinCortes(estado: EstadoCamara, vista: Vista, obligatorios: readonly Sujeto[], resto: readonly Sujeto[]): boolean {
+  const arriba = tapadoArriba(vista);
+  const libre = { x: 0, y: arriba, ancho: vista.ancho, alto: vista.alto - arriba - tapadoAbajo(vista) };
+  const placas = vista.placas ?? [];
+  const proyectar = (p: Sujeto) => huella(p, estado.centro, estado.zoom, vista)[0];
+  return obligatorios.map(proyectar).every(r => r.x >= libre.x && r.y >= libre.y
+    && r.x + r.ancho <= libre.x + libre.ancho && r.y + r.alto <= libre.y + libre.alto
+    && placas.every(placa => !seCruzan(r, placa)))
+    && resto.map(proyectar).every(r => [libre, ...placas].every(placa =>
+      !bloqueosDeCorte(r, placa).some(corte => contiene(corte, 0, 0))));
+}
+
+/** Prohíbe cruzar el borde del área. Permite quedar completamente dentro o completamente fuera. */
+function bloqueosDeCorte(r: Caja, area: Caja): Bordes[] {
+  if (area.ancho <= 0 || area.alto <= 0) return [];
+  const fuera = bloqueoDe(r, area, 0);
+  if (r.ancho > area.ancho || r.alto > area.alto) return [fuera];
+  return [
+    { ...fuera, der: fuera.izq + r.ancho },
+    { ...fuera, izq: fuera.der - r.ancho },
+    { ...fuera, inf: fuera.sup + r.alto },
+    { ...fuera, sup: fuera.inf - r.alto },
+  ];
 }
 
 /** Sitúa una placa del mundo completa cerca de su ancla, evitando cuerpos y placas de la interfaz. */
@@ -287,10 +339,10 @@ function desplazamientoLibre(limite: Bordes, bloqueos: readonly Bordes[]): Punto
   const x0 = Math.max(izq, Math.min(der, 0));
   const y0 = Math.max(sup, Math.min(inf, 0));
   if (!bloqueos.some(b => contiene(b, x0, y0))) return { x: x0, y: y0 };
+  const relevantes = bloqueos.filter(b => b.der > izq && b.izq < der && b.inf > sup && b.sup < inf);
   const xs = new Set([x0]);
   const ys = new Set([y0]);
-  for (const b of bloqueos) {
-    if (b.der <= izq || b.izq >= der || b.inf <= sup || b.sup >= inf) continue;
+  for (const b of relevantes) {
     if (b.izq >= izq) xs.add(b.izq);
     if (b.der <= der) xs.add(b.der);
     if (b.sup >= sup) ys.add(b.sup);
@@ -301,7 +353,7 @@ function desplazamientoLibre(limite: Bordes, bloqueos: readonly Bordes[]): Punto
   for (const x of xs) {
     for (const y of ys) {
       const cuadrado = x * x + y * y;
-      if (cuadrado < distancia && !bloqueos.some(b => contiene(b, x, y))) {
+      if (cuadrado < distancia && !relevantes.some(b => contiene(b, x, y))) {
         mejor = { x, y };
         distancia = cuadrado;
       }

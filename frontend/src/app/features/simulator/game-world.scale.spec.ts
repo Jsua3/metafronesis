@@ -150,7 +150,7 @@ describe('game-world: rótulos legibles en cualquier tamaño (T5.3)', () => {
       camState: { centro: { x: 480, y: 260 }, zoom: 1 },
       nearestKey: 'puerta',
     });
-    const ubicar = (scene as unknown as { ubicarAvisosHeredados(avisos: boolean): void }).ubicarAvisosHeredados.bind(scene);
+    const ubicar = (scene as unknown as { ubicarAvisosHeredados(avisos: boolean, ocupadas: []): void }).ubicarAvisosHeredados.bind(scene);
     for (const [ancla, esperado] of [[260, 344], [700, 616]]) {
       const hint = {
         __doorX: ancla, __doorY: 260, __doorHalfWidth: 99, scaleX: 1, scaleY: 1,
@@ -158,7 +158,7 @@ describe('game-world: rótulos legibles en cualquier tamaño (T5.3)', () => {
       };
       hint.setPosition.mockReturnValue(hint);
       scene.doorHints = new Map([['puerta', hint]]);
-      ubicar(true);
+      ubicar(true, []);
       expect(hint.setPosition).toHaveBeenCalledWith(esperado, 260);
       expect(hint.setVisible).toHaveBeenLastCalledWith(true);
     }

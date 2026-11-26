@@ -209,8 +209,8 @@ describe('el rótulo de la escena nueva no tapa la ficha del objetivo', () => {
 });
 
 describe('el HUD recibe el título de la escena (T9.2)', () => {
-  it('stageLabel es el título del nodo: sin contador de decisiones ni respaldo por escenarios', () => {
-    expect(source).toMatch(/readonly stageLabel = computed<string \| null>\(\(\) => this\.visibleNode\(\)\?\.title \?\? null\);/);
+  it('stageLabel sigue la ficha de la sala y el nodo visible', () => {
+    expect(source).toContain('return fichaDeLaSala(this.visibleNode(), mapa, guia).titulo;');
     expect(source).not.toContain('fallbackStageLabel');
   });
 
@@ -364,7 +364,7 @@ describe('ayuda (T9.8)', () => {
     expect(rule('.help-layer')).toMatch(/top: clamp\(64px, 12vh, 120px\);/);
     expect(rule('.help-layer')).toMatch(/bottom: calc\(var\(--alto-pie, 88px\) \+ 8px\);/);
     expect(rule('.help-layer')).toMatch(/pointer-events: none;/);
-    expect(source).toMatch(/<footer class="bottom-zone"[^>]*\[attr\.inert\]="inputBlocked\(\)/);
+    expect(source).toMatch(/<footer class="bottom-zone"[^>]*\[attr\.inert\]="pieInerte\(\) \? '' : null"/);
   });
 });
 

@@ -18,6 +18,7 @@ vi.mock('phaser', () => ({
 import { MapObjectState, SimulationWorldState } from '../../core/models/simulation.model';
 import type { Gesto } from './caso/vocabulario';
 import { DataDrivenWorldScene, GameWorldComponent } from './game-world.component';
+import { Caja, Punto, seCruzan } from './camara/camara';
 import type { Mock } from 'vitest';
 
 /**
@@ -217,6 +218,51 @@ describe('mundo: encuadre', () => {
     scene.frameActors('familia');
     cuadro(scene);
     expect(camera.setZoom).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])('confirma el encuadre de las opciones después del viaje o del corte (reducido: %s)', reducido => {
+    const { scene } = escenaConPersona('familia', { x: 480, y: 300 }, {
+      jugador: { x: 400, y: 300 }, reduceMotion: reducido,
+    });
+    const probe = scene as unknown as {
+      time: { now: number }; callbacks: { onEncuadre: ReturnType<typeof vi.fn> };
+      setCameraMoment: DataDrivenWorldScene['setCameraMoment'];
+    };
+    probe.time = { now: 0 };
+    probe.callbacks.onEncuadre = vi.fn();
+    cuadro(scene);
+    const fase = {};
+    probe.setCameraMoment({ tipo: 'conversacion', clave: 'familia' }, 360, 60, fase);
+    probe.time.now = 16;
+    cuadro(scene);
+    if (!reducido) {
+      expect(probe.callbacks.onEncuadre).not.toHaveBeenCalled();
+      for (let t = 32; t <= 3000 && !probe.callbacks.onEncuadre.mock.calls.length; t += 16) {
+        probe.time.now = t;
+        cuadro(scene);
+      }
+    }
+    expect(probe.callbacks.onEncuadre).toHaveBeenCalledExactlyOnceWith(fase);
+  });
+
+  it('coloca el acuse fuera del cuerpo que sigue en la sala desde el primer cuadro del reajuste', () => {
+    const { scene, marker } = escenaConPersona('familia', { x: 480, y: 300 }, { jugador: { x: 400, y: 300 } });
+    Object.assign(marker, { visible: true, alpha: 1 });
+    const probe = scene as unknown as {
+      cuerpoEnPantalla(pie: Punto, zoom: number): Caja;
+      camState: { zoom: number };
+      setCameraPlacas: DataDrivenWorldScene['setCameraPlacas'];
+    };
+    cuadro(scene);
+    const pies = { x: marker.x, y: marker.y + 16 };
+    const { x, y } = probe.cuerpoEnPantalla(pies, probe.camState.zoom);
+    const ubicar = vi.fn();
+    const acuse = { x, y, ancho: 120, alto: 42, ubicar };
+    probe.setCameraPlacas(() => [acuse]);
+    cuadro(scene);
+    const colocada = ubicar.mock.lastCall?.[0] as Punto;
+    expect(colocada).toBeTruthy();
+    expect(seCruzan({ ...acuse, ...colocada }, probe.cuerpoEnPantalla(pies, probe.camState.zoom))).toBe(false);
   });
 });
 

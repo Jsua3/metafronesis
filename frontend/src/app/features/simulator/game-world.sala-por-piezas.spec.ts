@@ -59,7 +59,7 @@ describe('sala por piezas en la escena (P2)', () => {
     expect(source).toContain('pintada: true, dePieza: true');
     // Con el mundo en pausa no hay aviso; solo se avisa a Angular cuando cambia.
     expect(source).toContain('const avisos = this.haDadoUnPaso() && !this.coreografia && !this.motionPaused;');
-    expect(source).toContain('this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null);');
+    expect(source).toContain('this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null, ocupadas);');
     expect(source).toContain('if (firma === this.firmaDelAviso) return;');
   });
 

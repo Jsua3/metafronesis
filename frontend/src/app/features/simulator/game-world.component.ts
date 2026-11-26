@@ -6,7 +6,7 @@ import Phaser from 'phaser';
 import { Activation, CollisionZoneState, Intensity, MapObjectState, NpcConfig, Persona, RoomConfig, ScenarioConfig, SimulationWorldState } from '../../core/models/simulation.model';
 import { backgroundImage, walkableZone } from './room-ambient.util';
 import { LEGACY_FEET_OFFSET_Y, isPaintedDoor, markerFeetOffsetY, markerLabelOffsetY, standsOnFeet } from './object-anchor.util';
-import { ALTO_DE_PERSONA_PX, type Caja, cajaDelCuerpo, cajaDelRotulo, yDelRotulo } from './rotulo-sin-pisar.util';
+import { ALTO_DE_PERSONA_PX, SEPARACION_BAJO_LOS_PIES_PX, type Caja, cajaDelCuerpo, cajaDelRotulo, yDelRotulo } from './rotulo-sin-pisar.util';
 import { KenneyDungeonFrames } from './kenney-frames.constants';
 import {
   HOSPITAL_COLLISIONS,
@@ -108,7 +108,8 @@ import { attachScrollKeyGuard, isScrollRegionTarget, isShortcutContext, isTextEn
 import { isCriticalAsset } from './asset-criticality.util';
 import {
   ALTO_CUERPO, MEDIO_CUERPO, Caja as CajaDePlaca, EstadoCamara, Momento, Sujeto,
-  avanzarCamara, comoDibujar, duracionDeViaje, enViajeDentro, esperaDelGeneral, objetivoCamara, sinSaltos, situarAviso,
+  avanzarCamara, asentada, comoDibujar, duracionDeViaje, encuadreSinCortes, enViajeDentro, esperaDelGeneral, objetivoCamara, seCruzan,
+  sinSaltos, situarAviso,
 } from './camara/camara';
 import { fitGameToHost, pixelScaleConfig, watchHostSize } from './pixel-canvas';
 import { PixelRender } from './pixel-render';
@@ -141,6 +142,9 @@ import { npcsDeLaSala } from './caso/npcs-de-sala';
 /** Lo que la pantalla le pide a la cámara (bloque M1): explorar, o encuadrar la conversación o el objeto `clave`. */
 export type CameraMoment = { tipo: 'explorar' } | { tipo: 'conversacion' | 'objeto'; clave: string };
 export interface CameraOptions { cercana: boolean; acercarAuto: boolean }
+export interface PlacaDeInterfaz extends CajaDePlaca {
+  ubicar?: (posicion: Punto | null) => void;
+}
 export interface CameraReport {
   zoom: number; momento: Momento['tipo']; x: number; y: number; viajando: boolean;
   /** Lo que la interfaz tapa (px CSS) abajo y arriba, tal como lo recibe la cámara, y la sala que encuadra («1200x528»). */
@@ -187,6 +191,7 @@ interface WorldCallbacks {
   onKeyPersonPosition?: (position: { x: number; y: number } | null) => void;
   /** Cámara (bloque M1): zoom entero asentado, momento y centro redondeado; solo se avisa al cambiar. */
   onCamera?: (camera: CameraReport) => void;
+  onEncuadre?: (fase: object | null) => void;
   /** Terminó una caminata pedida con «Ir a…» (F6-11): llegó, o no pudo (muro, mueble, servidor). */
   onWalkEnded?:  (key: string, label: string, outcome: 'arrived' | 'blocked') => void;
   onWalkCancelled?: () => void;
@@ -418,8 +423,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private edgeState = '';
   /** Posición de trabajo del destino (sin asignar por cuadro) y los bordes de la vista con los que se recortaron los rótulos. */
   private readonly edgeXY = { x: 0, y: 0 };
-  private labelViewLeft = NaN;
-  private labelViewRight = NaN;
   /** Clic o toque sobre una persona u objeto (P9): al llegar, interactúa con él. Lo reemplaza cualquier otra caminata pedida. */
   private walkInteractKey: string | null = null;
   /** Escala de los rótulos para medir ≥ 12 px de pantalla; se recalcula al cambiar el tamaño del canvas. */
@@ -458,9 +461,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** Alto (px CSS) que el cuadro de diálogo (o la franja de abajo) tapa abajo del lienzo, y la franja de arriba. */
   private camCoveredCss = 0;
   private camCoveredTopCss = 0;
+  private camFase: object | null = null;
+  private camFaseLista: object | null = null;
   /** Zona segura (U1): quien mide las placas de la interfaz sobre el lienzo (px CSS) y lo último que midió. */
-  private camPlacasMedir: (() => readonly CajaDePlaca[]) | null = null;
-  private camPlacas: readonly CajaDePlaca[] = [];
+  private camPlacasMedir: (() => readonly PlacaDeInterfaz[]) | null = null;
+  private camPlacas: readonly PlacaDeInterfaz[] = [];
   private camPlacasEn = Number.NEGATIVE_INFINITY;
   private camFrozen = false;
   private camSettledZoom = 0;
@@ -824,14 +829,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * P2: el aviso de la puerta de pieza activa («E · Pasar a …»), un botón de Angular sobre el lienzo, en px del contenedor
    * (posición de `posicionDelAviso` por la cámara y el devicePixelRatio). Solo avisa a Angular cuando cambia.
    */
-  private avisoDePuerta(id: string | null): void {
+  private avisoDePuerta(id: string | null, ocupadas: CajaDePlaca[] = []): void {
     let aviso: AvisoDePuertaEnPantalla | null = null;
     const p = id ? this.salaPorPiezas?.posicionDelAviso(id) : null;
     const obj = id ? this.markerData.get(id) : undefined;
     if (id && p && obj) {
       aviso = {
         id, texto: exitVerb(obj.label), bloqueada: this.doorStates[id] === 'locked',
-        ...this.proyectarAviso(p), vista: this.vistaParaAvisos(), ocupadas: this.obstaculosParaAvisos(),
+        ...this.proyectarAviso(p), vista: this.vistaParaAvisos(), ocupadas,
       };
     }
     const firma = aviso ? JSON.stringify(aviso) : '';
@@ -844,7 +849,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private proyectarAviso(p: Punto): Punto {
     const cam = this.cameras.main;
     const estado = this.camState ?? { centro: cam.midPoint, zoom: cam.zoom };
-    const escala = this.scale.zoom || 1;
+    const escala = this.scale?.zoom || 1;
     return {
       x: Math.round(((p.x - estado.centro.x) * estado.zoom + cam.width / 2) * escala),
       y: Math.round(((p.y - estado.centro.y) * estado.zoom + cam.height / 2) * escala),
@@ -853,43 +858,46 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   private vistaParaAvisos(): CajaDePlaca {
     const { width, height } = this.cameras.main;
-    const escala = this.scale.zoom || 1;
+    const escala = this.scale?.zoom || 1;
     return { x: 4, y: 4 + this.camCoveredTopCss, ancho: width * escala - 8,
       alto: height * escala - 8 - this.camCoveredTopCss - this.camCoveredCss };
   }
 
-  private obstaculosParaAvisos(): CajaDePlaca[] {
-    const cajas = [...this.camPlacas];
-    const zoomCss = (this.camState?.zoom ?? this.cameras.main.zoom) * (this.scale.zoom || 1);
-    const cuerpo = (x: number, y: number, alto = ALTO_CUERPO) => cajas.push({
-      ...this.proyectarAviso({ x: x - MEDIO_CUERPO, y: y - alto }),
-      ancho: Math.ceil(2 * MEDIO_CUERPO * zoomCss), alto: Math.ceil(alto * zoomCss),
-    });
-    if (this.player) cuerpo(this.player.x, this.player.y);
-    this.markers.forEach((marker, key) => {
-      const objeto = this.markerData.get(key);
-      if (objeto?.type === 'PERSON' && marker.visible && marker.alpha > 0) {
-        const cama = this.apoyosDeLaSala.get(key)?.cama;
-        if (cama) cuerpo(marker.x, marker.y + FILAS_DE_CABEZA, FILAS_DE_CABEZA);
-        else cuerpo(marker.x, marker.y + markerFeetOffsetY(objeto));
-      }
-      const rotulo = this.markerLabels.get(key);
-      if (rotulo?.visible && rotulo.alpha > 0) {
-        cajas.push({
-          ...this.proyectarAviso({ x: rotulo.x - rotulo.displayWidth / 2, y: rotulo.y }),
-          ancho: rotulo.displayWidth * zoomCss, alto: rotulo.displayHeight * zoomCss,
-        });
-      }
-    });
-    this.npcMarkers.forEach(npc => { if (npc.visible && npc.alpha > 0) cuerpo(npc.x, npc.y); });
-    const prompt = this.markerPrompt;
-    if (prompt?.visible) {
-      cajas.push({
-        ...this.proyectarAviso({ x: prompt.x - prompt.displayWidth / 2, y: prompt.y }),
-        ancho: prompt.displayWidth * zoomCss, alto: prompt.displayHeight * zoomCss,
-      });
+  private cuerpoEnPantalla(pie: Sujeto, zoomCss: number): CajaDePlaca {
+    const { mitad = MEDIO_CUERPO, alto = ALTO_CUERPO } = pie.cuerpo ?? {};
+    return {
+      ...this.proyectarAviso({ x: pie.x - mitad, y: pie.y - alto }),
+      ancho: Math.ceil(2 * mitad * zoomCss), alto: Math.ceil(alto * zoomCss),
+    };
+  }
+
+  private cuerpoVivo(key: string): Sujeto | null {
+    const actor = this.actorOf(key);
+    if (!actor?.visible || !(actor.alpha > 0)) return null;
+    const objeto = this.markerData.get(key);
+    if (key.startsWith(NPC_KEY_PREFIX)) return { x: actor.x, y: actor.y };
+    if (objeto?.type !== 'PERSON') return null;
+    const apoyo = this.apoyosDeLaSala.get(key);
+    if (!apoyo?.cama) return { x: actor.x, y: actor.y + markerFeetOffsetY(objeto) };
+    const { cabeza, cobija } = apoyo.cama;
+    const xCobija = apoyo.mueble.espejo ? cabeza.x - cobija.x - cobija.ancho : cobija.x - cabeza.x;
+    const izquierda = Math.min(-MEDIO_CUERPO, xCobija);
+    const derecha = Math.max(MEDIO_CUERPO, xCobija + cobija.ancho);
+    const alto = Math.max(FILAS_DE_CABEZA, cobija.y - cabeza.y + cobija.alto);
+    return { x: actor.x + (izquierda + derecha) / 2, y: actor.y + alto, cuerpo: { mitad: (derecha - izquierda) / 2, alto } };
+  }
+
+  private cuerposVisibles(): Sujeto[] {
+    const cuerpos: Sujeto[] = [];
+    for (const key of this.markers.keys()) {
+      const cuerpo = this.cuerpoVivo(key);
+      if (cuerpo) cuerpos.push(cuerpo);
     }
-    return cajas;
+    for (const key of this.npcMarkers.keys()) {
+      const cuerpo = this.cuerpoVivo(this.npcKeyOf(key));
+      if (cuerpo) cuerpos.push(cuerpo);
+    }
+    return cuerpos;
   }
 
   /** Al entrar por una puerta, primero deja ver al personaje. Un paso real vuelve a mostrar los avisos. */
@@ -1395,10 +1403,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
    * Lo que la pantalla pide (bloque M1): explorar, hablar con `clave` o revisar `clave`; cuánto tapa abajo el cuadro de
    * diálogo o la franja de cine, y cuánto la franja de arriba (px CSS).
    */
-  setCameraMoment(moment: CameraMoment, coveredCss: number, coveredTopCss = 0): void {
+  setCameraMoment(moment: CameraMoment, coveredCss: number, coveredTopCss = 0, fase: object | null = null): void {
     this.camMoment = moment;
     this.camCoveredCss = Math.max(0, coveredCss);
     this.camCoveredTopCss = Math.max(0, coveredTopCss);
+    this.camFase = fase;
   }
 
   setCameraOptions(options: CameraOptions): void {
@@ -1406,7 +1415,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   }
 
   /** Zona segura (U1): la pantalla da cómo medir sus placas sobre el lienzo; se mide a lo sumo cada `MEDIR_PLACAS_MS`. */
-  setCameraPlacas(medir: (() => readonly CajaDePlaca[]) | null): void {
+  setCameraPlacas(medir: (() => readonly PlacaDeInterfaz[]) | null): void {
     this.camPlacasMedir = medir;
     this.camPlacasEn = Number.NEGATIVE_INFINITY;
     if (!medir) this.camPlacas = [];
@@ -1455,12 +1464,14 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** La reacción, la conversación o el objeto en curso, con los pies de quien corresponda; null si no hay. */
   private closeMomentNow(): Momento | null {
     if (this.camFrameKey) {
-      const de = this.focoDelApoyo(this.camFrameKey) ?? this.liveFeetOf(this.camFrameKey);
+      const de = this.cuerpoVivo(this.camFrameKey) ?? this.focoDelApoyo(this.camFrameKey) ?? this.liveFeetOf(this.camFrameKey);
       if (de) return { tipo: 'reaccion', de };
     }
     if (this.camMoment.tipo !== 'explorar') {
       const { tipo, clave } = this.camMoment;
-      const feet = this.focoDelApoyo(clave) ?? (tipo === 'conversacion' ? this.liveFeetOf(clave) : this.feetOf(clave));
+      const feet = tipo === 'conversacion'
+        ? this.cuerpoVivo(clave) ?? this.liveFeetOf(clave)
+        : this.focoDelApoyo(clave) ?? this.feetOf(clave);
       if (feet) return this.camMoment.tipo === 'conversacion' ? { tipo: 'conversacion', con: feet } : { tipo: 'objeto', en: feet };
     }
     return null;
@@ -1502,8 +1513,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       cubiertoAbajo: this.camCoveredCss * dpr, cubiertoArriba: this.camCoveredTopCss * dpr,
       placas: this.camPlacas.map(p => ({ x: p.x * dpr, y: p.y * dpr, ancho: p.ancho * dpr, alto: p.alto * dpr })),
     };
+    const jugador = { x: this.player.x, y: this.player.y };
+    const cuerpos = this.cuerposVisibles();
     const calculado = objetivoCamara({
-      jugador: { x: this.player.x, y: this.player.y },
+      jugador,
       sala,
       vista,
       momento,
@@ -1512,11 +1525,13 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       cerca: this.nearestKey ? this.feetForSafeArea(this.nearestKey) : null,
       destino: this.nextTargetKey && !this.dimmedKeys.has(this.nextTargetKey)
         ? this.feetForSafeArea(this.nextTargetKey) : null,
+      cuerpos,
     }, this.camCut ? null : this.camState);
-    // Plano sostenido: el objetivo es el de antes de soltarse (sin recalcular con el cuadro que se va).
-    const sostener = this.camSosteniendo && this.camCoveredCss === 0;
-    const objetivo = sostener && this.camUltimoObjetivo ? this.camUltimoObjetivo : calculado;
-    if (!sostener) this.camUltimoObjetivo = calculado;
+    const retenido = this.camUltimoObjetivo;
+    const sostener = this.camSosteniendo && this.camCoveredCss === 0 && !this.coreografia && retenido
+      && encuadreSinCortes(retenido, vista, [jugador], cuerpos);
+    const objetivo = sostener ? retenido : calculado;
+    this.camUltimoObjetivo = objetivo;
 
     let next: EstadoCamara;
     if (this.camCut || !this.camState || this.callbacks.reduceMotion) {
@@ -1549,13 +1564,28 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.applyCanvasScale(escala);
     this.scaleLabelsForZoom(next.zoom);
     this.syncEdgeArrow();
-    this.refitLabelsToView();
-    const avisos = this.haDadoUnPaso() && !this.coreografia && !this.motionPaused;
-    this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null);
-    this.ubicarAvisosHeredados(avisos);
     if (escala === 1 && base !== this.camSettledZoom) {
       this.camSettledZoom = base;
       this.onCameraZoomSettled();
+    }
+    const zoomCss = next.zoom * (this.scale?.zoom || 1);
+    const ocupadas = this.camPlacas.filter(p => !p.ubicar).concat(
+      [jugador, ...cuerpos].map(pie => this.cuerpoEnPantalla(pie, zoomCss)),
+    );
+    for (const placa of this.camPlacas) {
+      if (!placa.ubicar) continue;
+      const posicion = situarAviso(placa, this.vistaParaAvisos(), ocupadas);
+      placa.ubicar(posicion);
+      if (posicion) ocupadas.push({ ...placa, ...posicion });
+    }
+    this.ubicarRotulos(ocupadas, zoomCss);
+    const avisos = this.haDadoUnPaso() && !this.coreografia && !this.motionPaused;
+    this.ubicarAvisosHeredados(avisos, ocupadas);
+    this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null, ocupadas);
+    const faseLista = this.camTravel === null && asentada(next, objetivo) ? this.camFase : null;
+    if (this.camFase !== this.camFaseLista && (faseLista || this.camFase === null)) {
+      this.camFaseLista = faseLista;
+      this.callbacks.onEncuadre?.(faseLista);
     }
     const report: CameraReport = {
       zoom: this.camSettledZoom, momento: momento.tipo, x: Math.round(next.centro.x), y: Math.round(next.centro.y),
@@ -2768,18 +2798,68 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     return min > max ? (view.x + view.right) / 2 : Math.min(max, Math.max(min, ownerX));
   }
 
-  /**
-   * La cámara se movió: los rótulos visibles se vuelven a recortar a la nueva vista. Solo cuando cambian los bordes de la
-   * vista y solo con rótulos a la vista (a lo sumo tres): `placeLabel` ya sabe dónde va cada uno.
-   */
-  private refitLabelsToView(): void {
-    const view = this.cameras?.main?.worldView;
-    if (!view || (view.x === this.labelViewLeft && view.right === this.labelViewRight)) return;
-    this.labelViewLeft = view.x;
-    this.labelViewRight = view.right;
-    for (let i = 0; i < this.revealed.length; i++) this.placeLabel(this.revealed[i]);
-    const near = this.nearestKey;
-    if (near !== null && !this.revealed.includes(near)) this.placeLabel(near);
+  /** La acción al alcance ocupa sitio primero. Cada rótulo se vuelve a probar aunque su dueño esté quieto. */
+  private ubicarRotulos(ocupadas: CajaDePlaca[], zoomCss: number): void {
+    const vista = this.vistaParaAvisos();
+    const colocar = (texto: Phaser.GameObjects.Text, x: number, y: number, accion = false) => {
+      const ancho = texto.displayWidth * zoomCss;
+      const alto = texto.displayHeight * zoomCss;
+      const ancla = this.proyectarAviso({ x, y });
+      const caja = { x: ancla.x - ancho * texto.originX, y: ancla.y - alto * texto.originY, ancho, alto };
+      if (!accion && !seCruzan(caja, vista)) {
+        texto.setVisible(false);
+        return;
+      }
+      const posicion = situarAviso(caja, vista, ocupadas);
+      if (texto.visible !== (posicion !== null)) texto.setVisible(posicion !== null);
+      if (!posicion) return;
+      const nx = x + (posicion.x - caja.x) / zoomCss;
+      const ny = y + (posicion.y - caja.y) / zoomCss;
+      if (texto.x !== nx || texto.y !== ny) texto.setPosition(nx, ny);
+      ocupadas.push({ ...caja, ...posicion });
+    };
+    const anclaDelMarcador = (key: string, obj: MapObjectState, marker: Phaser.GameObjects.Container) => {
+      const llegada = this.apoyosDeLaSala.get(key)?.llegada;
+      const moving = this.markerMoves(key);
+      return { x: llegada?.x ?? (moving ? marker.x : obj.x),
+        y: (llegada?.y ?? (moving ? marker.y : obj.y) + markerFeetOffsetY(obj)) + SEPARACION_BAJO_LOS_PIES_PX };
+    };
+    const cerca = this.nearestKey;
+    const prompt = this.markerPromptOn ? this.markerPrompt : undefined;
+    if (cerca && prompt) {
+      const objeto = this.markerData.get(cerca);
+      const marcador = this.markers.get(cerca);
+      const rotulo = this.markerLabels.get(cerca);
+      if (objeto && marcador && rotulo) {
+        const { x, y } = anclaDelMarcador(cerca, objeto, marcador);
+        colocar(prompt, x, y + rotulo.displayHeight + 2, true);
+      }
+    }
+    for (const [key, rotulo] of this.markerLabels) {
+      if (!(rotulo.alpha > 0)) continue;
+      const objeto = this.markerData.get(key);
+      const marcador = this.markers.get(key);
+      if (!objeto || !marcador) continue;
+      const { x, y } = anclaDelMarcador(key, objeto, marcador);
+      if (key === cerca && prompt?.visible) {
+        colocar(rotulo, prompt.x, prompt.y - rotulo.displayHeight - 6 / zoomCss);
+      } else {
+        colocar(rotulo, x, y);
+      }
+    }
+    for (const npc of this.npcMarkers.values()) {
+      const bag = npc as unknown as Record<string, unknown>;
+      const label = bag['__labelSprite'] as Phaser.GameObjects.Text | undefined;
+      const hint = bag['__hintSprite'] as Phaser.GameObjects.Text | undefined;
+      const y = npc.y + Number(bag['__labelOffsetY'] ?? 0);
+      if (hint && hint.alpha > 0) {
+        const principal = this.actorOf(cerca ?? '') === npc;
+        colocar(hint, npc.x, y - (label?.displayHeight ?? 0) - 2, principal);
+      }
+      if (label && label.alpha > 0) colocar(label, npc.x, y);
+    }
+    const flecha = this.edgeArrow;
+    if (flecha?.visible) colocar(flecha, flecha.x, flecha.y);
   }
 
   /** Pone (x, y) del destino en `edgeXY` sin asignar nada; false si no está en la sala. */
@@ -3410,12 +3490,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     return this.add.container(0, 0, [cabeza, cobija]);
   }
 
-  private ubicarAvisosHeredados(avisos: boolean): void {
+  private ubicarAvisosHeredados(avisos: boolean, ocupadas: CajaDePlaca[]): void {
     const candidatos = [...this.doorHints].filter(([key]) =>
       avisos && (key === this.nearestKey || this.revealed.includes(key)));
     this.doorHints.forEach(hint => hint.setVisible(false));
     if (!candidatos.length || !this.camState) return;
-    const ocupadas = this.obstaculosParaAvisos();
     const vista = this.vistaParaAvisos();
     const zoomCss = this.camState.zoom * (this.scale.zoom || 1);
     for (const [, hint] of candidatos) {
@@ -3494,7 +3573,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   /** Para esquivar placas, una persona que camina cuenta donde se la ve. */
   private feetForSafeArea(key: string): Sujeto | null {
     const objeto = this.markerData.get(key);
-    if (objeto?.type === 'PERSON') return this.liveFeetOf(key);
+    if (objeto?.type === 'PERSON') return this.cuerpoVivo(key);
     const pies = this.feetOf(key);
     const rotulo = this.markerLabels.get(key);
     if (!pies || !rotulo?.alpha) return pies;
@@ -3504,7 +3583,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     return { ...pies, rotulo: {
       ancho: Math.max(rotulo.width, prompt?.width ?? 0) * escala,
       alto: (rotulo.height + (prompt?.height ?? 0)) * escala,
-      separacion: rotulo.y - pies.y + (prompt ? 2 : 0),
+      separacion: SEPARACION_BAJO_LOS_PIES_PX + (prompt ? 2 : 0),
     } };
   }
 
@@ -3650,7 +3729,6 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.markerPrompt = undefined;
     this.edgeArrow = undefined;
     this.edgeState = '';
-    this.labelViewLeft = this.labelViewRight = NaN;
     this.walkInteractKey = null;
     this.revealed.length = 0;
     // El contorno y el verbo del puntero también los destruye `children.removeAll`: se vuelven a crear al usarlos.
@@ -4930,19 +5008,22 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
   /** Cámara (bloque M1): momento que pide la pantalla y alto (px CSS) que el cuadro de diálogo tapa abajo del lienzo. */
   private cameraOptions: CameraOptions = { cercana: false, acercarAuto: true };
   private cameraMoment: CameraMoment = { tipo: 'explorar' };
+  readonly encuadreListo = signal<object | null>(null);
+  private cameraFase: object | null = null;
   private cameraCoveredCss = 0;
   private cameraCoveredTopCss = 0;
-  private cameraPlacas: (() => readonly CajaDePlaca[]) | null = null;
+  private cameraPlacas: (() => readonly PlacaDeInterfaz[]) | null = null;
   /** Zona segura de la cámara (U1): cómo medir las placas de la interfaz sobre el lienzo (px CSS desde su esquina). */
-  setCameraPlacas(medir: (() => readonly CajaDePlaca[]) | null) {
+  setCameraPlacas(medir: (() => readonly PlacaDeInterfaz[]) | null) {
     this.cameraPlacas = medir;
     this.scene?.setCameraPlacas?.(medir);
   }
-  setCameraMoment(moment: CameraMoment, coveredCss = 0, coveredTopCss = 0) {
+  setCameraMoment(moment: CameraMoment, coveredCss = 0, coveredTopCss = 0, fase: object | null = null) {
     this.cameraMoment = moment;
     this.cameraCoveredCss = coveredCss;
     this.cameraCoveredTopCss = coveredTopCss;
-    this.scene?.setCameraMoment(moment, coveredCss, coveredTopCss);
+    this.cameraFase = fase;
+    this.scene?.setCameraMoment(moment, coveredCss, coveredTopCss, fase);
   }
   setCameraOptions(options: CameraOptions) {
     this.cameraOptions = options;
@@ -5031,6 +5112,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         onKeyPersonIndicator: name => this.writeKeyPerson(name),
         onKeyPersonPosition: position => this.writeKeyPersonPosition(position),
         onCamera: camera => this.writeCamera(camera),
+        onEncuadre: fase => this.zone.run(() => this.encuadreListo.set(fase)),
         onWalkEnded:   (key, label, outcome) => this.zone.run(() => this.walkEnded.emit({ key, label, outcome })),
         onWalkCancelled: () => this.zone.run(() => this.walkCancelled.emit()),
         onLoadProgress: percent => this.zone.run(() => {
@@ -5059,7 +5141,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
       this.scene.setPersonaScene(this.activation(), this.intensity());
       // La cámara recibe lo que la pantalla pidió antes de que existiera la escena (bloque M1).
       this.scene.setCameraOptions(this.cameraOptions);
-      this.scene.setCameraMoment(this.cameraMoment, this.cameraCoveredCss, this.cameraCoveredTopCss);
+      this.scene.setCameraMoment(this.cameraMoment, this.cameraCoveredCss, this.cameraCoveredTopCss, this.cameraFase);
       this.scene.setCameraPlacas?.(this.cameraPlacas);
       this.armBootWatchdog();
       this.phaserGame = new Phaser.Game({

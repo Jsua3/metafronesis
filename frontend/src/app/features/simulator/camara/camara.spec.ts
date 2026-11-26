@@ -307,9 +307,35 @@ describe('camara: zona segura de las placas (bloque U1)', () => {
     expect(objetivoCamara(e, primero)).toEqual(primero);
   });
 
-  it('el plano general no se corre: ahí se ve la sala entera', () => {
-    const e = entrada({ jugador: { x: 60, y: 110 }, momento: { tipo: 'general' } });
-    expect(objetivoCamara({ ...e, vista: conPlacas() }, null)).toEqual(objetivoCamara(e, null));
+  it('mantiene el plano general centrado si la ficha deja libre a la persona', () => {
+    const estado = objetivoCamara(entrada({ momento: { tipo: 'general' }, jugador: { x: 600, y: 330 } }), null);
+    const v = { ...PORTATIL, placas: [OBJETIVO] };
+    expect(objetivoCamara(entrada({ momento: { tipo: 'general' }, jugador: { x: 600, y: 330 }, vista: v }), null)).toEqual(estado);
+  });
+
+  it('encuadra a las personas de la sala en el plano de entrada aunque no sean el destino', () => {
+    const jugador = { x: 610, y: 390 };
+    const oscar = { x: 370, y: 245 }, gloria = { x: 1120, y: 340 };
+    const v = vista(1366, 768);
+    v.placas = [{ x: 12, y: 12, ancho: 440, alto: 382 }, { x: 1187, y: 305, ancho: 167, alto: 44 }];
+    const e = { ...entrada({ jugador, vista: v, momento: { tipo: 'general' } }), cuerpos: [oscar, gloria] };
+    const estado = objetivoCamara(e, null);
+    for (const persona of [jugador, oscar, gloria]) {
+      const cuerpo = enPantalla(persona, estado, v);
+      expect(cuerpo.x).toBeGreaterThanOrEqual(0);
+      expect(cuerpo.x + cuerpo.ancho).toBeLessThanOrEqual(v.ancho);
+      expect(v.placas.some(placa => tapa(cuerpo, placa))).toBe(false);
+    }
+  });
+
+  it('incluye a la persona que sigue en la sala cuando el acuse ocupa el carril', () => {
+    const jugador = { x: 630, y: 290 }, vigilante = { x: 550, y: 265 };
+    const acuse = { x: 455, y: 94, ancho: 200, alto: 222 };
+    const v = { ...PORTATIL, placas: [acuse] };
+    const e = { ...entrada({ jugador, vista: v }), cuerpos: [vigilante] };
+    const estado = objetivoCamara(e, null);
+    expect(tapa(enPantalla(vigilante, estado, v), acuse)).toBe(false);
+    expect(tapa(enPantalla(jugador, estado, v), acuse)).toBe(false);
   });
 
   it('si ninguna salida cabe en la vista, no se mueve', () => {

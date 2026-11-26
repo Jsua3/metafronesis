@@ -45,9 +45,11 @@ const medirVentana = () => typeof window === 'undefined'
   template: `
     @if (dialogue(); as d) {
       <div #dialogueBox
-        cdkTrapFocus
-        [cdkTrapFocusAutoCapture]="true"
+        [cdkTrapFocus]="!encuadrando()"
+        [cdkTrapFocusAutoCapture]="!encuadrando()"
         class="dialogue-strip"
+        [attr.data-encuadrando]="encuadrando() ? '' : null"
+        [attr.inert]="encuadrando() ? '' : null"
         [class.strip--angosta]="angosta()"
         [class.dialogue-strip--side]="mode() === 'side'"
         [class.strip--warning]="interaction()?.type === 'WARNING'"
@@ -232,6 +234,7 @@ const medirVentana = () => typeof window === 'undefined'
       line-height: 1.45;
       animation: strip-rise 160ms steps(3, jump-none) both;
     }
+    .dialogue-strip[data-encuadrando] { visibility: hidden; animation: none; }
 
     /* Marco de pixel art: borde de 4 px de mundo por lado y relleno con trama, sin esquinas suavizadas. */
     .placa-cuerpo, .speaker-name, .panel-back, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
@@ -952,6 +955,11 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.lineIndex(),
     this.isTypingComplete() && this.ultimaPagina(),
   ));
+  readonly esperarEncuadre = input(false);
+  readonly encuadreListo = input<object | null>(null);
+  /** Cada disposición se mide por separado, también si las opciones aparecen después de leer. */
+  readonly faseEncuadre = computed(() => ({ dialogo: this.dialogue(), opciones: this.choicesVisible() }));
+  readonly encuadrando = computed(() => this.esperarEncuadre() && this.encuadreListo() !== this.faseEncuadre());
   /** Opción ya elegida: pausa breve de confirmación antes de ejecutar. */
   readonly chosenKey = signal<string | null>(null);
   /** La letra de pixel no cargó (ruta o recurso ausente): las opciones muestran su letra en texto. */
@@ -1037,7 +1045,9 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       }
     });
     effect(() => {
+      if (this.encuadrando()) return;
       if (this.choicesVisible()) this.choicesShownAt = Date.now();
+      untracked(() => this.requestDialogueFocus());
     });
     // La línea activa se anuncia por la región viva persistente de la app (F6-12, H-09). Cuenta la línea completa, no
     // la máquina de escribir, y solo cuando cambia el diálogo o la línea.
@@ -1215,7 +1225,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   @HostListener('document:keydown', ['$event'])
   onKeydown(e: KeyboardEvent): void {
     const d = this.dialogue();
-    if (!d) return;
+    if (!d || (this.encuadrando() && e.key !== 'Escape')) return;
     // La cabecera conserva su propia activación: sin esto, Enter o Espacio sobre «Volver al mapa»
     // o «Salida segura» avanzarían el texto y el preventDefault cancelaría el clic nativo.
     if (e.key !== 'Escape' && (e.target as HTMLElement | null)?.closest?.('.panel-head')) return;

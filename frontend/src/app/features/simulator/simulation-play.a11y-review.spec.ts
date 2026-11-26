@@ -35,7 +35,7 @@ describe('F6: anuncios de las regiones vivas, una sola vez', () => {
 
   // Bloque U1 (variante B): el aviso suave es una placa con icono de pixel y la ficha lleva la pestaña de la etapa antes del desplazable; ninguno trae role.
   it('el juego no trae región viva propia: ni el aviso suave ni la tarjeta «Qué hacer» llevan role', () => {
-    expect(source).toMatch(/<div class="soft-notice u-placa u-sombra"><app-pixel-icono nombre="hecho" \/><span>\{\{ softNotice\(\) \}\} <span>\{\{ decisionSelection\(\) \}\}<\/span><\/span><\/div>/);
+    expect(source).toMatch(/<div class="soft-notice u-placa u-sombra" data-placa-flotante><app-pixel-icono nombre="hecho" \/><span>\{\{ texto \}\}<\/span><\/div>/);
     expect(source).not.toMatch(/<div class="soft-notice[^>]*role=/);
     expect(source).toMatch(/<div class="objective-card">\s*(<!--[\s\S]*?-->\s*)?(@if \(stageLabel\(\); as etapa\) \{[\s\S]*?objective-card__etapa[\s\S]*?\}\s*)?<div class="objective-card__scroll">/);
     expect(source).not.toMatch(/<div class="objective-card"[^>]*role=/);

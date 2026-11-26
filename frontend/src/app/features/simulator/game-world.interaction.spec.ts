@@ -21,6 +21,7 @@ vi.mock('phaser', () => ({
 import { MapObjectState, NpcConfig, SimulationWorldState } from '../../core/models/simulation.model';
 import { DataDrivenWorldScene } from './game-world.component';
 import { MARKER_INTERACT_RADIUS, NPC_INTERACT_RADIUS } from './interaction-priority.util';
+import { Caja, EstadoCamara, seCruzan } from './camara/camara';
 import type { Mock } from 'vitest';
 
 interface FakeNode {
@@ -39,7 +40,7 @@ function node(x = 0, y = 0): FakeNode {
     setPosition: vi.fn((nx: number, ny: number) => { self.x = nx; self.y = ny; return self; }),
     setStrokeStyle: vi.fn(() => self),
     setDepth: vi.fn(() => self),
-    setOrigin: vi.fn(() => self),
+    setOrigin: vi.fn((x: number, y = x) => { self['originX'] = x; self['originY'] = y; return self; }),
     setText: vi.fn((t: string) => { self['text'] = t; return self; }),
   };
   return self;
@@ -794,20 +795,28 @@ describe('DataDrivenWorldScene: nada se sale de la vista (P9)', () => {
     edgeArrow?: FakeNode;
     nextTargetKey: string | null;
     syncEdgeArrow(): void;
-    refitLabelsToView(): void;
+    ubicarRotulos(ocupadas: Caja[], zoomCss: number): void;
+    camState: EstadoCamara;
+    scale: { zoom: number };
     labelScale: number;
   }
   const vista = (x: number, w: number, y = 0, hgt = 528) =>
     ({ x, right: x + w, y, bottom: y + hgt, width: w, height: hgt });
+  const ponerVista = (p: VistaProbe, v: ReturnType<typeof vista>) => {
+    p.cameras = { main: { worldView: v, width: v.width, height: v.height } };
+    p.camState = { zoom: 1, centro: { x: v.x + v.width / 2, y: v.y + v.height / 2 } };
+  };
   const conVista = (v: ReturnType<typeof vista>, player = { x: 480, y: 430 }) => {
     const h = crearEscena(player);
     const p = h.scene as unknown as VistaProbe;
-    p.cameras = { main: { worldView: v } };
+    ponerVista(p, v);
+    p.scale = { zoom: 1 };
     p.labelScale = 1;
     (h.scene.add as unknown as { text: Mock }).text = vi.fn(() => Object.assign(node(), { displayWidth: 60, displayHeight: 14 }));
     return { h, p };
   };
-  const etiqueta = (h: Harness) => h.nodes['npc:enfermera-urgencias']['__labelSprite'] as FakeNode;
+  const etiqueta = (h: Harness) => Object.assign(h.nodes['npc:enfermera-urgencias']['__labelSprite'] as FakeNode,
+    { originX: 0.5, originY: 1, displayHeight: 14 });
 
   it('un rótulo junto al borde se recorta a la vista con margen, en vez de salir cortado', () => {
     const { h } = conVista(vista(540, 400), { x: 570, y: 372 });   // la enfermera (x=560) queda a 20 px del borde izquierdo
@@ -824,8 +833,8 @@ describe('DataDrivenWorldScene: nada se sale de la vista (P9)', () => {
     etiqueta(h)['displayWidth'] = 80;
     move(h, 570, 372);
     expect(etiqueta(h).visible).toBe(false);
-    (p.cameras as { main: { worldView: unknown } }).main.worldView = vista(300, 400);
-    p.refitLabelsToView();
+    ponerVista(p, vista(300, 400));
+    p.ubicarRotulos([], 1);
     expect(etiqueta(h).visible).toBe(true);
     expect(etiqueta(h).x).toBe(560);
   });
@@ -834,10 +843,41 @@ describe('DataDrivenWorldScene: nada se sale de la vista (P9)', () => {
     const { h, p } = conVista(vista(300, 400), { x: 570, y: 372 });
     etiqueta(h)['displayWidth'] = 80;
     move(h, 570, 372);
-    p.refitLabelsToView();
+    p.ubicarRotulos([], 1);
     const llamadas = etiqueta(h).setPosition.mock.calls.length;
-    for (let i = 0; i < 10; i++) p.refitLabelsToView();
+    for (let i = 0; i < 10; i++) p.ubicarRotulos([], 1);
     expect(etiqueta(h).setPosition.mock.calls.length).toBe(llamadas);
+  });
+
+  it('evita que el nombre de un objeto cruce un cuerpo que pasa y lo recupera al quedar libre', () => {
+    const { h, p } = conVista(vista(0, 980));
+    h.scene.setOrientation({ nextTargetKey: 'tool-pap', doorStates: {}, dimmedKeys: new Set() });
+    const rotulo = Object.assign(h.nodes['tool-pap#label'], { originX: 0.5, originY: 0, displayWidth: 90, displayHeight: 14 });
+    const cuerpo = { x: 297, y: 436, ancho: 45, alto: 65 };
+    const original = { x: 273, y: 440, ancho: 90, alto: 14 };
+    const cajas = [cuerpo];
+    expect(seCruzan(original, cuerpo)).toBe(true);
+    p.ubicarRotulos(cajas, 1);
+    expect(rotulo.visible).toBe(true);
+    expect(seCruzan(cajas.at(-1)!, cuerpo)).toBe(false);
+    p.ubicarRotulos([{ x: 0, y: 0, ancho: 980, alto: 528 }], 1);
+    expect(rotulo.visible).toBe(false);
+    p.ubicarRotulos([], 1);
+    expect([rotulo.visible, rotulo.x, rotulo.y]).toEqual([true, 318, 440]);
+  });
+
+  it('mantiene la acción de revisar completa si el panel deja sitio para la acción y no para el nombre', () => {
+    const { h, p } = conVista(vista(600, 200, 320, 110));
+    const nombre = Object.assign(h.nodes['zona-restringida#label'], { originX: 0.5, originY: 0, displayWidth: 180, displayHeight: 24 });
+    move(h, 660, 330);
+    const prompt = (h.scene as unknown as OrientacionProbe).markerPrompt!;
+    const panel = { x: 0, y: 28, ancho: 200, alto: 82 };
+    const cajas = [panel];
+    p.ubicarRotulos(cajas, 1);
+    expect(prompt.visible).toBe(true);
+    expect(prompt['text']).not.toBe('');
+    expect(seCruzan(cajas.at(-1)!, panel)).toBe(false);
+    expect(nombre.visible).toBe(false);
   });
 
   it('el siguiente paso fuera de cuadro lleva una flecha al borde por donde hay que ir, con su nombre corto', () => {

@@ -33,6 +33,7 @@ export interface PasoAutorado {
 export interface GuiaAutorada {
   paso: number;
   titulo: string;
+  objetivo?: string;
   pasos: readonly PasoAutorado[];
 }
 
@@ -167,15 +168,16 @@ export function leerGuiaAutorada(ambiente: unknown, nombre?: string): GuiaAutora
   const paso = crudo['paso'];
   const numero = typeof paso === 'string' && /^\d+$/.test(paso.trim()) ? Number(paso) : paso;
   return {
-    paso: typeof numero === 'number' && Number.isSafeInteger(numero) && numero > 0 ? numero : 1,
+    paso: typeof numero === 'number' && Number.isSafeInteger(numero) && numero >= 0 ? numero : 1,
     titulo: typeof crudo['titulo'] === 'string' ? conNombre(crudo['titulo'].trim(), nombre) : '',
+    ...(typeof crudo['objetivo'] === 'string' && { objetivo: conNombre(crudo['objetivo'].trim(), nombre) }),
     pasos,
   };
 }
 
 /** La pestaña de la tarjeta: «Paso 2 · Contén antes de informar» (sin título, solo «Paso 2»). */
 export const pestanaDeLaGuia = (g: Pick<GuiaAutorada, 'paso' | 'titulo'>): string =>
-  g.titulo ? `Paso ${g.paso} · ${g.titulo}` : `Paso ${g.paso}`;
+  g.paso === 0 ? g.titulo : g.titulo ? `Paso ${g.paso} · ${g.titulo}` : `Paso ${g.paso}`;
 
 /** Los pasos escritos, evaluados contra el mundo, y a dónde apunta el primero pendiente que trae `lugar`. */
 function pasosAutorados(a: NonNullable<EntradaGuia['autorada']>, lugares: readonly PlaceCandidate[]) {

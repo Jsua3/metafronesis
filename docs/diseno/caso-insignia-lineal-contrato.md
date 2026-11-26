@@ -79,6 +79,7 @@ Plantilla común a todos los textos: `{nombre}` se reemplaza por el nombre de pi
 
 - Reemplaza los pasos calculados de la tarjeta del objetivo (`caso/guia.ts`) cuando existe. Sin `guia`, todo sigue como hoy.
 - La pestaña dice «Paso {paso} · {titulo}». El objetivo de la escena (`goal`) sigue arriba.
+- `paso: 0` identifica una guía de ambiente, fuera de la numeración del capítulo. Mientras se muestra ese mapa, la ficha usa el título del mapa y el `objetivo` opcional de su guía. Si falta `objetivo`, toma el primer paso escrito de esa sala. Al volver, la ficha recupera el título y el objetivo de la etapa.
 - `hecho` es un hecho opcional, y el paso se marca hecho (✓) cuando se cumple:
   - `{"talked": claveObjeto}` se cumple cuando la clave está en `world.viewedNpcKeysHere`, que recoge las conversaciones del nodo actual. Si el campo viene como `[]`, el paso queda pendiente. Si falta, la guía usa las marcas anteriores del intento, incluidas `flags.viewedNpcKeys` y las inspecciones.
   - `{"inspected": claveObjeto}`: la clave está en `inspectedObjectKeys`.

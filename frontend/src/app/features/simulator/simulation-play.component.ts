@@ -35,7 +35,7 @@ import { partirNotaDeTransicion } from './nota-transicion';
 import { SensitiveNoticeComponent } from './sensitive-notice.component';
 import { debeConfirmarEnsayo, escenaDesde, reintentarSinDesde, veredictoDeLectura } from './caso/ensayo';
 import { debeConfirmarIntento, intentoPerdido } from './caso/intento-reemplazado';
-import { escenaRetenida } from './caso/escena-visible';
+import { escenaRetenida, fichaDeLaSala } from './caso/escena-visible';
 import {
   type AlmacenSimple, type IntencionDeDecision, OrdenDeRespuestas, PLAZO_ACCION_MS, borrarIntencion, borrarLectura, claveDeNpc, esPlazoVencido, guardarIntencion,
   guardarLectura, leerIntencion, leerLectura, objetoDeLectura, pasoTrasFalloDeGuardado, respuestaVigente, veredictoDeEnvio, veredictoDeIntencion,
@@ -53,10 +53,9 @@ import { RehearsalPanelComponent } from './rehearsal-panel.component';
 import { type GuiaEscena, GUIA_VACIA, armarGuia, avisarOpcionNueva, leerGuiaAutorada } from './caso/guia';
 import { leerAcompanantes } from './caso/acompanantes';
 import { DialoguePanelComponent } from './dialogue-panel.component';
-import { CameraMoment, GameWorldComponent, NPC_KEY_PREFIX } from './game-world.component';
+import { CameraMoment, GameWorldComponent, NPC_KEY_PREFIX, PlacaDeInterfaz } from './game-world.component';
 import { CameraSettings } from './camara/camera-settings.service';
 import { altoTapado } from './camara/cubierta';
-import type { Caja } from './camara/camara';
 import { type EscenarioReaccion, type FinReaccion, ReactionDirectorComponent } from './reaction-director.component';
 import { JournalPanelComponent, JournalSaveState } from './journal-panel.component';
 import { isActivatableTarget, isScrollRegionTarget, isShortcutContext, isTextEntryTarget } from './keyboard-focus.util';
@@ -160,7 +159,8 @@ const PLACAS_SOBRE_EL_MUNDO = [
   '.objective-card', '.carril .sensitive-strip', '.carril .soft-notice', '.carril .room-banner',
   'app-simulation-hud .hud-case', 'app-simulation-hud .hud-strip',
   'app-minimapa .minimapa__lugar', 'app-minimapa .minimapa__abrir', 'app-minimapa .minimapa__alternar',
-  '.bottom-zone', '.right-panel',
+  '.bottom-zone', '.bottom-zone .tool-dock-wrap', '.bottom-zone .tool-notice', '.right-panel',
+  'ui-toast-host [role="alert"]',
   '.dialogue-cinematic .placa', '.dialogue-cinematic .panel-head', '.dialogue-cinematic .strip-body',
   'app-reaction-director .reaction-strip', 'app-game-world .touch-dpad', 'app-game-world .touch-interact',
 ].join(', ');
@@ -418,7 +418,9 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               @if (softNotice() && !reacting() && viewMode() !== 'dialogue-cinematic') {
                 <!-- Aviso breve (4,2 s): lo que dice ya se anunció; nunca es la única
                      fuente. Sin role: una región que nace con su texto no se anuncia de forma fiable. -->
-                <div class="soft-notice u-placa u-sombra"><app-pixel-icono nombre="hecho" /><span>{{ softNotice() }} <span>{{ decisionSelection() }}</span></span></div>
+                @for (texto of [softNotice()]; track texto) {
+                  <div class="soft-notice u-placa u-sombra" data-placa-flotante><app-pixel-icono nombre="hecho" /><span>{{ texto }}</span></div>
+                }
               }
               @if (stepsNotice() && viewMode() !== 'dialogue-cinematic') {
                 <!-- «Da unos pasos…» (P8): aviso NO modal. Dice cuánto falta y hacia dónde, se actualiza al caminar y se va solo
@@ -506,7 +508,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                   <div class="confirmacion-reaccion"><app-pixel-icono nombre="hecho" />{{ texto }}</div>
                 }
               </div>
-              <div class="cine cine--abajo" aria-hidden="true" [class.cine--dentro]="cinemaBars()"
+              <div class="cine cine--abajo" aria-hidden="true" [class.cine--dentro]="cinemaBars() && !dialoguePanel()?.encuadrando()"
                 [style.height.px]="cinemaBottomPx()"></div>
             } @else {
               <!-- Solo el fondo: el indicador de carga es .game-boot (un solo estado). #game-area existe siempre. -->
@@ -547,11 +549,12 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         </div>
 
         <!-- REGLA-004: mientras el fundido de escena (o la nota de transición) espera al servidor, el pie queda por encima y «Salida segura» se ve y se toca. -->
-        <!-- Con el cuadro de diálogo sobre el mundo, el pie se oculta y queda inerte: la franja de abajo es del cuadro. -->
+        <!-- Salida segura queda en el pie hasta que el cuadro de diálogo toma el relevo. -->
         <footer class="bottom-zone" [class.bottom-zone--above-veils]="footerAboveVeils()"
-          [attr.inert]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? '' : null"
-          [attr.aria-hidden]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? 'true' : null"
-          [class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic'"
+          [attr.inert]="pieInerte() ? '' : null"
+          [attr.aria-hidden]="pieInerte() ? 'true' : null"
+          [class.bottom-zone--encuadrando]="esperandoPanel()"
+          [class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic' && !esperandoPanel()"
           [class.bottom-zone--bajo-reaccion]="reacting()">
           @if (game.status === 'IN_PROGRESS' || reactingToLast()) {
             <!-- La misma implementación que las superposiciones (F6-6, REGLA-004). Sin [disabled]: con una petición
@@ -615,6 +618,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
 
         @if (viewMode() === 'dialogue-cinematic') {
           <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogoConNombre()" [world]="world()" [avisoBreve]="softNotice() + (decisionSelection() ? ' ' + decisionSelection() : '')" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente"
+            [esperarEncuadre]="esperarEncuadre()" [encuadreListo]="gameWorldRef()?.encuadreListo() ?? null"
             [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
             (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
             (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -905,6 +909,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
        (con el diálogo abierto el pie ya era inerte y el dock no hace nada): el pie se oculta en vez de quedar debajo, sin
        dejar hueco (visibility, no display: el lienzo no cambia de tamaño al abrir y cerrar). */
     .bottom-zone--bajo-dialogo { visibility: hidden; }
+    .bottom-zone--encuadrando > :not(app-safe-exit-button) { visibility: hidden; }
     /* Lo mismo durante la reacción: la franja ocupa la banda de abajo y trae su «Salida segura» (antes la tapaba y solo
        asomaba un filo); un solo botón a la vista y en el árbol de accesibilidad. */
     .bottom-zone--bajo-reaccion { visibility: hidden; }
@@ -1159,6 +1164,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       padding: var(--pixel-px) calc(5 * var(--pixel-px)) calc(2 * var(--pixel-px));
       font-size: var(--pixel-tam); font-weight: 600; line-height: 1.35; pointer-events: none;
     }
+    [data-placa-flotante] { position: relative; }
+    [data-placa-flotante]:not([data-ubicada]) { visibility: hidden; }
     /* Acuse de la salida segura con una capa abierta: placa con la tinta de la brasa, arriba al centro (carril). */
     .pausing-notice {
       position: absolute; top: var(--pixel-borde); left: 50%; transform: translateX(-50%); z-index: var(--ds-z-maximo);
@@ -1469,6 +1476,15 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     const persona = interaction.type === 'PERSON' || interaction.key.startsWith('npc:');
     return { tipo: persona ? 'conversacion' : 'objeto', clave: interaction.key };
   });
+  protected readonly esperarEncuadre = computed(() => {
+    const dialogo = this.dialogue();
+    return !!this.gameWorldRef() && this.viewMode() === 'dialogue-cinematic' && !!dialogo
+      && (dialogo.choices.length > 0 || dialogo.key.startsWith('tool-feedback-'));
+  });
+  protected readonly esperandoPanel = computed(() =>
+    this.esperarEncuadre() && (this.dialoguePanel()?.encuadrando() ?? true));
+  protected readonly pieInerte = computed(() =>
+    (this.inputBlocked() || this.viewMode() === 'dialogue-cinematic') && !this.esperandoPanel());
   readonly fadeActive   = signal(false);
   /** Avisos del sistema visibles (el anfitrión `ui-toast-host` los pinta y anuncia). */
   private readonly systemNotices = toSignal(this.notifications.messages$, { initialValue: [] });
@@ -1691,7 +1707,11 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       : null;
   });
   /** El HUD nombra la escena (sin contador de decisiones: el número de pasos lo decide la docente, no la pantalla). */
-  readonly stageLabel = computed<string | null>(() => this.visibleNode()?.title ?? null);
+  readonly stageLabel = computed<string | null>(() => {
+    const mapa = this.world()?.map;
+    const guia = leerGuiaAutorada(mapa?.ambient, this.nombreDeQuienJuega());
+    return fichaDeLaSala(this.visibleNode(), mapa, guia).titulo;
+  });
   /**
    * La escena que la barra y la ficha del objetivo muestran. Tras decidir, conserva la anterior hasta aplicar el mundo nuevo.
    */
@@ -1746,15 +1766,28 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
    * Zona segura de la cámara (U1): cajas visibles sobre el mundo, en px CSS desde el contenedor del lienzo.
    * El contenedor conserva su tamaño cuando se escala el lienzo durante un viaje.
    */
-  private readonly medirPlacas = (): Caja[] => {
+  private readonly medirPlacas = (): PlacaDeInterfaz[] => {
     const zona = this.canvasZone()?.nativeElement;
     const raiz = zona?.closest('.game-container');
     const lienzo = zona?.querySelector<HTMLElement>('app-game-world .phaser-host') ?? zona;
     if (!raiz || !lienzo) return [];
     const base = lienzo.getBoundingClientRect();
-    const cajas: Caja[] = [];
+    const cajas: PlacaDeInterfaz[] = [];
     raiz.querySelectorAll<HTMLElement>(PLACAS_SOBRE_EL_MUNDO).forEach(el => {
       const r = el.getBoundingClientRect();
+      if (el.hasAttribute('data-placa-flotante') && r.width >= 1 && r.height >= 1) {
+        // La posición de la rejilla es el ancla. Los desplazamientos visuales no cambian el hueco del carril.
+        const x = r.left - base.left - (parseFloat(el.style.left) || 0);
+        const y = r.top - base.top - (parseFloat(el.style.top) || 0);
+        cajas.push({ x, y, ancho: r.width, alto: r.height, ubicar: posicion => {
+          if (posicion) {
+            el.style.left = `${posicion.x - x}px`;
+            el.style.top = `${posicion.y - y}px`;
+          }
+          el.toggleAttribute('data-ubicada', posicion !== null);
+        } });
+        return;
+      }
       const x = Math.max(r.left, base.left);
       const y = Math.max(r.top, base.top);
       const ancho = Math.min(r.right, base.right) - x;
@@ -1964,6 +1997,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
       const options = { cercana: this.cameraSettings.cercana(), acercarAuto: this.cameraSettings.acercarAuto() };
       const frozen = this.planOpen();
       const bars = this.cinemaBars();
+      const fase = this.esperarEncuadre() ? this.dialoguePanel()?.faseEncuadre() ?? null : null;
       // Al aparecer el mundo, los ajustes guardados (vista cercana, acercamiento) tienen que llegarle (hallazgo 5).
       this.world();
       untracked(() => {
@@ -1976,7 +2010,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
           const top = bars ? this.cinemaTopPx() : 0;
           const bottom = Math.max(this.dialogueCoverCss(mode), top);
           this.cinemaBottomPx.set(bottom);
-          this.gameWorld?.setCameraMoment(moment, bottom, top);
+          this.gameWorld?.setCameraMoment(moment, bottom, top, fase);
         };
         const cuadro = requestAnimationFrame(medir);
         const despues = setTimeout(medir, 450);
@@ -1985,7 +2019,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
           clearTimeout(despues);
         });
         // Con un diálogo o una reacción en pantalla, en vivo: las opciones entran escalonadas y el aviso aparece después.
-        if (moment.tipo !== 'explorar' || bars) {
+        if (moment.tipo !== 'explorar' || bars || fase) {
           const vivo = setInterval(medir, 250);
           onCleanup(() => clearInterval(vivo));
         }
@@ -2866,15 +2900,16 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     // Lo que tapa abajo: el cuadro de diálogo y, durante la reacción, la franja con lo que dice quien reacciona.
     // El cuadro y TODO lo que se le monta encima (aviso, ficha «Decisión», «Volver al mapa», «Ver pista»: se dibujan
     // fuera de su caja). La franja de la reacción vive en el DOM aunque no se vea: solo cuenta durante la reacción.
+    const dialogo = mode === 'dialogue-cinematic' ? document.querySelector('app-dialogue-panel.dialogue-cinematic') : null;
     const raices = [
-      mode === 'dialogue-cinematic' ? document.querySelector('app-dialogue-panel.dialogue-cinematic') : null,
       this.reacting() ? document.querySelector('app-reaction-director .reaction-strip') : null,
     ].filter((r): r is Element => r !== null);
     const visible = (el: Element) => (el as Element & { checkVisibility?: (o?: object) => boolean })
       .checkVisibility?.({ opacityProperty: true, visibilityProperty: true }) ?? true;
-    const cajas = raices.flatMap(r => [r, ...Array.from(r.querySelectorAll('*'))])
-      .filter(visible)
-      .map(el => el.getBoundingClientRect());
+    const reaccion = raices.flatMap(r => [r, ...Array.from(r.querySelectorAll('*'))]).filter(visible);
+    // El panel conserva su maqueta cuando espera la cámara, incluso si sus opciones aún son inertes.
+    const panel = dialogo ? [dialogo, ...dialogo.querySelectorAll('.dialogue-strip, .panel-head, .speaker-name, .placa, .strip-body')] : [];
+    const cajas = [...panel, ...reaccion].map(el => el.getBoundingClientRect());
     return altoTapado(host.getBoundingClientRect().bottom, cajas);
   }
 
@@ -3174,7 +3209,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     setItem: (key, value) => this.writeStored(key, value),
     removeItem: key => { try { sessionStorage.removeItem(key); } catch { /* sin almacenamiento: nada que borrar */ } },
   };
-  private readonly dialoguePanel = viewChild(DialoguePanelComponent);
+  protected readonly dialoguePanel = viewChild(DialoguePanelComponent);
   private readingRestorePending = false;
   private readonly positionOrder = new OrdenDeRespuestas();
   private positionFailures = 0;
@@ -4926,22 +4961,24 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     const cerradas = this.doorStates();
     const inventario = world?.inventory ?? [];
     const nombre = this.nombreDeQuienJuega();
+    const guiaAutorada = leerGuiaAutorada(world?.map?.ambient, nombre);
     const guide = armarGuia({
-      goal: conNombre(this.visibleNode()?.goal ?? '', nombre),
+      goal: conNombre(fichaDeLaSala(this.visibleNode(), world?.map, guiaAutorada).objetivo, nombre),
       lugares: (this.gameWorld?.places() ?? []).map(l => l.kind === 'door' && cerradas[l.key] === 'locked' ? { ...l, note: 'cerrada' } : l),
       inspeccionados: world?.inspectedObjectKeys ?? [],
       hablados: collectViewedNpcKeys(world, this.viewedNpcKeys()),
       herramientas: (world?.objects ?? []).filter(o => o.type === 'TOOL' && o.toolCode)
         .map(o => ({ key: o.key, label: o.label, recogida: inventario.includes(o.toolCode!) })),
       // La guía escrita en el caso (`ambiente.guia`) reemplaza los pasos calculados; sin ella todo sigue igual.
-      autorada: this.guiaAutoradaDe(world, inventario, nombre),
+      autorada: this.guiaAutoradaDe(world, inventario, guiaAutorada),
     });
     this.guide.set(guide);
     return guide;
   }
 
-  private guiaAutoradaDe(world: SimulationWorldState | null, inventario: readonly string[], nombre: string) {
-    const guia = leerGuiaAutorada(world?.map?.ambient, nombre);
+  private guiaAutoradaDe(
+    world: SimulationWorldState | null, inventario: readonly string[], guia: ReturnType<typeof leerGuiaAutorada>,
+  ) {
     if (!guia) return undefined;
     return {
       guia,

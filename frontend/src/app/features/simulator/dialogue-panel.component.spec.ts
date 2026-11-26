@@ -125,6 +125,31 @@ describe('DialoguePanelComponent - integración renderizada', () => {
     fixture.detectChanges();
   }
 
+  it('pinta el alto real de las opciones, pero las mantiene inertes hasta recibir su propio encuadre', () => {
+    fixture.componentRef.setInput('esperarEncuadre', true);
+    fixture.componentRef.setInput('reduceMotion', true);
+    render(MULTI_LINE_DIALOGUE);
+    fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
+    fixture.detectChanges();
+    component.advanceLine();
+    fixture.detectChanges();
+
+    const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+    expect(banda.querySelector('.choice-btn')).not.toBeNull();
+    expect(banda.hasAttribute('data-encuadrando')).toBe(true);
+    expect(banda.hasAttribute('inert')).toBe(true);
+    const ejecutar = vi.fn();
+    component.execute.subscribe(ejecutar);
+    component.onKeydown(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(component.chosenKey()).toBeNull();
+    expect(ejecutar).not.toHaveBeenCalled();
+
+    fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
+    fixture.detectChanges();
+    expect(banda.hasAttribute('inert')).toBe(false);
+    expect(banda.contains(document.activeElement)).toBe(true);
+  });
+
   it('reemplaza cada control sin sacar el foco del diálogo y oculta opciones intermedias', () => {
     render(MULTI_LINE_DIALOGUE);
     component.skipTypewriter();
@@ -1680,9 +1705,10 @@ describe('DialoguePanelComponent - el aviso breve va dentro del cuadro', () => {
 
   it('con el cuadro sobre el mundo, la barra inferior se oculta sin dejar hueco y queda inerte', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
-    expect(pantalla).toContain(`[class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic'"`);
-    expect(pantalla).toContain(`[attr.inert]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? '' : null"`);
+    expect(pantalla).toContain(`[class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic' && !esperandoPanel()"`);
+    expect(pantalla).toContain(`[attr.inert]="pieInerte() ? '' : null"`);
     expect(pantalla).toContain('.bottom-zone--bajo-dialogo { visibility: hidden; }');
+    expect(pantalla).toContain('.bottom-zone--encuadrando > :not(app-safe-exit-button) { visibility: hidden; }');
   });
 
   it('la pantalla no pinta el aviso suelto mientras hay un diálogo sobre el mundo: se lo pasa al cuadro', () => {

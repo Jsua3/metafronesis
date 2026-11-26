@@ -117,8 +117,9 @@ describe('SimulationPlayComponent: salida segura (correcciones de la revisión)'
       expect(component.footerAboveVeils()).toBe(false);
     });
 
-    it('la plantilla enlaza la clase y el pie sigue inerte con una superposición', () => {
-      expect(source).toMatch(/<footer class="bottom-zone" \[class\.bottom-zone--above-veils\]="footerAboveVeils\(\)"\s*\[attr\.inert\]="inputBlocked\(\)/);
+    it('la plantilla enlaza el pie inerte y mantiene Salida segura durante el encuadre', () => {
+      expect(source).toMatch(/<footer class="bottom-zone" \[class\.bottom-zone--above-veils\]="footerAboveVeils\(\)"\s*\[attr\.inert\]="pieInerte\(\)/);
+      expect(source).toContain("(this.inputBlocked() || this.viewMode() === 'dialogue-cinematic') && !this.esperandoPanel()");
     });
 
     // Bloque U1 (variante B): el aviso de pausa ya no trae un número sino `var(--ds-z-maximo)` (1000): se resuelve su valor en la escala de capas.

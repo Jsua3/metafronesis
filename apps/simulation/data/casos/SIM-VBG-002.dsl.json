@@ -2993,6 +2993,7 @@
             "guia": {
               "paso": 0,
               "titulo": "Una noche cualquiera en urgencias",
+              "objetivo": "Mira cómo sigue la noche para otras personas en urgencias.",
               "pasos": [
                 {
                   "texto": "La familia no está aquí. Vuelve con ella cuando quieras.",
@@ -5523,6 +5524,7 @@
             "guia": {
               "paso": 0,
               "titulo": "Una noche cualquiera en urgencias",
+              "objetivo": "Mira cómo sigue la noche para otras personas en urgencias.",
               "pasos": [
                 {
                   "texto": "La familia no está aquí. Vuelve con ella cuando quieras.",
@@ -8830,6 +8832,7 @@
             "guia": {
               "paso": 0,
               "titulo": "Una noche cualquiera en urgencias",
+              "objetivo": "Mira cómo sigue la noche para otras personas en urgencias.",
               "pasos": [
                 {
                   "texto": "La familia no está aquí. Vuelve con ella cuando quieras.",
