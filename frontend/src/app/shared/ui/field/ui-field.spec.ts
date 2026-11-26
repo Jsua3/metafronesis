@@ -123,26 +123,27 @@ describe('ui-field', () => {
     expect(fields()[3].querySelector('label')!.htmlFor).toBe(select.id);
   });
 
-  it('contraseña revelable: alterna el tipo con aria-pressed, sin enviar el formulario y sin perder el foco', async () => {
+  it('contraseña revelable: alterna el tipo y su nombre «Mostrar»/«Ocultar contraseña», sin enviar el formulario y sin perder el foco', async () => {
     const field = fields()[4];
     const password = control(4);
     const toggle = field.querySelector<HTMLButtonElement>('button[ui-icon-button]')!;
     expect(password.type).toBe('password');
     expect(toggle.getAttribute('aria-label')).toBe('Mostrar contraseña');
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.hasAttribute('aria-pressed')).toBe(false);
     expect(toggle.type).toBe('button');
 
     toggle.focus();
     toggle.click();
     await fixture.whenStable();
     expect(password.type).toBe('text');
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.hasAttribute('aria-pressed')).toBe(false);
+    expect(toggle.getAttribute('aria-label')).toBe('Ocultar contraseña');
     expect(document.activeElement).toBe(toggle);
 
     toggle.click();
     await fixture.whenStable();
     expect(password.type).toBe('password');
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-label')).toBe('Mostrar contraseña');
   });
 });
 
