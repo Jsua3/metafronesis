@@ -38,6 +38,7 @@ interface TarjetaCaso {
   item: SimulationCaseSummary;
   estado: EstadoCaso;
   portada: string | null | undefined;
+  portadaPixelArt: boolean;
   /** Los intentos de este caso, del más reciente al más antiguo. */
   intentos: StudentAttemptSummary[];
   /** El intento que se revisa en la página de cierre, si ya hay uno terminado. */
@@ -141,6 +142,7 @@ export class SimulationCatalogComponent {
       item,
       estado: estadoCaso(entrada, intentos, catalogo),
       portada: entrada.portada ?? item.portada,
+      portadaPixelArt: (entrada.portada ? entrada.portadaPixelArt : item.portadaPixelArt) ?? true,
       intentos,
       recorrido: ultimoRecorrido(intentos),
       resaltado: this.blockedId() === item.caseVersionId,

@@ -25,6 +25,7 @@ if __name__ == "__main__":
     django.setup()
 
 import importlib  # noqa: E402
+import re  # noqa: E402
 
 from django.apps import apps as django_apps  # noqa: E402
 from django.contrib.auth.models import AnonymousUser  # noqa: E402
@@ -34,6 +35,7 @@ from django.urls import URLPattern, URLResolver, get_resolver  # noqa: E402
 from rest_framework.parsers import MultiPartParser  # noqa: E402
 from rest_framework.permissions import IsAuthenticated  # noqa: E402
 from rest_framework.views import APIView  # noqa: E402
+from shared.body_limit import CASE_COVER_ROUTE  # noqa: E402
 
 VERSION = 1
 HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
@@ -43,6 +45,7 @@ AUTHENTICATED = "authenticated"
 # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
 PUBLIC_ROUTE_REASONS: dict[str, str] = {
     "api/health": "sondeo de salud de la plataforma",
+    "api/simulation/covers/<uuid:cover_id>": "imagen de portada de un caso, saneada al subir y accesible por su URL opaca",
     "api/auth/login": "entrar",
     "api/auth/code-login": "entrar con c?digo de convocatoria",
     "api/auth/google": "entrar con una cuenta de Google",
@@ -246,9 +249,11 @@ def _has_own_parsers(view_class):
     return False
 
 
-def _body(method, view_class):
+def _body(route, method, view_class):
     if method in ("GET", "DELETE"):
         return "none"
+    if CASE_COVER_ROUTE.fullmatch("/" + re.sub(r"<[^>]+>", "1", route)):
+        return "multipart-case-cover"
     # Todas las vistas admiten multipart por el ajuste por defecto; es de importación de archivos
     # solo la que lo declara en sus propios ``parser_classes`` (hoy, la importación de grupos).
     if view_class is not None and _has_own_parsers(view_class) and any(
@@ -282,7 +287,7 @@ def collect_routes(patterns=None):
                 "route": route,
                 "method": method,
                 "exposure": _exposure(view, permissions),
-                "body": _body(method, view_class),
+                "body": _body(route, method, view_class),
                 "throttle": _throttle_scopes(view_class),
                 "audit": auditoria.get((route, method)),  # S4-1 · None: ni muta ni lee datos de otra persona
             }

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.simulation.models.world import validar_codigo_herramienta
 from shared.jsonutils import INT4_MAX, INT4_MIN
 from .mundo_serializers import RevisionMundoSerializer
 
@@ -22,7 +23,7 @@ class DialogoSerializer(RevisionMundoSerializer):
 
 
 class HerramientaSerializer(RevisionMundoSerializer):
-    toolCode = serializers.CharField(max_length=80)
+    toolCode = serializers.CharField(max_length=80, validators=[validar_codigo_herramienta])
     label = serializers.CharField(max_length=255)
     icon = serializers.CharField(max_length=80, required=False, allow_blank=True, allow_null=True)
     category = serializers.CharField(max_length=80, required=False, allow_blank=True, allow_null=True)

@@ -113,7 +113,7 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
     audio = {
       init: vi.fn(), setScene: vi.fn(), isMusicMuted: vi.fn(() => false), isSfxMuted: vi.fn(() => false),
       dispose: vi.fn(), stopIntroLament: vi.fn(), playIntroLament: vi.fn(), playSfx: vi.fn(),
-      toggleMusicMuted: vi.fn(() => false), playResolution: vi.fn(),
+      toggleMusicMuted: vi.fn(() => false), playResolution: vi.fn(), silenciarIntro: vi.fn(),
     };
     TestBed.configureTestingModule({
       imports: [SimulationPlayComponent],
@@ -166,6 +166,33 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
 
       expect(component.controlsVisible()).toBe(true);
       expect(component.worldMotionPaused()).toBe(true);
+    });
+
+    it.each([true, false])('encadena cinemática, tutor y controles con nota de capítulo: %s', llevaNota => {
+      playing();
+      const world = component.world()!;
+      component.world.set({ ...world, map: { ...world.map, ambient: {
+        cinematica: { id: 'inicio', planos: [{ escena: 'negro' }] },
+        tutor: { nombre: 'Docente', lineas: ['Lee el objetivo.'] },
+        ...(llevaNota ? { transitionText: 'Capítulo 1 · Una llegada.' } : {}),
+      } } });
+      const mosaico = () => [!!component.cinematica(), !!component.tutor(), !!component.transitionNote(), component.controlsVisible()];
+      (component as unknown as { empezarEntradaDelCaso(): boolean }).empezarEntradaDelCaso();
+      expect(mosaico()).toEqual([true, false, false, false]);
+
+      component.alTerminarCinematica();
+      expect(mosaico()).toEqual([false, true, false, false]);
+      component.openControls();
+      expect(mosaico()).toEqual([false, true, false, false]);
+
+      component.alCerrarTutor();
+      expect(mosaico()).toEqual([false, false, llevaNota, !llevaNota]);
+      if (llevaNota) {
+        vi.advanceTimersByTime(4199);
+        expect(component.controlsVisible()).toBe(false);
+        vi.advanceTimersByTime(1);
+      }
+      expect(mosaico()).toEqual([false, false, false, true]);
     });
 
     it('con la tarjeta abierta E y J no actúan sobre el mundo de debajo', () => {

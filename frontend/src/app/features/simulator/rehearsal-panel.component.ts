@@ -30,10 +30,10 @@ const SECCION_DE: Record<CampoError, string> = { irA: 'escena', explorado: 'expl
   template: `
     <aside class="rp" [attr.aria-label]="draft.rehearsalPanelTitle.text">
       <!-- El regreso va arriba y siempre a la vista (también con el panel plegado): antes estaba al final de un panel largo. -->
-      <a class="rp__volver" [routerLink]="['/portal/casos', caseVersionId(), 'editor', 'escena', block().sceneId]">
+      <a class="rp__volver u-boton" [routerLink]="['/portal/casos', caseVersionId(), 'editor', 'escena', block().sceneId]">
         <span aria-hidden="true">‹</span> {{ draft.rehearsalBackToScript.text }}
       </a>
-      <button type="button" class="rp__toggle" aria-keyshortcuts="Alt+A" aria-controls="rehearsal-panel-body"
+      <button type="button" class="rp__toggle u-boton" aria-keyshortcuts="Alt+A" aria-controls="rehearsal-panel-body"
         [attr.aria-expanded]="open()" (click)="toggle()">
         {{ draft.rehearsalPanelTitle.text }}
         <span class="sr-only">. {{ open() ? draft.rehearsalHide.text : draft.rehearsalShow.text }} (Alt+A)</span>
@@ -55,7 +55,7 @@ const SECCION_DE: Record<CampoError, string> = { irA: 'escena', explorado: 'expl
                   <option [value]="s.id" [selected]="s.id === destino()">{{ s.title }}</option>
                 }
               </select>
-              <button type="button" data-action="irA" (click)="send({ irA: destino() })">{{ draft.rehearsalGoTo.text }}</button>
+              <button class="u-boton" type="button" data-action="irA" (click)="send({ irA: destino() })">{{ draft.rehearsalGoTo.text }}</button>
               @if (errorOf('irA'); as message) { <p class="rp__error">{{ message }}</p> }
             </section>
 
@@ -129,7 +129,7 @@ const SECCION_DE: Record<CampoError, string> = { irA: 'escena', explorado: 'expl
             </section>
 
             <div class="rp__actions">
-              <button type="button" data-action="reload" (click)="reload()">{{ draft.rehearsalReload.text }}</button>
+              <button class="u-boton" type="button" data-action="reload" (click)="reload()">{{ draft.rehearsalReload.text }}</button>
             </div>
           </fieldset>
         </div>
@@ -144,7 +144,7 @@ const SECCION_DE: Record<CampoError, string> = { irA: 'escena', explorado: 'expl
     }
     .rp { display: flex; flex-direction: column; max-block-size: 100%; inline-size: min(340px, 100%); color: var(--ds-text-1, #f4f7fb);
       background: var(--ds-surface-2, rgba(18,24,42,.96)); border: 1px solid var(--ds-border, rgba(182,156,255,.3)); border-radius: 12px; overflow: hidden; }
-    .rp__toggle { text-align: start; padding: 8px 12px; background: transparent; color: inherit; border: 0; font: inherit; font-weight: 600; cursor: pointer; }
+    .rp__toggle { text-align: start; }
     /* Respuesta al pulsar (ui-lint: todo clicable tiene :active); sin movimiento, solo un leve oscurecimiento. */
     button:active:not(:disabled), a:active { filter: brightness(.85); }
     .rp__body { overflow-y: auto; padding: 0 12px 12px; min-block-size: 0; }

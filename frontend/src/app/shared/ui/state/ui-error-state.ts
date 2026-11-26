@@ -54,11 +54,11 @@ function focusWasLost(): boolean {
     <p #title class="ui-error-state__title" tabindex="-1">{{ copy().title }}</p>
     <p class="ui-error-state__message">{{ message() || copy().message }}</p>
     @if (copy().retry) {
-      <button ui-button type="button" variant="secondary" (click)="onRetry()">{{ actions.retry }}</button>
+      <button ui-button [class.u-boton]="botonesDeJuego()" type="button" variant="secondary" (click)="onRetry()">{{ actions.retry }}</button>
     }
     @if (technical(); as technical) {
       <details class="ui-error-state__details">
-        <summary>{{ actions.technicalDetail }}</summary>
+        <summary [class.u-boton]="botonesDeJuego()">{{ actions.technicalDetail }}</summary>
         <code>{{ technical }}</code>
       </details>
     }
@@ -76,6 +76,7 @@ export class UiErrorState {
    * carga) deja el foco en el cuerpo y quien usa teclado o lector no lo encuentra.
    */
   readonly autofocus = input(false, { transform: booleanAttribute });
+  readonly botonesDeJuego = input(false, { transform: booleanAttribute });
   readonly retry = output<void>();
 
   protected readonly actions = STATE_ACTION_COPY;

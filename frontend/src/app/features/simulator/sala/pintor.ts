@@ -215,8 +215,9 @@ export function emisivoDeSprite(capa: Uint8ClampedArray, ancho: number, alto: nu
  * `abiertas` van en su último cuadro.
  */
 export function componerSala(plan: PlanDeSala, imagenes: Imagenes, luz: CapasDeLuz | null, abiertas: readonly string[] = [],
-  reflejo: MedidaDeReflejo | null = null): Imagen {
+  reflejo: MedidaDeReflejo | null = null, observarFondo?: (fondo: Imagen) => void): Imagen {
   const escena = pintarFondo(plan, imagenes);
+  observarFondo?.(escena);
   const orden = { muro: 0, piso: 1, frente: 2 };
   const cosas = plan.sprites
     .map((sprite, n) => ({ sprite, n }))

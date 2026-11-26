@@ -62,9 +62,9 @@ describe('game-world: nada nuevo por cuadro (F§7.2, 59 FPS)', () => {
     expect(frameBody).toMatch(/if \(alsoChanged\) \{[\s\S]*?this\.callbacks\.onProximityAlso\(/);
   });
 
-  it('el anillo, los rótulos y los atenuados no usan tweens ni se actualizan desde update()', () => {
+  it('el contorno y las señales de orientación no usan tweens', () => {
     for (const body of [
-      bodyOf(/\n  private syncTargetRing\(\): void \{/, /\n  \/\*\* Reinicia/),
+      bodyOf(/\n  private actualizarContornos\(tiempo: number\): void \{/, /\n  \/\*\* Termina los gestos/),
       bodyOf(/\n  private refreshMarkerStates\(\) \{/, /\n  \/\*\* El canvas cambió/),
       bodyOf(/\n  setOrientation\(next: \{/, /\n  \/\*\* Puntero táctil/),
     ]) {
@@ -126,7 +126,7 @@ describe('game-world: ratón (F6-7, VD-5)', () => {
     expect(handler).not.toMatch(/if \(pointer\.wasTouch \|\|/);
     expect(handler).toMatch(/pointer\.button !== 0/);
     // Sobre algo señalado camina hasta su alcance de interacción; en el suelo, hasta el punto clicado.
-    expect(handler).toContain('startWalk({ x: aimed.x, y: aimed.y, radius: aimed.reach })');
+    expect(handler).toContain('this.caminataAlMarcador(key, aimed)');
     expect(handler).toContain('WALK_GROUND_RADIUS_PX');
   });
 
@@ -208,16 +208,17 @@ describe('game-world: señales iguales para todos (límite 1 de producto)', () =
     const forbidden = /classification|prohibitedConduct|isRecommended|isProhibited|decisionOptionId/;
     for (const body of [
       bodyOf(/\n  private updateNearestInteraction\(suppressSound = false\) \{/, /\n  \/\*\*\n   \* Lo que se le entrega a Angular/),
-      bodyOf(/\n  private syncTargetRing\(\): void \{/, /\n  \/\*\* Reinicia/),
+      bodyOf(/\n  private actualizarContornos\(tiempo: number\): void \{/, /\n  \/\*\* Termina los gestos/),
       bodyOf(/\n  private refreshMarkerStates\(\) \{/, /\n  \/\*\* El canvas cambió/),
     ]) {
       expect(body).not.toMatch(forbidden);
     }
   });
 
-  it('el anillo es único (un trazo claro y su halo), con colores fijos', () => {
-    expect(source).toContain('const RING_COLOR = 0xcdbcff;');
-    expect(source).toContain('const RING_HALO_COLOR = 0x0b0f1a;');
+  it('el contorno usa el lila fijo y un solo píxel de grosor', () => {
+    const contorno = readFileSync(join(__dirname, 'sala/contorno.ts'), 'utf-8');
+    expect(contorno).toContain('const COLOR_CONTORNO = 0xcdbcff;');
+    expect(contorno).toContain('.fillRect(x, y, ancho, 1)');
     // El atenuado de las otras etapas vive en markerEmphasis (world-characters.util): el componente no repite el valor.
     expect(readFileSync(join(__dirname, 'world-characters.util.ts'), 'utf-8')).toContain('export const DIMMED_ALPHA = 0.55;');
     expect(source).not.toContain('const DIMMED_ALPHA');
@@ -247,12 +248,12 @@ describe('game-world: orientarse en el juego (P9)', () => {
   });
 
   it('el anillo de cercanía y la frase de E salen de nearestKey: el mismo candidato sobre el que actúan E y «Interactuar»', () => {
-    const ring = bodyOf(/\n  private syncNearRing\(\): void \{/, /\n  \/\*\*/);
-    expect(ring).toContain('const key = this.nearestKey;');
+    const ring = bodyOf(/\n  private actualizarContornos\(tiempo: number\): void \{/, /\n  \/\*\*/);
+    expect(ring).toContain('claves.add(this.nearestKey)');
     expect(ring).not.toMatch(/tweens\.add|this\.tweens/);
     expect(bodyOf(/\n  private proximityPromptText\(key: string\): string \| null \{/, /\n  \/\*\*/)).toContain('interactionVerb(obj,');
     // Se repinta solo cuando cambia algo (con el resto de lo que pinta el estado), nunca desde update().
-    expect(bodyOf(/\n  private refreshMarkerStates\(\) \{/, /\n  \/\*\* El canvas cambió/)).toMatch(/this\.syncNearRing\(\);\s*this\.syncMarkerPrompt\(\);/);
+    expect(bodyOf(/\n  private refreshMarkerStates\(\) \{/, /\n  \/\*\* El canvas cambió/)).toMatch(/this\.syncStepMark\(\);\s*this\.syncMarkerPrompt\(\);/);
     const update = bodyOf(/\n  override update\(time: number, delta: number\) \{/, /\n  setWorld\(/);
     expect(update).not.toMatch(/syncNearRing|syncMarkerPrompt|proximityPromptText|syncStepMark/);
   });

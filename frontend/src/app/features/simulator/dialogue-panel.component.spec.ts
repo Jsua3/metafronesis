@@ -125,6 +125,99 @@ describe('DialoguePanelComponent - integración renderizada', () => {
     fixture.detectChanges();
   }
 
+  it('pinta el alto real de las opciones, pero las mantiene inertes hasta recibir su propio encuadre', () => {
+    fixture.componentRef.setInput('esperarEncuadre', true);
+    fixture.componentRef.setInput('reduceMotion', true);
+    render(MULTI_LINE_DIALOGUE);
+    fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
+    fixture.detectChanges();
+    component.advanceLine();
+    fixture.detectChanges();
+
+    const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+    const fichas = banda.querySelector('.strip-body') as HTMLElement;
+    expect(banda.querySelector('.choice-btn')).not.toBeNull();
+    expect(fichas.hasAttribute('data-encuadrando')).toBe(true);
+    expect(fichas.hasAttribute('inert')).toBe(true);
+    // La línea que se estaba leyendo no desaparece mientras la cámara llega.
+    expect(banda.hasAttribute('inert')).toBe(false);
+    expect(banda.hasAttribute('data-encuadrando')).toBe(false);
+    const ejecutar = vi.fn();
+    component.execute.subscribe(ejecutar);
+    component.onKeydown(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(component.chosenKey()).toBeNull();
+    expect(ejecutar).not.toHaveBeenCalled();
+
+    fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
+    fixture.detectChanges();
+    expect(fichas.hasAttribute('inert')).toBe(false);
+    expect(banda.contains(document.activeElement)).toBe(true);
+  });
+
+  it('abre al vencer el plazo sin cámara y da un plazo propio a las opciones', () => {
+    vi.useFakeTimers();
+    try {
+      fixture.componentRef.setInput('esperarEncuadre', true);
+      fixture.componentRef.setInput('reduceMotion', true);
+      render(MULTI_LINE_DIALOGUE);
+      const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+      const faseDeLectura = component.faseEncuadre();
+      const avanzarTiempo = (ms: number) => {
+        vi.advanceTimersByTime(ms);
+        fixture.detectChanges();
+      };
+
+      // La lectura no espera a la cámara: el cuadro está a la vista desde el principio.
+      expect(banda.hasAttribute('inert')).toBe(false);
+      expect(banda.hasAttribute('data-encuadrando')).toBe(false);
+
+      component.advanceLine();
+      fixture.componentRef.setInput('encuadreListo', faseDeLectura);
+      fixture.detectChanges();
+      const fichas = () => banda.querySelector('.strip-body') as HTMLElement;
+      avanzarTiempo(1599);
+      expect(banda.querySelector('.choice-btn')).not.toBeNull();
+      expect(fichas().hasAttribute('inert')).toBe(true);
+      expect(banda.hasAttribute('inert')).toBe(false);
+      avanzarTiempo(1);
+      expect(fichas().hasAttribute('inert')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('la trampa de foco no captura mientras las fichas esperan (sin aviso de cdkFocusInitial sobre un grupo inerte)', () => {
+    expect(source).toContain(`[cdkTrapFocusAutoCapture]="!encuadrando()"`);
+    expect(source).toMatch(/<div class="choices"[^>]*cdkFocusInitial/);
+  });
+
+  it('abre al confirmar y cancela el plazo de esa fase', () => {
+    vi.useFakeTimers();
+    try {
+      fixture.componentRef.setInput('esperarEncuadre', true);
+      fixture.componentRef.setInput('reduceMotion', true);
+      render(MULTI_LINE_DIALOGUE);
+      const banda: HTMLElement = fixture.nativeElement.querySelector('.dialogue-strip');
+      const fichas = () => banda.querySelector('.strip-body') as HTMLElement;
+      component.advanceLine();
+      fixture.detectChanges();
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+      expect(fichas().hasAttribute('inert')).toBe(true);
+
+      fixture.componentRef.setInput('encuadreListo', component.faseEncuadre());
+      fixture.detectChanges();
+      expect(fichas().hasAttribute('inert')).toBe(false);
+      // El plazo de esa fase quedó cancelado: nada vuelve a cerrar las fichas.
+      vi.advanceTimersByTime(2000);
+      fixture.detectChanges();
+      expect(fichas().hasAttribute('inert')).toBe(false);
+      expect(banda.hasAttribute('inert')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('reemplaza cada control sin sacar el foco del diálogo y oculta opciones intermedias', () => {
     render(MULTI_LINE_DIALOGUE);
     component.skipTypewriter();
@@ -225,17 +318,28 @@ describe('DialoguePanelComponent - integración renderizada', () => {
     expect(portraitSrc()).toBe('/assets/characters/kit/supervisor-clinico/portrait-alegre.png');
   });
 
-  it('una voz sin cuerpo no tiene retrato: queda la silueta', () => {
+  it.each(['Supervisión clínica', 'Consecuencia', 'Aviso de pausa', 'Tu libreta', 'Informe', 'Cierre del caso'])(
+    '%s muestra el texto sin una ventanilla de retrato', (speakerName) => {
     render({
       ...MULTI_LINE_DIALOGUE,
-      speakerName: 'Supervisión clínica',
+      speakerName,
       portraitKey: null,
-      lines: [{ order: 1, speakerName: 'Supervisión clínica', text: 'Revisa el protocolo.', emotion: 'danger' }],
+      lines: [{ order: 1, speakerName, text: 'Revisa el protocolo.', emotion: 'danger' }],
       choices: [],
     });
 
-    expect(portraitSrc()).toBeNull();
-    expect(fixture.nativeElement.querySelector('.portrait-svg')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.speaker-name')?.textContent).toContain(speakerName);
+    expect(fixture.nativeElement.querySelector('.portrait')).toBeNull();
+  });
+
+  it('el aviso de herramienta muestra el texto sin la ventanilla de retrato', () => {
+    render({
+      ...MULTI_LINE_DIALOGUE, speakerName: 'Herramienta pertinente', portraitKey: null, hidePortrait: true,
+      lines: [{ order: 1, speakerName: '', text: 'La herramienta ayudó a la persona.', emotion: 'neutral' }], choices: [],
+    });
+
+    expect(fixture.nativeElement.querySelector('.speaker-name')?.textContent).toContain('Herramienta pertinente');
+    expect(fixture.nativeElement.querySelector('.portrait')).toBeNull();
   });
 
   it('la receta del árbol no vale para la línea de otro hablante', () => {
@@ -947,7 +1051,7 @@ describe('DialoguePanelComponent - «Continuar» y sonido de opciones (T4.7)', (
     const expectPrimary = () => {
       expect(advanceButtons()).toHaveLength(1);
       const [button] = advanceButtons();
-      expect(button.classList).toContain('ui-button--primary');
+      expect(button.classList).toContain('u-boton--principal');
       expect(button.classList).not.toContain('psy-button--ghost');
     };
     // Línea 1 de 2, todavía escribiéndose: «Saltar».
@@ -1282,9 +1386,11 @@ describe('DialoguePanelComponent - texto de 12 px, estados y vocabulario educati
   });
 
   it('«Volver al mapa» tiene hover protegido, respuesta al presionar y el anillo global de la piel', () => {
-    expect(styles).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.panel-back:hover \{/);
-    expect(styles).toMatch(/\.panel-back:active \{[^}]*transform:/);
-    expect(styles).not.toMatch(/\.panel-back:focus-visible/);
+    const pixel = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+    expect(template).toContain('class="panel-back u-boton"');
+    expect(pixel).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.u-boton:hover/);
+    expect(pixel).toMatch(/\.u-boton:active \{[^}]*transform:/);
+    expect(pixel).toMatch(/\.u-boton:focus-visible \{[^}]*outline:/);
     expect(styles).not.toMatch(/\.choice-btn:focus-visible \{[^}]*outline:\s*\d+px solid/);
   });
 
@@ -1586,19 +1692,14 @@ describe('DialoguePanelComponent - las placas-botón de la cabecera', () => {
     expect(pistaHtml).toContain(`[icon]="variante() === 'placa' ? undefined : 'lightbulb'"`);
   });
 
-  it('las tres miden y visten igual: marco y trama de pixel, la misma letra y la misma altura', () => {
-    expect(source).toContain('--tam-boton: .82em;');
-    for (const css of [salida, pistaScss]) {
-      expect(css).toContain('border-image: var(--m) 4 / calc(4 * var(--px)) stretch;');
-      expect(css).toContain('font-size: var(--tam-boton);');
-      expect(css).toContain('padding: 0 12px 1px 8px;');
-    }
-    expect(source).toMatch(/\.panel-back \{[^}]*font-size: var\(--tam-boton\);/);
-    // El mismo alto para las tres (el de «Volver» con su tecla «Esc»), y «Volver al mapa» en un solo renglón.
-    expect(source).toContain('--alto-boton: calc(22 * var(--px));');
-    expect(source).toMatch(/\.panel-back \{[^}]*min-height: var\(--alto-boton\);[^}]*white-space: nowrap;/);
+  it('el diálogo y la pista reutilizan la placa-botón del juego, con un blanco de al menos 44 px', () => {
+    const pixel = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+    expect(source).toContain('class="panel-back u-boton"');
+    expect(source).toContain('class="instant-setting u-boton"');
+    expect(source).toContain('class="close-btn u-boton u-boton--principal"');
+    expect(pistaHtml).toContain("[class.u-boton]=\"variante() === 'placa'\"");
+    expect(pixel).toContain('min-height: 44px');
     expect(salida).toContain('min-height: var(--alto-boton, 44px);');
-    expect(pistaScss).toContain('min-block-size: var(--alto-boton, 44px);');
   });
 
   it('«Salida segura» lleva brasa y su texto tibio llega a 4,5:1; «Ver pista» apagada se lee y su bombilla se apaga', () => {
@@ -1609,8 +1710,7 @@ describe('DialoguePanelComponent - las placas-botón de la cabecera', () => {
       expect(contrastRatio('#F2ECDF', surface)).toBeGreaterThanOrEqual(4.5);
     }
     expect(salida).toContain('--m: var(--marco-salida); --t: var(--trama-salida);');
-    expect(pistaScss).toMatch(/&\[aria-disabled='true'\] \{[^}]*--m: var\(--marco-placa-apagada\);[^}]*color: #a9a2b8;/);
-    expect(pistaScss).toContain('&::before { background-image: var(--icono-bombilla-apagada); }');
+    expect(pistaScss).toContain("&[aria-disabled='true']::before { background-image: var(--icono-bombilla-apagada); }");
   });
 });
 const PLACA_ARTE = ['#1B1826', '#211E2E', '#171421'];
@@ -1670,13 +1770,14 @@ describe('DialoguePanelComponent - el aviso breve va dentro del cuadro', () => {
   it('con el cuadro sobre el mundo, la barra inferior se oculta sin dejar hueco y queda inerte', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
     expect(pantalla).toContain(`[class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic'"`);
-    expect(pantalla).toContain(`[attr.inert]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? '' : null"`);
     expect(pantalla).toContain('.bottom-zone--bajo-dialogo { visibility: hidden; }');
+    // El cuadro nunca se oculta para encuadrar: el pie no tiene que relevarlo.
+    expect(pantalla).not.toContain('bottom-zone--encuadrando');
   });
 
   it('la pantalla no pinta el aviso suelto mientras hay un diálogo sobre el mundo: se lo pasa al cuadro', () => {
     const pantalla = readFileSync(join(__dirname, 'simulation-play.component.ts'), 'utf-8');
-    expect(pantalla).toContain("@if (softNotice() && viewMode() !== 'dialogue-cinematic') {");
+    expect(pantalla).toContain("@if (softNotice() && !reacting() && viewMode() !== 'dialogue-cinematic') {");
     expect(pantalla).toMatch(/<app-dialogue-panel class="dialogue-cinematic"[^>]*\[avisoBreve\]="softNotice\(\) \+/);
   });
 });

@@ -207,7 +207,7 @@ def _valid_option(attempt, option_id):
     )
     from . import disponibilidad_mundo
     if option.pk not in {ofrecida.pk for ofrecida in disponibilidad_mundo.opciones(attempt)}:
-        raise ValidationError("La opci?n a?n no est? disponible.")
+        raise ValidationError("La opción aún no está disponible.")
     if option.target_node.case_version_id != attempt.case_version_id:
         raise ValidationError("La escena destino pertenece a otro caso.")
     return option

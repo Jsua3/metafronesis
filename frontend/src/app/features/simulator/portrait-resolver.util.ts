@@ -1,7 +1,7 @@
 /**
  * Retrato del diálogo (spec §7.3, §8.2): el de la receta del hablante, buscado primero por
  * la receta del NPC y su clave y después por su nombre. Una voz sin cuerpo («Supervisión
- * clínica», «Protocolo clínico»…) no tiene retrato: el panel muestra su silueta.
+ * clínica», «Protocolo clínico»…) puede hablar sin ventanilla de retrato.
  */
 import {
   portraitStateFor,
@@ -24,11 +24,14 @@ export interface DialoguePortraitKeys {
   portraitKey?: string | null;
   speakerName?: string | null;
   emotion?: string | null;
+  soloReceta?: boolean;
 }
 
 export function resolvePortraitAsset(bundle: KitBundle | null, keys: DialoguePortraitKeys): string | null {
   if (!bundle) return null;
-  const recipeId = resolveRecipeId(bundle, { recipeId: keys.recipeId, actor: keys.portraitKey, speaker: keys.speakerName });
+  const recipeId = resolveRecipeId(bundle, keys.soloReceta
+    ? { recipeId: keys.recipeId }
+    : { recipeId: keys.recipeId, actor: keys.portraitKey, speaker: keys.speakerName });
   if (!recipeId) return null;
   const visual = resolveCharacter(bundle, { kind: 'receta', recipeId });
   const state = portraitStateFor(bundle, keys.emotion);
@@ -52,4 +55,17 @@ const SYSTEM_VOICES = new Set([
 export function isSystemVoice(speakerName: string | null | undefined): boolean {
   const name = speakerName?.trim();
   return !name || SYSTEM_VOICES.has(name);
+}
+
+
+/** La identidad del profesor se puede leer aunque la sala no tenga una presentaci?n con l?neas. */
+export function identidadDelTutor(datos: unknown): { nombre: string; rol: string; recipeId: string | null } | null {
+  if (!datos || typeof datos !== 'object' || Array.isArray(datos)) return null;
+  const { nombre, rol, recipeId } = datos as Record<string, unknown>;
+  if (![nombre, rol, recipeId].some(valor => typeof valor === 'string' && valor.trim())) return null;
+  return {
+    nombre: (typeof nombre === 'string' ? nombre.trim().slice(0, 80) : '') || 'Tutor',
+    rol: typeof rol === 'string' ? rol.trim().slice(0, 140) : '',
+    recipeId: typeof recipeId === 'string' && /^[a-z0-9-]+$/.test(recipeId) ? recipeId : null,
+  };
 }

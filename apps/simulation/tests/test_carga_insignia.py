@@ -36,16 +36,16 @@ def autor():
 def test_carga_completa_e_idempotente(documento, autor):
     plan = traducir(documento)
     version = cargar(plan, autor)
-    assert version.nodes.count() == 18
-    assert version.decisions.count() == 49
-    assert version.scene_maps.count() == 18
+    assert version.nodes.count() == 24
+    assert version.decisions.count() == 62
+    assert version.scene_maps.count() == 24
     assert version.characters.count() == 13
     assert version.clinical_tools.count() == 5
-    assert sum(sala.map_objects.count() for sala in version.scene_maps.all()) == 223
+    assert sum(sala.map_objects.count() for sala in version.scene_maps.all()) == 305
     otro_autor = CustomUser.objects.create_user(email='otro@example.test', password='prueba', role='PROFESOR')
     assert cargar(plan, otro_autor).pk == version.pk
     assert SimulationCase.objects.count() == 1
-    assert version.nodes.count() == 18
+    assert version.nodes.count() == 24
     assert all(sala.node.case_version_id == version.pk for sala in version.scene_maps.select_related('node'))
     assert all(opcion.source_node.case_version_id == version.pk and opcion.target_node.case_version_id == version.pk
                for opcion in version.decisions.select_related('source_node', 'target_node'))
@@ -58,6 +58,13 @@ def test_carga_completa_e_idempotente(documento, autor):
 def test_rechaza_contenido_no_soportado_sin_escribir(documento, autor):
     documento['x-siep']['escenas'][0]['novedad'] = True
     with pytest.raises(ErrorDeCarga, match='no soportado'):
+        cargar(traducir(documento), autor)
+    assert not SimulationCase.objects.exists()
+
+
+def test_rechaza_codigo_de_herramienta_con_arroba(documento, autor):
+    documento['x-siep']['herramientas'][0]['codigo'] = 'PAP@gloria'
+    with pytest.raises(ErrorDeCarga, match="'@' está reservado"):
         cargar(traducir(documento), autor)
     assert not SimulationCase.objects.exists()
 
@@ -114,11 +121,13 @@ def test_recorrido_por_api_sobre_caso_cargado(documento, autor):
     sala = version.scene_maps.get(node__start_node=True)
     movimiento = cliente.patch(base + '/world-state', {'currentMapKey': sala.map_key, 'playerX': 600, 'playerY': 300}, format='json')
     assert movimiento.status_code == 200, movimiento.content
-    entrada = cliente.post(base + '/enter-room', {'targetNodeKey': 'c1-sala-espera', 'doorKey': 'a-espera'}, format='json')
-    assert entrada.status_code == 200, entrada.content
-    opcion = version.nodes.get(start_node=True).options.first()
+    # La puerta hacia la sala de espera solo se abre cuando la historia llega allá: primero se decide.
+    cerrada = cliente.post(base + '/enter-room', {'targetNodeKey': 'c1-sala-espera', 'doorKey': 'a-espera'}, format='json')
+    assert cerrada.status_code == 400, cerrada.content
+    opcion = version.nodes.get(start_node=True).options.get(option_key='n1-mirar-y-presentarse')
     decision = cliente.post(base + '/decisions', {'decision_option_id': opcion.pk, 'request_id': 'decision-prueba'}, format='json')
     assert decision.status_code == 200, decision.content
+    assert cliente.get(base + '/world').json()['data']['map']['key'] == 'hosp-sala-espera-1'
 
 
 @pytest.mark.parametrize('minutos', [0, -1])

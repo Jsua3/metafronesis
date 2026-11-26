@@ -10,6 +10,29 @@ from .test_borrador import crear
 pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-22", "SIEP-23")]
 
 
+def test_el_final_incondicional_es_unico_y_va_al_final(cliente):
+    version_id = crear(cliente).data["data"]["versionId"]
+    ruta = f"/api/authoring/cases/{version_id}/rules/endings"
+    respaldo = {"key": "respaldo", "title": "Respaldo", "message": "Mensaje"}
+    condicionado = {**respaldo, "key": "principal", "when": {"count": "recommended", "gte": 1}}
+    aceptada = cliente.put(ruta, {"endings": [condicionado, {**respaldo, "when": None}]}, format="json")
+    assert aceptada.status_code == 200, aceptada.content
+    finales = aceptada.json()["data"]["rules"]["endings"]
+    assert [final["key"] for final in finales] == ["principal", "respaldo"]
+    assert "when" not in finales[-1]
+    guardadas = CaseVersion.objects.get(pk=version_id).rules
+
+    for invalidos, mensaje in (
+        ([respaldo, condicionado], "debe ser el último"),
+        ([respaldo, {**respaldo, "key": "otro", "when": None}], "como máximo un final"),
+    ):
+        rechazada = cliente.put(ruta, {"endings": invalidos}, format="json")
+        assert rechazada.status_code == 400, rechazada.content
+        assert rechazada.json()["field"] == "endings"
+        assert mensaje in rechazada.json()["message"]
+    assert CaseVersion.objects.get(pk=version_id).rules == guardadas
+
+
 def test_reglas_conservan_las_demas_y_rechazan_valores_invalidos(cliente):
     version_id = crear(cliente).data["data"]["versionId"]
     base = f"/api/authoring/cases/{version_id}/rules"

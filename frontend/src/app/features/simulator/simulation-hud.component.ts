@@ -103,54 +103,60 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                   role="dialog" aria-modal="false" aria-labelledby="game-settings-title">
                   <div class="settings-menu__header">
                     <strong id="game-settings-title">Ajustes</strong>
-                    <button type="button" aria-label="Cerrar ajustes" (click)="closeSettings()">
+                    <button class="u-boton u-boton--icono" type="button" aria-label="Cerrar ajustes" (click)="closeSettings()">
                       <mat-icon aria-hidden="true">close</mat-icon>
                     </button>
                   </div>
-                  <button type="button" [attr.aria-pressed]="!musicMuted()" (click)="toggleMusic.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="!musicMuted()" (click)="toggleMusic.emit()">
                     <mat-icon aria-hidden="true">{{ musicMuted() ? 'music_off' : 'music_note' }}</mat-icon>
                     <span>Música ambiental</span>
                     <strong aria-hidden="true">{{ musicMuted() ? 'No' : 'Sí' }}</strong>
                   </button>
-                  <button type="button" [attr.aria-pressed]="!sfxMuted()" (click)="toggleSfx.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="!sfxMuted()" (click)="toggleSfx.emit()">
                     <mat-icon aria-hidden="true">{{ sfxMuted() ? 'volume_off' : 'graphic_eq' }}</mat-icon>
                     <span>Sonidos de acciones</span>
                     <strong aria-hidden="true">{{ sfxMuted() ? 'No' : 'Sí' }}</strong>
                   </button>
-                  <button type="button" [attr.aria-pressed]="reduceMotion()" (click)="toggleReduceMotion.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="reduceMotion()" (click)="toggleReduceMotion.emit()">
                     <mat-icon aria-hidden="true">motion_photos_pause</mat-icon>
                     <span>Movimiento reducido</span>
                     <strong aria-hidden="true">{{ reduceMotion() ? 'Sí' : 'No' }}</strong>
                   </button>
                   <!-- WCAG 2.1.4 (F6-10): las teclas de una letra o un número se pueden apagar. -->
-                  <button type="button" [attr.aria-pressed]="shortcuts()" (click)="toggleShortcuts.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="shortcuts()" (click)="toggleShortcuts.emit()">
                     <mat-icon aria-hidden="true">accessibility</mat-icon>
                     <span>{{ shortcutsLabel }}</span>
                     <strong aria-hidden="true">{{ shortcuts() ? 'Sí' : 'No' }}</strong>
                   </button>
                   <!-- P8: las líneas de los diálogos aparecen completas, sin máquina de escribir (se recuerda). -->
-                  <button type="button" [attr.aria-pressed]="instantText()" (click)="toggleInstantText.emit()">
+                  <button class="u-boton" type="button" [attr.aria-pressed]="instantText()" (click)="toggleInstantText.emit()">
                     <mat-icon aria-hidden="true">text_fields</mat-icon>
                     <span>{{ instantTextLabel }}</span>
                     <strong aria-hidden="true">{{ instantText() ? 'Sí' : 'No' }}</strong>
                   </button>
-                  <button type="button" (click)="toggleJournal.emit(); settingsOpen.set(false)">
+                  <button class="u-boton" type="button" (click)="toggleJournal.emit(); settingsOpen.set(false)">
                     <mat-icon aria-hidden="true">menu_book</mat-icon>
                     <span>Bitácora</span>
                     <strong>{{ journalKey() ? 'J' : '' }}</strong>
                   </button>
-                  <button type="button" (click)="showHelp()">
+                  <button class="u-boton" type="button" (click)="showHelp()">
                     <mat-icon aria-hidden="true">help_outline</mat-icon>
                     <span>Cómo se juega</span>
                     <strong></strong>
                   </button>
-                  <button type="button" (click)="resetHelpMemory()">
+                  <button class="u-boton" type="button" (click)="resetHelpMemory()">
                     <mat-icon aria-hidden="true">replay</mat-icon>
                     <span>Ver la ayuda otra vez</span>
                     <strong>{{ helpResetDone() ? 'Lista' : '' }}</strong>
                   </button>
                   <span class="settings-menu__status" role="status">{{ helpResetDone() ? 'La ayuda de primera vez volverá a mostrarse.' : '' }}</span>
-                  <a routerLink="/portal/simulador">
+                  @if (fichaDisponible()) {
+                    <button class="u-boton" type="button" (click)="closeSettings(); openCaseBrief.emit()">
+                      <mat-icon aria-hidden="true">description</mat-icon>
+                      <span>Ficha del caso</span>
+                    </button>
+                  }
+                  <a class="u-boton" routerLink="/portal/simulador">
                     <mat-icon aria-hidden="true">home</mat-icon>
                     <span>Catálogo</span>
                     <strong></strong>
@@ -263,37 +269,12 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
       font-size: var(--pixel-letra-media);
       letter-spacing: .04em;
     }
-    .settings-menu__header button, .settings-menu button, .settings-menu a { color: inherit; font: inherit; }
-    .settings-menu__header button {
-      display: grid; place-items: center; width: 44px; height: 44px; padding: 0; cursor: pointer;
-      border-style: solid; border-width: calc(4 * var(--pixel-px)); border-image: var(--marco-tecla) 4 / calc(4 * var(--pixel-px)) stretch;
-      background: var(--pixel-tecla) padding-box; image-rendering: pixelated; color: var(--pixel-tinta);
-    }
-    .settings-menu__header button:active { border-image-source: var(--marco-tecla-hundida); transform: translateY(var(--pixel-px)); }
-    @media (hover: hover) and (pointer: fine) {
-      .settings-menu__header button:hover { border-image-source: var(--marco-tecla-encendida); background-color: var(--luz); color: var(--pixel-tinta-oscura); }
-    }
-    .settings-menu > button,
-    .settings-menu > a {
+    .settings-menu > .u-boton {
       display: grid;
       grid-template-columns: 24px minmax(0, 1fr) 34px;
-      align-items: center;
       gap: calc(4 * var(--pixel-px));
-      min-height: 44px;
       padding: 0 calc(4 * var(--pixel-px));
-      border-style: solid;
-      border-width: calc(4 * var(--pixel-px));
-      border-image: var(--marco-placa) 4 / calc(4 * var(--pixel-px)) stretch;
-      background: var(--pixel-penumbra) var(--trama-placa) 0 0 / calc(8 * var(--pixel-px)) padding-box;
-      image-rendering: pixelated;
       text-align: left;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    .settings-menu > button:focus-visible, .settings-menu > a:focus-visible { border-image-source: var(--marco-placa-foco); background-color: var(--pixel-penumbra-alzada); }
-    .settings-menu > button:active, .settings-menu > a:active { border-image-source: var(--marco-placa-pulsada); background-color: var(--pixel-penumbra-hundida); transform: translateY(var(--pixel-px)); }
-    @media (hover: hover) and (pointer: fine) {
-      .settings-menu > button:hover, .settings-menu > a:hover { border-image-source: var(--marco-placa-sobre); background-color: var(--pixel-penumbra-alzada); }
     }
     .settings-menu mat-icon { color: var(--luz); font-size: 18px; width: 18px; height: 18px; }
     .settings-menu span { min-width: 0; color: var(--pixel-tinta); font-size: var(--pixel-letra-media); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -317,7 +298,10 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
         padding: var(--pixel-px) calc(4 * var(--pixel-px)) calc(2 * var(--pixel-px)); background: var(--pixel-penumbra);
         box-shadow: 0 0 0 var(--pixel-px) var(--pixel-contorno); visibility: hidden;
       }
-      .hud-persona:hover .hud-persona-label, .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
+      .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
+      @media (hover: hover) {
+        .hud-persona:hover .hud-persona-label { visibility: visible; }
+      }
     }
     /* Teléfono en vertical: el catálogo sigue a un toque en Ajustes («Catálogo»). */
     @media (max-width: 480px) {
@@ -351,6 +335,8 @@ export class SimulationHudComponent {
   readonly brand = APP_BRAND;
   /** La pestaña lleva el título sin su subtítulo («… — tres capítulos»): entero no cabía y salía cortado (B, V4). */
   protected readonly tituloCorto = (titulo: string): string => titulo.split(' — ')[0];
+  readonly fichaDisponible = input(false);
+  readonly openCaseBrief = output<void>();
   readonly attempt = input<SimulationAttemptState | null>(null);
   /** Retrato de la persona consultante en el kit (lo da el mundo al cargar); sin él, la persona se dice solo con palabras. */
   readonly patientVisual = input<CharacterVisual | null>(null);

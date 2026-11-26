@@ -22,10 +22,15 @@ describe('AvisoDePuertaComponent', () => {
   };
 
   beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(180);
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(44);
     TestBed.configureTestingModule({ imports: [AvisoDePuertaComponent] });
     fixture = TestBed.createComponent(AvisoDePuertaComponent);
-    poner({ texto: 'Pasar a la sala de espera' });
+    poner({ texto: 'Pasar a la sala de espera', x: 412, y: 188, vista: { x: 4, y: 4, ancho: 792, alto: 490 } });
+    fixture.detectChanges();
   });
+
+  afterEach(() => vi.restoreAllMocks());
 
   it('es un botón con la tecla E, el separador y el destino; el lector de pantalla oye solo el destino', () => {
     expect(boton().type).toBe('button');
@@ -62,8 +67,14 @@ describe('AvisoDePuertaComponent', () => {
   it('se coloca con la cola en el punto que le dan', () => {
     poner({ x: 412, y: 188 });
     const cola = fixture.nativeElement.querySelector('.aviso__cola') as HTMLElement;
-    expect([boton().style.left, boton().style.top]).toEqual(['412px', '188px']);
+    expect([boton().style.left, boton().style.top]).toEqual(['322px', '138px']);
     expect([cola.style.left, cola.style.top]).toEqual(['412px', '188px']);
+  });
+
+  it('se aparta de quien está bajo el aviso y deja de dibujar la cola si cambia de altura', () => {
+    poner({ ocupadas: [{ x: 250, y: 115, ancho: 300, alto: 90 }] });
+    expect(boton().style.top).toBe('65px');
+    expect(fixture.nativeElement.querySelector('.aviso__cola')).toBeNull();
   });
 
   // Bloque U1: el cartel pasó a la placa del cuadro de diálogo (tintas de tokens/_pixel.scss): texto y detalle sobre la

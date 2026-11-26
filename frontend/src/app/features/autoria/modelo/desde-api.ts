@@ -297,6 +297,7 @@ export function casoDesdeApi(editor: CaseEditorView, mundos: WorldDefinition[], 
   return {
     id: String(editor.caseVersionId), revision: editor.revision, titulo: editor.title, lugarId, salas, escenas,
     tiempoEstimado: editor.estimatedMinutes ?? null,
+    ...(editor.portada !== undefined ? { portada: editor.portada, portadaPixelArt: editor.portadaPixelArt } : {}),
     contexto: editor.context ?? '', objetivos: [...(editor.learningObjectives ?? [])],
     ...(editor.contentWarnings ? { temasSensibles: [...editor.contentWarnings] } : {}),
     inicioId: inicio ? String(inicio.id) : null,

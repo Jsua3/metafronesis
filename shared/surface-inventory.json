@@ -332,6 +332,22 @@
       "audit": "CASE_VERSION_CLONED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/cover",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "CASE_COVER_REMOVED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/cover",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "multipart-case-cover",
+      "throttle": null,
+      "audit": "CASE_COVER_UPDATED"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/decisions",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -1598,6 +1614,14 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
+    },
+    {
+      "route": "api/simulation/covers/<uuid:cover_id>",
+      "method": "GET",
+      "exposure": "public",
+      "body": "none",
+      "throttle": null,
+      "audit": null
     },
     {
       "route": "schema",

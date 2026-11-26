@@ -270,6 +270,8 @@ export interface CasoBorrador {
   revision: number;
   titulo: string;
   tiempoEstimado?: number | null;
+  portada?: string | null;
+  portadaPixelArt?: boolean;
   /** El contexto que lee el estudiante antes de empezar (texto plano); ausente en un borrador que aún no está en el servidor. */
   contexto?: string;
   /** Los objetivos de aprendizaje del caso, uno por renglón; ausente en un borrador que aún no está en el servidor. */

@@ -1,0 +1,24 @@
+{
+  "id": "camillero",
+  "displayName": "Camillero",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "rapado",
+    "face": "sereno",
+    "top": "uniforme-clinico",
+    "bottom": "pantalon-uniforme",
+    "shoes": "tenis",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "castano-oscuro",
+    "top": "azul",
+    "bottom": "azul",
+    "shoes": "blanco",
+    "sole": "gris-claro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

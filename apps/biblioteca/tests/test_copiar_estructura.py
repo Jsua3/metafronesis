@@ -100,6 +100,21 @@ def version(docente_con_permiso, biblioteca):
     return CaseVersion.objects.get(pk=respuesta.data["data"]["versionId"])
 
 
+def test_rechaza_codigo_de_herramienta_con_arroba(docente_con_permiso, biblioteca):
+    _, cliente = docente_con_permiso
+    lugar = copy.deepcopy(HOSPITAL)
+    lugar["catalogo"]["herramientas"] = [{"id": "pap@gloria", "nombre": "PAP"}]
+    (biblioteca / "hospital" / "escenario.json").write_text(json.dumps(lugar), encoding="utf-8")
+    respuesta = cliente.post(
+        "/api/authoring/cases",
+        {"code": "HOSP-ARROBA", "title": "Hospital", "lugarId": "hospital", "salas": SALAS, "porPiezas": True},
+        format="json",
+    )
+    assert respuesta.status_code == 400, respuesta.content
+    assert "'@' está reservado" in respuesta.json()["message"]
+    assert not CaseVersion.objects.filter(simulation_case__code="HOSP-ARROBA").exists()
+
+
 def _mapa(version, sala):
     return SceneMap.objects.get(case_version=version, node__node_key=sala)
 

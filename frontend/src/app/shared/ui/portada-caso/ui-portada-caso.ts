@@ -32,13 +32,15 @@ export const PORTADA_MEDIDAS: Readonly<Record<UiPortadaTamano, { ancho: number; 
     '[class.ui-portada-caso--tarjeta]': "tamano() === 'tarjeta'",
     '[class.ui-portada-caso--heroe]': "tamano() === 'heroe'",
     '[class.ui-portada-caso--respaldo]': '!imagen()',
+    '[class.ui-portada-caso--portal]': 'portal()',
     '[class.vt-portada]': 'umbral()',
     '[attr.data-titulo]': 'titulo()',
     'aria-hidden': 'true',
   },
   template: `
     @if (imagen(); as src) {
-      <img class="ui-portada-caso__imagen" alt="" [src]="src" [width]="medida().ancho" [height]="medida().alto"
+      <img class="ui-portada-caso__imagen" [class.ui-portada-caso__imagen--pixel]="pixelArt()"
+        alt="" [src]="src" [width]="medida().ancho" [height]="medida().alto"
         decoding="async" [attr.loading]="tamano() === 'heroe' ? null : 'lazy'" (error)="fallo.set(true)" />
     } @else {
       <span class="ui-portada-caso__mosaico"></span>
@@ -49,8 +51,10 @@ export const PORTADA_MEDIDAS: Readonly<Record<UiPortadaTamano, { ancho: number; 
   styleUrl: './ui-portada-caso.scss',
 })
 export class UiPortadaCaso {
-  /** URL de la imagen de la primera sala (BK-1), o nada. */
+  /** URL pública de la portada, o nada. */
   readonly portada = input<string | null | undefined>(null);
+  readonly pixelArt = input(true, { transform: booleanAttribute });
+  readonly portal = input(false, { transform: booleanAttribute });
   /** El título del caso (solo para depurar y para las pruebas: la portada no se lee). */
   readonly titulo = input.required<string>();
   readonly tamano = input<UiPortadaTamano>('tarjeta');

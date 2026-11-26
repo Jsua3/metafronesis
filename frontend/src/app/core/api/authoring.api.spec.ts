@@ -27,6 +27,28 @@ describe('AuthoringApi (adaptador del servidor de metafronesis)', () => {
 
   afterEach(() => http.verify());
 
+  it('envía la imagen como multipart y usa la revisión para subir y quitar la portada', () => {
+    const imagen = new File(['imagen'], 'portada.png', { type: 'image/png' });
+    const recibidos: unknown[] = [];
+    api.updateCover(9, imagen, true, 7).subscribe(datos => recibidos.push(datos));
+    const subida = http.expectOne('/api/authoring/cases/9/cover');
+    expect(subida.request.method).toBe('PUT');
+    expect(subida.request.headers.get('X-Case-Revision')).toBe('7');
+    expect(subida.request.headers.has('Content-Type')).toBe(false);
+    expect(subida.request.body.get('imagen')).toBe(imagen);
+    expect(subida.request.body.get('pixelArt')).toBe('true');
+    const guardada = { portada: '/media/portada.png', portadaPixelArt: true, revision: 8 };
+    subida.flush({ success: true, data: guardada });
+
+    api.removeCover(9, 8).subscribe(datos => recibidos.push(datos));
+    const retirada = http.expectOne('/api/authoring/cases/9/cover');
+    expect(retirada.request.method).toBe('DELETE');
+    expect(retirada.request.headers.get('X-Case-Revision')).toBe('8');
+    const quitada = { portada: null, portadaPixelArt: false, revision: 9 };
+    retirada.flush({ success: true, data: quitada });
+    expect(recibidos).toEqual([guardada, quitada]);
+  });
+
   /** Responde una mutación y, si hace falta, la relectura del editor. */
   function responder(url: string, releer: boolean) {
     const peticion = http.expectOne(url);

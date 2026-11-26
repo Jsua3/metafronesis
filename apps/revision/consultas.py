@@ -2,6 +2,7 @@ from django.http import Http404
 
 from apps.grupos.alcance import estudiantes_de
 from apps.grupos.models import Grupo, GrupoEstudiante, MembershipStatus
+from apps.simulation.assessment.evaluation import read_snapshot
 from apps.simulation.models import SimulationAttempt
 from apps.simulation.models.attempt import REGISTERED_DECISION_EVENT_TYPES
 from apps.simulation.models.rubric import EvaluationOrigin
@@ -62,7 +63,7 @@ def detalle(docente, attempt_id):
     return {
         **_fila(intento),
         "decisions": [_decision(evento) for evento in eventos],
-        "evaluation": evaluacion.snapshot if evaluacion else None,
+        "evaluation": read_snapshot(intento, evaluacion) if evaluacion else None,
         "rubric": _rubrica(intento),
         "teacherFeedback": retroalimentacion_docente_de(intento),
     }

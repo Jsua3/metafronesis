@@ -1,3 +1,4 @@
+import { alfaDelCuadro } from './alfa-del-cuadro';
 /**
  * Una sala por piezas dentro de una escena de Phaser: pinta el plan de `composicion.ts`, pone encima las dos capas de luz
  * de `luz.ts` y lleva las puertas con `puerta.ts`. Es lo que la escena del juego (y el arnés de capturas) crea al entrar en
@@ -14,6 +15,7 @@
 import Phaser from 'phaser';
 
 import { DEPTH, actorDepth } from '../depth-sort.util';
+import { anclaDelArte } from './apoyos-de-mueble';
 import { urlDePieza } from './catalogo';
 import type { ManifiestoDePiezas, MuebleDeCatalogo, SalaPorPiezas } from './catalogo';
 import { clipsDe, cuadroDelClip } from './mueble-vivo';
@@ -101,26 +103,6 @@ function pixelesDe(escena: Phaser.Scene, ruta: string): Imagen | null {
   return imagen;
 }
 
-/** El alfa (0 a 255) del cuadro que muestra un sprite, ya volteado si lo está. null si no tiene imagen. */
-function alfaDelCuadro(sprite: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite): { datos: Uint8Array; w: number; h: number } | null {
-  const frame = sprite.frame;
-  const w = frame?.cutWidth ?? 0, h = frame?.cutHeight ?? 0;
-  const fuente = frame?.source?.image as HTMLImageElement | HTMLCanvasElement | undefined;
-  if (!w || !h || !fuente) return null;
-  const lienzo = document.createElement('canvas');
-  lienzo.width = w;
-  lienzo.height = h;
-  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.drawImage(fuente, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
-  const rgba = ctx.getImageData(0, 0, w, h).data;
-  const datos = new Uint8Array(w * h);
-  for (let f = 0; f < h; f++) {
-    for (let col = 0; col < w; col++) datos[f * w + (sprite.flipX ? w - 1 - col : col)] = rgba[(f * w + col) * 4 + 3];
-  }
-  return { datos, w, h };
-}
-
 /** Galón de 9 × 6 px que apunta hacia la cámara, con su contorno: la flecha de la puerta que no se ve. */
 function texturaDeFlecha(escena: Phaser.Scene): string {
   const nombre = 'sala:flecha-camara';
@@ -153,6 +135,8 @@ export interface MuebleDeSala {
   x: number;
   y: number;
   espejo: boolean;
+  /** Los objetos sobre un tablero comparten su orden y no tienen sombra de piso. */
+  profundidadSobre?: number;
 }
 
 interface MuebleVivo {
@@ -164,7 +148,7 @@ interface MuebleVivo {
   desde: number;
 }
 
-const texturaDeMueble = (clave: string) => `sala:mueble:${clave}`;
+export const texturaDeMueble = (clave: string) => `sala:mueble:${clave}`;
 
 /**
  * Lo caro de armar una sala (el fondo compuesto y la luz) guardado por su firma: cada respuesta del servidor vuelve a armar
@@ -321,13 +305,16 @@ export class EscenaDeSala {
       const hoja = texturaDeMueble(m.clave);
       if (!escena.textures.exists(hoja)) continue;
       const clips = clipsDe(m.ficha);
-      const apoyo = (m.ficha as { apoyo?: [number, number] }).apoyo ?? [Math.floor(m.ficha.ancho / 2), m.ficha.alto];
+      const apoyo = anclaDelArte(m.ficha);
       const sprite = escena.add.sprite(m.x, m.y, hoja, clips['reposo'].de)
-        .setOrigin(apoyo[0] / m.ficha.ancho, apoyo[1] / m.ficha.alto).setFlipX(m.espejo).setDepth(actorDepth(m.y));
+        .setOrigin(apoyo[0] / m.ficha.ancho, apoyo[1] / m.ficha.alto).setFlipX(m.espejo)
+        .setDepth(m.profundidadSobre ?? actorDepth(m.y));
       this.objetos.push(sprite);
       this.mueblesVivos.push({ id: m.id, sprite, extras: [], clips, clip: 'reposo', desde: 0 });
-      const cuerpo = EscenaDeSala.cuerpoDeSprite(sprite, 0, 0);
-      if (cuerpo) cuerpos.push(cuerpo);
+      if (m.profundidadSobre === undefined) {
+        const cuerpo = EscenaDeSala.cuerpoDeSprite(sprite, 0, 0);
+        if (cuerpo) cuerpos.push(cuerpo);
+      }
     }
 
     // Luz.
@@ -476,6 +463,13 @@ export class EscenaDeSala {
     }] : []);
   }
 
+  /** Puerta que se mantiene abierta aunque quien juega no esté cerca (los acompañantes la cruzan), o null. */
+  private forzada: string | null = null;
+
+  forzarAbierta(id: string | null): void {
+    this.forzada = id;
+  }
+
   /** La puerta que manda ahora (la que muestra el aviso), o null. */
   puertaActiva(): string | null {
     return this.activa;
@@ -493,7 +487,7 @@ export class EscenaDeSala {
     for (const vivo of this.vivos) {
       const s = vivo.plan;
       if (s.puerta) {
-        vivo.estado = avanzarPuerta(vivo.estado, { dtMs, cerca: this.activa === s.id, bloqueada: bloqueadas.has(s.id), reducido: this.reducido });
+        vivo.estado = avanzarPuerta(vivo.estado, { dtMs, cerca: this.activa === s.id || this.forzada === s.id, bloqueada: bloqueadas.has(s.id), reducido: this.reducido });
         vivo.objeto.setFrame(cuadroVisible(vivo.estado, vivo.hojas));
         vivo.objeto.x = s.x + desvioDeSacudida(vivo.estado);
         if (abiertaDelTodo(vivo.estado)) abiertas.push(s.id);
@@ -727,6 +721,12 @@ export class EscenaDeSala {
     for (const o of this.objetos) this.escena.add.existing(o);
   }
 
+  /** Dibujo vivo de los muebles y las puertas que se pintan fuera del marcador. */
+  spriteDeInteraccion(id: string): Phaser.GameObjects.Sprite | undefined {
+    return this.mueblesVivos.find(mueble => mueble.id === id)?.sprite
+      ?? this.vivos.find(vivo => vivo.plan.puerta && vivo.plan.id === id)?.objeto;
+  }
+
   /** Quien juega está cerca de este objeto (null: de ninguno): si el mueble tiene clip `cerca`, lo hace una vez. */
   cerca(id: string | null): void {
     if (id === this.cercano) return;
@@ -764,12 +764,12 @@ export class EscenaDeSala {
     this.reducido = reducido;
   }
 
-  /** Dónde va el aviso de una puerta, en coordenadas de sala: sobre la puerta (o sobre su umbral, si es del lado de la cámara). */
+  /** Ancla del aviso en la puerta. La pantalla decide cuánto moverlo para dejar libres las figuras. */
   posicionDelAviso(id: string): { x: number; y: number } | null {
     const s = this.plan.sprites.find(p => p.id === id && p.puerta);
     if (!s?.puerta) return null;
-    if (s.puerta.muro === 'camara') return { x: s.puerta.llegada[0], y: s.puerta.llegada[1] - 84 };
-    return { x: s.puerta.llegada[0], y: Math.min(s.y, s.puerta.llegada[1] - 84) - 6 };
+    if (s.puerta.muro === 'camara') return { x: s.puerta.ancla[0], y: s.y };
+    return { x: s.puerta.ancla[0], y: s.y - 6 };
   }
 
   destruir(): void {

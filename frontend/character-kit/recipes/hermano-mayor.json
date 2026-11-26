@@ -1,0 +1,25 @@
+{
+  "id": "hermano-mayor",
+  "displayName": "Hermano mayor",
+  "kind": "npc",
+  "complexion": "b",
+  "pieces": {
+    "hair": "rapado",
+    "face": "sereno",
+    "top": "chaqueta-jean",
+    "bottom": "pantalon",
+    "shoes": "botines",
+    "accessories": []
+  },
+  "colors": {
+    "skin": "piel-2",
+    "hair": "negro",
+    "top": "azul",
+    "inner": "carbon",
+    "bottom": "gris-oscuro",
+    "shoes": "carbon",
+    "sole": "gris-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

@@ -464,8 +464,11 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
       const fichas = readFileSync(join(__dirname, '../../../styles/tokens/_pixel.scss'), 'utf-8');
       expect(fichas).toContain('--tecla-hud: clamp(44px, calc(var(--pixel-tam) * 3), 48px);');
       expect(fichas).not.toMatch(/--tecla-hud: [^;]*3[0-9]px/);
-      expect(base).toMatch(/\.settings-menu__header button \{[^}]*width: 44px;[^}]*height: 44px;/);
-      expect(base).toMatch(/\.settings-menu > button,\s*\.settings-menu > a \{[^}]*min-height: 44px;/);
+      const botones = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+      expect(hudSource).toContain('class="u-boton u-boton--icono" type="button" aria-label="Cerrar ajustes"');
+      expect(base).toMatch(/\.settings-menu > \.u-boton \{/);
+      expect(botones).toMatch(/\.u-boton--icono \{ width: 44px/);
+      expect(botones).toContain('min-height: 44px');
     });
 
     it('nada del HUD anima width y ya no quedan barras ni pulsos de estrés', () => {
