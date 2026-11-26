@@ -4,8 +4,6 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { MAT_CARD_CONFIG } from '@angular/material/card';
 import { firstValueFrom } from 'rxjs';
 import { routes } from './app.routes';
-import { CachedSimulationService } from './core/api/cached-simulation.service';
-import { SimulationService } from './core/api/simulation.service';
 import { jwtInterceptor } from './core/auth/jwt.interceptor';
 import { NotificationService } from './core/notifications/notification.service';
 import { watchConnectionRecovery } from './core/notifications/connection-recovery';
@@ -38,8 +36,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withNavigationErrorHandler(offlineNavigationHandler), withPreloading(PreloadMarkedRoutes), withComponentInputBinding()),
     { provide: TitleStrategy, useClass: SiepTitleStrategy },
     provideHttpClient(withInterceptors([jwtInterceptor])),
-    // Proxy de caché: los componentes siguen inyectando SimulationService (ver CachedSimulationService).
-    { provide: SimulationService, useExisting: CachedSimulationService },
     provideAppInitializer(initializeAuthSession),
     // El aviso de conexión se retira solo al volver la red (evento `online`) o con la primera respuesta correcta.
     provideAppInitializer(() => { watchConnectionRecovery(inject(NotificationService)); }),

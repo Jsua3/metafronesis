@@ -17,7 +17,7 @@ export interface DraftCopyEntry {
    * Decisión del plan visual (§9) o regla de negocio que lo origina; `F6-n` / `F7-n` cuando el texto nace de una
    * tarea del plan y no de una decisión.
    */
-  readonly decision: `VD-${number}` | `RN-${number}` | `ETH-${number}` | `F6-${number}` | `F7-${number}` | `F10-${number}` | `P6-${number}` | `DSL-${number}` | `R1-${number}`;
+  readonly decision: `VD-${number}` | `RN-${number}` | `ETH-${number}` | `F6-${number}` | `F7-${number}` | `F10-${number}` | `P6-${number}` | `DSL-${number}` | `R1-${number}` | `UB-E${number}`;
   /** Quién debe fijar la redacción definitiva. */
   readonly owner: 'Psicología';
   /** Qué se espera de Psicología; sin indicar, `validar`. */
@@ -33,6 +33,12 @@ export interface DraftCopyEntry {
 const SHORTCUTS_SETTING_LABEL = 'Atajos de una tecla';
 
 export const DRAFT_COPY = {
+  // BORRADOR: texto pendiente de Psicología (UB-E09).
+  hudHelp: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: texto de Ayuda', text: 'Ayuda' },
+  hudHelpLabel: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: nombre accesible de Ayuda', text: 'Ayuda: cómo se juega' },
+  hudSettings: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: texto de Ajustes', text: 'Ajustes' },
+  hudSettingsLabel: { decision: 'UB-E09', owner: 'Psicología', where: 'HUD: nombre accesible de Ajustes', text: 'Ajustes del juego' },
+
   /**
    * Anuncio a lectores de pantalla cuando la persona cambia de estado tras una decisión (VD-23). Va en `polite`, una
    * sola vez por cambio y nunca al cargar; si cambian el vínculo y la activación, se dicen en una sola frase
