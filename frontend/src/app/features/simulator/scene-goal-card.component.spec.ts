@@ -19,6 +19,7 @@ const GUIA: GuiaEscena = {
   siguiente: 'Habla con Familia',
   hechos: 1,
   total: 2,
+  siguienteLugar: { key: 'familia', label: 'Familia', tipo: 'persona' },
 };
 
 /**
@@ -58,6 +59,31 @@ describe('SceneGoalCardComponent', () => {
   }
 
   afterEach(() => TestBed.resetTestingModule());
+
+  it('nombra la acción de persona y conserva el botón al cambiar el destino', () => {
+    const { fixture, host } = montar({ guia: GUIA, compact: false });
+    const button = host.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
+    expect(button.textContent).toContain('Hablar con Familia');
+    fixture.componentRef.setInput('guia', { ...GUIA, siguienteLugar: { key: 'puerta', label: 'Sala', tipo: 'puerta' } });
+    fixture.detectChanges();
+    expect(host.querySelector('[data-guia-ir]')).toBe(button);
+    expect(button.textContent).toContain('Ir a Sala');
+  });
+
+  it('conserva Ir allí al actualizar la misma guía', () => {
+    const { fixture, host } = montar({ guia: GUIA, compact: false });
+    const button = host.querySelector('[data-guia-ir]');
+    expect(button).not.toBeNull();
+    const observer = new MutationObserver(() => {});
+    observer.observe(host, { childList: true, subtree: true });
+    for (let i = 0; i < 10; i++) {
+      fixture.componentRef.setInput('guia', { ...GUIA, siguienteLugar: { ...GUIA.siguienteLugar! } });
+      fixture.detectChanges();
+    }
+    expect(host.querySelector('[data-guia-ir]')).toBe(button);
+    expect(observer.takeRecords().flatMap(r => Array.from(r.removedNodes)).filter(n => n === button || (n instanceof Element && !!n.querySelector('[data-guia-ir]')))).toHaveLength(0);
+    observer.disconnect();
+  });
 
   describe('guía para las primeras testers (V7)', () => {
     it('fuera de compacto arranca abierta, con el siguiente paso y la cuenta de la sala', () => {
@@ -106,9 +132,38 @@ describe('SceneGoalCardComponent', () => {
     const { el, abrir, abiertas } = montar({ guia: GUIA });
     abrir();
     const filas = [...el.querySelectorAll('li')].map(li => li.textContent!.replace(/\s+/g, ' ').trim());
-    expect(filas).toEqual(['Enfermera · ya hablaste', 'Familia · aún no', 'Historia clínica · ya revisaste']);
+    // P9: «aún no» se leía como «no disponible»; la persona del siguiente paso lo dice, y quien falta dice qué falta.
+    expect(filas).toEqual(['Enfermera · ya hablaste', 'Familia · tu siguiente paso', 'Historia clínica · ya revisaste']);
     expect(el.textContent).toContain('En esta sala');
     expect(abiertas()).toBe(1);
+  });
+
+  it('una persona sin hablar que no es el siguiente paso dice «sin hablar todavía», nunca «aún no»', () => {
+    const guia: GuiaEscena = { ...GUIA, siguienteLugar: { key: 'npc:enfermera', label: 'Enfermera', tipo: 'persona' } };
+    const { el, abrir } = montar({ guia });
+    abrir();
+    const filas = [...el.querySelectorAll('li')].map(li => li.textContent!.replace(/\s+/g, ' ').trim());
+    expect(filas[1]).toBe('Familia · sin hablar todavía');
+    expect(el.textContent).not.toContain('aún no');
+  });
+
+  describe('«Siguiente paso» conectado con «Ir a…» (P9)', () => {
+    it('el botón «Ir allí» emite la clave del siguiente paso y su nombre accesible dice a quién', () => {
+      const { fixture, el, abrir } = montar({ guia: GUIA });
+      const pedidas: string[] = [];
+      fixture.componentInstance.goToStep.subscribe(k => pedidas.push(k));
+      abrir();
+      const ir = el.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
+      expect(ir.textContent).toContain('Hablar con Familia');
+      ir.click();
+      expect(pedidas).toEqual(['familia']);
+    });
+
+    it('sin nada a lo que apuntar no hay botón', () => {
+      const { el, abrir } = montar({ guia: { ...GUIA, siguiente: null, siguienteLugar: null } });
+      abrir();
+      expect(el.querySelector('[data-guia-ir]')).toBeNull();
+    });
   });
 
   it('abierta ofrece «Pedir una pista» con el intento', () => {

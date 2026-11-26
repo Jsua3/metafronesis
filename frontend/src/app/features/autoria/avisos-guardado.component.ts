@@ -1,9 +1,8 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, untracked, viewChild,
+  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, signal, untracked, viewChild,
 } from '@angular/core';
 
 import { CasoStore } from './estado/caso.store';
-import { FALTA_CLASE } from './estado/persistir';
 
 /** Cómo va el guardado, por la forma de su marca, y en dos largos de texto. */
 type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
@@ -28,11 +27,16 @@ type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
   host: { '[class.en-barra]': "parte() === 'estado'" },
   template: `
     @if (parte() === 'estado') {
-      <p class="estado-guardado" role="status" data-estado-guardado [attr.data-forma]="forma()" [attr.title]="estado()">
+      <p class="estado-guardado" data-estado-guardado [attr.data-forma]="forma()" [attr.title]="store.textoGuardado() + '. El caso se guarda automáticamente; borrador significa que aún no se ha enviado a revisión.'">
         <span class="estado-guardado__marca" aria-hidden="true"></span>
-        <span class="estado-guardado__corto" aria-hidden="true">{{ corto() }}</span>
-        <span class="solo-lector">{{ estado() }}</span>
+        <span class="estado-guardado__rotulo" aria-hidden="true">Guardado automático:</span>
+        <span class="estado-guardado__corto" aria-hidden="true">{{ store.textoGuardado() }}</span>
+        <span class="solo-lector">{{ store.textoGuardado() }}</span>
       </p>
+      <span class="solo-lector" role="status" aria-live="polite" aria-atomic="true">{{ anuncioGuardado() }}</span>
+      @if (store.guardadoDetenido()) {
+        <button type="button" class="estado-guardado__ver" (click)="store.reintentarGuardado()">Reintentar</button>
+      }
       @if (hayAviso()) {
         <button type="button" class="estado-guardado__ver" (click)="verAviso()">Ver el aviso</button>
       }
@@ -88,6 +92,7 @@ type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
     }
     /* La marca dice el estado con forma: punto lleno (guardado), anillo vacío (guardando), triángulo (falta algo). */
     .estado-guardado__marca { inline-size: 0.625rem; block-size: 0.625rem; border-radius: 50%; background: var(--ds-success); flex: none; }
+    .estado-guardado__rotulo { color: var(--asb-cromo-tinta); font-weight: 700; }
     .estado-guardado[data-forma='guardando'] .estado-guardado__marca { background: transparent; box-shadow: inset 0 0 0 2px var(--ds-primary); }
     .estado-guardado[data-forma='sin-guardar'] .estado-guardado__marca,
     .estado-guardado[data-forma='aviso'] .estado-guardado__marca {
@@ -122,6 +127,7 @@ export class AvisosGuardadoComponent {
   /** Qué parte pinta esta instancia: el estado (en la barra) o los avisos (arriba del contenido). */
   readonly parte = input<'estado' | 'avisos'>('avisos');
   protected readonly store = inject(CasoStore);
+  protected readonly anuncioGuardado = signal('');
   private readonly injector = inject(Injector);
   private readonly conflictoAviso = viewChild<ElementRef<HTMLElement>>('conflictoAviso');
   private readonly errorAviso = viewChild<ElementRef<HTMLElement>>('errorAviso');
@@ -131,36 +137,21 @@ export class AvisosGuardadoComponent {
 
   protected readonly forma = computed<FormaGuardado>(() => {
     if (this.store.guardando()) return 'guardando';
-    if (this.hayAviso()) return 'aviso';
+    if (this.hayAviso() || this.store.guardadoDetenido()) return 'aviso';
     return this.store.sinGuardar().length ? 'sin-guardar' : 'guardado';
   });
 
-  /** Cómo va el guardado, contando las respuestas que solo están en esta pantalla (la frase entera, para el lector). */
-  protected readonly estado = computed(() => {
-    if (this.store.guardando()) return 'Guardando tus cambios…';
-    if (this.store.conflicto()) return 'Hay cambios sin guardar';
-    if (this.store.error()) return 'Un cambio no se guardó';
-    const pendientes = this.store.sinGuardar();
-    const n = pendientes.length;
-    if (n === 0) return 'Todo guardado';
-    const respuestas = n === 1 ? '1 respuesta' : `${n} respuestas`;
-    const donde = n === 1 ? 'solo está' : 'solo están';
-    return pendientes.every((p) => p.mensaje === FALTA_CLASE)
-      ? `Falta elegir la clase de ${respuestas}: ${donde} en esta pantalla`
-      : `Falta completar ${respuestas}: ${donde} en esta pantalla`;
-  });
-
-  /** Lo que cabe en la barra (la frase entera queda en el globo y para el lector de pantalla). */
-  protected readonly corto = computed(() => {
-    switch (this.forma()) {
-      case 'guardando': return 'Guardando…';
-      case 'guardado': return 'Guardado';
-      case 'aviso': return this.store.conflicto() ? 'Sin guardar' : 'No se guardó';
-      default: return `${this.store.sinGuardar().length} sin guardar`;
-    }
-  });
-
   constructor() {
+    effect((onCleanup) => {
+      if (this.parte() !== 'estado') return;
+      const texto = this.store.textoGuardado();
+      if (this.forma() === 'aviso') {
+        this.anuncioGuardado.set(texto);
+        return;
+      }
+      const timer = setTimeout(() => this.anuncioGuardado.set(texto), 1500);
+      onCleanup(() => clearTimeout(timer));
+    });
     effect(() => {
       if (this.parte() !== 'avisos') return;
       const conflicto = this.store.conflicto() !== null;

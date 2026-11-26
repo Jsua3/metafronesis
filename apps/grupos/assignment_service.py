@@ -10,15 +10,18 @@ grupo; ``assignment.list``: el docente dueño o el ADMIN). Una asignación de un
 confirma (404), como una rúbrica ajena (R3).
 """
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Exists, OuterRef, Q, Subquery
+from django.db.models.functions import JSONObject
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 
-from apps.simulation.models import CaseVersion
+from apps.simulation.models import CaseVersion, SimulationAttempt
 from shared import policies
 from shared.exceptions import ApiError
 
 from .assignments import assignment_state, format_window_value, parse_window_value
-from .models import CaseAssignment, Grupo
+from .models import CaseAssignment, Grupo, GrupoEstudiante, MembershipStatus
+from .secuencia import clave_secuencia
 from apps.simulation.services.audit_service import auditable
 from shared.policies import ADMIN
 
@@ -40,15 +43,20 @@ def assignment_dto(assignment, now=None):
     data = {
         "id": assignment.id,
         "caseVersionId": assignment.case_version_id,
+        "caseId": assignment.case_version.simulation_case_id,
         "target": target,
         "state": assignment_state(assignment, now),
         "active": assignment.active,
         "sortOrder": assignment.sort_order,
+        # El docente necesita nombrar cada asignación (orden, secuencia) sin una segunda consulta por caso.
+        "caseTitle": assignment.case_version.simulation_case.title,
     }
     if assignment.opens_at is not None:
         data["opensAt"] = format_window_value(assignment.opens_at)
     if assignment.closes_at is not None:
         data["closesAt"] = format_window_value(assignment.closes_at)
+    if hasattr(assignment, "progress") and assignment.grupo_id is not None:
+        data["progress"] = assignment.progress or {"students": 0, "completed": 0, "inProgress": 0}
     return data
 
 
@@ -87,9 +95,26 @@ def _check_window(opens_at, closes_at):
         raise _field_error("closesAt", "La fecha de cierre debe ser posterior a la de apertura.")
 
 
+def next_sort_order(grupo_id):
+    """El lugar al final de la secuencia del grupo (1 si aún no tiene casos). Si ya no cabe por debajo del tope, se
+    renumera la secuencia existente (1…N, en su orden actual) para que el caso nuevo quede al final."""
+    filas = list(CaseAssignment.objects.filter(grupo_id=grupo_id).select_related("case_version"))
+    filas.sort(key=lambda fila: clave_secuencia([fila]))
+    if not filas:
+        return 1
+    ultimo = max(fila.sort_order for fila in filas)
+    if ultimo < SORT_ORDER_MAX:
+        return ultimo + 1
+    for posicion, fila in enumerate(filas, start=1):
+        fila.sort_order = posicion
+    CaseAssignment.objects.bulk_update(filas, ["sort_order"])
+    return len(filas) + 1
+
+
 # ─── Carga con propiedad ──────────────────────────────────────────────────────────────────
-def _group_to_manage(group_id, actor):
-    grupo = Grupo.objects.filter(pk=group_id).first()
+def _group_to_manage(group_id, actor, *, lock=False):
+    queryset = Grupo.objects.select_for_update() if lock else Grupo.objects
+    grupo = queryset.filter(pk=group_id).first()
     if grupo is None:
         raise NotFound(f"Grupo no encontrado: {group_id}")
     if not policies.can(actor, "assignment", "manage", owner_id=grupo.profesor_id):
@@ -114,7 +139,7 @@ def _assignable_version(case_version_id):
 
 
 def _load_to_manage(assignment_id, actor, *, lock=False):
-    queryset = CaseAssignment.objects.select_related("grupo")
+    queryset = CaseAssignment.objects.select_related("grupo", "case_version__simulation_case")
     if lock:
         queryset = queryset.select_for_update(of=("self",))
     row = queryset.filter(pk=assignment_id).first()
@@ -152,12 +177,14 @@ def create_assignment(actor, payload):
             status.HTTP_400_BAD_REQUEST,
             field="target",
         )
-    grupo = _group_to_manage(target["groupId"], actor)
+    grupo = _group_to_manage(target["groupId"], actor, lock=True)
     version = _assignable_version(payload["caseVersionId"])
     opens_at = _parse_date(payload.get("opensAt"), "opensAt")
     closes_at = _parse_date(payload.get("closesAt"), "closesAt")
     _check_window(opens_at, closes_at)
-    sort_order = _parse_sort_order(payload["sortOrder"]) if "sortOrder" in payload else 0
+    # Sin ``sortOrder`` el caso nuevo va al final de la secuencia del grupo: antes todos empataban en 0 y el orden en que
+    # los estudiantes los hacían lo decidía el id del caso, sin que el docente lo supiera.
+    sort_order = _parse_sort_order(payload["sortOrder"]) if "sortOrder" in payload else next_sort_order(grupo.id)
     try:
         with transaction.atomic():
             return CaseAssignment.objects.create(
@@ -179,9 +206,27 @@ def create_assignment(actor, payload):
         ) from None
 
 
+def assignments_with_progress():
+    """Consulta reutilizable para contar personas por asignación sin consultas por fila."""
+    # Una sola consulta para todas las asignaciones: los EXISTS cuentan personas, no intentos.
+    # Si alguien terminó y después volvió a empezar, prevalece «terminó».
+    attempts = SimulationAttempt.objects.filter(
+        student_id=OuterRef("estudiante_id"), case_version_id=OuterRef(OuterRef("case_version_id"))
+    )
+    members = (GrupoEstudiante.objects.filter(grupo_id=OuterRef("grupo_id"), status=MembershipStatus.ACTIVE)
+        .annotate(done=Exists(attempts.filter(status="COMPLETED")),
+                  ongoing=Exists(attempts.filter(status__in=("IN_PROGRESS", "PAUSED"))))
+        .order_by().values("grupo_id")
+        .annotate(total=Count("estudiante_id"), completed=Count("estudiante_id", filter=Q(done=True)),
+                  in_progress=Count("estudiante_id", filter=Q(done=False, ongoing=True)))
+        .annotate(result=JSONObject(students="total", completed="completed", inProgress="in_progress"))
+        .values("result")[:1])
+    return CaseAssignment.objects.select_related("grupo", "case_version__simulation_case").annotate(progress=Subquery(members))
+
+
 def list_assignments(actor, group_id=None, case_version_id=None):
     """Las asignaciones que el actor puede listar: las de un grupo suyo (el ADMIN, todas)."""
-    queryset = CaseAssignment.objects.select_related("grupo")
+    queryset = assignments_with_progress()
     if group_id is not None:
         grupo = Grupo.objects.filter(pk=group_id).first()
         if grupo is None or not policies.can(actor, "assignment", "list", owner_id=grupo.profesor_id):
@@ -191,13 +236,15 @@ def list_assignments(actor, group_id=None, case_version_id=None):
         queryset = queryset.filter(grupo__profesor_id=actor.id)
     if case_version_id is not None:
         queryset = queryset.filter(case_version_id=case_version_id)
-    return list(queryset.order_by("sort_order", "id"))
+    return sorted(queryset, key=lambda fila: clave_secuencia([fila]))
 
 
 @auditable("asignacion.actualizar", "ASSIGNMENT", 1)
 @transaction.atomic
 def update_assignment(actor, assignment_id, changes):
     """Aplica solo lo que viene en ``changes`` («ausente = no tocar»; ``None`` borra una fecha)."""
+    row = _load_to_manage(assignment_id, actor)
+    _group_to_manage(row.grupo_id, actor, lock=True)
     row = _load_to_manage(assignment_id, actor, lock=True)
     if "opensAt" in changes:
         row.opens_at = _parse_date(changes["opensAt"], "opensAt")
@@ -217,6 +264,51 @@ def update_assignment(actor, assignment_id, changes):
 @auditable("asignacion.eliminar", "ASSIGNMENT", 1)
 @transaction.atomic
 def remove_assignment(actor, assignment_id):
+    row = _load_to_manage(assignment_id, actor)
+    _group_to_manage(row.grupo_id, actor, lock=True)
     row = _load_to_manage(assignment_id, actor, lock=True)
     row.delete()
     return {"id": assignment_id}
+
+
+def _contexto_del_orden(args, kwargs, result):
+    return {"groupId": args[1] if len(args) > 1 else kwargs.get("group_id"), "assignmentIds": [row.id for row in result]}
+
+
+@auditable("asignacion.reordenar", "ASSIGNMENT", -1, context=_contexto_del_orden)
+@transaction.atomic
+def reorder_group_assignments(actor, group_id, ordered_ids, previous_ids):
+    """Fija el orden de la secuencia del grupo: ``ordered_ids`` son TODAS sus asignaciones (activas o en pausa), de la
+    primera a la última, y quedan numeradas 1…N de una vez. Un grupo ajeno no se toca (403, como crear); una lista que no
+    es exactamente la del grupo (faltan, sobran o se repiten) no cambia nada (409) y el docente recarga la lista."""
+    grupo = _group_to_manage(group_id, actor, lock=True)
+    filas = list(
+        CaseAssignment.objects.select_for_update(of=("self",))
+        .filter(grupo_id=grupo.id)
+        .select_related("case_version__simulation_case")
+    )
+    por_id = {fila.id: fila for fila in filas}
+    actual = [fila.id for fila in sorted(filas, key=lambda fila: clave_secuencia([fila]))]
+    if previous_ids != actual:
+        raise ApiError(
+            "ASSIGNMENT_ORDER_STALE",
+            "Otra persona cambió el orden; esta es la lista actual.",
+            status.HTTP_409_CONFLICT,
+            currentAssignmentIds=actual,
+        )
+    if len(ordered_ids) != len(set(ordered_ids)) or set(ordered_ids) != set(por_id):
+        raise ApiError(
+            "ASSIGNMENT_ORDER_MISMATCH",
+            # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
+            "La lista de casos cambió mientras la ordenabas. Recarga la pantalla y vuelve a intentarlo.",
+            status.HTTP_409_CONFLICT,
+        )
+    if len(ordered_ids) > SORT_ORDER_MAX:
+        raise _field_error("assignmentIds", f"Un grupo admite hasta {SORT_ORDER_MAX} casos ordenados.")
+    ordenadas = []
+    for posicion, asignacion_id in enumerate(ordered_ids, start=1):
+        fila = por_id[asignacion_id]
+        fila.sort_order = posicion
+        ordenadas.append(fila)
+    CaseAssignment.objects.bulk_update(ordenadas, ["sort_order"])
+    return ordenadas

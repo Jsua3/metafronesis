@@ -131,7 +131,7 @@ export const MAXIMO_DESCRIPCION = 2000;
       background-color: color-mix(in oklab, var(--primario, #b69cff) 38%, transparent);
     }
     @media (max-width: 72rem) { .doodles { display: none; } }
-    .formulario { max-inline-size: 48rem; }
+    .formulario { max-inline-size: 48rem; padding-block-end: 7rem; }
     .campo { display: flex; flex-direction: column; gap: 0.25rem; }
     .campo label { font-weight: 700; font-size: var(--autoria-texto-16); }
     .campo p, .formulario > p, .retomar p { margin: 0; font-size: var(--autoria-texto-16); line-height: 1.5rem; }

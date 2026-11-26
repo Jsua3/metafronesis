@@ -41,6 +41,25 @@ describe('AuthService: cambio de contraseña obligatorio (E2-9)', () => {
   const summary = (mustChangePassword: boolean) =>
     ({ id: 7, nombre: 'Ana', apellido: 'Ríos', email: 'ana@cue.edu.co', role: 'ESTUDIANTE', mustChangePassword });
 
+  it('al cerrar sesión elimina todos los respaldos del editor', () => {
+    sessionStorage.setItem('autoria-respuestas:7:41:escena', 'privado');
+    sessionStorage.setItem('otra-clave', 'conservar');
+    vi.spyOn(service, 'redirectToLogin').mockImplementation(() => {});
+    service.logout();
+    expect(sessionStorage.getItem('autoria-respuestas:7:41:escena')).toBeNull();
+    expect(sessionStorage.getItem('otra-clave')).toBe('conservar');
+    sessionStorage.removeItem('otra-clave');
+  });
+
+  it('consulta disponibilidad de demo sin enviar ni recibir credenciales', async () => {
+    const done = firstValueFrom(service.demoConfig());
+    const request = http.expectOne('/api/auth/demo/config');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.body).toBeNull();
+    request.flush({ success: true, data: { enabled: false } });
+    expect(await done).toEqual({ enabled: false });
+  });
+
   it('el acceso conserva `mustChangePassword` de la respuesta', async () => {
     const done = firstValueFrom(service.login('ana@cue.edu.co', 'Temporal-123'));
     http.expectOne('/api/auth/login').flush({ success: true, message: null, data: { token: token(), user: summary(true) } });

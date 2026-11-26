@@ -14,6 +14,11 @@ export interface Invitation {
   teacherName: string;
   invitedAt: string | null;
   status: MembershipStatus;
+  /**
+   * Casos que el docente asignó al grupo; solo viaja con el número cuando ya eres miembro (`ACTIVE`). `null` antes de aceptar;
+   * ausente si el servidor es anterior: ahí no se sabe y la pantalla no afirma que el grupo esté vacío.
+   */
+  casesCount?: number | null;
 }
 
 /**

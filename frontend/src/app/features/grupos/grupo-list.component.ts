@@ -11,7 +11,7 @@ import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { mapAgregarEstudianteError, mapGrupoError } from '../../core/api/grupo-error.utils';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { NotificationService } from '../../core/notifications/notification.service';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { focusFirstInvalid } from '../../shared/forms/focus-first-invalid.util';
 import { UiBadge, UiBadgeTone } from '../../shared/ui/badge/ui-badge';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -175,6 +175,7 @@ export class GrupoListComponent implements OnInit {
   error = signal('');
   /** Pestaña abierta del detalle (se conserva al pasar de un grupo a otro). */
   pestana = signal<string | undefined>('estudiantes');
+  readonly solicitudAsignar = signal(0);
   /** La hoja de importación está abierta: el aviso se lee dentro de ella y no se repite en el detalle. */
   importacionAbierta = signal(false);
 
@@ -203,7 +204,14 @@ export class GrupoListComponent implements OnInit {
     const n = grupo.totalEstudiantes;
     const m = grupo.totalInvitados ?? 0;
     const partes = [`${n} ${n === 1 ? 'estudiante' : 'estudiantes'}`];
-    if (m) partes.push(`${m} ${m === 1 ? 'invitación pendiente' : 'invitaciones pendientes'}`);
+    partes.push(`${m} ${m === 1 ? 'invitación pendiente' : 'invitaciones pendientes'}`);
+    // BORRADOR: texto pendiente de Psicología.
+    if (grupo.resumenCasos) {
+      const r = grupo.resumenCasos;
+      partes.push(`${r.asignados} ${r.asignados === 1 ? 'caso asignado' : 'casos asignados'}`);
+      if (r.oportunidades) partes.push(`${r.terminados} de ${r.oportunidades} casos terminados por estudiantes`);
+      else if (r.asignados) partes.push('Aún sin estudiantes que puedan avanzar');
+    }
     return partes.join(' · ');
   }
   protected verTodos(): void { void this.router.navigate(['/portal/grupos']); }
@@ -250,16 +258,7 @@ export class GrupoListComponent implements OnInit {
 
   ngOnInit() {
     this.cargar();
-    this.casosApi.listPublished().subscribe({
-      next: cases => {
-        this.casosDisponibles.set(cases);
-        this.casosCargados.set(true);
-      },
-      error: () => {
-        this.casosDisponibles.set([]);
-        this.casosFallaron.set(true);
-      }
-    });
+    this.cargarCasos();
     this.grupoService.importSpec().subscribe({
       next: spec => this.importSpec.set(spec),
       error: () => this.importSpec.set({
@@ -270,6 +269,32 @@ export class GrupoListComponent implements OnInit {
         acceptedExtensions: ['.xlsx']
       })
     });
+  }
+
+  /**
+   * Los casos publicados que el docente puede asignar. Se piden otra vez cada vez que abre «Casos asignados» (`silencioso`):
+   * un caso que acaba de publicar en otra pantalla tiene que aparecer sin recargar la página. Un refresco silencioso que
+   * falla conserva la lista que ya había; el primero que falla lo dice (con «Reintentar» junto al botón de asignar).
+   */
+  cargarCasos(silencioso = false): void {
+    if (!silencioso) { this.casosFallaron.set(false); this.casosCargados.set(false); }
+    this.casosApi.listPublished().subscribe({
+      next: cases => {
+        this.casosDisponibles.set(cases);
+        this.casosCargados.set(true);
+        this.casosFallaron.set(false);
+      },
+      error: () => {
+        if (silencioso && this.casosCargados()) return;
+        this.casosDisponibles.set([]);
+        this.casosFallaron.set(true);
+      }
+    });
+  }
+
+  /** Al abrir «Casos asignados» se vuelve a leer lo publicado (el docente pudo publicar un caso mientras tanto). */
+  alCambiarPestana(valor: string | undefined): void {
+    if (valor === 'casos') this.cargarCasos(true);
   }
 
   /** Mensaje de error de un campo, solo cuando ya se tocó o se intentó enviar. */
@@ -343,7 +368,7 @@ export class GrupoListComponent implements OnInit {
         this.notify.success('Grupo creado.');
       },
       error: (err: unknown) => {
-        const text = apiErrorMessage(err, 'No fue posible crear el grupo.');
+        const text = mensajeDeError(err, 'No fue posible crear el grupo.');
         if (text) this.notify.error(text);
         this.saving.set(false);
       }
@@ -380,7 +405,7 @@ export class GrupoListComponent implements OnInit {
       },
       error: (err: unknown) => {
         const text = err instanceof HttpErrorResponse && [400, 404].includes(err.status)
-          ? mapGrupoError(err, 'No fue posible actualizar el grupo.') : apiErrorMessage(err, 'No fue posible actualizar el grupo.');
+          ? mapGrupoError(err, 'No fue posible actualizar el grupo.') : mensajeDeError(err, 'No fue posible actualizar el grupo.');
         if (text) this.notify.error(text);
         this.saving.set(false);
       }
@@ -433,7 +458,7 @@ export class GrupoListComponent implements OnInit {
       },
       error: (err: unknown) => {
         const text = err instanceof HttpErrorResponse && [400, 404].includes(err.status)
-          ? mapGrupoError(err, 'No fue posible borrar el grupo.') : apiErrorMessage(err, 'No fue posible borrar el grupo.');
+          ? mapGrupoError(err, 'No fue posible borrar el grupo.') : mensajeDeError(err, 'No fue posible borrar el grupo.');
         if (text) this.notify.error(text);
       }
     });
@@ -459,7 +484,7 @@ export class GrupoListComponent implements OnInit {
       },
       error: (err: unknown) => {
         const text = err instanceof HttpErrorResponse && [400, 404].includes(err.status)
-          ? mapGrupoError(err, 'No fue posible quitar al estudiante.') : apiErrorMessage(err, 'No fue posible quitar al estudiante.');
+          ? mapGrupoError(err, 'No fue posible quitar al estudiante.') : mensajeDeError(err, 'No fue posible quitar al estudiante.');
         if (text) this.notify.error(text);
       }
     });
@@ -476,7 +501,14 @@ export class GrupoListComponent implements OnInit {
 
   }
 
+  irAAsignar(): void {
+    this.pestana.set('casos');
+    this.cargarCasos(true);
+    this.solicitudAsignar.update(n => n + 1);
+  }
+
   agregarEstudiante(grupo: Grupo) {
+    this.pestana.set('estudiantes');
     this.abrirGrupo(grupo);
     this.grupoSeleccionado.set(grupo.id);
     this.busquedaEstudiante.set('');
@@ -490,7 +522,10 @@ export class GrupoListComponent implements OnInit {
 
   /** Abre el detalle de un grupo; el conteo de casos asignados del grupo anterior no se arrastra al nuevo. */
   private abrirGrupo(grupo: Grupo) {
-    if (this.grupoActivo()?.id !== grupo.id) this.casosAsignadosTotal.set(null);
+    if (this.grupoActivo()?.id !== grupo.id) {
+      this.casosAsignadosTotal.set(null);
+      this.solicitudAsignar.set(0);
+    }
     this.grupoActivo.set(grupo);
   }
 
@@ -559,7 +594,8 @@ export class GrupoListComponent implements OnInit {
         // E2-10: el docente invita; la persona entra al grupo cuando acepta (su bandeja de invitaciones).
         // D-14: el servidor responde lo mismo exista o no la cuenta, así que el texto tampoco afirma que se envió.
         this.mensajeEstudiante.set(message?.trim() || 'Si el correo corresponde a un estudiante registrado, recibirá la invitación.');
-        this.grupos.update(list => list.map(g => g.id === grupo.id ? grupo : g));
+        this.notify.success(this.mensajeEstudiante());
+        this.grupos.update(list => list.map(g => g.id === grupo.id ? { ...g, ...grupo } : g));
         if (this.grupoActivo()?.id === grupo.id) this.grupoActivo.set(grupo);
         this.mensajeEsError.set(false);
         this.estudianteForm.reset();

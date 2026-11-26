@@ -160,6 +160,16 @@
       "audit": "LOGIN_SUCCEEDED,LOGIN_FAILED,LOGIN_LOCKED"
     },
     {
+      "route": "api/auth/demo/config",
+      "method": "GET",
+      "exposure": "public",
+      "body": "none",
+      "throttle": [
+        "login_ip"
+      ],
+      "audit": null
+    },
+    {
       "route": "api/auth/google",
       "method": "POST",
       "exposure": "public",
@@ -890,6 +900,14 @@
       "audit": "asignacion.eliminar"
     },
     {
+      "route": "api/grupos/<int:pk>/casos/orden",
+      "method": "PUT",
+      "exposure": "role:PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "asignacion.reordenar"
+    },
+    {
       "route": "api/grupos/<int:pk>/estudiantes",
       "method": "GET",
       "exposure": "role:PROFESOR",
@@ -1178,6 +1196,14 @@
       "body": "json-small",
       "throttle": null,
       "audit": "RUBRIC_CREATED"
+    },
+    {
+      "route": "api/rubrics/case-versions/<int:case_version_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: consulta de la rúbrica del propio caso o de un catálogo común"
     },
     {
       "route": "api/rubrics/case-versions/<int:case_version_id>",

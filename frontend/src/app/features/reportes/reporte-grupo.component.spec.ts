@@ -7,6 +7,7 @@ import { Grupo, GrupoService } from '../../core/api/grupo.service';
 import { ReporteService } from '../../core/api/reporte.service';
 import { CaseCatalogApi } from '../../core/api/case-catalog.api';
 import { NotificationService } from '../../core/notifications/notification.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { ReporteGrupo, ReporteSimulacionGrupo } from '../../core/models/reporte.model';
 import { SimulationCaseSummary } from '../../core/models/revision.model';
 import { ReporteGrupoComponent } from './reporte-grupo.component';
@@ -91,6 +92,7 @@ describe('pantalla Reportes (F7-3)', () => {
         { provide: GrupoService, useValue: { listar: vi.fn(api.grupos ?? (() => of([grupoA, grupoB]))) } },
         { provide: CaseCatalogApi, useValue: { listPublished: vi.fn(api.casos ?? (() => of([caso]))) } },
         { provide: NotificationService, useValue: notify },
+        { provide: AuthService, useValue: { hasRole: (role: string) => role === 'PROFESOR' } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
       ],
     });
@@ -105,8 +107,31 @@ describe('pantalla Reportes (F7-3)', () => {
     TestBed.resetTestingModule();
   });
 
+  it('ofrece volver al grupo seleccionado desde el reporte', async () => {
+    await render();
+    expect(host().querySelector('a[href="/portal/grupos/1"]')).toBeNull();
+    choose(select('Grupo'), 'Cohorte A · COH-A');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text(host().querySelector('a[href="/portal/grupos/1"]'))).toContain('Ver grupo Cohorte A');
+  });
+
   // req: RNF-04, BLOQUE-H
   describe('estados', () => {
+    it('distingue la carga y el error de casos y permite reintentar sin recargar grupos', async () => {
+      const pending = new Subject<SimulationCaseSummary[]>();
+      let calls = 0;
+      await render({ casos: () => ++calls === 1 ? pending : of([]) }, { stable: false });
+      expect(text(host())).toContain('Cargando casos');
+      pending.error(new Error('falló'));
+      fixture.detectChanges();
+      expect(text(host())).toContain('No fue posible cargar los casos');
+      const error = host().querySelector('[data-error-casos]')!;
+      (error.querySelector('button') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(calls).toBe(2);
+      expect(text(host())).toContain('Aún no hay casos publicados');
+    });
     it('un solo h1 y la región de estado siempre presente', async () => {
       await render();
       expect(host().querySelectorAll('h1')).toHaveLength(1);

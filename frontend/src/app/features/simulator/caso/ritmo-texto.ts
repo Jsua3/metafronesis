@@ -3,7 +3,7 @@
  * pausa breve en la puntuación, para que el texto se lea como se diría. Las acotaciones entre paréntesis se separan
  * para pintarlas aparte. Módulo puro: sin Angular.
  */
-export const MS_POR_CARACTER = 33;
+export const MS_POR_CARACTER = 20;
 
 const PAUSA: Readonly<Record<string, number>> = {
   ',': 120, ';': 180, ':': 180, '.': 300, '?': 300, '!': 300, '…': 420, ')': 200,

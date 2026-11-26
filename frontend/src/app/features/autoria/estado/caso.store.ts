@@ -3,6 +3,7 @@ import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { revisionConflictOf } from '../../../core/api/revision-conflict.util';
 import type { CaseLifecycle, RubricAdoptRequest, ValidationIssue } from '../../../core/models/simulation.model';
 import { AutoriaApiService } from '../api/autoria-api.service';
@@ -26,10 +27,13 @@ import { claveLibre, cuerpoCrearCaso } from '../modelo/hacia-api';
 import { hexAleatorio, nuevoId } from '../modelo/ids';
 import { revisarPuntoDeIda } from '../modelo/movimiento';
 import { posicionLibre, trazarEscenas } from '../modelo/trazado';
+import { puedeEnviar, faltasDelServidor } from '../modelo/revision';
+import { clasificarPendientes } from '../modelo/pendientes';
 import { Historial } from './historial';
 import * as persistir from './persistir';
 import { casoLeidoDelServidor, firmaDelCaso } from './releer';
 import { SesionServidor } from './sesion-servidor';
+import { type Borrador, escribirBorradores, leerBorradores } from './borradores-respuesta';
 
 export type TipoElemento = 'mueble' | 'objeto' | 'personaje';
 
@@ -128,6 +132,7 @@ export function mensajeDeFallo(error: unknown, nombre: string, aMedias = false):
     : `No se pudo guardar ${nombre}. Lo dejamos como estaba.`;
   if (!(error instanceof HttpErrorResponse)) return base;
   if (error.status === 0) return `${base} No hay conexión. Revisa tu internet y vuelve a intentarlo.`;
+  if (error.status === 403 && error.error?.code === 'AUTHORING_NOT_ALLOWED') return 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.';
   if (error.status === 403) return `${base} No tienes permiso para cambiar este caso.`;
   if (error.status === 404) return `${base} Esa parte del caso ya no existe; recarga el caso para verlo al día.`;
   if (error.status >= 500) return `${base} Hubo un problema al guardar; vuelve a intentarlo en un momento.`;
@@ -142,6 +147,7 @@ export function mensajeDeFallo(error: unknown, nombre: string, aMedias = false):
 
 export function mensajeDeCarga(error: unknown): string {
   const estado = error instanceof HttpErrorResponse ? error.status : -1;
+  if (error instanceof HttpErrorResponse && error.status === 403 && error.error?.code === 'AUTHORING_NOT_ALLOWED') return 'Para crear casos necesitas el permiso de autoría. Pídeselo a la administración de tu programa.';
   if (estado === 403) return 'No tienes permiso para abrir este caso.';
   if (estado === 404) return 'No encontramos ese caso. Puede que ya no exista.';
   if (estado === 0) return 'No pudimos abrir el caso: no hay conexión. Revisa tu internet y vuelve a intentarlo.';
@@ -160,6 +166,53 @@ export function mensajeDeCarga(error: unknown): string {
  */
 @Injectable({ providedIn: 'root' })
 export class CasoStore {
+  readonly respuestasRecuperadas = signal<ReadonlySet<string>>(new Set());
+  readonly respaldoLocalDisponible = signal(true);
+
+  readonly borradoresPendientes = signal<Borrador[]>([]);
+  private usuario(): number | null {
+    try { return this.injector.get(AuthService).currentUser()?.id ?? null; } catch { return null; }
+  }
+
+  private respaldarRespuestas(caso: CasoBorrador): void {
+    const usuario = this.usuario();
+    if (!this.sesion || usuario === null) return;
+    const anteriores = leerBorradores(usuario, caso.id);
+    for (const escena of caso.escenas) for (const respuesta of escena.respuestas) {
+      if (respuesta.destinoId || this.borradoresPendientes().some(b => b.escenaId === escena.id && b.respuesta.id === respuesta.id)) continue;
+      const indice = anteriores.findIndex(b => b.escenaId === escena.id && b.respuesta.id === respuesta.id);
+      const borrador = { escenaId: escena.id, respuesta: structuredClone(respuesta), revision: this.sesion.revision, guardado: Date.now() };
+      if (indice < 0) anteriores.push(borrador); else anteriores[indice] = borrador;
+    }
+    this.respaldoLocalDisponible.set(escribirBorradores(usuario, caso.id, anteriores));
+  }
+
+  private limpiarBorrador(caso: CasoBorrador, escenaId: string, respuestaId: string): void {
+    const usuario = this.usuario();
+    if (usuario !== null) {
+      const anteriores = leerBorradores(usuario, caso.id);
+      this.respaldoLocalDisponible.set(escribirBorradores(usuario, caso.id, anteriores.filter(b => b.escenaId !== escenaId || b.respuesta.id !== respuestaId)));
+    }
+    this.respuestasRecuperadas.update(ids => { const nuevos = new Set(ids); nuevos.delete(respuestaId); return nuevos; });
+  }
+
+  existeEscena(id: string): boolean { return this.estado()?.escenas.some(e => e.id === id) ?? false; }
+
+  descartarBorrador(borrador: Borrador): void {
+    const caso = this.estado();
+    if (!caso || this.soloLectura()) return;
+    this.limpiarBorrador(caso, borrador.escenaId, borrador.respuesta.id);
+    this.borradoresPendientes.update(lista => lista.filter(b => b !== borrador));
+  }
+
+  recuperarBorrador(borrador: Borrador, escenaId: string): void {
+    const caso = this.estado();
+    if (!caso || this.soloLectura() || !caso.escenas.some(e => e.id === escenaId && e.respuestas.length < 4)) return;
+    const respuesta = { ...structuredClone(borrador.respuesta), id: nuevoId('respuesta'), destinoId: null };
+    this.ejecutar({ nombre: 'la respuesta recuperada', aplicar: c => { c.escenas.find(e => e.id === escenaId)!.respuestas.push(respuesta); } });
+    if (this.respaldoLocalDisponible()) this.descartarBorrador(borrador);
+    this.respuestasRecuperadas.update(ids => new Set([...ids, respuesta.id]));
+  }
   private readonly injector = inject(Injector);
   /**
    * Va a una dirección del portal en esta misma pestaña (`state` viaja con la navegación). Lo usa el ensayo («Probar»), que
@@ -190,6 +243,76 @@ export class CasoStore {
   private readonly enLinea = signal(false);
 
   readonly caso = this.estado.asReadonly();
+  private readonly hallazgosRevision = signal<ValidationIssue[]>([]);
+  readonly revisionPendiente = signal(true);
+  readonly faltasLocales = computed(() => this.caso() ? puedeEnviar(this.caso()!).faltas : []);
+  /** Orientación inmediata para escribir, sin atribuirla a la revisión del servidor. */
+  readonly guiaLocal = computed(() => this.caso() ? clasificarPendientes(this.caso()!, this.faltasLocales()) : []);
+  /** Única lista de bloqueos: incluye lo que falta escribir y lo que exige el servidor. */
+  readonly faltas = computed(() => {
+    const caso = this.caso();
+    if (!caso) return [];
+    // Solo la compuerta determina bloqueos. Una revisi?n anterior no describe los cambios actuales.
+    if (this.revisionPendiente()) return [];
+    const unicos = new Map(this.hallazgosRevision().map(h => [JSON.stringify([h.code, h.nodeId, h.optionKey, h.path, h.message]), h]));
+    return faltasDelServidor([...unicos.values()], caso, {
+      faltasLocales: [], soloServidor: true, escenaDeNodo: id => this.sesion?.idLocalDeNodo(id) ?? String(id), respuestaDeOpcion: clave => this.respuestaDeOpcion(clave),
+      respuestasGuardadas: id => this.respuestasGuardadasDe(id),
+    });
+  });
+  readonly pendientes = computed(() => {
+    const caso = this.caso();
+    if (!caso) return [];
+    const confirmadas = this.faltas();
+    const claves = new Set(confirmadas.map(f => JSON.stringify([f.codigo, f.ir.ruta, f.ir.ancla])));
+    const sugerenciasLocales = this.guiaLocal().filter(f => f.tipo !== 'sugerencia' && !claves.has(JSON.stringify([f.codigo, f.ir.ruta, f.ir.ancla])))
+      .map(f => ({ ...f, tipo: 'sugerencia' as const }));
+    return [...clasificarPendientes(caso, confirmadas), ...sugerenciasLocales];
+  });
+  readonly totalPendientes = computed(() => this.faltas().length);
+  registrarRevision(hallazgos: ValidationIssue[], ciclo?: CaseLifecycle): void {
+    hallazgos = hallazgos.map(h => {
+      const nodo = /^nodes\/(\d+)/.exec(h.path ?? '')?.[1];
+      if (nodo && h.nodeId === undefined) h = { ...h, nodeId: Number(nodo) };
+      const id = /^options\/(\d+)/.exec(h.path ?? '')?.[1];
+      const opcion = id ? this.sesion?.vista.decisions.find(d => d.id === Number(id)) : undefined;
+      return opcion ? { ...h, nodeId: opcion.sourceNodeId, optionKey: opcion.optionKey } : h;
+    });
+    const motivo = ciclo?.blockedReason;
+    this.hallazgosRevision.set([...hallazgos, ...(motivo && motivo.code !== 'VALIDATION_ERRORS' && !hallazgos.some(h => h.code === motivo.code && h.message === motivo.message)
+      ? [{ code: motivo.code, severity: 'error' as const, message: motivo.message }] : [])]);
+    this.revisionPendiente.set(false);
+  }
+  agregarBloqueos(hallazgos: ValidationIssue[]): void {
+    this.hallazgosRevision.update(actual => [...actual, ...hallazgos]);
+  }
+  readonly avisoEnsayo = signal<string | null>(null);
+  readonly ultimoGuardado = signal<Date | null>(null);
+  readonly guardadoDetenido = signal<'conexion' | 'error' | null>(null);
+  readonly textoGuardado = computed(() => {
+    if (this.guardando()) return 'Guardando…';
+    if (this.guardadoDetenido() === 'conexion') return 'Sin conexión: tus cambios esperan';
+    if (this.guardadoDetenido()) return 'No se pudo guardar: reintentar';
+    if (this.error()) return 'No se pudo guardar: revisa el aviso';
+    if (this.conflicto()) return 'Hay cambios sin guardar: revisa el conflicto';
+    const pendientes = this.sinGuardar();
+    if (pendientes.length) {
+      const n = pendientes.length;
+      const respuestas = n === 1 ? '1 respuesta' : `${n} respuestas`;
+      return pendientes.every(p => p.mensaje === persistir.FALTA_CLASE)
+        ? `Sin guardar: falta elegir la clase de ${respuestas}`
+        : `Sin guardar: falta completar ${respuestas}`;
+    }
+    if ([...this.puertasSinGuardar().values()].some(p => p.length)) return 'Sin guardar: faltan puertas por completar';
+    const hora = this.ultimoGuardado();
+    return hora ? `Todo guardado · ${hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })}` : this.enLinea() ? 'Todo guardado' : 'Sin guardar';
+  });
+  reintentarGuardado(): void {
+    if (!this.guardadoDetenido()) return;
+    this.guardadoDetenido.set(null);
+    this.errorAhora.set(null);
+    void this.procesar();
+  }
   /** El caso ya no es un borrador (está en revisión o publicado): se puede ver, pero no cambiar. */
   readonly soloLectura = computed(() => {
     const estado = this.estado()?.estado;
@@ -238,7 +361,7 @@ export class CasoStore {
    * Hay algo que no está a salvo en el sistema: cambios viajando, un conflicto sin resolver o respuestas que solo están en
    * pantalla porque les falta la clase, la razón o a dónde llevan. Salir ahora lo perdería.
    */
-  readonly haySinGuardar = computed(() => this.guardandoAhora() || this.conflictoAhora() !== null || this.sinGuardar().length > 0);
+  readonly haySinGuardar = computed(() => this.guardandoAhora() || this.guardadoDetenido() !== null || this.conflictoAhora() !== null || this.sinGuardar().length > 0 || [...this.puertasSinGuardar().values()].some(p => p.length));
 
   /**
    * Relee del servidor si el ensayo de esta versión llegó a un final (`rehearsedToEnd`) y lo pone en `probadoHastaElFinal`, sin
@@ -347,6 +470,27 @@ export class CasoStore {
   }
 
   private empezarCon(caso: CasoBorrador | null, sesion: SesionServidor | null): void {
+    const recuperadas = new Set<string>();
+    const pendientes: Borrador[] = [];
+    const usuario = this.usuario();
+    if (caso && sesion && usuario !== null && (caso.estado === undefined || caso.estado === 'DRAFT')) {
+      caso = structuredClone(caso);
+      for (const borrador of leerBorradores(usuario, caso.id)) {
+        const escena = caso.escenas.find(e => e.id === borrador.escenaId);
+        const indice = escena?.respuestas.findIndex(r => r.id === borrador.respuesta.id) ?? -1;
+        if (escena && indice >= 0 && !escena.respuestas[indice].destinoId && borrador.revision === sesion.revision) {
+          escena.respuestas[indice] = borrador.respuesta;
+          recuperadas.add(borrador.respuesta.id);
+        } else pendientes.push(borrador);
+      }
+    }
+    this.borradoresPendientes.set(pendientes);
+    this.respuestasRecuperadas.set(recuperadas);
+    this.avisoEnsayo.set(null);
+    this.hallazgosRevision.set([]);
+    this.revisionPendiente.set(true);
+    this.ultimoGuardado.set(null);
+    this.guardadoDetenido.set(null);
     this.puertasPendientes.set(new Map());
     this.sesion = sesion;
     this.cola = [];
@@ -366,7 +510,7 @@ export class CasoStore {
 
   /** Espera a que todo lo que se cambió haya llegado al servidor (o a que algo lo detenga). */
   sincronizado(): Promise<void> {
-    if (!this.procesando && (this.cola.length === 0 || this.conflictoAhora())) return Promise.resolve();
+    if (!this.procesando && (this.cola.length === 0 || this.conflictoAhora() || this.guardadoDetenido())) return Promise.resolve();
     return new Promise((resolver) => this.esperas.push(resolver));
   }
 
@@ -383,7 +527,9 @@ export class CasoStore {
     op.aplicar(nuevo); // si lanza, nada cambió
     if (!opciones.propuesta) this.propuestaAplicada.set(null); // lo aplicado por el asistente solo se deshace de un paso si nada más cambió
     if (opciones.sala) this.historial?.hacer(structuredClone(nuevo.salas));
+    this.revisionPendiente.set(true);
     this.estado.set(nuevo);
+    this.respaldarRespuestas(nuevo);
     this.version.update((v) => v + 1);
 
     if (!this.sesion) {
@@ -424,7 +570,7 @@ export class CasoStore {
   }
 
   private async procesar(): Promise<void> {
-    if (this.procesando) return;
+    if (this.procesando || this.guardadoDetenido()) return;
     this.procesando = true;
     this.guardandoAhora.set(true);
     try {
@@ -439,11 +585,24 @@ export class CasoStore {
           if (this.sesion !== sesion) return; // mientras tanto se abrió otro caso
           despues.revision = sesion.revision;
           this.base = despues;
+          // Solo se elimina el respaldo tras la confirmación del servidor.
+          for (const escena of despues.escenas) for (const respuesta of escena.respuestas) {
+            if (respuesta.destinoId && !persistir.motivoSinGuardar(respuesta) && sesion.decisionDe(respuesta.id) !== undefined) {
+              this.limpiarBorrador(despues, escena.id, respuesta.id);
+            }
+          }
+          this.ultimoGuardado.set(new Date());
           this.cola.shift();
         } catch (error) {
           if (this.sesion !== sesion) return;
           if (revisionConflictOf(error) || this.esCasoVencido(error)) {
             this.avisarConflicto([...new Set([...this.cola.flatMap((o) => o.resumen ?? []), ...this.resumenDePendientes()])]);
+            break;
+          }
+          // Sin confirmación no se pierde el cambio ni se repite autom?ticamente una escritura.
+          if (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)
+              && sesion.revision === revisionAntes) {
+            this.guardadoDetenido.set(error.status === 0 ? 'conexion' : 'error');
             break;
           }
           this.cola.shift(); // se revierte solo este cambio
@@ -573,6 +732,7 @@ export class CasoStore {
     const cambiadas = salas.filter((s) => JSON.stringify(s) !== JSON.stringify(actual.salas.find((x) => x.id === s.id))).map((s) => s.id);
     const nuevo = structuredClone(actual);
     nuevo.salas = structuredClone(salas);
+    this.revisionPendiente.set(true);
     this.estado.set(nuevo);
     this.version.update((v) => v + 1);
     if (!this.sesion) {
@@ -1022,7 +1182,7 @@ export class CasoStore {
     });
   }
 
-  editarEscena(id: string, cambios: Partial<Pick<Escena, 'titulo' | 'intensidad' | 'advertencia' | 'recursosApoyo'>>): void {
+  editarEscena(id: string, cambios: Partial<Pick<Escena, 'titulo' | 'narracion' | 'intensidad' | 'advertencia' | 'recursosApoyo'>>): void {
     const escena = this.tituloEscena(id);
     this.ejecutar({
       nombre: 'la escena',
@@ -1031,6 +1191,7 @@ export class CasoStore {
       fusion: `escena:${id}`,
       resumen: [
         ...textoCompleto('Título de una escena', cambios.titulo),
+        ...textoCompleto('Narración de una escena', cambios.narracion),
         ...(cambios.intensidad ? [`Cambiaste la intensidad de la escena «${escena}»`] : []),
         ...textoCompleto(`Aviso para el estudiante de la escena «${escena}»`, cambios.advertencia ?? undefined),
         ...(cambios.recursosApoyo ? [`Cambiaste los recursos de apoyo de la escena «${escena}»${cambios.recursosApoyo.length ? `: ${cambios.recursosApoyo.map((r) => `«${r}»`).join(', ')}` : ''}`] : []),
@@ -1223,6 +1384,10 @@ export class CasoStore {
       },
       enviar: (despues, sesion) => persistir.sincronizarRespuesta(sesion, despues, respuestaId),
     });
+    const caso = this.estado();
+    if (caso && !caso.escenas.find(e => e.id === escenaId)?.respuestas.some(r => r.id === respuestaId)) {
+      this.limpiarBorrador(caso, escenaId, respuestaId);
+    }
   }
 
   /** Crea una escena en la misma sala, la conecta a la respuesta y devuelve su id. */
@@ -1250,9 +1415,11 @@ export class CasoStore {
    * acepta la escena misma (la que creó la IA).
    */
   aceptarIa(ruta: { escenaId: string; lineaId?: string; respuestaId?: string } | { finalId: string } | { salaId: string; tipo: TipoElemento; indice: number }): void {
+    const antes = this.estado() ? structuredClone(this.estado()!) : null;
     const pieza = 'tipo' in ruta ? lista(this.sala(this.estado()!, ruta.salaId), ruta.tipo)[ruta.indice] : undefined;
     this.ejecutar({
       nombre: 'la revisión',
+      alFallar: () => this.propuestaAplicada.set(null),
       resumen: ['Aceptaste una parte sugerida por el asistente'],
       aplicar: (caso) => {
         if ('tipo' in ruta) {
@@ -1287,7 +1454,16 @@ export class CasoStore {
         const nodo = sesion.nodoDe(ruta.escenaId);
         if (nodo !== undefined) await sesion.aceptarNodo(nodo);
       },
-    });
+    }, { propuesta: true });
+    if (antes) {
+      const tocados: Tocados = { escenasNuevas: [], escenas: [], guiones: [], respuestas: [], salas: [], finales: false };
+      if ('tipo' in ruta) tocados.salas.push(ruta.salaId);
+      else if ('finalId' in ruta) tocados.finales = true;
+      else if (ruta.lineaId) tocados.guiones.push(ruta.escenaId);
+      else if (ruta.respuestaId) tocados.respuestas.push(ruta.respuestaId);
+      else tocados.escenas.push(ruta.escenaId);
+      this.propuestaAplicada.set({ antes, tocados });
+    }
   }
 
   /** Cuántas partes sugeridas por la IA quedan por aceptar en la escena: ella, sus líneas, sus respuestas y las personas marcadas de su sala. */
@@ -1303,8 +1479,10 @@ export class CasoStore {
   aceptarEscenaIa(escenaId: string): void {
     const plan = persistir.planDeAceptacion(this.estado(), escenaId);
     if (!plan || persistir.partesPorAceptar(plan) === 0) return;
+    const antes = structuredClone(this.estado()!);
     this.ejecutar({
       nombre: 'la revisión',
+      alFallar: () => this.propuestaAplicada.set(null),
       resumen: ['Aceptaste todo lo sugerido por el asistente en una escena'],
       aplicar: (caso) => {
         const escena = this.escena(caso, escenaId);
@@ -1322,7 +1500,11 @@ export class CasoStore {
           throw error;
         }
       },
-    });
+    }, { propuesta: true });
+    this.propuestaAplicada.set({ antes, tocados: {
+      escenasNuevas: [], escenas: [escenaId], guiones: [escenaId], respuestas: plan.respuestas,
+      salas: plan.salaId ? [plan.salaId] : [], finales: false,
+    } });
   }
 
   /** Las respuestas de la escena que ya están en el servidor, en el orden de su número (el orden en que este exporta las opciones). */
@@ -1444,8 +1626,12 @@ export class CasoStore {
     await this.sincronizado();
     const sesion = this.sesion;
     if (!sesion) throw new Error('Este caso todavía no se guardó.');
+    if (this.haySinGuardar()) throw new Error('Todavía hay cambios sin guardar.');
+    const version = this.version();
     const validacion = await firstValueFrom(sesion.api.validateCase(sesion.caseVersionId));
     const ciclo = await firstValueFrom(sesion.api.lifecycle(sesion.caseVersionId));
+    if (this.sesion !== sesion || this.version() !== version) throw new Error('El caso cambió durante la revisión.');
+    this.registrarRevision(validacion.issues, ciclo);
     return { hallazgos: validacion.issues, ciclo };
   }
 
@@ -1546,7 +1732,7 @@ export class CasoStore {
    * El contexto que lee el estudiante y los objetivos de aprendizaje del caso (texto plano; el servidor pone los topes).
    * `extra` (opcional) lleva los temas sensibles (RK-7) y el nombre (RK-8); lo que no se pasa no se toca.
    */
-  editarFicha(contexto: string, objetivos: string[], extra: { temas?: string[]; titulo?: string } = {}): void {
+  editarFicha(contexto: string, objetivos: string[], extra: { temas?: string[]; titulo?: string; tiempoEstimado?: number | null } = {}): void {
     const limpio = contexto.trim();
     const lista = objetivos.map((o) => o.trim()).filter(Boolean);
     const temas = extra.temas?.map((t) => t.trim()).filter(Boolean);
@@ -1564,6 +1750,7 @@ export class CasoStore {
         caso.objetivos = [...lista];
         if (temas) caso.temasSensibles = [...temas];
         if (titulo) caso.titulo = titulo;
+        if (extra.tiempoEstimado !== undefined) caso.tiempoEstimado = extra.tiempoEstimado;
       },
       enviar: (despues, sesion) => persistir.guardarFicha(sesion, despues),
       fusion: 'ficha',

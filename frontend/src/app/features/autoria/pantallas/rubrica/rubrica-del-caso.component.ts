@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -34,12 +36,13 @@ import { type CriterioVista, type VistaRubrica, criteriosDe, pesoEnPalabras, tip
  */
 @Component({
   selector: 'app-rubrica-del-caso',
-  imports: [RouterLink, UiFiguraPixel, UiProgress, PestanasEvaluacionComponent, FichasDeRespuestasComponent, ElectorDeRubricaComponent],
+  imports: [UiAyudaBreve, RouterLink, UiFiguraPixel, UiProgress, PestanasEvaluacionComponent, FichasDeRespuestasComponent, ElectorDeRubricaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './rubrica-del-caso.component.html',
   styleUrl: './rubrica-del-caso.component.scss',
 })
 export class RubricaDelCasoComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly store = inject(CasoStore);
   private readonly rutas = inject(RutasAutoria);
   private readonly rubricas = inject(RubricService);
@@ -124,12 +127,10 @@ export class RubricaDelCasoComponent {
     if (this.vista().tipo === 'error') this.vista.set({ tipo: 'cargando' });
     try {
       const rubrica = await firstValueFrom(this.rubricas.caseVersionRubric(id));
-      if (this.versionId() === id) this.vista.set(tipoDeRubrica(rubrica, id));
+      if (this.versionId() === id) this.vista.set(rubrica ? tipoDeRubrica(rubrica, id) : { tipo: 'sin-rubrica' });
     } catch (error) {
       if (this.versionId() !== id) return;
-      // 404 = el caso no tiene ninguna (ni la predeterminada): es el estado vacío, no un error.
-      if ((error as { status?: number }).status === 404) this.vista.set({ tipo: 'sin-rubrica' });
-      else this.vista.set({ tipo: 'error', mensaje: apiErrorMessage(error, 'No pudimos leer la rúbrica del caso.') ?? 'No pudimos leer la rúbrica del caso.' });
+      this.vista.set({ tipo: 'error', mensaje: apiErrorMessage(error, 'No pudimos leer la rúbrica del caso.') ?? 'No pudimos leer la rúbrica del caso.' });
     }
   }
 

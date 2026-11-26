@@ -356,6 +356,7 @@ export class ServidorFalso {
     updateBrief: (cv: number, cuerpo: BriefUpdateRequest, revision?: number) =>
       this.escribir('updateBrief', revision, [cuerpo], () => {
         if (cuerpo.context !== undefined) this.editor.context = cuerpo.context;
+        if (cuerpo.estimatedMinutes !== undefined) this.editor.estimatedMinutes = cuerpo.estimatedMinutes;
         if (cuerpo.learningObjectives !== undefined) this.editor.learningObjectives = [...cuerpo.learningObjectives];
         if (cuerpo.contentWarnings !== undefined) this.editor.contentWarnings = [...cuerpo.contentWarnings];
         if (cuerpo.title !== undefined) this.editor.title = cuerpo.title;
@@ -457,6 +458,10 @@ export class ServidorFalso {
       this.entrar('assistantStatus', undefined, [cv]);
       return of({ enabled: true, mode: 'connected' as const, remainingToday: 10 });
     },
+
+    // El manifiesto de piezas de la biblioteca: uno válido y vacío (sin piezas), como un catálogo recién instalado.
+    staticJson: (_url: string): Observable<unknown> =>
+      of({ esquema: 2, piezas: {}, pisos: {}, muros: {}, muebles: {}, propios: [], lugares: [] }),
 
     // La generación por etapas vive en `generaciones` (con su propio registro de llamadas).
     generationStatus: () => this.generaciones.generationStatus(),

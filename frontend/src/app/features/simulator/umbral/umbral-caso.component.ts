@@ -10,9 +10,6 @@ import { FirmaProgresoComponent } from './firma-progreso.component';
 /** Las fases reales del arranque: cada una enciende un píxel de la firma (DISENO §4.4, C16). */
 export type FaseUmbral = 'intento' | 'sala' | 'escena' | 'listo';
 
-/** Bajo 1 s no hace falta decir qué pasa (Nielsen): antes, solo los píxeles. */
-export const UMBRAL_TEXTO_MS = 1000;
-
 /** El paso en curso, en palabras. «Preparando la escena…» es el mismo texto que la región de estado del juego. */
 export const PASOS_UMBRAL: Readonly<Record<Exclude<FaseUmbral, 'listo'>, string>> = {
   intento: 'Preparando tu intento…',
@@ -58,6 +55,8 @@ export class UmbralCasoComponent {
   readonly fase = input<FaseUmbral>('intento');
   /** Pasaron 10 s sin terminar de cargar: lo que está en curso sigue y se ofrece volver. */
   readonly lento = input(false);
+  /** Porcentaje real de recursos de Phaser; null antes de montar la escena. */
+  readonly porcentaje = input<number | null>(null);
   /** Hay una tarjeta de entrada a la vista (la tarjeta, reanudar o el aviso): la pantalla sube y le deja la mitad de abajo. */
   readonly conTarjeta = input(false);
   /** Hay un intento en curso y ninguna tarjeta trae su propia salida segura: el umbral la ofrece (REGLA-004). */
@@ -81,17 +80,14 @@ export class UmbralCasoComponent {
     const fase = this.fase();
     return fase === 'listo' ? 'Listo' : PASOS_UMBRAL[fase];
   });
-  /** Pasado 1 s, el paso se dice también en texto (antes, solo los píxeles: bajo 1 s no hace falta indicador). */
-  private readonly pasoUnSegundo = signal(false);
+  /** El texto de la fase aparece desde que empieza la carga. */
   // Con una tarjeta a la vista nada carga: se espera a la persona, y decir «Preparando…» sería mentir.
-  protected readonly mostrarPaso = computed(() => this.pasoUnSegundo() && this.fase() !== 'listo' && !this.conTarjeta());
+  protected readonly mostrarPaso = computed(() => this.fase() !== 'listo' && !this.conTarjeta());
   protected readonly tamanoPortada = signal<UiPortadaTamano>(this.cabeHeroe() ? 'heroe' : 'tarjeta');
   protected readonly volverEtiqueta = computed(() => (this.modo() === 'rehearsal' ? 'Volver al editor' : 'Volver a la ficha'));
 
   constructor() {
     const destroyRef = inject(DestroyRef);
-    const reloj = window.setTimeout(() => this.pasoUnSegundo.set(true), UMBRAL_TEXTO_MS);
-    destroyRef.onDestroy(() => window.clearTimeout(reloj));
     try {
       const consulta = window.matchMedia?.(HEROE_CABE);
       const alCambiar = (evento: MediaQueryListEvent) => this.tamanoPortada.set(evento.matches ? 'heroe' : 'tarjeta');

@@ -10,6 +10,7 @@ from apps.grupos.views import (
     AssignmentDetailView,
     AssignmentListCreateView,
     GrupoCasoDetailView,
+    GrupoCasosOrdenView,
     GrupoCasosView,
     GrupoDetailView,
     GrupoEstudianteActivarView,
@@ -85,6 +86,7 @@ urlpatterns = [
     path("api/grupos/estudiantes/import/template", GrupoEstudiantesImportTemplateView.as_view()),
     path("api/grupos/estudiantes/import/template/", GrupoEstudiantesImportTemplateView.as_view()),
     path("api/grupos/<int:pk>/casos", GrupoCasosView.as_view()),
+    path("api/grupos/<int:pk>/casos/orden", GrupoCasosOrdenView.as_view()),
     path("api/grupos/<int:pk>/casos/<int:case_version_id>", GrupoCasoDetailView.as_view()),
     # C7 · asignaciones de casos con ventana (E3-1); las rutas de arriba son su alias heredado.
     path("api/assignments", AssignmentListCreateView.as_view()),

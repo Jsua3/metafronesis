@@ -74,3 +74,18 @@ def test_semilla_otorga_permiso_a_docente_existente(monkeypatch):
     permiso.delete()
     call_command("seed_demo_users")
     assert modelo.objects.filter(docente=docente).count() == 1
+
+
+def test_lista_admin_informa_permiso_de_autoria(personas):
+    admin, docente, _ = personas
+    cliente = APIClient()
+    cliente.force_authenticate(admin)
+    ruta = f"/api/admin/users/{docente.pk}/authoring-permission"
+    def permiso():
+        usuarios = cliente.get("/api/admin/users").data["data"]
+        return next(u for u in usuarios if u["id"] == docente.pk)["permisoAutoria"]
+    assert permiso() is False
+    assert cliente.put(ruta).status_code == 200
+    assert permiso() is True
+    assert cliente.delete(ruta).status_code == 200
+    assert permiso() is False

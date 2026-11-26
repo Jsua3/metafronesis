@@ -3,6 +3,7 @@
 from django.db.models import Q
 from django.utils import timezone
 from apps.grupos.models import CaseAssignment, GrupoEstudiante
+from apps.grupos.secuencia import clave_secuencia
 from .models import StudentCaseCompletion
 
 
@@ -34,11 +35,7 @@ def catalog(student):
     )
     ordered = sorted(
         by_version.values(),
-        key=lambda entries: (
-            min(a.sort_order for a in entries),
-            entries[0].case_version.simulation_case_id,
-            entries[0].case_version_id,
-        ),
+        key=clave_secuencia,
     )
     blocked = False
     items = []

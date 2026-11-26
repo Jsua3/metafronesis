@@ -365,6 +365,7 @@ export class AuthoringApi {
   updateBrief(caseVersionId: number, body: BriefUpdateRequest, revision?: number) {
     const cuerpo: Record<string, unknown> = {};
     if (body.context !== undefined) cuerpo['narrativeContext'] = body.context;
+    if (body.estimatedMinutes !== undefined) cuerpo['estimatedMinutes'] = body.estimatedMinutes;
     if (body.learningObjectives !== undefined) cuerpo['learningObjectives'] = body.learningObjectives;
     if (body.title !== undefined) cuerpo['title'] = body.title;
     if (body.contentWarnings !== undefined) cuerpo['contentWarnings'] = body.contentWarnings;
@@ -509,7 +510,7 @@ export class AuthoringApi {
       `${this.API}/${caseVersionId}/validate`, {})
       .pipe(map((response): CaseValidation => {
         const issues = response.data.problems.map((p): ValidationIssue => {
-          const nodo = /^nodes\/(\d+)$/.exec(p.where);
+          const nodo = /^nodes\/(\d+)(?:\/|$)/.exec(p.where);
           return { code: p.code, severity: 'error', message: p.message, path: p.where, ...(nodo ? { nodeId: Number(nodo[1]) } : {}) };
         });
         return { issues, canPublish: response.data.valid };

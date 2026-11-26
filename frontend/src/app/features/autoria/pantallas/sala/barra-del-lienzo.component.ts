@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output } from '@angular/core';
 
 import type { PuertaCaso } from '../../modelo/caso';
@@ -13,6 +15,7 @@ import type { FaltaDeSala } from '../../modelo/salas-a-documento';
  */
 @Component({
   selector: 'app-barra-del-lienzo',
+  imports: [UiAyudaBreve],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:pointerdown)': 'alPulsarFuera($event)' },
   template: `
@@ -22,6 +25,7 @@ import type { FaltaDeSala } from '../../modelo/salas-a-documento';
         <button type="button" class="zoom__opcion" [attr.aria-pressed]="escala() === 1" (click)="escalaCambio.emit(1)">Ajustar</button>
         <button type="button" class="zoom__opcion" [attr.aria-pressed]="escala() === 2" (click)="escalaCambio.emit(2)">×2</button>
       </div>
+      <ui-ayuda-breve termino="×2" [explicacion]="glosario['×2']" />
     }
     @if (faltas().length || puertas().length) {
       <details class="faltas" (keydown.escape)="cerrar($event)">
@@ -74,6 +78,7 @@ import type { FaltaDeSala } from '../../modelo/salas-a-documento';
   styleUrl: './barra-del-lienzo.component.scss',
 })
 export class BarraDelLienzoComponent {
+  protected readonly glosario = GLOSARIO;
   readonly salaId = input.required<string>();
   /** Ancho de la sala por piezas; `null` en una sala de imagen fija (sin control de tamaño). */
   readonly ancho = input<number | null>(null);

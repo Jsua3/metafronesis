@@ -87,3 +87,13 @@ def test_tiempo_invalido_400(cliente):
     respuesta = cliente.post(URL, {"code": "C", "title": "Caso", "estimatedMinutes": 0}, format="json")
     assert respuesta.status_code == 400
     assert not CaseVersion.objects.exists()
+
+
+def test_ficha_guarda_tiempo_y_editor_lo_devuelve(cliente, settings):
+    settings.REVISION_REQUIRED = True
+    version_id = crear(cliente).data["data"]["versionId"]
+    respuesta = cliente.put(f"{URL}/{version_id}/brief", {"estimatedMinutes": 60, "revision": 0}, format="json")
+    assert respuesta.status_code == 200
+    assert CaseVersion.objects.get(pk=version_id).estimated_minutes == 60
+    assert cliente.get(f"{URL}/{version_id}/editor").data["data"]["estimatedMinutes"] == 60
+    assert cliente.put(f"{URL}/{version_id}/brief", {"estimatedMinutes": 0, "revision": 1}, format="json").status_code == 400

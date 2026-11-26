@@ -19,7 +19,7 @@ describe('portal: feedback de acciones', () => {
     expect(users).not.toContain('app-confirm-dialog');
     expect(users).not.toContain('statusConfirmTarget');
     expect(users).toContain('this.dialog.confirm({');
-    expect(users).toContain("apiErrorMessage(err, 'No fue posible actualizar el estado del usuario.')");
+    expect(users).toContain("mensajeDeError(err, 'No fue posible actualizar el estado del usuario.')");
   });
 
   it('Grupos ya no usa window.confirm ni el diálogo antiguo: confirma con el diálogo de la biblioteca', () => {
@@ -33,7 +33,7 @@ describe('portal: feedback de acciones', () => {
   it('Usuarios avisa el resultado de descartar una solicitud', () => {
     expect(users).toContain("this.notify.success('Solicitud descartada.');");
     expect(users).not.toContain("this.message.set('Solicitud descartada.')");
-    expect(users).toContain("apiErrorMessage(err, 'No fue posible actualizar la solicitud.')");
+    expect(users).toContain("mensajeDeError(err, 'No fue posible actualizar la solicitud.')");
   });
 
   it('Grupos avisa crear, editar, borrar y copiar', () => {

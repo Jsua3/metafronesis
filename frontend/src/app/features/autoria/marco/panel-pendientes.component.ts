@@ -6,6 +6,7 @@ import { UiDialogFrame } from '../../../shared/ui/dialog/ui-dialog';
 import { ETAPAS, type Etapa, type Pendiente } from '../modelo/pendientes';
 import { injectLlevar } from './llevar';
 import { ProgresoDelCaso } from './progreso.service';
+import { CasoStore } from '../estado/caso.store';
 
 const NOMBRE_ETAPA: Record<Etapa, string> = {
   datos: 'Datos del caso', lugar: 'Lugar y salas', historia: 'Historia: escenas y guion', evaluacion: 'Evaluación', enviar: 'Enviar a revisión',
@@ -32,8 +33,12 @@ interface Grupo {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-dialog-frame title="Pendientes del caso" [description]="resumen()">
-      @if (grupos().length === 0) {
-        <p class="pp__vacio">Nada pendiente. Cuando quieras, prueba el caso y envíalo a Psicología.</p>
+      @if (!store.soloLectura()) {
+      @if (grupos().length === 0 && rellenos().length === 0) {
+        <p class="pp__vacio">@if (store.revisionPendiente()) { Falta completar la revisión. } @else { Nada pendiente. Cuando quieras, prueba el caso y envíalo a Psicología. }</p>
+      }
+      @if (!store.revisionPendiente() && progreso.totalPendientes() === 0) {
+        <button ui-button type="button" (click)="irEnviar()">Ir a Enviar</button>
       }
       @for (g of grupos(); track g.etapa) {
         <section class="pp__grupo" [attr.aria-labelledby]="'pp-' + g.etapa">
@@ -64,9 +69,20 @@ interface Grupo {
           }
         </section>
       }
-      @if (sugerencias().length) {
+      @for (grupo of rellenos(); track grupo.id) {
+        <section class="pp__grupo">
+          <h3 class="pp__etapa">Escena {{ grupo.numero }} · {{ grupo.titulo }}: {{ grupo.items.length }} {{ grupo.items.length === 1 ? 'texto de muestra por escribir' : 'textos de muestra por escribir' }}</h3>
+          <ul>@for (item of grupo.items; track $index) { <li>{{ item.detalle }} <button ui-button type="button" variant="ghost" size="sm" (click)="ir(item.pendiente)">Ir</button></li> }</ul>
+        </section>
+      }
+      @if (sugerencias().length || rellenosSugeridos().length) {
         <details class="pp__sugerencias">
-          <summary>Sugerencias ({{ sugerencias().length }}): no impiden enviar</summary>
+          <summary><span class="pp__chevron" aria-hidden="true"></span>Sugerencias ({{ sugerencias().length + cantidadRellenosSugeridos() }}): no impiden enviar</summary>
+          @for (grupo of rellenosSugeridos(); track grupo.id) {
+            <section class="pp__grupo"><h3 class="pp__etapa">Escena {{ grupo.numero }} · {{ grupo.titulo }}: {{ grupo.items.length }} {{ grupo.items.length === 1 ? 'texto de muestra' : 'textos de muestra' }}</h3>
+              <ul>@for (item of grupo.items; track $index) { <li>{{ item.detalle }} <button ui-button type="button" variant="ghost" size="sm" (click)="ir(item.pendiente)">Ir</button></li> }</ul>
+            </section>
+          }
           <ul class="pp__lista">
             @for (p of sugerencias(); track $index) {
               <li class="pp__item pp__item--sugerencia">
@@ -76,6 +92,7 @@ interface Grupo {
             }
           </ul>
         </details>
+      }
       }
     </ui-dialog-frame>
   `,
@@ -100,12 +117,22 @@ interface Grupo {
     .pp__item--sugerencia .pp__texto { color: var(--ds-text-2); }
     .pp__item .marca-estado { margin-block-start: 0.1875rem; }
     .pp__sugerencias { padding-block-start: var(--ds-space-3); border-block-start: 1px solid var(--l-filo); }
-    .pp__sugerencias summary { min-block-size: 2.75rem; display: flex; align-items: center; color: var(--ds-text-2); font-weight: 700; cursor: pointer; }
+    /* \`display: flex\` quita el triángulo nativo del resumen: la marca propia dice que se despliega y gira al abrirse. */
+    .pp__sugerencias summary { min-block-size: 2.75rem; display: flex; align-items: center; gap: var(--ds-space-2); color: var(--ds-text-2); font-weight: 700; cursor: pointer; list-style: none; }
+    .pp__sugerencias summary::-webkit-details-marker { display: none; }
+    .pp__chevron {
+      inline-size: 0.5rem; block-size: 0.5rem; flex: none; margin-inline: 0.125rem;
+      border-inline-end: 2px solid currentColor; border-block-end: 2px solid currentColor;
+      rotate: -45deg; transition: rotate 160ms ease;
+    }
+    .pp__sugerencias[open] .pp__chevron { rotate: 45deg; }
+    @media (prefers-reduced-motion: reduce) { .pp__chevron { transition: none; } }
     .pp__sugerencias[open] summary { margin-block-end: var(--ds-space-2); }
   `,
 })
 export class PanelPendientesComponent {
-  private readonly progreso = inject(ProgresoDelCaso);
+  protected readonly progreso = inject(ProgresoDelCaso);
+  protected readonly store = inject(CasoStore);
   private readonly ref = inject(DialogRef, { optional: true });
   private readonly llevar = injectLlevar();
 
@@ -115,18 +142,52 @@ export class PanelPendientesComponent {
       etapa,
       nombre: NOMBRE_ETAPA[etapa],
       corregir: todos.filter((p) => p.etapa === etapa && p.tipo === 'por-corregir'),
-      escribir: todos.filter((p) => p.etapa === etapa && p.tipo === 'por-escribir'),
+      escribir: todos.filter((p) => p.etapa === etapa && p.tipo === 'por-escribir' && p.codigo !== 'CONTENT_PLACEHOLDER'),
     })).filter((g) => g.corregir.length || g.escribir.length);
   });
 
-  protected readonly sugerencias = computed(() => this.progreso.pendientes().filter((p) => p.tipo === 'sugerencia'));
+  protected readonly sugerencias = computed(() => this.progreso.pendientes().filter((p) => p.tipo === 'sugerencia' && p.codigo !== 'CONTENT_PLACEHOLDER'));
+
+  protected readonly rellenos = computed(() => this.agruparRellenos(false));
+  protected readonly rellenosSugeridos = computed(() => this.agruparRellenos(true));
+  protected readonly cantidadRellenosSugeridos = computed(() => this.rellenosSugeridos().reduce((total, grupo) => total + grupo.items.length, 0));
+
+  private agruparRellenos(sugeridos: boolean) {
+    const escenas = this.progreso.escenas();
+    const pendientes = this.progreso.pendientes().filter(p => p.codigo === 'CONTENT_PLACEHOLDER' && (p.tipo === 'sugerencia') === sugeridos);
+    const ids = [...new Set(pendientes.map(p => p.escenaId))];
+    return ids.map(id => {
+      const indice = escenas.findIndex(e => e.id === id);
+      const escena = escenas[indice];
+      const items = pendientes.filter(p => p.escenaId === id).map(p => {
+        const respuesta = escena?.respuestas.findIndex(r => p.ir.ancla === `respuesta-${r.id}`) ?? -1;
+        const campo = /retroalimentaci[oó]n|justificaci[oó]n/i.test(p.mensaje) ? 'retroalimentación' : 'texto';
+        return { pendiente: p, detalle: respuesta >= 0 ? `Respuesta ${respuesta + 1} · ${campo}` : p.mensaje };
+      });
+      return { id: id ?? 'sin-escena', numero: indice + 1 || '?', titulo: escena?.titulo ?? 'Escena sin identificar', items };
+    });
+  }
+
+  protected async irEnviar(): Promise<void> {
+    this.ref?.close();
+    await this.llevar({ ruta: '/revision' });
+  }
 
   protected readonly resumen = computed(() => {
+    // Un caso que ya no es borrador no tiene nada que corregir ni que enviar: se dice por qué, sin invitar a enviarlo.
+    if (this.store.soloLectura()) {
+      switch (this.store.caso()?.estado) {
+        case 'PUBLISHED': return 'El caso está publicado: ya no se corrige ni se envía. Se puede ver, pero no editar.';
+        case 'ARCHIVED': return 'El caso está archivado: ya no se corrige ni se envía. Se puede ver, pero no editar.';
+        default: return 'El caso está en revisión de Psicología: mientras tanto no se edita. Si lo devuelven, aquí verás qué cambiar.';
+      }
+    }
+    if (this.store.revisionPendiente()) return 'Falta completar la revisión con el servidor.';
     const corregir = this.progreso.porCorregir().length;
     const escribir = this.progreso.pendientes().filter((p) => p.tipo === 'por-escribir').length;
     const partes = [corregir === 1 ? '1 por corregir' : `${corregir} por corregir`];
     if (escribir) partes.push(escribir === 1 ? '1 por escribir' : `${escribir} por escribir`);
-    return `${partes.join(' · ')}. Lo que está por corregir impide enviar el caso; lo demás es avance.`;
+    return `${partes.join(' · ')}. Tanto lo que falta escribir como lo que falta corregir impiden enviar el caso.`;
   });
 
   /** Cierra la hoja y lleva al sitio: con la hoja abierta el foco no podría llegar al campo. */

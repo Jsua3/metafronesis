@@ -80,10 +80,11 @@ export const ACCIONES: readonly Accion[] = [
   {
     id: 'respuesta-a-escena-nueva', nombre: 'Hacer que una respuesta abra un camino nuevo', pantalla: PANTALLAS.guion, ruta: '/editor/escena/:escena',
     palabras: 'camino nuevo rama llevar a escena nueva',
-    pasos: ['En una respuesta, abre «Lleva a…».', 'Elige «Una escena nueva».', 'Pulsa «Crear la escena nueva»: queda conectada.'],
-    objetivos: [['select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]'], ['select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]'], ['.crear-escena-nueva', 'select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]']],
-    ayuda: 'En «Lleva a…» de una respuesta, elige «Una escena nueva» y pulsa «Crear la escena nueva».',
+    pasos: ['En una respuesta, abre «Lleva a…».', 'Elige «Crear una escena nueva ahora»: se crea y queda conectada.'],
+    objetivos: [['select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]'], ['select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]']],
+    ayuda: 'En «Lleva a…» elige «Crear una escena nueva ahora»; se crea y queda conectada.',
   },
+  { id: 'terminar-respuesta', nombre: 'Terminar el caso con una respuesta', pantalla: PANTALLAS.guion, ruta: '/editor/escena/:escena', palabras: 'final cierre terminar', ayuda: 'En la respuesta, crea una escena final o elige una existente. Una escena sin respuestas también se puede convertir en final.' },
   { id: 'revisar-caminos', nombre: 'Revisar los caminos del caso', pantalla: PANTALLAS.mapa, ruta: '/editor', palabras: 'avisos problemas errores sin salida', ayuda: 'Aquí están los avisos de caminos; «Llévame ahí» te lleva a la escena.' },
   // E5: los pasos profesionales (los hitos) dejan el mapa y pasan a Evaluación. BORRADOR: textos nuevos, pendientes de la
   // aprobación de Psicología.

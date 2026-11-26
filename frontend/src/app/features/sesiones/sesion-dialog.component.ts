@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 import { apiErrorMessage } from '../../core/api/api-error.util';
 import { GrupoService } from '../../core/api/grupo.service';
@@ -20,16 +21,36 @@ export type SesionDialogResult = SesionDetalle;
 
 type Campo = keyof SesionDatos;
 
+/** La próxima hora en punto, en la hora del navegador, como valor de un campo `datetime-local`. */
+function proximaHoraEnPunto(): string {
+  const d = new Date();
+  d.setMinutes(0, 0, 0);
+  d.setHours(d.getHours() + 1);
+  return fromWindowIso(d.toISOString());
+}
+
+/** Una hora después de un valor `datetime-local`; vacío si el valor no es una fecha. */
+function sumarHora(local: string): string {
+  const d = new Date(local);
+  if (Number.isNaN(d.getTime())) return '';
+  d.setHours(d.getHours() + 1);
+  return fromWindowIso(d.toISOString());
+}
+
 /** Crear o editar una sesión: grupo, caso de la biblioteca, horario y tiempo máximo. Guarda él mismo; cada error
  * (propio o del servidor) sale en su campo y recibe el foco. */
 @Component({
   selector: 'app-sesion-dialog',
-  imports: [UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
+  imports: [RouterLink, UiButton, UiControl, UiDialogActions, UiDialogFrame, UiField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- BORRADOR: textos pendientes de Psicología (VD-23). -->
     <ui-dialog-frame [title]="titulo" description="Los estudiantes activos del grupo quedan convocados.">
       <form class="sd-form" novalidate [id]="formId" (submit)="enviar($event)">
+        @if (!actual) {
+          <!-- BORRADOR: texto pendiente de Psicología. -->
+          <p>¿Quieres que lo hagan a su ritmo? <a [routerLink]="grupoId() ? ['/portal/grupos', grupoId()] : ['/portal/grupos']" (click)="ref.close()">Asigna el caso al grupo</a>.</p>
+        }
         <ui-field label="Grupo" required [error]="errores().grupoId">
           <select uiControl name="grupoId" (change)="grupoId.set(leer($event))">
             <option value="">Elige un grupo</option>
@@ -47,11 +68,11 @@ type Campo = keyof SesionDatos;
           </select>
         </ui-field>
         <div class="sd-par">
-          <ui-field label="Inicio" required [error]="errores().inicio">
-            <input uiControl type="datetime-local" name="inicio" [value]="inicio()" (input)="inicio.set(leer($event))" />
+          <ui-field label="Inicio" required [error]="errores().inicio" hint="Día y hora. Ejemplo: 26/11/2026, 10:00 a. m.">
+            <input uiControl type="datetime-local" name="inicio" [value]="inicio()" (input)="cambiarInicio(leer($event))" />
           </ui-field>
-          <ui-field label="Fin" required [error]="errores().fin">
-            <input uiControl type="datetime-local" name="fin" [value]="fin()" (input)="fin.set(leer($event))" />
+          <ui-field label="Fin" required [error]="errores().fin" hint="Se propone una hora después del inicio.">
+            <input uiControl type="datetime-local" name="fin" [value]="fin()" (input)="cambiarFin(leer($event))" />
           </ui-field>
         </div>
         <ui-field label="Tiempo máximo (minutos)" required [error]="errores().tiempoMaximoMin" [hint]="ayudaTiempo()">
@@ -83,7 +104,7 @@ export class SesionDialogComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
   private readonly notify = inject(NotificationService);
-  private readonly actual = this.data.modo === 'editar' ? this.data.sesion : null;
+  protected readonly actual = this.data.modo === 'editar' ? this.data.sesion : null;
 
   protected readonly formId = uniqueUiId('sd-form');
   // BORRADOR: textos pendientes de Psicología (VD-23).
@@ -103,8 +124,21 @@ export class SesionDialogComponent {
 
   protected readonly grupoId = signal(this.actual?.grupo ? String(this.actual.grupo.id) : '');
   protected readonly caseVersionId = signal(this.actual ? String(this.actual.caso.caseVersionId) : '');
-  protected readonly inicio = signal(fromWindowIso(this.actual?.inicio));
-  protected readonly fin = signal(fromWindowIso(this.actual?.fin));
+  // Al crear se propone la próxima hora en punto y una hora de duración (la prueba con personas: nadie sabía qué
+  // escribir en dos campos vacíos de fecha y hora). Mientras nadie escriba el fin a mano, el fin sigue al inicio.
+  protected readonly inicio = signal(this.actual ? fromWindowIso(this.actual.inicio) : proximaHoraEnPunto());
+  protected readonly fin = signal(this.actual ? fromWindowIso(this.actual.fin) : sumarHora(this.inicio()));
+  private finPropuesto = !this.actual;
+
+  protected cambiarInicio(valor: string): void {
+    this.inicio.set(valor);
+    if (this.finPropuesto && valor) this.fin.set(sumarHora(valor));
+  }
+
+  protected cambiarFin(valor: string): void {
+    this.finPropuesto = false;
+    this.fin.set(valor);
+  }
   protected readonly tiempoMaximoMin = signal(this.actual ? String(this.actual.tiempoMaximoMin) : '');
   protected readonly lugar = signal(this.actual?.lugar ?? '');
   protected readonly mensaje = signal(this.actual?.mensaje ?? '');

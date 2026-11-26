@@ -29,8 +29,8 @@ import { ApiDataResponse } from './api-response';
 export class InstructorApi {
   private readonly http = inject(HttpClient);
 
-  recentAttempts() {
-    return this.http.get<ApiDataResponse<RecentAttempt[]>>('/api/instructor/attempts/recent')
+  recentAttempts(filter?: { groupId: number; caseVersionId: number }) {
+    return this.http.get<ApiDataResponse<RecentAttempt[]>>('/api/instructor/attempts/recent', filter ? { params: { groupId: filter.groupId, caseVersionId: filter.caseVersionId } } : {})
       .pipe(map(response => response.data));
   }
 

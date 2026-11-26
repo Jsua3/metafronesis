@@ -5,6 +5,7 @@
  * Regla común: lo que el editor no muestra no se pierde. Cada función recibe, si lo hay, lo que el servidor devolvió
  * antes (`previo`) y parte de ahí; los campos que el servidor deja «como estaban» cuando faltan se omiten.
  */
+import { esRelleno } from './relleno';
 import type { Expresion } from '../../../core/models/biblioteca.model';
 import type { CaseCreateRequest } from '../../../core/api/authoring.api';
 import type {
@@ -112,7 +113,7 @@ export function cuerpoNodo(escena: Escena, opciones: OpcionesNodo): NodeUpsertRe
     intensity: escena.intensidad,
   };
   // Una escena que propuso o cambió la IA se marca (si el servidor aún no la tiene marcada); solo «Aceptar» (accept-ai) la baja.
-  if (escena.marcaIa && !previo?.aiSuggested) cuerpo.aiSuggested = true;
+  if (!!escena.marcaIa !== !!previo?.aiSuggested) cuerpo.aiSuggested = !!escena.marcaIa;
   // Se compara contra el previo ya normalizado (lo que el borrador leyó), no contra el dato crudo del servidor.
   // Ausente = no tocar: el objetivo y los comentarios solo viajan si la docente los cambió (o si la escena es nueva).
   if (escena.objetivo !== undefined && (!previo || escena.objetivo !== (previo.goal ?? ''))) cuerpo.goal = escena.objetivo;
@@ -158,12 +159,12 @@ export function cuerpoDecision(
     text: respuesta.texto,
     prohibitedConduct: contraindicada,
     prohibitionReason: contraindicada ? respuesta.razon : null,
-    immediateFeedback: previo?.immediateFeedback ?? '',
+    immediateFeedback: esRelleno(previo?.immediateFeedback ?? '') ? respuesta.retroalimentacion : previo?.immediateFeedback ?? '',
     feedbackText: respuesta.retroalimentacion,
     effects: efectosAApi(respuesta.efectos),
   };
   if (respuesta.clase) cuerpo.responseClass = respuesta.clase;
-  if (respuesta.marcaIa && !previo?.aiSuggested) cuerpo.aiSuggested = true;
+  if (!!respuesta.marcaIa !== !!previo?.aiSuggested) cuerpo.aiSuggested = !!respuesta.marcaIa;
   // Ausente = no tocar: el requisito y la reacción solo viajan si la docente los cambió (o si la opción es nueva).
   if (respuesta.requiere !== undefined && (!previo || !mismoJson(respuesta.requiere, previo.requires ?? {}))) {
     cuerpo.requires = structuredClone(respuesta.requiere);

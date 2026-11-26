@@ -78,11 +78,15 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
     mustChangePassword = serializers.BooleanField(source="must_change_password", read_only=True)
     pendingApproval = serializers.BooleanField(source="is_pending_approval", read_only=True)
+    permisoAutoria = serializers.SerializerMethodField()
+
+    def get_permisoAutoria(self, user):
+        return hasattr(user, "permiso_autoria")
 
     class Meta:
         model = User
         fields = [
-            "id", "nombre", "apellido", "email", "role", "activo", "mustChangePassword", "pendingApproval",
+            "id", "nombre", "apellido", "email", "role", "activo", "mustChangePassword", "pendingApproval", "permisoAutoria",
         ]
 
 

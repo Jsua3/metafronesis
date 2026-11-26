@@ -6,7 +6,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { apiErrorMessage } from '../../core/api/api-error.util';
+import { mensajeDeError } from '../../core/api/mensaje-de-error.util';
 import { InstructorApi } from '../../core/api/instructor.api';
 import { CanLeave } from '../../core/navigation/can-leave.guard';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -36,6 +36,7 @@ import { UiTable, UiTableRow, UiTableTable } from '../../shared/ui/table/ui-tabl
 import { DRAFT_COPY } from './draft-copy';
 import { milestoneMark } from './outcome-text.util';
 import { ReplaceAttemptDialogComponent, ReplaceAttemptDialogData } from './replace-attempt-dialog.component';
+import { CasosPorAprobarComponent } from './revision/casos-por-aprobar.component';
 import { RubricaIntentoComponent } from './revision/rubrica-intento.component';
 import {
   FeedbackPanelView, SummaryFeedbackKey, TraceFeedbackDialogComponent, TraceFeedbackDialogData,
@@ -116,7 +117,7 @@ const ACCION_REEMPLAZAR = 'reemplazar';
   imports: [
     UiBadge, UiButton, UiCard, UiCheck, UiControl, UiField, UiMenu, UiCabeceraIlustrada, UiSection, UiSegmentado, UiSkeleton,
     UiStat, UiSwitch, UiTab, UiTabs, UiEmptyState, UiErrorState, UiTable, UiTableRow, UiTableTable,
-    RubricaIntentoComponent,
+    RubricaIntentoComponent, CasosPorAprobarComponent,
   ],
   templateUrl: './instructor-trace.component.html',
   styleUrl: './instructor-trace.component.scss',
@@ -127,7 +128,8 @@ export class InstructorTraceComponent implements OnInit, CanLeave {
   private readonly instructorApi = inject(InstructorApi);
   private readonly dialog = inject(UiDialog);
   private readonly notify = inject(NotificationService);
-  private readonly route = inject(ActivatedRoute, { optional: true });
+  protected readonly route = inject(ActivatedRoute, { optional: true });
+  protected readonly filtroGrupoCaso = !!this.route?.snapshot.queryParamMap.get('grupo') && !!this.route?.snapshot.queryParamMap.get('caseVersionId');
   private readonly destroyRef = inject(DestroyRef);
 
   /**
@@ -388,7 +390,11 @@ export class InstructorTraceComponent implements OnInit, CanLeave {
   loadAttempts() {
     this.loadingAttempts.set(true);
     this.attemptsError.set('');
-    this.instructorApi.recentAttempts().subscribe({
+    const groupId = Number(this.route?.snapshot.queryParamMap.get('grupo'));
+    const caseVersionId = Number(this.route?.snapshot.queryParamMap.get('caseVersionId'));
+    const filter = Number.isInteger(groupId) && groupId > 0 && Number.isInteger(caseVersionId) && caseVersionId > 0
+      ? { groupId, caseVersionId } : undefined;
+    (filter ? this.instructorApi.recentAttempts(filter) : this.instructorApi.recentAttempts()).subscribe({
       next: attempts => {
         attempts = attempts ?? [];
         this.attempts.set(attempts);
@@ -492,7 +498,7 @@ export class InstructorTraceComponent implements OnInit, CanLeave {
         },
         error: (err: unknown) => {
           this.replacing.set(false);
-          const text = apiErrorMessage(err, 'No fue posible reemplazar el intento.');
+          const text = mensajeDeError(err, 'No fue posible reemplazar el intento.');
           if (text) this.notify.error(text);
         },
       });

@@ -103,7 +103,7 @@ describe('AttemptOutcomeComponent', () => {
 
   it('la pausa habla de reanudar y el cierre terminal no finge pausa (ETH-02 A)', () => {
     expect(component.eyebrow('PAUSED')).toBe('Pausa segura activa');
-    expect(component.headline('PAUSED')).toContain('retomarlo');
+    expect(component.headline('PAUSED')).toContain('retomar el caso');
     expect(component.eyebrow('SAFE_EXITED')).toBe('Salida segura registrada');
     expect(component.headline('SAFE_EXITED')).toContain('cerrado');
     expect(component.headline('SAFE_EXITED')).not.toMatch(/pausa/i);
@@ -208,7 +208,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   it('muestra el texto tranquilizador exacto y ninguna clave interna', () => {
     render('PAUSED');
     expect(text(host().querySelector('.oc-pause-copy')))
-      .toBe('Tu avance quedó guardado exactamente donde estabas. No hay penalización: puedes retomarlo cuando quieras.');
+      .toBe('La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.');
   });
 
   it('con la pausa aún sin registrar, una línea discreta con role="status" lo dice, justo bajo el texto tranquilizador; sin nota no hay línea', () => {
@@ -223,16 +223,16 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     expect(host().querySelector('.oc-pause-note')).toBeNull();
   });
 
-  it('«Reanudar este intento» es la primera acción y «Volver al catálogo» la segunda', () => {
+  it('«Volver al juego» es la primera acción y «Volver al catálogo» la segunda', () => {
     render('PAUSED');
     const actions = Array.from(host().querySelectorAll('button, a')).filter(el => !el.closest('details'));
-    expect(text(actions[0])).toBe('Reanudar este intento');
+    expect(text(actions[0])).toBe('Volver al juego');
     expect(actions[0].tagName).toBe('BUTTON');
     expect(text(actions[1])).toBe('Volver al catálogo');
     expect(actions).toHaveLength(2);
   });
 
-  it('«Reanudar este intento» emite resume y es el elemento con foco inicial', () => {
+  it('«Volver al juego» emite resume y es el elemento con foco inicial', () => {
     render('PAUSED');
     const resume = vi.fn();
     component.resume.subscribe(resume);
@@ -242,7 +242,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
     expect(resume).toHaveBeenCalledTimes(1);
   });
 
-  it('la pausa captura el foco: el elemento activo es «Reanudar este intento»', async () => {
+  it('la pausa captura el foco: el elemento activo es «Volver al juego»', async () => {
     render('PAUSED');
     await fixture.whenStable();
     expect(document.activeElement).toBe(host().querySelector('button.oc-btn--go'));
@@ -279,7 +279,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
   it('sin informe no hay details y la pausa sigue ofreciendo reanudar', () => {
     render('PAUSED', { report: null });
     expect(host().querySelector('details')).toBeNull();
-    expect(text(host().querySelector('button.oc-btn--go'))).toBe('Reanudar este intento');
+    expect(text(host().querySelector('button.oc-btn--go'))).toBe('Volver al juego');
   });
 
   it('el resto de estados conserva su tablero y sus acciones', () => {
@@ -341,7 +341,7 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
       expect((document.activeElement as HTMLElement).tagName).not.toBe('BUTTON');
     });
 
-    it('en pausa el foco sigue en «Reanudar este intento»: lo primero es poder volver', async () => {
+    it('en pausa el foco sigue en «Volver al juego»: lo primero es poder volver', async () => {
       render('PAUSED');
       await fixture.whenStable();
       expect(document.activeElement).toBe(host().querySelector('button.oc-btn--go'));
@@ -406,8 +406,8 @@ describe('AttemptOutcomeComponent: pausa calmada renderizada (T12.1, AC-7)', () 
       render('PAUSED');
       expect(text(host().querySelector('#outcome-title'))).toBe('Tu caso está en pausa');
       expect(component.pauseMessage)
-        .toBe('Tu avance quedó guardado exactamente donde estabas. No hay penalización: puedes retomarlo cuando quieras.');
-      expect(text(host().querySelector('button.oc-btn--go'))).toBe('Reanudar este intento');
+        .toBe('La pausa quedó guardada. No hay penalización: puedes retomar el caso cuando quieras.');
+      expect(text(host().querySelector('button.oc-btn--go'))).toBe('Volver al juego');
     });
   });
 

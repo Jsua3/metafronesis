@@ -12,6 +12,17 @@ export interface AccessDecision {
   readonly reason?: AccessReasonEnum;
 }
 
+export interface AssignmentProgress {
+  readonly students: number;
+  readonly completed: number;
+  readonly inProgress: number;
+}
+
+/** Resumen del listado de grupos: pares de estudiante activo y caso asignado. */
+export interface GrupoResumenCasos { readonly asignados: number; readonly terminados: number; readonly oportunidades: number; }
+export interface GrupoListado { readonly id: number; readonly nombre: string; readonly codigo: string; readonly totalEstudiantes: number; readonly totalInvitados: number; readonly resumenCasos: GrupoResumenCasos; }
+export interface GrupoListadoListEnvelope { readonly success: boolean; readonly message?: string; readonly data: ReadonlyArray<GrupoListado>; }
+
 export type AccessReasonEnum = 'NOT_ASSIGNED' | 'NOT_YET_OPEN' | 'CLOSED' | 'LOCKED_BY_SEQUENCE';
 
 export type ActivationEnum = 'CALM' | 'TENSE' | 'CRISIS';
@@ -140,6 +151,7 @@ export interface ApiEnvelope {
 export interface Assignment {
   /** Una asignación en pausa no habilita nada. */
   readonly active: boolean;
+  readonly caseId: number;
   readonly caseTitle: string | null;
   readonly caseVersionId: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
@@ -147,6 +159,8 @@ export interface Assignment {
   readonly id: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
   readonly opensAt?: string;
+  /** Avance de miembros activos; disponible en el listado de asignaciones del grupo. */
+  readonly progress?: AssignmentProgress;
   /** Su lugar en la secuencia de casos. */
   readonly sortOrder: number;
   /** Dónde está la ventana hoy. */
@@ -930,6 +944,8 @@ export type IntensityEnum = 'LOW' | 'MEDIUM' | 'HIGH';
 
 /** La membresía del estudiante en un grupo: pendiente de respuesta, aceptada o rechazada. El listado no trae las retiradas (`REMOVED`), pero la respuesta de `leave` (y la de aceptar o rechazar) sí devuelve la membresía tal como quedó, también con ese estado. */
 export interface Invitation {
+  /** Casos publicados que el docente asignó al grupo. Solo si ya eres miembro (`ACTIVE`); si no, es nulo. */
+  readonly casesCount: number | null;
   readonly groupId: number;
   readonly groupName: string;
   /** Igual a `groupId`: la membresía es `(grupo, estudiante)`. */
@@ -1437,7 +1453,7 @@ export interface OpenApiPaths {
   readonly '/api/reportes/grupo/{grupo_id}': 'GET';
   readonly '/api/reportes/grupo/{grupo_id}/export': 'GET';
   readonly '/api/rubrics': 'GET' | 'POST';
-  readonly '/api/rubrics/case-versions/{case_version_id}': 'GET' | 'POST' | 'PUT';
+  readonly '/api/rubrics/case-versions/{case_version_id}': 'GET' | 'PUT';
   readonly '/api/rubrics/{rubric_id}': 'GET' | 'PATCH' | 'PUT';
   readonly '/api/rubrics/{rubric_id}/activate': 'POST';
   readonly '/api/rubrics/{rubric_id}/deactivate': 'POST';

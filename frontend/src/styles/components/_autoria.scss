@@ -195,7 +195,7 @@ app-autoria-shell .cromo .menu-agregar .ui-menu__trigger[aria-expanded='true'] {
 
   // Sin la marca, el nombre del caso abre la masa (antes se centraba y dejaba un hueco a su izquierda).
   app-autoria-shell .cromo .modulo-principal {
-    justify-self: start;
+    justify-self: stretch;
   }
 }
 
@@ -370,13 +370,12 @@ app-autoria-shell .cromo .modulo-cuenta > .tema {
   }
 }
 
-// Franja de tableta apaisada (64rem a 80rem): el estado de guardado se queda en su marca (la frase sigue en el globo y para
-// el lector de pantalla) y la etapa en la que estás, en su número: así caben las herramientas sin montarse sobre el hilo.
-@media (min-width: 64rem) and (max-width: 79.999rem) {
-  app-autoria-shell .cromo .estado-guardado__corto,
-  app-autoria-shell .cromo .hilo__etapa[aria-current='page'] .hilo__nombre {
-    display: none;
-  }
+// Las herramientas ceden antes que los nombres de las etapas; el botón conserva su nombre accesible.
+@media (min-width: 64rem) and (max-width: 99.999rem) {
+  app-autoria-shell .cromo .menu-agregar .ui-menu__label,
+  app-autoria-shell .cromo .menu-agregar .ui-button__label,
+  app-autoria-shell .cromo .menu-agregar .ui-button__icon:not(.ui-button__icon-slot .ui-button__icon) { display: none; }
+  app-autoria-shell .cromo .menu-agregar .ui-menu__trigger { min-inline-size: 2.75rem; padding-inline: 0.5rem; }
 }
 
 // El chip de la cuenta (nombre y rol) es lo primero que cede: el menú de la cuenta sigue ahí.

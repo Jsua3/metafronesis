@@ -1,9 +1,23 @@
 <ui-section title="Casos asignados" [level]="3">
   <div class="ga-stack">
-    <p class="ga-hint">Los estudiantes del grupo solo ven los casos asignados, dentro de sus fechas.</p>
+    <!-- BORRADOR: texto pendiente de Psicología. -->
+    <p class="ga-hint">Los estudiantes del grupo solo ven los casos asignados, dentro de sus fechas.
+      Los hacen en el orden de esta lista: cada caso se abre cuando terminan el anterior.@if (rows().length > 1) { Cambia el orden con «Subir» y «Bajar».}</p>
 
     <div class="ga-toolbar">
       <button ui-button type="button" data-ga-assign icon="assignment_add" [disabledReason]="assignReason() ?? busyReason()" (click)="assign()">Asignar un caso</button>
+      <!-- El motivo a la vista, al lado del botón: un botón apagado sin causa visible se lee como roto (P6). El lector
+           ya lo oye por aria-describedby del botón; esta línea es para quien mira, y lleva el camino de salida. -->
+      @if (motivoVisible(); as motivo) {
+        <div class="ga-reason">
+          <p class="ga-reason__text" data-ga-reason>{{ motivo.texto }}</p>
+          @if (motivo.salida === 'casos') {
+            <a ui-button size="sm" variant="secondary" routerLink="/portal/casos">Ir a «Casos»</a>
+          } @else if (motivo.salida === 'reintentar-casos') {
+            <button ui-button type="button" size="sm" variant="secondary" (click)="retryCases.emit()">Reintentar</button>
+          }
+        </div>
+      }
     </div>
 
     @switch (state()) {
@@ -15,31 +29,48 @@
         </div>
       }
       @case ('error') {
-        <ui-error-state [kind]="errorKind()" message="No pudimos cargar los casos asignados." (retry)="load()" />
+        <ui-error-state [kind]="errorKind()" [message]="errorTexto()" [status]="error()?.status" (retry)="load()" />
       }
       @case ('empty') {
         <p class="ga-empty">No hay casos asignados. Los estudiantes no verán casos hasta que asignes uno.</p>
       }
       @case ('ready') {
-        <ul class="ga-list">
+        <ol class="ga-list">
           @for (row of rows(); track row.assignment.id) {
             <li class="ga-item">
+              <span class="ga-item__orden" aria-hidden="true">{{ row.position }}</span>
               <span class="ga-item__text">
                 <strong>{{ row.title }}</strong>
                 @if (row.detail) {
                   <span>{{ row.detail }}</span>
                 }
                 <span class="ga-window">{{ row.window }}</span>
+                <span class="ga-sequence">{{ row.sequence }}</span>
+                @if (row.assignment.progress; as avance) {
+                  <span>{{ avance.completed }} de {{ avance.students }} estudiantes terminaron · {{ avance.inProgress }} en curso</span>
+                } @else {
+                  <span>Avance no disponible. Vuelve a abrir el grupo para actualizarlo.</span>
+                }
+                <a ui-button variant="ghost" routerLink="/portal/docente/trazabilidad" [queryParams]="{ grupo: grupoId(), caseVersionId: row.assignment.caseVersionId }">Ver intentos de {{ row.title }}</a>
               </span>
               <ui-badge class="ga-item__state" [tone]="row.tone">{{ row.label }}</ui-badge>
               <span class="ga-item__actions">
+                @if (rows().length > 1) {
+                  <!-- El orden se cambia con botones (teclado y ratón por igual); el lector oye el lugar nuevo al moverlo. -->
+                  <button ui-icon-button type="button" icon="arrow_upward" [attr.data-ga-move]="row.assignment.id + '--1'"
+                    [label]="'Subir «' + row.title + '» en el orden'"
+                    [disabledReason]="row.position === 1 ? 'Ya es el primer caso.' : busyReason()" (click)="move(row, -1)"></button>
+                  <button ui-icon-button type="button" icon="arrow_downward" [attr.data-ga-move]="row.assignment.id + '-1'"
+                    [label]="'Bajar «' + row.title + '» en el orden'"
+                    [disabledReason]="row.position === rows().length ? 'Ya es el último caso.' : busyReason()" (click)="move(row, 1)"></button>
+                }
                 <button ui-button type="button" size="sm" variant="secondary" [attr.aria-label]="'Cambiar fechas de «' + row.title + '»'" [disabledReason]="busyReason()" (click)="changeDates(row)">Cambiar fechas</button>
                 <button ui-button type="button" size="sm" variant="secondary" [attr.aria-label]="(row.assignment.active ? 'Pausar «' : 'Reanudar «') + row.title + '»'" [disabledReason]="busyReason()" (click)="togglePause(row)">{{ row.assignment.active ? 'Pausar' : 'Reanudar' }}</button>
                 <button ui-icon-button type="button" icon="delete_outline" [label]="'Retirar «' + row.title + '» del grupo'" [disabledReason]="busyReason()" (click)="remove(row)"></button>
               </span>
             </li>
           }
-        </ul>
+        </ol>
       }
     }
   </div>

@@ -1,3 +1,5 @@
+import { UiAyudaBreve } from '../../../../shared/ui/ayuda-breve/ui-ayuda-breve';
+import { GLOSARIO } from '../../modelo/glosario';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, input,
   signal, untracked, viewChild,
@@ -77,7 +79,7 @@ const CONSULTA_ESTRECHA = '(max-width: 63.999rem)';
  */
 @Component({
   selector: 'app-sala',
-  imports: [EstudioRanuraDirective, EstudioHerramientaComponent, RouterLink, UiMenu, CatalogoDelLugarComponent, LienzoDeSalaComponent, PiezasDelMuroComponent, ManijaDeAnchoComponent,
+  imports: [UiAyudaBreve, EstudioRanuraDirective, EstudioHerramientaComponent, RouterLink, UiMenu, CatalogoDelLugarComponent, LienzoDeSalaComponent, PiezasDelMuroComponent, ManijaDeAnchoComponent,
     PanelDeEstructuraComponent, TrayectoDePersonaComponent, BarraDelLienzoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'atencion.set(null)' },
@@ -93,7 +95,7 @@ const CONSULTA_ESTRECHA = '(max-width: 63.999rem)';
               <h1>{{ s.nombre }}</h1>
             </div>
             <!-- El aviso sube a la cabecera como nota permanente (EDITOR.md §4.4): no se pierde bajo el lienzo. -->
-            <p class="sala__nota"><span class="sala__encuadre">{{ encuadre(s) }}</span>
+            <p class="sala__nota"><span class="sala__encuadre">{{ encuadre(s) }}</span> <ui-ayuda-breve termino="Sala" [explicacion]="glosario['Sala']" /> @if (s.encuadre === 'tres-paredes') { <ui-ayuda-breve termino="Sala cerrada · 3 paredes" [explicacion]="glosario['Sala cerrada · 3 paredes']" /> }
               <span class="sala__aviso">Los cambios valen para todas las escenas que pasan en esta sala.</span></p>
           </div>
           <ng-template estudioRanura="herramientas">
@@ -425,6 +427,7 @@ const CONSULTA_ESTRECHA = '(max-width: 63.999rem)';
   styleUrl: './sala.component.scss',
 })
 export class SalaComponent {
+  protected readonly glosario = GLOSARIO;
   protected readonly rutas = inject(RutasAutoria);
   private readonly dialogo = inject(UiDialog);
   private readonly injector = inject(Injector);

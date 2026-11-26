@@ -6,7 +6,11 @@ import { puedeEnviar } from './revision';
 import { universidad } from '../testing/universidad';
 
 /** Un caso recién creado: tres escenas vacías, una por sala, con los seis pasos profesionales del lugar. */
-const casoNuevo = (): CasoBorrador => copiarEscenarioAlCaso(universidad, ['entrada', 'pasillo', 'aula'], 'Primera escucha');
+const casoNuevo = (): CasoBorrador => {
+  const caso = copiarEscenarioAlCaso(universidad, ['entrada', 'pasillo', 'aula'], 'Primera escucha');
+  caso.escenas.forEach(e => e.narracion = '');
+  return caso;
+};
 
 /** El mismo caso con la primera escena escrita a medias: una respuesta clasificada que no lleva a ninguna parte. */
 function conRespuestaSinDestino(): CasoBorrador {
@@ -79,6 +83,13 @@ describe('clasificarPendientes y siguientePaso', () => {
     const conFalta = avanceDelCaso(conRespuestaSinDestino()).find((a) => a.etapa === 'historia')!;
     expect(conFalta).toMatchObject({ estado: 'con-pendientes', pendientes: 1 });
     expect(textoDeEtapa(conFalta)).toBe('Historia: escenas y guion, 1 de 3 escenas escritas, 1 pendiente');
+  });
+
+  it('la historia excluye escenas con texto de muestra', () => {
+    const caso = casoNuevo();
+    caso.escenas.forEach(e => e.narracion = 'Una narracion completa.');
+    caso.escenas[1].narracion = 'Lorem ipsum dolor sit amet';
+    expect(avanceDelCaso(caso, []).find(a => a.etapa === 'historia')).toMatchObject({ estado: 'en-curso', detalle: '2 de 3 escenas escritas' });
   });
 
   it('cada dirección del editor pertenece a una etapa', () => {

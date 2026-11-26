@@ -1,10 +1,10 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { CaseAccessCache } from '../../core/api/case-access.cache';
-import { InvitationsApi } from '../../core/api/invitations.api';
+import { Invitation, InvitationsApi } from '../../core/api/invitations.api';
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { CatalogItem, StudentAttemptSummary } from '../../core/models/simulation.model';
@@ -23,11 +23,13 @@ describe('Inicio del estudiante', () => {
     historial?: StudentAttemptSummary[] | null;
     catalogo?: CatalogItem[];
     invitadas?: number;
+    /** La lista completa de invitaciones (si se pasa, manda sobre `invitadas`). */
+    invitaciones?: Invitation[];
     escena?: string | null;
     sinNombre?: boolean;
   }
 
-  async function render({ historial = [intento()], catalogo = [caso(1)], invitadas = 1, escena = 'La sala de espera', sinNombre = false }: Opciones = {}) {
+  async function render({ historial = [intento()], catalogo = [caso(1)], invitadas = 1, invitaciones, escena = 'La sala de espera', sinNombre = false }: Opciones = {}) {
     const fijar = vi.fn();
     const getActiveAttempt = vi.fn(() => of(escena ? { currentNode: { title: escena } } : null));
     TestBed.configureTestingModule({
@@ -41,7 +43,7 @@ describe('Inicio del estudiante', () => {
           useValue: { acceso: () => null, guardandoAcceso: () => (fuente: unknown) => fuente, intentoAbierto: () => undefined, guardandoIntentoAbierto: () => (fuente: unknown) => fuente },
         },
         { provide: SimulationService, useValue: { getCatalog: () => of(catalogo), attemptHistory: () => (historial === null ? throwError(() => ({})) : of(historial)), getActiveAttempt } },
-        { provide: InvitationsApi, useValue: { list: () => of(Array.from({ length: invitadas }, () => ({ status: 'INVITED' }))) } },
+        { provide: InvitationsApi, useValue: { list: () => of(invitaciones ?? Array.from({ length: invitadas }, () => ({ status: 'INVITED' }))) } },
       ],
     });
     const fixture = TestBed.createComponent(StudentDashboardComponent);
@@ -79,9 +81,13 @@ describe('Inicio del estudiante', () => {
 
   it('sin intentos ofrece la ficha del primer caso desbloqueado, con el número de escenas', async () => {
     const { host } = await render({ historial: [], invitadas: 0 });
-    expect(host.textContent).toContain('Ver ficha del caso');
+    const empezar = host.querySelector('.sd-protagonista a.ui-button--primary')!;
+    expect(empezar.textContent).toContain('Empezar');
+    expect(empezar.getAttribute('aria-label')).toBe('Empezar «Caso 1»');
+    expect(empezar.getAttribute('href')).toBe('/portal/simulador/1/ficha');
     expect(host.textContent).toContain('Sin empezar · 8 escenas');
-    expect(host.textContent).toContain('Tu siguiente caso está listo.');
+    // La tarjeta ya dice «Empezar»: «Lo siguiente» no la repite.
+    expect(host.querySelector('.sd-siguiente')).toBeNull();
     expect(host.querySelector('.sd-invitacion')).toBeNull();
   });
 
@@ -100,13 +106,14 @@ describe('Inicio del estudiante', () => {
     expect(filas[0].tagName).not.toBe('A');
   });
 
-  it('con todo terminado no hay primaria: solo «Ver tu recorrido» como acción secundaria, y los cierres', async () => {
+  it('con todo terminado no hay primaria: solo «Ver mi resultado» como acción secundaria, y los cierres', async () => {
     const { host } = await render({
       catalogo: [caso(1, { completed: true })],
       historial: [intento({ status: 'COMPLETED', attemptId: 'fin' })],
       invitadas: 0,
     });
-    expect(host.textContent).toContain('Terminaste los casos asignados.');
+    expect(host.querySelector('.sd-siguiente__frase')?.textContent).toContain('Terminaste los casos asignados.');
+    expect(host.querySelector('.sd-protagonista a')?.textContent).toContain('Ver mi resultado');
     expect(host.querySelector('.ui-button--primary')).toBeNull();
     expect(host.querySelector('a[href="/portal/simulador/1/cierre/fin"]')).not.toBeNull();
     expect(host.textContent).toContain('Tus cierres');
@@ -126,14 +133,65 @@ describe('Inicio del estudiante', () => {
     }
   });
 
-  it('sin casos asignados muestra el vacío y, con invitaciones, la acción para verlas', async () => {
+  it('sin casos y con invitaciones esperando: el vacío las nombra y la acción lleva a Grupos', async () => {
     const { host } = await render({ historial: [], catalogo: [], invitadas: 2 });
-    expect(host.textContent).toContain('Aún no tienes casos asignados');
+    expect(host.querySelector('app-sin-casos-estudiante ui-vacio-ilustrado')?.getAttribute('data-motivo')).toBe('invitacion-pendiente');
+    expect(host.textContent).toContain('Tienes 2 invitaciones esperando');
     expect(host.textContent).toContain('Tienes 2 invitaciones a grupos');
-    const router = TestBed.inject(Router);
-    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    (host.querySelector('ui-empty-state button') as HTMLButtonElement).click();
-    expect(navegar).toHaveBeenCalledWith(['/portal/invitaciones']);
+    expect(host.querySelector('app-sin-casos-estudiante a')?.getAttribute('href')).toBe('/portal/invitaciones');
+  });
+
+  describe('«Lo siguiente»: una frase que dice qué hacer ahora', () => {
+    const grupo = (extra: Partial<Invitation> = {}): Invitation => ({
+      id: 1, groupId: 1, groupName: 'Grupo A', teacherName: 'Paula Ríos', invitedAt: null, status: 'ACTIVE', casesCount: 0, ...extra,
+    });
+    const frase = (host: HTMLElement) => host.querySelector('.sd-siguiente__frase')?.textContent?.trim();
+
+    it('con un intento a medias: continuar, con la escena donde se retoma', async () => {
+      const { host } = await render({ invitaciones: [] });
+      // La tarjeta del caso ya dice «Continuar» y dónde se retoma: la frase no se repite arriba.
+      expect(host.querySelector('.sd-siguiente')).toBeNull();
+      expect(host.textContent).toContain('La sala de espera');
+    });
+
+    it('con una invitación pendiente y nada que jugar: aceptarla; la invitación sigue arriba con su botón', async () => {
+      const { host } = await render({ historial: [], catalogo: [], invitaciones: [grupo({ status: 'INVITED', casesCount: null })] });
+      expect(frase(host)).toBe('Acepta la invitación de tu docente para ver los casos de tu grupo.');
+      expect(host.querySelector('.sd-invitacion a')?.getAttribute('href')).toBe('/portal/invitaciones');
+    });
+
+    it('un caso listo gana a una invitación pendiente, pero la invitación no se esconde', async () => {
+      const { host } = await render({ historial: [], invitaciones: [grupo({ status: 'INVITED', casesCount: null })] });
+      expect(host.querySelector('.sd-siguiente')).toBeNull();
+      expect(host.querySelector('.sd-protagonista')?.textContent).toContain('Caso 1');
+      expect(host.querySelector('.sd-invitacion')).not.toBeNull();
+    });
+
+    it('sin grupo: dice que primero hace falta un grupo', async () => {
+      const { host } = await render({ historial: [], catalogo: [], invitaciones: [] });
+      expect(frase(host)).toBe('Todavía no tienes casos: primero necesitas estar en un grupo de tu docente.');
+      expect(host.querySelector('app-sin-casos-estudiante ui-vacio-ilustrado')?.getAttribute('data-motivo')).toBe('sin-grupo');
+    });
+
+    it('en un grupo sin casos: lo dice y no culpa a la persona', async () => {
+      const { host } = await render({ historial: [], catalogo: [], invitaciones: [grupo()] });
+      expect(frase(host)).toBe('Todavía no tienes casos: tu docente aún no los asigna a tu grupo.');
+      expect(host.textContent).toContain('«Grupo A» aún no tiene casos asignados');
+    });
+
+    it('con un caso que todavía no abre: nada pendiente, sin inventar una fecha', async () => {
+      const { host } = await render({
+        historial: [], invitaciones: [],
+        catalogo: [caso(1, { unlocked: false, locked: true, access: { allowed: false, reason: 'NOT_YET_OPEN' } })],
+      });
+      expect(frase(host)).toContain('Por ahora no tienes nada pendiente: «Caso 1» todavía no está disponible.');
+      expect(host.querySelector('.sd-protagonista a.ui-button--primary')).toBeNull();
+    });
+
+    it('mientras carga o si falla no se afirma nada', async () => {
+      const { host } = await render({ historial: null });
+      expect(host.querySelector('.sd-siguiente')).toBeNull();
+    });
   });
 
   it('sin nombre en la sesión el título no inventa uno', async () => {

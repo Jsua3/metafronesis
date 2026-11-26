@@ -140,9 +140,26 @@ def _cuenta(correo_local, nombre, apellido, rol, clave, informe):
     return cuenta
 
 
+def docentes_reales(correos):
+    """Las cuentas PROFESOR activas que ya existen y serán dueñas de los grupos sembrados (``--docentes``), de 1 a 3."""
+    if len(correos) > len(GRUPOS):
+        raise ErrorDeSiembra(f"--docentes admite hasta {len(GRUPOS)} correos, uno por grupo sembrado.")
+    docentes = []
+    for correo in correos:
+        docente = CustomUser.objects.filter(email__iexact=correo, role=UserRole.PROFESOR, activo=True).first()
+        if docente is None:
+            raise ErrorDeSiembra(f"--docentes: {correo} no es una cuenta PROFESOR activa que ya exista.")
+        docentes.append(docente)
+    return docentes
+
+
 def _grupo(codigo, nombre, docente, estudiantes, informe):
     grupo, creado = Grupo.objects.get_or_create(codigo=codigo, defaults={"nombre": nombre, "profesor": docente})
-    informe.anotar(creado, f"grupo «{grupo.nombre}» ({codigo})")
+    informe.anotar(creado, f"grupo «{grupo.nombre}» ({codigo})" + (f", a cargo de {docente.email}" if creado else ""))
+    if not creado and grupo.profesor_id != docente.pk:
+        grupo.profesor = docente
+        grupo.save(update_fields=["profesor"])
+        informe.creado.append(f"  el grupo {codigo} ahora es de {docente.email}")
     ahora = timezone.now()
     for estudiante in estudiantes:
         _, nuevo = GrupoEstudiante.objects.get_or_create(
@@ -208,19 +225,26 @@ def _caso_insignia(autora, publicador, rubrica, informe):
 
 
 @transaction.atomic
-def sembrar(publicador_correo, clave):
-    """Siembra el entorno y devuelve el ``Informe``. Falla con ``ErrorDeSiembra`` sin dejar nada escrito."""
+def sembrar(publicador_correo, clave, correos_docentes=()):
+    """Siembra el entorno y devuelve el ``Informe``. Falla con ``ErrorDeSiembra`` sin dejar nada escrito.
+
+    Con ``correos_docentes`` (``--docentes``), los grupos sembrados quedan a cargo de esas cuentas PROFESOR reales, en
+    orden y repartidos si son menos que los grupos: así ven a sus estudiantes, los intentos y los reportes. El caso
+    insignia sigue siendo de la docente demo que lo escribió (el editor solo muestra los casos propios).
+    """
     validar_clave(clave)
     publicador = CustomUser.objects.filter(email=publicador_correo, role=UserRole.ADMIN, activo=True).first()
     if publicador is None:
         raise ErrorDeSiembra("El publicador debe ser un administrador activo que ya exista; el comando no crea ADMIN.")
+    reales = docentes_reales(list(correos_docentes))
     informe = Informe()
     docentes = [_cuenta(*datos, UserRole.PROFESOR, clave, informe) for datos in DOCENTES]
     for docente in docentes:
         PermisoDeAutoria.objects.get_or_create(docente=docente, defaults={"otorgado_por": publicador})
     estudiantes = [_cuenta(*datos, UserRole.ESTUDIANTE, clave, informe) for datos in ESTUDIANTES]
-    grupos = [_grupo(codigo, nombre, docentes[docente], [estudiantes[i] for i in miembros], informe)
-              for codigo, nombre, docente, miembros in GRUPOS]
+    grupos = [_grupo(codigo, nombre, reales[orden % len(reales)] if reales else docentes[docente],
+                     [estudiantes[i] for i in miembros], informe)
+              for orden, (codigo, nombre, docente, miembros) in enumerate(GRUPOS)]
     autora = docentes[0]
     version = _caso_insignia(autora, publicador, _rubrica(autora, informe), informe)
     for grupo in grupos:
