@@ -721,8 +721,10 @@ export class EscenaDeSala {
     for (const o of this.objetos) this.escena.add.existing(o);
   }
 
-  spriteDeMueble(id: string): Phaser.GameObjects.Sprite | undefined {
-    return this.mueblesVivos.find(mueble => mueble.id === id)?.sprite;
+  /** Dibujo vivo de los muebles y las puertas que se pintan fuera del marcador. */
+  spriteDeInteraccion(id: string): Phaser.GameObjects.Sprite | undefined {
+    return this.mueblesVivos.find(mueble => mueble.id === id)?.sprite
+      ?? this.vivos.find(vivo => vivo.plan.puerta && vivo.plan.id === id)?.objeto;
   }
 
   /** Quien juega está cerca de este objeto (null: de ninguno): si el mueble tiene clip `cerca`, lo hace una vez. */

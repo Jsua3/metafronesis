@@ -341,6 +341,21 @@ describe('DataDrivenWorldScene: destino, anillo, rótulos y atenuados', () => {
     expect(h.scene.add.ellipse).not.toHaveBeenCalled();
   });
 
+  it('una puerta de pieza usa su hoja animada como dibujo del destino', () => {
+    const h = crearEscena();
+    const clave = 'puerta-sala-escucha';
+    const dibujo = probarContorno(h, clave);
+    orient(h, { nextTargetKey: clave });
+    const hoja = node(832, 392);
+    const sala = h.scene as unknown as { salaPorPiezas: { spriteDeInteraccion(key: string): FakeNode | undefined } };
+    sala.salaPorPiezas = { spriteDeInteraccion: key => key === clave ? hoja : undefined };
+    h.scene.actualizarContornos(0);
+    expect(dibujo).toMatchObject({ x: 832, y: 392, visible: true });
+    hoja.x += 1;
+    h.scene.actualizarContornos(16);
+    expect(dibujo.x).toBe(833);
+  });
+
   it('el rótulo del destino se ve aunque esté lejos y se oculta al cambiar de destino', () => {
     const h = crearEscena();
     orient(h, { nextTargetKey: 'tool-pap' });

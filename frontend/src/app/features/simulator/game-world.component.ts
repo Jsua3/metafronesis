@@ -1403,8 +1403,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     for (const clave of claves) {
       if (!clave || this.dimmedKeys.has(clave)) continue;
       const marcador = this.actorOf(clave);
-      const mueble = this.salaPorPiezas?.spriteDeMueble(clave);
-      const dibujo = mueble ?? this.dibujosDeMarcador.get(clave);
+      const pieza = this.salaPorPiezas?.spriteDeInteraccion(clave);
+      const dibujo = pieza ?? this.dibujosDeMarcador.get(clave);
       let contorno = this.contornos.get(clave);
       if (!dibujo || !this.disponible(marcador)) {
         contorno?.dibujo.setVisible(false);
@@ -1416,7 +1416,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
         contorno = new ContornoDeDibujo(this, partes);
         this.contornos.set(clave, contorno);
       }
-      contorno.actualizar(mueble ?? marcador!);
+      contorno.actualizar(pieza ?? marcador!);
     }
   }
 
@@ -4006,7 +4006,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
 
   private reservarDestinoDeConversaciones(ocupadas: CajaDePlaca[], zoomCss: number): void {
     const clave = this.nextTargetKey;
-    const dibujo = clave && (this.salaPorPiezas?.spriteDeMueble(clave) ?? this.dibujosDeMarcador.get(clave));
+    const dibujo = clave && (this.salaPorPiezas?.spriteDeInteraccion(clave) ?? this.dibujosDeMarcador.get(clave));
     const destino = dibujo && 'getBounds' in dibujo
       ? dibujo as Phaser.GameObjects.Container | Phaser.GameObjects.Sprite : null;
     for (const pieza of [destino, this.hoverLabel]) {
