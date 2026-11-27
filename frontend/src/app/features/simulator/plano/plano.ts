@@ -1,3 +1,5 @@
+import { exitVerb } from '../interaction-verb.util';
+
 /**
  * Plano del lugar (bloque M1, especificación §5.2 y §5.3): del campo `layout` del mundo a rectángulos, marcas de puerta y
  * textos para lector de pantalla. Sin Angular ni Phaser.
@@ -208,7 +210,8 @@ export function textoDelDestino(destino: DestinoDelPlano): string {
   switch (destino.tipo) {
     case 'persona': return `Siguiente paso: habla con ${destino.etiqueta}, en esta sala.`;
     case 'herramienta': return `Siguiente paso: recoge la herramienta «${destino.etiqueta}», en esta sala.`;
-    case 'puerta': return `Siguiente paso: pasa por la puerta «${destino.etiqueta}».`;
+    // BORRADOR: texto pendiente de Psicología.
+    case 'puerta': return `Siguiente paso: ${exitVerb(destino.etiqueta)}.`;
   }
 }
 

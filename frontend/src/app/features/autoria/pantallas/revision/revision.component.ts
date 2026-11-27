@@ -178,7 +178,8 @@ export class RevisionComponent {
       // Lo que hay que corregir va antes que lo que falta escribir, como los errores antes que los avisos en un IDE.
       const problemas = [...deEtapa].sort((x, y) => Number(x.tipo !== 'por-corregir') - Number(y.tipo !== 'por-corregir'))
         .map((p) => ({ ...p, donde: dondeEsta(p, escenas) }));
-      return { etapa, nombre, total: corregir + escribir, texto: partes.length ? partes.join(' · ') : 'Listo', problemas };
+      // BORRADOR: pendiente de aprobación de Psicología.
+      return { etapa, nombre, total: corregir + escribir, texto: partes.length ? partes.join(' · ') : this.store.revisionPendiente() ? 'Comprobación pendiente' : 'Listo', problemas };
     });
   });
 
@@ -202,6 +203,8 @@ export class RevisionComponent {
       case 'ARCHIVED': return 'Archivado: ya no aparece para los estudiantes.';
       default: {
         if (this.devuelto()) return 'Psicología lo devolvió: corrige lo que pide y vuelve a enviarlo.';
+        // BORRADOR: pendiente de aprobación de Psicología.
+        if (this.store.revisionPendiente()) return 'Comprobación pendiente: revisa el caso antes de enviarlo.';
         const n = this.faltas().length;
         return n === 0 ? 'Borrador listo para enviar.' : `Borrador: faltan ${n} ${n === 1 ? 'cosa' : 'cosas'} para poder enviarlo.`;
       }
@@ -219,7 +222,7 @@ export class RevisionComponent {
   /** El tono de la línea de estado: aviso si quedan cosas por resolver, bien si está listo; el resto es neutro. */
   protected readonly tonoDeEstado = computed(() => {
     if (this.store.soloLectura()) return 'neutro';
-    return this.faltas().length > 0 ? 'aviso' : this.consultando() ? 'neutro' : 'ok';
+    return this.faltas().length > 0 ? 'aviso' : this.consultando() || this.store.revisionPendiente() ? 'neutro' : 'ok';
   });
 
   protected readonly puedeEnviarAhora = computed(

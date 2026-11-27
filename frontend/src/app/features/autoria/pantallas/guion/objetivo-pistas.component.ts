@@ -14,7 +14,7 @@ const unaLinea = (texto: string, tope: number): string => texto.replace(/\s*[\r\
 
 /**
  * «Objetivo» y «Pistas» de una escena, en el guion. El objetivo es una frase que el estudiante ve en el juego; las pistas son lo
- * que puede pedir si no sabe cómo seguir. Se guarda al salir del campo (no en cada tecla).
+ * que puede pedir si no sabe cómo seguir. El objetivo se refleja al escribir y se normaliza al salir del campo.
  */
 @Component({
   selector: 'app-objetivo-pistas',
@@ -25,11 +25,11 @@ const unaLinea = (texto: string, tope: number): string => texto.replace(/\s*[\r\
       <label for="objetivo-escena" class="etiqueta">Objetivo de la escena</label>
       <input id="objetivo-escena" type="text" class="campo" [attr.maxlength]="maxObjetivo" [value]="objetivo()"
              aria-describedby="objetivo-ayuda objetivo-cuenta"
-             (input)="objetivo.set($any($event.target).value)" (change)="guardarObjetivo($event)" />
+             (input)="editarObjetivo($any($event.target).value)" (change)="guardarObjetivo($event)" />
       <div class="objetivo__pie">
         <p id="objetivo-ayuda" class="texto-secundario nota">
           <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
-          Una frase con lo que el estudiante busca aquí, sin decirle qué hacer. La ve en el juego. Hasta 200 caracteres.
+          Una frase con lo que el estudiante busca aquí, sin decirle qué hacer. La ve en el juego. Hasta 200 caracteres. La pregunta de decisión se escribe en el guion.
         </p>
         <p id="objetivo-cuenta" class="texto-secundario nota cuenta">{{ objetivo().length }} de {{ maxObjetivo }}</p>
       </div>
@@ -100,6 +100,11 @@ export class ObjetivoPistasComponent {
   protected readonly pistas = computed(() => this.escena().pistas ?? []);
   protected readonly enElTope = computed(() => this.pistas().length >= MAX_PISTAS);
   protected readonly avisoTope = computed(() => (this.objetivo().length >= MAX_OBJETIVO ? `Llegaste al tope de ${MAX_OBJETIVO} caracteres.` : ''));
+
+  protected editarObjetivo(texto: string): void {
+    this.objetivo.set(texto);
+    if (texto !== (this.escena().objetivo ?? '')) this.store.editarObjetivo(this.escena().id, texto);
+  }
 
   protected guardarObjetivo(evento: Event): void {
     const campo = evento.target as HTMLInputElement;

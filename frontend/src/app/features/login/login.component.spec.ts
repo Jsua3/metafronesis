@@ -704,4 +704,90 @@ describe('LoginComponent', () => {
       }
     });
   });
+  // UA-E16 y UA-E17 (medición 0.7.0): al pulsar «Ingresar» una persona con lector de pantalla no oyó ni «Ingresando…» ni el
+  // error (la alerta nacía en el DOM mientras el foco seguía en el botón), y en «Recuperar contraseña» no dio con la forma
+  // de volver (estaba al final del formulario, tras el envío).
+  describe('foco y avisos del envío (UA-E16, UA-E17)', () => {
+    it('mientras entra: el botón queda ocupado y la región viva dice «Ingresando…»; el foco no se pierde', async () => {
+      login = vi.fn(() => new Subject<unknown>());
+      await render();
+      fixture.componentInstance.form.setValue({ email: 'ana@cue.edu.co', password: 'secreta', remember: false });
+      submit().focus();
+      submit().click();
+      await fixture.whenStable();
+      expect(submit().getAttribute('aria-busy')).toBe('true');
+      expect(submit().getAttribute('aria-disabled')).toBe('true');
+      const estado = host().querySelector('.acceso__estado')!;
+      expect(estado.getAttribute('role')).toBe('status');
+      expect(estado.getAttribute('aria-live')).toBe('polite');
+      expect(text(estado)).toBe('Ingresando…');
+      expect(document.activeElement).toBe(submit());
+    });
+
+    it('si entrar falla, el foco va al aviso (una alerta con el motivo en palabras) y desde ahí Tab sigue al botón', async () => {
+      login = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' })));
+      await render();
+      fixture.componentInstance.form.setValue({ email: 'ana@cue.edu.co', password: 'otra', remember: false });
+      submit().focus();
+      submit().click();
+      await fixture.whenStable();
+      const aviso = host().querySelector<HTMLElement>('.acceso__error[role="alert"]')!;
+      expect(aviso.getAttribute('tabindex')).toBe('-1');
+      expect(document.activeElement).toBe(aviso);
+      expect(text(aviso)).toContain('No encontramos esa combinación');
+      expect(aviso.compareDocumentPosition(submit()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('un segundo fallo vuelve a llevar el foco al aviso, que se anuncia de nuevo', async () => {
+      login = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' })));
+      await render();
+      fixture.componentInstance.form.setValue({ email: 'ana@cue.edu.co', password: 'otra', remember: false });
+      submit().click();
+      await fixture.whenStable();
+      submit().focus();
+      submit().click();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(host().querySelector('.acceso__error[role="alert"]'));
+    });
+
+    it('recuperar contraseña: «Volver a iniciar sesión» es la primera parada tras el encabezado (antes del correo) y no se repite', async () => {
+      await render();
+      button('¿Olvidaste tu contraseña?').click();
+      await fixture.whenStable();
+      const paradas = [...form().querySelectorAll<HTMLElement>('button, a[href], input, select, textarea')]
+        .filter(el => el.tabIndex >= 0);
+      expect(text(paradas[0])).toBe('Volver a iniciar sesión');
+      expect(paradas[1]).toBe(form().querySelector('#olvido-email'));
+      expect([...host().querySelectorAll('button')].filter(b => text(b) === 'Volver a iniciar sesión')).toHaveLength(1);
+      expect(host().querySelector('h1')!.compareDocumentPosition(paradas[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('recuperar contraseña: si el envío falla, el foco va al aviso', async () => {
+      requestPasswordReset = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Error' })));
+      await render();
+      button('¿Olvidaste tu contraseña?').click();
+      await fixture.whenStable();
+      fixture.componentInstance.forgotForm.setValue({ email: 'ana@cue.edu.co' });
+      submit().focus();
+      submit().click();
+      await fixture.whenStable();
+      const aviso = host().querySelector<HTMLElement>('.acceso__error[role="alert"]')!;
+      expect(aviso.getAttribute('tabindex')).toBe('-1');
+      expect(document.activeElement).toBe(aviso);
+    });
+
+    it('solicitar acceso: si el envío falla, el foco va al aviso', async () => {
+      requestAccess = () => throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Error' }));
+      await render();
+      button('Solicitar acceso').click();
+      await fixture.whenStable();
+      fixture.componentInstance.registerForm.setValue({ nombre: 'Ana', apellido: 'Ruiz', email: 'ana@cue.edu.co', website: '' });
+      submit().focus();
+      submit().click();
+      await fixture.whenStable();
+      const aviso = host().querySelector<HTMLElement>('.acceso__error[role="alert"]')!;
+      expect(aviso.getAttribute('tabindex')).toBe('-1');
+      expect(document.activeElement).toBe(aviso);
+    });
+  });
 });

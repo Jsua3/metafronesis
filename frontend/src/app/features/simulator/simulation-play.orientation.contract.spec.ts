@@ -127,7 +127,7 @@ describe('ficha del objetivo (T9.1)', () => {
 
   it('la ficha recibe la guía, el intento y el pliegue compacto (cardFolded), y refresca la sala al abrirse', () => {
     // V7: también el ajuste «Reducir movimiento» (sin pulso al cambiar el objetivo).
-    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
+    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[doorMessages\]="doorMessages\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
     expect(source).toContain('readonly cardFolded = computed(() => this.compactMode() || this.narrowScreen());');
   });
 
@@ -231,17 +231,17 @@ describe('barra contextual (T9.3, T9.5)', () => {
   it('el botón principal conserva button.context-bar__interaction con su <strong> y el nombre «Interactuar: …»', () => {
     // Bloque U1 (variante B): las acciones son fichas del cuadro de diálogo (u-ficha u-sombra).
     expect(source).toMatch(/<button type="button" class="context-bar__interaction u-ficha u-sombra"/);
-    expect(source).toMatch(/<strong>\{\{ action\.verb\.text \}\}<\/strong>/);
+    expect(source).toMatch(/<strong>\{\{ walkingLabel\(action\.obj\) \?\? action\.verb\.text \}\}<\/strong>/);
     expect(source).toContain('`Interactuar: ${verb.text}');
     expect(source).not.toContain('atajo E');
   });
 
   it('el botón secundario usa context-bar__interaction--secondary y también lleva <strong>', () => {
-    expect(source).toMatch(/class="context-bar__interaction context-bar__interaction--secondary u-ficha u-sombra"[\s\S]*?<strong>\{\{ also\.verb\.text \}\}<\/strong>/);
+    expect(source).toMatch(/class="context-bar__interaction context-bar__interaction--secondary u-ficha u-sombra"[\s\S]*?<strong>\{\{ walkingLabel\(also\.obj\) \?\? also\.verb\.text \}\}<\/strong>/);
   });
 
   it('el secundario conserva «También:» en su nombre accesible aunque el modo compacto lo oculte a la vista', () => {
-    expect(source).toContain(`[attr.aria-label]="'También: ' + also.verb.text + (actionStepLabel(also.obj.key)`);
+    expect(source).toContain(`[attr.aria-label]="'También: ' + (walkingLabel(also.obj) ?? also.verb.text) + (actionStepLabel(also.obj.key)`);
   });
 
   it('en reposo la barra solo trae la nota «No hay nada a tu alcance» (clase propia); ni línea «Ahora:» ni leyenda de teclas', () => {
@@ -290,10 +290,10 @@ describe('barra contextual (T9.3, T9.5)', () => {
 describe('«Ir a…» (F6-11, VD-19)', () => {
   // req: BLOQUE-H H-06, RNF-04
   it('abierta, el resto del juego queda inerte y Esc la cierra antes que la ayuda, la bitácora, el diálogo y la pausa', () => {
-    expect(source).toMatch(/this\.showCaseIntro\(\) \|\| this\.dialogue\(\) !== null \|\| this\.journalOpen\(\) \|\| this\.placesOpen\(\)/);
+    expect(source).toMatch(/this\.showCaseIntro\(\) \|\| this\.dialogue\(\) !== null \|\| this\.journalOpen\(\) \|\| this\.planOpen\(\)/);
     const chain = source.slice(source.indexOf('if (this.placesOpen())  {'));
     expect(chain.indexOf('if (this.placesOpen())')).toBeLessThan(chain.indexOf('if (this.helpOpen())'));
-    expect(source).toMatch(/<app-world-places-list \[places\]="placeOptions\(\)" \[pausing\]="pausing\(\)"\s*\(choose\)="choosePlace\(\$event\)" \(closed\)="closePlaces\(\)" \(safeExit\)="pauseFromOverlay\(\)" \/>/);
+    expect(source).toMatch(/<app-world-places-list \[places\]="placeOptions\(\)" \[doorMessages\]="doorMessages\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[pausing\]="pausing\(\)"\s*\(choose\)="choosePlace\(\$event\)" \(closed\)="closePlaces\(\)" \(safeExit\)="pauseFromOverlay\(\)" \/>/);
   });
 
   it('solo se ofrecen personas, puertas y lo examinado (misma regla que el hover) y la llegada se anuncia', () => {
@@ -333,7 +333,7 @@ describe('texto de la pantalla de juego (F6-3)', () => {
 describe('enlaces con el mundo (T9.5, T9.9)', () => {
   it('el mundo recibe atenuados, puertas y modo compacto, y sus dos salidas nuevas están enlazadas', () => {
     // P9: el destino del anillo y de la flecha es el siguiente paso de la ficha del objetivo: una sola fuente para el texto, el mundo, el plano y «Ir a…».
-    expect(worldTag).toContain('[nextTargetKey]="guide().siguienteLugar?.key ?? null"');
+    expect(worldTag).toContain('[nextTargetKey]="pendingWalkInteraction()?.key ?? guide().siguienteLugar?.key ?? null"');
     expect(worldTag).toContain('[dimmedKeys]="dimmedKeys()"');
     expect(worldTag).toContain('[doorStates]="doorStates()"');
     expect(worldTag).toContain('[compact]="compactMode()"');

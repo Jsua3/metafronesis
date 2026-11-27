@@ -5,7 +5,7 @@ import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
 import type { ElementoSala, GuiaEscena } from './caso/guia';
 import { DRAFT_COPY } from './draft-copy';
 import { type HintAttemptRef, SceneHintComponent } from './scene-hint.component';
-import { actionForPlace } from './world-places.util';
+import { actionForPlace, walkingText } from './world-places.util';
 
 let nextGoalCardId = 0;
 
@@ -52,8 +52,8 @@ let nextGoalCardId = 0;
             <!-- «Siguiente paso» conectado con «Ir a…» (P9): el mismo camino automático, sin abrir la lista. -->
             @if (guia().siguienteLugar; as lugar) {
               <!-- BORRADOR: texto pendiente de Psicología. -->
-              <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)">
-                {{ actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
+              <button type="button" class="goal-card__ir u-boton" data-guia-ir [attr.aria-disabled]="doorMessages()[lugar.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[lugar.key] ? reasonId : null" (click)="goToStep.emit(lugar.key)">
+                {{ walkLabel(lugar.key, lugar.label, lugar.tipo) ?? actionForPlace(lugar.tipo === 'persona' ? 'person' : lugar.tipo === 'puerta' ? 'door' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
             }
           }
           <!-- La guía escrita en el caso: la lista de pasos con su marca en texto (nunca solo color). -->
@@ -66,8 +66,8 @@ let nextGoalCardId = 0;
                   <span class="goal-card__pasotexto">{{ p.texto }}<span class="goal-card__sr"> · {{ p.hecho ? 'hecho' : $index === pasoActual() ? 'tu siguiente paso' : p.informativo ? 'información' : 'pendiente' }}</span></span>
                   @if ($index === pasoActual() && !guia().textoSalida && guia().siguienteLugar; as lugar) {
                     <!-- BORRADOR: texto pendiente de Psicología. -->
-                    <button type="button" class="goal-card__ir goal-card__ir--en-paso u-boton" data-guia-ir (click)="goToStep.emit(lugar.key)">
-                      {{ actionForPlace(lugar.tipo === 'persona' ? 'person' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
+                    <button type="button" class="goal-card__ir goal-card__ir--en-paso u-boton" data-guia-ir [attr.aria-disabled]="doorMessages()[lugar.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[lugar.key] ? reasonId : null" (click)="goToStep.emit(lugar.key)">
+                      {{ walkLabel(lugar.key, lugar.label, lugar.tipo) ?? actionForPlace(lugar.tipo === 'persona' ? 'person' : lugar.tipo === 'puerta' ? 'door' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
                   }
                 </li>
               }
@@ -75,10 +75,13 @@ let nextGoalCardId = 0;
             @if (guia().textoSalida) {
               <p class="goal-card__paso">{{ guia().textoSalida }}</p>
               @if (guia().siguienteLugar; as salida) {
-                <button type="button" class="goal-card__ir u-boton" data-guia-ir (click)="goToStep.emit(salida.key)">
-                  {{ actionForPlace('object', salida.label) }} <span aria-hidden="true">▶</span></button>
+                <button type="button" class="goal-card__ir u-boton" data-guia-ir [attr.aria-disabled]="doorMessages()[salida.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[salida.key] ? reasonId : null" (click)="goToStep.emit(salida.key)">
+                  {{ walkLabel(salida.key, salida.label, 'puerta') ?? actionForPlace('door', salida.label) }} <span aria-hidden="true">▶</span></button>
               }
             }
+          }
+          @if (guia().siguienteLugar; as lugar) {
+            @if (doorMessages()[lugar.key]; as reason) { <p [id]="reasonId">{{ reason }}</p> }
           }
           @if (guia().enEstaSala.length) {
             <!-- Con la guía escrita, los pasos ya dicen con quién hablar: «En esta sala» queda plegada (la ficha no tapa la sala). -->
@@ -192,6 +195,13 @@ export class SceneGoalCardComponent {
   protected readonly bodyId = `goal-card-body-${nextGoalCardId++}`;
 
   readonly guia = input.required<GuiaEscena>();
+  readonly walkingKey = input<string | null>(null);
+  readonly doorMessages = input<Record<string, string>>({});
+  protected readonly reasonId = `goal-door-reason-${nextGoalCardId++}`;
+  // BORRADOR: texto pendiente de Psicología.
+  protected walkLabel(key: string, label: string, tipo?: string): string | null {
+    return this.walkingKey() === key ? `${walkingText(tipo === 'puerta' ? 'door' : 'object', label)}… Pulsa para cancelar` : null;
+  }
   readonly hintAttempt = input<HintAttemptRef | null>(null);
   /** Pantalla baja o táctil horizontal: la ficha pide menos sitio y arranca plegada. */
   readonly compact = input(false);

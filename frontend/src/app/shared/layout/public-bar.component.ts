@@ -47,7 +47,8 @@ export const PUBLIC_ANCHORS: readonly PublicAnchor[] = [
       <a class="modulo modulo-logo pulsable ds-motion" routerLink="/" aria-label="Metafrónesis: ir al inicio">
         <app-marca class="barra-marca" />
       </a>
-      <div class="modulo modulo-principal ds-motion" [class.con-tema]="mode() === 'portada'">
+      <!-- Grupos con nombre (UA-E18): sin ellos el lector de pantalla cuelga los enlaces del logo, como si fuera un menú. -->
+      <div class="modulo modulo-principal ds-motion" [class.con-tema]="mode() === 'portada'" role="group" aria-label="Secciones de la portada">
         @for (anchor of anchors(); track anchor.id) {
           <a class="nav-enlace ds-motion" [class.control-plegable]="secundario(anchor)" [href]="'#' + anchor.id">{{ anchor.label }}</a>
         }
@@ -66,7 +67,7 @@ export const PUBLIC_ANCHORS: readonly PublicAnchor[] = [
           <span class="cta-modulo__mas ds-motion"><span class="cta-modulo__mas-dentro">&nbsp;aquí<svg class="cta-modulo__flecha ds-motion" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8h9.5M8.5 4l4 4-4 4" /></svg></span></span>
         </a>
       } @else {
-        <div class="modulo modulo-cuenta ds-motion">
+        <div class="modulo modulo-cuenta ds-motion" role="group" aria-label="Tema y regreso a la portada">
           <app-tema-selector class="tema" />
           <a class="nav-enlace ds-motion" routerLink="/">Volver al inicio</a>
         </div>

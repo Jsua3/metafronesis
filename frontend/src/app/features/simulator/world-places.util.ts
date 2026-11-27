@@ -1,3 +1,5 @@
+import { exitVerb } from './interaction-verb.util';
+
 /**
  * Qué ofrece «Ir a…» (plan visual F6-11; VD-19, borrador de Psicología). Pura: sin Phaser ni datos clínicos. Es la
  * misma regla que el hover del ratón (F6-7) en forma de lista: las personas y las puertas de la sala (el jugador las
@@ -9,7 +11,17 @@ export type PlaceKind = 'person' | 'door' | 'object';
 /** BORRADOR: texto pendiente de Psicología. La etiqueta de una puerta puede venir como «Pasar a…». */
 export function actionForPlace(kind: PlaceKind, label: string): string {
   if (kind === 'person') return `Hablar con ${label}`;
-  return /^pasar a(?:\s|l\b)/i.test(label) ? label.replace(/^pasar a/i, 'Ir a') : `Ir a ${label}`;
+  return kind === 'door' ? exitVerb(label) : `Ir a ${label}`;
+}
+
+/**
+ * BORRADOR: texto pendiente de Psicología. Lo que dice la acción mientras el personaje camina: la misma frase en la lista,
+ * la ficha, la barra y el anuncio. Una puerta dice a qué va («pasar a Sala X»), no «Yendo hacia Pasar a…».
+ */
+export function walkingText(kind: PlaceKind, label: string): string {
+  if (kind !== 'door') return `Yendo hacia ${label}`;
+  const action = exitVerb(label);
+  return `Yendo hacia la puerta para ${action.charAt(0).toLowerCase()}${action.slice(1)}`;
 }
 
 export interface PlaceCandidate {

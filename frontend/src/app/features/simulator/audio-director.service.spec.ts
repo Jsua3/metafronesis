@@ -4,7 +4,8 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { Howl } from 'howler';
 import type { Mock } from 'vitest';
-import { AudioDirectorService } from './audio-director.service';
+import { AudioDirectorService, volumeForLevel } from './audio-director.service';
+import { VOLUME_DEFAULT_LEVEL, VOLUME_STORAGE_KEY } from './volume-settings.service';
 import { FADE_EPSILON, FADE_SPEED, fadeStep } from './audio-fade.util';
 import { MUSIC_CUES } from './music-cues.config';
 
@@ -652,5 +653,67 @@ describe('AudioDirectorService: navegadores que ignoran el volumen de HTML5 (iOS
     const long = longTrackOptions(AudioQueFalla);
     expect(long).toHaveLength(2);
     for (const options of long) expect(options.html5).toBe(false);
+  });
+});
+
+describe('AudioDirectorService: barras de volumen', () => {
+  let service: AudioDirectorService;
+  const howlOptions = () =>
+    (Howl as unknown as Mock).mock.calls.map(([options]) => options as { src: string[]; volume?: number });
+  const howlFor = (src: string) => {
+    const index = howlOptions().findIndex(options => options.src[0] === src);
+    return (Howl as unknown as Mock).mock.results[index].value;
+  };
+  const DOOR = 'assets/game/audio/sfx/puertas/door_open.wav';
+
+  function boot(): void {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined }),
+    });
+    (Howl as unknown as Mock).mockClear();
+    TestBed.resetTestingModule();
+    service = TestBed.inject(AudioDirectorService);
+    service.init();
+  }
+
+  beforeEach(() => localStorage.removeItem(VOLUME_STORAGE_KEY));
+  afterEach(() => { service?.dispose(); vi.useRealTimers(); localStorage.removeItem(VOLUME_STORAGE_KEY); });
+
+  it('el nivel por defecto conserva el volumen de antes de las barras', () => {
+    expect(volumeForLevel(0.42, VOLUME_DEFAULT_LEVEL)).toBeCloseTo(0.42);
+    expect(volumeForLevel(0.42, 0)).toBe(0);
+    expect(volumeForLevel(0.42, 10)).toBeCloseTo(0.7);
+  });
+
+  it('la barra de la música se oye al instante en la capa que suena, sin esperar el fundido', () => {
+    vi.useFakeTimers();
+    boot();
+    service.setScene('LOW', 'CALM');
+    vi.advanceTimersByTime(4000);
+    const ambient = howlFor(MUSIC_CUES.ambient[0]);
+    ambient.volume.mockClear();
+    service.setMusicLevel(3);
+    expect(ambient.volume).toHaveBeenCalled();
+    const level3 = ambient.volume.mock.calls.at(-1)[0] as number;
+    service.setMusicLevel(9);
+    const level9 = ambient.volume.mock.calls.at(-1)[0] as number;
+    expect(level9).toBeGreaterThan(level3);
+  });
+
+  it('la barra de los efectos re-escala cada efecto', () => {
+    boot();
+    const door = howlFor(DOOR);
+    service.setSfxLevel(10);
+    expect(door.volume).toHaveBeenLastCalledWith(volumeForLevel(0.5, 10));
+    service.setSfxLevel(0);
+    expect(door.volume).toHaveBeenLastCalledWith(0);
+  });
+
+  it('arranca con el nivel y el silencio recordados', () => {
+    localStorage.setItem(VOLUME_STORAGE_KEY, JSON.stringify({ music: 6, sfx: 3, musicMuted: true, sfxMuted: false }));
+    boot();
+    expect(service.isMusicMuted()).toBe(true);
+    expect(howlOptions().find(options => options.src[0] === DOOR)?.volume).toBeCloseTo(volumeForLevel(0.5, 3));
   });
 });

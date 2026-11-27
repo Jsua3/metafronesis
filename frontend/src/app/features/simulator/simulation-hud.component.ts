@@ -13,6 +13,7 @@ import { PixelIconoComponent } from './pixel/pixel-icono.component';
 import { CONSULTA_COMPACTO } from './pixel/tramos';
 import { COARSE_POINTER_QUERY, matchesMedia, watchMedia } from './pointer-modality.util';
 import { portraitStateForPersona } from './persona-portrait.util';
+import { VolumeBarsComponent } from './volume-bars.component';
 
 /** Marca de «ayuda vista» (la escribe la tarjeta de primera vez; aquí solo se borra desde Ajustes). */
 const HELP_MEMORY_KEY = 'siep.ayuda.v1';
@@ -20,7 +21,7 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
 @Component({
   selector: 'app-simulation-hud',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, KitFigureComponent, PixelIconoComponent],
+  imports: [CommonModule, RouterLink, MatIconModule, KitFigureComponent, PixelIconoComponent, VolumeBarsComponent],
   template: `
     @if (attempt(); as game) {
       <div class="hud-shell"
@@ -107,16 +108,13 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                       <mat-icon aria-hidden="true">close</mat-icon>
                     </button>
                   </div>
-                  <button class="u-boton" type="button" [attr.aria-pressed]="!musicMuted()" (click)="toggleMusic.emit()">
-                    <mat-icon aria-hidden="true">{{ musicMuted() ? 'music_off' : 'music_note' }}</mat-icon>
-                    <span>Música ambiental</span>
-                    <strong aria-hidden="true">{{ musicMuted() ? 'No' : 'Sí' }}</strong>
-                  </button>
-                  <button class="u-boton" type="button" [attr.aria-pressed]="!sfxMuted()" (click)="toggleSfx.emit()">
-                    <mat-icon aria-hidden="true">{{ sfxMuted() ? 'volume_off' : 'graphic_eq' }}</mat-icon>
-                    <span>Sonidos de acciones</span>
-                    <strong aria-hidden="true">{{ sfxMuted() ? 'No' : 'Sí' }}</strong>
-                  </button>
+                  <!-- Volumen por canal: barras que se arrastran o se llevan con el teclado; el icono silencia sin perder el nivel. -->
+                  <app-volume-bars class="settings-menu__volumen" label="Música ambiental" muteLabel="Silenciar la música"
+                    iconOn="music_note" iconOff="music_off" [level]="musicLevel()" [muted]="musicMuted()" [reduceMotion]="reduceMotion()"
+                    (levelChange)="musicLevelChange.emit($event)" (toggleMute)="toggleMusic.emit()" />
+                  <app-volume-bars class="settings-menu__volumen" label="Sonidos de acciones" muteLabel="Silenciar los sonidos de acciones"
+                    iconOn="graphic_eq" iconOff="volume_off" [level]="sfxLevel()" [muted]="sfxMuted()" [reduceMotion]="reduceMotion()"
+                    (levelChange)="sfxLevelChange.emit($event)" (toggleMute)="toggleSfx.emit()" />
                   <button class="u-boton" type="button" [attr.aria-pressed]="reduceMotion()" (click)="toggleReduceMotion.emit()">
                     <mat-icon aria-hidden="true">motion_photos_pause</mat-icon>
                     <span>Movimiento reducido</span>
@@ -319,11 +317,13 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
       .hud-case { display: none; }
       .settings-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(560px, calc(100vw - 16px)); }
       .settings-menu__header { grid-column: 1 / -1; }
+      .settings-menu__volumen { grid-column: 1 / -1; }
     }
     /* Poco alto (V6): con 620 px o menos, Ajustes ya va en dos columnas (a 1229 × 584, en una sola, pedía 3 px de barra). */
     @media (max-height: 620px) {
       .settings-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(560px, calc(100vw - 16px)); }
       .settings-menu__header { grid-column: 1 / -1; }
+      .settings-menu__volumen { grid-column: 1 / -1; }
     }
     @media (prefers-reduced-motion: reduce) {
       .hud-persona-pulso { animation: none; }
@@ -353,6 +353,9 @@ export class SimulationHudComponent {
   readonly journalOpen = input(false);
   readonly musicMuted = input(false);
   readonly sfxMuted = input(false);
+  /** Niveles 0–10 de las barras de volumen (los guarda quien integra el HUD). */
+  readonly musicLevel = input(6);
+  readonly sfxLevel = input(6);
   readonly reduceMotion = input(false);
   /** «Texto instantáneo» (P8): las líneas de los diálogos aparecen completas. Lo guarda quien integra el HUD. */
   readonly instantText = input(false);
@@ -391,6 +394,8 @@ export class SimulationHudComponent {
   readonly helpReset = output<void>();
   readonly toggleMusic = output<void>();
   readonly toggleSfx = output<void>();
+  readonly musicLevelChange = output<number>();
+  readonly sfxLevelChange = output<number>();
   readonly toggleReduceMotion = output<void>();
   readonly toggleInstantText = output<void>();
   readonly toggleShortcuts = output<void>();
