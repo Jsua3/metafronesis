@@ -134,6 +134,13 @@
 
             <!-- Alcance (RN-01) al pie: la portada ya dijo qué es SIEP; aquí queda como nota sin empujar el formulario. -->
             <ui-scope-notice />
+            <!-- SIEP-284: aviso de tratamiento de datos personales. BORRADOR: texto pendiente de revisión jurídica de la universidad. -->
+            <details class="acceso__politica">
+              <summary>Política de tratamiento de datos personales</summary>
+              <p>Al ingresar autorizas a Metafrónesis, proyecto académico de la Corporación Universitaria Empresarial Alexander von Humboldt, a tratar tus datos personales (nombre, correo institucional, rol, grupo y tu actividad en los casos) conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013.</p>
+              <p>Los usamos solo con fines formativos: darte acceso, mostrarte tus casos, registrar tu progreso y entregar retroalimentación a tu docente. No los vendemos ni los compartimos con terceros, y tus reflexiones se guardan cifradas.</p>
+              <p>Puedes conocer, actualizar, rectificar o pedir la supresión de tus datos escribiendo a equipometafronesis&#64;gmail.com.</p>
+            </details>
           </form>
         } @else {
           <form class="acceso__form" [class.acceso__form--cambia]="switched()" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" novalidate>
@@ -200,6 +207,13 @@
             </p>
 
             <ui-scope-notice />
+            <!-- SIEP-284: aviso de tratamiento de datos personales. BORRADOR: texto pendiente de revisión jurídica de la universidad. -->
+            <details class="acceso__politica">
+              <summary>Política de tratamiento de datos personales</summary>
+              <p>Al ingresar autorizas a Metafrónesis, proyecto académico de la Corporación Universitaria Empresarial Alexander von Humboldt, a tratar tus datos personales (nombre, correo institucional, rol, grupo y tu actividad en los casos) conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013.</p>
+              <p>Los usamos solo con fines formativos: darte acceso, mostrarte tus casos, registrar tu progreso y entregar retroalimentación a tu docente. No los vendemos ni los compartimos con terceros, y tus reflexiones se guardan cifradas.</p>
+              <p>Puedes conocer, actualizar, rectificar o pedir la supresión de tus datos escribiendo a equipometafronesis&#64;gmail.com.</p>
+            </details>
           </form>
         }
       </section>
