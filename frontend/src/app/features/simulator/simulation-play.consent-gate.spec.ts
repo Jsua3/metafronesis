@@ -721,7 +721,7 @@ describe('SimulationPlayComponent — puerta de consentimiento (ETH-01)', () => 
       expect(sim.enterRoom).not.toHaveBeenCalled();
       // P8: ya no es un aviso modal del sistema sino uno no bloqueante que dice cuánto falta y hacia dónde.
       expect(component.doorNotice()).toBe('');
-      expect(component.stepsNotice()).toMatch(/aléjate.*cualquier dirección posible/i);
+      expect(component.stepsNotice()).toMatch(/da unos pasos lejos de la puerta/i);
 
       component.rememberPosition(340, 450);
       component.rememberPosition(145, 455);

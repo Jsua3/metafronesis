@@ -148,6 +148,51 @@ describe('SimulationPlayComponent: orientación integrada', () => {
 
   const tick = (ms = 0) => { vi.advanceTimersByTime(ms); TestBed.tick(); };
 
+  it('informa de la caminata, permite cancelarla y abre al instante si está cerca', () => {
+    startInUrgencias();
+    const walkToKey = vi.fn(() => true), cancelWalk = vi.fn();
+    (component as any).gameWorld = { walkToKey, cancelWalk };
+    const announce = vi.spyOn(component as any, 'announce');
+    const person = urgenciasObjects()[0];
+    component.requestInteraction(person);
+    expect((component as any).pendingWalkInteraction()?.key).toBe(person.key);
+    expect(announce).toHaveBeenCalledWith('Yendo hacia Familia en crisis. Pulsa de nuevo para cancelar.');
+    component.requestInteraction(person);
+    expect(cancelWalk).toHaveBeenCalled();
+    expect((component as any).pendingWalkInteraction()).toBeNull();
+    component.nearbyInteraction.set(person);
+    const open = vi.spyOn(component, 'openInteraction').mockImplementation(() => {});
+    component.requestInteraction(person);
+    expect(open).toHaveBeenCalledWith(person);
+    expect(walkToKey).toHaveBeenCalledTimes(1);
+  });
+
+  it('abre al alcance incluso si no es uno de los dos candidatos del HUD', () => {
+    startInUrgencias();
+    const person = urgenciasObjects()[0];
+    const walkToKey = vi.fn(() => true);
+    (component as any).gameWorld = { walkToKey, cancelWalk: vi.fn(), isInReach: vi.fn(() => true) };
+    const open = vi.spyOn(component, 'openInteraction').mockImplementation(() => {});
+    component.requestInteraction(person);
+    expect(open).toHaveBeenCalledWith(person);
+    expect(walkToKey).not.toHaveBeenCalled();
+  });
+
+  it('mantiene el objetivo de la conversación abierta hasta volver al mapa', () => {
+    startInUrgencias();
+    (component as any).gameWorld = { places: () => [
+      { key: 'familia-crisis', label: 'Abuela', kind: 'person' },
+      { key: 'hermano', label: 'Hermano mayor', kind: 'person' },
+    ] };
+    const before = component.refreshGuide();
+    component.dialogue.set({ key: 'abuela', speakerName: 'Abuela', lines: [], choices: [] } as unknown as DialogueState);
+    component.world.set(makeWorld('hospital-urgencias', urgenciasObjects(), { inspectedObjectKeys: ['familia-crisis'] }));
+    expect(component.refreshGuide().siguienteLugar?.key).toBe('hermano');
+    expect(component.guide()).toEqual(before);
+    component.dialogue.set(null);
+    expect(component.refreshGuide().siguienteLugar?.key).toBe('hermano');
+  });
+
   it('la lista y la ficha caminan y abren la conversación de una persona', () => {
     startInUrgencias();
     (component as any).gameWorld = { walkToKey: vi.fn(() => true) };

@@ -1296,6 +1296,23 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     return true;
   }
 
+  /** Comprueba el alcance real, incluso cuando el HUD ya muestra otros dos candidatos. */
+  isInReach(key: string): boolean {
+    const anchor = this.hoverAnchor(key);
+    if (!this.player || !anchor) return false;
+    const llegada = this.apoyosDeLaSala.get(key)?.llegada;
+    const radius = llegada ? ALCANCE_AL_BORDE_PX : key.startsWith(NPC_KEY_PREFIX) ? NPC_INTERACT_RADIUS : MARKER_INTERACT_RADIUS;
+    return Math.hypot(this.player.x - (llegada?.x ?? anchor.x), this.player.y - (llegada?.y ?? anchor.y)) <= radius;
+  }
+
+  /** Detiene la caminata pedida desde la interfaz sin activar el destino. */
+  cancelWalk(): void {
+    this.walk = NO_WALK;
+    this.walkGoal = null;
+    this.walkInteractKey = null;
+    this.walkWaitsForResume = false;
+  }
+
   /** Al pie de un mueble, la llegada es el punto del piso al que también señala el anillo. */
   private caminataAlMarcador(key: string, anchor: { x: number; y: number; reach: number }): WalkState {
     const apoyo = this.apoyosDeLaSala.get(key);
@@ -5113,6 +5130,10 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
 
   /** Camina hasta una de ellas; false si ya no está (cambió la sala). */
   walkToKey(key: string): boolean { return this.scene?.walkToKey(key) ?? false; }
+
+  cancelWalk(): void { this.scene?.cancelWalk(); }
+
+  isInReach(key: string): boolean { return this.scene?.isInReach(key) ?? false; }
 
   /** Qué anima por cercanía y el cuadro de cada objeto con hoja, como `data-proximity` (JSON) del host: contrato del e2e. Directo al DOM. */
   private writeProximityAnimation(report: ProximityReport): void {

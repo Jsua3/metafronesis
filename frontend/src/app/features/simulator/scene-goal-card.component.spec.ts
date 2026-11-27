@@ -67,7 +67,18 @@ describe('SceneGoalCardComponent', () => {
     fixture.componentRef.setInput('guia', { ...GUIA, siguienteLugar: { key: 'puerta', label: 'Sala', tipo: 'puerta' } });
     fixture.detectChanges();
     expect(host.querySelector('[data-guia-ir]')).toBe(button);
-    expect(button.textContent).toContain('Ir a Sala');
+    expect(button.textContent).toContain('Pasar a Sala');
+  });
+
+  it('una puerta cerrada conserva el foco y asocia el motivo de la barra', () => {
+    const guia = { ...GUIA, siguienteLugar: { key: 'puerta', label: 'Sala', tipo: 'puerta' as const } };
+    const { fixture, host } = montar({ guia, compact: false });
+    fixture.componentRef.setInput('doorMessages', { puerta: 'Antes de pasar, habla con Enfermera.' });
+    fixture.detectChanges();
+    const button = host.querySelector<HTMLButtonElement>('[data-guia-ir]')!;
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(host.querySelector('#' + button.getAttribute('aria-describedby'))?.textContent).toBe('Antes de pasar, habla con Enfermera.');
+    expect(button.disabled).toBe(false);
   });
 
   it('conserva Ir allí al actualizar la misma guía', () => {
