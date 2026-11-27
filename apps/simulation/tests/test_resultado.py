@@ -58,7 +58,7 @@ def test_resultado_trae_aciertos_errores_y_justificaciones(scene):
     assert datos["decisions"][0] == {"node": "Inicio", "question": "", "option": "Terminar", "correct": True, "responseClass": "RECOMMENDED", "justification": {"feedback": "Bien", "theoryBasis": "Fundamento"}}
     assert datos["decisions"][1]["justification"] == {"feedback": "Revisar", "theoryBasis": "Teoría"}
     assert datos["evaluation"] == objeto.evaluation.snapshot
-    assert str(datos["rubric"]["total"]) == "4.00"
+    assert str(datos["rubric"]["total"]) == "5.00"
     assert datos["rubric"]["status"] == "EVALUATED"
     assert datos["rubric"]["levels"] == [{"criterion": criterio.pk, "level": "DESTACADO"}]
     assert datos["teacherFeedback"] == "Buen trabajo"

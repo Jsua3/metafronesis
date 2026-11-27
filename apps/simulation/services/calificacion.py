@@ -14,7 +14,7 @@ from django.db import transaction
 from shared.eventos import intento_calificado
 
 from apps.simulation.models import AttemptStatus, CriterionScore, RubricEvaluation, SimulationAttempt
-from apps.simulation.models.rubric import LEVEL_INDEX, EvaluationOrigin, FormativeLevel
+from apps.simulation.models.rubric import LEVEL_INDEX, EvaluationOrigin, FormativeLevel, nota_ponderada
 from apps.simulation.models.vocabulary import ResponseClass
 from .case_rules import competency_overrides
 from .rubricas import rubrica_activa_de
@@ -65,13 +65,9 @@ def _nivel(indices, topada):
 
 
 def _total(niveles, criterios):
+    """Nota 0–5 de los criterios con nivel, ponderada por su peso."""
     pesos = {c.pk: c.weight for c in criterios}
-    con_nivel = [(LEVEL_INDEX[nivel], pesos[pk]) for pk, nivel in niveles.items() if nivel is not None]
-    suma_pesos = sum((peso for _, peso in con_nivel), Decimal(0))
-    if not suma_pesos:
-        return Decimal("0.00")
-    total = sum((indice * peso for indice, peso in con_nivel), Decimal(0)) / suma_pesos
-    return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return nota_ponderada((nivel, pesos[pk]) for pk, nivel in niveles.items() if nivel is not None)
 
 
 class EstrategiaDeCalificacion(ABC):

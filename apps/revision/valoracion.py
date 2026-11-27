@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework import status
 
 from apps.simulation.models import CriterionScore, Rubric, RubricEvaluation, SimulationAttempt, SimulationRubricAssignment
-from apps.simulation.models.rubric import EvaluationOrigin, LEVEL_INDEX
+from apps.simulation.models.rubric import EvaluationOrigin, FormativeLevel, LEVEL_INDEX, nota_ponderada
 from apps.simulation.services.gestion_rubricas import descriptores
 from shared.exceptions import ApiError
 
@@ -108,7 +108,8 @@ def guardar(intento, docente, datos):
         evaluacion = RubricEvaluation(attempt=intento, rubric=rubrica, instructor=docente, origin=EvaluationOrigin.DOCENTE, created_at=timezone.now())
     evaluacion.status = "EVALUATED" if entregar and len(puntuaciones) == len(criterios) else "PENDING"
     evaluacion.comment = comentario
-    evaluacion.total_score = sum((Decimal(LEVEL_INDEX[puntuaciones[criterio.pk][0]]) * (criterio.weight or criterio.max_score) / PESO_TOTAL for criterio in criterios if criterio.pk in puntuaciones), Decimal(0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    # Nota 0–5: un criterio aún sin nivel cuenta como En inicio (0) hasta que el docente lo valore.
+    evaluacion.total_score = nota_ponderada((puntuaciones[criterio.pk][0] if criterio.pk in puntuaciones else FormativeLevel.EN_INICIO, criterio.weight or criterio.max_score) for criterio in criterios)
     evaluacion.snapshot_json = json.dumps({"rubricId": rubrica.pk, "rubricName": rubrica.name, "criteria": [{"id": criterio.pk, "title": criterio.title, "weight": str(criterio.weight), "description": criterio.description} for criterio in criterios], "valoracionRubrica": True}, ensure_ascii=False)
     evaluacion.updated_at = timezone.now()
     evaluacion.save()

@@ -42,7 +42,7 @@ def test_volver_y_cambiar_usa_la_ultima_respuesta(scene):
     assert [d['option'] for d in resultado['decisions']] == ['Cambio', 'Final']
     assert resultado['evaluation']['counts']['recommended'] == 1
     assert resultado['evaluation']['counts']['acceptable'] == 1
-    assert str(resultado['rubric']['total']) == '3.00'
+    assert str(resultado['rubric']['total']) == '3.33'
 
 
 @pytest.mark.req('SIEP-27')

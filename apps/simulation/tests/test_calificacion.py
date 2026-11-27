@@ -29,10 +29,10 @@ def registrar(datos, effects, clase="RECOMMENDED", tipo="DECISION_SELECTED"):
     AttemptEvent.objects.create(attempt=intento, node=scene["node"], decision_option=option, event_type=tipo)
 
 
-def test_todo_recomendado_da_destacado_y_total_4(datos):
+def test_todo_recomendado_da_destacado_y_total_5(datos):
     registrar(datos, ["CARE", "OTHER"])
     resultado = calificacion.PorCompetenciaPonderada().calificar(datos[4], datos[1])
-    assert resultado.total == Decimal("4.00")
+    assert resultado.total == Decimal("5.00")
     assert set(resultado.niveles.values()) == {"DESTACADO"}
     assert resultado.estado == "EVALUATED"
 
@@ -48,7 +48,7 @@ def test_criterio_sin_evidencia_queda_pendiente(datos):
     resultado = calificacion.PorCompetenciaPonderada().calificar(datos[4], datos[1])
     assert resultado.estado == "PENDING"
     assert resultado.niveles[datos[3].id] is None
-    assert resultado.total == Decimal("4.00")
+    assert resultado.total == Decimal("5.00")
 
 
 def test_incompleto_cuenta_lo_faltante_como_en_inicio(datos):
@@ -56,7 +56,7 @@ def test_incompleto_cuenta_lo_faltante_como_en_inicio(datos):
     resultado = calificacion.IncompletoParcial().calificar(datos[4], datos[1])
     assert resultado.estado == "PARTIAL"
     assert resultado.niveles[datos[3].id] == "EN_INICIO"
-    assert resultado.total == Decimal("2.80")
+    assert resultado.total == Decimal("3.00")
 
 
 def test_estrategia_segun_estado(datos):
@@ -77,7 +77,7 @@ def test_completar_un_intento_crea_la_evaluacion_del_sistema(scene):
     assert response.status_code == 200
     intento = SimulationAttempt.objects.get(pk=intento_id)
     evaluacion = intento.rubric_evaluations.get(origin="SISTEMA")
-    assert evaluacion.total_score == Decimal("4.00")
+    assert evaluacion.total_score == Decimal("5.00")
     assert evaluacion.criterion_scores.get(rubric_criterion=criterio).level == "DESTACADO"
     assert calificacion.calificar_y_guardar(intento).pk == evaluacion.pk
     assert intento.rubric_evaluations.count() == 1

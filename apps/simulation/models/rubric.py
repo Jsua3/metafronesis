@@ -1,4 +1,6 @@
 """Rubric / checklist / audit models."""
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.conf import settings
 from django.db import models
 
@@ -24,6 +26,22 @@ LEVEL_INDEX = {
     FormativeLevel.LOGRADO: 3,
     FormativeLevel.DESTACADO: 4,
 }
+
+#: La nota de la universidad va de 0 (la más baja) a 5 (la más alta).
+NOTA_MAXIMA = 5
+
+
+def nota_ponderada(pares):
+    """Nota 0–5 de pares ``(nivel, peso)``: cada nivel vale (índice − 1) / 3 × 5 y se promedia por peso.
+
+    En inicio vale 0; En proceso, 1,67; Logrado, 3,33; Destacado, 5. Sin peso, la nota es 0,00.
+    """
+    pares = [(nivel, Decimal(peso)) for nivel, peso in pares]
+    suma_pesos = sum((peso for _, peso in pares), Decimal(0))
+    if not suma_pesos:
+        return Decimal("0.00")
+    puntos = sum((Decimal(LEVEL_INDEX[nivel] - 1) * peso for nivel, peso in pares), Decimal(0))
+    return (puntos * NOTA_MAXIMA / (3 * suma_pesos)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 class EvaluationOrigin(models.TextChoices):

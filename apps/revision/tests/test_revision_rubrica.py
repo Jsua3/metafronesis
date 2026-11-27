@@ -142,3 +142,19 @@ def test_traza_oculta_valoracion_automatica_hasta_entregar(datos):
     cuerpo = {"scores": [{"criterionId": criterio.pk, "level": "LOGRADO"}]}
     assert datos["cliente"].put(ruta + "/rubric-evaluation", cuerpo, format="json").status_code == 200
     assert datos["cliente"].get(ruta + "/trace").data["data"]["systemEvaluation"]["origin"] == "SISTEMA"
+
+
+def test_valoracion_docente_da_la_nota_en_escala_0_a_5(datos):
+    from decimal import Decimal
+    from apps.simulation.models import RubricEvaluation
+    escucha = RubricCriterion.objects.create(rubric=datos["rubrica"], competency="EMPATIA", title="Escucha", weight=60)
+    riesgo = RubricCriterion.objects.create(rubric=datos["rubrica"], competency="RIESGO", title="Riesgo", weight=40)
+    ruta = f'/api/instructor/attempts/{datos["intento"].pk}/rubric-evaluation'
+    cuerpo = {"scores": [{"criterionId": escucha.pk, "level": "DESTACADO"}], "deliver": False}
+    assert datos["cliente"].put(ruta, cuerpo, format="json").status_code == 200
+    # Riesgo aún sin nivel cuenta como En inicio (0): 5 × 60 % = 3,00.
+    assert RubricEvaluation.objects.get(attempt=datos["intento"], origin="DOCENTE").total_score == Decimal("3.00")
+    cuerpo = {"scores": [{"criterionId": escucha.pk, "level": "DESTACADO"}, {"criterionId": riesgo.pk, "level": "LOGRADO"}]}
+    assert datos["cliente"].put(ruta, cuerpo, format="json").status_code == 200
+    # 5 × 0,6 + 3,33… × 0,4 = 4,33.
+    assert RubricEvaluation.objects.get(attempt=datos["intento"], origin="DOCENTE").total_score == Decimal("4.33")

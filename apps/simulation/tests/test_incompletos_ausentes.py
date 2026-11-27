@@ -34,7 +34,7 @@ def test_cerrar_incompleto_califica_parcial(datos):
         cerrado = cerrar_como_incompleto(intento, "TIEMPO")
         evaluacion = cerrado.rubric_evaluations.get(origin="SISTEMA")
         assert cerrado.status == "INCOMPLETE" and cerrado.ended_at and cerrado.locked_at
-        assert evaluacion.status == "PARTIAL" and evaluacion.total_score == Decimal("2.80")
+        assert evaluacion.status == "PARTIAL" and evaluacion.total_score == Decimal("3.00")
         assert evaluacion.criterion_scores.get(rubric_criterion=primero).level == "DESTACADO"
         assert evaluacion.criterion_scores.get(rubric_criterion=segundo).level == "EN_INICIO"
         assert cerrado.evaluation.snapshot

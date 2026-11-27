@@ -4,6 +4,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 
 ## [Sin publicar]
 
+### Cambiado
+- La nota total de las evaluaciones con rúbrica (del sistema y del docente) va de 0 a 5, la escala de la universidad: cada nivel vale (índice − 1) / 3 × 5 (En inicio 0, En proceso 1,67, Logrado 3,33, Destacado 5) y un ausente queda en 0,00. La migración `simulation.0019` recalcula las evaluaciones guardadas.
+
 ### Pendiente
 - Romper el ciclo de dependencias entre `grupos`, `privacy`, `progression`, `security`, `sesiones`, `simulation` y `users`.
 - Configurar ruff y ejecutarlo en el CI.
