@@ -182,6 +182,27 @@
   text-wrap: pretty;
 }
 
+// SIEP-284: aviso de tratamiento de datos personales (Ley 1581 de 2012) al pie del acceso y del registro.
+.acceso__politica {
+  margin: 0;
+  color: var(--ds-text-2);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+
+  summary {
+    cursor: pointer;
+    min-block-size: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0.375rem 0 0;
+  }
+}
+
 // Por qué volvió la persona al acceso (plan visual F3-6, H-34) y el resultado de la solicitud. Aviso, no alarma: el
 // ámbar queda para la salida segura (DD-3); aquí el tinte de marca y, si salió bien, el verde.
 .acceso__notice,
