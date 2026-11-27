@@ -144,3 +144,14 @@
 }
 
 @media (pointer: coarse) { .ui-segmentado__opcion { min-block-size: 2.75rem; min-inline-size: 2.75rem; } }
+
+@media (max-width: 63.999rem) {
+  .ui-segmentado__pista { scroll-snap-type: x proximity; }
+  .ui-segmentado__opcion { scroll-snap-align: start; }
+}
+
+@media (forced-colors: active) and (max-width: 63.999rem) {
+  :host(.ui-segmentado--mas-inicio) .ui-segmentado__pista,
+  :host(.ui-segmentado--mas-fin) .ui-segmentado__pista { mask-image: none; scrollbar-width: auto; }
+  .ui-segmentado__pista::-webkit-scrollbar { display: block; }
+}

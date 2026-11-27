@@ -65,7 +65,7 @@ function mismaContrasena(group: AbstractControl): ValidationErrors | null {
               <form class="restablecer__form" [formGroup]="form" novalidate (ngSubmit)="submit()">
                 <div class="restablecer__nueva">
                   <ui-field label="Nueva contraseña" required revealable [error]="errorDeNueva()">
-                    <input uiControl id="restablecer-nueva" type="password" formControlName="password" autocomplete="new-password" aria-describedby="restablecer-requisitos" />
+                    <input uiControl id="restablecer-nueva" type="password" formControlName="password" autocomplete="new-password" autocapitalize="none" autocorrect="off" enterkeyhint="next" aria-describedby="restablecer-requisitos" />
                   </ui-field>
                   <ul id="restablecer-requisitos" class="restablecer__requisitos" aria-label="Requisitos de la nueva contraseña">
                     <li [class.cumplido]="tieneLongitud()">Al menos {{ minimo }} caracteres<span class="ds-sr-only">{{ tieneLongitud() ? ': cumplido' : ': pendiente' }}</span></li>
@@ -74,7 +74,7 @@ function mismaContrasena(group: AbstractControl): ValidationErrors | null {
                   </ul>
                 </div>
                 <ui-field label="Repite la nueva contraseña" required revealable [error]="errorDeConfirmacion()">
-                  <input uiControl id="restablecer-confirmar" type="password" formControlName="confirmPassword" autocomplete="new-password" />
+                  <input uiControl id="restablecer-confirmar" type="password" formControlName="confirmPassword" autocomplete="new-password" autocapitalize="none" autocorrect="off" enterkeyhint="done" />
                 </ui-field>
                 @if (formError()) {
                   <p class="restablecer__error" role="alert">{{ formError() }}</p>

@@ -39,8 +39,8 @@ export interface UmbralEstado {
 
 const NOT_ASSIGNED = accessNotice({ allowed: false, reason: 'NOT_ASSIGNED' })!;
 const NOT_FOUND_MESSAGE = 'No encontramos este caso: puede que ya no esté publicado o que el enlace esté mal.';
-/** A partir de aquí las dos columnas caben lado a lado (`.p-dividida`, `_portal.scss`). */
-const AMPLIO = '(min-width: 64rem)';
+/** En horizontal bajo se conserva la barra inferior, aunque el ancho llegue a 840 px. */
+const AMPLIO = '(min-width: 52.5rem) and (min-height: 31.25rem)';
 const PUNTERO_GRUESO = '(pointer: coarse)';
 
 function coincide(consulta: string, porDefecto: boolean): boolean {

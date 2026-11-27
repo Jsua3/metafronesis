@@ -74,12 +74,12 @@ function sameNewPassword(group: AbstractControl): ValidationErrors | null {
       } @else {
       <form class="cambio__form" [formGroup]="form" novalidate (ngSubmit)="submit()">
         <ui-field [label]="modo() === 'forzado' ? 'Contraseña temporal' : 'Contraseña actual'" required revealable [error]="errorOf('currentPassword')">
-          <input uiControl id="cambio-actual" type="password" formControlName="currentPassword" autocomplete="current-password" />
+          <input uiControl id="cambio-actual" type="password" formControlName="currentPassword" autocomplete="current-password" autocapitalize="none" autocorrect="off" enterkeyhint="next" />
         </ui-field>
         <!-- La lista de requisitos va pegada a su campo (mismo grupo): se lee como parte de él, no como otro bloque. -->
         <div class="cambio__nueva">
           <ui-field label="Nueva contraseña" required revealable [error]="errorOf('newPassword')">
-            <input uiControl id="cambio-nueva" type="password" formControlName="newPassword" autocomplete="new-password" aria-describedby="cambio-requisitos" />
+            <input uiControl id="cambio-nueva" type="password" formControlName="newPassword" autocomplete="new-password" autocapitalize="none" autocorrect="off" enterkeyhint="next" aria-describedby="cambio-requisitos" />
           </ui-field>
           <!-- Cada requisito lleva un cuadrito de píxel: hueco si falta, lleno con su visto si se cumple, punteado si lo
                comprueba el servidor. La forma cambia además del color (nunca solo color), y el lector oye el estado. -->
@@ -90,7 +90,7 @@ function sameNewPassword(group: AbstractControl): ValidationErrors | null {
           </ul>
         </div>
         <ui-field label="Repite la nueva contraseña" required revealable [error]="confirmError()">
-          <input uiControl id="cambio-confirmar" type="password" formControlName="confirmPassword" autocomplete="new-password" />
+          <input uiControl id="cambio-confirmar" type="password" formControlName="confirmPassword" autocomplete="new-password" autocapitalize="none" autocorrect="off" enterkeyhint="done" />
         </ui-field>
 
         @if (formError()) {

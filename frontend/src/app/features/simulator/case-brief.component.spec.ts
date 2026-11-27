@@ -116,6 +116,16 @@ describe('CaseBriefComponent', () => {
     vi.stubGlobal('requestIdleCallback', vi.fn());
   });
 
+  it('en 840 px presenta la entrada junto a la lectura', async () => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(min-width: 52.5rem) and (min-height: 31.25rem)', media: consulta,
+      addEventListener: () => undefined, removeEventListener: () => undefined,
+    }));
+    await render();
+    expect(host().querySelector('.ficha__lateral')).not.toBeNull();
+    expect(host().querySelector('.ficha__barra')).toBeNull();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
     TestBed.resetTestingModule();

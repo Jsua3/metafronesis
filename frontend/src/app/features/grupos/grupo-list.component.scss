@@ -16,6 +16,10 @@
 }
 
 @media (max-width: 63.999rem) {
+  :host {
+    container-type: inline-size;
+  }
+
   .gl-cab--lista.gl-cab--con-detalle {
     display: none;
   }
@@ -23,6 +27,27 @@
   .gl-cab--detalle.gl-cab--con-detalle {
     display: block;
   }
+}
+
+@media (max-width: 63.999rem) and (min-height: 31.25rem) {
+  @container (min-width: 52.5rem) {
+    .gl-cab--lista.gl-cab--con-detalle { display: grid; }
+    .gl-cab--detalle.gl-cab--con-detalle { display: none; }
+    :host .gl-layout { grid-template-columns: 18rem minmax(0, 1fr); }
+    :host .gl-layout--detalle .gl-list { display: grid; }
+    :host .gl-layout:not(.gl-layout--detalle) .gl-detail { display: block; }
+    :host .gl-groups { grid-template-columns: minmax(0, 1fr); }
+    :host .gl-detail__title h2 { display: block; }
+    :host .gl-group.gl-group--active {
+      border-color: var(--l-tinte-filo, var(--ds-primary));
+      background: var(--l-fila-elegida, var(--ds-surface-2));
+      box-shadow: inset 3px 0 0 var(--l-acento, var(--ds-primary));
+    }
+  }
+}
+
+@media (max-width: 63.999rem) and (min-width: 37.5rem) {
+  .gl-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 // ── Maestro y detalle ───────────────────────────────────────────────────────────────────────────────────────────

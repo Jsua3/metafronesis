@@ -783,6 +783,37 @@
   .acceso__main {
     padding-top: calc(var(--asb-alto-modulo-superior) + env(safe-area-inset-top, 0px) + var(--ds-space-4));
   }
+
+  .acceso__form:focus-within .acceso__submit {
+    position: sticky;
+    inset-block-end: calc(max(var(--ds-space-2), env(safe-area-inset-bottom, 0px)) + var(--acceso-teclado, 0px));
+    z-index: var(--ds-z-pegajoso);
+  }
+
+  .acceso__campos input {
+    scroll-margin-block-end: 5rem;
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 1023.98px) and (min-height: 31.25rem) {
+  .acceso__layout {
+    width: min(60rem, 100%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (max-width: 1023.98px) and (max-height: 499.98px) {
+  .acceso__main {
+    align-content: start;
+    padding-top: calc(var(--asb-alto-modulo-superior) + env(safe-area-inset-top, 0px) + var(--ds-space-2));
+  }
+
+  .acceso__layout { width: min(44rem, 100%); }
+  .acceso__card { padding: var(--ds-space-4); }
+  .acceso__card .acceso__producto { display: none; }
+  .acceso__form { gap: var(--ds-space-2); }
+  .acceso__campos { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: var(--ds-space-3); }
 }
 
 // Teléfono: «Administrador» no cabe holgado a 14 px en un tercio de la pista; los pilares, en una columna.
