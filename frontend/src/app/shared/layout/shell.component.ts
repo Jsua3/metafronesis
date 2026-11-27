@@ -65,11 +65,17 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
              pantalla los lee como hijos del logo, como si el logo fuera un menú desplegable. -->
         <div class="modulo modulo-principal ds-motion" role="group" aria-label="Secciones del portal">
           @for (item of navItems(); track item.id) {
+            <!-- Descripción del destino (solo docentes): un bocadillo hermano del enlace, anclado a él (los plegables
+                 recortan lo que llevan dentro) y descrito con aria-describedby, sin «title» (el nativo salía encima).
+                 Escape lo cierra sin mover el puntero (WCAG 1.4.13). -->
             <a class="nav-enlace ds-motion" [class.control-plegable]="folds(item)" [routerLink]="item.route"
-              [attr.title]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null" [attr.aria-description]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null"
-              [attr.data-ayuda]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null"
+              [style.--ancla-nav]="ayuda(item) ? anclaAyuda(item) : null" [attr.aria-describedby]="ayuda(item) ? idAyuda(item) : null"
+              (keydown.escape)="ocultarAyuda($event)" (mouseleave)="mostrarAyuda($event)" (blur)="mostrarAyuda($event)"
               routerLinkActive="nav-enlace--activo" ariaCurrentWhenActive="page">{{ item.label }}@if (cuenta(item.id); as n) {<span
                 class="nav-enlace__cuenta" aria-hidden="true">{{ insignia(n) }}</span><span class="ds-sr-only">{{ insigniaAccesible(n) }}</span>}</a>
+            @if (ayuda(item); as texto) {
+              <span class="nav-ayuda" [id]="idAyuda(item)" [style.--ancla-nav]="anclaAyuda(item)" aria-hidden="true">{{ texto }}</span>
+            }
           }
           <span class="indicador-mas ds-motion" aria-hidden="true">···</span>
         </div>
@@ -101,10 +107,82 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
     </main>
   `,
   styles: [`
-    /* BORRADOR: textos pendientes de Psicología. Ayuda al pasar o enfocar cada entrada. */
-    .nav-enlace { position: relative; }
-    .nav-enlace[data-ayuda]::after { content: attr(data-ayuda); display: none; position: absolute; top: calc(100% + 0.4rem); left: 0; z-index: 10; width: max-content; max-width: 18rem; padding: 0.55rem 0.75rem; white-space: normal; color: var(--ds-text-1); background: var(--ds-surface-1); border: 1px solid var(--ds-border); border-radius: var(--ds-radius-md); font-weight: normal; }
-    .nav-enlace[data-ayuda]:hover::after, .nav-enlace[data-ayuda]:focus-visible::after { display: block; }
+    /* BORRADOR: textos pendientes de Psicología. Descripción de cada destino al posarse o enfocarlo. Es un elemento
+       propio y no el ::after del enlace, que ya es el subrayado del destino actual (_glass-bar.scss §8). Va centrada
+       bajo el enlace, con flecha, y aparece tras una pausa al posarse (al enfocar con teclado, enseguida). */
+    .nav-enlace { anchor-name: var(--ancla-nav); }
+    .nav-ayuda {
+      position: absolute;
+      /* Sin anchor(): centrada bajo el módulo. Con él: centrada bajo su enlace. */
+      inset-block-start: calc(100% + var(--ds-space-2));
+      inset-inline-start: 50%;
+      inset-block-start: calc(anchor(bottom) + var(--ds-space-2));
+      inset-inline-start: anchor(center);
+      position-anchor: var(--ancla-nav);
+      z-index: var(--ds-z-desplegable);
+      inline-size: max-content;
+      max-inline-size: min(17rem, calc(100vw - 2rem));
+      padding: var(--ds-space-2) var(--ds-space-3);
+      border: 1px solid var(--ds-border);
+      border-radius: var(--ds-radius-md);
+      background: var(--ds-surface-1);
+      box-shadow: var(--ds-shadow-e2);
+      color: var(--ds-text-1);
+      font-size: var(--ds-type-body-s-size);
+      font-weight: 400;
+      line-height: var(--ds-type-body-s-line);
+      letter-spacing: normal;
+      text-align: start;
+      white-space: normal;
+      opacity: 0;
+      visibility: hidden;
+      translate: -50% calc(-1 * var(--ds-space-1));
+      transition: opacity var(--ds-dur-fast) var(--ds-ease-out), translate var(--ds-dur-fast) var(--ds-ease-out),
+        visibility 0s linear var(--ds-dur-fast);
+    }
+    /* La flecha hacia el enlace y, bajo ella, un puente invisible para llevar el puntero al bocadillo sin que se cierre. */
+    .nav-ayuda::before {
+      content: '';
+      position: absolute;
+      inset-block-end: 100%;
+      inset-inline-start: 50%;
+      inline-size: var(--ds-space-2);
+      block-size: var(--ds-space-2);
+      translate: -50% 50%;
+      rotate: 45deg;
+      background: var(--ds-surface-1);
+      border-block-start: 1px solid var(--ds-border);
+      border-inline-start: 1px solid var(--ds-border);
+    }
+    .nav-ayuda::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-end: 100%;
+      block-size: calc(var(--ds-space-2) + 1px);
+    }
+    .nav-enlace:focus-visible + .nav-ayuda {
+      opacity: 1;
+      visibility: visible;
+      translate: -50% 0;
+      transition-delay: 0s;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .nav-enlace:hover + .nav-ayuda, .nav-ayuda:hover {
+        opacity: 1;
+        visibility: visible;
+        translate: -50% 0;
+        transition-delay: var(--ds-dur-slow);
+      }
+    }
+    .nav-enlace.nav-enlace--sin-ayuda + .nav-ayuda {
+      opacity: 0;
+      visibility: hidden;
+      transition-delay: 0s;
+    }
+    @media (forced-colors: active) {
+      .nav-ayuda, .nav-ayuda::before { border-color: CanvasText; }
+    }
     /* La barra es fija: el contenido arranca bajo ella. --l-alto-barra (_materiales.scss) es la píldora más su caída
        de 6 px en escritorio y, en móvil, la banda de arriba (_portal.scss la redefine). El canal lateral es el de la
        portada: 16 px en el teléfono. */
@@ -194,6 +272,28 @@ export class ShellComponent {
   /** Pendientes del destino (0 = sin insignia). */
   protected cuenta(id: string): number {
     return this.insignias.cuentas()[id] ?? 0;
+  }
+
+  /** Descripción del destino en la barra: solo la ve el docente (BORRADOR: textos pendientes de Psicología). */
+  protected ayuda(item: NavItem): string | null {
+    return this.auth.currentUser()?.role === 'PROFESOR' ? item.descripcion ?? null : null;
+  }
+
+  protected idAyuda(item: NavItem): string {
+    return `ayuda-nav-${item.id}`;
+  }
+
+  protected anclaAyuda(item: NavItem): string {
+    return `--ancla-nav-${item.id}`;
+  }
+
+  /** Escape cierra la descripción sin mover el puntero ni el foco; vuelve a salir al dejar el enlace (WCAG 1.4.13). */
+  protected ocultarAyuda(evento: Event): void {
+    (evento.currentTarget as HTMLElement).classList.add('nav-enlace--sin-ayuda');
+  }
+
+  protected mostrarAyuda(evento: Event): void {
+    (evento.currentTarget as HTMLElement).classList.remove('nav-enlace--sin-ayuda');
   }
 
   private toTab({ id, label, etiquetaCorta, icon, route, descripcion }: NavItem): BottomTab {
