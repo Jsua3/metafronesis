@@ -53,6 +53,7 @@ import { actionForPlace, PlaceCandidate, walkingText } from './world-places.util
       </footer>
     </section>
   `,
+  styleUrl: './places-mobile.css',
   styles: [`
     :host { display: contents; }
     /* Placa de pixel de la hoja común (bloque U1): sin esquinas redondeadas ni sombras difusas. */

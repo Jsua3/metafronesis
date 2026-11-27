@@ -60,6 +60,7 @@ export type FinReaccion = 'completa' | 'saltada' | 'cancelada';
       </div>
     }
   `,
+  styleUrl: './reaction-mobile.css',
   styles: [`
     :host { display: contents; }
     .reaction-dock {
@@ -127,7 +128,7 @@ export class ReactionDirectorComponent implements OnDestroy {
   /** El arte de pixel de la interfaz de diálogo, como variables CSS. */
   protected readonly arte = variablesDeArte('noche');
   /** El retrato a ×6 (192 px, múltiplo de 96: sirve también para un retrato fino) y a ×3 en pantallas angostas. */
-  protected readonly escalaRetrato = typeof window !== 'undefined' && (window.matchMedia?.('(max-width: 560px)')?.matches ?? false) ? 3 : 6;
+  protected readonly escalaRetrato = typeof window !== 'undefined' && (window.matchMedia?.('(width < 1024px)')?.matches ?? false) ? 2 : 6;
   protected readonly tramosDe = tramos;
   private readonly _activa = signal(false);
   readonly activa = this._activa.asReadonly();
