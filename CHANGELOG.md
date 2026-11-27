@@ -36,7 +36,6 @@ Metafrónesis en el teléfono y la tableta, y un acabado de escritorio a la altu
 - **Ayuda «?»:** pasa a ser un bocadillo de pixel art con una explicación flotante que no empuja el texto (#112). Las descripciones del menú de la barra van en un bocadillo propio (#118).
 
 ### Corregido
-- Los intentos quedan vinculados a la convocatoria de la que salieron, para los reportes (#116). Migraciones `simulation/0019` y `0020`.
 - Los correos de las notificaciones que fallaban no dejaban rastro: ahora quedan en el registro y en el aviso, se envían al confirmar y usan una conexión por lote (#124).
 - La barra pública dejaba una cápsula vacía y los iconos de los botones mostraban texto (#122).
 
