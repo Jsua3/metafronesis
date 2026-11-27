@@ -36,7 +36,7 @@ export interface CapituloTutorial {
 
 // BORRADOR: texto nuevo, pendiente de la aprobación de Psicología
 /** El mentor del tutorial: su figura del kit, su nombre y la carpeta de su voz (blips sin palabras, ver `voz-mentor.ts`). */
-export const MENTOR = { receta: 'sebas', nombre: 'Profe Sebas', voz: 'assets/game/audio/voces/sebas' } as const;
+export const MENTOR = { receta: 'sebas', nombre: 'Profe Sebas', apodo: 'El Compa', voz: 'assets/game/audio/voces/sebas' } as const;
 
 const respuestas = (c: CasoBorrador) => c.escenas.flatMap((e) => e.respuestas);
 

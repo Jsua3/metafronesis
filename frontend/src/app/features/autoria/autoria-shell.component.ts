@@ -102,7 +102,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
             <a class="boton-barra enlace-probar" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar"
-               aria-label="Probar el caso en el juego (se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
+               aria-label="Probar el caso en el juego (se abre en otra pestaña)" (click)="probar($event)">Probar<svg class="enlace-probar__icono" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 5H5v10h10v-3M11 4h5v5M16 4l-7 7" /></svg></a>
             <button type="button" class="boton-barra boton-pendientes" data-accion="ver-pendientes" aria-haspopup="dialog"
                     [attr.title]="textoPendientes()" (click)="abrirPendientes($event)">
               <!-- El nombre es el texto para lectores («Pendientes: …», empieza por la palabra visible), no un aria-label:
@@ -277,12 +277,14 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     }
     @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { max-inline-size: 16rem; } }
 
-    /* «Probar» es la acción de la barra: lleva el tinte de marca sobre el vidrio (sin filo), como la acción de una barra
-       de iOS; el botón sólido de cada pantalla sigue siendo uno solo. */
-    .enlace-probar { background: color-mix(in oklab, var(--asb-acento) 16%, transparent); color: var(--ds-primary); }
+    /* «Probar» es LA acción de la barra: una cápsula sólida de marca con el icono de «se abre aparte». El tinte de antes
+       sobre el vidrio se leía como un botón apagado (pedido del usuario, 2026-11-27). */
+    .boton-barra.enlace-probar { gap: 0.375rem; background: var(--ds-primary); color: var(--ds-on-primary); }
+    .enlace-probar__icono { inline-size: 1rem; block-size: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     @media (hover: hover) and (pointer: fine) {
-      .enlace-probar:hover { background: color-mix(in oklab, var(--asb-acento) 24%, transparent); color: var(--ds-primary); }
+      .boton-barra.enlace-probar:hover { background: var(--ds-primary-hover); color: var(--ds-on-primary); box-shadow: none; }
     }
+    @media (forced-colors: active) { .boton-barra.enlace-probar { border: 1px solid LinkText; } }
     /* El siguiente paso, en la barra de estado: una cápsula con el acento, siempre a la vista (pasarela, 2026-11-22). */
     /* Doble clase: le gana a la regla base de la barra de estado (.est-dato-boton), que se carga después. */
     .est-dato-boton.est-siguiente {
@@ -298,8 +300,9 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     .guardado-estado { padding-inline: 0.5rem; }
     .insignia {
       display: inline-grid; place-items: center; min-inline-size: 1.375rem; block-size: 1.375rem; padding-inline: 0.375rem;
-      border-radius: 999px; background: var(--ds-warning-text); color: var(--ds-surface-1); font-size: var(--autoria-texto-14);
-      font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
+      border-radius: 999px; background: var(--ds-warning-bg); color: var(--ds-warning-text); font-size: var(--autoria-texto-14);
+      font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1;
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ds-warning-text) 35%, transparent);
     }
     .insignia--cero { background: transparent; box-shadow: inset 0 0 0 1px var(--l-filo-fuerte); color: var(--asb-cromo-tinta-tenue); }
 
