@@ -102,7 +102,7 @@ app-autoria-shell .boton-barra {
   color: var(--asb-cromo-tinta);
   font: inherit;
   font-size: var(--autoria-texto-16);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25rem;
   white-space: nowrap;
   text-decoration: none;
@@ -145,7 +145,7 @@ app-autoria-shell .cromo .menu-agregar .ui-menu__trigger {
   box-shadow: inset 0 1px 0 transparent, inset 0 0 0 1px transparent;
   color: var(--asb-cromo-tinta);
   font-size: var(--autoria-texto-16);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @media (hover: hover) and (pointer: fine) {

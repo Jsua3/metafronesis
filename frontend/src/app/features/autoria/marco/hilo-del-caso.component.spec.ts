@@ -18,7 +18,7 @@ describe('HiloDelCasoComponent', () => {
       // El estado también es texto: el nombre accesible lo dice entero.
       // Sin aria-label: el nombre es el texto para lectores (Axe pegaba el aria-label con el texto visible).
       expect(a.hasAttribute('aria-label')).toBe(false);
-      expect(a.querySelector('.solo-lector')!.textContent).toBe(a.getAttribute('title'));
+      expect(a.hasAttribute('title')).toBe(false);
       const visible = [a.querySelector('.hilo__nombre')?.textContent?.trim(), a.querySelector('.hilo__cifra')?.textContent?.trim()].filter(Boolean).join(' ');
       expect(a.querySelector('.solo-lector')!.textContent!.startsWith(visible)).toBe(true);
     }
@@ -44,5 +44,29 @@ describe('HiloDelCasoComponent', () => {
     expect(cifraDeEtapa({ ...base, estado: 'con-pendientes', detalle: '3 de 8 escenas escritas', pendientes: 2 })).toBe('2');
     expect(cifraDeEtapa({ ...base, estado: 'en-curso', detalle: '3 de 8 escenas escritas', pendientes: 0 })).toBe('3/8');
     expect(cifraDeEtapa({ ...base, estado: 'lista', detalle: '8 de 8 escenas escritas', pendientes: 0 })).toBe('');
+  });
+
+  it('cada etapa tiene su bocadillo: qué se hace en ella y su estado, asociado con aria-describedby', async () => {
+    const { raiz } = await abrirEditor('/portal/casos/41/editor/datos');
+    const etapas = [...raiz.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Secciones del caso"] a')];
+    expect(etapas).toHaveLength(5);
+    for (const a of etapas) {
+      const ayuda = raiz.querySelector<HTMLElement>(`#${a.getAttribute('aria-describedby')}`)!;
+      expect(ayuda.classList).toContain('hilo__ayuda');
+      expect(ayuda.getAttribute('aria-hidden')).toBe('true');
+      expect(a.contains(ayuda)).toBe(false);
+      expect(ayuda.querySelector('.hilo__ayuda-texto')!.textContent!.trim().length).toBeGreaterThan(20);
+      expect(a.querySelector('.solo-lector')!.textContent!.toLowerCase()).toContain(ayuda.querySelector('.hilo__ayuda-estado')!.textContent!.trim().toLowerCase());
+    }
+    expect(raiz.querySelector('#hilo-ayuda-lugar .hilo__ayuda-texto')!.textContent).toContain('salas');
+  });
+
+  it('Escape cierra el bocadillo de la etapa; vuelve al dejarla', async () => {
+    const { raiz } = await abrirEditor('/portal/casos/41/editor/datos');
+    const a = raiz.querySelector<HTMLAnchorElement>('nav[aria-label="Secciones del caso"] a')!;
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(a.classList).toContain('hilo__etapa--sin-ayuda');
+    a.dispatchEvent(new MouseEvent('mouseleave'));
+    expect(a.classList).not.toContain('hilo__etapa--sin-ayuda');
   });
 });

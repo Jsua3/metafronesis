@@ -19,7 +19,7 @@ describe('P4 · contrato visible del editor', () => {
     await listo();
     expect(raiz.querySelector<HTMLElement>('.caso-actual')!.title).toBe(caso.titulo);
     expect(raiz.querySelectorAll('.hilo__numero')).toHaveLength(5);
-    expect(raiz.querySelectorAll('.hilo__etapa[title]')).toHaveLength(5);
+    expect(raiz.querySelectorAll('.hilo__etapa[aria-describedby]')).toHaveLength(5);
     const leer = (ruta: string) => readFileSync(join(__dirname, ruta), 'utf8');
     const shell = leer('../autoria-shell.component.ts');
     const hilo = leer('../marco/hilo-del-caso.component.ts');
@@ -27,7 +27,9 @@ describe('P4 · contrato visible del editor', () => {
     expect(shell).toMatch(/flex: 1 1 12rem; min-inline-size: 0/);
     expect(barra).toMatch(/grid-template-columns: minmax\(0, 1fr\) auto/);
     expect(barra).toMatch(/justify-self: stretch/);
-    expect(hilo).toMatch(/max-width: 74\.999rem[\s\S]*?\.hilo__nombre \{ display: none; \}[\s\S]*?\.hilo__numero \{ display: inline; \}/);
+    // Por debajo de 75rem los nombres ceden; el círculo numerado de cada etapa se ve siempre.
+    expect(hilo).toMatch(/max-width: 74\.999rem[\s\S]*?\.hilo__nombre \{ display: none; \}/);
+    expect(hilo).not.toMatch(/\.hilo__numero \{ display: none/);
     expect([...raiz.querySelectorAll('.hilo__nombre')].map(e => e.textContent?.trim())).toEqual(['Datos', 'Lugar', 'Historia', 'Evaluación', 'Enviar']);
     expect(barra).toMatch(/max-width: 99\.999rem[\s\S]*?menu-agregar[\s\S]*?ui-button__label/);
   });
