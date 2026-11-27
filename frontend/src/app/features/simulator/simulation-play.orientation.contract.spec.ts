@@ -33,8 +33,10 @@ const worldTag = source.match(/<app-game-world[\s\S]*?\/>/)?.[0] ?? '';
 describe('ficha del objetivo (T9.1)', () => {
   // Bloque U1 (variante B): ahora el envoltorio lleva también la pestaña de la etapa antes del desplazable con la ficha.
   it('el envoltorio .objective-card contiene la ficha y no tiene role="status" (la ficha no trae región viva: anuncia el LiveRegionAnnouncer)', () => {
-    expect(source).toMatch(/<div class="objective-card">\s*(<!--[\s\S]*?-->\s*)?(@if \(stageLabel\(\); as etapa\) \{[\s\S]*?objective-card__etapa[\s\S]*?\}\s*)?<div class="objective-card__scroll">\s*<app-scene-goal-card/);
-    expect(source).not.toMatch(/<div class="objective-card"[^>]*role=/);
+    expect(source).toMatch(/<div class="objective-card"[^>]*>\s*(<!--[\s\S]*?-->\s*)?(@if \(stageLabel\(\); as etapa\) \{[\s\S]*?objective-card__etapa[\s\S]*?\}\s*)?<div class="objective-card__scroll">\s*<app-scene-goal-card/);
+    // Rol de diálogo solo con la hoja táctil abierta; nunca un rol fijo ni una región viva.
+    expect(source).not.toMatch(/<div class="objective-card"[^>]*\srole=/);
+    expect(source).toContain(`[attr.role]="goalOpen() ? 'dialog' : null"`);
     expect(source).not.toMatch(/<p class="objective-card__etapa[^>]*role=/);
   });
 
@@ -127,7 +129,10 @@ describe('ficha del objetivo (T9.1)', () => {
 
   it('la ficha recibe la guía, el intento y el pliegue compacto (cardFolded), y refresca la sala al abrirse', () => {
     // V7: también el ajuste «Reducir movimiento» (sin pulso al cambiar el objetivo).
-    expect(source).toMatch(/<app-scene-goal-card \[guia\]="guide\(\)" \[doorMessages\]="doorMessages\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)"\s*\(opened\)="refreshGuide\(\)" \(goToStep\)="goToStep\(\$event\)" \(consentRequired\)="requireConsentAgain\(\)"/);
+    expect(source).toMatch(/<app-scene-goal-card #goalCard \[guia\]="guide\(\)" \[doorMessages\]="doorMessages\(\)" \[walkingKey\]="pendingWalkInteraction\(\)\?\.key \?\? null" \[hintAttempt\]="hintAttempt\(\)" \[compact\]="cardFolded\(\)" \[reduceMotion\]="reduceMotion\(\)" \[touchMode\]="goalAsSheet\(\)"\s*\(opened\)="refreshGuide\(\); goalOpen\.set\(goalAsSheet\(\)\)" \(closed\)="goalOpen\.set\(false\)" \(goToStep\)="goToStepFromGoal\(\$event, goalCard\)" \(consentRequired\)="consentFromGoal\(goalCard\)"/);
+    // Como hoja táctil, la ficha se cierra antes de caminar o de volver al consentimiento, y delega en las mismas órdenes.
+    expect(source).toMatch(/goToStepFromGoal\(key: string, card: SceneGoalCardComponent\): void \{\s*if \(this\.goalAsSheet\(\)\) card\.close\(\);\s*this\.goToStep\(key\);/);
+    expect(source).toMatch(/consentFromGoal\(card: SceneGoalCardComponent\): void \{\s*if \(this\.goalAsSheet\(\)\) card\.close\(\);\s*this\.requireConsentAgain\(\);/);
     expect(source).toContain('readonly cardFolded = computed(() => this.compactMode() || this.narrowScreen());');
   });
 
@@ -305,7 +310,9 @@ describe('«Ir a…» (F6-11, VD-19)', () => {
   });
 
   it('al cerrarla el foco vuelve a su acceso de la cabecera', () => {
-    expect(source).toMatch(/afterNextRender\(\(\) => document\.querySelector<HTMLElement>\('\[data-hud-places\]'\)\?\.focus\(\)/);
+    expect(source).toMatch(/const places = document\.querySelector<HTMLElement>\('\[data-hud-places\]'\);/);
+    // En teléfono la cabecera no muestra «Ir a…»: el foco vuelve al botón «Menú», desde donde se abrió.
+    expect(source).toMatch(/places\?\.getClientRects\(\)\.length \? places : document\.querySelector<HTMLElement>\('\[data-hud-mobile-menu\]'\)\)\?\.focus\(\)/);
   });
 });
 

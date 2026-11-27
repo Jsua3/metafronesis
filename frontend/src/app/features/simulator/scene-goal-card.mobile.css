@@ -1,0 +1,11 @@
+@media (width < 600px) and (height >= 500px), (height < 500px) and (width < 1024px) {
+  :host([data-collapsed='true']) .goal-card__kicker { display: none; }
+  :host([data-collapsed='true']) .goal-card__toggle { grid-template-areas: 'goal chevron'; height: 44px; }
+  :host([data-collapsed='true']) .goal-card__goal { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+:host .goal-card__ir--walking { color: var(--luz); border-color: var(--luz); }
+/* Hoja abierta en táctil: el encabezado y «Cerrar» comparten la primera fila y el cuerpo ocupa todo el ancho. */
+:host section:has(> .goal-card__close) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; column-gap: 8px; width: 100%; }
+:host section:has(> .goal-card__close) > .goal-card__toggle { grid-column: 1; grid-row: 1; width: 100%; }
+:host section:has(> .goal-card__close) > .goal-card__body { grid-column: 1 / -1; width: 100%; box-sizing: border-box; }
+:host .goal-card__close { grid-column: 2; grid-row: 1; align-self: stretch; min-width: 72px; min-height: 48px; }

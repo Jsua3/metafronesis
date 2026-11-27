@@ -1,0 +1,131 @@
+.mobile-tools-button { display: none; }
+.help-safe-exit { display: none; }
+@media (pointer: coarse) {
+  .game-container ::ng-deep button, .game-container ::ng-deep a[role='button'] {
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .game-container ::ng-deep button:active { filter: brightness(.85); }
+}
+.game-container--touch-overlay:not(.game-container--settings-open) .top-bar,
+.game-container--touch-overlay:not(.game-container--goal-open) .objective-card,
+.game-container--touch-overlay .bottom-zone,
+.game-container--touch-overlay app-minimapa { visibility: hidden; pointer-events: none; }
+.game-container--touch-overlay .help-safe-exit {
+  display: inline-flex; position: fixed; z-index: 96; left: max(8px, env(safe-area-inset-left));
+  bottom: max(8px, env(safe-area-inset-bottom)); pointer-events: auto;
+}
+.game-container--touch-overlay .help-layer { top: max(8px, env(safe-area-inset-top)); bottom: 64px; }
+.goal-backdrop, .goal-safe-exit { display: none; }
+@media (width < 1024px) {
+  .goal-backdrop, .goal-safe-exit { display: block; }
+  .goal-backdrop { position: fixed; inset: 0; z-index: 24; background: rgba(7, 8, 18, .72); }
+  :host .game-container.game-container--goal-open .main-zone .objective-card {
+    position: fixed; inset: auto 0 0; width: 100%; max-height: 90dvh; z-index: 25; visibility: visible;
+  }
+  :host .game-container.game-container--goal-open .main-zone .objective-card__scroll { max-height: 90dvh; }
+  :host .game-container.game-container--goal-open .main-zone .objective-card__scroll { flex: 1 1 auto; min-height: 0; }
+  :host .game-container.game-container--goal-open .goal-safe-exit { flex: 0 0 auto; align-self: stretch; display: flex; box-sizing: border-box; width: 100%; padding: 8px max(12px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-bottom)); background: var(--pixel-penumbra); }
+  :host .game-container.game-container--goal-open .main-zone .objective-card { background: var(--pixel-penumbra); }
+}
+@media (height < 500px) and (width < 1024px) {
+  :host .game-container.game-container--goal-open .main-zone .objective-card { inset: 0 0 0 auto; width: min(440px, 80dvw); max-height: 100dvh; }
+  :host .game-container.game-container--goal-open .main-zone .objective-card__scroll { max-height: 100dvh; }
+}
+@media (width >= 600px) and (width < 1024px) and (height >= 500px) {
+  :host .game-container.game-container--goal-open .main-zone .objective-card { left: 50%; right: auto; bottom: 50%; width: min(560px, 94dvw); transform: translate(-50%, 50%); }
+}
+@media (pointer: coarse) and (width >= 600px) and (height >= 500px) {
+  .game-container .main-zone { margin: 0; }
+  .game-container .bottom-zone { height: auto; min-height: 80px; align-items: flex-end; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .game-container .bottom-zone > .tool-dock { flex: 0 0 auto; overflow: visible; }
+  .game-container .context-bar { display: none; }
+}
+@media (pointer: coarse) and (width >= 1024px) and (height >= 500px) {
+  .game-container .objective-card { top: max(80px, calc(env(safe-area-inset-top) + 72px)); }
+}
+@media (pointer: coarse) and (width >= 600px) and (width < 1024px) and (height >= 500px) {
+  .game-container .top-bar__derecha { margin-left: auto; }
+  .game-container .carril { position: absolute; top: calc(var(--alto-objetivo, 0px) + 16px); left: 8px; width: min(280px, 35vw); align-items: flex-start; }
+}
+@media (width < 600px) and (height >= 500px), (height < 500px) and (width < 1024px) {
+  .game-container { width: 100dvw; height: 100dvh; overscroll-behavior: none; }
+  .game-container .main-zone { margin: 0; padding: 0; }
+  .game-container .top-bar__fila { display: block; padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) 0 max(4px, env(safe-area-inset-left)); }
+  .top-bar__hueco { display: none; }
+  .top-bar__derecha { width: 100%; }
+  .top-bar__derecha app-simulation-hud { width: 100%; }
+  .top-bar__derecha > app-simulation-hud { pointer-events: none; }
+  .top-bar__derecha app-minimapa { display: none; }
+  .carril { position: absolute; top: 60px; left: 8px; right: 8px; }
+  .game-container .carril > app-sensitive-notice, .game-container .notice-pie { display: none; }
+  .game-container .objective-card, .game-container .objective-card:not(:has(app-scene-goal-card[data-collapsed='true'])) {
+    top: max(8px, env(safe-area-inset-top)); left: max(64px, calc(env(safe-area-inset-left) + 64px));
+    right: max(80px, calc(env(safe-area-inset-right) + 80px)); width: auto; max-height: min(66dvh, 450px);
+    flex-direction: column; z-index: 25;
+  }
+  .objective-card__etapa { display: none; }
+  .game-container .bottom-zone {
+    box-sizing: border-box; display: flex; flex-wrap: nowrap; align-items: end; height: auto; min-height: 64px;
+    padding: 4px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    gap: 6px;
+  }
+  .bottom-zone > app-safe-exit-button { flex: 0 0 108px; }
+  .bottom-zone > app-safe-exit-button ::ng-deep .safe-exit-btn { width: 108px; min-height: 48px; padding-inline: 4px; gap: 0; font-size: 12px; }
+  .bottom-zone > app-safe-exit-button ::ng-deep .safe-exit-btn--placa::before { display: none; }
+  .game-container .tool-dock, .game-container .context-bar { display: none; }
+  .game-container .mobile-tools-button { display: inline-flex; flex: 0 0 108px; min-width: 0; min-height: 48px; padding: 4px; font-size: 12px; line-height: 1.15; white-space: normal; }
+}
+@media (pointer: coarse) and (width < 600px) and (height >= 500px) {
+  :host(.juego--umbral) .game-container .case-intro-overlay:not(.content-warning-overlay) { place-items: end stretch; padding: 0; }
+  :host(.juego--umbral) .game-container .case-intro-overlay:not(.content-warning-overlay) .case-intro-card { max-height: 92dvh; }
+  .game-container .case-intro-overlay { place-items: end stretch; padding: 0; }
+  .game-container .case-intro-card { width: 100%; max-height: 92dvh; border-radius: 0; }
+  .game-container .case-intro-card__header, .game-container .case-intro-card__actions { padding: 12px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left)); }
+  .game-container .case-intro-card__body { padding: 12px; }
+}
+@media (pointer: coarse) and (height < 500px) and (width < 1024px) {
+  :host(.juego--umbral) .game-container .case-intro-overlay:not(.content-warning-overlay) { place-items: stretch end; padding: 0; }
+  :host(.juego--umbral) .game-container .case-intro-overlay:not(.content-warning-overlay) .case-intro-card { width: min(440px, 55dvw); max-height: 100dvh; }
+  /* La portada del caso queda entera a la izquierda de la hoja: nada cortado por detrás. */
+  :host(.juego--umbral) .game-container app-umbral-caso { right: min(440px, 55dvw); place-items: center; padding-block: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-bottom)); }
+  .game-container .case-intro-overlay { place-items: stretch end; padding: 0; }
+  .game-container .case-intro-card { width: min(440px, 80dvw); max-height: 100dvh; border-radius: 0; }
+  .game-container .case-intro-card__header, .game-container .case-intro-card__actions { padding: 8px 12px; gap: 6px; }
+  .game-container .case-intro-card__body { padding: 8px 12px; }
+  .game-container .case-intro-card__buttons { flex-wrap: wrap; }
+}
+@media (height < 500px) and (width < 1024px) {
+  .game-container .mobile-tools-button { margin-left: auto; }
+  .game-container--nearby .mobile-tools-button { margin-right: calc(min(142px, 35vw) + 6px); }
+}
+@media (pointer: coarse) and (width >= 600px) and (width < 1024px) and (height >= 500px) {
+  .game-container .case-intro-card { width: min(560px, 94dvw); }
+}
+/* Entradas del caso en teléfono y tableta vertical: las acciones ocupan el ancho y se reparten sin escalonarse. */
+@media (pointer: coarse) and (width < 1024px) {
+  .game-container .case-intro-card__actions { flex-direction: column; align-items: stretch; }
+  .game-container .case-intro-card__actions > a { justify-content: center; text-align: center; min-height: 44px; }
+  /* Si dos botones no caben en una fila, cada uno toma la suya entera y la acción principal queda arriba. */
+  .game-container .case-intro-card__buttons { display: flex; flex-direction: row; flex-wrap: wrap-reverse; align-items: stretch; width: 100%; }
+  .game-container .case-intro-card__buttons > * { flex: 1 1 auto; justify-content: center; min-height: 44px; }
+  .game-container .case-intro-card__buttons > app-safe-exit-button ::ng-deep .safe-exit-btn { width: 100%; justify-content: center; }
+}
+/* Quien comenta cerca del borde de arriba: la burbuja baja y queda sobre el muelle, sin pisar la barra. */
+@media (width < 600px) and (height >= 500px), (height < 500px) and (width < 1024px) {
+  .game-container ::ng-deep app-comment-bubble .bubble--floor { bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+@media (width < 600px) and (height >= 500px) {
+  /* La burbuja cabe en el ancho que reserva su ancla: no se corta en los bordes. */
+  .game-container ::ng-deep app-comment-bubble .bubble { max-width: min(16em, 68%); }
+  /* La ayuda es una hoja inferior: deja su última franja a «Salida segura», que sigue a un toque. */
+  .game-container.game-container--touch-overlay .help-layer ::ng-deep :is(.help-welcome, .help-screen) { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+@media (pointer: coarse) {
+  /* El aviso de una herramienta se cierra con un objetivo completo de 44 px. */
+  .game-container ::ng-deep .tool-notice__close { min-width: 44px; min-height: 44px; }
+  /* Con Ajustes abierto, el aviso de contenido sensible y el resto del carril se apartan como los demás controles. */
+  .game-container.game-container--settings-open .carril { visibility: hidden; }
+}
+@media (pointer: coarse) and (width >= 600px) and (width < 1024px) and (height >= 500px) {
+  .game-container ::ng-deep app-comment-bubble .bubble--floor { bottom: calc(112px + env(safe-area-inset-bottom)); }
+}

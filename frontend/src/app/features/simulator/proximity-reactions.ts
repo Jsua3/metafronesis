@@ -136,8 +136,8 @@ export class ProximityReactions {
 }
 
 /** Mitad del ancho máximo de la burbuja (260 px) y su alto con la cola: lo que hay que dejar libre en cada borde. */
-const BURBUJA_MEDIO_ANCHO_PX = 135;
-const BURBUJA_ALTO_PX = 100;
+export const BURBUJA_MEDIO_ANCHO_PX = 135;
+export const BURBUJA_ALTO_PX = 100;
 const BURBUJA_MARGEN_PX = 8;
 
 /**
