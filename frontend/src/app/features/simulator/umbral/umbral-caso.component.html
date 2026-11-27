@@ -12,7 +12,7 @@
 
   <p class="umbral-caso__cuidado">
     <mat-icon aria-hidden="true">pause</mat-icon>
-    <span>{{ cuidado }}</span>
+    <span>{{ cuidado.split('(Esc)')[0] }}<span class="umbral-caso__tecla">(Esc)</span>{{ cuidado.split('(Esc)')[1] }}</span>
   </p>
 
   <div class="umbral-caso__progreso" [class.game-boot]="arrancando()">

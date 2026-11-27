@@ -1,4 +1,5 @@
 import { APP_BRAND } from '../../core/config/brand.config';
+import { A11yModule } from '@angular/cdk/a11y';
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, HostListener, Renderer2, computed, effect, inject, input, output, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -14,6 +15,8 @@ import { CONSULTA_COMPACTO } from './pixel/tramos';
 import { COARSE_POINTER_QUERY, matchesMedia, watchMedia } from './pointer-modality.util';
 import { portraitStateForPersona } from './persona-portrait.util';
 import { VolumeBarsComponent } from './volume-bars.component';
+import { DpadSettings } from './dpad-settings.service';
+import { SafeExitButtonComponent } from './safe-exit-button.component';
 
 /** Marca de «ayuda vista» (la escribe la tarjeta de primera vez; aquí solo se borra desde Ajustes). */
 const HELP_MEMORY_KEY = 'siep.ayuda.v1';
@@ -21,7 +24,8 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
 @Component({
   selector: 'app-simulation-hud',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, KitFigureComponent, PixelIconoComponent, VolumeBarsComponent],
+  host: { '[class.hud--touch-settings]': 'touchMode() && settingsOpen()' },
+  imports: [A11yModule, CommonModule, RouterLink, MatIconModule, KitFigureComponent, PixelIconoComponent, VolumeBarsComponent, SafeExitButtonComponent],
   template: `
     @if (attempt(); as game) {
       <div class="hud-shell"
@@ -101,11 +105,15 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
               @if (settingsOpen()) {
                 <div #settingsMenu id="game-settings-menu" class="settings-menu" popover="manual"
                   [style.--hud-menu-top]="menuTop() + 'px'"
-                  role="dialog" aria-modal="false" aria-labelledby="game-settings-title">
+                  role="dialog" [attr.aria-modal]="touchMode() ? 'true' : 'false'" aria-labelledby="game-settings-title"
+                  [cdkTrapFocus]="touchMode()" [cdkTrapFocusAutoCapture]="touchMode()">
                   <div class="settings-menu__header">
                     <strong id="game-settings-title">Ajustes</strong>
                     <button class="u-boton u-boton--icono" type="button" aria-label="Cerrar ajustes" (click)="closeSettings()">
-                      <mat-icon aria-hidden="true">close</mat-icon>
+                      @if (touchMode()) {
+                        <!-- BORRADOR: texto pendiente de Psicología. -->
+                        <span>Cerrar</span>
+                      } @else { <mat-icon aria-hidden="true">close</mat-icon> }
                     </button>
                   </div>
                   <!-- Volumen por canal: barras que se arrastran o se llevan con el teclado; el icono silencia sin perder el nivel. -->
@@ -120,6 +128,14 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                     <span>Movimiento reducido</span>
                     <strong aria-hidden="true">{{ reduceMotion() ? 'Sí' : 'No' }}</strong>
                   </button>
+                  @if (touchMode()) {
+                    <!-- BORRADOR: texto pendiente de Psicología. -->
+                    <button class="u-boton" type="button" data-hud-dpad [attr.aria-pressed]="dpad.visible()" (click)="dpad.toggle()">
+                      <mat-icon aria-hidden="true">open_with</mat-icon>
+                      <span>Mostrar cruceta</span>
+                      <strong aria-hidden="true">{{ dpad.visible() ? 'Sí' : 'No' }}</strong>
+                    </button>
+                  }
                   <!-- WCAG 2.1.4 (F6-10): las teclas de una letra o un número se pueden apagar. -->
                   <button class="u-boton" type="button" [attr.aria-pressed]="shortcuts()" (click)="toggleShortcuts.emit()">
                     <mat-icon aria-hidden="true">accessibility</mat-icon>
@@ -159,18 +175,25 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
                     <span>Catálogo</span>
                     <strong></strong>
                   </a>
+                  @if (touchMode()) {
+                    <app-safe-exit-button variante="placa" data-hide-key (pause)="closeSettings(false); safeExit.emit()" />
+                  }
                 </div>
               }
               <a class="hud-action hud-action--home u-tecla u-tecla--icono" routerLink="/portal/simulador"
                 aria-label="Volver al catálogo de simulaciones" title="Volver al catálogo">
                 <app-pixel-icono nombre="inicio" />
               </a>
+              <!-- BORRADOR: texto pendiente de Psicología. -->
+              <button #mobileMenuTrigger type="button" class="hud-mobile-menu u-boton" data-hud-mobile-menu
+                (click)="openMobileMenu.emit()">Menú</button>
             </div>
           </div>
         </div>
       </div>
     }
   `,
+  styleUrl: './simulation-hud.mobile.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     /* Bloque U1, variante B: el grupo de la derecha de la pantalla del juego, en las piezas del cuadro de diálogo (hoja común
@@ -297,7 +320,7 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
         box-shadow: 0 0 0 var(--pixel-px) var(--pixel-contorno); visibility: hidden;
       }
       .hud-persona:focus-visible .hud-persona-label { visibility: visible; }
-      @media (hover: hover) {
+      @media (hover: hover) and (pointer: fine) {
         .hud-persona:hover .hud-persona-label { visibility: visible; }
       }
     }
@@ -332,6 +355,7 @@ const HELP_MEMORY_KEY = 'siep.ayuda.v1';
   `]
 })
 export class SimulationHudComponent {
+  readonly dpad = inject(DpadSettings);
   readonly brand = APP_BRAND;
   /** La pestaña lleva el título sin su subtítulo («… — tres capítulos»): entero no cabía y salía cortado (B, V4). */
   protected readonly tituloCorto = (titulo: string): string => titulo.split(' — ')[0];
@@ -351,6 +375,7 @@ export class SimulationHudComponent {
   /** Sala física actual (world.map.title); con puertas puede diferir del nodo DAG. */
   readonly locationLabel = input('');
   readonly journalOpen = input(false);
+  readonly touchMode = input(false);
   readonly musicMuted = input(false);
   readonly sfxMuted = input(false);
   /** Niveles 0–10 de las barras de volumen (los guarda quien integra el HUD). */
@@ -384,6 +409,9 @@ export class SimulationHudComponent {
   /** Tras «Ver la ayuda otra vez»: lo confirma la fila y una región viva (sin temporizadores). */
   readonly helpResetDone = signal(false);
   readonly toggleJournal = output<void>();
+  readonly openMobileMenu = output<void>();
+  readonly settingsOpenChange = output<boolean>();
+  readonly safeExit = output<void>();
   /** Botón «Ir a…» de la cabecera (F6-11): pide la lista de personas y puertas de la sala. */
   readonly openPlaces = output<void>();
   /** Botón «Controles» de la cabecera (P8): pide la tarjeta de controles (moverse, interactuar, «Ir a…», plano). */
@@ -403,12 +431,14 @@ export class SimulationHudComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly renderer = inject(Renderer2);
   private readonly settingsTrigger = viewChild<ElementRef<HTMLButtonElement>>('settingsTrigger');
+  private readonly mobileMenuTrigger = viewChild<ElementRef<HTMLButtonElement>>('mobileMenuTrigger');
   private readonly settingsMenu = viewChild<ElementRef<HTMLElement>>('settingsMenu');
   /** Borde superior del menú (px): justo bajo la cabecera, medido al abrirlo porque su alto cambia en compacto. */
   readonly menuTop = signal(53);
   private stopPointerListener: (() => void) | null = null;
 
   constructor() {
+    effect(() => this.settingsOpenChange.emit(this.settingsOpen()));
     // El oyente de clic fuera existe solo mientras Ajustes está abierto: uno global y
     // permanente hace entrar en la zona de Angular cada toque de toda la pantalla de juego.
     effect(() => {
@@ -441,6 +471,8 @@ export class SimulationHudComponent {
     if (!this.settingsOpen()) return;
     this.settingsOpen.set(false);
     this.helpResetDone.set(false);
+    const mobile = this.mobileMenuTrigger()?.nativeElement;
+    if (restoreFocus && mobile && mobile.getClientRects().length) { mobile.focus(); return; }
     if (restoreFocus) this.settingsTrigger()?.nativeElement.focus();
   }
 

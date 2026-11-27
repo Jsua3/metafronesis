@@ -56,6 +56,9 @@ import { PixelIconoComponent } from '../pixel/pixel-icono.component';
     .aviso__candado { width: calc(7 * var(--pixel-px, 2px)); height: calc(8 * var(--pixel-px, 2px)); flex: none; }
     .aviso__ojo { fill: var(--pixel-penumbra); }
     .aviso__falta { font-weight: 400; color: var(--pixel-tinta-suave); }
+    .aviso--cerrada { --m: var(--marco-placa); border-color: var(--pixel-ambar); }
+    .aviso--cerrada .aviso__candado { color: var(--pixel-ambar); }
+    .aviso--cerrada .aviso__falta { flex-basis: 100%; padding-top: calc(2 * var(--pixel-px, 2px)); border-top: var(--pixel-px, 2px) solid var(--pixel-separador); }
     .aviso__oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .aviso__cola {
       position: absolute; display: block; width: calc(7 * var(--pixel-px, 2px)); height: calc(4 * var(--pixel-px, 2px));

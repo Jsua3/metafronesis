@@ -172,7 +172,7 @@ describe('GameHelpComponent (T3.2)', () => {
       const lines = host().querySelectorAll('.help-card__lines p');
       expect(lines).toHaveLength(1);
       expect(lines[0].textContent?.trim()).toBe(
-        'Mantén pulsada una flecha para caminar. Toca «Interactuar» cuando veas un nombre abajo.',
+        'Toca para ir o arrastra para caminar. La cruceta es opcional en Ajustes.',
       );
       expect(host().querySelector('.help-card')?.classList).toContain('help-card--compact');
     });

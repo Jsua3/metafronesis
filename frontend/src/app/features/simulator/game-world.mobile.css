@@ -1,0 +1,24 @@
+@media (width < 600px) and (height >= 500px), (height < 500px) and (width < 1024px) {
+  :host .touch-controls { bottom: max(8px, env(safe-area-inset-bottom)); left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); }
+  :host .touch-dpad { margin-bottom: 66px; }
+  :host .touch-interact { max-width: min(142px, calc(100dvw - 242px)); min-height: 56px; padding: 4px; font-size: 12px; text-wrap: balance; }
+  :host .touch-interact mat-icon { display: none; }
+}
+/* El lienzo recibe el arrastre; las placas siguen usando los gestos normales del navegador. */
+:host .phaser-host { touch-action: none; }
+.floating-stick {
+  position: absolute; z-index: 47; width: 112px; height: 112px; margin: -56px 0 0 -56px;
+  pointer-events: none; box-sizing: border-box; image-rendering: pixelated;
+}
+.floating-stick::before {
+  content: ''; position: absolute; inset: 0; background: #f2d69c;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 112 112'%3E%3Cpath fill='black' fill-rule='evenodd' d='M22 0H90V6H106V22H112V90H106V106H90V112H22V106H6V90H0V22H6V6H22Z M26 4H86V10H102V26H108V86H102V102H86V108H26V102H10V86H4V26H10V10H26Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 112 112'%3E%3Cpath fill='black' fill-rule='evenodd' d='M22 0H90V6H106V22H112V90H106V106H90V112H22V106H6V90H0V22H6V6H22Z M26 4H86V10H102V26H108V86H102V102H86V108H26V102H10V86H4V26H10V10H26Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  box-sizing: border-box; image-rendering: pixelated;
+}
+.floating-stick__knob { position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px;
+  border: 3px solid #f8e8bc; background: #9b7092; box-shadow: inset 0 0 0 3px #47314e; }
+@media (pointer: coarse) and (width >= 600px) and (height >= 500px) {
+  :host .touch-controls { bottom: max(8px, env(safe-area-inset-bottom)); }
+  :host .touch-dpad { margin-bottom: 82px; }
+}

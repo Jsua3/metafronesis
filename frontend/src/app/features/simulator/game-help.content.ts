@@ -52,13 +52,15 @@ export function firstTimeHelpLines(options: HelpCardOptions): readonly string[] 
   const keyboardMoveLine = options.singleKeyShortcuts === false ? KEYBOARD_MOVE_LINE_NO_LETTERS : KEYBOARD_MOVE_LINE;
   if (compact) {
     return modality === 'touch'
-      ? ['Mantén pulsada una flecha para caminar. Toca «Interactuar» cuando veas un nombre abajo.']
+      // BORRADOR: texto pendiente de Psicología.
+      ? ['Toca para ir o arrastra para caminar. La cruceta es opcional en Ajustes.']
       : [keyboardMoveLine];
   }
   const lines: string[] = [];
   lines.push(
     modality === 'touch'
-      ? 'Mantén pulsada una flecha para caminar. Cuando algo tenga nombre cerca, toca «Interactuar».'
+      // BORRADOR: texto pendiente de Psicología.
+      ? 'Toca para ir o arrastra para caminar. La cruceta es opcional en Ajustes; cerca de algo, toca «Interactuar».'
       : keyboardMoveLine,
   );
   lines.push(WHAT_TO_DO_LINE);
@@ -111,7 +113,8 @@ export function helpSections(options: HelpScreenOptions): readonly HelpSection[]
       id: 'moverte',
       title: 'Moverte',
       text: touch
-        ? 'Mantén pulsada una flecha; un toque da un paso corto.'
+        // BORRADOR: texto pendiente de Psicología.
+        ? 'Toca el suelo para ir o arrastra para caminar. Puedes activar la cruceta en Ajustes.'
         : letters
           ? 'Flechas o WASD.'
           : 'Flechas.',
@@ -146,7 +149,8 @@ export function helpSections(options: HelpScreenOptions): readonly HelpSection[]
       id: 'bitacora',
       title: 'Bitácora',
       text: touch
-        ? 'Escribe tus reflexiones cuando quieras con el botón de la cabecera.'
+        // BORRADOR: texto pendiente de Psicología.
+        ? 'Escribe tus reflexiones cuando quieras con «Bitácora», en la cabecera o en el menú.'
         : letters
           ? 'Escribe tus reflexiones cuando quieras (tecla J o botón de la cabecera).'
           : 'Escribe tus reflexiones cuando quieras con el botón de la cabecera.',
@@ -214,11 +218,12 @@ export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly C
   if (touch) {
     return [
       // BORRADOR: texto pendiente de Psicología.
-      { id: 'moverte', keys: 'Toca', title: 'Moverte', text: 'Toca donde quieras ir; para hablar, pulsa el botón de la persona. También puedes usar la cruz.' },
+      { id: 'moverte', keys: 'Toca', title: 'Moverte', text: 'Toca para ir o arrastra para caminar. Puedes activar la cruceta en Ajustes.' },
       { id: 'interactuar', keys: 'Interactuar', title: 'Interactuar', text: 'Acércate a algo y toca «Interactuar»: el botón dice con qué vas a interactuar.' },
       // BORRADOR: texto pendiente de Psicología.
-      { id: 'ir-a', keys: 'Ir a…', title: 'Ir directo', text: 'Toca «Ir a…» arriba, elige una persona o una puerta y tu personaje camina y habla con ella o cruza la puerta.' },
-      { id: 'plano', keys: 'Mapa', title: 'Plano', text: 'Toca el mapa pequeño de arriba para ver el plano del lugar.' },
+      { id: 'ir-a', keys: 'Ir a…', title: 'Ir directo', text: 'Toca «Ir a…» en el menú, elige una persona o una puerta y tu personaje camina hacia ella.' },
+      // BORRADOR: texto pendiente de Psicología.
+      { id: 'plano', keys: 'Mapa', title: 'Plano', text: 'Abre «Plano» desde el menú o toca el mapa pequeño cuando esté visible.' },
     ];
   }
   return [
@@ -250,5 +255,7 @@ export function controlsWelcomeRows(options: ControlsWelcomeOptions): readonly C
 /** Cómo volver a abrir la tarjeta; se escribe una vez aquí para la tarjeta y su prueba. */
 export function controlsReopenLine(options: ControlsWelcomeOptions): string {
   const key = options.modality !== 'touch' && options.singleKeyShortcuts !== false ? ` o con la tecla ${CONTROLS_SHORTCUT_KEY}` : '';
+  // BORRADOR: texto pendiente de Psicología.
+  if (options.modality === 'touch') return 'Para verla otra vez, usa «Controles», en la cabecera o en el menú.';
   return `Para verla otra vez, usa el botón «Controles» de la cabecera${key}.`;
 }

@@ -1,0 +1,41 @@
+:host { display: contents; }
+.mobile-sheet-backdrop { position: fixed; inset: 0; z-index: 900; background: rgba(7, 8, 18, .72); }
+.mobile-sheet {
+  position: fixed; z-index: 901; box-sizing: border-box; inset: auto 0 0;
+  max-height: min(92dvh, 760px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px; padding: 12px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  color: var(--pixel-tinta); font-family: var(--pixel-f-texto); font-size: var(--pixel-tam);
+}
+.mobile-sheet__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mobile-sheet__header h2 { margin: 0; font: 700 var(--pixel-letra-media) var(--pixel-f-nombre); color: var(--luz); }
+.mobile-sheet__header button, .mobile-sheet__row { min-height: 48px; }
+.mobile-sheet__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 4px; }
+.mobile-sheet__row { width: 100%; justify-content: flex-start; text-align: left; }
+.mobile-sheet__notice { margin: 0; padding: 10px; line-height: 1.45; }
+.mobile-sheet__footer { display: flex; justify-content: flex-start; }
+@media (height < 500px) and (width < 1024px) {
+  .mobile-sheet { inset: 0 0 0 auto; width: min(380px, 75dvw); max-height: none; padding-top: max(10px, env(safe-area-inset-top)); }
+}
+/* Herramientas en la hoja: cada una con su nombre a la vista, en filas que se acomodan al ancho. */
+.mobile-sheet__body ::ng-deep app-tool-inventory { grid-column: 1 / -1; }
+.mobile-sheet__body ::ng-deep .tool-dock-wrap { align-items: stretch; gap: 8px; }
+.mobile-sheet__body ::ng-deep .tool-count { display: inline-flex; align-self: flex-start; margin: 0; }
+.mobile-sheet__body ::ng-deep .tool-count__cuenta ~ .u-rotulo__texto { display: none; }
+.mobile-sheet__body ::ng-deep .tool-dock { flex-wrap: wrap; gap: 10px; overflow: visible; padding: 2px 2px 14px; }
+.mobile-sheet__body ::ng-deep .tool-dock .tool-card {
+  flex: 1 1 calc(33.333% - 10px); max-width: calc(50% - 5px); width: auto; height: auto; min-height: 88px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; padding: 8px 4px;
+}
+.mobile-sheet__body ::ng-deep .tool-dock .tool-name { display: block; font-size: 12px; line-height: 1.2; text-align: center; text-wrap: balance; }
+.mobile-sheet__body ::ng-deep .tool-notice { position: static; max-width: none; justify-content: space-between; }
+.mobile-sheet__body ::ng-deep .tool-notice__close { min-width: 44px; min-height: 44px; }
+@media (height < 500px) and (width < 1024px) {
+  .mobile-sheet__body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mobile-sheet__body app-volume-bars, .mobile-sheet__notice { grid-column: 1 / -1; }
+  /* Con poco alto, las herramientas van en dos columnas con el icono al lado del nombre: caben las cinco. */
+  .mobile-sheet__body ::ng-deep .tool-dock .tool-card {
+    flex: 1 1 calc(50% - 5px); flex-direction: row; justify-content: flex-start; min-height: 56px; padding: 4px 8px; gap: 8px;
+  }
+  .mobile-sheet__body ::ng-deep .tool-dock .tool-name { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { .mobile-sheet { animation: none; } }

@@ -357,6 +357,7 @@ import { RECONSIDERED_LABEL, reconsideredChip } from './reconsidered.util';
       </section>
     }
   `,
+  styleUrl: './attempt-outcome.mobile.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     .outcome {

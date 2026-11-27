@@ -29,6 +29,15 @@ function everyHelpText(): string[] {
 }
 
 describe('game-help.content: tarjeta de primera vez (F§5.8)', () => {
+  it('explica tocar para ir, arrastrar y la cruceta opcional', () => {
+    const first = firstTimeHelpLines({ modality: 'touch', compact: true, safeExitPromise: true }).join(' ');
+    const section = helpSections({ modality: 'touch', safeExitPromise: true }).find(s => s.id === 'moverte')!.text;
+    for (const text of [first, section]) {
+      expect(text.toLowerCase()).toContain('toca');
+      expect(text.toLowerCase()).toContain('arrastra');
+      expect(text.toLowerCase()).toContain('cruceta');
+    }
+  });
   it('teclado: tres líneas con la tecla E, la ficha del objetivo y la pausa con Esc', () => {
     expect(firstTimeHelpLines({ modality: 'keyboard', compact: false, safeExitPromise: true })).toEqual([
       'Muévete con las flechas o WASD. Acércate a una persona o un objeto: abajo aparece su nombre. Pulsa E para interactuar.',
@@ -39,7 +48,7 @@ describe('game-help.content: tarjeta de primera vez (F§5.8)', () => {
 
   it('táctil: las mismas líneas 2 y 3, esta última sin «con teclado, también Esc»', () => {
     expect(firstTimeHelpLines({ modality: 'touch', compact: false, safeExitPromise: true })).toEqual([
-      'Mantén pulsada una flecha para caminar. Cuando algo tenga nombre cerca, toca «Interactuar».',
+      'Toca para ir o arrastra para caminar. La cruceta es opcional en Ajustes; cerca de algo, toca «Interactuar».',
       'Arriba está el objetivo de la escena: ábrelo para ver qué hay en la sala o pedir una pista.',
       'Puedes pausar el caso en cualquier momento con «Salida segura». Tu avance se guarda.',
     ]);
@@ -47,7 +56,7 @@ describe('game-help.content: tarjeta de primera vez (F§5.8)', () => {
 
   it('compacto táctil: una sola frase corta', () => {
     expect(firstTimeHelpLines({ modality: 'touch', compact: true, safeExitPromise: true })).toEqual([
-      'Mantén pulsada una flecha para caminar. Toca «Interactuar» cuando veas un nombre abajo.',
+      'Toca para ir o arrastra para caminar. La cruceta es opcional en Ajustes.',
     ]);
   });
 
@@ -116,7 +125,7 @@ describe('game-help.content: pantalla permanente (F§5.8)', () => {
     const text = (modality: HelpModality, id: string) =>
       helpSections({ modality, safeExitPromise: true }).find(s => s.id === id)?.text;
     expect(text('keyboard', 'moverte')).toBe('Flechas o WASD.');
-    expect(text('touch', 'moverte')).toBe('Mantén pulsada una flecha; un toque da un paso corto.');
+    expect(text('touch', 'moverte')).toBe('Toca el suelo para ir o arrastra para caminar. Puedes activar la cruceta en Ajustes.');
     expect(text('keyboard', 'interactuar')).toBe(
       'Acércate a una persona o un objeto con nombre y pulsa E (también sirven Espacio y Enter).',
     );
@@ -124,7 +133,7 @@ describe('game-help.content: pantalla permanente (F§5.8)', () => {
     expect(text('keyboard', 'bitacora')).toBe(
       'Escribe tus reflexiones cuando quieras (tecla J o botón de la cabecera).',
     );
-    expect(text('touch', 'bitacora')).toBe('Escribe tus reflexiones cuando quieras con el botón de la cabecera.');
+    expect(text('touch', 'bitacora')).toBe('Escribe tus reflexiones cuando quieras con «Bitácora», en la cabecera o en el menú.');
   });
 
   it('«Qué hacer» describe la ficha del objetivo: dónde está, sin nombrar una tarjeta que ya no existe ni insinuar respuestas', () => {
