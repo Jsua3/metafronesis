@@ -1,0 +1,1 @@
+Capturas antes y despues de los PR de movil y tableta. Rama sin historia comun: no se fusiona.
