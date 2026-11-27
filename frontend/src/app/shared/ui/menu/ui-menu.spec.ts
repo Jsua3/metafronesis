@@ -93,10 +93,87 @@ describe('ui-menu', () => {
     expect(document.activeElement).toBe(items()[2]);
   });
 
+  it('sin `grupo` ni `detalle` el menú no pinta separadores, rótulos ni segundas líneas', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    expect(root().querySelectorAll('.ui-menu__separador, .ui-menu__grupo, .ui-menu__detalle').length).toBe(0);
+    expect(items().some(item => item.querySelector('.ds-sr-only'))).toBe(false);
+  });
+
   it('los iconos de los ítems son decorativos y el peligro se marca con clase', async () => {
     trigger().click();
     await fixture.whenStable();
     expect(items().every(item => item.querySelector('mat-icon')?.getAttribute('aria-hidden') === 'true')).toBe(true);
     expect(items()[2].classList).toContain('ui-menu__item--danger');
   });
+});
+
+/** Secciones y segunda línea (SIEP-281): campos opcionales; sin ellos el menú es el de siempre. */
+@Component({
+  imports: [UiMenu],
+  template: `<ui-menu label="Cuenta" iconOnly icon="account_circle" [items]="items" />`,
+})
+class HostGrupos {
+  items: UiMenuItem[] = [
+    { value: 'yo', label: 'Ana · Docente', disabled: true },
+    { value: 'a', label: 'Luis Paz', detalle: 'Estudiante · luis@cue.edu.co', grupo: 'Cambiar de cuenta' },
+    { value: 'b', label: 'Agregar cuenta', grupo: 'Cambiar de cuenta' },
+    { value: 'clave', label: 'Cambiar contraseña' },
+  ];
+}
+
+describe('ui-menu: secciones y detalle', () => {
+  let fixture: ComponentFixture<HostGrupos>;
+  const root = () => fixture.nativeElement as HTMLElement;
+  const items = () => [...root().querySelectorAll<HTMLElement>('[role="menuitem"]')];
+  const key = async (target: Element, name: string) => {
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+  };
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    fixture = TestBed.createComponent(HostGrupos);
+    document.body.appendChild(fixture.nativeElement);
+    await fixture.whenStable();
+    root().querySelector<HTMLButtonElement>('.ui-menu__trigger')!.click();
+    await fixture.whenStable();
+  });
+
+  afterEach(() => root().remove());
+
+  it('pinta un separador y un rótulo no interactivo cuando cambia el grupo, y el rótulo es decorativo', () => {
+    const rotulos = [...root().querySelectorAll<HTMLElement>('.ui-menu__grupo')];
+    expect(rotulos.map(r => r.textContent!.trim())).toEqual(['Cambiar de cuenta']);
+    expect(rotulos[0].getAttribute('aria-hidden')).toBe('true');
+    expect(rotulos[0].getAttribute('role')).toBe('presentation');
+    // Un separador antes del grupo y otro al volver a ítems sin grupo.
+    expect(root().querySelectorAll('.ui-menu__separador').length).toBe(2);
+    expect(items().length).toBe(4);
+  });
+
+  it('el nombre de la sección se anuncia dentro del primer ítem del grupo', () => {
+    expect(items()[1].querySelector('.ds-sr-only')?.textContent).toContain('Cambiar de cuenta');
+    expect(items()[2].querySelector('.ds-sr-only')).toBeNull();
+    expect(items()[0].querySelector('.ds-sr-only')).toBeNull();
+  });
+
+  it('el detalle se pinta como segunda línea', () => {
+    expect(items()[1].querySelector('.ui-menu__detalle')?.textContent?.trim()).toBe('Estudiante · luis@cue.edu.co');
+    expect(items()[2].querySelector('.ui-menu__detalle')).toBeNull();
+  });
+
+  it('las flechas y la búsqueda por letra siguen funcionando con rótulos y separadores', async () => {
+    // Con la fila de identidad deshabilitada (siguen siendo focales) las flechas recorren sólo los ítems, no los rótulos.
+    expect(document.activeElement).toBe(items()[0]);
+    await key(items()[0], 'ArrowDown');
+    expect(document.activeElement).toBe(items()[1]);
+    await key(items()[1], 'ArrowDown');
+    expect(document.activeElement).toBe(items()[2]);
+    await key(items()[2], 'ArrowDown');
+    expect(document.activeElement).toBe(items()[3]);
+    await key(items()[3], 'l');
+    expect(document.activeElement).toBe(items()[1]);
+  });
+
 });

@@ -12,6 +12,7 @@ import { map, merge, startWith } from 'rxjs';
 
 import { EXPIRED_SESSION_REASON } from '../../core/auth/auth.guard';
 import { AuthService } from '../../core/auth/auth.service';
+import { CuentasRecordadasService } from '../../core/auth/cuentas-recordadas.service';
 import { safeReturnUrl } from '../../core/auth/return-url';
 import { throttledMessage } from '../../core/auth/throttled';
 import { APP_BRAND } from '../../core/config/brand.config';
@@ -75,6 +76,7 @@ export class LoginComponent implements AfterViewInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly cuentasRecordadas = inject(CuentasRecordadasService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly zone = inject(NgZone);
@@ -184,6 +186,14 @@ export class LoginComponent implements AfterViewInit {
 
   constructor() {
     afterNextRender(() => this.trackPointer());
+
+    // SIEP-281: «Cambiar de cuenta» deja el correo elegido en memoria (nunca en la URL); se toma una sola vez y la
+    // persona solo escribe la contraseña.
+    const correoElegido = this.cuentasRecordadas.consumirCorreoPorEntrar();
+    if (correoElegido) {
+      this.form.controls.email.setValue(correoElegido);
+      afterNextRender(() => this.pageRef.nativeElement.querySelector<HTMLInputElement>('#login-password')?.focus(), { injector: this.injector });
+    }
 
     // El build de producción pliega ngDevMode a false y descarta la rama: el import() y su chunk no existen.
     if (typeof ngDevMode === 'undefined' || ngDevMode) {

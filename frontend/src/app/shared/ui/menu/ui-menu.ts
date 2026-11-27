@@ -1,7 +1,7 @@
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, afterNextRender, afterRenderEffect, booleanAttribute, input, output,
-  viewChild,
+  ChangeDetectionStrategy, Component, ElementRef, afterNextRender, afterRenderEffect, booleanAttribute, computed, input,
+  output, viewChild,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -15,6 +15,14 @@ export interface UiMenuItem {
   icon?: string;
   tone?: 'default' | 'danger';
   disabled?: boolean;
+  /**
+   * Sección a la que pertenece. Cuando cambia respecto al ítem anterior se pinta un separador y, si tiene nombre, un
+   * rótulo pequeño no interactivo. `@angular/aria/menu` no tiene grupos: el rótulo es decorativo (`aria-hidden`) y el
+   * nombre de la sección se anuncia dentro del primer ítem del grupo.
+   */
+  grupo?: string;
+  /** Segunda línea pequeña con texto secundario (p. ej. «Docente · laura@…»). */
+  detalle?: string;
 }
 
 /**
@@ -46,13 +54,28 @@ export interface UiMenuItem {
       [attr.aria-labelledby]="triggerId"
       (itemSelected)="itemSelected.emit($event)">
       <ng-template ngMenuContent>
-        @for (item of items(); track item.value) {
+        @for (fila of filas(); track fila.item.value) {
+          @let item = fila.item;
+          @if (fila.separador) {
+            <div class="ui-menu__separador" role="presentation" aria-hidden="true"></div>
+          }
+          @if (fila.rotulo) {
+            <div class="ui-menu__grupo" role="presentation" aria-hidden="true">{{ fila.rotulo }}</div>
+          }
           <div ngMenuItem class="ui-menu__item" [class.ui-menu__item--danger]="item.tone === 'danger'"
             [value]="item.value" [disabled]="!!item.disabled" [searchTerm]="item.label">
             @if (item.icon) {
               <mat-icon class="ui-menu__icon" aria-hidden="true">{{ item.icon }}</mat-icon>
             }
-            <span class="ui-menu__label">{{ item.label }}</span>
+            <span class="ui-menu__texto">
+              @if (fila.rotulo) {
+                <span class="ds-sr-only">{{ fila.rotulo }}. </span>
+              }
+              <span class="ui-menu__label">{{ item.label }}</span>
+              @if (item.detalle) {
+                <span class="ui-menu__detalle">{{ item.detalle }}</span>
+              }
+            </span>
           </div>
         }
       </ng-template>
@@ -70,6 +93,14 @@ export class UiMenu {
   /** Borde del botón con el que se alinea el panel. */
   readonly align = input<'start' | 'end'>('end');
   readonly itemSelected = output<string | undefined>();
+
+  /** Los ítems con su separador y rótulo de sección: solo donde cambia `grupo` (sin `grupo`, nada de esto aparece). */
+  protected readonly filas = computed(() => this.items().map((item, i, todos) => {
+    const anterior = i > 0 ? todos[i - 1].grupo : undefined;
+    const cambia = i > 0 && item.grupo !== anterior;
+    const rotulo = item.grupo && item.grupo !== anterior ? item.grupo : null;
+    return { item, separador: cambia, rotulo };
+  }));
 
   protected readonly triggerId = uniqueUiId('ui-menu-trigger');
   protected readonly anchorName = `--${this.triggerId}`;

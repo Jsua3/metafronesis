@@ -6,6 +6,9 @@ import { filter, map } from 'rxjs/operators';
 
 import { encabezadoPrincipal, enfocarPorPrograma } from '../../core/a11y/foco.util';
 import { AuthService } from '../../core/auth/auth.service';
+import { CuentasRecordadasDialogoComponent } from '../../core/auth/cuentas-recordadas-dialogo.component';
+import { CuentasRecordadasService } from '../../core/auth/cuentas-recordadas.service';
+import { UiDialog } from '../ui/dialog/ui-dialog';
 import { DoodlesComponent } from '../ui/doodles/doodles.component';
 import { TemaService } from '../../core/tema/tema.service';
 import { UiGlassBar } from '../ui/glass-bar/ui-glass-bar';
@@ -21,6 +24,11 @@ import { readRouteChrome } from './route-chrome';
 
 /** Inicio: adónde lleva el logo de la barra. */
 const RUTA_INICIO = '/portal/dashboard';
+
+/** Sección del menú de cuenta con las cuentas recordadas en este navegador (SIEP-281). */
+// BORRADOR: texto pendiente de Psicología
+const GRUPO_CUENTAS = 'Cambiar de cuenta';
+const PREFIJO_CUENTA = 'cuenta:';
 
 /** Adónde lleva «Cambiar contraseña» del menú de cuenta (DP-22: cambio voluntario dentro del portal). */
 export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
@@ -123,6 +131,8 @@ export class ShellComponent {
   readonly brand = APP_BRAND;
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cuentasRecordadas = inject(CuentasRecordadasService);
+  private readonly dialog = inject(UiDialog);
   private readonly tema = inject(TemaService);
   private readonly insignias = inject(NavBadgesService);
 
@@ -157,11 +167,27 @@ export class ShellComponent {
    * como tal y no hace nada) y «Cerrar sesión» se distingue por su tono (D-22). Sin «Mi perfil»: no hay pantalla de
    * perfil y un enlace vacío miente.
    */
-  protected readonly accountMenu = computed<UiMenuItem[]>(() => [
-    { value: 'identidad', label: `${this.userName()} · ${this.userRole()}`, icon: 'badge', disabled: true },
-    { value: 'contrasena', label: 'Cambiar contraseña', icon: 'key' },
-    { value: 'salir', label: 'Cerrar sesión', icon: 'logout', tone: 'danger' },
-  ]);
+  protected readonly accountMenu = computed<UiMenuItem[]>(() => {
+    const actual = this.auth.currentUser();
+    const guardadas = this.cuentasRecordadas.cuentas();
+    const grupo = GRUPO_CUENTAS;
+    return [
+      { value: 'identidad', label: `${this.userName()} · ${this.userRole()}`, icon: 'badge', disabled: true },
+      // SIEP-281: las demás cuentas de ESTE navegador (la actual ya es la identidad de arriba).
+      ...guardadas.filter(c => c.id !== actual?.id).map(c => ({
+        value: `${PREFIJO_CUENTA}${c.id}`, label: `${c.nombre} ${c.apellido}`.trim() || c.email, detalle: `${roleLabel(c.rol)} · ${c.email}`,
+        icon: 'account_circle', grupo,
+      })),
+      // BORRADOR: texto pendiente de Psicología
+      { value: 'agregar', label: 'Agregar cuenta', icon: 'person_add', grupo },
+      // BORRADOR: texto pendiente de Psicología
+      ...(guardadas.length ? [{ value: 'quitar', label: 'Quitar cuentas de esta lista…', icon: 'person_remove', grupo }] : []),
+      { value: 'contrasena', label: 'Cambiar contraseña', icon: 'key' },
+      { value: 'salir', label: 'Cerrar sesión', icon: 'logout', tone: 'danger' as const },
+      // BORRADOR: texto pendiente de Psicología
+      ...(guardadas.length ? [{ value: 'olvidar', label: 'Cerrar sesión y olvidar las cuentas', icon: 'logout', tone: 'danger' as const }] : []),
+    ];
+  });
   protected readonly insignia = textoInsignia;
   protected readonly insigniaAccesible = textoInsigniaAccesible;
 
@@ -192,7 +218,16 @@ export class ShellComponent {
   }
 
   onAccount(value: string | undefined): void {
+    const salir = () => this.auth.logout();
     if (value === 'salir') this.auth.logout();
     else if (value === 'contrasena') void this.router.navigateByUrl(RUTA_CAMBIAR_CONTRASENA);
+    else if (value === 'agregar') this.cuentasRecordadas.agregarCuenta(this.auth.currentUser(), salir);
+    else if (value === 'olvidar') this.cuentasRecordadas.cerrarYOlvidar(salir);
+    else if (value === 'quitar') this.dialog.open(CuentasRecordadasDialogoComponent, { size: 'md' });
+    else if (value?.startsWith(PREFIJO_CUENTA)) {
+      const id = Number(value.slice(PREFIJO_CUENTA.length));
+      const cuenta = this.cuentasRecordadas.cuentas().find(c => c.id === id);
+      if (cuenta) this.cuentasRecordadas.cambiarA(cuenta, salir);
+    }
   }
 }
