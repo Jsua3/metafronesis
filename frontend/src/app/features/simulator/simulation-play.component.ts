@@ -70,6 +70,7 @@ import { keyPersonAccessibleName, resolveKeyPerson } from './key-person.util';
 import { SimulationHudComponent } from './simulation-hud.component';
 import { ToolInventoryComponent } from './tool-inventory.component';
 import { AudioDirectorService } from './audio-director.service';
+import { VOLUME_DEFAULT_LEVEL, VolumeSettings } from './volume-settings.service';
 import {
   PROTOCOL_INFO_MESSAGE,
 } from './hospital-map.config';
@@ -444,6 +445,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               [journalOpen]="journalOpen()"
               [musicMuted]="musicMuted()"
               [sfxMuted]="sfxMuted()"
+              [musicLevel]="volume.musicLevel()" [sfxLevel]="volume.sfxLevel()"
+              (musicLevelChange)="setMusicLevel($event)" (sfxLevelChange)="setSfxLevel($event)"
               [reduceMotion]="reduceMotion()"
               (toggleJournal)="journalOpen.set(!journalOpen())" (openPlaces)="openPlaces()"
               [shortcuts]="shortcuts.enabled()" (toggleShortcuts)="shortcuts.toggle()"
@@ -1367,6 +1370,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly audioDirector = inject(AudioDirectorService);
+  /** Nivel y silencio de cada canal, recordados entre sesiones (barras de volumen de Ajustes). */
+  readonly volume = inject(VolumeSettings);
+  /** Última muestra del volumen de los efectos: al arrastrar la barra no suena un clic por cada escalón. */
+  private lastSfxSample = 0;
   /** Las dos regiones vivas persistentes de la app: el juego no trae una propia (F6-12). */
   private readonly liveAnnouncer = inject(LiveRegionAnnouncer);
   private readonly notifications = inject(NotificationService);
@@ -4034,8 +4041,15 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   }
 
   toggleMusicMute(): void {
+    // Con la barra en cero, quitar el silencio la devuelve al nivel de partida: si no, «activar» no sonaría.
+    if (!this.musicMuted() && this.volume.musicLevel() === 0) {
+      this.setMusicLevel(VOLUME_DEFAULT_LEVEL);
+      this.announce('Música activada.');
+      return;
+    }
     const muted = this.audioDirector.toggleMusicMuted();
     this.musicMuted.set(muted);
+    this.volume.setMusicMuted(muted);
     if (!muted) {
       // Durante la intro vuelve su tema; en la partida, la música adaptativa del mapa.
       if (this.showCaseIntro()) this.audioDirector.playIntroLament();
@@ -4045,9 +4059,34 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   }
 
   toggleSfxMute(): void {
+    if (!this.sfxMuted() && this.volume.sfxLevel() === 0) {
+      this.setSfxLevel(VOLUME_DEFAULT_LEVEL);
+      this.announce('Sonidos de acciones activados.');
+      return;
+    }
     const muted = this.audioDirector.toggleSfxMuted();
     this.sfxMuted.set(muted);
+    this.volume.setSfxMuted(muted);
     this.announce(muted ? 'Sonidos de acciones silenciados.' : 'Sonidos de acciones activados.');
+  }
+
+  /** Barra de la música: mover la barra con el canal silenciado le quita el silencio (se quiere oír el nivel nuevo). */
+  setMusicLevel(level: number): void {
+    this.volume.setMusicLevel(level);
+    this.audioDirector.setMusicLevel(this.volume.musicLevel());
+    if (this.musicMuted() && this.volume.musicLevel() > 0) this.toggleMusicMute();
+  }
+
+  /** Barra de los efectos: como la de la música, y suena una muestra corta al nivel nuevo. */
+  setSfxLevel(level: number): void {
+    this.volume.setSfxLevel(level);
+    this.audioDirector.setSfxLevel(this.volume.sfxLevel());
+    if (this.sfxMuted() && this.volume.sfxLevel() > 0) this.toggleSfxMute();
+    const now = Date.now();
+    if (now - this.lastSfxSample >= 120) {
+      this.lastSfxSample = now;
+      this.audioDirector.playSfx('ui_select');
+    }
   }
 
   toggleReduceMotion(): void {
