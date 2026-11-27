@@ -2,6 +2,7 @@ import { Injectable, NgZone, inject } from '@angular/core';
 import { Howl } from 'howler';
 import { FADE_TICK_MS, fadeStep } from './audio-fade.util';
 import { MUSIC_CUES } from './music-cues.config';
+import { VOLUME_DEFAULT_LEVEL, VolumeSettings, clampVolumeLevel } from './volume-settings.service';
 import type { Activation, Intensity } from '../../core/models/simulation.model';
 
 export type MusicLayer = 'ambient' | 'tension' | 'resolution' | 'crisis';
@@ -21,6 +22,8 @@ interface StemTrack {
   howl: Howl;
   volume: number;
   targetVolume: number;
+  /** Peso que la escena pide a la capa (0–1), antes del volumen de la música: así una barra nueva re-escala sin esperar a la escena. */
+  weight?: number;
   /** La ambiental acaba de pasar a la pieza siguiente y aún no suena: `setScene` no pide otro `play()` (sonarían dos). */
   advancing?: boolean;
 }
@@ -34,6 +37,16 @@ const SINGLE_STEM_AMBIENT_FLOOR = 0.6;
 
 /** Ganancia de efectos concretos respecto al volumen base de los SFX (recoger es un detalle, no un aviso). */
 const SFX_GAIN: Partial<Record<SoundEffect, number>> = { item_pickup: 0.7 };
+
+/** Volumen base de la música y de los efectos con las barras en su nivel por defecto (el de antes de las barras). */
+const MUSIC_BASE_VOLUME = 0.42;
+// Bajo a propósito: los SFX de UI acompañan, no protagonizan.
+const SFX_BASE_VOLUME = 0.5;
+
+/** Volumen real de un canal para un nivel de las barras: el nivel por defecto da el volumen base; el 10 lo sube un 66 %. */
+export function volumeForLevel(base: number, level: number): number {
+  return Math.min(1, base * clampVolumeLevel(level) / VOLUME_DEFAULT_LEVEL);
+}
 
 /**
  * Expuesta para pruebas: antes el test recargaba todo el módulo (reload dinámico) para forzar
@@ -62,11 +75,12 @@ export class AudioDirectorService {
   /** Pieza de la lista ambiental que suena (índice en `MUSIC_CUES.ambient`) y fallos de carga seguidos (para no girar en vacío). */
   private ambientIndex = 0;
   private ambientFailures = 0;
-  private musicVolume = 0.42;
-  private musicMuted = false;
-  private sfxMuted = false;
-  // Bajo a propósito: los SFX de UI acompañan, no protagonizan.
-  private sfxVolume = 0.5;
+  /** Nivel y silencio recordados por la persona (barras de volumen de Ajustes). */
+  private readonly volumeSettings = inject(VolumeSettings);
+  private musicVolume = volumeForLevel(MUSIC_BASE_VOLUME, this.volumeSettings.musicLevel());
+  private musicMuted = this.volumeSettings.musicMuted();
+  private sfxMuted = this.volumeSettings.sfxMuted();
+  private sfxVolume = volumeForLevel(SFX_BASE_VOLUME, this.volumeSettings.sfxLevel());
   private fadeInterval?: number;
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private initialized = false;
@@ -251,6 +265,29 @@ export class AudioDirectorService {
     }
   }
 
+  /**
+   * Barra de la música: el nivel se oye al instante (sin el fundido lento de las escenas). Cada capa conserva el peso que
+   * le dio la escena y se re-escala; el tema de la intro sigue el mismo volumen.
+   */
+  setMusicLevel(level: number): void {
+    const previous = this.musicVolume;
+    this.musicVolume = volumeForLevel(MUSIC_BASE_VOLUME, level);
+    if (this.musicMuted) return;
+    if (this.introLament?.playing()) this.introLament.volume(this.musicVolume);
+    this.stems.forEach(stem => {
+      if (stem.weight === undefined) return;
+      stem.targetVolume = stem.weight * this.musicVolume;
+      stem.volume = previous > 0 ? stem.volume * (this.musicVolume / previous) : stem.targetVolume;
+      stem.howl.volume(Math.max(0, Math.min(1, stem.volume)));
+    });
+  }
+
+  /** Barra de los sonidos de acciones: cada efecto guarda su ganancia propia sobre el nuevo volumen. */
+  setSfxLevel(level: number): void {
+    this.sfxVolume = volumeForLevel(SFX_BASE_VOLUME, level);
+    this.sfx.forEach((howl, key) => howl.volume(this.sfxVolume * (SFX_GAIN[key] ?? 1)));
+  }
+
   setSfxMuted(muted: boolean): void {
     this.sfxMuted = muted;
     this.sfx.forEach(howl => howl.mute(muted));
@@ -363,6 +400,7 @@ export class AudioDirectorService {
   private setTargetVolume(layer: MusicLayer, vol: number): void {
     const stem = this.stems.get(layer);
     if (!stem) return;
+    stem.weight = vol;
     stem.targetVolume = this.musicMuted ? 0 : vol * this.musicVolume;
     this.ensureFadeLoop();
   }

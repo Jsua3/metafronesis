@@ -56,6 +56,27 @@ describe('P3: acceso directo y comprensible', () => {
     expect(description?.textContent).toBe('Por ejemplo: nombre@institucion.edu.co');
   });
 
+  it('la contraseña se puede ver (botón con nombre que dice la acción) y pegar en los formularios del acceso (SIEP-263)', async () => {
+    const fixture = await render();
+    const host = fixture.nativeElement as HTMLElement;
+    const password = host.querySelector<HTMLInputElement>('#login-password')!;
+    const reveal = host.querySelector<HTMLButtonElement>('.ui-field__reveal')!;
+    expect(reveal.getAttribute('aria-label')).toBe('Mostrar contraseña');
+    reveal.click();
+    await fixture.whenStable();
+    expect(password.type).toBe('text');
+    expect(reveal.getAttribute('aria-label')).toBe('Ocultar contraseña');
+    // Pegar: ningún manejador cancela el evento y el valor entra por `input`, como lo hace el navegador al pegar.
+    for (const input of host.querySelectorAll<HTMLInputElement>('input:not([type=checkbox]):not([tabindex="-1"])')) {
+      const paste = new Event('paste', { bubbles: true, cancelable: true });
+      input.dispatchEvent(paste);
+      expect(paste.defaultPrevented, input.id).toBe(false);
+      input.value = 'texto.pegado@example.test';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(input.value, input.id).toBe('texto.pegado@example.test');
+    }
+  });
+
   it('cuenta seis paradas hasta Ingresar usando el salto y deja todo lo secundario después', async () => {
     const fixture = await render();
     const host = fixture.nativeElement as HTMLElement;

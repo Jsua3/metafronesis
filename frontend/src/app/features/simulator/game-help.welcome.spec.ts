@@ -38,7 +38,7 @@ describe('Controles de primera vez: contenido', () => {
     expect(rows[1].keys).toContain('E');
     expect(rows[1].text).toContain('dice con qué vas a interactuar');
     expect(rows[2].keys).toBe('I');
-    expect(rows[2].text).toContain('camina solo');
+    expect(rows[2].text).toContain('camina y habla');
     expect(rows[3].keys).toBe('M');
   });
 

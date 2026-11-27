@@ -1,3 +1,4 @@
+import { ORIENTATION_COPY } from './orientation.config';
 
 /**
  * Distancia (px del mundo) a la que hay que alejarse de las puertas antes de volver a cruzar una: al entrar o recargar
@@ -43,6 +44,7 @@ export function doorRearmProgress(player: DoorPoint, doors: readonly DoorPoint[]
 /** El aviso en palabras simples; `null` cuando no falta nada. */
 export function doorRearmMessage(player: DoorPoint, doors: readonly DoorPoint[]): string | null {
   const progress = doorRearmProgress(player, doors);
-  // BORRADOR: texto pendiente de Psicología. La geometría puede bloquear el eje radial; la regla acepta cualquier dirección.
-  return progress ? 'Aléjate de la puerta en cualquier dirección posible para poder volver a cruzarla.' : null;
+  // BORRADOR: texto pendiente de Psicología. La geometría puede bloquear el eje radial y la regla acepta cualquier dirección:
+  // el texto no promete una dirección. Una sola fuente: el texto de orientación.
+  return progress ? ORIENTATION_COPY.door.awayFromDoorGeneric : null;
 }

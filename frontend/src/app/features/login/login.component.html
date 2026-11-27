@@ -30,6 +30,13 @@
               <p class="acceso__subtitle">Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva. El enlace vence en 30 minutos.</p>
             </div>
 
+            <!-- La salida va ARRIBA, tras el encabezado: la primera parada del tabulador (UA-E17: al final del formulario, tras el
+                 envío, una persona con teclado y lector no la encontró). Un solo «Volver a iniciar sesión» en la pantalla. -->
+            <button type="button" class="acceso__link acceso__volver" (click)="openSignIn()">
+              <svg class="acceso__volver-flecha" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M12.5 8H3.5M7.5 4l-4 4 4 4" /></svg>
+              Volver a iniciar sesión
+            </button>
+
             <div class="acceso__campos">
               <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(forgotForm.controls.email, { required: 'Escribe el correo de tu cuenta.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, forgotTried())">
@@ -46,16 +53,11 @@
             @if (forgotError()) {
               <div class="acceso__aviso-error">
                 <mat-icon aria-hidden="true">error</mat-icon>
-                <p class="acceso__error" role="alert">{{ forgotError() }}</p>
+                <p class="acceso__error" role="alert" tabindex="-1">{{ forgotError() }}</p>
               </div>
             }
 
             <button ui-button type="submit" variant="primary" size="lg" class="acceso__submit" [loading]="forgotLoading()">Enviar enlace</button>
-
-            <p class="acceso__switch">
-              ¿La recordaste?
-              <button type="button" class="acceso__link" (click)="openSignIn()">Volver a iniciar sesión</button>
-            </p>
           </form>
         } @else if (!showRegister()) {
           <form class="acceso__form" [class.acceso__form--cambia]="switched()" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
@@ -91,7 +93,7 @@
             @if (error()) {
               <div class="acceso__aviso-error">
                 <mat-icon aria-hidden="true">error</mat-icon>
-                <p class="acceso__error" role="alert">{{ error() }}</p>
+                <p class="acceso__error" role="alert" tabindex="-1">{{ error() }}</p>
               </div>
             }
 
@@ -186,7 +188,7 @@
             @if (registerError()) {
               <div class="acceso__aviso-error">
                 <mat-icon aria-hidden="true">error</mat-icon>
-                <p class="acceso__error" role="alert">{{ registerError() }}</p>
+                <p class="acceso__error" role="alert" tabindex="-1">{{ registerError() }}</p>
               </div>
             }
 

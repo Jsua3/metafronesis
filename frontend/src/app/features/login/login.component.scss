@@ -466,6 +466,24 @@
   }
 }
 
+// «Volver a iniciar sesión» de la recuperación: arriba, con su flecha, como la salida que es (UA-E17).
+.acceso__volver {
+  gap: var(--ds-space-2);
+  justify-self: start;
+  min-height: 2rem;
+}
+
+.acceso__volver-flecha {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 // El primario en cápsula, con el filo de luz arriba y la sombra del color (como en la portada).
 .acceso__submit {
   width: 100%;

@@ -133,6 +133,10 @@ const medirVentana = () => typeof window === 'undefined'
                 <!-- BORRADOR: texto pendiente de Psicología. -->
                 <button type="button" class="instant-setting u-boton" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
                 <div class="placa-pie">
+                  <!-- BORRADOR: texto pendiente de Psicología. -->
+                  @if (d.key.startsWith('consequence-') && d.lines.length > 1) {
+                    <span class="placa-pagina">{{ lineIndex() + 1 }} de {{ d.lines.length }}</span>
+                  }
                   @if (paginas().length > 1) {
                     <!-- Parlamento en páginas (V5): cuántas van y cuántas son, a la izquierda y antes de todo botón (al lado
                          de «Saltar» quedaba tapado; V6). El lector tiene el texto entero arriba. -->
@@ -140,7 +144,7 @@ const medirVentana = () => typeof window === 'undefined'
                   }
                   <button type="button" class="close-btn u-boton u-boton--principal" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
                     (click)="continuarDialogo()">
-                    Continuar <span aria-hidden="true">▶</span>
+                    {{ advanceLabel(d) }} <span aria-hidden="true">▶</span>
                   </button>
                 </div>
               </div>
@@ -162,7 +166,7 @@ const medirVentana = () => typeof window === 'undefined'
                   (consentRequired)="consentRequired.emit()" />
               }
               <div class="choices" role="group" aria-label="Opciones de intervención" tabindex="-1" cdkFocusInitial
-                [attr.aria-describedby]="notice ? 'choices-notice' : null"
+                [attr.aria-describedby]="notice ? 'choices-notice choice-instruction' : 'choice-instruction'"
                 [class.choices--locked]="chosenKey() !== null">
                 @for (choice of d.choices; track choice.key; let i = $index) {
                   @let etiqueta = etiquetaDeFicha(d, i);
@@ -178,7 +182,7 @@ const medirVentana = () => typeof window === 'undefined'
                     (focus)="onChoiceFocus($event)"
                     (click)="onChoiceClick($event, choice)">
                     <!-- La letra se dibuja en pixel art; como texto queda solo para que el texto visible empiece por ella (WCAG 2.5.3). -->
-                    <span class="choice-num" aria-hidden="true" [attr.data-letra]="letra(i)"><span class="choice-num__txt" [class.choice-num__txt--ver]="i > 3">{{ letra(i) }}</span></span>{{ ' ' }}<span class="choice-btn__body">
+                    <kbd class="choice-num" aria-hidden="true" [attr.data-letra]="letra(i)"><span class="choice-num__txt" [class.choice-num__txt--ver]="i > 3">{{ letra(i) }}</span></kbd>{{ ' ' }}<span class="choice-btn__body">
                       @if (etiqueta) {
                         <span class="choice-btn__tag">{{ etiqueta }}</span>{{ ' ' }}
                       }
@@ -193,7 +197,8 @@ const medirVentana = () => typeof window === 'undefined'
               </div>
             }
 
-            <p class="keyboard-hint">{{ keyboardHint(d) }}</p>
+            <!-- BORRADOR: texto pendiente de Psicología. -->
+            <p class="keyboard-hint" [class.keyboard-hint--choices]="choicesVisible() && !d.stale" id="choice-instruction">{{ choicesVisible() && !d.stale ? choiceInstruction(d) : keyboardHint(d) }}</p>
           </div>
         </div>
       </div>
@@ -759,6 +764,7 @@ const medirVentana = () => typeof window === 'undefined'
     }
     /* La pista de teclado solo existe donde hay teclado y puntero fino. */
     .strip-body[data-mas]::after, .keyboard-hint { display: none; --m: var(--marco-placa); --t: var(--trama-placa); align-self: flex-start; margin: 0; padding: 0 8px 1px; font-size: max(14px, .9em); color: #f2ecdf; }
+    .keyboard-hint--choices { display: block; }
     @media (hover: hover) and (pointer: fine) {
       .keyboard-hint { display: block; }
     }
@@ -852,6 +858,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   /** El aviso breve de la pantalla (VD-29) mientras el cuadro está sobre el mundo: el cuadro le da su sitio. */
   readonly avisoBreve  = input<string>('');
   readonly nextStep = input<string | null>(null);
+  readonly finalActionLabel = input<string | null>(null);
   /** Movimiento reducido del juego (interruptor del HUD o preferencia del sistema): la línea aparece completa, sin máquina de escribir. */
   readonly reduceMotion = input(false);
   /**
@@ -1205,12 +1212,27 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     return isTool(c) && !c.toolMissing ? 'Usar una herramienta' : null;
   }
 
+  // BORRADOR: texto pendiente de Psicología. Describe exactamente la siguiente activación del botón estable.
+  advanceLabel(d: DialogueState): string {
+    if (!this.isTypingComplete()) return 'Mostrar texto completo';
+    if (!this.ultimaPagina()) return `Seguir leyendo (${this.pagina() + 2} de ${this.paginas().length})`;
+    if (!this.isLastLine()) return `Seguir leyendo (${this.lineIndex() + 2} de ${d.lines.length})`;
+    return this.hasChoices(d) ? 'Ver las opciones' : this.finalActionLabel() ?? 'Volver al mapa';
+  }
+
+  // BORRADOR: texto pendiente de Psicología. No promete letras cuando los atajos están desactivados.
+  choiceInstruction(d: DialogueState): string {
+    if (!this.shortcuts.enabled()) return 'Elige una opción: haz clic en ella.';
+    const letters = d.choices.map((_, i) => this.letra(i)).join(', ');
+    return `Elige una opción: haz clic en ella o pulsa su letra (${letters}).`;
+  }
+
   /** Pista de teclado (solo se pinta con puntero fino); sin los atajos de una tecla no promete los números. */
   keyboardHint(d: DialogueState): string {
     const count = this.hasChoices(d) ? d.choices.length : 0;
     if (count === 0 || !this.shortcuts.enabled()) return 'Enter: continuar · Esc: volver al mapa';
     const range = count === 1 ? letraDe(0) : `${letraDe(0)} a ${letraDe(count - 1)}`;
-    return `Enter: continuar · ${range}: elegir · Esc: volver al mapa`;
+    return `Enter: continuar · Pulsa ${range} para elegir · Esc: volver al mapa`;
   }
 
   /** El sonido de la opción acompaña al foco de teclado; el puntero no lo dispara al pasar por encima. */

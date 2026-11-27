@@ -38,6 +38,14 @@ const valores = (raiz: HTMLElement) => Object.fromEntries([...raiz.querySelector
   [b.querySelector('.faceta__nombre')!.textContent, b.querySelector('.faceta__valor')!.textContent]));
 
 describe('RespuestaComponent', () => {
+  it('distingue crear la escena siguiente de crear y conectar una escena final', async () => {
+    const { raiz } = await montar({ destinoId: null });
+    const botones = [...raiz.querySelectorAll('button')];
+    expect(botones.some(b => b.textContent?.trim() === 'Crear la escena que sigue')).toBe(true);
+    expect(botones.some(b => b.textContent?.trim() === 'Terminar el caso aquí: crear la escena final')).toBe(true);
+    expect(raiz.textContent).toContain('El caso termina al llegar a ella; no tiene respuestas');
+  });
+
   it('las cinco facetas dicen su valor sin abrirse', async () => {
     const { raiz } = await montar();
     expect(valores(raiz)).toEqual({ Pasos: '2', Criterios: '1', Persona: 'se abre y se calma', Reacción: 'sí', Aparece: 'con requisito' });
@@ -82,7 +90,7 @@ describe('RespuestaComponent', () => {
     fixture.componentInstance.crearFinal.subscribe(crear);
     const botones = [...raiz.querySelectorAll('button')];
     botones.find((b) => b.textContent?.includes('Usar 2 · Final'))!.click();
-    botones.find((b) => b.textContent?.includes('Crear escena final'))!.click();
+    botones.find((b) => b.textContent?.includes('crear la escena final'))!.click();
     expect(destino).toHaveBeenCalledWith('e2');
     expect(crear).toHaveBeenCalled();
     expect(raiz.querySelector<HTMLTextAreaElement>('#rt1')!.value).toBe('Validar su miedo');

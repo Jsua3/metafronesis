@@ -258,4 +258,62 @@ describe('InvitationsComponent', () => {
       vi.useRealTimers();
     }
   });
+  // UA-E27 y UA-E28 (medición 0.7.0): «Aceptar» apenas resaltaba y costaba dar con él con Tab; al cerrar el aviso de
+  // «Rechazar» el foco quedaba donde no se esperaba, y al responder desaparecía la tarjeta con el foco dentro.
+  describe('la acción principal y el foco (UA-E27, UA-E28)', () => {
+    it('«Aceptar» es la acción principal de cada invitación y llega antes que «Rechazar» en el orden de foco', async () => {
+      await render({ list: () => of([invitation(), invitation({ id: 2, groupId: 2, groupName: 'Crisis' })]) });
+      for (const acciones of host().querySelectorAll('.inv-item__actions')) {
+        const botones = [...acciones.querySelectorAll<HTMLButtonElement>('button')];
+        expect(botones.map(b => text(b))).toEqual(['Aceptar', 'Rechazar']);
+        expect(botones[0].classList.contains('ui-button--primary')).toBe(true);
+        expect(botones[1].classList.contains('ui-button--primary')).toBe(false);
+        expect(botones[0].tabIndex).toBe(0);
+      }
+    });
+
+    it('el nombre accesible de cada botón dice a qué grupo responde y empieza por su texto visible (WCAG 2.5.3)', async () => {
+      await render();
+      expect(button('Aceptar')!.getAttribute('aria-label')).toBe('Aceptar la invitación a Psicología Jurídica · 2026-2');
+      expect(button('Rechazar')!.getAttribute('aria-label')).toBe('Rechazar la invitación a Psicología Jurídica · 2026-2');
+    });
+
+    it('al llegar con el foco en el encabezado, la primera parada es «Aceptar» (nada entre ambos)', async () => {
+      await render();
+      const paradas = [...host().querySelectorAll<HTMLElement>('a[href], button, input, [tabindex]')].filter(el => el.tabIndex >= 0);
+      expect(paradas[0]).toBe(button('Aceptar'));
+    });
+
+    it('cancelar «Rechazar» devuelve el foco a «Rechazar» (el diálogo lo restituye) y no envía nada', async () => {
+      const decline = vi.fn();
+      await render({ decline }, vi.fn(async () => false));
+      const rechazar = button('Rechazar')!;
+      rechazar.focus();
+      rechazar.click();
+      await fixture.whenStable();
+      expect(decline).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(rechazar);
+    });
+
+    it('al rechazar, la tarjeta desaparece y el foco pasa al encabezado de la pantalla, no a <body>', async () => {
+      await render();
+      const rechazar = button('Rechazar')!;
+      rechazar.focus();
+      rechazar.click();
+      await fixture.whenStable();
+      expect(button('Rechazar')).toBeNull();
+      await vi.waitFor(() => expect(document.activeElement).toBe(host().querySelector('h1')));
+      expect(text(host().querySelector('[role="status"].ds-sr-only'))).toContain('Rechazaste la invitación');
+    });
+
+    it('al salir de un grupo, el foco tampoco se pierde con el menú que desaparece', async () => {
+      await render({ list: () => of([invitation({ status: 'ACTIVE' })]) });
+      const disparador = host().querySelector<HTMLElement>('ui-menu button')!;
+      disparador.focus();
+      elegirSalir();
+      await fixture.whenStable();
+      expect(host().querySelector('ui-menu')).toBeNull();
+      await vi.waitFor(() => expect(document.activeElement).toBe(host().querySelector('h1')));
+    });
+  });
 });
