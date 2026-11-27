@@ -90,6 +90,37 @@ describe('UiDialog', () => {
     expect(await closed).toBeUndefined();
   });
 
+  it('la hoja solo se cierra por arrastre si el cuerpo está arriba y el cierre está permitido', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: () => undefined, removeEventListener: () => undefined }));
+    try {
+      const ref = TestBed.inject(UiDialog).open(EditGroupDialog, {});
+      await settle();
+      const dialog = dialogs()[0];
+      const body = dialog.querySelector<HTMLElement>('.ui-dialog-frame__body')!;
+      const handle = dialog.querySelector<HTMLElement>('.ui-dialog-frame__handle')!;
+      expect(handle).not.toBeNull();
+      const gesture = () => {
+        for (const [type, y] of [['pointerdown', 10], ['pointerup', 110]] as const) {
+          const e = new Event(type, { bubbles: true });
+          Object.assign(e, { pointerType: 'touch', pointerId: 1, clientY: y, isPrimary: true });
+          handle.dispatchEvent(e);
+        }
+      };
+      body.scrollTop = 30;
+      gesture();
+      expect(dialogs()).toHaveLength(1);
+      body.scrollTop = 0;
+      ref.disableClose = true;
+      gesture();
+      expect(dialogs()).toHaveLength(1);
+      ref.disableClose = false;
+      const closed = firstValueFrom(ref.closed);
+      gesture();
+      await closed;
+      expect(dialogs()).toHaveLength(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it('confirm(): alertdialog; «Confirmar» resuelve true y «Cancelar» o Esc resuelven false', async () => {
     const dialog = TestBed.inject(UiDialog);
     let answer = dialog.confirm({ title: 'Publicar caso', message: 'Lo verán tus estudiantes.', confirmLabel: 'Publicar' });

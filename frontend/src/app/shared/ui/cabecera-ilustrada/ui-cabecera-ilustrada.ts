@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 
 import { DoodlesComponent } from '../doodles/doodles.component';
 import { UiPageHeader } from '../page-header/ui-page-header';
@@ -32,7 +32,7 @@ let siguiente = 0;
       <ng-content />
     </div>
     @if (escena(); as nombre) {
-      <ui-vineta class="ui-cabecera-ilustrada__vineta" [escena]="nombre" [personaje]="personaje()" [escala]="escala()" [marco]="herramienta() ? 'ninguno' : 'suelo'"
+      <ui-vineta class="ui-cabecera-ilustrada__vineta" [escena]="nombre" [personaje]="personaje()" [escala]="escalaParaVista()" [marco]="herramienta() ? 'ninguno' : 'suelo'"
         alinear="fin" />
     }
     @if (herramienta()) { <div class="cabecera-herramienta__acciones"><ng-content select="[uiHerramientaAcciones]" /></div> }
@@ -54,4 +54,14 @@ export class UiCabeceraIlustrada {
   readonly escala = input<EscalaVineta>(2);
   readonly doodles = input(true);
   readonly herramienta = input(false);
+  private readonly consultaTableta = typeof matchMedia === 'function'
+    ? matchMedia('(min-width: 600px) and (max-width: 1023px) and (min-height: 500px)') : null;
+  private readonly tableta = signal(this.consultaTableta?.matches ?? false);
+  protected readonly escalaParaVista = computed<EscalaVineta>(() => this.tableta() ? 1 : this.escala());
+
+  constructor() {
+    const cambiar = (evento: MediaQueryListEvent) => this.tableta.set(evento.matches);
+    this.consultaTableta?.addEventListener('change', cambiar);
+    inject(DestroyRef).onDestroy(() => this.consultaTableta?.removeEventListener('change', cambiar));
+  }
 }
