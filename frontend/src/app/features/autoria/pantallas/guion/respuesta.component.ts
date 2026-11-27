@@ -350,7 +350,9 @@ export class RespuestaComponent {
     afterNextRender(() => {
       const el = document.getElementById(ancla);
       el?.scrollIntoView?.({ block: 'center' });
-      (el?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])') ?? el)?.focus();
+      // Primero el campo; el botón solo si no hay ninguno (el botón de ayuda de la leyenda va antes que los campos).
+      (el?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea:not([disabled])')
+        ?? el?.querySelector<HTMLElement>('button:not([disabled])') ?? el)?.focus();
     }, { injector: this.injector });
   }
 
