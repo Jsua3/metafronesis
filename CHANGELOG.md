@@ -17,6 +17,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
 - Que mover una pieza en el editor se vea al instante: hoy la sala se rearma entera (ya sin parpadeo, desde el #75).
 
+### Corregido
+- **Correos de los avisos:** un correo que no sale queda en el registro del servidor con su causa (antes solo se guardaba el nombre del error en el aviso); los avisos de una sesión salen al confirmar la operación y por una sola conexión SMTP; la invitación a un grupo también deja su aviso en SIEP.
+
 ## [0.7.1] - 2026-11-27
 
 Respuesta inmediata en el juego y en el editor. Una tercera medición con las mismas personas simuladas sobre la 0.7.0 dio 76 % menos errores de acción (de 83 a 20), pero la sensación de uso no mejoró: la gente seguía sin saber si su acción había hecho algo. Esta versión hace que cada acción responda al instante y diga qué viene después.
