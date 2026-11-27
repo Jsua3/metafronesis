@@ -16,7 +16,76 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - Probar en el navegador, con el servidor real, el ensayo, el asistente de autoría, la generación con IA y el caso insignia.
 - El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
 - Que mover una pieza en el editor se vea al instante: hoy la sala se rearma entera (ya sin parpadeo, desde el #75).
-- En el editor, la pantalla «Rúbrica» del caso pide `GET /api/rubrics/case-versions/{id}`, que el servidor no tiene (solo `PUT`): responde «Método no permitido», no se puede poner la rúbrica desde el editor y el caso queda sin poder enviarse a revisión. Lo encontró la prueba de uso con personas simuladas. Los casos de la siembra ya traen su rúbrica.
+
+## [0.7.0] - 2026-11-26
+
+Plan de choque de usabilidad: una prueba con 116 personas simuladas dio un SUS de 35,8 y ninguna logró enviar un caso a revisión. Esta versión quita lo que impedía terminar, hace que el editor diga la verdad, guía al estudiante y al docente, y pule el juego y la accesibilidad. Trae también las sesiones del docente con sus correos, la recuperación de contraseña, el nuevo acceso, la edición compartida de casos entre docentes, la IA coautora (fase 1), los avatares de Karen y Sara y el caso insignia lineal con cinemática.
+
+### Añadido
+- **Sesiones del docente:** un grupo, un caso de la biblioteca y un horario, con estados programada, en curso, pausada, finalizada y cancelada (#87).
+- **Correos de las sesiones:** la convocatoria lleva el enlace a «Casos», llega un recordatorio 30 minutos antes (comando `recordar_sesiones`, cada 5 minutos) y la retroalimentación del docente avisa al estudiante con el enlace a su resultado (#98).
+- **«¿Olvidaste tu contraseña?»** con enlace de un solo uso por correo (#85).
+- **Acceso con recorrido guiado** de lo que hace el simulador, que se pausa al escribir y respeta movimiento reducido (#86).
+- **Edición compartida de casos:** el autor de un caso es quien lo creó y no cambia; otro docente edita un caso publicado creando una versión nueva suya, y cada caso muestra «Autor: … · Editado por: …» (#97).
+- **IA coautora, fase 1:** antes de construir, la IA aclara la idea con hasta 6 preguntas con opciones y acuerda con el docente una ficha del caso; en el editor, el panel de la IA tiene «Construir juntos» y «Pedir un cambio», se acopla o flota y se mueve también con teclado (#99).
+- **Avatares elegibles de Karen y Sara**, con bata y sin ella, hechos con su permiso escrito y solo con su nombre de pila (#101).
+- **`sembrar_demostracion --docentes`:** deja los grupos sembrados a cargo de docentes reales que ya existen (#84).
+- **Caso insignia SIM-VBG-002 lineal (2.0.7):** tres capítulos del hospital a la comisaría con una sola línea del tiempo, tres finales según lo que se hizo y uno de «Recorrido incompleto», cinemática en pixel art que nunca muestra el ataque, tutor al inicio y entre capítulos, y herramientas que ya no se pueden perder (#100).
+- **Portada por versión de caso:** cualquier docente la sube desde «Datos» (PNG, JPEG o WebP verificados por contenido, hasta 2 MB, sin metadatos y auditada); el caso insignia trae la suya (#100).
+- **«Asignar a un grupo» desde el propio caso publicado**, en la lista de casos y en el editor (#89).
+- **Permiso de autoría visible:** el docente sin permiso sabe qué le falta y a quién pedirlo; la administración lo da con un clic o al aprobar la cuenta (#89).
+- **Avance por caso en el grupo:** cuántos estudiantes terminaron cada caso asignado y cuántos lo tienen en curso, con enlace a sus intentos; «Invitar estudiantes» y «Asignar un caso» en la cabecera del grupo (#89).
+- **El grupo de un vistazo:** la lista de grupos y el inicio del docente muestran estudiantes aceptados, invitaciones pendientes y el avance de los casos; cada sección del menú del docente dice en una línea qué se hace ahí (#89).
+- **«Lo siguiente»** en el inicio del estudiante y del docente: una frase con lo que toca hacer ahora (#92, #89).
+- **Juego:** tarjeta de controles la primera vez, «Ir a…» a la vista, el siguiente paso marcado en el mundo, en el plano y en «Ir a…», flecha al borde cuando queda fuera de cuadro, cercanía visible para E e «Interactuar», clic o toque para caminar, y texto instantáneo opcional (#93).
+- **Editor:** explicación corta junto a cada término de Psicología y glosario en «Ayuda» (sin renombrar los términos), «Crear mi primer caso» junto al tutorial, «Deshacer» tras aceptar una propuesta de la IA y estado de guardado siempre visible (#88).
+
+### Cambiado
+- **El editor dice la verdad:** lo que impide enviar lo decide la compuerta del servidor y la barra, la evaluación, el panel y «Enviar» muestran el mismo número; lo demás son sugerencias. Al abrir «Enviar» la revisión se pide sola. El texto de relleno no cuenta como contenido (#88).
+- **«Llévame ahí»** abre la sección, desplaza y enfoca el campo exacto (#88).
+- Terminar el caso se hace desde la propia respuesta: crear una escena final conectada, usar una existente o convertir una escena sin respuestas en final; «Crear una escena nueva ahora» crea y conecta en un paso, y un borrador dice en la lista que ya está guardado (#88).
+- Una respuesta sin destino explica por qué lo necesita, ofrece crear la escena siguiente o un final, y lo escrito se respalda en la sesión del navegador (#88).
+- La barra del editor cede en vez de encimarse: las etapas conservan su nombre desde 1280 px (#88).
+- Estados vacíos del estudiante que dicen qué pasa, por qué y qué hacer; una sola acción principal por caso (#92).
+- Con teclado, la acción principal del estudiante llega antes que las secundarias; al entrar a un caso el botón dice «Entrando…» y, si falla, explica qué pasó y ofrece reintentar (#92).
+- Ningún botón apagado sin motivo en el portal del docente y de la administración; la cifra de pendientes cuadra en menú, resumen y pestañas (#89).
+- Inicio de sesión: el ejemplo del correo va en la ayuda (ya no parece un valor), orden de foco corto y demostración de un clic solo en desarrollo; la marca dice Metafrónesis en todas las pantallas (#91).
+- Las sesiones ya no piden espacio académico (#95).
+- «Da unos pasos…» ya no es un aviso modal; los diálogos se adelantan o se saltan con clic, Espacio o Enter (#93).
+- Juego: el texto se escribe más rápido, «Texto instantáneo» está en el propio diálogo, las páginas son cortas, «Tu decisión se guardó» aparece cuando el servidor lo confirma, una opción bloqueada dice qué herramienta falta y la tarjeta de controles empieza por el clic (#93).
+- Juego: cada botón dice lo que pasa («Hablar con …» camina y abre la conversación; «Ir a …» solo camina), la acción del siguiente paso se marca como tal y las demás como opcionales, y al decidir se ve «Elegiste: …» (#93).
+- Juego: «Ayuda» y «Ajustes» se distinguen sin depender del ícono (texto visible, o signo de interrogación frente a engranaje en pantalla pequeña) (#103).
+- El portal se carga aparte del arranque: el paquete inicial baja de 487,8 kB a 474 kB (#103).
+
+### Corregido
+- La rúbrica del caso respondía 405 y no dejaba enviar a revisión; ahora `GET /api/rubrics/case-versions/{id}` la devuelve (#88).
+- El envío exigía un tiempo estimado que ninguna pantalla pedía; ahora está en «Datos» (#88).
+- Tras aceptar una invitación los casos tardaban hasta 60 s en aparecer (#92).
+- Contraste de la etiqueta de cabecera (WCAG AA) y foco visible que no se pierde al cambiar de pantalla o cerrar un diálogo (#94).
+- Tres botones cuyo nombre para lectores de pantalla no empezaba por el texto visible: «Interactuar» del juego, «Asignar a un grupo» y «Permiso de autoría» (#93, #89).
+- «Reducir movimiento» se respeta en todo el portal con una sola regla, y el interruptor del juego dice lo mismo; el creador de avatar ofrece las cuatro vistas directas (#94, #92).
+- El juego ya no deja atascado junto a una puerta, cabe con zoom al 200 % y muestra el progreso de carga (#93).
+- Cinco contratos del juego fallaban en Windows por los saltos de línea (#93).
+- El docente ve y cambia el orden en que su grupo hará los casos («Subir/Bajar»); un caso nuevo va al final, dos cambios a la vez ya no se pisan y docente y estudiante ven la misma secuencia (#89).
+- La administración encuentra lo que debe aprobar: «Casos por aprobar (N)» arriba de «Revisión» (#89).
+- Asociar una rúbrica la autoriza el dueño del caso, y «sin rúbrica» ya no oculta otros errores (#88).
+- El estudiante puede leer su propio intento terminado aunque el caso ya no esté disponible; antes veía un 404 al consultarlo después de finalizar la sesión (#98).
+- Los botones del juego respondían a veces solo al segundo clic porque se volvían a crear mientras se usaban; ahora conservan su identidad, y «Interactuar» con una persona lejana camina hasta ella y abre la conversación (#93).
+- Crear una sesión propone el inicio (la próxima hora en punto) y el fin (una hora después), con un ejemplo de la fecha (#89).
+- Administración: la lista de usuarios carga por bloques con su total, el permiso de crear casos está en el menú de cada docente y «Por aprobar» y «Solicitudes» vacíos explican qué entra en cada uno; Reportes separa la carga y el error de casos con «Reintentar» (#89).
+
+### Seguridad
+- Los borradores del editor se guardan por usuario en la sesión del navegador, caducan y se borran al cerrar sesión (#88).
+- `GET /api/auth/demo/config` responde siempre `enabled: false` en producción sin consultar cuentas (#91).
+
+### Migraciones
+- `sesiones/0003_sesiones_con_grupo_y_estados`, `sesiones/0004_quitar_espacio_academico` y `sesiones/0005_recordatorio_enviado_en` (#87, #95, #98).
+- `simulation/0017_acuerdo_de_coautoria` (#99).
+- `simulation/0017_portada_de_version` y `simulation/0018_une_coautoria_y_portada`, que une las dos 0017 (#100).
+
+### Operación
+- Programar `python manage.py recordar_sesiones` cada 5 minutos, junto a `cerrar_sesiones_vencidas` (#98).
+- Dependencia nueva: `Pillow==13.0.0` en `requirements.txt`; el despliegue tiene que instalarla (#100).
 
 ## [0.6.2] - 2026-11-23
 

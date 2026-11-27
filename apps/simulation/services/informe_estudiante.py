@@ -4,8 +4,8 @@ import json
 
 from apps.simulation.casedef.vocabulary import INITIAL_PERSONA, LABELS, step_persona
 from apps.simulation.models import AttemptReport, AttemptStatus, ReflectionJournal
-from apps.simulation.models.attempt import RETRY_EVENT_TYPES
-from apps.simulation.services import case_rules
+from apps.simulation.models.attempt import OPEN_ATTEMPT_STATUSES, RETRY_EVENT_TYPES
+from apps.simulation.services import case_rules, endings
 from apps.simulation.assessment import evaluation as evaluacion_formativa
 from apps.simulation.services.revision_de_respuestas import decisiones_vigentes
 
@@ -73,6 +73,9 @@ def construir(intento):
         "summaryMessage": MENSAJES[intento.status],
     }
     if intento.status != AttemptStatus.COMPLETED:
+        if intento.status not in OPEN_ATTEMPT_STATUSES:
+            informe["ending"] = {**endings.incomplete(), "reason": []}
+            informe["decisionReview"] = _revision(decisiones_vigentes(intento))
         return informe
     decisiones = decisiones_vigentes(intento)
     evaluacion_guardada = getattr(intento, "evaluation", None)

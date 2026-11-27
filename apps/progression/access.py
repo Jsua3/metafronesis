@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 from apps.grupos.models import CaseAssignment, GrupoEstudiante
 from apps.grupos.secuencia import clave_secuencia
+from apps.simulation.services.portadas import datos_portada
 from .models import StudentCaseCompletion
 
 
@@ -66,6 +67,7 @@ def catalog(student):
                 "completed": done,
                 "allowed": reason is None,
                 "reason": reason,
+                **datos_portada(version),
             }
         )
         if not done and not closed:

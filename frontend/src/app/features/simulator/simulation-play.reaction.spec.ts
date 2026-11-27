@@ -15,7 +15,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -100,7 +100,7 @@ describe('SimulationPlayComponent: la reacción al elegir (4.3.3)', () => {
       providers: [
         { provide: SimulationService, useValue: sim },
         { provide: AudioDirectorService, useValue: audio },
-        { provide: AuthService, useValue: {} },
+        { provide: AuthService, useValue: { currentUser: () => ({ nombre: 'Ana López' }) } },
         { provide: CONSENT_RECORDER, useValue: new SessionConsentRecorder() },
         { provide: Router, useValue: { navigate: vi.fn() } },
         {
@@ -121,6 +121,17 @@ describe('SimulationPlayComponent: la reacción al elegir (4.3.3)', () => {
     const mundo = new Proxy(mirado, { get: (t, k: string) => (t[k] ??= vi.fn()) });
     (component as unknown as Record<string, unknown>)['reaction'] = director;
     (component as unknown as Record<string, unknown>)['gameWorld'] = mundo;
+  });
+
+  it('personaliza la línea al presentar la reacción y conserva el texto recibido', () => {
+    montarConDialogoDeDecision();
+    const reaction = { ...REACTION, line: 'Gracias por escuchar, {nombre}.' };
+    sim['chooseDecision'].mockReturnValue(of({ ...RESPUESTA_CON_REACCION, reaction }));
+
+    component.executeDecision(41);
+
+    expect(director.play.mock.calls[0][0].reaction.line).toBe('Gracias por escuchar, Ana.');
+    expect(reaction.line).toBe('Gracias por escuchar, {nombre}.');
   });
 
   afterEach(() => {
@@ -253,6 +264,36 @@ describe('SimulationPlayComponent: la reacción al elegir (4.3.3)', () => {
     expect(component.dialogue()?.speakerName).toBe('Consecuencia');
     expect(component.fadeActive(), 'ningún fundido tapa la supervisión ni su «Salida segura»').toBe(false);
     expect(service['getWorld']).toHaveBeenCalled();
+  });
+
+  it('lee la revisión de E21 cuando llega el mundo del intento completado', () => {
+    const { component, service } = montarConDialogoDeDecision();
+    const terminal = new Subject<SimulationWorldState>();
+    service['getWorld'].mockReturnValue(terminal);
+    const revision = {
+      nombre: 'Profesor', entrada: 'Terminaste, {nombre}.',
+      capitulos: [{ titulo: 'En el hospital', pasos: [{
+        numero: 1, titulo: 'Observa', hitos: ['primer_contacto'], logrado: 'Observaste.', pendiente: 'Empieza por observar.',
+      }] }],
+    };
+    const mapa = { ...makeWorld().map, key: 'c3-consultorio-4', ambient: { revision } };
+    component.world.set({ ...makeWorld(), attemptId: 'attempt-1', status: 'IN_PROGRESS', map: { ...mapa, key: 'c3-consultorio-3' } });
+    service['chooseDecision'].mockReturnValue(of({
+      ...RESPUESTA_CON_REACCION, status: 'COMPLETED',
+      currentNode: { ...RESPUESTA_CON_REACCION.currentNode, key: 'cierre-caso', terminal: true },
+    }));
+
+    component.executeDecision(41);
+    director.terminar();
+    expect(service['getWorld']).toHaveBeenCalledWith('attempt-1');
+    expect(component.revisionDelCierre()).toBeNull();
+    terminal.next({ ...makeWorld(), map: mapa, attemptId: 'attempt-1', status: 'COMPLETED' });
+    terminal.complete();
+    expect(component.world()?.map.key).toBe('c3-consultorio-4');
+    expect(component.revisionDelCierre()).toMatchObject(revision);
+    expect(component.nombreDeQuienJuega()).toBe('Ana');
+    component.world.set({ ...makeWorld(), map: mapa, attemptId: 'otro-intento', status: 'COMPLETED' });
+    expect(component.revisionDelCierre()).toBeNull();
   });
 
   it('el cierre sin supervisión que mostrar sigue con el fundido de siempre', () => {
@@ -417,13 +458,48 @@ describe('SimulationPlayComponent: la reacción al elegir (4.3.3)', () => {
       expect(component.refreshGuide().objetivo).toBe('Objetivo anterior');
     });
 
-    it('al terminar la reacción cambian a la escena nueva', () => {
-      montarEnEscenaAnterior();
+    it('conserva título y guía en la consecuencia, la caminata, la tarjeta y hasta aplicar el mundo nuevo', async () => {
+      const { service } = montarEnEscenaAnterior();
+      const guiaDe = (texto: string) => ({ pasos: [{ texto }] });
+      const antes = makeWorld();
+      component.world.set({
+        ...antes,
+        map: { ...antes.map, ambient: { guia: guiaDe('Paso de la sala anterior') } },
+        objects: [...antes.objects, {
+          ...antes.objects[0], key: 'salida', type: 'EXIT', metadata: { targetNodeKey: ESCENA_NUEVA.currentNode.key },
+        }],
+      });
+      service['getWorld'].mockReturnValue(of({
+        ...makeWorld(),
+        map: { ...antes.map, key: 'espera', title: 'Sala de espera', ambient: { guia: guiaDe('Paso de la sala nueva') } },
+      }));
+      const mundo = (component as unknown as { gameWorld: Record<string, Mock> }).gameWorld;
+      mundo['places'].mockReturnValue([]);
+      let cruzaron!: () => void;
+      mundo['caminarALaPuerta'].mockReturnValue(new Promise<void>(resolve => { cruzaron = resolve; }));
+      const anterior = () => {
+        expect(component.stageLabel()).toBe('Escena anterior');
+        expect(component.refreshGuide()).toMatchObject({ objetivo: 'Objetivo anterior', pasos: [{ texto: 'Paso de la sala anterior' }] });
+        expect(component.world()?.map.key).toBe(antes.map.key);
+      };
       component.executeDecision(41);
       director.terminar('completa');
-      TestBed.tick();
+      expect(component.dialogue()).toMatchObject({ speakerName: 'Consecuencia', hidePortrait: true });
+      anterior();
+      component.closeDialogue();
+      expect(mundo['caminarALaPuerta']).toHaveBeenCalledTimes(1);
+      expect(component.cambioDeLugar()).toBeNull();
+      anterior();
+      cruzaron();
+      await Promise.resolve();
+      expect(component.cambioDeLugar()?.lugar).toBe('Sala de espera');
+      anterior();
+      component.irAlLugar();
+      anterior();
+      await vi.advanceTimersByTimeAsync(400);
       expect(component.stageLabel()).toBe('Escena nueva');
-      expect(component.refreshGuide().objetivo).toBe('Objetivo nuevo');
+      expect(component.world()?.map.key).toBe('espera');
+      expect(component.refreshGuide()).toMatchObject({ objetivo: 'Objetivo nuevo', pasos: [{ texto: 'Paso de la sala nueva' }] });
     });
 
     it('si la reacción se corta («Salida segura» o Esc), la escena nueva se muestra en el acto', () => {

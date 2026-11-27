@@ -39,7 +39,7 @@ let lugares: PlaceCandidate[] = [];
 @Component({
   selector: 'app-game-world',
   template: '',
-  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused',
+  inputs: ['world', 'scenarioConfig', 'viewedNpcKeys', 'shortcuts', 'nearbyInteraction', 'selectedInteractionKey', 'motionPaused', 'nombreDeQuienJuega',
     'sfxMuted', 'reduceMotion', 'activation', 'intensity', 'doorStates', 'doorMessages', 'nextTargetKey', 'dimmedKeys', 'compact', 'showLoader'],
   outputs: ['worldReady', 'patientVisual', 'proximity', 'proximityAlso', 'nothingNearby', 'interact', 'npcInteract', 'walkEnded', 'walkCancelled',
     'bootFailed', 'roomExit', 'enterRoom', 'positionChange'],
@@ -155,6 +155,91 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     fixture.detectChanges();
     return { fixture, component, announcer, service: sim };
   }
+
+  it.each(['Enter', ' '])('al cerrar controles con %j, la pulsación queda fuera de la cola del mundo hasta soltarla', tecla => {
+    const { fixture, component, service } = montarConMundo();
+    const herramienta = { ...OBJETO_SIN_DECISION, key: 'tool-pap', type: 'TOOL' as const, toolCode: 'PAP' };
+    const jugar = () => component.openInteraction(herramienta);
+    const cola: Array<() => void> = [];
+    const escucharMundo = (event: KeyboardEvent) => { if (!event.defaultPrevented) cola.push(jugar); };
+    const pulsar = (target: EventTarget, tipo: 'keydown' | 'keyup', repeat = false) => {
+      const event = new KeyboardEvent(tipo, { key: tecla, bubbles: true, cancelable: true, repeat });
+      target.dispatchEvent(event);
+      return event;
+    };
+    component.worldRendered.set(true);
+    component.nearbyInteraction.set(herramienta);
+    component.openControls();
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    const entendido = Array.from(host.querySelectorAll('app-game-help button')).find(button => button.textContent?.includes('Entendido')) as HTMLButtonElement;
+    const juego = host.querySelector<HTMLElement>('.game-container')!;
+    entendido.focus();
+    expect(document.activeElement).toBe(entendido);
+
+    window.addEventListener('keydown', escucharMundo);
+    try {
+      expect(pulsar(entendido, 'keydown').defaultPrevented).toBe(false);
+      if (tecla === ' ') pulsar(entendido, 'keyup');
+      entendido.click(); // Activación nativa que jsdom no sintetiza a partir de KeyboardEvent.
+      fixture.detectChanges();
+      juego.focus();
+      expect(component.controlsVisible()).toBe(false);
+
+      if (tecla === 'Enter') {
+        expect(pulsar(juego, 'keydown', true).defaultPrevented).toBe(true);
+        pulsar(juego, 'keyup');
+      }
+      cola.splice(0).forEach(accion => accion());
+      expect(service['openInteraction']).not.toHaveBeenCalled();
+
+      pulsar(juego, 'keydown');
+      expect(service['openInteraction']).toHaveBeenCalledOnce();
+      expect(service['openInteraction']).toHaveBeenCalledWith('a1', herramienta.key);
+    } finally {
+      window.removeEventListener('keydown', escucharMundo);
+    }
+  });
+
+  it('la guía prioriza los usos del nodo, incluso vacíos, y admite respuestas anteriores', () => {
+    const { component } = montarConMundo();
+    const world = mundo({ usedToolKeys: ['PAP@camilo'], map: { key: 'sala-x', title: 'Sala X', ambient: {
+      guia: { pasos: [{ texto: 'Aplica la herramienta.', hecho: { used: 'PAP' } },
+        { texto: 'Apóyalo con la herramienta.', hecho: { used: 'PAP@camilo' } }] },
+    } } });
+    const hechos = (estado: SimulationWorldState) => component.refreshGuide(estado).pasos?.map(p => p.hecho);
+
+    expect(hechos({ ...world, usedToolKeysHere: [] })).toEqual([false, false]);
+    expect(hechos({ ...world, usedToolKeysHere: ['PAP@otra-persona'] })).toEqual([true, false]);
+    expect(hechos({ ...world, usedToolKeysHere: ['PAP@camilo'] })).toEqual([true, true]);
+    expect(hechos(world)).toEqual([true, true]);
+  });
+
+  it('el Enter de la nota de capítulo no cierra los controles que aparecen después', () => {
+    const { fixture, component, service } = montarConMundo();
+    component.worldRendered.set(true);
+    component.helpCardSeen.set(false);
+    component.transitionNote.set('Capítulo 1 · Una llegada.');
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    const juego = host.querySelector<HTMLElement>('.game-container')!;
+    const pulsar = (tipo: 'keydown' | 'keyup', repeat = false) => {
+      const event = new KeyboardEvent(tipo, { key: 'Enter', bubbles: true, cancelable: true, repeat });
+      juego.dispatchEvent(event);
+      return event;
+    };
+
+    expect(host.querySelector('app-nota-transicion')).not.toBeNull();
+    expect(host.querySelector('app-game-help')).toBeNull();
+    expect(pulsar('keydown').defaultPrevented).toBe(true);
+    fixture.detectChanges();
+    expect(host.querySelector('app-nota-transicion')).toBeNull();
+    expect(host.querySelector('app-game-help')).not.toBeNull();
+    expect(pulsar('keydown', true).defaultPrevented).toBe(true);
+    pulsar('keyup');
+    expect(component.controlsVisible()).toBe(true);
+    expect(service['openInteraction']).not.toHaveBeenCalled();
+  });
 
   it('conserva las acciones al abrir y cerrar Ir a… y recibir posiciones y cercanía equivalentes', () => {
     const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };

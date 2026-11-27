@@ -121,34 +121,37 @@ describe('SimulationService (API de metafronesis)', () => {
   describe('el catálogo y la ficha (rutas que metafronesis ya tenía)', () => {
     it('getCatalog traduce las filas del servidor (snake_case, sin sobre) al catálogo del cliente', () => {
       let catalogo: unknown;
+      const portada = { portada: '/api/simulation/covers/imagen', portadaPixelArt: true };
       service.getCatalog().subscribe(r => (catalogo = r));
       http.expectOne(`${S}/catalog`).flush([
-        { case_version_id: 7, case_id: 3, title: 'Caso siete', completed: true, allowed: true, reason: null },
+        { case_version_id: 7, case_id: 3, title: 'Caso siete', completed: true, allowed: true, reason: null, ...portada },
         { case_version_id: 8, case_id: 4, title: 'Caso ocho', completed: false, allowed: false, reason: 'LOCKED_BY_SEQUENCE' },
       ]);
       expect(catalogo).toEqual([
-        { caseVersionId: 7, code: '', title: 'Caso siete', description: '', order: 1, unlocked: true, completed: true, locked: false, access: { allowed: true } },
+        { caseVersionId: 7, code: '', title: 'Caso siete', description: '', order: 1, unlocked: true, completed: true, locked: false, access: { allowed: true }, ...portada },
         { caseVersionId: 8, code: '', title: 'Caso ocho', description: '', order: 2, unlocked: false, completed: false, locked: true, access: { allowed: false, reason: 'LOCKED_BY_SEQUENCE' } },
       ]);
     });
 
     it('listCases une el catálogo con los casos por el id del caso (código y descripción)', () => {
       let casos: unknown;
+      const portada = { portada: '/api/simulation/covers/imagen', portadaPixelArt: false };
       service.listCases().subscribe(r => (casos = r));
-      http.expectOne(`${S}/catalog`).flush([{ case_version_id: 7, case_id: 3, title: 'Caso siete', completed: false, allowed: true, reason: null }]);
+      http.expectOne(`${S}/catalog`).flush([{ case_version_id: 7, case_id: 3, title: 'Caso siete', completed: false, allowed: true, reason: null, ...portada }]);
       http.expectOne(`${S}/cases`).flush([{ id: 3, code: 'SIM-3', title: 'Caso siete', description: 'Descripción', active: true }]);
-      expect(casos).toEqual([{ caseVersionId: 7, caseId: 3, code: 'SIM-3', title: 'Caso siete', description: 'Descripción', semanticVersion: '', nodeCount: 0, status: 'PUBLISHED' }]);
+      expect(casos).toEqual([{ caseVersionId: 7, caseId: 3, code: 'SIM-3', title: 'Caso siete', description: 'Descripción', semanticVersion: '', nodeCount: 0, status: 'PUBLISHED', ...portada }]);
     });
 
     it('la ficha se arma con el contexto y los objetivos del servidor; el aviso de contenido sale del consentimiento', () => {
       let ficha: unknown;
+      const portada = { portada: '/api/simulation/covers/imagen', portadaPixelArt: true };
       service.getCaseBrief(7).subscribe(r => (ficha = r));
       const brief = http.expectOne(`${S}/cases/7/brief`);
       expect(brief.request.context.get(SCREEN_HANDLES_FORBIDDEN)).toBe(true);
-      brief.flush({ success: true, data: { caseVersionId: 7, code: 'C', title: 'Caso siete', description: 'd', narrativeContext: 'Contexto', learningObjectives: ['Escuchar'], estimatedMinutes: 20 } });
+      brief.flush({ success: true, data: { caseVersionId: 7, code: 'C', title: 'Caso siete', description: 'd', narrativeContext: 'Contexto', learningObjectives: ['Escuchar'], estimatedMinutes: 20, ...portada } });
       http.expectOne(`${S}/cases/7/consent`).flush({ success: true, data: { required: true, noticeVersion: 'v1', accepted: false, acceptedAt: null } });
       expect(ficha).toEqual({
-        caseVersionId: 7, title: 'Caso siete', context: 'Contexto', characters: [], learningObjectives: ['Escuchar'], hasSensitiveContent: true, access: { allowed: true },
+        caseVersionId: 7, title: 'Caso siete', context: 'Contexto', characters: [], learningObjectives: ['Escuchar'], hasSensitiveContent: true, access: { allowed: true }, ...portada,
       });
     });
 

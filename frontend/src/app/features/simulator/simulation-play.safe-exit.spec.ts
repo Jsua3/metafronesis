@@ -19,7 +19,7 @@ import { EMPTY, Subject, of, throwError } from 'rxjs';
 
 import { SimulationService } from '../../core/api/simulation.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { SimulationAttemptState } from '../../core/models/simulation.model';
+import { SimulationAttemptState, SimulationWorldState } from '../../core/models/simulation.model';
 import { AudioDirectorService } from './audio-director.service';
 import { CONSENT_RECORDER, SessionConsentRecorder } from './consent-recorder';
 import { SimulationPlayComponent } from './simulation-play.component';
@@ -272,8 +272,24 @@ describe('SimulationPlayComponent: salida segura (correcciones de la revisión)'
       expect(component.attempt()?.status).toBe('PAUSED');
     });
 
-    it('la nota de transición ya no es un temporizador anónimo: se puede cancelar', () => {
-      expect(source).toMatch(/this\.transitionNoteTimer = window\.setTimeout\(\(\) => \{\s*this\.transitionNoteTimer = null;\s*this\.transitionNote\.set\(''\);/);
+    it('la salida segura cancela el temporizador de la nota de transición', () => {
+      const juego = component as unknown as {
+        mostrarNotaDeTransicion(world: SimulationWorldState): boolean;
+        transitionNoteTimer: number | null;
+      };
+      const cancelar = vi.spyOn(window, 'clearTimeout');
+      sim['safeExit'].mockReturnValue(of(paused()));
+      const withNote = { map: { key: 'sala', ambient: { transitionText: 'Quince días después…' } } } as SimulationWorldState;
+      expect(juego.mostrarNotaDeTransicion(withNote)).toBe(true);
+      const temporizador = juego.transitionNoteTimer;
+      expect(temporizador).not.toBeNull();
+
+      component.pauseFromOverlay();
+
+      expect(cancelar).toHaveBeenCalledWith(temporizador);
+      expect(juego.transitionNoteTimer).toBeNull();
+      expect(component.transitionNote()).toBe('');
+      cancelar.mockRestore();
     });
   });
 

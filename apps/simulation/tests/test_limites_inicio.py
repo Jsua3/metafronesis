@@ -73,6 +73,11 @@ def test_las_respuestas_se_conservan_al_vencer(scene, registros):
     assert respuesta.status_code == 409
     assert AttemptEvent.objects.filter(pk=evento.pk, decision_option=scene["option"]).exists()
     assert intento.evaluation.snapshot["evidence"]
+    informe = scene["client"].get(f"/api/simulation/attempts/{intento.pk}/student-report")
+    assert informe.status_code == 200, informe.content
+    datos = informe.json()["data"]
+    assert datos["ending"]["key"] == "incompleto"
+    assert [decision["chosen"]["optionId"] for decision in datos["decisionReview"]] == [scene["option"].pk]
 
 
 def test_el_intervalo_actual_cuenta_al_decidir(scene, registros):

@@ -77,3 +77,4 @@ from .attempt import ReflectionJournal
 from .attempt import AttemptReport
 
 from .generation import CaseGeneration, GenerationStatus
+from .coautoria import AgreementStatus, CoauthorAgreement

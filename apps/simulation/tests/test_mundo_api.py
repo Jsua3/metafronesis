@@ -45,10 +45,35 @@ def test_lectura_tiene_contrato_y_crea_estado_perezoso(mundo):
     assert respuesta.status_code == 200
     datos = respuesta.json()["data"]
     assert set(datos) == {"attemptId", "status", "map", "player", "objects", "collisions", "tools",
-                          "inventory", "inspectedObjectKeys", "viewedDialogueKeys", "usedToolKeys",
-                          "flags", "decisionOptions", "comments", "layout"}
+                          "inventory", "inspectedObjectKeys", "viewedDialogueKeys", "viewedNpcKeysHere", "usedToolKeys",
+                          "usedToolKeysHere", "flags", "decisionOptions", "comments", "layout"}
+    assert datos["usedToolKeysHere"] == []
+    assert datos["viewedNpcKeysHere"] == []
     assert datos["player"] == {"x": 50, "y": 50}
     assert AttemptWorldState.objects.filter(attempt=mundo["intento"]).count() == 1
+
+
+def test_el_mundo_recupera_la_identidad_del_tutor_inicial_al_reanudar_en_otra_sala(mundo):
+    inicio = {"nombre": "Profesor", "rol": "Tutor del caso", "recipeId": "supervisor-clinico"}
+    sala = mundo["sala"]
+    sala.ambient_json = json.dumps({"tutor": {**inicio, "lineas": ["Bienvenida"]}})
+    sala.save(update_fields=["ambient_json"])
+    intento = mundo["intento"]
+    intento.current_node = mundo["end"]
+    intento.save(update_fields=["current_node"])
+
+    def leer():
+        respuesta = mundo["client"].get(mundo["base"] + "/world")
+        assert respuesta.status_code == 200
+        return respuesta.json()["data"]
+
+    assert leer()["tutorInicial"] == inicio
+    fin = SceneMap.objects.get(node=mundo["end"])
+    fin.ambient_json = json.dumps({"tutor": {"nombre": "Lucía", "rol": "Docente"}})
+    fin.save(update_fields=["ambient_json"])
+    datos = leer()
+    assert datos["map"]["ambient"]["tutor"]["nombre"] == "Lucía"
+    assert "tutorInicial" not in datos
 
 
 @pytest.mark.parametrize("coordenadas", [(5, 50), (210, 215)])
@@ -194,3 +219,8 @@ def test_openapi_del_patch_admite_acuse_y_mundo_completo():
     esquema = SchemaGenerator().get_schema(public=True)
     respuesta = esquema["paths"]["/api/simulation/attempts/{id}/world-state"]["patch"]["responses"]["200"]
     assert "anyOf" in respuesta["content"]["application/json"]["schema"]
+    mundo = esquema["components"]["schemas"]["MundoRespuesta"]
+    assert "usedToolKeysHere" in mundo["required"]
+    assert mundo["properties"]["usedToolKeysHere"] == {"type": "array", "items": {"type": "string"}}
+    assert "viewedNpcKeysHere" in mundo["required"]
+    assert mundo["properties"]["viewedNpcKeysHere"] == {"type": "array", "items": {"type": "string"}}

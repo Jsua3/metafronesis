@@ -81,6 +81,23 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
 
   // Bloque U1, variante B (placas en las esquinas): el HUD es el grupo de la derecha (caso, persona y teclas); la etapa va
   // en la pestaña de la ficha del objetivo y la sala en la del plano (pruebas en simulation-play).
+  describe('Ayuda y Ajustes (UB-E09)', () => {
+    it('distingue las acciones y emite la apertura de ayuda', () => {
+      const root = mount();
+      const help = root.querySelector<HTMLButtonElement>('[data-hud-help]')!;
+      const settings = root.querySelector<HTMLButtonElement>('[data-hud-settings]')!;
+      expect(help?.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Ayuda');
+      expect(settings?.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Ajustes');
+      expect(help.getAttribute('aria-label')).toMatch(/^Ayuda/);
+      expect(settings.getAttribute('aria-label')).toMatch(/^Ajustes/);
+      expect(help.querySelector('app-pixel-icono')?.getAttribute('nombre')).toBe('ayuda');
+      expect(settings.querySelector('app-pixel-icono')?.getAttribute('nombre')).toBe('ajustes');
+      const emitted = vi.fn(); hud.openHelp.subscribe(emitted); help.click();
+      expect(emitted).toHaveBeenCalledTimes(1);
+      settings.click(); expect(hud.settingsOpen()).toBe(true);
+    });
+  });
+
   describe('grupo de la derecha', () => {
     it('la etapa ya no se pinta aquí: la lleva la pestaña de la ficha del objetivo', () => {
       const root = mount(false, { stageLabel: 'Decisión 2 de 6' });
@@ -92,7 +109,7 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
       const root = mount();
       expect(root.querySelector('.hud-case.u-rotulo')).not.toBeNull();
       expect(root.querySelector('.hud-strip.u-placa .hud-persona')).not.toBeNull();
-      expect(root.querySelectorAll('.hud-strip .hud-action.u-tecla--icono').length).toBe(5);
+      expect(root.querySelectorAll('.hud-strip .hud-action.u-tecla--icono').length).toBe(6);
     });
 
     it('el contador antiguo «Paso k (k/6)» ya no existe: ni bloque ni cálculo', () => {
@@ -164,7 +181,7 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
       expect(controls?.hasAttribute('data-hud-controls')).toBe(true);
       expect(controls?.querySelector('app-pixel-icono')).not.toBeNull();
       expect(controls?.querySelector('.hud-action__texto')?.textContent?.trim()).toBe('Controles');
-      expect(hudSource).toContain('<app-pixel-icono nombre="ayuda" />');
+      expect(hudSource).toContain('<app-pixel-icono nombre="controles" />');
       const emitted = vi.fn();
       hud.openControls.subscribe(emitted);
       controls!.click();
@@ -447,8 +464,11 @@ describe('HUD: cabecera (T7.1) y Ajustes (T7.2)', () => {
       const fichas = readFileSync(join(__dirname, '../../../styles/tokens/_pixel.scss'), 'utf-8');
       expect(fichas).toContain('--tecla-hud: clamp(44px, calc(var(--pixel-tam) * 3), 48px);');
       expect(fichas).not.toMatch(/--tecla-hud: [^;]*3[0-9]px/);
-      expect(base).toMatch(/\.settings-menu__header button \{[^}]*width: 44px;[^}]*height: 44px;/);
-      expect(base).toMatch(/\.settings-menu > button,\s*\.settings-menu > a \{[^}]*min-height: 44px;/);
+      const botones = readFileSync(join(__dirname, '../../../styles/components/_pixel.scss'), 'utf-8');
+      expect(hudSource).toContain('class="u-boton u-boton--icono" type="button" aria-label="Cerrar ajustes"');
+      expect(base).toMatch(/\.settings-menu > \.u-boton \{/);
+      expect(botones).toMatch(/\.u-boton--icono \{ width: 44px/);
+      expect(botones).toContain('min-height: 44px');
     });
 
     it('nada del HUD anima width y ya no quedan barras ni pulsos de estrés', () => {

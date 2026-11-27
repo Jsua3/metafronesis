@@ -19,8 +19,8 @@ const MEDIO_ANCHO_DE_PERSONA_PX = 14;
 export interface Caja { x0: number; y0: number; x1: number; y1: number }
 
 /** El cuerpo de una persona que pisa en (x, pies). */
-export function cajaDelCuerpo(x: number, pies: number): Caja {
-  return { x0: x - MEDIO_ANCHO_DE_PERSONA_PX, y0: pies - ALTO_DE_PERSONA_PX, x1: x + MEDIO_ANCHO_DE_PERSONA_PX, y1: pies };
+export function cajaDelCuerpo(x: number, pies: number, alto = ALTO_DE_PERSONA_PX): Caja {
+  return { x0: x - MEDIO_ANCHO_DE_PERSONA_PX, y0: pies - alto, x1: x + MEDIO_ANCHO_DE_PERSONA_PX, y1: pies };
 }
 
 /** La caja de un rótulo de `ancho` × `alto` con su borde de arriba en `y`, centrado en `x`. */

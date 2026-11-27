@@ -46,6 +46,21 @@ describe('Casos del estudiante', () => {
 
   beforeEach(() => { info.mockClear(); sessionStorage.removeItem('siep.catalogo.retorno'); });
 
+  it('usa la portada asignada y aplica el escalado de píxeles solo cuando corresponde', async () => {
+    const { host } = await render([
+      entrada(1, { portada: '/media/sala.png', portadaPixelArt: true }),
+      entrada(2, { portada: '/media/foto.jpg', portadaPixelArt: false }),
+      entrada(3),
+    ], []);
+    const tarjetas = host.querySelectorAll('.cs-tarjeta');
+    const portada = (i: number) => tarjetas[i].querySelector('.ui-portada-caso__imagen');
+    expect(portada(0)?.getAttribute('src')).toBe('/media/sala.png');
+    expect(portada(0)?.classList).toContain('ui-portada-caso__imagen--pixel');
+    expect(portada(1)?.getAttribute('src')).toBe('/media/foto.jpg');
+    expect(portada(1)?.classList).not.toContain('ui-portada-caso__imagen--pixel');
+    expect(tarjetas[2].querySelector('.ui-portada-caso__puerta')).not.toBeNull();
+  });
+
   it('agrupa los intentos por caso sin duración ni nombre repetido, y «Ver mi resultado» navega al cierre', async () => {
     const { host, navegar } = await render([entrada(1, { completed: true })], [intento()]);
     const historial = host.querySelector('details')!;
@@ -66,6 +81,17 @@ describe('Casos del estudiante', () => {
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'cierre', 'abc']);
   });
 
+  it('terminado con resultado también ofrece «Ver ficha», para volver a practicar desde la ficha', async () => {
+    const { fixture, host, navegar } = await render([entrada(1, { completed: true })], [intento()]);
+    const botones = Array.from(host.querySelectorAll<HTMLButtonElement>('.cs-acciones button'));
+    const ficha = botones.find(b => b.textContent?.includes('Ver ficha'));
+    expect(ficha).toBeDefined();
+    expect(ficha!.classList).toContain('ui-button--secondary');
+    await fixture.whenStable();
+    ficha!.click();
+    expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'ficha'], expect.anything());
+  });
+
   it('al volver del recorrido devuelve el foco a la accion del caso', async () => {
     sessionStorage.setItem('siep.catalogo.retorno', '1');
     const foco = vi.spyOn(HTMLElement.prototype, 'focus');
@@ -80,13 +106,18 @@ describe('Casos del estudiante', () => {
   it('lo abierto se continúa directo; sin empezar abre la ficha; el estado va en palabras', async () => {
     const { fixture, host, navegar } = await render([entrada(1), entrada(2)], [intento({ status: 'PAUSED' })]);
     const botones = Array.from(host.querySelectorAll<HTMLButtonElement>('.cs-acciones button'));
-    expect(botones).toHaveLength(2);
+    expect(botones).toHaveLength(3);
     expect(botones[0].textContent).toContain('Continuar');
-    expect(botones[1].textContent).toContain('Empezar');
+    expect(botones[1].textContent).toContain('Ver ficha');
+    expect(botones[1].classList).toContain('ui-button--secondary');
+    expect(botones[2].textContent).toContain('Empezar');
     botones[0].click();
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1], expect.objectContaining({ queryParams: { intento: 'continuar' } }));
     await fixture.whenStable();
     botones[1].click();
+    expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 1, 'ficha'], expect.anything());
+    await fixture.whenStable();
+    botones[2].click();
     expect(navegar).toHaveBeenCalledWith(['/portal/simulador', 2, 'ficha'], expect.anything());
     expect(host.textContent).toContain('En pausa');
     expect(host.textContent).toContain('Sin empezar');

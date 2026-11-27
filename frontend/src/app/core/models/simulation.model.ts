@@ -11,11 +11,10 @@ export interface CatalogItem {
   /** La decisión de acceso del servidor (asignación, ventana y secuencia); `unlocked` sigue diciendo lo mismo en pocas palabras. */
   access?: CaseAccess;
   /**
-   * BK-1 · URL del fondo en pixel art de la sala donde empieza el caso, o `null` si esa sala se arma por piezas, no tiene
-   * fondo o el fondo no es una ruta permitida (la interfaz pinta su composición de respaldo). Opcional: un servidor
-   * anterior a BK no lo manda y ninguna pantalla puede romperse por eso.
+   * URL pública de la portada de la versión. Sin imagen, la interfaz muestra la puerta de respaldo.
    */
   portada?: string | null;
+  portadaPixelArt?: boolean;
   /** BK-1 · Cuántas escenas tiene el caso (estructura del caso, no una medida). Opcional, como `portada`. */
   escenas?: number;
 }
@@ -59,8 +58,9 @@ export interface CaseBrief {
   escenas?: number;
   /** Dónde empieza: «Empiezas en {lugar}». `null` si el caso no tiene escena de inicio. */
   inicio?: CaseBriefStart | null;
-  /** Fondo de la sala de inicio (ver `CatalogItem.portada`). */
+  /** Portada de la versión (ver `CatalogItem.portada`). */
   portada?: string | null;
+  portadaPixelArt?: boolean;
   /** Los temas sensibles que declara el caso («En este caso aparecen:»); vacía si no declara ninguno. */
   temasSensibles?: string[];
   /** Si el recorrido se valora con una rúbrica (asignada, propia de la versión o la predeterminada del sitio). */
@@ -104,8 +104,9 @@ export interface SimulationCaseSummary {
   updatedAt?: string | null;
   /** Escenas con narración y, si no son un final, al menos una respuesta: «3 de 5 escenas con guion». */
   escenasConGuion?: number;
-  /** Fondo de la sala de inicio (ver `CatalogItem.portada`). */
+  /** Portada de la versión (ver `CatalogItem.portada`). */
   portada?: string | null;
+  portadaPixelArt?: boolean;
   // Autoría compartida: solo la lista de autoría los trae.
   /** Quien creó el caso; no cambia aunque otros docentes publiquen versiones nuevas. */
   autor?: PersonaCaso;
@@ -391,6 +392,8 @@ export interface SimulationWorldState {
   attemptId: string;
   status: SimulationAttemptState['status'];
   map: SceneMapState;
+  /** Identidad del tutor del mapa de inicio cuando la sala actual carece de tutor. */
+  tutorInicial?: Partial<Pick<TutorDelCaso, 'nombre' | 'rol' | 'recipeId'>>;
   player: PlayerState;
   objects: MapObjectState[];
   collisions: CollisionZoneState[];
@@ -398,7 +401,11 @@ export interface SimulationWorldState {
   inventory: string[];
   inspectedObjectKeys: string[];
   viewedDialogueKeys: string[];
+  /** Claves de las personas con las que se habló en el nodo actual. */
+  viewedNpcKeysHere?: string[];
   usedToolKeys: string[];
+  /** Usos realizados en el nodo actual, como código o código@objetivo. */
+  usedToolKeysHere?: string[];
   flags: Record<string, unknown>;
   /** Opciones ofrecidas ahora para el nodo actual; solo las traen las respuestas de mundo del juego (no el acuse de PATCH). */
   decisionOptions?: SimulationDecisionOption[];
@@ -497,7 +504,68 @@ export interface SceneMapState {
   theme: string;
   spawnX: number;
   spawnY: number;
-  ambient: Record<string, unknown>;
+  ambient: AmbienteDeSala;
+}
+
+/**
+ * `map.ambient` de una sala (`x-siep.escenas[].mapa.ambiente` del caso). Llega tal cual del servidor: los campos con tipo son
+ * los que el cliente conoce y todos son opcionales; cualquier otro sigue siendo `unknown`. Lo que trae se valida al leerlo
+ * (`cinematica/lectura.ts`), nunca se da por bueno por el tipo.
+ */
+export interface AmbienteDeSala {
+  [campo: string]: unknown;
+  /** Nota de capítulo o de salto de tiempo («Capítulo 2 · La noticia…»). */
+  transitionText?: unknown;
+  /** Cinemática del caso: solo en la sala de la escena inicial (contrato del caso insignia, §1). */
+  cinematica?: CinematicaDelCaso;
+  /** El tutor fuera de la historia: en la sala inicial y en la primera sala de cada capítulo (§2). */
+  tutor?: TutorDelCaso;
+  /** Conversaciones ambientales entre dos personas de la sala (§8). */
+  conversaciones?: {
+    personas: [string, string];
+    lineas: { quien: string; texto: string }[];
+    pausaMs?: number;
+    modo?: 'quietos' | 'caminan';
+  }[];
+}
+
+/** Escenas genéricas que el reproductor sabe dibujar con el arte del juego (no imágenes del caso). */
+export type EscenaDeCinematica =
+  | 'barrio' | 'casa-ventana' | 'negro' | 'calle-emergencia' | 'urgencias-llegada' | 'urgencias-familia' | 'titulo';
+export type MomentoDeCinematica = 'tarde' | 'noche';
+export type SiluetaDeCinematica = 'hombre' | 'mujer' | 'nina';
+
+/** Un plano de la cinemática. Todo su texto viene del caso; `{nombre}` se pone al pintarlo. */
+export interface PlanoDeCinematica {
+  escena: EscenaDeCinematica;
+  momento?: MomentoDeCinematica;
+  subtitulo?: string;
+  duracionMs?: number;
+  /** Solo `casa-ventana`: quiénes se ven tras la ventana. */
+  siluetas?: SiluetaDeCinematica[];
+  /** `casa-ventana` (y `barrio`): la luz de la ventana encendida. */
+  luzVentana?: boolean;
+}
+
+export interface CinematicaDelCaso {
+  id: string;
+  planos: PlanoDeCinematica[];
+}
+
+export interface PasoDelTutor {
+  numero: number;
+  titulo: string;
+  detalle?: string;
+}
+
+/** El tutor: una capa sobre el mundo con el retrato del kit (`recipeId`, emoción neutral), su nombre y su rol. */
+export interface TutorDelCaso {
+  nombre: string;
+  rol?: string;
+  recipeId?: string;
+  lineas: string[];
+  /** La lista numerada que la tarjeta muestra junto a la penúltima línea. */
+  pasos?: PasoDelTutor[];
 }
 
 export interface PlayerState {
@@ -554,6 +622,10 @@ export interface DialogueState {
   portraitKey: string | null;
   /** Receta del kit del NPC que habla (solo en el cliente: diálogos de NPC de escenario). */
   recipeId?: string | null;
+  /** Clave del actor en el mundo para recuperar su aspecto en el cliente. */
+  speakerObjectKey?: string;
+  /** Identidad del tutor en la retroalimentación inmediata. */
+  tutor?: { rol: string };
   emotion: string;
   lines: DialogueLineState[];
   choices: DialogueChoiceState[];
@@ -561,6 +633,8 @@ export interface DialogueState {
   notice?: string | null;
   /** UI: la conversación corresponde a otro momento del caso; se muestra como informativa, sin decisiones. */
   stale?: boolean;
+  /** UI: la placa de un aviso o texto narrado se presenta sin retrato. */
+  hidePortrait?: boolean;
 }
 
 export interface DialogueLineState {
@@ -1101,6 +1175,8 @@ export interface PublicationChecklistView {
 
 export interface CaseEditorView {
   estimatedMinutes?: number | null;
+  portada?: string | null;
+  portadaPixelArt?: boolean;
   caseVersionId: number;
   /** Revisión del borrador (E2-6): viaja en `X-Case-Revision` en cada mutación y la respuesta trae la siguiente. */
   revision: number;

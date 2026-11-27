@@ -8,6 +8,22 @@ from .test_borrador import crear
 pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-22", "SIEP-23")]
 
 
+@pytest.mark.parametrize("editar", [False, True])
+def test_codigo_de_herramienta_reserva_la_arroba(cliente, editar):
+    version_id = crear(cliente).data["data"]["versionId"]
+    ruta = f"/api/authoring/cases/{version_id}/tools"
+    datos = {"toolCode": "escucha@ana", "label": "Escucha"}
+    if editar:
+        herramienta = ClinicalTool.objects.create(case_version_id=version_id, tool_code="escucha", label="Escucha")
+        respuesta = cliente.put(f"{ruta}/{herramienta.pk}", datos, format="json")
+    else:
+        respuesta = cliente.post(ruta, datos, format="json")
+    assert respuesta.status_code == 400, respuesta.content
+    assert respuesta.json()["field"] == "toolCode"
+    assert "'@' está reservado" in respuesta.json()["message"]
+    assert not ClinicalTool.objects.filter(case_version_id=version_id, tool_code=datos["toolCode"]).exists()
+
+
 def test_guardar_dialogos_en_mundo(cliente, settings):
     settings.REVISION_REQUIRED = True
     version_id = crear(cliente).data["data"]["versionId"]

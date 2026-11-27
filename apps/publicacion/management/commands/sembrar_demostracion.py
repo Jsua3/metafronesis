@@ -2,7 +2,7 @@
 
     SIEP_SEMILLA_CLAVE=... python manage.py sembrar_demostracion --confirmar --publicador admin@ejemplo.org
 
-La contraseña temporal común llega por ``SIEP_SEMILLA_CLAVE`` y no se imprime nunca. Es idempotente: crea lo que falta.
+La contraseña temporal común llega por ``SIEP_SEMILLA_CLAVE`` y no se imprime nunca. La siembra es idempotente.
 """
 import os
 
@@ -17,12 +17,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--confirmar", action="store_true", help="Obligatorio: confirma que se quiere escribir en este entorno.")
         parser.add_argument("--publicador", required=True, help="Correo de un ADMIN que ya existe; publica el caso.")
+        parser.add_argument("--docentes", default="",
+                            help="Correos de 1 a 3 cuentas PROFESOR que ya existen, separados por comas: quedan a cargo de los grupos sembrados.")
 
     def handle(self, *args, **options):
         if not options["confirmar"]:
             raise CommandError("Falta --confirmar: este comando escribe en la base del entorno actual.")
         try:
-            informe = siembra.sembrar(options["publicador"], os.environ.get("SIEP_SEMILLA_CLAVE", ""))
+            docentes = [correo.strip() for correo in options["docentes"].split(",") if correo.strip()]
+            informe = siembra.sembrar(options["publicador"], os.environ.get("SIEP_SEMILLA_CLAVE", ""), docentes)
         except siembra.ErrorDeSiembra as error:
             raise CommandError(str(error)) from None
         self.stdout.write(f"Creado ({len(informe.creado)}):")
@@ -31,4 +34,8 @@ class Command(BaseCommand):
         self.stdout.write(f"Ya existía ({len(informe.existente)}):")
         for linea in informe.existente:
             self.stdout.write(f"  {linea}")
+        if informe.archivado:
+            self.stdout.write(f"Archivado ({len(informe.archivado)}):")
+            for linea in informe.archivado:
+                self.stdout.write(f"  {linea}")
         self.stdout.write("Las cuentas nuevas tienen una contraseña temporal y deben cambiarla al primer ingreso.")

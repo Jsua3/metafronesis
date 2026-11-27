@@ -133,6 +133,8 @@ export interface MuroDeCatalogo {
 export interface MuebleDeCatalogo extends ImagenDeCatalogo {
   cuadros: number;
   fps?: number;
+  /** Columna y fila del punto de apoyo dentro del cuadro. */
+  apoyo?: [number, number];
   /** Lo que ocupa en el piso (centrado en su apoyo, `fondo` px hacia atrás) y su altura: de ahí sale la sombra que arroja. */
   huella?: { ancho: number; fondo: number; alto: number };
   /** Mapa de brillo del mueble (ver `VistaDePieza.brillo`). */

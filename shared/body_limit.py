@@ -25,6 +25,7 @@ METODOS_CON_CUERPO = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 MULTIPART_IMPORT_ROUTE = re.compile(r"/api/grupos/[0-9]+/estudiantes/import/?")
 #: La importación de casos: ``POST api/authoring/cases/import`` (tope propio, ver ajustes).
 CASE_IMPORT_ROUTE = re.compile(r"/api/authoring/cases/import/?")
+CASE_COVER_ROUTE = re.compile(r"/api/authoring/cases/[0-9]+/cover")
 _DIGITOS = re.compile(r"[0-9]{1,18}")
 
 # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
@@ -83,6 +84,8 @@ def _alcance(ruta):
         return "multipart-import", settings.SIEP_MAX_IMPORT_BODY_BYTES
     if CASE_IMPORT_ROUTE.fullmatch(ruta):
         return "json-case-import", settings.SIEP_MAX_CASE_IMPORT_BODY_BYTES
+    if CASE_COVER_ROUTE.fullmatch(ruta):
+        return "multipart-case-cover", settings.SIEP_MAX_CASE_COVER_BODY_BYTES
     return "json-small", settings.SIEP_MAX_BODY_BYTES
 
 

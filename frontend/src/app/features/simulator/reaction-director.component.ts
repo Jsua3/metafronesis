@@ -18,7 +18,6 @@ import { tramos } from './caso/ritmo-texto';
 import { variablesDeArte } from './dialogo-arte';
 import { type Emocion, type Gesto } from './caso/vocabulario';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
-import { UiButton } from '../../shared/ui/button/ui-button';
 
 /** Lo que el director necesita de la escena; lo cumple `GameWorldComponent`. */
 export interface EscenarioReaccion {
@@ -32,7 +31,7 @@ export type FinReaccion = 'completa' | 'saltada' | 'cancelada';
 
 @Component({
   selector: 'app-reaction-director',
-  imports: [KitFigureComponent, SafeExitButtonComponent, UiButton],
+  imports: [KitFigureComponent, SafeExitButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (activa()) {
@@ -51,7 +50,7 @@ export type FinReaccion = 'completa' | 'saltada' | 'cancelada';
             @if (frase(); as texto) {
               <p class="reaction-line">@for (t of tramosDe(texto); track $index) {<span [class.acot]="t.acotacion">{{ t.texto }}</span>}</p>
             }
-            <button type="button" class="reaction-continue" ui-button variant="primary" (click)="continuar()">
+            <button type="button" class="reaction-continue u-boton u-boton--principal" (click)="continuar()">
               Continuar <span class="reaction-key" aria-hidden="true">Enter</span>
             </button>
           </div>

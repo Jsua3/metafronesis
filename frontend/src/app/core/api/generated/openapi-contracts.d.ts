@@ -159,6 +159,10 @@ export interface Assignment {
   readonly id: number;
   /** Si no hay fecha, no viaja. ISO 8601 con el desfase de Bogotá (-05:00). */
   readonly opensAt?: string;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
   /** Avance de miembros activos; disponible en el listado de asignaciones del grupo. */
   readonly progress?: AssignmentProgress;
   /** Su lugar en la secuencia de casos. */
@@ -1310,6 +1314,108 @@ export interface WorldPatchAckMap {
   readonly key: string;
 }
 
+export interface CaseCoverChange {
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  readonly revision: number;
+}
+
+/** Sobre de éxito: `data` es `CaseCoverChange`. */
+export interface CaseCoverChangeEnvelope {
+  readonly data: CaseCoverChange;
+  readonly message?: string;
+  /** Siempre `true` en una respuesta de éxito. */
+  readonly success: boolean;
+}
+
+export interface CaseCoverUpload {
+  readonly imagen: string;
+  readonly pixelArt?: boolean;
+  readonly revision?: number | null;
+}
+
+export interface CatalogoEstudiante {
+  readonly allowed: boolean;
+  readonly case_id: number;
+  readonly case_version_id: number;
+  readonly completed: boolean;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  /** NOT_YET_OPEN, CLOSED o LOCKED_BY_SEQUENCE. Nulo si puede empezar. */
+  readonly reason: string | null;
+  readonly title: string;
+}
+
+export interface FichaSimulacion {
+  readonly caseVersionId: number;
+  readonly code: string;
+  readonly description: string | null;
+  readonly estimatedMinutes: number | null;
+  readonly learningObjectives: ReadonlyArray<string>;
+  readonly narrativeContext: string | null;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  readonly title: string;
+}
+
+/** Sobre de éxito: `data` es `FichaSimulacion`. */
+export interface FichaSimulacionEnvelope {
+  readonly data: FichaSimulacion;
+  readonly message?: string;
+  /** Siempre `true` en una respuesta de éxito. */
+  readonly success: boolean;
+}
+
+export interface PersonaCaso {
+  readonly id: number;
+  readonly nombre: string;
+}
+
+export interface VistaEditor {
+  readonly autor: PersonaCaso;
+  readonly caseVersionId: number;
+  readonly characters: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly checklist: Readonly<Record<string, unknown>>;
+  readonly checklistCompletion: number;
+  readonly contentWarnings: ReadonlyArray<string>;
+  readonly context: string;
+  readonly decisions: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly editadoPor: ReadonlyArray<PersonaCaso>;
+  readonly estimatedMinutes: number | null;
+  readonly hints: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly learningObjectives: ReadonlyArray<string>;
+  readonly maps: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly nodes: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly objects: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  /** URL pública de la portada, relativa al sitio. */
+  readonly portada: string | null;
+  /** Si la imagen se dibuja con escalado de pixel art. */
+  readonly portadaPixelArt: boolean;
+  readonly publishable: boolean;
+  readonly rehearsedToEnd: boolean;
+  readonly revision: number;
+  readonly rubrics: ReadonlyArray<Readonly<Record<string, unknown>>>;
+  readonly rules: Readonly<Record<string, unknown>>;
+  readonly semanticVersion: string;
+  readonly status: string;
+  readonly title: string;
+  readonly tools: ReadonlyArray<Readonly<Record<string, unknown>>>;
+}
+
+/** Sobre de éxito: `data` es `VistaEditor`. */
+export interface VistaEditorEnvelope {
+  readonly data: VistaEditor;
+  readonly message?: string;
+  /** Siempre `true` en una respuesta de éxito. */
+  readonly success: boolean;
+}
+
 export interface OpenApiPaths {
   readonly '/api/admin/access-requests': 'GET';
   readonly '/api/admin/access-requests/{request_id}/status': 'PATCH';
@@ -1389,6 +1495,7 @@ export interface OpenApiPaths {
   readonly '/api/authoring/cases/{case_version_id}/definition': 'GET';
   readonly '/api/authoring/cases/{case_version_id}/dialogues/{tree_id}': 'DELETE' | 'PUT';
   readonly '/api/authoring/cases/{case_version_id}/dialogues/{tree_id}/accept-ai': 'POST';
+  readonly '/api/authoring/cases/{case_version_id}/cover': 'DELETE' | 'PUT';
   readonly '/api/authoring/cases/{case_version_id}/editor': 'GET';
   readonly '/api/authoring/cases/{case_version_id}/hints/{hint_id}': 'DELETE' | 'PUT';
   readonly '/api/authoring/cases/{case_version_id}/lifecycle': 'GET' | 'POST';
@@ -1487,6 +1594,7 @@ export interface OpenApiPaths {
   readonly '/api/simulation/cases/{case_version_id}/brief': 'GET';
   readonly '/api/simulation/cases/{case_version_id}/consent': 'DELETE' | 'GET' | 'POST';
   readonly '/api/simulation/catalog': 'GET';
+  readonly '/api/simulation/covers/{cover_id}': 'GET';
 }
 
 export type OpenApiEndpointPath = keyof OpenApiPaths;

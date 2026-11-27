@@ -1,5 +1,6 @@
 import json
 
+from apps.simulation.assessment.evaluation import read_snapshot
 from apps.simulation.models import AttemptStatus
 from apps.simulation.models.attempt import REGISTERED_DECISION_EVENT_TYPES
 from apps.simulation.models.rubric import EvaluationOrigin
@@ -71,7 +72,7 @@ def traza(intento, docente):
     sistema = next((evaluacion for evaluacion in evaluaciones if evaluacion.origin == EvaluationOrigin.SISTEMA), None)
     sistema_visible = {**resumen(sistema), "competencyLevels": []} if sistema and any(evaluacion.status == "EVALUATED" for evaluacion in docentes) else None
     instantanea = getattr(intento, "evaluation", None)
-    datos_cierre = instantanea.snapshot if instantanea else {}
+    datos_cierre = read_snapshot(intento, instantanea) if instantanea else {}
     final = datos_cierre.get("ending")
     if final is not None:
         final = {**final, "reason": final.get("reason", [])}

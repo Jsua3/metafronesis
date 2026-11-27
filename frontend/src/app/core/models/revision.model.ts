@@ -13,8 +13,9 @@ export interface SimulationCaseSummary {
   updatedAt?: string | null;
   /** Escenas con narración y, si no son un final, al menos una respuesta: «3 de 5 escenas con guion». */
   escenasConGuion?: number;
-  /** Fondo de la sala de inicio (ver `CatalogItem.portada`). */
+  /** Portada de la versión (ver `CatalogItem.portada`). */
   portada?: string | null;
+  portadaPixelArt?: boolean;
 }
 
 /** La clase de una respuesta (modelo de métricas): la única etiqueta que el docente y el reporte congelado comparten. */

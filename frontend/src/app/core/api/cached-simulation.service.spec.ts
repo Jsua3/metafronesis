@@ -1,9 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { createEnvironmentInjector, EnvironmentInjector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { portalRoutes } from '../../portal.routes';
 
 import { AuthService } from '../auth/auth.service';
 import { SimulationCaseSummary } from '../models/simulation.model';
@@ -174,8 +173,12 @@ describe('CachedSimulationService (proxy de caché)', () => {
     });
   });
 
-  it('app.config registra el proxy bajo el token SimulationService', () => {
-    const source = readFileSync(join(__dirname, '..', '..', 'app.config.ts'), 'utf-8');
-    expect(source).toContain('{ provide: SimulationService, useExisting: CachedSimulationService }');
+  it('las rutas del portal registran el proxy bajo el token SimulationService', () => {
+    const portal = createEnvironmentInjector(portalRoutes[0].providers!, TestBed.inject(EnvironmentInjector));
+    try {
+      expect(portal.get(SimulationService)).toBe(service);
+    } finally {
+      portal.destroy();
+    }
   });
 });

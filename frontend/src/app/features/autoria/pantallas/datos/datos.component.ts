@@ -3,6 +3,8 @@ import {
 } from '@angular/core';
 
 import type { CanLeave } from '../../../../core/navigation/can-leave.guard';
+import { apiErrorMessage } from '../../../../core/api/api-error.util';
+import { UiButton } from '../../../../shared/ui/button/ui-button';
 import { UiDialog } from '../../../../shared/ui/dialog/ui-dialog';
 import { UiPortadaCaso } from '../../../../shared/ui/portada-caso/ui-portada-caso';
 import { AutoAltoDirective } from '../../marco/auto-alto.directive';
@@ -32,7 +34,7 @@ type Situacion = { forma: 'guardando' | 'guardado' | 'error' | 'corregir' | ''; 
  */
 @Component({
   selector: 'app-datos',
-  imports: [UiPortadaCaso, AutoAltoDirective, EstudioRanuraDirective, EstudioSeccionComponent],
+  imports: [UiButton, UiPortadaCaso, AutoAltoDirective, EstudioRanuraDirective, EstudioSeccionComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './datos.component.html',
   styleUrl: './datos.component.scss',
@@ -67,9 +69,16 @@ export class DatosComponent implements CanLeave {
   protected readonly temaNuevo = signal('');
   /** Qué secciones están abiertas (todas al entrar: la docente ve el formulario entero y pliega lo que ya revisó). */
   protected readonly abiertaIdentidad = signal(true);
+  protected readonly abiertaPortada = signal(true);
   protected readonly abiertaContexto = signal(true);
   protected readonly abiertaObjetivos = signal(true);
   protected readonly errorTema = signal<string | null>(null);
+  protected readonly archivoPortada = signal<File | null>(null);
+  protected readonly portadaPixelArt = signal(false);
+  protected readonly errorPortada = signal<string | null>(null);
+  protected readonly guardandoPortada = signal(false);
+  protected readonly portadaOcupada = computed(() =>
+    this.guardandoPortada() || !!this.store.guardadoDetenido() || !!this.store.conflicto());
   /** Lo último que esta pantalla dijo del guardado; la lectura de un caso nuevo lo borra. */
   private readonly aviso = signal<Situacion>({ forma: '', texto: '' });
 
@@ -133,6 +142,34 @@ export class DatosComponent implements CanLeave {
   private enfocar(id: string, seccion: { set(v: boolean): void }): void {
     seccion.set(true);
     afterNextRender(() => this.anfitrion.querySelector<HTMLElement>(`#${id}`)?.focus(), { injector: this.injector });
+  }
+
+  protected elegirPortada(entrada: HTMLInputElement): void {
+    const archivo = entrada.files?.[0] ?? null;
+    const grande = Boolean(archivo && archivo.size > 2 * 1024 * 1024);
+    this.errorPortada.set(grande ? 'La portada puede pesar hasta 2 MB.' : null);
+    this.archivoPortada.set(grande ? null : archivo);
+    this.portadaPixelArt.set(false);
+    if (grande) entrada.value = '';
+  }
+
+  protected async cambiarPortada(archivo: File | null, entrada: HTMLInputElement): Promise<void> {
+    if (this.portadaOcupada()) return;
+    this.errorPortada.set(null);
+    this.guardandoPortada.set(true);
+    const accion = archivo ? 'subir' : 'quitar';
+    try {
+      await this.store.cambiarPortada(archivo, this.portadaPixelArt());
+      entrada.value = '';
+      this.archivoPortada.set(null);
+      this.portadaPixelArt.set(false);
+      this.enfocar('d-portada', this.abiertaPortada);
+    } catch (error) {
+      const respaldo = `No se pudo ${accion} la portada. Inténtalo de nuevo.`;
+      this.errorPortada.set(apiErrorMessage(error, respaldo) ?? respaldo);
+    } finally {
+      this.guardandoPortada.set(false);
+    }
   }
 
   protected tope(n: number): string {

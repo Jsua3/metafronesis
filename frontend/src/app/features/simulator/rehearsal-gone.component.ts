@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { UiButton } from '../../shared/ui/button/ui-button';
 import { DRAFT_COPY } from './draft-copy';
 
 /**
@@ -11,12 +10,12 @@ import { DRAFT_COPY } from './draft-copy';
  */
 @Component({
   selector: 'app-rehearsal-gone',
-  imports: [RouterLink, UiButton],
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <p class="rg__text" tabindex="-1">{{ motivo() === 'closed' ? draft.rehearsalClosed.text : draft.rehearsalGone.text }}</p>
-    <button ui-button class="restart" type="button" variant="primary" (click)="restart.emit()">{{ draft.rehearsalRestart.text }}</button>
-    <a ui-button variant="secondary" [routerLink]="['/portal/casos', caseVersionId(), 'editor']">{{ draft.rehearsalBackToEditor.text }}</a>
+    <button class="restart u-boton u-boton--principal" type="button" (click)="restart.emit()">{{ draft.rehearsalRestart.text }}</button>
+    <a class="u-boton" [routerLink]="['/portal/casos', caseVersionId(), 'editor']">{{ draft.rehearsalBackToEditor.text }}</a>
   `,
   styles: [`.rg__text { margin: 0; max-inline-size: 28rem; font-size: 1.05rem; }`],
 })

@@ -1,6 +1,6 @@
 <section class="scene-hint" [class.scene-hint--placa]="variante() === 'placa'" aria-label="Pistas de la escena">
   <div class="scene-hint__bar">
-    <button ui-button class="scene-hint__ask" type="button" variant="secondary" size="sm" [icon]="variante() === 'placa' ? undefined : 'lightbulb'" [loading]="busy()" [disabledReason]="blockedReason()" (click)="ask()">{{ buttonLabel() }}</button>
+    <button ui-button class="scene-hint__ask" [class.u-boton]="variante() === 'placa'" type="button" variant="secondary" size="sm" [icon]="variante() === 'placa' ? undefined : 'lightbulb'" [loading]="busy()" [disabledReason]="blockedReason()" (click)="ask()">{{ buttonLabel() }}</button>
     @if (counter(); as text) {
       <span class="scene-hint__counter">{{ text }}</span>
     }
@@ -8,7 +8,7 @@
       <span class="scene-hint__message">{{ text }}</span>
     }
     @if (loadFailed()) {
-      <button ui-button type="button" variant="ghost" size="sm" (click)="load()">Reintentar</button>
+      <button ui-button [class.u-boton]="variante() === 'placa'" type="button" variant="ghost" size="sm" (click)="load()">Reintentar</button>
     }
   </div>
   @if (state()?.shown?.length) {

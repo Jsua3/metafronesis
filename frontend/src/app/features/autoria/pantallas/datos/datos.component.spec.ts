@@ -62,6 +62,42 @@ async function montar(opciones: { estado?: string; contexto?: string; objetivos?
 describe('DatosComponent · los datos del caso se guardan solos', () => {
   afterEach(() => document.querySelectorAll('body > app-datos, body > [ng-version]').forEach((n) => n.remove()));
 
+  it('sube, reemplaza y quita la portada; el inspector refleja lo confirmado', async () => {
+    const { raiz, servidor, botonDe, hacerClic, listo } = await montar();
+    const elegir = async (nombre: string) => {
+      const input = raiz.querySelector<HTMLInputElement>('#d-portada')!;
+      Object.defineProperty(input, 'files', { configurable: true, value: [new File(['imagen'], nombre)] });
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      await listo();
+    };
+    const imagen = () => raiz.querySelector('ui-portada-caso .ui-portada-caso__imagen');
+    await elegir('portada.png');
+    (raiz.querySelector('#d-portada-pixel') as HTMLInputElement).click();
+    await hacerClic(botonDe('Subir portada'));
+    expect(imagen()?.getAttribute('src')).toBe('/media/3.png');
+    expect(imagen()?.classList).toContain('ui-portada-caso__imagen--pixel');
+    await elegir('reemplazo.png');
+    await hacerClic(botonDe('Reemplazar portada'));
+    expect(imagen()?.getAttribute('src')).toBe('/media/4.png');
+    expect(imagen()?.classList).not.toContain('ui-portada-caso__imagen--pixel');
+    await hacerClic(botonDe('Quitar portada'));
+    expect(imagen()).toBeNull();
+    expect(raiz.querySelector('ui-portada-caso .ui-portada-caso__puerta')).not.toBeNull();
+    expect(servidor.metodos).toEqual(['updateCover', 'updateCover', 'removeCover']);
+  });
+
+  it('muestra el rechazo de la imagen junto al selector', async () => {
+    const { raiz, servidor, botonDe, hacerClic, listo } = await montar();
+    servidor.fallar('updateCover', 400, 'Elige una imagen PNG, JPEG o WebP válida.');
+    const input = raiz.querySelector<HTMLInputElement>('#d-portada')!;
+    Object.defineProperty(input, 'files', { value: [new File(['falsa'], 'imagen.png')] });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await listo();
+    await hacerClic(botonDe('Subir portada'));
+    expect(raiz.querySelector('#d-portada-error')?.textContent).toContain('Elige una imagen PNG, JPEG o WebP válida.');
+    expect(raiz.querySelector('ui-portada-caso .ui-portada-caso__imagen')).toBeNull();
+  });
+
   it('muestra el nombre, el contexto, los objetivos (uno por campo) y los temas, cada uno con su etiqueta', async () => {
     const { raiz, nombre, contexto, objetivo } = await montar();
     expect(raiz.querySelector('h1')!.textContent).toContain('Datos del caso');

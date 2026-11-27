@@ -28,7 +28,7 @@
   @if (lento() && fase() !== 'listo') {
     <div class="umbral-caso__lento">
       <p>{{ textoLento }}</p>
-      <button ui-button type="button" variant="secondary" icon="arrow_back" (click)="volver.emit()">{{ volverEtiqueta() }}</button>
+      <button class="u-boton" ui-button type="button" variant="secondary" icon="arrow_back" (click)="volver.emit()">{{ volverEtiqueta() }}</button>
     </div>
   }
 

@@ -1,5 +1,13 @@
+from io import BytesIO
+
 import pytest
+from PIL import Image
+
+from apps.publicacion.ciclo import publicar
 from apps.simulation.models import CaseVersion
+from apps.simulation.services.portadas import crear_portada
+from apps.users.models import CustomUser
+from shared.policies import ADMIN
 
 pytestmark = [pytest.mark.django_db, pytest.mark.req('SIEP-26')]
 
@@ -23,6 +31,24 @@ def test_clon_es_borrador_con_todo_copiado(caso):
         assert opcion.source_node.case_version_id == clon.pk and opcion.target_node.case_version_id == clon.pk
 
 
+def test_el_clon_publicado_hereda_la_portada(caso, settings):
+    settings.REVIEW_WORKFLOW_STRICT = False
+    original = caso["version"]
+    imagen = BytesIO()
+    Image.new("RGB", (240, 132)).save(imagen, "PNG")
+    imagen.seek(0)
+    original.cover = crear_portada(imagen)
+    original.cover_pixel_art = True
+    original.status = "PUBLISHED"
+    original.save(update_fields=["status", "cover", "cover_pixel_art"])
+    respuesta = clonar(caso)
+    assert respuesta.status_code == 201
+    admin = CustomUser.objects.create_user(email="admin-portada@example.test", role=ADMIN)
+    publicada = publicar(admin, respuesta.data["data"]["versionId"])
+    assert publicada.status == "PUBLISHED"
+    assert publicada.cover_id == original.cover_id and publicada.cover_pixel_art
+
+
 def test_editar_el_clon_no_toca_el_original(caso):
     caso['version'].status = 'ARCHIVED'
     caso['version'].save()
@@ -35,6 +61,19 @@ def test_editar_el_clon_no_toca_el_original(caso):
     caso['inicio'].refresh_from_db()
     caso['opciones'][0].refresh_from_db()
     assert caso['inicio'].narrative == 'Inicio' and caso['opciones'][0].text == 'Opción'
+
+
+def test_clon_rechaza_un_codigo_de_herramienta_con_arroba(caso):
+    original = caso['version']
+    original.status = 'ARCHIVED'
+    original.save(update_fields=['status'])
+    original.clinical_tools.create(tool_code='PAP@gloria', label='PAP')
+
+    respuesta = clonar(caso)
+    assert respuesta.status_code == 400, respuesta.content
+    assert respuesta.json()['field'] == 'toolCode'
+    assert "'@' está reservado" in respuesta.json()['message']
+    assert list(caso['caso'].versions.values_list('pk', flat=True)) == [original.pk]
 
 
 def test_no_se_clona_un_borrador_409(caso):

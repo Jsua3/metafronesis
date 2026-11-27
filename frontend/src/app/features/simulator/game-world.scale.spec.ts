@@ -144,18 +144,24 @@ describe('game-world: rótulos legibles en cualquier tamaño (T5.3)', () => {
 
   it('el rótulo de una puerta pegada al borde se corre hacia dentro para no cortarse con el canvas', () => {
     const scene = sceneAt(960 / 478);
-    const hint = { x: 838, __doorX: 838, __doorHalfWidth: 99, setScale: vi.fn() };
-    scene.doorHints = new Map([['puerta-sala-escucha', hint]]);
-    scene.onScaleResize();
-    const reach = 99 * scene.labelScale + 6;
-    expect(hint.x).toBeLessThanOrEqual(960 - reach);
-    expect(hint.x).toBeLessThan(838);
-    // una puerta del borde izquierdo se corre hacia la derecha
-    const left = { x: 122, __doorX: 122, __doorHalfWidth: 99, setScale: vi.fn() };
-    scene.doorHints = new Map([['puerta-urgencias', left]]);
-    scene.labelScale = 1;
-    scene.onScaleResize();
-    expect(left.x).toBeGreaterThanOrEqual(99 * scene.labelScale + 6);
+    scene.markerLabels.clear();
+    Object.assign(scene, {
+      cameras: { main: { width: 478, height: 390, zoom: 1 } },
+      camState: { centro: { x: 480, y: 260 }, zoom: 1 },
+      nearestKey: 'puerta',
+    });
+    const ubicar = (scene as unknown as { ubicarAvisosHeredados(avisos: boolean, ocupadas: []): void }).ubicarAvisosHeredados.bind(scene);
+    for (const [ancla, esperado] of [[260, 344], [700, 616]]) {
+      const hint = {
+        __doorX: ancla, __doorY: 260, __doorHalfWidth: 99, scaleX: 1, scaleY: 1,
+        setScale: vi.fn(), setVisible: vi.fn(), setPosition: vi.fn(),
+      };
+      hint.setPosition.mockReturnValue(hint);
+      scene.doorHints = new Map([['puerta', hint]]);
+      ubicar(true, []);
+      expect(hint.setPosition).toHaveBeenCalledWith(esperado, 260);
+      expect(hint.setVisible).toHaveBeenLastCalledWith(true);
+    }
   });
 
   it('el zoom de cámara de cada sala cuenta: con zoom 2 (salas Tiled) los rótulos no se duplican', () => {

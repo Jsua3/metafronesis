@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.grupos.models import Grupo, GrupoEstudiante, MembershipStatus
-from apps.simulation.models import (AttemptEvent, CaseVersion, DecisionOption, Rubric,
+from apps.simulation.models import (AttemptEvaluation, AttemptEvent, CaseVersion, DecisionOption, Rubric,
                                     SimulationAttempt, SimulationCase, SimulationNode,
                                     SimulationRubricAssignment)
 from apps.users.models import CustomUser
@@ -59,6 +59,26 @@ def test_detalle_trae_decisiones_y_justificacion(datos):
     detalle = respuesta.data["data"]
     assert detalle["decisions"][0]["justification"] == {"feedback": "Explicación", "theoryBasis": "Teoría"}
     assert {"evaluation", "rubric", "teacherFeedback"} <= detalle.keys()
+
+
+def test_revision_de_un_intento_incompleto_entrega_un_final_neutral(datos):
+    intento = datos["intento"]
+    intento.status = "INCOMPLETE"
+    intento.save(update_fields=["status"])
+    evaluacion = AttemptEvaluation.objects.create(attempt=intento, snapshot={
+        "ending": {"key": "riesgo_abierto", "message": "Epílogo de la historia"},
+        "evidence": [{"decision_option_id": datos["opcion"].pk}],
+    })
+    ruta = f"/api/instructor/attempts/{intento.pk}"
+    detalle = datos["cliente"].get(ruta)
+    assert detalle.status_code == 200, detalle.content
+    instantanea = detalle.data["data"]["evaluation"]
+    assert instantanea["ending"]["key"] == "incompleto"
+    assert instantanea["ending"]["tone"] == "neutral"
+    assert instantanea["evidence"] == evaluacion.snapshot["evidence"]
+    traza = datos["cliente"].get(ruta + "/trace")
+    assert traza.status_code == 200, traza.content
+    assert traza.data["data"]["ending"] == {**instantanea["ending"], "reason": []}
 
 
 def test_registra_retroalimentacion_general(datos):

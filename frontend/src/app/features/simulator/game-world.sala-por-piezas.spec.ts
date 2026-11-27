@@ -47,7 +47,7 @@ describe('sala por piezas en la escena (P2)', () => {
   });
 
   it('3. con una capa encima, las puertas de pieza y las sombras no avanzan', () => {
-    expect(source).toMatch(/if \(this\.salaPorPiezas && !this\.motionPaused\) \{\s*const activa = this\.salaPorPiezas\.actualizar\(/);
+    expect(source).toMatch(/if \(this\.salaPorPiezas && !this\.motionPaused\) \{\s*this\.salaPorPiezas\.actualizar\(/);
   });
 
   it('el aviso de la puerta de pieza es un botón de Angular sobre el lienzo, no la pista de Phaser', () => {
@@ -58,13 +58,14 @@ describe('sala por piezas en la escena (P2)', () => {
     expect(source).toContain("if (isExit && object.metadata?.['dePieza'] !== true) {");
     expect(source).toContain('pintada: true, dePieza: true');
     // Con el mundo en pausa no hay aviso; solo se avisa a Angular cuando cambia.
-    expect(source).toMatch(/this\.avisoDePuerta\(activa\);\s*this\.salaPorPiezas\.cerca\(this\.nearestKey\);\s*\} else \{\s*this\.avisoDePuerta\(null\);/);
+    expect(source).toContain('const avisos = this.haDadoUnPaso() && !this.coreografia && !this.motionPaused;');
+    expect(source).toContain('this.avisoDePuerta(avisos ? this.salaPorPiezas?.puertaActiva() ?? null : null, ocupadas);');
     expect(source).toContain('if (firma === this.firmaDelAviso) return;');
   });
 
   it('los muebles y objetos de la biblioteca de piezas los dibuja la escena; su marcador queda sin sprite, solo rótulo y área', () => {
     expect(source).toContain("const painted = isPaintedDoor(object) || object.metadata?.['dePieza'] === true;");
-    expect(source).toContain('const art = this.assetsLoaded && !isExit && !painted ? this.buildArtSprite(object) : null;');
+    expect(source).toContain('const art = this.assetsLoaded && !isExit && !painted && !apoyo?.cama ? this.buildArtSprite(object, !!apoyo) : null;');
     expect(source).toContain("const pieza = piezaDelObjeto(obj.metadata?.['arte'], manifiesto);");
     expect(source).toContain('if (obj) { this.salaPorPiezas?.revisar(obj.key); this.callbacks.onInteract(obj); return; }');
   });

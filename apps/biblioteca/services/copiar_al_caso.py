@@ -28,6 +28,7 @@ import copy
 import json
 from dataclasses import dataclass, field
 
+from django.core.exceptions import ValidationError
 from rest_framework import status
 
 from apps.autoria import geometria_salas
@@ -40,7 +41,7 @@ from apps.simulation.models import (
     SceneMap,
     SimulationNode,
 )
-from apps.simulation.models.world import MAP_OBJECT_TYPES
+from apps.simulation.models.world import MAP_OBJECT_TYPES, validar_codigo_herramienta
 from apps.simulation.services import case_rules
 from shared.exceptions import ApiError
 from shared.jsonutils import read_map
@@ -348,13 +349,17 @@ def _personajes_del_caso(case_version, lugar, elegidas):
 
 
 def _herramientas(case_version, lugar):
-    herramientas = [
-        ClinicalTool(
-            case_version=case_version, tool_code=herramienta["id"], label=herramienta["nombre"],
+    herramientas = []
+    for herramienta in lugar.get("catalogo", {}).get("herramientas", []):
+        codigo = herramienta["id"]
+        try:
+            validar_codigo_herramienta(codigo)
+        except ValidationError as error:
+            raise ApiError("VALIDATION_ERROR", error.message, field="toolCode") from error
+        herramientas.append(ClinicalTool(
+            case_version=case_version, tool_code=codigo, label=herramienta["nombre"],
             icon=ICONO_HERRAMIENTA, category="clinical", description=herramienta.get("descripcion", ""), active=True,
-        )
-        for herramienta in lugar.get("catalogo", {}).get("herramientas", [])
-    ]
+        ))
     ClinicalTool.objects.bulk_create(herramientas)
     return len(herramientas)
 

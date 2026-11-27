@@ -4,6 +4,8 @@ Note: support_resources_json / required_tools_json are TEXT columns holding
 JSON strings (not jsonb), so they are TextField and parsed in serializers.
 """
 
+from uuid import uuid4
+
 from django.conf import settings
 from django.db import models
 
@@ -48,6 +50,17 @@ class SimulationCase(models.Model):
 
     def __str__(self):
         return self.code
+
+
+class CaseCover(models.Model):
+    """Imagen saneada e inmutable, compartida por las versiones que la referencian."""
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    formato = models.CharField(max_length=4)
+    contenido = models.BinaryField()
+
+    class Meta:
+        db_table = "case_covers"
 
 
 class CaseVersion(models.Model):
@@ -118,6 +131,8 @@ class CaseVersion(models.Model):
     edited_alone_since = models.BigIntegerField(default=0, db_default=0)
     #: Tiempo estimado de participación en minutos (RF-05); nulo mientras el autor no lo define.
     estimated_minutes = models.PositiveIntegerField(null=True, blank=True)
+    cover = models.ForeignKey(CaseCover, null=True, blank=True, on_delete=models.PROTECT, related_name="versions")
+    cover_pixel_art = models.BooleanField(default=False, db_default=False)
 
     class Meta:
         db_table = "case_versions"

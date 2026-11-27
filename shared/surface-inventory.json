@@ -332,6 +332,22 @@
       "audit": "CASE_VERSION_CLONED"
     },
     {
+      "route": "api/authoring/cases/<int:case_version_id>/cover",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "CASE_COVER_REMOVED"
+    },
+    {
+      "route": "api/authoring/cases/<int:case_version_id>/cover",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "multipart-case-cover",
+      "throttle": null,
+      "audit": "CASE_COVER_UPDATED"
+    },
+    {
       "route": "api/authoring/cases/<int:case_version_id>/decisions",
       "method": "POST",
       "exposure": "role:ADMIN,PROFESOR",
@@ -682,6 +698,78 @@
       "body": "json-small",
       "throttle": null,
       "audit": "CASE_CREATED,NODE_CREATED,NODE_UPDATED,DECISION_CREATED"
+    },
+    {
+      "route": "api/authoring/coauthor",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STARTED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>",
+      "method": "DELETE",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_CANCELLED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "EXENTO: lectura de la conversación propia con la IA"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/accept",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_ACCEPTED"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/answer",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/question",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/skip",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/summary",
+      "method": "POST",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
+    },
+    {
+      "route": "api/authoring/coauthor/<uuid:acuerdo_id>/summary",
+      "method": "PUT",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "json-small",
+      "throttle": null,
+      "audit": "AI_COAUTHOR_STAGE"
     },
     {
       "route": "api/authoring/generations",
@@ -1526,6 +1614,14 @@
       "body": "none",
       "throttle": null,
       "audit": "EXENTO: lectura de lo propio o de un catálogo común a todos los roles: no son datos de otra persona"
+    },
+    {
+      "route": "api/simulation/covers/<uuid:cover_id>",
+      "method": "GET",
+      "exposure": "public",
+      "body": "none",
+      "throttle": null,
+      "audit": null
     },
     {
       "route": "schema",

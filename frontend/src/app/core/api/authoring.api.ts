@@ -35,7 +35,7 @@ import type {
   GenerationStatus,
 } from '../models/generacion.model';
 import { ApiDataResponse as ApiResponse } from './api-response';
-import type { AssistantGuide, AssistantGuideBody, AssistantProposeBody, AssistantResult, AssistantStatus } from './generated/openapi-contracts';
+import type { AssistantGuide, AssistantGuideBody, AssistantProposeBody, AssistantResult, AssistantStatus, CaseCoverChangeEnvelope } from './generated/openapi-contracts';
 import { CaseListCache } from './case-list-cache';
 import { revisionConflictOf } from './revision-conflict.util';
 
@@ -94,7 +94,7 @@ interface ResumenServidor {
   versionId: number;
   status: string;
   revision: number;
-  brief: { code: string; title: string; description: string | null };
+  brief: { code: string; title: string; description: string | null; portada?: string | null; portadaPixelArt?: boolean };
 }
 
 /**
@@ -144,6 +144,19 @@ export class AuthoringApi {
       .pipe(map(response => response.data));
   }
 
+  updateCover(caseVersionId: number, imagen: File, pixelArt: boolean, revision: number) {
+    const cuerpo = new FormData();
+    cuerpo.set('imagen', imagen);
+    cuerpo.set('pixelArt', String(pixelArt));
+    return this.http.put<CaseCoverChangeEnvelope>(`${this.API}/${caseVersionId}/cover`, cuerpo, withRevision(revision))
+      .pipe(map(respuesta => respuesta.data));
+  }
+
+  removeCover(caseVersionId: number, revision: number) {
+    return this.http.delete<CaseCoverChangeEnvelope>(`${this.API}/${caseVersionId}/cover`, withRevision(revision))
+      .pipe(map(respuesta => respuesta.data));
+  }
+
   /** Clona la versión (de una publicada o archivada sale un borrador) y devuelve el editor de la copia. */
   cloneCaseVersion(caseVersionId: number) {
     return this.http.post<ApiResponse<{ versionId: number }>>(`${this.API}/${caseVersionId}/clone-version`, {})
@@ -164,6 +177,7 @@ export class AuthoringApi {
       semanticVersion: v.semanticVersion ?? '',
       nodeCount: 0,
       status: v.status,
+      ...(v.brief.portada !== undefined ? { portada: v.brief.portada, portadaPixelArt: v.brief.portadaPixelArt } : {}),
       ...(v.caseId != null ? { caseId: v.caseId } : {}),
       ...(v.autor ? { autor: v.autor } : {}),
       ...(v.editadoPor ? { editadoPor: v.editadoPor } : {}),

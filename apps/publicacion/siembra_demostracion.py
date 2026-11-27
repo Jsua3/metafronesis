@@ -1,7 +1,7 @@
 """Siembra de demostración (SIEP-234): deja un entorno listo para mostrar el simulador.
 
-Crea, solo lo que falta, docentes, estudiantes, grupos con membresía activa, una rúbrica y el caso insignia
-SIM-VBG-002 publicado y asignado a los grupos. Todo en una transacción: si algo falla, no queda nada a medias.
+Crea, solo lo que falta, docentes, estudiantes, grupos con membresía activa y una rúbrica. Publica y asigna a los
+grupos la versión vigente del caso insignia SIM-VBG-002 y retira las anteriores. Todo en una transacción.
 
 Las cuentas nuevas reciben una contraseña TEMPORAL común que llega de fuera (variable de entorno, nunca del código) y
 quedan con cambio obligatorio al primer ingreso. Las cuentas que ya existían no se tocan. El módulo no imprime la clave.
@@ -24,14 +24,16 @@ from apps.publicacion import ciclo
 from apps.publicacion.arbol import arbol_de
 from apps.simulation.casedef.escritor_insignia import ErrorDeCarga, cargar
 from apps.simulation.casedef.insignia import traducir
-from apps.simulation.models import CaseVersion, CaseVersionStatus, Competency, Rubric, RubricCriterion
+from apps.simulation.models import CaseVersion, CaseVersionStatus, Competency, Rubric, RubricCriterion, SimulationCase
 from apps.simulation.services import rubricas
+from apps.simulation.services.portadas import crear_portada
 from apps.users.models import CustomUser, PermisoDeAutoria, UserRole
 from shared.exceptions import ApiError
 
 DOMINIO = "demo.metafronesis.test"
-MINUTOS_ESTIMADOS = 45
+MINUTOS_ESTIMADOS = 40  # el caso lineal se juega en unos 40 minutos
 RUTA_DOCUMENTO = Path(__file__).resolve().parents[1] / "simulation/data/casos/SIM-VBG-002.dsl.json"
+RUTA_PORTADA = RUTA_DOCUMENTO.with_name("SIM-VBG-002.portada.png")
 
 DOCENTES = (
     ("laura.mendoza", "Laura", "Mendoza"),
@@ -104,6 +106,7 @@ class ErrorDeSiembra(Exception):
 class Informe:
     creado: list = field(default_factory=list)
     existente: list = field(default_factory=list)
+    archivado: list = field(default_factory=list)
 
     def anotar(self, creado, texto):
         (self.creado if creado else self.existente).append(texto)
@@ -140,9 +143,26 @@ def _cuenta(correo_local, nombre, apellido, rol, clave, informe):
     return cuenta
 
 
+def docentes_reales(correos):
+    """Las cuentas PROFESOR activas que ya existen y serán dueñas de los grupos sembrados (``--docentes``), de 1 a 3."""
+    if len(correos) > len(GRUPOS):
+        raise ErrorDeSiembra(f"--docentes admite hasta {len(GRUPOS)} correos, uno por grupo sembrado.")
+    docentes = []
+    for correo in correos:
+        docente = CustomUser.objects.filter(email__iexact=correo, role=UserRole.PROFESOR, activo=True).first()
+        if docente is None:
+            raise ErrorDeSiembra(f"--docentes: {correo} no es una cuenta PROFESOR activa que ya exista.")
+        docentes.append(docente)
+    return docentes
+
+
 def _grupo(codigo, nombre, docente, estudiantes, informe):
     grupo, creado = Grupo.objects.get_or_create(codigo=codigo, defaults={"nombre": nombre, "profesor": docente})
-    informe.anotar(creado, f"grupo «{grupo.nombre}» ({codigo})")
+    informe.anotar(creado, f"grupo «{grupo.nombre}» ({codigo})" + (f", a cargo de {docente.email}" if creado else ""))
+    if not creado and grupo.profesor_id != docente.pk:
+        grupo.profesor = docente
+        grupo.save(update_fields=["profesor"])
+        informe.creado.append(f"  el grupo {codigo} ahora es de {docente.email}")
     ahora = timezone.now()
     for estudiante in estudiantes:
         _, nuevo = GrupoEstudiante.objects.get_or_create(
@@ -173,17 +193,31 @@ def _rubrica(autora, informe):
     return rubrica
 
 
+def _adjuntar_portada_insignia(version):
+    if version.cover_id or not RUTA_PORTADA.is_file():
+        return
+    try:
+        with RUTA_PORTADA.open("rb") as archivo:
+            version.cover = crear_portada(archivo)
+    except (ApiError, OSError) as error:
+        raise ErrorDeSiembra(f"No se pudo adjuntar la portada del caso insignia: {error}") from error
+    version.cover_pixel_art = True
+    version.save(update_fields=["cover", "cover_pixel_art"])
+
+
 def _caso_insignia(autora, publicador, rubrica, informe):
     """Carga el caso como borrador, le asigna la rúbrica de la siembra y lo publica.
 
     La rúbrica entra en la huella de la versión: se asigna ANTES de publicar, porque después cambiarla rompería el sello.
-    Una versión que ya está publicada no se toca.
+    Una versión ya publicada solo recibe la portada si todavía le falta: es un recurso de presentación fuera del sello.
     """
     plan = traducir(json.loads(RUTA_DOCUMENTO.read_text(encoding="utf-8")))
     plan = replace(plan, version=MappingProxyType({**plan.version, "estimated_minutes": MINUTOS_ESTIMADOS}))
-    existente = CaseVersion.objects.filter(simulation_case__code=plan.caso["code"],
-                                           semantic_version=plan.version["semantic_version"]).first()
+    # Serializa el reemplazo por caso, también cuando la versión del documento ya estaba publicada.
+    caso = SimulationCase.objects.select_for_update().filter(code=plan.caso["code"]).first()
+    existente = caso.versions.filter(semantic_version=plan.version["semantic_version"]).first() if caso else None
     if existente is not None and existente.status == CaseVersionStatus.PUBLISHED:
+        _adjuntar_portada_insignia(existente)
         informe.existente.append(f"caso {plan.caso['code']} versión {existente.semantic_version} (PUBLISHED)")
         return existente
     try:
@@ -192,6 +226,7 @@ def _caso_insignia(autora, publicador, rubrica, informe):
         raise ErrorDeSiembra(f"No se pudo cargar el caso insignia: {error}") from error
     if version.status != CaseVersionStatus.DRAFT:
         raise ErrorDeSiembra(f"El caso insignia está en estado {version.status}; la siembra no lo publica.")
+    _adjuntar_portada_insignia(version)
     rubricas.asociar_a_version(autora, rubrica.pk, version.pk)
     problemas = arbol_de(version).problemas()
     if problemas:
@@ -208,19 +243,26 @@ def _caso_insignia(autora, publicador, rubrica, informe):
 
 
 @transaction.atomic
-def sembrar(publicador_correo, clave):
-    """Siembra el entorno y devuelve el ``Informe``. Falla con ``ErrorDeSiembra`` sin dejar nada escrito."""
+def sembrar(publicador_correo, clave, correos_docentes=()):
+    """Siembra el entorno y devuelve el ``Informe``. Falla con ``ErrorDeSiembra`` sin dejar nada escrito.
+
+    Con ``correos_docentes`` (``--docentes``), los grupos sembrados quedan a cargo de esas cuentas PROFESOR reales, en
+    orden y repartidos si son menos que los grupos: así ven a sus estudiantes, los intentos y los reportes. El caso
+    insignia sigue siendo de la docente demo que lo escribió (el editor solo muestra los casos propios).
+    """
     validar_clave(clave)
     publicador = CustomUser.objects.filter(email=publicador_correo, role=UserRole.ADMIN, activo=True).first()
     if publicador is None:
         raise ErrorDeSiembra("El publicador debe ser un administrador activo que ya exista; el comando no crea ADMIN.")
+    reales = docentes_reales(list(correos_docentes))
     informe = Informe()
     docentes = [_cuenta(*datos, UserRole.PROFESOR, clave, informe) for datos in DOCENTES]
     for docente in docentes:
         PermisoDeAutoria.objects.get_or_create(docente=docente, defaults={"otorgado_por": publicador})
     estudiantes = [_cuenta(*datos, UserRole.ESTUDIANTE, clave, informe) for datos in ESTUDIANTES]
-    grupos = [_grupo(codigo, nombre, docentes[docente], [estudiantes[i] for i in miembros], informe)
-              for codigo, nombre, docente, miembros in GRUPOS]
+    grupos = [_grupo(codigo, nombre, reales[orden % len(reales)] if reales else docentes[docente],
+                     [estudiantes[i] for i in miembros], informe)
+              for orden, (codigo, nombre, docente, miembros) in enumerate(GRUPOS)]
     autora = docentes[0]
     version = _caso_insignia(autora, publicador, _rubrica(autora, informe), informe)
     for grupo in grupos:
@@ -230,4 +272,13 @@ def sembrar(publicador_correo, clave):
         assignment_service.create_assignment(
             grupo.profesor, {"caseVersionId": version.pk, "target": {"type": "GROUP", "groupId": grupo.pk}})
         informe.creado.append(f"asignación del caso a {grupo.codigo}")
+    otras_publicadas = (CaseVersion.objects.select_for_update()
+        .filter(simulation_case_id=version.simulation_case_id, status=CaseVersionStatus.PUBLISHED)
+        .exclude(pk=version.pk).order_by("pk"))
+    for anterior in otras_publicadas:
+        ciclo.archivar(publicador, anterior.pk)
+        informe.archivado.append(f"versión {anterior.semantic_version} archivada: la reemplaza la {version.semantic_version}")
+    CaseAssignment.objects.filter(
+        grupo__in=grupos, case_version__simulation_case_id=version.simulation_case_id, active=True,
+    ).exclude(case_version=version).update(active=False)
     return informe

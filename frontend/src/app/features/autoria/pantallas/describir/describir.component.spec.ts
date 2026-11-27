@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { firstValueFrom, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 
 import { AuthoringApi } from '../../../../core/api/authoring.api';
+import { type Acuerdo, CoautoriaApi, type FichaAcordada } from '../../../../core/api/coautoria.api';
 import { casoCopiadoDeLugar } from '../../testing/caso-api';
 import { rutasDePrueba } from '../../testing/rutas';
 import { ServidorFalso } from '../../testing/servidor-falso';
@@ -12,12 +13,33 @@ import { DescribirComponent } from './describir.component';
 
 const DESCRIPCION = 'Una estudiante llega a Bienestar y dice que ya no puede más con lo que pasa en casa.';
 
+const FICHA: FichaAcordada = {
+  titulo: 'Primera consulta', objetivo: 'Escuchar sin juzgar.', personajes: [{ nombre: 'Laura', descripcion: 'Desconfiada.' }],
+  lugar: 'Bienestar universitario.', momento: 'dia',
+  escenas: [{ titulo: 'Llegada', proposito: 'Recibirla.' }, { titulo: 'Cierre', proposito: 'Acordar otra cita.' }],
+  hitos: [], finales: [{ titulo: 'Vuelve', descripcion: 'Acuerdan otra cita.' }], intensidad: 'MEDIUM', temasSensibles: [],
+};
+
+function acuerdo(cambios: Partial<Acuerdo> = {}): Acuerdo {
+  return {
+    id: 'acuerdo-1', status: 'summarized', lugarId: 'universidad', caseVersionId: null, idea: DESCRIPCION, respuestas: [],
+    pregunta: null, topePreguntas: 6, ficha: FICHA, llamadasUsadas: 2, llamadasTope: 14, generationId: null, ocupado: false,
+    ...cambios,
+  };
+}
+
 async function montar() {
   TestBed.resetTestingModule();
   const servidor = new ServidorFalso(casoCopiadoDeLugar(universidad, ['consultorio', 'pasillo']), universidad);
+  const coautora = {
+    iniciar: vi.fn(() => of(acuerdo())),
+    aceptar: vi.fn(() => of(acuerdo({ status: 'accepted', generationId: 'generacion-9' }))),
+  };
   await TestBed.configureTestingModule({
     imports: [DescribirComponent],
-    providers: [provideRouter(rutasDePrueba), { provide: AuthoringApi, useValue: servidor.autoria }],
+    providers: [
+      provideRouter(rutasDePrueba), { provide: AuthoringApi, useValue: servidor.autoria }, { provide: CoautoriaApi, useValue: coautora },
+    ],
   }).compileComponents();
   const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
   const api = TestBed.inject(AuthoringApi);
@@ -36,7 +58,7 @@ async function montar() {
     await hasta(() => !raiz.textContent!.includes('Revisando si puedes generar'));
     return { fixture, raiz, hasta };
   };
-  return { servidor, g: servidor.generaciones, api, navegar, crear };
+  return { servidor, g: servidor.generaciones, api, navegar, crear, coautora };
 }
 
 const boton = (raiz: HTMLElement, texto: string) =>
@@ -57,12 +79,13 @@ describe('DescribirComponent', () => {
     const { crear } = await montar();
     const { raiz } = await crear();
 
-    expect(raiz.querySelector('label[for="descripcion"]')!.textContent).toContain('Describe la situación y lo que debe aprender el estudiante');
-    expect(raiz.textContent).toContain('Entre 40 y 2000 caracteres.');
+    expect(raiz.querySelector('label[for="descripcion"]')!.textContent).toContain('Cuéntale tu idea a la IA');
+    expect(raiz.textContent).toContain('la IA te hará unas preguntas antes de construir');
     expect(raiz.querySelector('#descripcion-cuenta')!.textContent).toContain('0 de 2000');
     expect(raiz.textContent).toContain('Te quedan 5 casos generados hoy.');
     expect(raiz.textContent).toContain('La IA escribe un borrador. Nada se publica sin tu revisión y la de Psicología.');
-    expect(boton(raiz, 'Generar el caso con IA')).toBeTruthy();
+    expect(boton(raiz, 'Conversar con la IA')).toBeTruthy();
+    expect(boton(raiz, 'Generar sin preguntas')).toBeTruthy();
   });
 
   it('el contador sigue lo que se escribe', async () => {
@@ -73,16 +96,18 @@ describe('DescribirComponent', () => {
     expect(raiz.querySelector('#descripcion-cuenta')!.textContent).toContain('11 de 2000');
   });
 
-  it('menos de 40 caracteres no deja generar y dice por qué', async () => {
+  it('menos de 40 caracteres no deja generar sin preguntas y dice por qué', async () => {
     const { g, navegar, crear } = await montar();
     const { fixture, raiz } = await crear();
-    const generar = boton(raiz, 'Generar el caso con IA')!;
+    const generar = boton(raiz, 'Generar sin preguntas')!;
 
     expect(generar.getAttribute('aria-disabled')).toBe('true');
-    expect(generar.getAttribute('aria-describedby')).toBe('descripcion-falta');
-    expect(raiz.querySelector('#descripcion-falta')!.textContent).toContain('Escribe al menos 40 caracteres.');
+    expect(generar.getAttribute('aria-describedby')).toBe('idea-falta');
+    expect(raiz.querySelector('#idea-falta')!.textContent).toContain('Escribe al menos 10 caracteres.');
     escribir(raiz, 'Muy corto.');
     fixture.detectChanges();
+    expect(generar.getAttribute('aria-describedby')).toBe('descripcion-falta');
+    expect(raiz.querySelector('#descripcion-falta')!.textContent).toContain('Para generar sin preguntas, escribe al menos 40 caracteres.');
     generar.click();
     await new Promise((r) => setTimeout(r, 0));
 
@@ -95,12 +120,39 @@ describe('DescribirComponent', () => {
     expect(raiz.querySelector('#descripcion-falta')).toBeNull();
   });
 
+  it('«Conversar con la IA» abre la conversación con la idea y, al aceptar lo acordado, va a la generación', async () => {
+    const { coautora, navegar, crear } = await montar();
+    const { fixture, raiz, hasta } = await crear();
+    escribir(raiz, DESCRIPCION);
+    fixture.detectChanges();
+    boton(raiz, 'Conversar con la IA')!.click();
+    await hasta(() => raiz.textContent!.includes('Lo que acordamos'));
+
+    expect(coautora.iniciar).toHaveBeenCalledWith(DESCRIPCION, { lugarId: 'universidad' });
+    boton(raiz, 'Aceptar')!.click();
+    await hasta(() => navegar.mock.calls.length > 0);
+    expect(navegar).toHaveBeenCalledWith('/portal/casos/nuevo/generando/generacion-9');
+  });
+
+  it('con menos de 10 caracteres no deja conversar', async () => {
+    const { coautora, crear } = await montar();
+    const { fixture, raiz } = await crear();
+    escribir(raiz, 'Corto');
+    fixture.detectChanges();
+    const conversar = boton(raiz, 'Conversar con la IA')!;
+
+    expect(conversar.getAttribute('aria-disabled')).toBe('true');
+    conversar.click();
+    fixture.detectChanges();
+    expect(coautora.iniciar).not.toHaveBeenCalled();
+  });
+
   it('generar navega a /portal/casos/nuevo/generando/<id>', async () => {
     const { g, navegar, crear } = await montar();
     const { fixture, raiz, hasta } = await crear();
     escribir(raiz, DESCRIPCION);
     fixture.detectChanges();
-    boton(raiz, 'Generar el caso con IA')!.click();
+    boton(raiz, 'Generar sin preguntas')!.click();
     await hasta(() => navegar.mock.calls.length > 0);
 
     const empezo = g.llamadas.find((l) => l.metodo === 'startGeneration')!;
@@ -167,7 +219,7 @@ describe('DescribirComponent', () => {
       vi.spyOn(api, 'startGeneration').mockReturnValue(respuesta(400, { code: 'VALIDATION_ERROR', message: 'Cuéntanos un poco más.', field: 'descripcion' }));
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('#descripcion-error'));
 
       expect(raiz.querySelector('#descripcion-error')!.textContent).toContain('Cuéntanos un poco más.');
@@ -188,7 +240,7 @@ describe('DescribirComponent', () => {
         respuesta(409, { code: 'GENERATION_IN_PROGRESS', message: 'Ya tienes un caso generándose.', generationId: 'otra-pestana' }));
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!boton(raiz, 'Retomar'));
 
       expect(raiz.textContent).toContain('Tienes un caso a medio generar');
@@ -203,11 +255,11 @@ describe('DescribirComponent', () => {
         respuesta(429, { code: 'AI_LIMIT_EXCEEDED', message: 'Llegaste al límite de casos generados por hoy.' }));
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('[role="alert"]'));
 
       expect(raiz.querySelector('[role="alert"]')!.textContent).toContain('Llegaste al límite de casos generados por hoy.');
-      const generar = boton(raiz, 'Generar el caso con IA')!;
+      const generar = boton(raiz, 'Generar sin preguntas')!;
       expect(generar.getAttribute('aria-disabled')).toBe('true');
       expect(generar.getAttribute('aria-describedby')).toBe('descripcion-general');
       generar.click();
@@ -221,7 +273,7 @@ describe('DescribirComponent', () => {
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
       g.habilitada = false; // se apagó mientras escribía
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => raiz.textContent!.includes('La generación con IA no está disponible.'));
 
       // el mensaje es el que trae el servidor, con la salida: elegir las salas a mano
@@ -235,11 +287,11 @@ describe('DescribirComponent', () => {
       const empezar = vi.spyOn(api, 'startGeneration').mockReturnValue(respuesta(500, { code: 'SERVER' }));
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('[role="alert"]'));
 
       expect(raiz.querySelector('[role="alert"]')!.textContent).toContain('No pudimos hablar con la IA.');
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => empezar.mock.calls.length === 2);
     });
   });
@@ -263,7 +315,7 @@ describe('DescribirComponent', () => {
       const { fixture, raiz, hasta } = await crear();
       escribir(raiz, DATOS);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('#descripcion-error'));
 
       expect(raiz.querySelector('#descripcion-error')!.textContent).toContain(
@@ -281,7 +333,7 @@ describe('DescribirComponent', () => {
       const { fixture, raiz, hasta } = await crear();
       escribir(raiz, `${DESCRIPCION} <b>x</b>`);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('#descripcion-error'));
       expect(raiz.querySelector('#descripcion-error')!.textContent).toContain('La descripción debe ser texto plano, sin etiquetas, enlaces ni caracteres especiales.');
     });
@@ -293,7 +345,7 @@ describe('DescribirComponent', () => {
         respuesta(400, { code: 'VALIDATION_ERROR', message: 'Elige el lugar donde pasa el caso.', field: 'lugarId' }));
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('#lugar-error'));
 
       const lugar = raiz.querySelector('#lugar-error')!;
@@ -312,11 +364,11 @@ describe('DescribirComponent', () => {
       }));
       escribir(raiz, DESCRIPCION);
       fixture.detectChanges();
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await hasta(() => !!raiz.querySelector('[role="alert"]'));
 
       expect(raiz.querySelector('[role="alert"]')!.textContent).toContain('La plataforma llegó al límite de casos generados por hoy. Vuelve a intentarlo mañana.');
-      boton(raiz, 'Generar el caso con IA')!.click();
+      boton(raiz, 'Generar sin preguntas')!.click();
       await new Promise((r) => setTimeout(r, 0));
       expect(empezar).toHaveBeenCalledTimes(1);
     });
@@ -327,7 +379,7 @@ describe('DescribirComponent', () => {
       const { raiz } = await crear();
       expect(raiz.textContent).toContain('La generación con IA no está disponible por ahora. Puedes elegir las salas a mano.');
       expect(raiz.querySelector('textarea')).toBeNull();
-      expect(boton(raiz, 'Generar el caso con IA')).toBeUndefined();
+      expect(boton(raiz, 'Generar sin preguntas')).toBeUndefined();
     });
   });
 });

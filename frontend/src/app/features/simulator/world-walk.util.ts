@@ -35,6 +35,7 @@ export function reachRadius(interactRadius: number): number {
 
 export interface WalkState {
   readonly target: WalkTarget | null;
+  readonly remaining?: readonly WalkTarget[];
   /** Dónde estaba el jugador en el cuadro anterior: mide el avance (null en el primer cuadro). */
   readonly last: WalkPoint | null;
   /** Tiempo acumulado sin avanzar. */
@@ -43,8 +44,8 @@ export interface WalkState {
 
 export const NO_WALK: WalkState = { target: null, last: null, stuckMs: 0 };
 
-export function startWalk(target: WalkTarget): WalkState {
-  return { target, last: null, stuckMs: 0 };
+export function startWalk(target: WalkTarget, remaining?: readonly WalkTarget[]): WalkState {
+  return { target, last: null, stuckMs: 0, ...(remaining?.length ? { remaining } : {}) };
 }
 
 export interface WalkTick {
@@ -64,7 +65,11 @@ export function tickWalk(state: WalkState, position: WalkPoint, deltaMs: number)
 
   const dx = target.x - position.x;
   const dy = target.y - position.y;
-  if (Math.hypot(dx, dy) <= target.radius) return { state: NO_WALK, input: IDLE, arrived: true, gaveUp: false };
+  if (Math.hypot(dx, dy) <= target.radius) {
+    const next = state.remaining?.[0];
+    if (next) return { state: startWalk(next, state.remaining?.slice(1)), input: IDLE, arrived: false, gaveUp: false };
+    return { state: NO_WALK, input: IDLE, arrived: true, gaveUp: false };
+  }
 
   let stuckMs = state.stuckMs;
   if (state.last) {
@@ -74,7 +79,7 @@ export function tickWalk(state: WalkState, position: WalkPoint, deltaMs: number)
   if (stuckMs >= WALK_STUCK_MS) return { state: NO_WALK, input: IDLE, arrived: false, gaveUp: true };
 
   return {
-    state: { target, last: { x: position.x, y: position.y }, stuckMs },
+    state: { ...state, last: { x: position.x, y: position.y }, stuckMs },
     input: {
       left: dx < -WALK_AXIS_DEADZONE_PX,
       right: dx > WALK_AXIS_DEADZONE_PX,

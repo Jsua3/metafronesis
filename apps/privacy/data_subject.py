@@ -275,6 +275,13 @@ PERSON_SCOPE: dict[str, tuple[Pertenencia, ...]] = {
     "authoring_generations": (
         Pertenencia(TITULAR, lambda p: Q(owner_id=p.pk), solo=("lugar_id", "description", "status", "created_at")),
     ),
+    # ── La IA coautora (SIEP-269): la idea del docente, sus respuestas y la ficha acordada ──
+    "authoring_coauthor_agreements": (
+        Pertenencia(
+            TITULAR, lambda p: Q(owner_id=p.pk),
+            solo=("lugar_id", "case_version_id", "idea", "turns_json", "agreement_json", "status", "created_at"),
+        ),
+    ),
     "rubric_evaluations": (
         Pertenencia(TITULAR, lambda p: Q(attempt__student_id=p.pk), excluir=("instructor_id",)),
         Pertenencia(
@@ -450,6 +457,16 @@ ERASURE_RULES: dict[tuple[str, str], Regla] = {
             BORRAR_FILA,
             "texto libre de la docente y lo que el modelo escribió a partir de él: la generación se borra entera; el caso "
             "importado, si lo hubo, es contenido del programa y queda",
+        ),
+    ),
+    # ── La IA coautora: texto libre del docente y lo que el modelo escribió a partir de él; se borra la fila entera ──
+    **_columnas(
+        "authoring_coauthor_agreements",
+        ("owner_id", "idea", "turns_json", "question_json", "agreement_json"),
+        Regla(
+            BORRAR_FILA,
+            "texto libre del docente, sus respuestas y lo que el modelo escribió a partir de ellos: la conversación se borra "
+            "entera; el caso que se construyó con ella, si lo hubo, es contenido del programa y queda",
         ),
     ),
     # ── Evaluaciones docentes: la institución decide (SD-9); hoy se conservan ──

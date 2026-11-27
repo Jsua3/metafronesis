@@ -2,7 +2,7 @@
   "id": "sebas",
   "displayName": "Sebas",
   "kind": "npc",
-  "complexion": "c",
+  "complexion": "d",
   "pieces": {
     "hair": "corto-liso",
     "face": "cachetes",

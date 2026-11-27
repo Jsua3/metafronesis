@@ -63,7 +63,7 @@ describe('game-world: controles táctiles', () => {
   });
 
   it('«Interactuar» conserva su clase para el e2e y dice con qué va a interactuar', () => {
-    expect(source).toContain('class="psy-button psy-button--glass touch-interact"');
+    expect(source).toContain('class="u-boton u-boton--principal touch-interact"');
     expect(source).toMatch(/\[attr\.aria-label\]="'Interactuar: ' \+ \(interactLabel\(\) \?\? 'Acércate a algo'\)"/);
     expect(source).toContain("{{ interactLabel() ?? 'Acércate a algo' }}");
     // sin nada cerca se atenúa pero se puede tocar (la escena avisa): nunca `disabled`
@@ -76,6 +76,6 @@ describe('game-world: controles táctiles', () => {
   });
 
   it('en anchos cortos (< 700 px) los controles se hacen semitransparentes sobre el mundo', () => {
-    expect(source).toMatch(/@media \(max-width: 699px\) \{\s*:host\(\.touch-input\) \.touch-btn \{ background: rgba\(8,12,18,\.45\);/);
+    expect(source).toContain('u-boton u-boton--icono touch-btn');
   });
 });

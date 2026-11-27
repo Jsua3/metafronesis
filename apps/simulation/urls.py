@@ -5,9 +5,11 @@ from .views_bitacora import EstadoIntento, Reflexiones, SalidaSegura
 from .views_resultado import Resultado
 from .views_progreso import Revisit, Progress
 from .views_consultas import Ficha, IntentoActivo, Historial
+from .views_portada import ImagenPortadaView
 from .views_world import Mundo, MapaProgreso, PosicionMundo, EntradaSala, Pistas, SiguientePista, Interaccion, UsoHerramienta, Personaje
 
 urlpatterns = [
+    path("covers/<uuid:cover_id>", ImagenPortadaView.as_view(), name="case-cover"),
     path("attempts/<uuid:pk>/student-report", InformeEstudiante.as_view()),
     path("attempts/<uuid:pk>/reflections", Reflexiones.as_view()),
     path("attempts/<uuid:pk>/safe-exit", SalidaSegura.as_view()),

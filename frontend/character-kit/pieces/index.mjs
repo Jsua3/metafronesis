@@ -9,13 +9,16 @@ import jogger from './bottom/jogger.mjs';
 import pantalon from './bottom/pantalon.mjs';
 import pantalonUniforme from './bottom/pantalon-uniforme.mjs';
 import cachetes from './face/cachetes.mjs';
+import karen from './face/karen.mjs';
 import maduro from './face/maduro.mjs';
+import sara from './face/sara.mjs';
 import sereno from './face/sereno.mjs';
 import afro from './hair/afro.mjs';
 import bobFlequillo from './hair/bob-flequillo.mjs';
 import colaCaballo from './hair/cola-caballo.mjs';
 import cortoLiso from './hair/corto-liso.mjs';
 import cortoRizado from './hair/corto-rizado.mjs';
+import largoRayaMedio from './hair/largo-raya-medio.mjs';
 import largoSuelto from './hair/largo-suelto.mjs';
 import mediaMelena from './hair/media-melena.mjs';
 import mono from './hair/mono.mjs';
@@ -47,6 +50,7 @@ export const PIECES = Object.freeze([
   colaCaballo,
   cortoLiso,
   cortoRizado,
+  largoRayaMedio,
   largoSuelto,
   mediaMelena,
   mono,
@@ -54,7 +58,9 @@ export const PIECES = Object.freeze([
   trenza,
   // rostro
   cachetes,
+  karen,
   maduro,
+  sara,
   sereno,
   // arriba
   blazer,

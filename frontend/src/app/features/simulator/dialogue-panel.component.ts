@@ -23,7 +23,6 @@ import {
   isFinalDialogueLine,
   nextDialogueLineIndex,
 } from './dialogue-progression.util';
-import { UiButton } from '../../shared/ui/button/ui-button';
 import { DRAFT_COPY } from './draft-copy';
 import { isSystemVoice, resolvePortraitAsset } from './portrait-resolver.util';
 import { escalaDelRetrato } from './pixel/tramos';
@@ -41,22 +40,22 @@ const medirVentana = () => typeof window === 'undefined'
 @Component({
   selector: 'app-dialogue-panel',
   standalone: true,
-  imports: [A11yModule, CommonModule, KitFigureComponent, SafeExitButtonComponent, SceneHintComponent, UiButton],
+  imports: [A11yModule, CommonModule, KitFigureComponent, SafeExitButtonComponent, SceneHintComponent],
   template: `
     @if (dialogue(); as d) {
       <div #dialogueBox
         cdkTrapFocus
-        [cdkTrapFocusAutoCapture]="true"
+        [cdkTrapFocusAutoCapture]="!encuadrando()"
         class="dialogue-strip"
         [class.strip--angosta]="angosta()"
         [class.dialogue-strip--side]="mode() === 'side'"
         [class.strip--warning]="interaction()?.type === 'WARNING'"
         [class.strip--supervisory]="activeSpeakerName(d) === 'Supervisión clínica'"
         [class.strip--quieto]="reduceMotion()"
-        [class.strip--sin-retrato]="!portraitSrc(d) && !visualDeHablante(d)"
         [class.strip--con-opciones]="hasChoices(d)"
         [class.strip--letras-texto]="letrasEnTexto()"
         [style]="arte()"
+        [style.--retrato]="ocultarRetrato(d) ? '0px' : null"
         [attr.data-momento]="momento()"
         role="dialog"
         aria-modal="true"
@@ -71,7 +70,7 @@ const medirVentana = () => typeof window === 'undefined'
             <p class="panel-head__aviso">{{ avisoBreve() }}</p>
           }
           <div class="panel-head__row">
-            <button type="button" class="panel-back" (click)="close.emit()">
+            <button type="button" class="panel-back u-boton" (click)="close.emit()">
               <span class="panel-back__arrow" aria-hidden="true">◀</span> Volver al mapa
             </button>
             <app-safe-exit-button class="panel-head__exit" data-hide-key variante="placa" [pausing]="pausing()" (pause)="safeExit.emit()" />
@@ -86,30 +85,33 @@ const medirVentana = () => typeof window === 'undefined'
 
         <div class="strip-main">
           <!-- La placa de quien habla: nombre en su pestaña, retrato que asoma sobre el marco, estado y la línea. -->
-          <section class="placa">
+          <section class="placa" [class.placa--tutor]="d.tutor">
             <p class="speaker-name">{{ activeSpeakerName(d) }}
+              @if (d.tutor?.rol; as rol) { <span class="speaker-role">{{ rol }}</span> }
               @if (showsEmotionCue(d) && emotionLabel(activeEmotion(d)); as em) {
-                <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">{{ em }}</span>
+                <span class="emotion-tag" [style.color]="emotionColor(activeEmotion(d))">
+                  @if (ocultarRetrato(d)) {
+                    <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)" aria-hidden="true"></span>
+                  }{{ em }}</span>
               }
             </p>
             <div class="placa-cuerpo">
-              <div class="portrait" aria-hidden="true" [style.color]="showsEmotionCue(d) ? emotionColor(activeEmotion(d)) : null">
-                @if (portraitSrc(d); as src) {
-                  <img class="portrait-img" [src]="src" alt="" width="96" height="96" (error)="onPortraitError(src)" />
-                } @else if (visualDeHablante(d); as visual) {
-                  <!-- Sin retrato por nombre, la cara del personaje que está en la sala (la misma que usa la reacción). -->
-                  <app-kit-figure class="portrait-kit" [visual]="visual" [portrait]="caraDeKit(d, visual)" [scale]="escalaKit()" />
-                } @else {
-                  <!-- Sin retrato del kit: el busto de reserva, sin rasgos, al mismo oficio (32 x 32, contorno y luz del kit). -->
-                  <img class="portrait-svg" src="assets/game/dialogo/retrato-reserva.png" alt="" width="32" height="32" />
-                }
-                @if (showsEmotionCue(d) && activeEmotion(d) !== 'neutral') {
-                  <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)"></span>
-                }
-                @if (estadoPersona(d); as e) {
-                  <i class="portrait-base" [attr.data-activation]="e.activation"></i>
-                }
-              </div>
+              @if (!ocultarRetrato(d)) {
+                <div class="portrait" aria-hidden="true" [style.color]="showsEmotionCue(d) ? emotionColor(activeEmotion(d)) : null">
+                  @if (portraitSrc(d); as src) {
+                    <img class="portrait-img" [src]="src" alt="" width="96" height="96" (error)="onPortraitError(src)" />
+                  } @else if (visualDeHablante(d); as visual) {
+                    <!-- Sin retrato por nombre, la cara del personaje que está en la sala (la misma que usa la reacción). -->
+                    <app-kit-figure class="portrait-kit" [visual]="visual" [portrait]="caraDeKit(d, visual)" [scale]="escalaKit()" />
+                  }
+                  @if (showsEmotionCue(d) && activeEmotion(d) !== 'neutral') {
+                    <span class="emotion-chip" [attr.data-emotion]="activeEmotion(d)"></span>
+                  }
+                  @if (estadoPersona(d); as e) {
+                    <i class="portrait-base" [attr.data-activation]="e.activation"></i>
+                  }
+                </div>
+              }
 
               <!-- Clic sobre el texto: muestra la línea entera si aún se escribe y, si ya está completa, avanza (como Enter y
                    Espacio). Quien usa teclado ya tiene esas teclas; este clic es para ratón y toque, y no sustituye a los botones. -->
@@ -129,14 +131,14 @@ const medirVentana = () => typeof window === 'undefined'
                 }
 
                 <!-- BORRADOR: texto pendiente de Psicología. -->
-                <button type="button" class="instant-setting" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
+                <button type="button" class="instant-setting u-boton" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto instantáneo: {{ instantText.enabled() ? 'activado' : 'desactivado' }}</button>
                 <div class="placa-pie">
                   @if (paginas().length > 1) {
                     <!-- Parlamento en páginas (V5): cuántas van y cuántas son, a la izquierda y antes de todo botón (al lado
                          de «Saltar» quedaba tapado; V6). El lector tiene el texto entero arriba. -->
                     <span class="placa-pagina" aria-hidden="true">{{ cuentaDePaginas() }}</span>
                   }
-                  <button type="button" class="close-btn" ui-button variant="primary" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
+                  <button type="button" class="close-btn u-boton u-boton--principal" [attr.cdkFocusInitial]="choicesVisible() ? null : ''"
                     (click)="continuarDialogo()">
                     Continuar <span aria-hidden="true">▶</span>
                   </button>
@@ -146,7 +148,9 @@ const medirVentana = () => typeof window === 'undefined'
           </section>
 
           <!-- Las fichas de respuesta, A a D. -->
-          <div class="strip-body">
+          <!-- Las fichas esperan a que la cámara llegue (o a que venza el plazo): ocupan su sitio, invisibles e inertes.
+               La línea que se está leyendo nunca desaparece. -->
+          <div class="strip-body" [attr.data-encuadrando]="encuadrando() ? '' : null" [attr.inert]="encuadrando() ? '' : null">
             @if (choicesVisible() && !d.stale) {
               @let notice = avisoDeOpciones(d);
               @if (notice) {
@@ -230,9 +234,10 @@ const medirVentana = () => typeof window === 'undefined'
       line-height: 1.45;
       animation: strip-rise 160ms steps(3, jump-none) both;
     }
+    .strip-body[data-encuadrando], .strip-body[data-encuadrando] * { visibility: hidden; animation: none; }
 
     /* Marco de pixel art: borde de 4 px de mundo por lado y relleno con trama, sin esquinas suavizadas. */
-    .placa-cuerpo, .speaker-name, .panel-back, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
+    .placa-cuerpo, .speaker-name, .panel-head__note, .panel-head__aviso, .choice-btn, .stale-note, .choices-notice, .keyboard-hint, .strip-body[data-mas]::after, .portrait {
       border-style: solid;
       border-width: calc(4 * var(--px));
       border-image: var(--m) 4 / calc(4 * var(--px)) stretch;
@@ -381,7 +386,6 @@ const medirVentana = () => typeof window === 'undefined'
       color: #ffcd82;
     }
     .panel-back {
-      --m: var(--marco-placa); --t: var(--trama-placa);
       display: inline-flex;
       align-items: center;
       gap: 10px;
@@ -410,13 +414,11 @@ const medirVentana = () => typeof window === 'undefined'
       color: var(--tinta);
     }
     .close-btn::before { content: 'Enter'; }
-    /* «Volver al mapa» con los estados de la placa-botón, como «Salida segura» y «Ver pista»: sobre enciende el canto y
-       pulsada invierte el bisel; el foco es el anillo global de la piel, el mismo en las tres. */
     @media (hover: hover) and (pointer: fine) {
-      .panel-back:hover { --m: var(--marco-placa-sobre); --t: var(--trama-placa-sobre); color: #ffcd82; }
       .panel-back::before, .close-btn::before { display: inline-block; }
     }
-    .panel-back:active { transform: translateY(var(--px)); --m: var(--marco-placa-pulsada); --t: var(--trama-placa-pulsada); }
+    .speaker-role { margin-inline-start: .6em; font-family: var(--pixel-f-texto); font-size: var(--pixel-letra-chica); font-weight: 500; }
+    .placa--tutor { --retrato: 64px; }
     .panel-back__arrow { font-size: .75em; }
 
     /* La placa. */
@@ -485,9 +487,6 @@ const medirVentana = () => typeof window === 'undefined'
       overflow: hidden;
       background-color: #6c6589;
     }
-    .portrait-svg { display: block; width: var(--retrato); height: var(--retrato); image-rendering: pixelated; }
-    /* Una voz sin retrato del kit (la supervisión, un personaje sin receta): ventanilla chica con la silueta, no un hueco. */
-    .strip--sin-retrato { --retrato: 96px; }
     .portrait-img {
       display: block;
       width: var(--retrato);
@@ -514,8 +513,10 @@ const medirVentana = () => typeof window === 'undefined'
     .emotion-chip[data-emotion="positive"] { background: #6ec67a; }
     .emotion-chip[data-emotion="concerned"] { background: #f5b84b; }
     .emotion-chip[data-emotion="danger"] { background: #e25a4f; }
+    .emotion-tag .emotion-chip { position: static; display: inline-block; margin-inline-end: calc(2 * var(--px)); }
 
     .placa-habla { min-width: 0; display: flex; flex-direction: column; gap: calc(3 * var(--px)); padding-top: var(--px); }
+    .placa-habla:only-child { grid-column: 1 / -1; }
     .persona-state { margin: 0; display: flex; align-items: center; gap: calc(4 * var(--px)); font-size: .84em; color: var(--tinta-suave); }
     .pulso {
       flex: none;
@@ -527,8 +528,7 @@ const medirVentana = () => typeof window === 'undefined'
     }
     .pulso[data-activation="CALM"] { background-image: var(--pulso-CALM); animation-duration: 2s; animation-iteration-count: 2; }
     .pulso[data-activation="CRISIS"] { background-image: var(--pulso-CRISIS); animation-duration: .5s; animation-iteration-count: 8; }
-    .instant-setting { font: inherit; font-size: .82em; color: #ffdfab; background: #302942; border: 1px solid #cbb38d; border-radius: 4px; padding: 6px 10px; cursor: pointer; }
-    .instant-setting:focus-visible { outline: 3px solid #ffdfab; outline-offset: 2px; }
+    .instant-setting { font-size: .82em; align-self: flex-start; }
     .dialogue-text {
       line-height: 1.6;
       margin: 0;
@@ -557,17 +557,7 @@ const medirVentana = () => typeof window === 'undefined'
       align-items: center;
       gap: 8px;
       min-height: 44px;
-      padding: 0 2px;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      color: var(--tinta);
-      font: inherit;
       font-size: .9em;
-      font-weight: 600;
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .dialogue-strip .close-btn:hover { background: transparent; color: var(--luz); }
     }
 
     /* Las fichas de respuesta. */
@@ -951,6 +941,19 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     this.lineIndex(),
     this.isTypingComplete() && this.ultimaPagina(),
   ));
+  readonly esperarEncuadre = input(false);
+  readonly encuadreListo = input<object | null>(null);
+  /** Cada disposición se mide por separado, también si las opciones aparecen después de leer. */
+  readonly faseEncuadre = computed(() => ({ dialogo: this.dialogue(), opciones: this.choicesVisible() }));
+  private readonly faseAgotada = signal<object | null>(null);
+  private readonly fasePendiente = computed(() => {
+    const fase = this.faseEncuadre();
+    return this.esperarEncuadre() && fase.dialogo && fase.opciones && this.encuadreListo() !== fase ? fase : null;
+  });
+  readonly encuadrando = computed(() => {
+    const fase = this.fasePendiente();
+    return fase !== null && this.faseAgotada() !== fase;
+  });
   /** Opción ya elegida: pausa breve de confirmación antes de ejecutar. */
   readonly chosenKey = signal<string | null>(null);
   /** La letra de pixel no cargó (ruta o recurso ausente): las opciones muestran su letra en texto. */
@@ -972,7 +975,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     }
     return lista;
   });
-  /** Retrato cuya carga falló: cae a la silueta SVG (spike de retratos NPC). */
+  /** Retrato cuya carga falló: permite usar la figura de la sala si está disponible. */
   private readonly failedPortrait = signal<string | null>(null);
 
   private typewriterHandle: ReturnType<typeof setTimeout> | null = null;
@@ -1002,6 +1005,13 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   constructor() {
     this.kit.load().catch(() => undefined);
+    effect(onCleanup => {
+      const fase = this.fasePendiente();
+      if (!fase) return;
+      // El viaje más largo desde el plano general toma 1,4 s. Las fichas también abren si el lienzo no responde.
+      const plazo = setTimeout(() => this.faseAgotada.set(fase), 1600);
+      onCleanup(() => clearTimeout(plazo));
+    });
     // El alto que ocupa el cuadro, publicado en el anfitrión para la cámara (M1): data-alto-ocupado, en px CSS.
     afterNextRender(() => {
       if (typeof ResizeObserver === 'undefined') return;
@@ -1036,7 +1046,9 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       }
     });
     effect(() => {
+      if (this.encuadrando()) return;
       if (this.choicesVisible()) this.choicesShownAt = Date.now();
+      untracked(() => this.requestDialogueFocus());
     });
     // La línea activa se anuncia por la región viva persistente de la app (F6-12, H-09). Cuenta la línea completa, no
     // la máquina de escribir, y solo cuando cambia el diálogo o la línea.
@@ -1053,7 +1065,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /**
    * Retrato pixel-art de la línea actual (spec §8.2), o `null` si no hay retrato (voz sin
-   * cuerpo, kit sin cargar o imagen fallida) → el panel muestra la silueta SVG.
+   * cuerpo, kit sin cargar o imagen fallida).
    */
   portraitSrc(d: DialogueState): string | null {
     const line = this.activeLine();
@@ -1061,13 +1073,22 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     const treeSpeaker = d.speakerName?.trim() || null;
     // La receta y la clave del árbol valen para sus propias líneas, no para las de otro hablante.
     const sameSpeaker = !lineSpeaker || lineSpeaker === treeSpeaker;
+    const objeto = this.interaction();
+    if (sameSpeaker && objeto && objeto.type !== 'PERSON'
+      && (objeto.key === d.speakerObjectKey || objeto.key === d.key || objeto.dialogue?.key === d.key)) return null;
     const asset = resolvePortraitAsset(this.kit.bundle(), {
       recipeId: sameSpeaker ? d.recipeId ?? null : null,
       portraitKey: sameSpeaker ? d.portraitKey : null,
       speakerName: lineSpeaker || treeSpeaker,
+      soloReceta: !!d.tutor,
       emotion: line?.emotion?.trim() || d.emotion?.trim() || 'neutral',
     });
     return asset && this.failedPortrait() !== asset ? asset : null;
+  }
+
+  /** Solo abre la ventanilla cuando existe una cara del kit para el hablante de esta línea. */
+  ocultarRetrato(d: DialogueState): boolean {
+    return d.hidePortrait === true || (!this.portraitSrc(d) && (!!d.tutor || !this.visualDeHablante(d)));
   }
 
   activeSpeakerName(d: DialogueState): string {
@@ -1144,7 +1165,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   estadoPersona(d: DialogueState): { texto: string; activation: string } | null {
     const persona = this.persona();
     const label = persona?.label?.trim();
-    if (!persona || !label || isSystemVoice(this.activeSpeakerName(d))) return null;
+    if (!persona || !label || d.hidePortrait || isSystemVoice(this.activeSpeakerName(d))) return null;
     return { texto: label.charAt(0).toUpperCase() + label.slice(1), activation: persona.activation };
   }
 
@@ -1206,7 +1227,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   @HostListener('document:keydown', ['$event'])
   onKeydown(e: KeyboardEvent): void {
     const d = this.dialogue();
-    if (!d) return;
+    if (!d || (this.encuadrando() && e.key !== 'Escape')) return;
     // La cabecera conserva su propia activación: sin esto, Enter o Espacio sobre «Volver al mapa»
     // o «Salida segura» avanzarían el texto y el preventDefault cancelaría el clic nativo.
     if (e.key !== 'Escape' && (e.target as HTMLElement | null)?.closest?.('.panel-head')) return;
