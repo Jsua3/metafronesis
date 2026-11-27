@@ -77,7 +77,7 @@ describe('UiGalleryComponent (/dev/ui)', () => {
       expect(panel.querySelector('.ui-control:disabled')).not.toBeNull();
       expect(panel.querySelector('textarea.ui-control')).not.toBeNull();
       expect(panel.querySelector('select.ui-control')).not.toBeNull();
-      expect(panel.querySelector('.ui-field__reveal[aria-pressed]')).not.toBeNull();
+      expect(panel.querySelector('.ui-field__reveal[aria-label="Mostrar contraseña"]')).not.toBeNull();
       expect(panel.querySelector('label[ui-check] input[type="radio"]')).not.toBeNull();
       expect(panel.querySelector('input[role="switch"]')).not.toBeNull();
     }
