@@ -1,10 +1,11 @@
 import { limpiarTodosLosBorradores } from '../../features/autoria/estado/borradores-respuesta';
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { User, LoginResponse } from '../models/user.model';
+import { CuentasRecordadasService } from './cuentas-recordadas.service';
 import { decodeJwtPayload, isJwtExpired, isJwtMalformed } from './token.utils';
 
 interface ApiResponse<T> {
@@ -26,6 +27,8 @@ interface UserSummary {
 export class AuthService {
   private readonly TOKEN_KEY = 'psychosim_token';
   private readonly API = '/api/auth';
+
+  private readonly cuentas = inject(CuentasRecordadasService);
 
   currentUser = signal<User | null>(this.loadUser());
 
@@ -83,6 +86,8 @@ export class AuthService {
     }
     localStorage.setItem(this.TOKEN_KEY, token);
     this.currentUser.set(user);
+    // SIEP-281: la lista de cuentas recordadas decide por sí sola si la guarda (opt-in); no recibe el token.
+    this.cuentas.alIniciarSesion(user);
   }
 
   clearSession(): void {

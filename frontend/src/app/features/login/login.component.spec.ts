@@ -7,6 +7,7 @@ import { join } from 'path';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { CuentasRecordadasService } from '../../core/auth/cuentas-recordadas.service';
 import { TemaService } from '../../core/tema/tema.service';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { LOGIN_REMEMBER_EMAIL_KEY } from './login-assets.config';
@@ -788,6 +789,51 @@ describe('LoginComponent', () => {
       const aviso = host().querySelector<HTMLElement>('.acceso__error[role="alert"]')!;
       expect(aviso.getAttribute('tabindex')).toBe('-1');
       expect(document.activeElement).toBe(aviso);
+    });
+  });
+
+  // SIEP-281: «Cambiar de cuenta» deja el correo en memoria; el acceso lo toma una sola vez y pasa a la contraseña.
+  describe('cuenta elegida en «Cambiar de cuenta»', () => {
+    const cuenta = { id: 3, nombre: 'Luis', apellido: 'Paz', email: 'luis@cue.edu.co', rol: 'PROFESOR' as const, ultimaVez: new Date().toISOString() };
+    let cuentas: CuentasRecordadasService;
+
+    /** Monta el acceso ya dentro del documento (el foco no se mueve en un nodo suelto). */
+    async function montar(preparar: (c: CuentasRecordadasService) => void): Promise<void> {
+      cuentas = new CuentasRecordadasService();
+      preparar(cuentas);
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter([{ path: '**', component: Screen }]),
+          { provide: AuthService, useValue: { login, demoConfig: () => of({ enabled: false }), googleConfig: () => of({ enabled: false }) } },
+          { provide: UiDialog, useValue: { sheet: vi.fn() } },
+          { provide: CuentasRecordadasService, useValue: cuentas },
+        ],
+      });
+      fixture = TestBed.createComponent(LoginComponent);
+      document.body.appendChild(host());
+      await fixture.whenStable();
+    }
+
+    afterEach(() => host().remove());
+
+    it('con un correo por entrar, el campo queda relleno y el foco en la contraseña', async () => {
+      await montar(c => c.cambiarA(cuenta, () => undefined));
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('luis@cue.edu.co');
+      expect(host().querySelector<HTMLInputElement>('#login-password')!.value).toBe('');
+      expect(document.activeElement).toBe(host().querySelector('#login-password'));
+    });
+
+    it('el correo se consume: no queda en el servicio para la próxima vez', async () => {
+      await montar(c => c.cambiarA(cuenta, () => undefined));
+      expect(cuentas.correoPorEntrar()).toBeNull();
+    });
+
+    it('sin correo por entrar (o tras «Agregar cuenta») el formulario queda vacío, como siempre', async () => {
+      await montar(c => c.agregarCuenta(null, () => undefined));
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('');
+      expect(host().querySelector<HTMLInputElement>('#login-password')!.value).toBe('');
+      expect(document.activeElement).not.toBe(host().querySelector('#login-password'));
     });
   });
 });

@@ -6,6 +6,7 @@ import { Router, provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from './auth.service';
+import { CLAVE_CUENTAS_RECORDADAS, CuentasRecordadasService } from './cuentas-recordadas.service';
 import { jwtInterceptor } from './jwt.interceptor';
 
 /** JWT de prueba que no vence (año 2100) con el rol y el id que lee `loadUser`. */
@@ -93,6 +94,35 @@ describe('AuthService: cambio de contraseña obligatorio (E2-9)', () => {
     service.markPasswordChanged();
     expect(service.mustChangePassword()).toBe(false);
     expect(service.currentUser()?.nombre).toBe('Ana');
+  });
+
+  // SIEP-281: cuentas recordadas, solo con opt-in y sin credenciales en el almacenamiento.
+  it('un acceso normal no agrega la cuenta a las recordadas; tras «Agregar cuenta» sí, sin guardar el token', async () => {
+    const cuentas = TestBed.inject(CuentasRecordadasService);
+    const entrar = async () => {
+      const done = firstValueFrom(service.login('ana@cue.edu.co', 'Clave-123'));
+      http.expectOne('/api/auth/login').flush({ success: true, message: null, data: { token: token(), user: summary(false) } });
+      await done;
+    };
+    await entrar();
+    expect(cuentas.cuentas()).toEqual([]);
+    expect(localStorage.getItem(CLAVE_CUENTAS_RECORDADAS)).toBeNull();
+
+    cuentas.agregarCuenta(null, () => undefined);
+    await entrar();
+    expect(cuentas.cuentas().map(c => c.email)).toEqual(['ana@cue.edu.co']);
+    const crudo = localStorage.getItem(CLAVE_CUENTAS_RECORDADAS)!;
+    expect(crudo.toLowerCase()).not.toContain('token');
+    expect(crudo).not.toContain(token());
+    expect(crudo).not.toContain('Clave-123');
+  });
+
+  it('cerrar sesión por vencimiento (clearSession) no borra las cuentas recordadas', () => {
+    const cuentas = TestBed.inject(CuentasRecordadasService);
+    cuentas.recordar({ id: 7, nombre: 'Ana', apellido: 'Ríos', email: 'ana@cue.edu.co', rol: 'ESTUDIANTE', ultimaVez: new Date().toISOString() });
+    service.clearSession();
+    expect(cuentas.cuentas()).toHaveLength(1);
+    expect(localStorage.getItem(CLAVE_CUENTAS_RECORDADAS)).not.toBeNull();
   });
 
   it('un 403 PASSWORD_CHANGE_REQUIRED marca la sesión aunque `/me` no haya llegado', () => {
