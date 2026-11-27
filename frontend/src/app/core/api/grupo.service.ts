@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { ApiDataResponse } from './api-response';
 
@@ -13,6 +13,14 @@ export interface Grupo {
   totalInvitados?: number;
   /** Solo en el listado: avance de las asignaciones, incluidas las pausadas. */
   resumenCasos?: { asignados: number; terminados: number; oportunidades: number };
+}
+
+/** Estudiante registrado que el docente puede invitar: solo lo necesario para reconocerlo. */
+export interface EstudianteSugerido {
+  nombre: string;
+  /** Lo que va antes de la @ del correo. */
+  usuario: string;
+  email: string;
 }
 
 /** Estado de la membresía (E2-10, C5): el docente invita y el estudiante acepta, rechaza o sale. */
@@ -100,6 +108,14 @@ export class GrupoService {
       .pipe(map(r => r.data));
   }
 
+  /** Estudiantes registrados cuyo correo o usuario contiene `q` (mínimo 2 caracteres; pocos resultados). */
+  sugerirEstudiantes(grupoId: number, q: string) {
+    const params = new HttpParams().set('q', q);
+    return this.http.get<ApiDataResponse<EstudianteSugerido[]>>(`${this.API}/${grupoId}/estudiantes/sugerencias`, { params })
+      .pipe(map(r => r.data ?? []));
+  }
+
+  /** `email` es el correo o el nombre de usuario del estudiante. */
   agregarEstudiante(grupoId: number, email: string) {
     return this.http.post<ApiDataResponse<Grupo>>(`${this.API}/${grupoId}/estudiantes`, { email })
       .pipe(map(r => ({ grupo: r.data, message: r.message })));

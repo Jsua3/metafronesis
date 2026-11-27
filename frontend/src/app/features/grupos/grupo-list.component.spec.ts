@@ -430,12 +430,12 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
     expect(assign).toBeDefined();
     invite!.click();
     fixture.detectChanges();
-    const email = host().querySelector<HTMLInputElement>('.gl-add input[type=email]')!;
-    email.value = 'correo-incompleto';
+    const email = host().querySelector<HTMLInputElement>('.gl-add input[role=combobox]')!;
+    email.value = 'correo incompleto';
     email.dispatchEvent(new Event('input'));
     email.dispatchEvent(new Event('blur'));
     fixture.detectChanges();
-    expect(text(host().querySelector('.gl-add'))).toContain('Escribe un correo válido.');
+    expect(text(host().querySelector('.gl-add'))).toContain('Escribe un correo válido o un nombre de usuario.');
     assign!.click();
     fixture.detectChanges();
     expect(component().pestana()).toBe('casos');
@@ -501,7 +501,7 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
       const invitar = [...host().querySelectorAll<HTMLButtonElement>('.gl-toolbar button')].find(b => text(b).includes('Invitar estudiante'))!;
       invitar.click();
       fixture.detectChanges();
-      expect(host().querySelector('.gl-add input[type="email"]')).not.toBeNull();
+      expect(host().querySelector('.gl-add input[role="combobox"]')).not.toBeNull();
 
       service['agregarEstudiante'].mockReturnValue(of({ grupo: grupoA, message: 'Si el correo es de un estudiante registrado, recibirá la invitación.' }));
       component().estudianteForm.setValue({ email: 'nuevo@siep.test' });
@@ -534,13 +534,13 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
         component().agregarEstudiante(grupoA);
         await fixture.whenStable();
         fixture.detectChanges();
-        const input = host().querySelector('.gl-add input[type="email"]') as HTMLInputElement;
+        const input = host().querySelector('.gl-add input[role="combobox"]') as HTMLInputElement;
         const form = host().querySelector('.gl-add') as HTMLFormElement;
 
         form.dispatchEvent(new Event('submit', { cancelable: true }));
         fixture.detectChanges();
 
-        expect(text(host().querySelector('.gl-add .ui-field__message--error'))).toBe('Escribe un correo válido.');
+        expect(text(host().querySelector('.gl-add .ui-field__message--error'))).toBe('Escribe un correo válido o un nombre de usuario.');
         expect(document.activeElement).toBe(input);
       } finally {
         host().remove();

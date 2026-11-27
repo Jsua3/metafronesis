@@ -335,7 +335,7 @@ describe('grupos: feedback de acciones (comportamiento)', () => {
       component.grupoSeleccionado.set(1);
       component.estudianteForm.setValue({ email: 'nuevo@siep.test' });
       component.confirmarAgregar();
-      expect(component.mensajeEstudiante()).toBe('Si el correo corresponde a un estudiante registrado, recibirá la invitación.');
+      expect(component.mensajeEstudiante()).toBe('Si el correo o el usuario corresponde a un estudiante registrado, recibirá la invitación.');
     });
   });
 });
