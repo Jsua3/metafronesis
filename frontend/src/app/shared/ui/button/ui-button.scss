@@ -111,9 +111,12 @@
   block-size: 1.25rem;
 }
 
+// Caja cuadrada de 1em que recorta: si la fuente aún no trae un icono (o el navegador guarda una versión vieja),
+// el resto del nombre de la ligadura («event_busy» → «BUSY») no se pinta encima del rótulo.
 .ui-button .ui-button__icon {
-  inline-size: auto;
-  block-size: auto;
+  inline-size: 1em;
+  block-size: 1em;
+  overflow: hidden;
   font-size: var(--ds-type-lead-size);
   line-height: 1;
 }

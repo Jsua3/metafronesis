@@ -39,6 +39,7 @@ describe('app-public-bar', () => {
     expect(header.querySelector('nav.bandeja')!.getAttribute('aria-label')).toBe('Navegación pública');
     const anchors = [...header.querySelectorAll<HTMLAnchorElement>('.modulo-principal a.nav-enlace')];
     expect(anchors.map(anchor => anchor.textContent!.trim())).toEqual(['Simulador', 'Casos', 'Cómo funciona', 'Roles', 'Ética']);
+    expect(header.querySelector('.modulo-principal')!.classList).not.toContain('modulo-vacio');
     for (const anchor of anchors) expect(host.querySelector(anchor.getAttribute('href')!)).not.toBeNull();
     const login = header.querySelector<HTMLAnchorElement>('a.modulo-cuenta')!;
     expect(login.querySelector('.cta-modulo__rotulo')!.textContent!.trim()).toBe('Ingresar');
@@ -63,6 +64,8 @@ describe('app-public-bar', () => {
     await fixture.whenStable();
     const header = (fixture.nativeElement as HTMLElement).querySelector('header.cromo')!;
     expect(header.querySelectorAll('.modulo-principal a.nav-enlace')).toHaveLength(0);
+    // Sin secciones, el módulo central se oculta: al bajar no queda una cápsula hueca en medio de la barra.
+    expect(header.querySelector('.modulo-principal')!.classList).toContain('modulo-vacio');
     expect(header.querySelector('nav.modulo-inferior')).toBeNull();
     expect(header.querySelector('a.psy-skip-link')).toBeNull(); // sin navegación no hay salto a ella
     const back = header.querySelector<HTMLAnchorElement>('.modulo-cuenta a')!;
