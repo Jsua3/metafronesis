@@ -551,8 +551,15 @@ export class MapaEscenasComponent {
   /** El lienzo ocupa lo que queda de la zona que se desplaza (en el teléfono, el alto de la hoja de estilos). */
   private medirAlto(): void {
     const zona = this.zonaQueSeDesplaza();
-    if (!zona) return this.altoLienzo.set(null);
     const lienzo = this.lienzo().nativeElement;
+    if (!zona) {
+      if (window.innerWidth < 1024) return this.altoLienzo.set(null);
+      const estado = document.querySelector('app-estudio-barra-estado')?.getBoundingClientRect().height ?? 0;
+      const arriba = lienzo.getBoundingClientRect().top + window.scrollY;
+      const alto = Math.max(ALTO_MINIMO, Math.floor(window.innerHeight - arriba - estado - 12));
+      if (this.altoLienzo() !== alto) this.altoLienzo.set(alto);
+      return;
+    }
     const arriba = lienzo.getBoundingClientRect().top - zona.getBoundingClientRect().top + zona.scrollTop;
     const alto = Math.max(ALTO_MINIMO, Math.floor(zona.clientHeight - arriba - 12));
     if (this.altoLienzo() !== alto) this.altoLienzo.set(alto);

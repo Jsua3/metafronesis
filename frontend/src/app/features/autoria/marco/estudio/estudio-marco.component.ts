@@ -8,6 +8,7 @@ import { EstudioDivisorComponent } from './estudio-divisor.component';
 import { EstudioHerramientaComponent } from './estudio-herramienta.component';
 import { EstudioPaletaComponent } from './estudio-paleta.component';
 import { EstudioPanelComponent } from './estudio-panel.component';
+import { EstudioPegajosoDirective } from './estudio-pegajoso.directive';
 import { ANCHO_PANEL, EstudioService, type Panel } from './estudio.service';
 
 /** Los atajos de todo el editor (la hoja «?» suma después los de la pantalla abierta, sacados de sus comandos). */
@@ -43,7 +44,7 @@ const ATAJOS_GENERALES: GrupoAtajos[] = [
   selector: 'app-estudio-marco',
   imports: [
     NgTemplateOutlet, EstudioPanelComponent, EstudioDivisorComponent, EstudioBarraEstadoComponent, EstudioHerramientaComponent,
-    EstudioPaletaComponent, EstudioAtajosComponent,
+    EstudioPaletaComponent, EstudioAtajosComponent, EstudioPegajosoDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -54,7 +55,7 @@ const ATAJOS_GENERALES: GrupoAtajos[] = [
   template: `
     <!-- Oculto (\ o «Ocultar») el panel sigue vivo: las escenas conservan sus atajos (Alt+M, Alt+↓) y su desplazamiento. -->
     @if (exploradorDisponible()) {
-      <app-estudio-panel class="panel panel--explorador" [titulo]="nombreExplorador()" lado="inicio" atajoOcultar="\\" [lleno]="true"
+      <app-estudio-panel estudioPegajoso class="panel panel--explorador" [titulo]="nombreExplorador()" lado="inicio" atajoOcultar="\\" [lleno]="true"
                          [hidden]="!estudio.verExplorador()" (ocultar)="alternarPanel('explorador', false)">
         <ng-container [ngTemplateOutlet]="explorador()" />
       </app-estudio-panel>
@@ -76,7 +77,7 @@ const ATAJOS_GENERALES: GrupoAtajos[] = [
       <app-estudio-divisor class="divisor divisor--inspector" etiqueta="Ancho del inspector" [valor]="estudio.anchoInspector()" [invertido]="true"
                            [min]="limites.inspector.min" [max]="limites.inspector.max"
                            (cambio)="estudio.fijarAncho('inspector', $event)" (restablecer)="estudio.restablecerAncho('inspector')" />
-      <app-estudio-panel class="panel panel--inspector" titulo="Inspector" lado="fin" atajoOcultar="\\"
+      <app-estudio-panel estudioPegajoso class="panel panel--inspector" titulo="Inspector" lado="fin" atajoOcultar="\\"
                          (ocultar)="alternarPanel('inspector', false)">
         <ng-container [ngTemplateOutlet]="estudio.ranura('inspector')" />
       </app-estudio-panel>
@@ -137,10 +138,10 @@ const ATAJOS_GENERALES: GrupoAtajos[] = [
     .panel--explorador { border-block-end: 1px solid var(--l-filo); }
     .panel--inspector { border-block-start: 1px solid var(--l-filo); }
 
-    /* Escritorio: rejilla fija bajo la barra; la página no se desplaza (EDITOR.md §4.2, regla 1). */
+    /* Escritorio: las columnas fluyen con la página y se pegan únicamente cuando caben. */
     @media (min-width: 64rem) {
       :host {
-        display: grid; flex: 1; min-block-size: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
+        display: grid; flex: 1; min-block-size: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; align-items: start;
         background: var(--l-superficie-hundida);
       }
       :host(.con-explorador) { grid-template-columns: var(--est-ancho-explorador) 0 minmax(28rem, 1fr); }
@@ -152,7 +153,8 @@ const ATAJOS_GENERALES: GrupoAtajos[] = [
       .panel, .centro, .divisor { grid-row: 1; min-block-size: 0; }
       .panel--explorador, .panel--inspector { border-block: 0; }
       .divisor:not([hidden]) { display: block; }
-      .estado { display: flex; grid-row: 2; grid-column: 1 / -1; }
+      .estado { display: flex; position: fixed; z-index: 20; inset-inline: 0; inset-block-end: 0; }
+      .panel.esta-pegajoso { position: sticky; inset-block-start: var(--alto-barra, 4.5rem); align-self: start; }
       /* Al volver a mostrarse, el panel entra deslizándose desde su borde (resorte suave). */
       .panel--explorador:not([hidden]) { animation: panel-entra var(--ds-dur-move) var(--ds-spring-soft); }
       .panel--inspector { animation: panel-entra-fin var(--ds-dur-move) var(--ds-spring-soft); }

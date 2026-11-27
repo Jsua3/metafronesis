@@ -1015,6 +1015,13 @@ $corte-tope: 82.499rem;
   padding-inline-end: 0.25rem;
 }
 
+// En el acceso (contraseña, restablecer, 404) el módulo central no lleva nada: al bajar, el estado «scroll» le daba su
+// propio vidrio y quedaba una cápsula hueca sobre la tarjeta. Oculto (también su vidrio) y fuera del árbol accesible,
+// pero conserva su columna de la rejilla para que la cuenta siga a la derecha.
+.cromo.barra-publica .modulo-principal.modulo-vacio {
+  visibility: hidden;
+}
+
 .cromo.barra-publica .modulo .tema {
   // La tinta de los enlaces de la barra (--ds-text-2 quedaba en 3,9:1 sobre el velo en claro con la página violeta debajo).
   --_fg: var(--asb-cromo-tinta);

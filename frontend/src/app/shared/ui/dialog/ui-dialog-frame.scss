@@ -19,6 +19,8 @@
   gap: var(--ds-space-3);
 }
 
+.ui-dialog-frame__handle { display: none; }
+
 .ui-dialog-frame__title {
   margin: 0;
   padding-block-start: var(--ds-space-2);
@@ -193,4 +195,60 @@
   :is(.ui-dialog-pane, .ui-sheet-pane).ui-overlay-materiales .cdk-dialog-container {
     border: 1px solid CanvasText;
   }
+}
+
+// Las capas del teléfono se apoyan en el borde; el cuerpo se desplaza entre cabecera y acciones.
+@media (max-width: 599px) and (min-height: 500px) {
+  .cdk-global-overlay-wrapper:has(> .ui-dialog-pane) { align-items: flex-end !important; }
+  .ui-dialog-pane.ui-overlay-materiales {
+    inline-size: 100%;
+    max-inline-size: 100vw !important;
+    max-block-size: 92dvh !important;
+    margin: 0 !important;
+    --l-vidrio-alto: var(--ds-surface-1);
+  }
+  :is(.ui-dialog-pane, .ui-sheet-pane--bottom).ui-overlay-materiales .cdk-dialog-container {
+    max-block-size: 92dvh;
+    overflow: hidden;
+    border-radius: var(--l-radio) var(--l-radio) 0 0;
+    padding-block-end: max(.75rem, env(safe-area-inset-bottom, 0px));
+  }
+  :is(.ui-dialog-pane, .ui-sheet-pane--bottom) .ui-dialog-frame {
+    max-block-size: calc(92dvh - max(.75rem, env(safe-area-inset-bottom, 0px)));
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    padding-block-start: 0;
+  }
+  :is(.ui-dialog-pane, .ui-sheet-pane--bottom) .ui-dialog-frame__handle {
+    grid-row: 1;
+    display: grid;
+    place-items: center;
+    block-size: 1.75rem;
+    touch-action: none;
+    cursor: grab;
+  }
+  .ui-dialog-frame__handle::after { content: ''; width: 2.5rem; height: .25rem; border-radius: 999px; background: var(--ds-border-strong); }
+  .ui-dialog-frame__header { grid-row: 2; }
+  .ui-dialog-frame__description { grid-row: 3; }
+  .ui-dialog-frame__body { grid-row: 4; }
+  .ui-dialog-frame__actions { grid-row: 5; }
+  .ui-dialog-frame__close { width: auto; padding-inline: .5rem; gap: .25rem; }
+  .ui-dialog-frame__close::after { content: 'Cerrar'; font-size: var(--ds-type-body-s-size); }
+}
+
+@media (max-width: 1023px) and (max-height: 499px) {
+  .cdk-global-overlay-wrapper:has(> .ui-dialog-pane) { justify-content: flex-end !important; }
+  .ui-dialog-pane.ui-overlay-materiales {
+    inline-size: min(28rem, 100vw);
+    block-size: 100dvh;
+    max-inline-size: 100vw !important;
+    max-block-size: 100dvh !important;
+    margin: 0 !important;
+    --l-vidrio-alto: var(--ds-surface-1);
+  }
+  .ui-dialog-pane.ui-overlay-materiales .cdk-dialog-container { block-size: 100%; max-block-size: 100dvh; border-radius: var(--l-radio) 0 0 var(--l-radio); }
+  .ui-dialog-pane .ui-dialog-frame { block-size: 100%; max-block-size: 100dvh; }
+}
+
+@media (max-width: 599px), (max-width: 1023px) and (max-height: 499px) {
+  .ui-overlay--debajo { visibility: hidden; }
 }

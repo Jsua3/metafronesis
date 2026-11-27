@@ -86,7 +86,7 @@ function quienesBloquean(err: unknown): string {
     }
   `,
   styles: [`
-    :host { display: grid; gap: var(--ds-space-5); }
+    :host { display: grid; gap: var(--ds-space-5); --ui-table-max-block-size: none; }
     .sd-estado { margin: 0; }
     .sd-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ds-space-3); }
     .sd-cabecera h2 { margin: 0; font-size: var(--ds-type-title-s-size, 1.125rem); }

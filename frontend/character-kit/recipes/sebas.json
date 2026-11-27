@@ -1,0 +1,25 @@
+{
+  "id": "sebas",
+  "displayName": "Sebas",
+  "kind": "npc",
+  "complexion": "d",
+  "pieces": {
+    "hair": "corto-liso",
+    "face": "cachetes",
+    "top": "blazer",
+    "bottom": "pantalon",
+    "shoes": "zapatos",
+    "accessories": ["gafas", "barba-corta"]
+  },
+  "colors": {
+    "skin": "piel-1",
+    "hair": "negro",
+    "top": "carbon",
+    "inner": "celeste",
+    "bottom": "gris-oscuro",
+    "shoes": "castano",
+    "sole": "castano-oscuro"
+  },
+  "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
+  "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }
+}

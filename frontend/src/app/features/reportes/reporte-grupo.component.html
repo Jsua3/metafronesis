@@ -24,7 +24,7 @@
     }
 
     <form [formGroup]="form" class="rg-form" novalidate (ngSubmit)="generar()">
-      <ui-field label="Grupo" required hint="Elige la cohorte: el reporte se genera al elegirla.">
+      <ui-field class="rg-campo-grupo" label="Grupo" required hint="Elige la cohorte: el reporte se genera al elegirla.">
         <select uiControl formControlName="grupoId" [attr.aria-busy]="loadingFilters()">
           <option [ngValue]="null">Selecciona un grupo</option>
           @for (grupo of grupos(); track grupo.id) {
@@ -34,7 +34,7 @@
       </ui-field>
       @if (loadingFilters()) { <p role="status" aria-live="polite">Cargando grupos…</p> }
 
-      <ui-field label="Caso de simulación" hint="El reporte muestra los intentos de este caso.">
+      <ui-field class="rg-campo-caso" label="Caso de simulación" hint="El reporte muestra los intentos de este caso.">
         <select uiControl formControlName="caseVersionId" [attr.aria-busy]="loadingCasos()">
           <option [ngValue]="null">Elige un caso</option>
           @for (caso of casos(); track caso.caseVersionId) {

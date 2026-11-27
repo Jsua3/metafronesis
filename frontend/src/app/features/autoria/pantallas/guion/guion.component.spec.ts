@@ -49,10 +49,23 @@ async function elegirEnMenu(raiz: HTMLElement, listo: () => Promise<void>, menu:
 }
 
 describe('GuionComponent', () => {
+  it('en escritorio resume cerrado lo que hay antes de decidir al cambiar de escena', async () => {
+    const { fixture, store, raiz, listo } = await montar();
+    const caso = structuredClone(store.caso()!);
+    caso.escenas[0].objetivo = 'Escuchar';
+    store.fijar(caso);
+    fixture.componentRef.setInput('escenaId', caso.escenas[0].id);
+    await listo();
+    expect(raiz.querySelector('#antes-titulo')!.getAttribute('aria-expanded')).toBe('false');
+    expect(raiz.querySelector('#antes-titulo')!.textContent).toContain('Objetivo escrito');
+  });
+
   it('la pregunta se edita en el guion y actualiza la orientación sin perder el foco', async () => {
     const { store, id, raiz, listo } = await montar();
     const campo = raiz.querySelector<HTMLTextAreaElement>('#pregunta-escena')!;
     expect(campo).toBeTruthy();
+    expect(campo.labels?.[0].getAttribute('for')).toBe('pregunta-escena');
+    expect(campo.closest('#respuestas-escena')).not.toBeNull();
     campo.value = '¿Qué harías ahora?';
     campo.dispatchEvent(new Event('input'));
     await listo();
@@ -107,6 +120,8 @@ describe('GuionComponent', () => {
     const { store, id, raiz, listo } = await montar();
     boton(raiz, 'Agregar una respuesta').click();
     await listo();
+    raiz.querySelector<HTMLInputElement>('input[name^="rdestino-"][value="escena"]')!.click();
+    await listo();
     const llevaA = raiz.querySelector<HTMLSelectElement>('select[id^="rl"]')!;
     llevaA.value = 'nueva';
     llevaA.dispatchEvent(new Event('change'));
@@ -124,6 +139,8 @@ describe('GuionComponent', () => {
     store.fijar(caso);
     boton(raiz, 'Agregar una respuesta').click();
     await listo();
+    raiz.querySelector<HTMLInputElement>('input[name^="rdestino-"][value="final"]')!.click();
+    await listo();
     const accion = [...raiz.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.includes('Convertir') && b.textContent?.includes('Cierre existente'));
     expect(accion).toBeTruthy();
     accion!.click();
@@ -135,6 +152,8 @@ describe('GuionComponent', () => {
   it('crea un final conectado desde la respuesta sin convertir su escena de decisiones', async () => {
     const { store, id, raiz, listo } = await montar();
     boton(raiz, 'Agregar una respuesta').click();
+    await listo();
+    raiz.querySelector<HTMLInputElement>('input[name^="rdestino-"][value="final"]')!.click();
     await listo();
     boton(raiz, 'Terminar el caso aquí: crear la escena final').click();
     await listo();
@@ -262,7 +281,7 @@ describe('GuionComponent', () => {
     const { raiz, listo } = await montar();
     boton(raiz, 'Agregar una respuesta').click();
     await listo();
-    const radios = [...raiz.querySelectorAll<HTMLInputElement>('li.respuesta fieldset.clasificacion input[type="radio"]')];
+    const radios = [...raiz.querySelectorAll<HTMLInputElement>('li.respuesta fieldset[id^="clase-"] input[type="radio"]')];
     expect(radios.length).toBe(4);
     expect(radios.some((r) => r.checked)).toBe(false);
     // La ficha dice por qué no se guarda con las palabras de `motivoSinGuardar` y la marca «Solo en esta pantalla».
@@ -286,7 +305,7 @@ describe('GuionComponent', () => {
     const { store, id, raiz, listo } = await montar();
     boton(raiz, 'Agregar una respuesta').click();
     await listo();
-    const opciones = [...raiz.querySelectorAll<HTMLLabelElement>('fieldset.clasificacion label')].map((l) => l.textContent!.replace(/[✓▲✕]/g, '').trim());
+    const opciones = [...raiz.querySelectorAll<HTMLLabelElement>('fieldset[id^="clase-"] label')].map((l) => l.textContent!.replace(/[✓▲✕]/g, '').trim());
     expect(opciones).toEqual(['Recomendada', 'Aceptable', 'Con riesgo', 'Contraindicada']);
     raiz.querySelector<HTMLInputElement>('fieldset.clasificacion input[value="RISKY"]')!.click();
     await listo();

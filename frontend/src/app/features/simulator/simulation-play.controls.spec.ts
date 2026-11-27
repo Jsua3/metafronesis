@@ -160,6 +160,19 @@ describe('SimulationPlayComponent: controles, «Ir a…» y avisos sin bloqueo (
     return event;
   };
 
+  it('en táctil bloquea la interfaz de exploración durante reacción, ajustes y hojas', () => {
+    playing();
+    component.coarsePointer.set(true);
+    component.reacting.set(true);
+    expect(component.touchOverlay()).toBe(true);
+    component.reacting.set(false);
+    component.settingsLayerOpen.set(true);
+    expect(component.touchOverlay()).toBe(true);
+    component.settingsLayerOpen.set(false);
+    component.mobileSheet.set('menu');
+    expect(component.touchOverlay()).toBe(true);
+  });
+
   describe('P8: tarjeta de controles', () => {
     it('al entrar por primera vez está a la vista, es modal para el mundo y no camina nadie', () => {
       playing();

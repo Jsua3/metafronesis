@@ -16,11 +16,12 @@ from django.conf import settings
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.http import Http404
 from django.utils import timezone
 
 from apps.grupos import assignment_service
 from apps.grupos.models import CaseAssignment, Grupo, GrupoEstudiante, MembershipStatus
-from apps.publicacion import ciclo
+from apps.publicacion import ciclo, clonado
 from apps.publicacion.arbol import arbol_de
 from apps.simulation.casedef.escritor_insignia import ErrorDeCarga, cargar
 from apps.simulation.casedef.insignia import traducir
@@ -55,46 +56,75 @@ GRUPOS = (
     ("DEMO-PRACTICA-AP", "Práctica en Atención Psicosocial", 2, (2, 3, 8, 9, 10, 11)),
 )
 
-NOMBRE_RUBRICA = "Rúbrica de primeros auxilios psicológicos · Violencia basada en género"
-# Cada criterio apunta a una de las cuatro competencias que el caso insignia ya registra en sus decisiones,
-# para que la evidencia del intento llegue a la rúbrica.
+NOMBRE_RUBRICA = "Rúbrica de atención psicosocial · Violencia familiar y tentativa de feminicidio"
+DESCRIPCION_RUBRICA = (
+    "Evalúa las cuatro competencias que el caso SIM-VBG-002 registra en sus 20 decisiones, desde la crisis en urgencias "
+    "hasta el restablecimiento de derechos en la Comisaría de Familia. Cada criterio recoge todas las decisiones de su "
+    "competencia; el peso refleja cuántas decisiones la evidencian.")
+# Las cuatro competencias que el caso insignia registra en sus decisiones: la calificación del sistema promedia, por
+# competencia, el nivel de cada decisión que la toca. Por eso hay UN criterio por competencia: dos criterios con la misma
+# competencia recibirían siempre el mismo nivel, y una competencia sin criterio dejaría evidencia sin evaluar.
 COMPETENCIAS = {
     "CONTENCION": ("Contención emocional", "Estabiliza a la persona y a su red de apoyo en la crisis."),
     "MARCO_NORMATIVO": ("Marco normativo y rutas de atención", "Aplica referentes legales y activa las rutas institucionales."),
     "INTERVENCION_ETICA": ("Intervención técnica y ética", "Decide sin revictimizar y minimizando el riesgo."),
     "REFLEXION": ("Reflexión profesional", "Registra aprendizajes y justifica su criterio de intervención."),
 }
+# (competencia, peso, título, descripción, descriptores por nivel). Pesos: 5 decisiones de contención, 9 de intervención
+# ética, 5 de marco normativo y 2 de reflexión.
 CRITERIOS = (
-    ("CONTENCION", "Primeros auxilios psicológicos",
-     "Brinda contención emocional y atiende las necesidades inmediatas de la persona.",
-     {"EN_INICIO": "Prioriza el trámite sobre el estado emocional de la persona.",
-      "EN_PROCESO": "Ofrece apoyo emocional, pero sin atender todas las necesidades inmediatas.",
-      "LOGRADO": "Estabiliza a la persona y atiende sus necesidades inmediatas de seguridad y calma.",
-      "DESTACADO": "Estabiliza, ajusta su apoyo al ritmo de la persona y activa su red de apoyo."}),
-    ("INTERVENCION_ETICA", "Valoración del riesgo",
-     "Identifica señales de riesgo para la integridad de la persona y actúa en consecuencia.",
-     {"EN_INICIO": "No explora el riesgo o lo minimiza.",
-      "EN_PROCESO": "Explora el riesgo de forma parcial y no siempre ajusta su decisión.",
-      "LOGRADO": "Identifica los factores de riesgo y ajusta su intervención a su gravedad.",
-      "DESTACADO": "Valora el riesgo de forma continua y anticipa medidas de protección."}),
-    ("MARCO_NORMATIVO", "Información de derechos y rutas de atención",
-     "Informa a la persona sus derechos y las rutas de atención disponibles.",
-     {"EN_INICIO": "No informa derechos ni rutas, o lo hace con datos erróneos.",
-      "EN_PROCESO": "Menciona derechos o rutas, pero de forma incompleta.",
-      "LOGRADO": "Explica con claridad sus derechos y las rutas de atención que le corresponden.",
-      "DESTACADO": "Explica derechos y rutas con claridad y verifica que la persona los comprendió."}),
-    ("MARCO_NORMATIVO", "Derivación",
-     "Deriva a la entidad competente con consentimiento y sin dejar a la persona sola en el proceso.",
-     {"EN_INICIO": "Deriva sin explicar o sin acompañar, o no deriva.",
-      "EN_PROCESO": "Deriva a la entidad adecuada, pero sin el seguimiento necesario.",
-      "LOGRADO": "Deriva a la entidad competente, con consentimiento y acompañamiento.",
-      "DESTACADO": "Deriva, acompaña y deja acordado el seguimiento posterior."}),
-    ("INTERVENCION_ETICA", "Escucha sin revictimización",
-     "Escucha sin juzgar ni cuestionar el relato, y evita preguntas que repitan el daño.",
-     {"EN_INICIO": "Cuestiona o juzga el relato, o exige repetirlo.",
-      "EN_PROCESO": "Escucha con respeto, pero formula preguntas que pueden revictimizar.",
-      "LOGRADO": "Escucha sin juzgar y evita preguntas innecesarias sobre lo ocurrido.",
-      "DESTACADO": "Escucha con validación y cuida el lenguaje y los tiempos de la persona."}),
+    ("CONTENCION", Decimal("25"), "Primeros auxilios psicológicos y contención en crisis",
+     "Con la familia en urgencias y con Yuliana, verifica la seguridad, se presenta, contiene antes de informar, prepara "
+     "un espacio privado y acompaña el duelo por Salomé sin apresurar los trámites. Se observa en la llegada, la sala de "
+     "espera, la elección del lugar para hablar, el silencio tras la noticia y lo que sigue esa noche.",
+     {"EN_INICIO": "Informa o actúa antes de contener: da la noticia sin confirmarla o en un lugar sin privacidad, separa "
+                   "a la red de apoyo, responde al dolor con consejos («tiene que ser fuerte») o se retira.",
+      "EN_PROCESO": "Ofrece apoyo, pero salta pasos de los primeros auxilios psicológicos: lee la historia antes de mirar "
+                    "la escena, elige un rincón poco privado o pasa a los trámites justo después de la noticia.",
+      "LOGRADO": "Aplica los primeros auxilios psicológicos en orden: verifica la seguridad, se presenta, contiene antes de "
+                 "informar, prepara la sala de escucha y acompaña el silencio validando la emoción.",
+      "DESTACADO": "Además mantiene unida a la familia y conectada con su red, ajusta el ritmo a lo que cada persona "
+                   "necesita y deja acordado con trabajo social quién se queda con ellos."}),
+    ("INTERVENCION_ETICA", Decimal("35"), "Intervención técnica y ética sin revictimización",
+     "Acuerda una sola voz con el equipo médico, explora lo que la familia sabe antes de informar (EPICEE), protege la "
+     "confidencialidad y la seguridad de Yuliana, no le miente al despertar, prioriza la protección sobre la mediación, "
+     "valora el riesgo de feminicidio sin pedirle que repita el relato y valora a las personas dependientes. Se observa "
+     "en la estación de enfermería, la noticia, la llamada, el plan, el despertar, la Comisaría y la valoración del riesgo.",
+     {"EN_INICIO": "Decide de forma que revictimiza o expone: confirma datos por teléfono a un desconocido, le miente a "
+                   "Yuliana sobre su hija, propone mediación o perdón con el agresor, o le pide contar de nuevo lo ocurrido.",
+      "EN_PROCESO": "Evita el daño mayor, pero improvisa: delega la noticia sin acordarla, aplica el instrumento de riesgo "
+                    "como una lista, o centra la intervención solo en Yuliana o en su historia personal.",
+      "LOGRADO": "Acuerda la información con el equipo, comunica con EPICEE, protege la confidencialidad, dice la verdad "
+                 "en el momento y con el equipo adecuados, y valora el riesgo de feminicidio en privado, preguntando solo "
+                 "lo necesario.",
+      "DESTACADO": "Además integra en su plan la valoración psicosocial de la familia, el ciclo de la violencia y a las "
+                   "personas dependientes, con manejo interdisciplinario y sin poner a nadie como testigo."}),
+    ("MARCO_NORMATIVO", Decimal("25"), "Marco normativo y activación de rutas de protección",
+     "Actúa con el marco de cada escenario —Resolución 459 de 2012 y Ley 1257 de 2008 en el hospital; Leyes 2126 de 2021, "
+     "1098 de 2006 y 1257 de 2008 en la Comisaría—, activa las rutas sin trasladarle la carga a la víctima (notificación "
+     "en salud, Fiscalía, medidas de protección, salud mental) y le explica sus derechos y qué hace cada entidad. Se "
+     "observa con la psicóloga jefe, en la entrega de turno, en el marco del restablecimiento, al orientar a Yuliana y en "
+     "el concepto final.",
+     {"EN_INICIO": "Espera a que Yuliana decida si denuncia, le promete lo que la ley no garantiza («él no podrá "
+                   "acercarse nunca más») o desconoce las rutas que se activan de oficio.",
+      "EN_PROCESO": "Cita normas pertinentes, pero toma como eje una que no corresponde (Ley 1448 de 2011), deja rutas para "
+                    "después del alta o entrega los pasos por escrito sin acompañar.",
+      "LOGRADO": "Aplica el marco de cada escenario y deja activadas la notificación en salud, el reporte a la Fiscalía y "
+                 "la solicitud de medidas de protección; explica con palabras sencillas el papel de cada entidad.",
+      "DESTACADO": "Además sustenta el restablecimiento con el marco completo, incluye medidas para las personas "
+                   "dependientes y la derivación a salud mental, y verifica que Yuliana comprendió sus derechos."}),
+    ("REFLEXION", Decimal("15"), "Registro y reflexión profesional",
+     "Deja un informe de remisión útil para la Comisaría y que no revictimiza (hechos con su fuente, lo observado, lo "
+     "activado), y cierra el caso registrando lo que hizo, por qué, lo que faltó y cómo le afectó, con supervisión. Se "
+     "observa en el informe de remisión y en la bitácora de cierre.",
+     {"EN_INICIO": "No registra, o el informe culpa a la víctima («todo empezó porque ella le reclamó») o expone detalles "
+                   "que no aportan a su protección.",
+      "EN_PROCESO": "El informe es tan breve que no sirve de base («víctima de violencia intrafamiliar, remitida») o la "
+                    "bitácora solo recoge lo que salió bien.",
+      "LOGRADO": "Redacta hechos con su fuente, lo observado y lo activado, y registra en la bitácora su actuación, sus "
+                 "razones y lo que faltó.",
+      "DESTACADO": "Además reconoce cómo le afectó el caso, pide supervisión y convierte lo aprendido en criterios para la "
+                   "próxima intervención."}),
 )
 
 
@@ -181,10 +211,8 @@ def _rubrica(autora, informe):
     competencias = {codigo: Competency.objects.get_or_create(
         code=codigo, defaults={"name": datos[0], "description": datos[1], "sort_order": orden})[0]
         for orden, (codigo, datos) in enumerate(COMPETENCIAS.items(), start=1)}
-    rubrica = Rubric.objects.create(name=NOMBRE_RUBRICA, created_by=autora,
-        description="Evalúa la atención inicial a una persona víctima de violencia basada en género.")
-    peso = Decimal(100) / len(CRITERIOS)
-    for orden, (codigo, titulo, descripcion, descriptores) in enumerate(CRITERIOS, start=1):
+    rubrica = Rubric.objects.create(name=NOMBRE_RUBRICA, created_by=autora, description=DESCRIPCION_RUBRICA)
+    for orden, (codigo, peso, titulo, descripcion, descriptores) in enumerate(CRITERIOS, start=1):
         RubricCriterion.objects.create(
             rubric=rubrica, competency=codigo, competency_ref=competencias[codigo], title=titulo,
             description=descripcion, weight=peso, max_score=5, display_order=orden,
@@ -206,26 +234,44 @@ def _adjuntar_portada_insignia(version):
 
 
 def _caso_insignia(autora, publicador, rubrica, informe):
-    """Carga el caso como borrador, le asigna la rúbrica de la siembra y lo publica.
+    """Deja publicada una versión del caso insignia con la rúbrica de la siembra.
 
     La rúbrica entra en la huella de la versión: se asigna ANTES de publicar, porque después cambiarla rompería el sello.
-    Una versión ya publicada solo recibe la portada si todavía le falta: es un recurso de presentación fuera del sello.
+    Si la versión publicada tiene otra rúbrica (una siembra anterior), se clona en una versión nueva que recibe la rúbrica
+    actual y se publica; ``sembrar`` archiva después la anterior. Una versión ya publicada solo recibe la portada si
+    todavía le falta: es un recurso de presentación fuera del sello.
     """
     plan = traducir(json.loads(RUTA_DOCUMENTO.read_text(encoding="utf-8")))
     plan = replace(plan, version=MappingProxyType({**plan.version, "estimated_minutes": MINUTOS_ESTIMADOS}))
     # Serializa el reemplazo por caso, también cuando la versión del documento ya estaba publicada.
     caso = SimulationCase.objects.select_for_update().filter(code=plan.caso["code"]).first()
     existente = caso.versions.filter(semantic_version=plan.version["semantic_version"]).first() if caso else None
-    if existente is not None and existente.status == CaseVersionStatus.PUBLISHED:
-        _adjuntar_portada_insignia(existente)
-        informe.existente.append(f"caso {plan.caso['code']} versión {existente.semantic_version} (PUBLISHED)")
-        return existente
+    vigente = None
+    if existente is not None:
+        vigente = existente if existente.status == CaseVersionStatus.PUBLISHED else (
+            caso.versions.filter(status=CaseVersionStatus.PUBLISHED).order_by("-pk").first())
+    if vigente is not None:
+        activa = rubricas.rubrica_activa_de(vigente.pk)
+        if activa is not None and activa.pk == rubrica.pk:
+            _adjuntar_portada_insignia(vigente)
+            informe.existente.append(f"caso {plan.caso['code']} versión {vigente.semantic_version} (PUBLISHED)")
+            return vigente
+        try:
+            version = clonado.clonar(autora, vigente.pk)
+        except (ApiError, Http404) as error:
+            raise ErrorDeSiembra(f"No se pudo crear una versión nueva del caso insignia para cambiar su rúbrica: {error}") from error
+        informe.creado.append(f"versión {version.semantic_version} del caso, copia de la {vigente.semantic_version} con la rúbrica nueva")
+        return _publicar_con_rubrica(version, autora, publicador, rubrica, informe)
     try:
         version = cargar(plan, autora)
     except ErrorDeCarga as error:
         raise ErrorDeSiembra(f"No se pudo cargar el caso insignia: {error}") from error
     if version.status != CaseVersionStatus.DRAFT:
         raise ErrorDeSiembra(f"El caso insignia está en estado {version.status}; la siembra no lo publica.")
+    return _publicar_con_rubrica(version, autora, publicador, rubrica, informe)
+
+
+def _publicar_con_rubrica(version, autora, publicador, rubrica, informe):
     _adjuntar_portada_insignia(version)
     rubricas.asociar_a_version(autora, rubrica.pk, version.pk)
     problemas = arbol_de(version).problemas()

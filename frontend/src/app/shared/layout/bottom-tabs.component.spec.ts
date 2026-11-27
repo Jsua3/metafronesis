@@ -46,6 +46,22 @@ describe('app-more-sheet', () => {
   });
 });
 
+describe('navegación en tableta', () => {
+  it('muestra también los destinos secundarios sin el botón Más', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: () => undefined, removeEventListener: () => undefined }));
+    try {
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), provideRouter([]), { provide: UiDialog, useValue: { sheet: vi.fn() } }] });
+      const fixture = TestBed.createComponent(Host);
+      fixture.componentInstance.more.set([{ id: 'rubricas', label: 'Rúbricas', icon: 'grading', route: '/rubricas' }]);
+      await fixture.whenStable();
+      const nav = fixture.nativeElement.querySelector('nav') as HTMLElement;
+      expect(nav.querySelectorAll('a.pestana')).toHaveLength(3);
+      expect(nav.querySelector('button.pestana')).toBeNull();
+      fixture.destroy();
+    } finally { vi.unstubAllGlobals(); }
+  });
+});
+
 /**
  * Pestañas inferiores del móvil (plan visual F3-5; references/movil.md §3.3 de la skill): como mucho cinco; si el
  * rol tiene destinos secundarios, la última es «Más» y abre una hoja con ellos (diálogo con trampa y retorno del
@@ -89,6 +105,15 @@ describe('app-bottom-tabs', () => {
     await TestBed.inject(Router).navigateByUrl('/portal/simulador');
     await fixture.whenStable();
     expect(tabs().filter(tab => tab.getAttribute('aria-current') === 'page').map(label)).toEqual(['Casos']);
+  });
+
+  it('mantiene un único indicador decorativo que puede viajar entre destinos', async () => {
+    await TestBed.inject(Router).navigateByUrl('/portal/simulador');
+    await fixture.whenStable();
+    const indicator = nav().querySelectorAll('.pestanas__indicador');
+    expect(indicator).toHaveLength(1);
+    expect(indicator[0].getAttribute('aria-hidden')).toBe('true');
+    expect(nav().querySelectorAll('.pestana')).toHaveLength(2);
   });
 
   it('con etiqueta corta, la pestaña la usa (a 390 px «Mi personaje» no cabe sin partirse)', async () => {
@@ -140,6 +165,16 @@ describe('app-bottom-tabs', () => {
     expect(sheet).toHaveBeenCalledWith(MoreSheetComponent, expect.objectContaining({
       side: 'bottom', data: [{ id: 'rubricas', label: 'Rúbricas', icon: 'grading', route: '/portal/rubricas' }],
     }));
+  });
+
+  it('en una ventana baja Más abre una hoja lateral', async () => {
+    fixture.componentInstance.more.set([{ id: 'rubricas', label: 'Rúbricas', icon: 'grading', route: '/portal/rubricas' }]);
+    await fixture.whenStable();
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('max-height: 499px') }));
+    try {
+      nav().querySelector<HTMLButtonElement>('button.pestana')!.click();
+      expect(sheet).toHaveBeenCalledWith(MoreSheetComponent, expect.objectContaining({ side: 'end' }));
+    } finally { vi.unstubAllGlobals(); }
   });
 
   it('en docencia la hoja también explica los destinos visibles de la barra', async () => {

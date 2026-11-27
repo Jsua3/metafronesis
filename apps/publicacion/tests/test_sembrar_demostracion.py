@@ -100,10 +100,9 @@ def test_caso_insignia_publicado_con_rubrica_y_asignado(admin, clave):
     assert version.definition_hash == huella_de(version)
     asignacion = SimulationRubricAssignment.objects.get(case_version=version, active=True)
     criterios = list(asignacion.rubric.criteria.order_by("display_order"))
-    assert [c.title for c in criterios] == [
-        "Primeros auxilios psicológicos", "Valoración del riesgo", "Información de derechos y rutas de atención",
-        "Derivación", "Escucha sin revictimización"]
-    assert sum(c.weight for c in criterios) == 100
+    # Un criterio por cada competencia que registran las decisiones del caso: ninguna evidencia queda sin evaluar.
+    assert [c.competency for c in criterios] == ["CONTENCION", "INTERVENCION_ETICA", "MARCO_NORMATIVO", "REFLEXION"]
+    assert [c.weight for c in criterios] == [25, 35, 25, 15]
     assert all(c.competency_ref_id and len(c.level_descriptors_json) > 50 for c in criterios)
     asignados = CaseAssignment.objects.filter(case_version=version, active=True)
     assert set(asignados.values_list("grupo__codigo", flat=True)) == set(Grupo.objects.filter(codigo__startswith="DEMO-").values_list("codigo", flat=True))
@@ -294,3 +293,23 @@ def test_docentes_invalidos_se_niegan_sin_escribir(admin, clave, problema):
     with pytest.raises(CommandError, match="--docentes"):
         sembrar(admin, "--confirmar", "--docentes", correos)
     assert not Grupo.objects.exists() and not cuentas_demo().exists()
+
+
+@pytest.mark.req("SIEP-234")
+def test_una_rubrica_nueva_publica_otra_version_y_archiva_la_anterior(admin, clave):
+    sembrar(admin, "--confirmar")
+    anterior = CaseVersion.objects.get(simulation_case__code="SIM-VBG-002", status="PUBLISHED")
+    rubrica_vieja = SimulationRubricAssignment.objects.get(case_version=anterior, active=True).rubric
+    # Una siembra anterior dejó otra rúbrica: con otro nombre, la siembra actual crea la suya.
+    rubrica_vieja.name = "Rúbrica de una siembra anterior"
+    rubrica_vieja.save(update_fields=["name"])
+
+    salida = sembrar(admin, "--confirmar")
+    anterior.refresh_from_db()
+    vigente = CaseVersion.objects.get(simulation_case__code="SIM-VBG-002", status="PUBLISHED")
+    assert anterior.status == "ARCHIVED" and vigente.pk != anterior.pk and vigente.cloned_from_id == anterior.pk
+    assert vigente.definition_hash == huella_de(vigente)
+    assert rubricas.rubrica_activa_de(vigente.pk).name == siembra_demostracion.NOMBRE_RUBRICA
+    assert set(CaseAssignment.objects.filter(case_version=vigente, active=True).values_list("grupo__codigo", flat=True)) == {
+        codigo for codigo, *_ in siembra_demostracion.GRUPOS}
+    assert "con la rúbrica nueva" in salida

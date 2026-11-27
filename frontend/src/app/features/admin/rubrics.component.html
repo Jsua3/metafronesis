@@ -2,15 +2,17 @@
   <!-- El editor de una rúbrica: la cabecera dice cuál es y vuelve a la biblioteca (la guardia pregunta si hay cambios). -->
   <ui-page-header class="rb-cabecera rb-cabecera--editor" [title]="editor()?.titulo() ?? 'Rúbrica'"
     volverA="/portal/rubricas" volverEtiqueta="Biblioteca de rúbricas" />
-  <app-rubrica-editor [rubricId]="idEditor()" [comienzo]="desde()" (guardada)="alGuardar($event)" (perdida)="alPerderse()" />
 } @else {
   <ui-cabecera-ilustrada [herramienta]="true" class="rb-cabecera" [escena]="listState() === 'empty' ? null : 'rubricas'" eyebrow="Evaluación" title="Rúbricas"
     description="Los criterios con los que se valora cada intento, y qué significa cada nivel en cada uno.">
     <button ui-button uiHerramientaAcciones type="button" icon="add" (click)="nueva()">Nueva rúbrica</button>
   </ui-cabecera-ilustrada>
 
-  <p class="ds-sr-only" role="status">{{ statusText() }}</p>
+}
 
+<p class="ds-sr-only" role="status">{{ statusText() }}</p>
+
+<div class="rb-layout" [class.rb-layout--editor]="enEditor()">
   <ui-section class="rb-list" title="Biblioteca de rúbricas" [level]="2">
     <div class="rb-stack">
       @if (listState() === 'ready') {
@@ -72,4 +74,7 @@
       }
     </div>
   </ui-section>
-}
+  @if (enEditor()) {
+    <app-rubrica-editor [rubricId]="idEditor()" [comienzo]="desde()" (guardada)="alGuardar($event)" (perdida)="alPerderse()" />
+  }
+</div>

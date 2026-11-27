@@ -2,7 +2,7 @@ import { leerConversaciones, type PasoEnPareja, RelojDeConversacion, rutaEnParej
 import { ContornoDeDibujo, partesDelContorno } from './sala/contorno';
 import { DOOR_REARM_DISTANCE } from './door-rearm.util';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, NgZone, OnChanges, OnDestroy, SimpleChanges, ViewChild, computed, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, HostListener, NgZone, OnChanges, OnDestroy, SimpleChanges, ViewChild, computed, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import Phaser from 'phaser';
 import { Activation, CollisionZoneState, Intensity, MapObjectState, NpcConfig, Persona, RoomConfig, ScenarioConfig, SimulationWorldState } from '../../core/models/simulation.model';
@@ -94,6 +94,9 @@ import {
   randomPersonPause, startPersonWalk, tickPersonWalk,
 } from './person-walk.util';
 import { COARSE_POINTER_QUERY, matchesMedia } from './pointer-modality.util';
+import { LOW_LANDSCAPE_QUERY, PHONE_QUERY, TABLET_QUERY } from './screen-class.util';
+import { DpadSettings } from './dpad-settings.service';
+import { beginStick, endStick, FloatingStick, moveStick } from './floating-stick.util';
 import {
   NUDGE_SUBSTEPS,
   PlayerDirection,
@@ -111,7 +114,7 @@ import { isCriticalAsset } from './asset-criticality.util';
 import {
   ALTO_CUERPO, MEDIO_CUERPO, Caja as CajaDePlaca, EstadoCamara, Momento, Sujeto,
   avanzarCamara, asentada, comoDibujar, duracionDeViaje, encuadreSinCortes, enViajeDentro, esperaDelGeneral, objetivoCamara, seCruzan,
-  protegerDePlacas, sinSaltos, situarAviso,
+  limitarASala, protegerDePlacas, sinSaltos, situarAviso,
 } from './camara/camara';
 import { fitGameToHost, pixelScaleConfig, watchHostSize } from './pixel-canvas';
 import { PixelRender } from './pixel-render';
@@ -193,6 +196,7 @@ interface WorldCallbacks {
   onKeyPersonPosition?: (position: { x: number; y: number } | null) => void;
   /** Cámara (bloque M1): zoom entero asentado, momento y centro redondeado; solo se avisa al cambiar. */
   onCamera?: (camera: CameraReport) => void;
+  touchInput?: () => boolean;
   onEncuadre?: (fase: object | null) => void;
   /** Terminó una caminata pedida con «Ir a…» (F6-11): llegó, o no pudo (muro, mueble, servidor). */
   onWalkEnded?:  (key: string, label: string, outcome: 'arrived' | 'blocked') => void;
@@ -517,6 +521,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   private readonly INTERACTION_COOLDOWN_MS = 260;
   /** Flecha táctil apretada (null si no hay ninguna) y desde cuándo (reloj de la escena). */
   private heldDirection: PlayerDirection | null = null;
+  private stickInput: PlayerMotionInput | null = null;
   private heldSince = 0;
 
   constructor(private readonly callbacks: WorldCallbacks) {
@@ -650,7 +655,9 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.keys['ENTER']?.on('down', () => { this.tappedKeys.enter = true; });
     // Ratón (F6-7): por eventos del puntero, nunca por cuadro (`update()` no cambia).
     this.input.on('pointermove', this.handlePointerMove, this);
-    this.input.on('pointerdown', this.handlePointerDown, this);
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.wasTouch) this.handlePointerDown(pointer);
+    });
     this.input.on('gameout', () => this.setHover(null));
     // Al cambiar el tamaño o el dpr del lienzo: nuevo zoom entero y rótulos de ≥ 12 px de pantalla.
     this.scale.on('resize', () => this.refitCamera());
@@ -726,6 +733,10 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       up:    !bloqueado && (this.cursors.up.isDown    || (letters && this.keys['W'].isDown)),
       down:  !bloqueado && (this.cursors.down.isDown  || (letters && this.keys['S'].isDown)),
     }, this.heldDirection, this.time.now - this.heldSince);
+    if (!bloqueado && this.stickInput) {
+      keyInput.left ||= this.stickInput.left; keyInput.right ||= this.stickInput.right;
+      keyInput.up ||= this.stickInput.up; keyInput.down ||= this.stickInput.down;
+    }
     // Caminata del ratón (F6-7): el teclado o la cruceta mandan sobre el destino y una capa abierta lo suelta.
     // Lo que pide pasa por el mismo paso con colisión y deslizamiento que el teclado.
     let input = keyInput;
@@ -999,6 +1010,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.motionPaused = paused;
     if (paused) {
       this.setHeldDirection(null); // un overlay tapa los controles: no seguir caminando detrás
+      this.stickInput = null;
       this.setHover(null);
       for (const { reloj, burbuja, cola, vistas } of this.conversaciones) {
         burbuja?.setVisible(false);
@@ -1018,6 +1030,23 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.heldDirection = direction;
     // `boot()` y `ngOnChanges` pueden pausar antes de que Phaser arranque la escena (sin reloj aún).
     this.heldSince = direction && this.time ? this.time.now : 0;
+  }
+
+  setStickInput(input: PlayerMotionInput | null): void {
+    this.stickInput = this.motionPaused ? null : input;
+    if (input && (input.left || input.right || input.up || input.down)) {
+      if (this.walkGoal) this.callbacks.onWalkCancelled?.();
+      this.walkGoal = null;
+      this.walkInteractKey = null;
+      this.walk = NO_WALK;
+    }
+  }
+
+  tapAtScreen(x: number, y: number): void {
+    const cam = this.cameras?.main;
+    if (!cam || this.motionPaused) return;
+    const point = cam.getWorldPoint(x, y);
+    this.handlePointerDown({ wasTouch: true, button: 0, worldX: point.x, worldY: point.y } as Phaser.Input.Pointer);
   }
 
   setReduceMotion(reduced: boolean) {
@@ -1378,7 +1407,16 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     this.walk = aimed && key !== null
       ? this.caminataAlMarcador(key, aimed)
       : startWalk({ x: pointer.worldX, y: pointer.worldY, radius: WALK_GROUND_RADIUS_PX });
+    if (pointer.wasTouch && key === null) this.markTapDestination(pointer.worldX, pointer.worldY);
     if (!this.walk.target) this.walkInteractKey = null;
+  }
+
+  private markTapDestination(x: number, y: number): void {
+    const mark = this.add?.graphics?.();
+    if (!mark || !this.time) return;
+    mark.lineStyle(2, 0xffe3a3, 1).strokeRect(-8, -8, 16, 16).setPosition(x, y).setDepth(9000);
+    if (!this.callbacks.reduceMotion) this.tweens.add({ targets: mark, alpha: 0, duration: 500 });
+    this.time.delayedCall(520, () => mark.destroy());
   }
 
   /** Contorno y verbo sobre lo señalado: la forma (borde y texto) lleva el mensaje, no solo el color. */
@@ -1583,6 +1621,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     }
     const vista = {
       ancho: cam.width, alto: cam.height, dpr,
+      cubrir: !!this.callbacks.touchInput?.() && (matchesMedia(PHONE_QUERY) || matchesMedia(TABLET_QUERY) || matchesMedia(LOW_LANDSCAPE_QUERY)),
       cubiertoAbajo: this.camCoveredCss * dpr, cubiertoArriba: this.camCoveredTopCss * dpr,
       placas: this.camPlacas.map(p => ({ x: p.x * dpr, y: p.y * dpr, ancho: p.ancho * dpr, alto: p.alto * dpr })),
     };
@@ -1627,10 +1666,11 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       // V5: un objetivo que cambia de golpe a mitad de un viaje (la placa que se esquiva) no se ve como un salto.
       next = sinSaltos(this.camState, next, delta);
     }
-    if (this.camMoment.tipo === 'explorar' && this.camCoveredCss === 0) {
+    if (this.camMoment.tipo === 'explorar' && this.camCoveredCss === 0 && !this.motionPaused) {
       const cama = this.nextTargetKey && this.apoyosDeLaSala.get(this.nextTargetKey)?.cama;
       next = protegerDePlacas(next, vista, jugador, cama ? destino : null);
     }
+    if (vista.cubrir && momento.tipo === 'explorar') next = limitarASala(next, vista, sala);
     this.camCut = false;
     this.camMomentType = momento.tipo;
     this.camTargetZoom = objetivo.zoom;
@@ -4706,11 +4746,20 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   host: { '[class.touch-input]': 'touchInput()' },
   template: `
     <div #gameHost class="phaser-host" role="application"
+      (pointerdown)="stickDown($event)" (pointermove)="stickMove($event)" (pointerup)="stickUp($event)"
+      (pointercancel)="stickCancel($event)" (lostpointercapture)="stickCancel($event)"
       [attr.data-world-ready]="renderReady()"
       [attr.data-rendered-map-key]="renderedMapKey()"
       [attr.data-rendered-scenario-key]="renderedScenarioKey()"
       [attr.aria-label]="worldLabel()">
     </div>
+    @if (stick(); as control) {
+      @if (control.dragging) {
+        <div class="floating-stick" aria-hidden="true" [style.left.px]="control.x" [style.top.px]="control.y">
+          <span class="floating-stick__knob" [style.transform]="'translate(' + control.dx + 'px,' + control.dy + 'px)'"></span>
+        </div>
+      }
+    }
     @if (avisoDePuerta(); as aviso) {
       <app-aviso-de-puerta [texto]="aviso.texto" [bloqueada]="aviso.bloqueada" [falta]="doorMessages()[aviso.id] ?? null" [conTecla]="!touchInput()"
         [x]="aviso.x" [y]="aviso.y" [vista]="aviso.vista" [ocupadas]="aviso.ocupadas" (cruzar)="cruzarPorAviso(aviso.id)" />
@@ -4734,8 +4783,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
         </div>
       </div>
     }
-    <div class="touch-controls" role="group" aria-label="Controles táctiles">
-      <div class="touch-dpad">
+    <div class="touch-controls" role="group" aria-label="Controles táctiles" [attr.inert]="motionPaused() ? '' : null" [class.touch-controls--paused]="motionPaused()">
+      <div class="touch-dpad" [hidden]="!dpad.visible()">
         <button type="button" class="u-boton u-boton--icono touch-btn touch-btn--up" aria-label="Mover arriba"
           (pointerdown)="holdDirection($event, 'up')" (pointerup)="releaseDirection()"
           (pointercancel)="releaseDirection()" (lostpointercapture)="releaseDirection()"
@@ -4757,14 +4806,15 @@ export class DataDrivenWorldScene extends Phaser.Scene {
           (contextmenu)="$event.preventDefault()"
           (click)="keyboardNudge($event, 'down')"><mat-icon>keyboard_arrow_down</mat-icon></button>
       </div>
-      <!-- Sin [disabled] ni aria-disabled (Playwright los toma por «no habilitado» y el e2e táctil no podría
-           tocar): sin nada cerca el toque se acepta y la escena avisa (nothingNearby). -->
+      <!-- Sin objetivo cercano el aviso permanece en la región viva y el botón no ocupa el mundo. -->
       <button type="button" class="u-boton u-boton--principal touch-interact"
+        [hidden]="!interactLabel()"
         [class.touch-interact--idle]="!interactLabel()"
         [attr.aria-label]="'Interactuar: ' + (interactLabel() ?? 'Acércate a algo')"
         (click)="interactNearest()"><mat-icon aria-hidden="true">touch_app</mat-icon><span class="touch-interact__label">{{ interactLabel() ?? 'Acércate a algo' }}</span></button>
     </div>
   `,
+  styleUrl: './game-world.mobile.css',
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     :host { display: block; position: relative; width: 100%; height: 100%; }
@@ -4791,6 +4841,7 @@ export class DataDrivenWorldScene extends Phaser.Scene {
       z-index: 48;
     }
     .touch-dpad, .touch-interact { pointer-events: auto; }
+    .touch-dpad[hidden], .touch-interact[hidden], .touch-controls--paused { display: none !important; }
     /* Cruz de 3x3 de 48 px: 3 x 48 + 2 x 4 = 152 px, menos que la banda negra de 844x390 (169 px). */
     .touch-dpad {
       display: grid;
@@ -4805,15 +4856,16 @@ export class DataDrivenWorldScene extends Phaser.Scene {
     .touch-btn--down { grid-area: 3 / 2; }
     .touch-btn {
       /* Mantener pulsado no debe hacer scroll, zoom, seleccionar texto ni abrir el menú largo. */
-      touch-action: none;
+      touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
     }
     /* El botón dice con qué va a interactuar: el texto cabe en la banda lateral partiéndose en líneas. */
     .touch-interact {
+      grid-column: 2;
       font-size: .82rem;
-      min-height: 48px;
+      min-height: 56px;
       max-width: 156px;
       padding: 6px 10px;
       gap: 6px;
@@ -4884,6 +4936,8 @@ export class DataDrivenWorldScene extends Phaser.Scene {
   `]
 })
 export class GameWorldComponent implements OnChanges, OnDestroy {
+  readonly dpad = inject(DpadSettings);
+  readonly stick = signal<FloatingStick | null>(null);
   readonly world = input<SimulationWorldState | null>(null);
   readonly scenarioConfig = input<ScenarioConfig | null>(null);
   readonly selectedInteractionKey = input<string | null>(null);
@@ -4999,6 +5053,56 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
     this.zone.run(() => this.touchInput.set(touchControlsVisible(next, matchesMedia(COARSE_POINTER_QUERY))));
   };
 
+  stickDown(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+    event.preventDefault();
+    if (this.motionPaused() || this.stick()) return;
+    const host = event.currentTarget as HTMLElement;
+    const rect = host.getBoundingClientRect();
+    this.stick.set(beginStick(null, event.pointerId, event.clientX - rect.left, event.clientY - rect.top));
+    try { host.setPointerCapture(event.pointerId); } catch { /* El puntero pudo haberse cancelado. */ }
+  }
+
+  stickMove(event: PointerEvent): void {
+    const current = this.stick();
+    if (!current || current.pointerId !== event.pointerId) return;
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const next = moveStick(current, event.pointerId, event.clientX - rect.left, event.clientY - rect.top);
+    this.stick.set(next);
+    this.scene?.setStickInput(next?.dragging ? next.input : null);
+  }
+
+  stickUp(event: PointerEvent): void {
+    const current = this.stick();
+    if (!current || current.pointerId !== event.pointerId) return;
+    const { state, tap } = endStick(current, event.pointerId);
+    this.stick.set(state);
+    this.scene?.setStickInput(null);
+    if (tap && !this.motionPaused()) {
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const camera = this.scene?.cameras?.main;
+      if (rect.width > 0 && rect.height > 0 && camera) {
+        this.scene?.tapAtScreen((event.clientX - rect.left) * camera.width / rect.width,
+          (event.clientY - rect.top) * camera.height / rect.height);
+      }
+    }
+  }
+
+  stickCancel(event: PointerEvent): void {
+    if (this.stick()?.pointerId === event.pointerId) this.cancelStick();
+  }
+
+  @HostListener('window:blur')
+  cancelStick(): void {
+    const current = this.stick();
+    this.stick.set(null);
+    this.scene?.setStickInput(null);
+    if (current) {
+      const host = this.gameHost?.nativeElement;
+      try { if (host?.hasPointerCapture(current.pointerId)) host.releasePointerCapture(current.pointerId); } catch { /* Ya se soltó. */ }
+    }
+  }
+
   constructor(private readonly zone: NgZone) {
     // Fuera de Angular: el puntero se mueve ~60 veces por segundo y solo un cambio de entrada entra a la zona.
     zone.runOutsideAngular(() => {
@@ -5029,7 +5133,10 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
     if (changes['world'] || changes['viewedNpcKeys']) this.pushExamined();
     if (changes['shortcuts']) this.scene?.setShortcutsEnabled(this.shortcuts());
     if (changes['selectedInteractionKey']) this.scene?.setSelected(this.selectedInteractionKey());
-    if (changes['motionPaused']) this.scene?.setMotionPaused(this.motionPaused());
+    if (changes['motionPaused']) {
+      if (this.motionPaused()) this.cancelStick();
+      this.scene?.setMotionPaused(this.motionPaused());
+    }
     if (changes['sfxMuted']) this.scene?.setSfxMuted(this.sfxMuted());
     if (changes['reduceMotion']) this.scene?.setReduceMotion(this.effectiveReduceMotion());
     if (changes['activation'] || changes['intensity']) this.scene?.setPersonaScene(this.activation(), this.intensity());
@@ -5065,6 +5172,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
 
   ngOnDestroy() {
     this.destroyed = true;
+    this.cancelStick();
     this.clearBootWatchdog();
     document.removeEventListener('pointerdown', this.onPointerKind, true);
     document.removeEventListener('pointermove', this.onPointerKind, true);
@@ -5317,6 +5425,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         onKeyPersonIndicator: name => this.writeKeyPerson(name),
         onKeyPersonPosition: position => this.writeKeyPersonPosition(position),
         onCamera: camera => this.writeCamera(camera),
+        touchInput: () => this.touchInput(),
         onEncuadre: fase => this.zone.run(() => this.encuadreListo.set(fase)),
         onWalkEnded:   (key, label, outcome) => this.zone.run(() => this.walkEnded.emit({ key, label, outcome })),
         onWalkCancelled: () => this.zone.run(() => this.walkCancelled.emit()),

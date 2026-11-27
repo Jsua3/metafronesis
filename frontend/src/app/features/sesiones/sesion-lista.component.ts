@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
@@ -24,9 +24,13 @@ import { ESTADOS, FILTROS, horario } from './sesion-presentacion';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- BORRADOR: textos pendientes de Psicología (VD-23). -->
-    <ui-page-header title="Sesiones" description="Programa una clase con un grupo y un caso de la biblioteca, y guíala en vivo.">
-      <button ui-button uiPageActions type="button" icon="add" (click)="nueva()">Nueva sesión</button>
-    </ui-page-header>
+    @if (compacta()) {
+      <h2>Sesiones</h2>
+    } @else {
+      <ui-page-header title="Sesiones" description="Programa una clase con un grupo y un caso de la biblioteca, y guíala en vivo.">
+        <button ui-button uiPageActions type="button" icon="add" (click)="nueva()">Nueva sesión</button>
+      </ui-page-header>
+    }
     <ui-segmentado etiqueta="Momento de la sesión" [opciones]="filtros" [(valor)]="filtro" />
     @if (estado() === 'ready' && sesiones().length === 0) {
       <ui-empty-state
@@ -58,10 +62,11 @@ import { ESTADOS, FILTROS, horario } from './sesion-presentacion';
     }
   `,
   styles: [`
-    :host { display: grid; gap: var(--ds-space-5); }
+    :host { display: grid; gap: var(--ds-space-5); --ui-table-max-block-size: none; }
   `],
 })
 export class SesionListaComponent {
+  readonly compacta = input(false);
   private readonly api = inject(SesionesApi);
   private readonly dialog = inject(UiDialog);
   private readonly notify = inject(NotificationService);

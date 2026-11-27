@@ -108,7 +108,7 @@ import { RutasAutoria } from '../../rutas';
                   </ul>
                 </app-estudio-seccion>
               }
-              <app-estudio-seccion titulo="Conexiones" [resumen]="resumenConexiones(e)">
+              <app-estudio-seccion titulo="Conexiones" [resumen]="resumenConexiones(e)" [plegadaEnEscritorio]="true">
                 <p class="conexion-rotulo">Llegan desde</p>
                 <ul class="chips">
                   @for (x of lleganDesdeLista(e); track x.id) {
@@ -122,7 +122,7 @@ import { RutasAutoria } from '../../rutas';
                   } @empty { <li class="chip chip--vacio">{{ e.esFinal ? 'Es un final' : 'Ninguna escena' }}</li> }
                 </ul>
               </app-estudio-seccion>
-              <app-estudio-seccion titulo="Contenido" [resumen]="plural(e.lineas.length, 'línea', 'líneas') + ' · ' + plural(e.respuestas.length, 'respuesta', 'respuestas')">
+              <app-estudio-seccion titulo="Contenido" [resumen]="plural(e.lineas.length, 'línea', 'líneas') + ' · ' + plural(e.respuestas.length, 'respuesta', 'respuestas')" [plegadaEnEscritorio]="true">
                 <dl class="datos">
                   <div><dt>Líneas del libreto</dt><dd>{{ e.lineas.length }}</dd></div>
                   <div><dt>Respuestas</dt><dd>{{ e.respuestas.length }}</dd></div>

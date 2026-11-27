@@ -54,7 +54,7 @@ function fotogramaValido(valor: unknown): number {
   styleUrl: './ui-figura-pixel.scss',
 })
 export class UiFiguraPixel {
-  /** Carpeta del personaje bajo `assets/characters/kit/`: `'camila/bata'`, `'docente-universidad'`… */
+  /** Carpeta del personaje bajo `assets/characters/kit/`: `'camila/bata'`, `'sebas'`… */
   readonly personaje = input.required<string>();
   readonly escala = input<UiFiguraEscala, unknown>(2, { transform: escalaEntera });
   /** Columna del cuadro de reposo (0 a 3). */

@@ -6,7 +6,23 @@
 // el formulario de la valoración vive (y se estiliza) en `revision/rubrica-intento`. Solo tokens --ds-* y --l-*.
 :host {
   display: block;
+  --ui-table-max-block-size: none;
+  container-type: inline-size;
   color: var(--ds-text-1);
+}
+
+@media (max-width: 63.999rem) {
+  @container (max-width: 52.499rem) {
+    .tr-layout--bandeja .tr-detail { display: none; }
+  }
+}
+
+@media (max-width: 63.999rem) and (min-height: 31.25rem) {
+  @container (min-width: 52.5rem) {
+    :host .tr-layout { grid-template-columns: 18rem minmax(0, 1fr); }
+    :host .tr-selector { display: none; }
+    :host .tr-bandeja { display: grid; }
+  }
 }
 
 .tr-layout {
@@ -605,7 +621,9 @@
   // El alto descuenta la cabecera de la página y el selector de la bandeja (unos 13rem bajo la barra): sin desplazar, el pie con «Guardar
   // evaluación» queda dentro de la ventana; ya desplazada, sobra un margen abajo, que es el precio de no medir con JS.
   .tr-valoracion.p-pegajosa--desplaza {
-    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6) - 13rem);
+    position: static;
+    max-block-size: none;
+    overflow-y: visible;
   }
 }
 
@@ -625,12 +643,7 @@
   // Pegajosa solo aquí: bajo 1440 px está en el flujo de una columna y, pegada, taparía la evidencia.
   .tr-bandeja {
     padding-inline: var(--ds-space-3);
-    position: sticky;
-    top: calc(var(--l-alto-barra) + var(--ds-space-4));
     display: grid;
-    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6) - 9rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
 
   .tr-review {
@@ -639,7 +652,7 @@
 
   // Sin el selector de la bandeja encima, la valoración gana su alto.
   .tr-valoracion.p-pegajosa--desplaza {
-    max-block-size: calc(100dvh - var(--l-alto-barra) - var(--ds-space-6) - 9rem);
+    max-block-size: none;
   }
 }
 

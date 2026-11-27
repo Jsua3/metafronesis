@@ -57,7 +57,7 @@ describe('game-world: controles táctiles', () => {
     expect(source).toContain('.touch-btn--right { grid-area: 2 / 3; }');
     expect(source).toContain('.touch-btn--down { grid-area: 3 / 2; }');
     // las cuatro flechas viven dentro de la cruz y ya no se centran sobre el piso
-    expect(source).toMatch(/<div class="touch-dpad">[\s\S]*?touch-btn--down[\s\S]*?<\/div>\s*<!--/);
+    expect(source).toMatch(/<div class="touch-dpad" \[hidden\]="!dpad\.visible\(\)">[\s\S]*?touch-btn--down[\s\S]*?<\/div>\s*<!--/);
     expect(source).not.toMatch(/bottom: 92px/);
     expect(source).not.toMatch(/\.touch-controls \{[^}]*translateX\(-50%\)/);
   });
@@ -66,8 +66,8 @@ describe('game-world: controles táctiles', () => {
     expect(source).toContain('class="u-boton u-boton--principal touch-interact"');
     expect(source).toMatch(/\[attr\.aria-label\]="'Interactuar: ' \+ \(interactLabel\(\) \?\? 'Acércate a algo'\)"/);
     expect(source).toContain("{{ interactLabel() ?? 'Acércate a algo' }}");
-    // sin nada cerca se atenúa pero se puede tocar (la escena avisa): nunca `disabled`
-    expect(source).toContain('[class.touch-interact--idle]="!interactLabel()"');
+    // Sin nada cerca no ocupa espacio ni recibe foco; la región viva conserva el aviso.
+    expect(source).toContain('[hidden]="!interactLabel()"');
     // ni `disabled` ni `aria-disabled`: Playwright los toma por «no habilitado» y el e2e táctil esperaría para siempre
     expect(source).not.toMatch(/touch-interact[^>]*\[disabled\]/);
     expect(source).not.toMatch(/touch-interact[\s\S]{0,400}\[attr\.aria-disabled\]/);

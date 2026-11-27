@@ -123,6 +123,15 @@ describe('HUD: menú de Ajustes', () => {
     expect(hudSource).toMatch(/if \(restoreFocus\) this\.settingsTrigger\(\)\?\.nativeElement\.focus\(\);/);
   });
 
+  it('«Mostrar cruceta» solo está en Ajustes con entrada táctil: en escritorio el menú no cambia', () => {
+    hud.settingsOpen.set(true);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    // Sin intento no se dibuja el HUD: el contrato se lee de la plantilla.
+    expect(host.querySelector('[data-hud-dpad]')).toBeNull();
+    expect(hudSource).toMatch(/@if \(touchMode\(\)\) \{\s*<!--[^>]*-->\s*<button class="u-boton" type="button" data-hud-dpad/);
+  });
+
   it('el manejador global de la partida respeta las teclas ya consumidas', () => {
     expect(playSource).toMatch(/handleGlobalInteraction\(event: KeyboardEvent\) \{[\s\S]{0,400}?if \(event\.defaultPrevented\) return;/);
   });

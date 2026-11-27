@@ -1,0 +1,9 @@
+@media (pointer: coarse) and (width < 600px) and (height >= 500px) {
+  .outcome.outcome--pause { inset: auto 0 0; transform: none; width: 100%; max-height: 92dvh; overflow-y: auto; }
+}
+@media (pointer: coarse) and (height < 500px) and (width < 1024px) {
+  .outcome.outcome--pause { inset: 0 0 0 auto; transform: none; width: min(480px, 80dvw); max-height: 100dvh; overflow-y: auto; }
+}
+@media (pointer: coarse) and (width >= 600px) and (width < 1024px) and (height >= 500px) {
+  .outcome.outcome--pause { width: min(560px, 94dvw); overflow-y: auto; }
+}

@@ -48,7 +48,10 @@ export const PUBLIC_ANCHORS: readonly PublicAnchor[] = [
         <app-marca class="barra-marca" />
       </a>
       <!-- Grupos con nombre (UA-E18): sin ellos el lector de pantalla cuelga los enlaces del logo, como si fuera un menú. -->
-      <div class="modulo modulo-principal ds-motion" [class.con-tema]="mode() === 'portada'" role="group" aria-label="Secciones de la portada">
+      <!-- En el acceso no hay secciones: el módulo central queda vacío y sin vidrio, para que al bajar no aparezca una
+           cápsula hueca en medio de la barra. Conserva su columna para que la cuenta siga a la derecha. -->
+      <div class="modulo modulo-principal ds-motion" [class.con-tema]="mode() === 'portada'"
+        [class.modulo-vacio]="mode() !== 'portada' && !anchors().length" role="group" aria-label="Secciones de la portada">
         @for (anchor of anchors(); track anchor.id) {
           <a class="nav-enlace ds-motion" [class.control-plegable]="secundario(anchor)" [href]="'#' + anchor.id">{{ anchor.label }}</a>
         }

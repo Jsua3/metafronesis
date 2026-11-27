@@ -22,7 +22,8 @@ En permisos, “JWT/DRF” significa que aplica la autenticación/permisos por d
 | POST | /api/auth/logout | LogoutView | JWT; account/self | — | users; S1; psychosim/urls.py:72; apps/users/views.py:334 |
 | GET, POST | /api/grupos | GrupoListCreateView | Policy group/list o group/manage | POST CrearGrupoSerializer; GET sin serializer | grupos; S2; psychosim/urls.py:73; apps/grupos/views.py:44 |
 | PUT, PATCH, DELETE | /api/grupos/<int:pk> | GrupoDetailView | JWT; group/manage | PUT ActualizarGrupoSerializer; PATCH reutiliza update | grupos; S2; psychosim/urls.py:74; apps/grupos/views.py:64 |
-| GET, POST | /api/grupos/<int:pk>/estudiantes | GrupoEstudiantesView | GET group/manage; POST membership/invite | POST AgregarEstudianteSerializer | grupos; S2; psychosim/urls.py:75; apps/grupos/views.py:85 |
+| GET, POST | /api/grupos/<int:pk>/estudiantes | GrupoEstudiantesView | GET group/manage; POST membership/invite | POST AgregarEstudianteSerializer (`email`: correo o nombre de usuario) | grupos; S2; psychosim/urls.py:75; apps/grupos/views.py:85 |
+| GET | /api/grupos/<int:pk>/estudiantes/sugerencias?q= | GrupoEstudiantesSugerenciasView | JWT; membership/invite | Hasta 8 estudiantes activos (`nombre`, `usuario`, `email`) cuyo correo contiene `q` (mínimo 2 caracteres), sin los ya invitados o miembros | grupos; psychosim/urls.py:76; apps/grupos/views.py:109 |
 | DELETE | /api/grupos/<int:pk>/estudiantes/<int:estudiante_id> | GrupoEstudianteDetailView | JWT; group/manage | — | grupos; S2; psychosim/urls.py:76; apps/grupos/views.py:106 |
 | POST | /api/grupos/<int:pk>/estudiantes/<int:estudiante_id>/activar | GrupoEstudianteActivarView | JWT; membership/respond | InvitationSerializer de respuesta | grupos; S2; psychosim/urls.py:77; apps/grupos/views.py:247 |
 | GET | /api/me/invitations | MeInvitationsView | JWT; membership/respond | InvitationSerializer | grupos; S2; psychosim/urls.py:79; apps/grupos/views.py:269 |

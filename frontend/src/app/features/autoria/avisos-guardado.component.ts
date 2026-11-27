@@ -88,12 +88,15 @@ type FormaGuardado = 'guardando' | 'guardado' | 'sin-guardar' | 'aviso';
     :host(.en-barra) { display: inline-flex; align-items: center; gap: 0.375rem; min-inline-size: 0; }
     .estado-guardado {
       display: inline-flex; align-items: center; gap: 0.375rem; margin: 0; min-block-size: 2.75rem;
-      color: var(--asb-cromo-tinta-tenue); font-size: var(--autoria-texto-14); font-weight: 600; line-height: 1.25rem; white-space: nowrap;
+      color: var(--asb-cromo-tinta-tenue, var(--ds-text-1)); font-size: var(--autoria-texto-14); font-weight: 600; line-height: 1.25rem; white-space: nowrap;
     }
-    /* La marca dice el estado con forma: punto lleno (guardado), anillo vacío (guardando), triángulo (falta algo). */
+    /* La marca permanece quieta al guardar y late mientras hay trabajo en curso. */
     .estado-guardado__marca { inline-size: 0.625rem; block-size: 0.625rem; border-radius: 50%; background: var(--ds-success); flex: none; }
-    .estado-guardado__rotulo { color: var(--asb-cromo-tinta); font-weight: 700; }
-    .estado-guardado[data-forma='guardando'] .estado-guardado__marca { background: transparent; box-shadow: inset 0 0 0 2px var(--ds-primary); }
+    .estado-guardado__rotulo { color: var(--asb-cromo-tinta, var(--ds-text-1)); font-weight: 700; }
+    @media (prefers-reduced-motion: no-preference) {
+      .estado-guardado[data-forma='guardando'] .estado-guardado__marca { animation: latido-guardado 1.6s ease-in-out infinite; }
+    }
+    @keyframes latido-guardado { 50% { opacity: 0.5; transform: scale(0.8); } }
     .estado-guardado[data-forma='sin-guardar'] .estado-guardado__marca,
     .estado-guardado[data-forma='aviso'] .estado-guardado__marca {
       inline-size: 0.75rem; block-size: 0.625rem; border-radius: 0; background: var(--ds-warning-text);
@@ -136,8 +139,8 @@ export class AvisosGuardadoComponent {
   protected readonly hayAviso = computed(() => this.store.conflicto() !== null || this.store.error() !== null);
 
   protected readonly forma = computed<FormaGuardado>(() => {
-    if (this.store.guardando()) return 'guardando';
     if (this.hayAviso() || this.store.guardadoDetenido()) return 'aviso';
+    if (this.store.guardando()) return 'guardando';
     return this.store.sinGuardar().length ? 'sin-guardar' : 'guardado';
   });
 

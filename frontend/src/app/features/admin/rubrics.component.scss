@@ -5,10 +5,51 @@
 // rúbrica tiene sus propios estilos (`rubrica-editor.component.scss`).
 :host {
   display: block;
+  container-type: inline-size;
   inline-size: 100%;
   max-inline-size: var(--l-ancho-pagina, 75rem);
   margin-inline: auto;
   color: var(--ds-text-1);
+}
+
+.rb-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
+}
+
+.rb-layout--editor .rb-list {
+  display: none;
+}
+
+@media (max-width: 63.999rem) and (min-height: 31.25rem) {
+  @container (min-width: 52.5rem) {
+    .rb-layout--editor {
+      grid-template-columns: 18rem minmax(0, 1fr);
+      gap: var(--ds-space-5);
+      align-items: start;
+    }
+
+    .rb-layout--editor .rb-list {
+      display: block;
+      margin-block-start: 0;
+    }
+
+    .rb-layout--editor app-rubrica-editor { min-inline-size: 0; }
+
+    .rb-layout--editor .rb-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'abrir menu' 'estado menu';
+    }
+
+    .rb-layout--editor .rb-row__abrir { grid-area: abrir; }
+    .rb-layout--editor .rb-row__estado { grid-area: estado; margin-inline-start: calc(2.5rem + var(--ds-space-3)); }
+    .rb-layout--editor .rb-row__menu { grid-area: menu; }
+  }
+}
+
+@media (min-width: 37.5rem) and (max-width: 63.999rem) {
+  .rb-layout:not(.rb-layout--editor) .rb-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 // El editor necesita la matriz ancha: con la columna de datos al lado, a 1440 px los cuatro niveles caben en fila.

@@ -42,8 +42,19 @@ class ActualizarGrupoSerializer(serializers.Serializer):
         return attrs
 
 
+_USUARIO = RegexValidator(r"^[\w.+-]+$", "Escribe un correo válido o un nombre de usuario sin espacios.")
+
+
 class AgregarEstudianteSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    """``email`` acepta el correo del estudiante o su nombre de usuario (lo que va antes de la @)."""
+
+    email = serializers.CharField(max_length=255, trim_whitespace=True)
+
+    def validate_email(self, value):
+        if "@" in value:
+            return serializers.EmailField().run_validation(value)
+        _USUARIO(value)
+        return value
 
 
 class ImportarEstudiantesSerializer(serializers.Serializer):

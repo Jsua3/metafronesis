@@ -39,9 +39,15 @@ const valores = (raiz: HTMLElement) => Object.fromEntries([...raiz.querySelector
 
 describe('RespuestaComponent', () => {
   it('distingue crear la escena siguiente de crear y conectar una escena final', async () => {
-    const { raiz } = await montar({ destinoId: null });
-    const botones = [...raiz.querySelectorAll('button')];
+    const { fixture, raiz } = await montar({ destinoId: null });
+    let botones = [...raiz.querySelectorAll('button')];
+    raiz.querySelector<HTMLInputElement>('input[name=rdestino-r1][value=escena]')!.click();
+    await fixture.whenStable();
+    botones = [...raiz.querySelectorAll('button')];
     expect(botones.some(b => b.textContent?.trim() === 'Crear la escena que sigue')).toBe(true);
+    raiz.querySelector<HTMLInputElement>('input[name=rdestino-r1][value=final]')!.click();
+    await fixture.whenStable();
+    botones = [...raiz.querySelectorAll('button')];
     expect(botones.some(b => b.textContent?.trim() === 'Terminar el caso aquí: crear la escena final')).toBe(true);
     expect(raiz.textContent).toContain('El caso termina al llegar a ella; no tiene respuestas');
   });
@@ -88,6 +94,8 @@ describe('RespuestaComponent', () => {
     const crear = vi.fn();
     fixture.componentInstance.destino.subscribe(destino);
     fixture.componentInstance.crearFinal.subscribe(crear);
+    raiz.querySelector<HTMLInputElement>('input[name=rdestino-r1][value=final]')!.click();
+    await fixture.whenStable();
     const botones = [...raiz.querySelectorAll('button')];
     botones.find((b) => b.textContent?.includes('Usar 2 · Final'))!.click();
     botones.find((b) => b.textContent?.includes('crear la escena final'))!.click();
@@ -102,4 +110,30 @@ describe('RespuestaComponent', () => {
     await fixture.whenStable();
     expect(raiz.querySelector('.consecuencia')!.textContent).toBe('Con riesgo: tres o más dejan el riesgo abierto al final.');
   });
+});
+
+// El destino es una única elección y permite crear la escena o el final correspondiente.
+it('ofrece las tres opciones de destino y sus acciones', async () => {
+  const { fixture, raiz } = await montar({ destinoId: null });
+  const botones = () => [...raiz.querySelectorAll<HTMLButtonElement>('button')];
+  const opcion = (texto: string) => botones().find(b => b.textContent?.trim() === texto)!;
+  const opciones = [...raiz.querySelectorAll<HTMLInputElement>('fieldset.clasificacion input[name=rdestino-r1]')];
+  expect(opciones.map(o => o.value)).toEqual(['escena', 'final', 'ninguno']);
+  expect(opciones[2].checked).toBe(true);
+  const escenaNueva = vi.fn();
+  const finalNuevo = vi.fn();
+  const destino = vi.fn();
+  fixture.componentInstance.crearEscena.subscribe(escenaNueva);
+  fixture.componentInstance.crearFinal.subscribe(finalNuevo);
+  fixture.componentInstance.destino.subscribe(destino);
+  opciones[0].click();
+  await fixture.whenStable();
+  opcion('Crear la escena que sigue').click();
+  expect(escenaNueva).toHaveBeenCalledOnce();
+  opciones[1].click();
+  await fixture.whenStable();
+  raiz.querySelector<HTMLButtonElement>('[data-accion="terminar-respuesta"]')!.click();
+  expect(finalNuevo).toHaveBeenCalledOnce();
+  opciones[2].click();
+  expect(destino).toHaveBeenCalledWith('');
 });

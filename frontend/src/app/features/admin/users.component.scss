@@ -3,6 +3,7 @@
 // bloque y toda rejilla lleva `minmax(0, 1fr)`.
 :host {
   display: block;
+  --ui-table-max-block-size: none;
   color: var(--ds-text-1);
 }
 
@@ -184,14 +185,11 @@
   select {
     min-block-size: var(--ds-target-min);
     max-inline-size: 100%;
-    padding-inline: var(--ds-space-3);
-    border: 1px solid var(--ds-border);
-    border-radius: var(--ds-radius-md);
-    background: var(--ds-surface-1);
-    color: var(--ds-text-1);
-    font: inherit;
-    font-weight: 400;
   }
+}
+
+@media (max-width: 63.999rem), (pointer: coarse) {
+  .us-control select { font-size: 1rem; }
 }
 
 .us-check {
@@ -201,7 +199,6 @@
   min-block-size: var(--ds-target-min);
   // 44 px también a lo ancho: con el texto oculto, el área pulsable no puede quedar en el ancho de la casilla.
   min-inline-size: var(--ds-target-min);
-  min-width: 0;
 
   input {
     inline-size: 1.25rem;
@@ -272,6 +269,9 @@
 // Resumen de pendientes (P6): la misma cifra del menú lateral, con lo que falta y un salto a cada lista.
 .us-pendientes {
   display: flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  box-sizing: border-box;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ds-space-2) var(--ds-space-3);
@@ -294,7 +294,7 @@
 }
 
 .us-pendientes__texto {
-  flex: 1 1 14rem;
+  flex: 0 1 auto;
   margin: 0;
   font-weight: var(--ds-type-h3-weight);
   overflow-wrap: anywhere;

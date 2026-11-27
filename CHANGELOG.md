@@ -17,6 +17,28 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). L
 - El editor ofrece «Probar» en un caso publicado y el servidor responde 409: solo se ensayan borradores.
 - Que mover una pieza en el editor se vea al instante: hoy la sala se rearma entera (ya sin parpadeo, desde el #75).
 
+## [0.8.0] - 2026-11-27
+
+Metafrónesis en el teléfono y la tableta, y un acabado de escritorio a la altura del resto. Sale de dos fuentes: las críticas de un docente que revisó el programa (cajas mucho más anchas que su contenido, botones de ayuda ajenos al lenguaje visual, desplegables sin estilo y módulos con scroll propio) y una cuarta medición con las mismas 61 personas simuladas sobre la 0.7.1, en la que el SUS subió de 45,9 a 48,3.
+
+### Agregado
+- **Juego en teléfono y tableta:** el simulador ocupa toda la pantalla y la interfaz fija cubre el 12 % del alto a 390 × 844 (#120). Los diálogos y paneles salen como hojas táctiles (#113).
+- **Acceso con tomas reales del juego:** cinco escenas del caso insignia se turnan en la ventana del acceso, con pausa, póster cuando se prefiere menos movimiento y carga diferida. El guion que las graba está en el repo (#115).
+- **Cambiar de cuenta** desde el menú de la cuenta, entre las cuentas que la persona eligió recordar en ese navegador. Solo se guardan id, nombre, correo y rol, nunca contraseñas ni tokens (#114).
+- **Sugerencias al invitar** estudiantes a un grupo, por correo o por usuario (#123).
+- `sembrar_participaciones`: sesiones jugadas con intentos, informes y retroalimentación para revisar reportes en desarrollo (#125).
+- Barras de volumen animadas en el juego (#109) y Sebas como personaje docente (#111).
+
+### Cambiado
+- **Editor de casos sin scroll anidado:** en escritorio se desplaza la página y no cajas sueltas; se medían 61 de 66 combinaciones con scroll propio y quedan 0 (#117). La barra del editor y las etapas del caso, rediseñadas (#121).
+- **Portal con anchos medidos y sin scroll anidado**, con diseño propio en teléfono y tableta (#126). Grupos y Reportes tienen campos al ancho de su contenido (#119).
+- **Desplegables con el estilo del programa** en todo el portal, barras táctiles y carril en tableta (#127).
+- **Ayuda «?»:** pasa a ser un bocadillo de pixel art con una explicación flotante que no empuja el texto (#112). Las descripciones del menú de la barra van en un bocadillo propio (#118).
+
+### Corregido
+- **Correos de los avisos:** un correo que no sale queda en el registro del servidor con su causa (antes solo se guardaba el nombre del error en el aviso); los avisos de una sesión salen al confirmar la operación y por una sola conexión SMTP; la invitación a un grupo también deja su aviso en SIEP. (#124)
+- La barra pública dejaba una cápsula vacía y los iconos de los botones mostraban texto (#122).
+
 ## [0.7.1] - 2026-11-27
 
 Respuesta inmediata en el juego y en el editor. Una tercera medición con las mismas personas simuladas sobre la 0.7.0 dio 76 % menos errores de acción (de 83 a 20), pero la sensación de uso no mejoró: la gente seguía sin saber si su acción había hecho algo. Esta versión hace que cada acción responda al instante y diga qué viene después.

@@ -2,6 +2,7 @@ import { Component, provideZonelessChangeDetection, signal } from '@angular/core
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { UiGlassBar } from './ui-glass-bar';
+import { TemaService } from '../../../core/tema/tema.service';
 
 /**
  * ui-glass-bar (plan visual F3): el `<header>` de la barra de vidrio modular. Cablea los eventos del navegador a la
@@ -27,6 +28,27 @@ import { UiGlassBar } from './ui-glass-bar';
 class Host {
   shown = signal(true);
 }
+
+describe('color de la barra del navegador', () => {
+  it('sigue el tema elegido aunque difiera del sistema', async () => {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = '#F5F7FA';
+    document.head.appendChild(meta);
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    const fixture = TestBed.createComponent(Host);
+    const tema = TestBed.inject(TemaService);
+    tema.fijar('oscuro');
+    await fixture.whenStable();
+    expect(meta.content).toBe('#0E1322');
+    tema.fijar('claro');
+    await fixture.whenStable();
+    expect(meta.content).toBe('#F5F7FA');
+    tema.fijar('sistema');
+    fixture.destroy();
+    meta.remove();
+  });
+});
 
 @Component({
   imports: [UiGlassBar],

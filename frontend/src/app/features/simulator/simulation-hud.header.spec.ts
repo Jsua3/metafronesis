@@ -38,6 +38,8 @@ function installMatchMedia(coarse: boolean): void {
       matches: query === '(pointer: coarse)' ? coarse : false,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
     }),
   });
 }

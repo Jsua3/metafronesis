@@ -47,7 +47,7 @@ describe('TutorialCapaComponent', { timeout: 15_000 }, () => {
     await listo();
     const burbuja = raiz.querySelector('.tut-burbuja')!;
     expect(burbuja.getAttribute('role')).toBe('dialog');
-    expect(burbuja.querySelector<HTMLImageElement>('.tut-mentor')!.src).toContain('/docente-universidad/portrait-alegre.png');
+    expect(burbuja.querySelector<HTMLImageElement>('.tut-mentor')!.src).toContain('/sebas/portrait-alegre.png');
     expect(burbuja.textContent).toContain(`Capítulo 1 de ${CAPITULOS.length}`);
     expect(burbuja.textContent).toContain(CAPITULOS[0].pasos[0].titulo);
     expect(raiz.querySelector('.tut-progreso')).not.toBeNull();

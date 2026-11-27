@@ -21,7 +21,7 @@ describe('ui-figura-pixel', () => {
   it('compone la ruta del kit y la pone como variable de estilo del anfitrión', async () => {
     const host = await crear({ personaje: 'camila/bata' });
     expect(host.style.getPropertyValue('--figura')).toContain('/assets/characters/kit/camila/bata/idle.png');
-    expect(rutaFiguraKit('docente-universidad')).toBe('/assets/characters/kit/docente-universidad/idle.png');
+    expect(rutaFiguraKit('sebas')).toBe('/assets/characters/kit/sebas/idle.png');
   });
 
   it('descarta rutas que no son de un personaje del kit', () => {

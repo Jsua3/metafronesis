@@ -1,0 +1,28 @@
+:host { display: grid; gap: var(--ds-space-2); min-width: 0; }
+.ventana { display: flex; align-items: center; gap: var(--ds-space-3); min-width: 0; padding: var(--ds-space-1) var(--ds-space-2) 0; }
+.puntos { flex: none; width: .625rem; height: .625rem; margin-right: 2.25rem; border-radius: 50%; background: var(--l-filo-fuerte); box-shadow: 1rem 0 0 var(--l-filo-fuerte), 2rem 0 0 var(--l-filo-fuerte); }
+.rotulo { min-width: 0; margin: 0; color: var(--ds-text-2); font-size: var(--ds-type-caption-size); font-weight: 600; line-height: var(--ds-type-caption-line); text-wrap: balance; }
+.pausa { flex: none; margin-left: auto; }
+.escenario { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 1.25rem; background: var(--ds-surface-page); box-shadow: 0 8px 24px -12px color-mix(in oklab, black 70%, transparent); }
+.escenario::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--l-filo); pointer-events: none; }
+.capa { position: absolute; inset: 0; opacity: 0; transition: opacity var(--ds-dur-slow) var(--ds-ease-in-out); }
+.capa.saliente { opacity: 1; z-index: var(--ds-z-base); }
+.capa.activa { opacity: 1; z-index: var(--ds-z-elevado); }
+.capa img, .capa video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+// El video aparece sobre su póster con un fundido corto: la primera vez el póster es otro momento de la misma toma.
+.capa video { opacity: 0; transition: opacity var(--ds-dur-slow) var(--ds-ease-in-out); }
+.capa video.reproduciendo { opacity: 1; }
+// El título y los segmentos comparten el margen del resto del panel.
+.avance { padding-inline: var(--ds-space-2); }
+.avance p { margin: 0; color: var(--ds-text-1); font-size: var(--ds-type-caption-size); font-weight: 600; line-height: var(--ds-type-caption-line); }
+.segmentos { display: flex; gap: var(--ds-space-2); }
+.segmento { flex: 1; min-width: 24px; min-height: 24px; padding: 10px 0; border: 0; background: transparent; cursor: pointer; }
+// La pista de cada segmento se distingue del panel (3:1, WCAG 1.4.11) y la activa es más alta: no depende solo del color.
+.segmento span { display: block; height: 4px; border-radius: var(--ds-radius-pill); background: color-mix(in oklab, var(--ds-text-1) 48%, transparent); overflow: hidden; transition: height var(--ds-dur-base) var(--ds-ease-out); }
+.segmento.actual span { height: 8px; background: color-mix(in oklab, var(--l-acento-tinta) 34%, transparent); box-shadow: inset 0 0 0 1px var(--l-acento-tinta); }
+.segmento span::after { content: ''; display: block; width: calc(var(--avance) * 100%); height: 100%; background: var(--l-acento-tinta); transition: width 250ms linear; }
+.segmento:focus-visible { outline: 2px solid var(--l-acento-tinta); outline-offset: 2px; }
+@media (pointer: coarse) { .segmento { min-width: var(--ds-target-min); min-height: var(--ds-target-min); } }
+@media (max-width: 30rem) { .pausa-texto { position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+@media (forced-colors: active) { .segmento span { border: 1px solid CanvasText; background: Canvas; } .segmento.actual span { background: Highlight; } .pausa { outline: 1px solid CanvasText; } }
+@supports (corner-shape: squircle) { .escenario { corner-shape: squircle; border-radius: 1.875rem; } }

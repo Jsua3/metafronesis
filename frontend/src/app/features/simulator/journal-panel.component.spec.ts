@@ -68,6 +68,14 @@ describe('JournalPanelComponent: salida segura en la bitácora (T12.2, REGLA-004
     expect(safeExit).toHaveBeenCalledTimes(1);
   });
 
+  it('el campo ofrece la acción de teclado y el cierre conserva su nombre accesible', () => {
+    const textarea = host().querySelector<HTMLTextAreaElement>('textarea');
+    expect(textarea?.getAttribute('enterkeyhint')).toBe('done');
+    const close = host().querySelector<HTMLButtonElement>('.sheet-close');
+    expect(close?.getAttribute('aria-label')).toBe('Cerrar bitácora y continuar la simulación');
+    expect(close?.querySelector('.sheet-close__label')?.textContent?.trim()).toBe('Cerrar');
+  });
+
   it('el botón de salida no es el botón de cerrar (cada uno conserva su salida)', () => {
     const safeExit = vi.fn();
     const closeSheet = vi.fn();

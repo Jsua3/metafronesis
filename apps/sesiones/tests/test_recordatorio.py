@@ -13,7 +13,10 @@ pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-37", "SIEP-42")]
 
 
 @pytest.fixture(autouse=True)
-def correo(settings):
+def correo(settings, monkeypatch):
+    # Los correos de los avisos salen al confirmar la transacción; aquí, que nunca se confirma, salen al momento.
+    from apps.notificaciones import servicios as avisos
+    monkeypatch.setattr(avisos, "al_confirmar", lambda funcion: funcion())
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     settings.SIEP_PUBLIC_URL = "https://ejemplo.test"
 

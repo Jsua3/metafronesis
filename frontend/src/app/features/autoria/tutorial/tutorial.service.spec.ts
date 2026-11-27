@@ -187,4 +187,67 @@ describe('TutorialService', { timeout: 15_000 }, () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(tutorial.activo()).toBe(false);
   });
+
+  describe('los atajos del pie de la burbuja', () => {
+    const tecla = (init: KeyboardEventInit) => document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }));
+    const esperar = () => new Promise((r) => setTimeout(r, 0));
+
+    it('Alt+→ y Alt+← cambian de paso, también desde un campo de texto', async () => {
+      const { tutorial, store } = await montar();
+      await tutorial.iniciar(store.caso()!.id);
+      const campo = document.body.appendChild(document.createElement('textarea'));
+      campo.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, bubbles: true }));
+      await esperar();
+      expect(tutorial.estado().paso).toBe(1);
+      tecla({ key: 'ArrowLeft', altKey: true });
+      await esperar();
+      expect(tutorial.estado().paso).toBe(0);
+    });
+
+    it('Alt+→ en la insignia continúa al capítulo siguiente', async () => {
+      const { tutorial, store } = await montar();
+      await tutorial.iniciar(store.caso()!.id);
+      await terminarBienvenida(tutorial);
+      expect(tutorial.logro()).not.toBeNull();
+      tecla({ key: 'ArrowRight', altKey: true });
+      await vi.waitFor(() => expect(tutorial.capitulo().id).toBe('datos'));
+      expect(tutorial.logro()).toBeNull();
+    });
+
+    it('Alt+→ en un práctico sin hacer lo salta, como «Saltar este paso»', async () => {
+      const { tutorial, store } = await montar();
+      await tutorial.iniciar(store.caso()!.id);
+      await terminarBienvenida(tutorial);
+      await tutorial.continuar();
+      await tutorial.siguiente();
+      expect(tutorial.paso().id).toBe('d-contexto');
+      tecla({ key: 'ArrowRight', altKey: true });
+      await vi.waitFor(() => expect(tutorial.paso().id).toBe('d-objetivos'));
+      expect(leerProgreso(7).practicos).toEqual([]);
+    });
+
+    it('Alt+B lleva el foco a la burbuja (también si Opción+B escribe otra letra)', async () => {
+      const { tutorial, store } = await montar();
+      await tutorial.iniciar(store.caso()!.id);
+      const antes = tutorial.focoBurbuja();
+      tecla({ key: '∫', code: 'KeyB', altKey: true });
+      expect(tutorial.focoBurbuja()).toBe(antes + 1);
+    });
+
+    it('Esc no cierra el tutorial si otra pieza ya la atendió o hay un diálogo abierto', async () => {
+      const { tutorial, store } = await montar();
+      await tutorial.iniciar(store.caso()!.id);
+      const menu = document.body.appendChild(document.createElement('div'));
+      menu.addEventListener('keydown', (e) => e.preventDefault());
+      menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      expect(tutorial.activo()).toBe(true);
+      const dialogo = document.body.appendChild(document.createElement('div'));
+      dialogo.setAttribute('aria-modal', 'true');
+      tecla({ key: 'Escape' });
+      expect(tutorial.activo()).toBe(true);
+      dialogo.remove();
+      tecla({ key: 'Escape' });
+      expect(tutorial.activo()).toBe(false);
+    });
+  });
 });

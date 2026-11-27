@@ -43,7 +43,7 @@ describe('tramos de la interfaz (U1, V7)', () => {
     const compacto = hud.slice(hud.indexOf(`@media ${CONSULTA_COMPACTO} {`));
     expect(compacto).toMatch(/\.hud-persona-label \{[^}]*position: absolute;[^}]*visibility: hidden;/);
     expect(compacto).toContain('.hud-persona:focus-visible .hud-persona-label { visibility: visible; }');
-    expect(compacto).toMatch(/@media \(hover: hover\) \{\s*\.hud-persona:hover \.hud-persona-label \{ visibility: visible; \}/);
+    expect(compacto).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.hud-persona:hover \.hud-persona-label \{ visibility: visible; \}/);
     // La frase sigue en el DOM (no display: none): el lector la tiene en el nombre del grupo y la placa la muestra.
     expect(compacto.slice(0, compacto.indexOf('}\n    }'))).not.toMatch(/\.hud-persona-label \{ display: none; \}/);
   });

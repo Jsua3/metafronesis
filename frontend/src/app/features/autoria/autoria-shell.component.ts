@@ -102,7 +102,7 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
           @if (store.caso()) {
             <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
             <a class="boton-barra enlace-probar" [attr.href]="rutaEnsayo()" target="_blank" rel="noopener" data-accion="probar"
-               aria-label="Probar el caso en el juego (se abre en otra pestaña)" (click)="probar($event)">Probar <span aria-hidden="true">↗</span></a>
+               aria-label="Probar el caso en el juego (se abre en otra pestaña)" (click)="probar($event)">Probar<svg class="enlace-probar__icono" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 5H5v10h10v-3M11 4h5v5M16 4l-7 7" /></svg></a>
             <button type="button" class="boton-barra boton-pendientes" data-accion="ver-pendientes" aria-haspopup="dialog"
                     [attr.title]="textoPendientes()" (click)="abrirPendientes($event)">
               <!-- El nombre es el texto para lectores («Pendientes: …», empieza por la palabra visible), no un aria-label:
@@ -277,16 +277,18 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     }
     @media (max-width: 79.999rem) and (min-width: 64rem) { .caso-actual { max-inline-size: 16rem; } }
 
-    /* «Probar» es la acción de la barra: lleva el tinte de marca sobre el vidrio (sin filo), como la acción de una barra
-       de iOS; el botón sólido de cada pantalla sigue siendo uno solo. */
-    .enlace-probar { background: color-mix(in oklab, var(--asb-acento) 16%, transparent); color: var(--ds-primary); }
+    /* «Probar» es LA acción de la barra: una cápsula sólida de marca con el icono de «se abre aparte». El tinte de antes
+       sobre el vidrio se leía como un botón apagado (pedido del usuario, 2026-11-27). */
+    .boton-barra.enlace-probar { gap: 0.375rem; background: var(--ds-primary); color: var(--ds-on-primary); }
+    .enlace-probar__icono { inline-size: 1rem; block-size: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     @media (hover: hover) and (pointer: fine) {
-      .enlace-probar:hover { background: color-mix(in oklab, var(--asb-acento) 24%, transparent); color: var(--ds-primary); }
+      .boton-barra.enlace-probar:hover { background: var(--ds-primary-hover); color: var(--ds-on-primary); box-shadow: none; }
     }
+    @media (forced-colors: active) { .boton-barra.enlace-probar { border: 1px solid LinkText; } }
     /* El siguiente paso, en la barra de estado: una cápsula con el acento, siempre a la vista (pasarela, 2026-11-22). */
     /* Doble clase: le gana a la regla base de la barra de estado (.est-dato-boton), que se carga después. */
     .est-dato-boton.est-siguiente {
-      margin-inline-start: 0.25rem; border-radius: 999px; background: color-mix(in oklab, var(--ds-primary) 12%, transparent);
+      border-radius: 999px; background: color-mix(in oklab, var(--ds-primary) 12%, var(--asb-superficie, var(--ds-surface-1)));
       color: var(--ds-primary); font-weight: 700;
     }
     .est-siguiente__rotulo { font-weight: 600; }
@@ -298,8 +300,9 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     .guardado-estado { padding-inline: 0.5rem; }
     .insignia {
       display: inline-grid; place-items: center; min-inline-size: 1.375rem; block-size: 1.375rem; padding-inline: 0.375rem;
-      border-radius: 999px; background: var(--ds-warning-text); color: var(--ds-surface-1); font-size: var(--autoria-texto-14);
-      font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
+      border-radius: 999px; background: var(--ds-warning-bg); color: var(--ds-warning-text); font-size: var(--autoria-texto-14);
+      font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1;
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ds-warning-text) 35%, transparent);
     }
     .insignia--cero { background: transparent; box-shadow: inset 0 0 0 1px var(--l-filo-fuerte); color: var(--asb-cromo-tinta-tenue); }
 
@@ -341,13 +344,16 @@ const MENU_CUENTA: UiMenuItem[] = [{ value: 'salir', label: 'Cerrar sesión', ic
     .explorador > [hidden] { display: none; }
 
     /* Barra de estado: dónde estoy y lo que falta. */
-    .estado-donde { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
+    .estado-donde { white-space: nowrap; }
     .estado-pendientes { color: var(--ds-warning-text); font-weight: 700; }
 
-    /* Escritorio: la página no se desplaza; cada zona, sí (§4.2, regla 1). La rejilla la arma el estudio. */
+    /* En escritorio el contenido crece y el documento se desplaza entre las barras fijas. */
     @media (min-width: 64rem) {
+      :host { block-size: auto; min-block-size: 100dvh; overflow: visible; padding-block-end: var(--alto-estado, 2.75rem); box-sizing: border-box; }
       .cuerpo { flex: 1; min-block-size: 0; }
-      .zona-centro { --alto-cabecera: 0px; min-block-size: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block-start: 1rem; }
+      .zona-centro { min-block-size: 0; overflow: visible; }
+      .explorador > .zona { overflow: visible; }
+      :host ::ng-deep textarea.auto-alto { max-block-size: none; overflow-y: hidden; }
       .columna-ia {
         position: absolute; z-index: var(--autoria-capa-5); inset-block: 0.75rem; inset-inline-end: 0.75rem;
         inline-size: min(25rem, calc(100% - 1.5rem)); overflow: auto; overscroll-behavior: contain;
@@ -569,11 +575,20 @@ export class AutoriaShellComponent implements CanLeave {
         const alto = getComputedStyle(barra).position === 'fixed' ? Math.ceil(barra.getBoundingClientRect().height) : 0;
         raiz.setProperty('--alto-barra', `${alto}px`);
         raiz.setProperty('--alto-cabecera', `${alto}px`);
+        if (window.matchMedia?.('(min-width: 64rem)').matches ?? window.innerWidth >= 1024) {
+          raiz.setProperty('scroll-padding-block-start', `${alto + 8}px`);
+          raiz.setProperty('scroll-padding-block-end', '3.25rem');
+        } else {
+          raiz.removeProperty('scroll-padding-block-start');
+          raiz.removeProperty('scroll-padding-block-end');
+        }
       };
       medir();
       destruir.onDestroy(() => {
         raiz.removeProperty('--alto-barra');
         raiz.removeProperty('--alto-cabecera');
+        raiz.removeProperty('scroll-padding-block-start');
+        raiz.removeProperty('scroll-padding-block-end');
       });
       if (typeof ResizeObserver === 'undefined') return;
       const observador = new ResizeObserver(medir);

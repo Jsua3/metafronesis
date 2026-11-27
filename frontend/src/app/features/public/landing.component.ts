@@ -370,7 +370,7 @@ export class LandingComponent {
       title: 'Profesor',
       text: 'Asigna casos, supervisa trazabilidad y evalúa el desempeño con rúbricas académicas.',
       features: ['Rúbricas', 'Evaluación', 'Seguimiento'],
-      avatares: [RETRATO('docente-universidad')]
+      avatares: [RETRATO('sebas')]
     },
     {
       icon: 'admin_panel_settings',
