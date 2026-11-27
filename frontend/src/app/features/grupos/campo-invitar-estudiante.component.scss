@@ -1,0 +1,58 @@
+/* Campo de invitar con sugerencias (patrón combobox): la lista flota bajo el campo sin empujar el formulario. */
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.gl-combo {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.gl-combo__lista {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + var(--ds-space-1));
+  z-index: var(--ds-z-elevado);
+  display: grid;
+  gap: var(--ds-space-1);
+  margin: 0;
+  padding: var(--ds-space-1);
+  list-style: none;
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  box-shadow: var(--ds-shadow-e2);
+}
+
+.gl-combo__lista[hidden] {
+  display: none;
+}
+
+.gl-combo__opcion {
+  display: grid;
+  gap: var(--ds-space-1);
+  min-block-size: var(--ds-target-min);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text-1);
+  cursor: pointer;
+}
+
+.gl-combo__opcion[aria-selected='true'] {
+  background: var(--ds-surface-2);
+  outline: 2px solid var(--ds-primary);
+  outline-offset: -2px;
+}
+
+.gl-combo__nombre {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.gl-combo__detalle {
+  color: var(--ds-text-2);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  overflow-wrap: anywhere;
+}

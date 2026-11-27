@@ -34,6 +34,7 @@ import { UiErrorState } from '../../shared/ui/state/ui-error-state';
 import { UiArchivo } from '../../shared/ui/archivo/ui-archivo';
 import { UiTab, UiTabs } from '../../shared/ui/tabs/ui-tabs';
 import { GroupAssignmentsComponent } from './group-assignments.component';
+import { CampoInvitarEstudianteComponent, correoOUsuario } from './campo-invitar-estudiante.component';
 
 @Component({ selector: 'app-grupo-hoja', standalone: true, imports: [NgTemplateOutlet, UiDialogFrame],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,7 +81,7 @@ function removeLabel(student: GrupoEstudiante): string {
     ReactiveFormsModule, RouterLink, NgTemplateOutlet,
     UiBadge, UiButton, UiIconButton, UiCard, UiControl, UiField, UiMenu, UiPageHeader, UiCabeceraIlustrada, UiVacioIlustrado, UiArchivo, UiTab, UiTabs,
     UiSkeleton, UiTable, UiTableTable, UiTableRow, UiCelda, UiCeldaPrincipal, UiCeldaAcciones,
-    UiEmptyState, UiErrorState, GroupAssignmentsComponent,
+    UiEmptyState, UiErrorState, GroupAssignmentsComponent, CampoInvitarEstudianteComponent,
   ],
   templateUrl: './grupo-list.component.html',
   styleUrl: './grupo-list.component.scss',
@@ -254,7 +255,7 @@ export class GrupoListComponent implements OnInit {
   ];
 
   form = this.fb.group({ nombre: ['', Validators.required], codigo: ['', Validators.required] });
-  estudianteForm = this.fb.group({ email: ['', [Validators.required, Validators.email]] });
+  estudianteForm = this.fb.group({ email: ['', [Validators.required, correoOUsuario]] });
 
   ngOnInit() {
     this.cargar();
@@ -578,7 +579,7 @@ export class GrupoListComponent implements OnInit {
     if (this.estudianteForm.invalid || this.agregandoEstudiante()) {
       if (this.estudianteForm.invalid) {
         this.estudianteForm.markAllAsTouched();
-        this.mensajeEstudiante.set('Revisa el correo del estudiante.');
+        this.mensajeEstudiante.set('Revisa el correo o el usuario del estudiante.');
         this.mensajeEsError.set(true);
         focusFirstInvalid(this.host.nativeElement.querySelector<HTMLElement>('.gl-add') ?? this.host.nativeElement);
       }
@@ -593,7 +594,7 @@ export class GrupoListComponent implements OnInit {
       next: ({ grupo, message }) => {
         // E2-10: el docente invita; la persona entra al grupo cuando acepta (su bandeja de invitaciones).
         // D-14: el servidor responde lo mismo exista o no la cuenta, así que el texto tampoco afirma que se envió.
-        this.mensajeEstudiante.set(message?.trim() || 'Si el correo corresponde a un estudiante registrado, recibirá la invitación.');
+        this.mensajeEstudiante.set(message?.trim() || 'Si el correo o el usuario corresponde a un estudiante registrado, recibirá la invitación.');
         this.notify.success(this.mensajeEstudiante());
         this.grupos.update(list => list.map(g => g.id === grupo.id ? { ...g, ...grupo } : g));
         if (this.grupoActivo()?.id === grupo.id) this.grupoActivo.set(grupo);

@@ -101,8 +101,22 @@ class GrupoEstudiantesView(APIView):
         # BORRADOR: texto nuevo del servidor, pendiente de la aprobación de Psicología (VD-23).
         # El mismo mensaje exista o no la cuenta: no se enumeran correos (D-14).
         return api_ok(
-            dto, message="Si el correo es de un estudiante registrado, recibirá la invitación."
+            dto, message="Si el correo o el usuario es de un estudiante registrado, recibirá la invitación."
         )
+
+
+class GrupoEstudiantesSugerenciasView(APIView):
+    """Sugerencias para el campo de invitar: ``?q=`` (mínimo 2 caracteres) por correo o nombre de usuario."""
+
+    permission_classes = [_CAN_INVITE]
+
+    def get(self, request, pk):
+        sugerencias = services.sugerir_estudiantes(pk, request.query_params.get("q", ""), request.user)
+        # Nombres y correos de otras personas: queda quién buscó y en qué grupo (cuántos, no cuáles).
+        audit_service.record(
+            "STUDENT_SUGGESTIONS_VIEWED", "GRUPO", pk, {"groupId": pk, "count": len(sugerencias)}
+        )
+        return api_ok(sugerencias)
 
 
 class GrupoEstudianteDetailView(APIView):
