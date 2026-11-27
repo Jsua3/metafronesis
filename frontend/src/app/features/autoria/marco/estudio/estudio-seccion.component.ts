@@ -61,6 +61,7 @@ let siguiente = 0;
       opacity: 0; transition: opacity var(--ds-dur-fast) var(--ds-ease-out);
     }
     .cuerpo--abierto .relleno { opacity: 1; }
+    @media (min-width: 64rem) { .cuerpo { transition-duration: 220ms; } }
     @media (prefers-reduced-motion: reduce) {
       .cuerpo, .relleno, .chevron { transition: none; }
     }
@@ -71,5 +72,10 @@ export class EstudioSeccionComponent {
   /** Lo que se ve con la sección plegada, a la derecha del título. */
   readonly resumen = input<string | null>(null);
   readonly abierta = model(true);
+  readonly plegadaEnEscritorio = input(false);
   protected readonly id = `est-seccion-${++siguiente}`;
+
+  ngOnInit(): void {
+    if (this.plegadaEnEscritorio() && window.innerWidth >= 1024) this.abierta.set(false);
+  }
 }

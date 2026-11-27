@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, TemplateRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { type Comando, esCampoDeTexto, filtrarComandos, leerGuardado } from './atajos';
 import { EstudioDivisorComponent } from './estudio-divisor.component';
 import { atajoAria, EstudioHerramientaComponent } from './estudio-herramienta.component';
 import { EstudioMarcoComponent } from './estudio-marco.component';
+import { EstudioPanelComponent } from './estudio-panel.component';
+import { EstudioPegajosoDirective } from './estudio-pegajoso.directive';
 import { EstudioPaletaComponent } from './estudio-paleta.component';
 import { EstudioSeccionComponent } from './estudio-seccion.component';
 import { EstudioRanuraDirective, EstudioService } from './estudio.service';
@@ -213,4 +215,34 @@ describe('EstudioMarco ? foco de los paneles', () => {
       });
     }
   }
+});
+
+it('el panel deja fluir su contenido en escritorio', () => {
+  const estilos = (EstudioPanelComponent as any).ɵcmp.styles.join(' ');
+  expect(estilos).toMatch(/@media\s*\(min-width:\s*64rem\)[\s\S]*?\.cuerpo[^{}]*\{[^}]*overflow:\s*visible/);
+});
+
+@Component({ imports: [EstudioPegajosoDirective], template: '<aside estudioPegajoso></aside>' })
+class BancoPegajoso {}
+
+it('pega la columna solo mientras cabe en la ventana', async () => {
+  let avisar: ResizeObserverCallback = () => undefined;
+  const desconectar = vi.fn();
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(callback: ResizeObserverCallback) { avisar = callback; }
+    observe() {}
+    disconnect() { desconectar(); }
+  });
+  const fixture = TestBed.createComponent(BancoPegajoso);
+  const columna = fixture.nativeElement.querySelector('aside') as HTMLElement;
+  let alto = 200;
+  vi.spyOn(columna, 'getBoundingClientRect').mockImplementation(() => ({ height: alto }) as DOMRect);
+  await fixture.whenStable();
+  expect(columna.classList.contains('esta-pegajoso')).toBe(true);
+  alto = window.innerHeight + 1;
+  avisar([], {} as ResizeObserver);
+  expect(columna.classList.contains('esta-pegajoso')).toBe(false);
+  fixture.destroy();
+  expect(desconectar).toHaveBeenCalled();
+  vi.unstubAllGlobals();
 });

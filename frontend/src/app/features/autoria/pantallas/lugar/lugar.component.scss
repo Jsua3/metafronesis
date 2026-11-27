@@ -166,3 +166,11 @@
   .filtro { scroll-behavior: auto; }
   .desliza { animation: none; }
 }
+
+@media (min-width: 64rem) {
+  .crear { position: static; inset: auto; }
+  .estudio { grid-template-rows: auto; align-items: start; }
+  .plantillas, .inspector { overflow: visible; max-block-size: none; }
+  .filtro { flex-wrap: wrap; overflow: visible; mask-image: none; }
+  .desliza { display: none; }
+}

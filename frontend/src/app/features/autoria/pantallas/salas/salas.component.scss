@@ -125,8 +125,7 @@
 @media (min-width: 64rem) {
   .estudio { grid-template-columns: minmax(0, 1fr) 24rem; }
   .inspector {
-    position: sticky; inset-block-start: 1rem;
-    max-block-size: calc(100dvh - var(--alto-barra, 4.5rem) - 7.5rem); overflow-y: auto; overscroll-behavior: contain;
+    position: static;
   }
 }
 @media (min-width: 90rem) { .estudio { grid-template-columns: minmax(0, 1fr) 28rem; } }

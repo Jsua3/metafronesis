@@ -127,7 +127,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
           </div>
         </app-estudio-seccion>
         @if (sinRespuesta().length) {
-          <app-estudio-seccion titulo="Sin respuesta" [resumen]="sinRespuesta().length + ''">
+          <app-estudio-seccion titulo="Sin respuesta" [resumen]="sinRespuesta().length + ''" [plegadaEnEscritorio]="true">
             <ul class="saltos">
               @for (p of sinRespuesta(); track p.hito.clave) {
                 <li><button type="button" class="salto" (click)="irAlPaso(p.hito.clave)"><span class="salto__marca" aria-hidden="true"></span>{{ p.hito.nombre }}</button></li>
@@ -135,7 +135,7 @@ function finalesQueNombran(caso: CasoBorrador, clave: string): string[] {
             </ul>
           </app-estudio-seccion>
         }
-        <app-estudio-seccion titulo="Deciden el final" [resumen]="decisivos().length + ''">
+        <app-estudio-seccion titulo="Deciden el final" [resumen]="decisivos().length + ''" [plegadaEnEscritorio]="true">
           @if (decisivos().length) {
             <ul class="saltos">
               @for (p of decisivos(); track p.hito.clave) {

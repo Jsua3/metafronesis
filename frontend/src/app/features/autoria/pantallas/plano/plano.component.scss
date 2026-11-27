@@ -143,5 +143,6 @@
 // Escritorio: el lienzo llena el alto útil bajo la barra, la franja de herramientas, la cabecera y la barra de estado
 // (~19rem en total). El alto en porcentaje no llega desde el marco (la pantalla vive en una zona que se desplaza).
 @media (min-width: 64rem) {
-  .plano-caso__visor { min-block-size: max(18rem, calc(100dvh - 19rem)); }
+  .plano-caso { block-size: auto; overflow: visible; }
+  .plano-caso__visor { min-block-size: max(18rem, calc(100dvh - 22rem)); }
 }
