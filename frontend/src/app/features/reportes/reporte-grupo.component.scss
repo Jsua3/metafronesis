@@ -205,3 +205,20 @@
     flex-basis: 9.5rem;
   }
 }
+
+// SIEP-282: en escritorio cada desplegable mide lo razonable para su contenido, en fila. Por debajo de 64rem, como siempre.
+@media (min-width: 64rem) {
+  .rg-form {
+    grid-template-columns: minmax(0, 22rem) minmax(0, 28rem);
+    column-gap: var(--ds-space-6);
+    justify-content: start;
+  }
+
+  .rg-campo-grupo {
+    max-inline-size: 22rem;
+  }
+
+  .rg-campo-caso {
+    max-inline-size: 28rem;
+  }
+}

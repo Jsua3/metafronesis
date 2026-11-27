@@ -557,6 +557,28 @@ describe('pantalla Grupos en maestro-detalle (B5c)', () => {
     });
   });
 
+  // SIEP-282: campos acordes a su contenido en escritorio.
+  describe('anchos de campos (escritorio)', () => {
+    it('el formulario del estado vacío vive en una tarjeta compacta y el código lleva su ancho', async () => {
+      await render({ listar: () => of([]) });
+      const tarjeta = host().querySelector('.gl-vacio-form');
+      expect(tarjeta).not.toBeNull();
+      expect(tarjeta!.querySelector('form input[formControlName="nombre"]')).not.toBeNull();
+      expect(tarjeta!.querySelector('.gl-campo-codigo input[formControlName="codigo"]')).not.toBeNull();
+      expect(text(tarjeta!.querySelector('.gl-campo-codigo .ui-field__message'))).not.toBe('');
+      expect(text(tarjeta!.querySelector('button[type="submit"]'))).toBe('Crear grupo');
+    });
+
+    it('el buscador de estudiantes lleva la clase de ancho acotado', async () => {
+      await render();
+      await openDetail(grupoA);
+      await abrirPestana('estudiantes');
+      const campo = [...host().querySelectorAll('.gl-detail ui-field')]
+        .find(f => text(f.querySelector('label')).startsWith('Buscar estudiante'));
+      expect(campo?.classList.contains('gl-buscador')).toBe(true);
+    });
+  });
+
   // req: RNF-04, BLOQUE-H
   describe('sin restos del diseño anterior', () => {
     it('ni Material, ni cifras de arriba, ni el formulario «Nuevo grupo» ocupando la página', async () => {

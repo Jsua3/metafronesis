@@ -359,3 +359,29 @@
 .gl-import-result__summary {
   font-weight: var(--ds-type-h3-weight);
 }
+
+// SIEP-282: en escritorio los campos miden lo que contienen. Por debajo de 64rem, como siempre.
+@media (min-width: 64rem) {
+  // El formulario del estado vacío: una tarjeta compacta, centrada bajo el texto que la presenta.
+  .gl-vacio-form {
+    inline-size: 100%;
+    max-inline-size: 32rem;
+    margin-inline: auto;
+    padding: var(--ds-space-5);
+    border: 1px solid var(--l-filo, var(--ds-border));
+    border-radius: var(--l-radio-control, var(--ds-radius-md));
+    background: var(--l-superficie-hundida, var(--ds-surface-2));
+
+    .gl-actions {
+      justify-content: flex-end;
+    }
+  }
+
+  .gl-campo-codigo {
+    max-inline-size: 14rem;
+  }
+
+  .gl-buscador {
+    max-inline-size: 28rem;
+  }
+}
