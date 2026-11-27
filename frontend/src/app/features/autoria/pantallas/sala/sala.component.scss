@@ -712,12 +712,13 @@ kbd {
   outline-offset: 2px;
 }
 
-// ── Escritorio: la pantalla mide la zona central y no se desplaza ───────────
+// ── Escritorio: el lienzo ocupa el espacio útil y los paneles fluyen ─────────
 
 @media (min-width: 64rem) {
   .sala {
-    block-size: 100%;
-    overflow: hidden;
+    block-size: auto;
+    min-block-size: calc(100dvh - var(--alto-barra, 4.5rem) - var(--alto-estado, 2.75rem));
+    overflow: visible;
   }
 
   .sala__cuerpo {
@@ -729,18 +730,16 @@ kbd {
   .columna-lista,
   .panel {
     min-block-size: 0;
-    overflow: auto;
-    overscroll-behavior: contain;
+    overflow: visible;
   }
 
   // El panel desplaza sus hojas, no sus pestañas: quedan arriba siempre.
   .panel {
-    overflow: hidden;
+    overflow: visible;
   }
 
   .panel__hoja {
-    overflow: auto;
-    overscroll-behavior: contain;
+    overflow: visible;
     margin-inline: calc(var(--ds-space-3) * -1);
     padding-inline: var(--ds-space-3);
     padding-block-end: var(--ds-space-2);
@@ -749,6 +748,7 @@ kbd {
   // Una sala de imagen fija encaja en el ancho y en el alto del marco (la de piezas la encaja `escalaLienzo`).
   .lienzo-marco {
     container-type: size;
+    min-block-size: 20rem;
   }
 
   .escenario:not(.por-piezas) {

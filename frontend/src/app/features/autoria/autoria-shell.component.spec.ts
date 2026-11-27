@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { AuthoringApi } from '../../core/api/authoring.api';
 import { AutoriaShellComponent } from './autoria-shell.component';
+
 import { rutasEditorCaso, rutasNuevoCaso } from './autoria.routes';
 import { CasoStore } from './estado/caso.store';
 import type { CasoBorrador } from './modelo/caso';
@@ -16,6 +17,12 @@ import { rutasDePrueba } from './testing/rutas';
 import { ServidorFalso } from './testing/servidor-falso';
 import { universidad } from './testing/universidad';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
+
+it('deja el centro y el riel sin desplazamiento propio en escritorio', () => {
+  const estilos = (AutoriaShellComponent as any).ɵcmp.styles.join(' ');
+  expect(estilos).toMatch(/@media\s*\(min-width:\s*64rem\)[\s\S]*?\.zona-centro[^{}]*\{[^}]*overflow:\s*visible/);
+  expect(estilos).toMatch(/@media\s*\(min-width:\s*64rem\)[\s\S]*?\.explorador[^{}]*>\s*\.zona[^{}]*\{[^}]*overflow:\s*visible/);
+});
 
 const caso: CasoBorrador = {
   id: 'caso-1', revision: 0, hitos: [], nivelRiesgo: null, titulo: 'Primera escucha en Bienestar', lugarId: 'universidad', salas: [], escenas: [],
@@ -195,6 +202,7 @@ describe('AutoriaShellComponent · como ruta del programa', () => {
     expect(aviso.textContent).toContain('Este caso cambió mientras lo editabas');
     expect(aviso.textContent).toContain('Recibir a Camila con calma');
     expect(raiz.querySelector('[data-estado-guardado]')!.textContent).toContain('Hay cambios sin guardar');
+    expect(raiz.querySelector('[data-estado-guardado]')!.getAttribute('data-forma')).toBe('aviso');
 
     boton(raiz, 'Recargar el caso')!.click();
     await listo();
@@ -246,6 +254,7 @@ describe('AutoriaShellComponent · como ruta del programa', () => {
     // E0: el indicador vive en la barra de estado; a la vista va la forma corta y la frase entera es la que se anuncia (y la del globo).
     const indicador = () => raiz.querySelector('app-estudio-barra-estado [data-estado-guardado] .solo-lector')!.textContent!.trim();
     expect(indicador()).toContain('Todo guardado');
+    expect(raiz.querySelector('[data-estado-guardado]')!.getAttribute('data-forma')).toBe('guardado');
 
     const origen = store.caso()!.escenas[0];
     const r = store.agregarRespuesta(origen.id);

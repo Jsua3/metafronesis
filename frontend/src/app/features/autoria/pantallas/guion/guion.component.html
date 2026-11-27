@@ -23,16 +23,6 @@
                   [readOnly]="store.soloLectura()" (input)="store.editarEscena(e.id, { narracion: $any($event.target).value })"></textarea>
       </section>
 
-      @if (!e.esFinal) {
-        <!-- BORRADOR: pendiente de aprobación de Psicología. -->
-        <section class="bloque">
-          <label for="pregunta-escena">Pregunta de decisión</label>
-          <textarea id="pregunta-escena" class="campo" rows="2" [value]="e.pregunta ?? ''" [readOnly]="store.soloLectura()"
-                    aria-describedby="pregunta-ayuda" (input)="store.editarEscena(e.id, { pregunta: $any($event.target).value })"></textarea>
-          <p id="pregunta-ayuda" class="nota">Es la pregunta que acompaña las respuestas; es distinta del objetivo de la escena.</p>
-        </section>
-      }
-
       <!-- La cámara: el cuarto con su elenco y un globo sobre quien dice la línea que se escribe (EDITOR-PRO.md §3). -->
       <app-camara-escena [caso]="store.caso()!" [escena]="e" [miniatura]="miniaturaDe(e)" [lineaEnfocada]="lineaVista()" />
 
@@ -85,6 +75,16 @@
       <!-- 5 · Lo que puede responder el estudiante: fichas A a D con facetas. -->
       <section aria-labelledby="rh" class="bloque" id="respuestas-escena" tabindex="-1" data-accion="respuesta-a-escena-nueva terminar-respuesta">
         <h2 id="rh">Lo que puede responder el estudiante</h2>
+      @if (!e.esFinal) {
+        <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+        <section class="bloque">
+          <label for="pregunta-escena">Pregunta de decisión</label>
+          <textarea id="pregunta-escena" class="campo" rows="2" [value]="e.pregunta ?? ''" [readOnly]="store.soloLectura()"
+                    aria-describedby="pregunta-ayuda" (input)="store.editarEscena(e.id, { pregunta: $any($event.target).value })"></textarea>
+          <p id="pregunta-ayuda" class="nota">Es la pregunta que acompaña las respuestas; es distinta del objetivo de la escena.</p>
+        </section>
+      }
+
         <div class="bloque__herramientas">
           <app-guia-de-redaccion />
           @if (e.respuestas.length) {
@@ -254,7 +254,7 @@
           }
         }
       </section>
-      <app-estudio-seccion titulo="Vista previa" resumen="Como en el juego">
+      <app-estudio-seccion titulo="Vista previa" resumen="Como en el juego" [plegadaEnEscritorio]="true">
         <!-- La vista del estudiante: mini simulación en la piel del juego, junto al libreto (se pega arriba al desplazar). -->
         <aside class="guion__vista" aria-labelledby="vista-titulo" data-accion="vista-del-estudiante">
           <app-vista-estudiante [escena]="e" [personajes]="personajes()" [lineaEnfocada]="lineaVista()" />

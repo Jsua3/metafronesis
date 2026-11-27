@@ -129,6 +129,7 @@
           </details>
         }
       }
+      @if (escritorio()) { <ng-container [ngTemplateOutlet]="accionesRevision" /> }
       <p role="status" class="solo-lector">{{ anuncio() }}</p>
     </div>
   </div>
@@ -165,6 +166,10 @@
       </ol>
     </section>
 
+    @if (!escritorio()) { <ng-container [ngTemplateOutlet]="accionesRevision" /> }
+  </ng-template>
+
+  <ng-template #accionesRevision>
     @if (!store.soloLectura()) {
       @if (caso.lista; as lista) {
         @if (lista.items.length) {

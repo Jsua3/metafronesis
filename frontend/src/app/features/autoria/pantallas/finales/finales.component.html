@@ -136,7 +136,7 @@
     </div>
     </app-estudio-seccion>
     @if (caso.modoFinales !== 'propio') {
-      <app-estudio-seccion titulo="Deciden el final" [resumen]="cuantosDecisivos() + ' de ' + caso.hitos.length">
+      <app-estudio-seccion titulo="Deciden el final" [resumen]="cuantosDecisivos() + ' de ' + caso.hitos.length" [plegadaEnEscritorio]="true">
       <fieldset class="decisivos">
         <legend class="decisivos__rotulo">Pasos que deciden el final</legend>
         <p class="texto-secundario">El estudiante tiene que darlos sí o sí. Con ellos se arman los cuatro finales de abajo. También se eligen en <a class="enlace" [routerLink]="rutas.a('/editor/evaluacion')">Pasos profesionales</a>.</p>

@@ -55,6 +55,10 @@ let siguiente = 0;
     .cab__extra { display: flex; align-items: center; flex: 1; min-inline-size: 0; }
     .cuerpo { min-block-size: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
     .cuerpo--lleno { overflow: hidden; display: grid; }
+    @media (min-width: 64rem) {
+      :host { grid-template-rows: auto auto; }
+      .cuerpo, .cuerpo--lleno { overflow: visible; }
+    }
   `,
 })
 export class EstudioPanelComponent {

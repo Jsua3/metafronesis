@@ -96,11 +96,12 @@ export class GuionComponent {
   protected readonly nodoParaProbar = computed(() => (this.store.caso(), this.store.guardando(), this.store.nodoDeEscena(this.escenaId())));
   protected readonly rutaEnsayo = (nodo: number): string => RUTA_ENSAYO(this.store.caso()!.id, nodo);
 
-  /** «Antes de decidir» va cerrado si está vacío (§3.4, punto 2); con algo escrito, abierto. Se recalcula al cambiar de escena. */
+  /** En escritorio el resumen queda visible y la sección empieza plegada. */
   protected readonly antesAbierto = linkedSignal<string, boolean>({
     source: this.escenaId,
     // Solo al cambiar de escena: guardar algo dentro no debe volver a abrir lo que la docente cerró.
     computation: (id) => {
+      if (window.innerWidth >= 1024) return false;
       const e = untracked(this.store.caso)?.escenas.find((x) => x.id === id);
       return !!e && (!!e.objetivo?.trim() || (e.pistas?.length ?? 0) > 0 || (e.recursosApoyo?.length ?? 0) > 0);
     },

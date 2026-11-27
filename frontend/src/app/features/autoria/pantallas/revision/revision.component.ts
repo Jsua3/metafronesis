@@ -1,6 +1,7 @@
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -63,7 +64,7 @@ const NO_SE_PUDO_ENVIAR = 'No se pudo enviar el caso. No se cambió nada: vuelve
  */
 @Component({
   selector: 'app-revision',
-  imports: [RouterLink, CaseReviewPanelComponent, UiStat, EstudioRanuraDirective, EstudioHerramientaComponent],
+  imports: [NgTemplateOutlet, RouterLink, CaseReviewPanelComponent, UiStat, EstudioRanuraDirective, EstudioHerramientaComponent],
   host: { '(document:visibilitychange)': 'alCambiarVisibilidad()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './revision.component.html',
@@ -77,6 +78,7 @@ export class RevisionComponent {
   private readonly autoria = inject(AutoriaApiService);
   private readonly progreso = inject(ProgresoDelCaso);
   private readonly dialogo = inject(UiDialog);
+  protected readonly escritorio = signal(window.innerWidth >= 1024);
   protected readonly mensaje = signal('');
   protected readonly anuncio = signal('');
   protected readonly enviando = signal(false);
@@ -94,6 +96,9 @@ export class RevisionComponent {
   protected readonly falloVersion = signal<string | null>(null);
 
   constructor() {
+    const actualizarAncho = () => this.escritorio.set(window.innerWidth >= 1024);
+    window.addEventListener('resize', actualizarAncho);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('resize', actualizarAncho));
     // En la paleta (Ctrl+K): cada problema por resolver, «Comprobar de nuevo» y «Enviar a Psicología».
     injectComandos((): Comando[] => this.store.soloLectura() ? [] : [
       { id: 'rev:comprobar', grupo: 'Enviar a revisión', titulo: 'Comprobar de nuevo', ejecutar: () => void this.comprobar() },

@@ -245,6 +245,13 @@ interface FilaEscena {
     .riel__marca--ia { box-shadow: none; outline: 1px dashed var(--ds-text-2); outline-offset: -1px; }
     .riel__estado[data-estado='con-pendientes'] { color: var(--ds-warning-text); font-weight: 700; }
 
+    @media (min-width: 64rem) {
+      .riel__lista { gap: 0; }
+      .riel__escena { grid-template-columns: 2.5rem minmax(0, 1fr) auto; min-block-size: 2.75rem; padding-block: 0.25rem; box-sizing: border-box; }
+      .riel__tesela { inline-size: 2.5rem; block-size: 1.75rem; }
+      .riel__titulo { display: block; white-space: nowrap; text-overflow: ellipsis; }
+      .riel__marcas { display: none; }
+    }
     .riel__agregar {
       display: flex; align-items: center; gap: 0.5rem; inline-size: 100%; min-block-size: 2.75rem; margin-block-start: 0.375rem;
       padding: 0 0.75rem; border: 1px dashed var(--l-filo-fuerte); border-radius: var(--l-radio-control); background: transparent;

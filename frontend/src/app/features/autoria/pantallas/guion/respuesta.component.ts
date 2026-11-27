@@ -98,34 +98,46 @@ export interface DestinoPosible { id: string; etiqueta: string; esFinal?: boolea
     }
 
     <div class="ficha__destino" [id]="'destino-' + r.id">
-      <label [for]="'rl' + i" class="ficha__destino-rotulo">Lleva a…</label>
+      <span class="ficha__destino-rotulo">Lleva a…</span>
+      <!-- BORRADOR: texto pendiente de Psicología -->
+      <fieldset class="clasificacion">
+        <legend class="solo-lector">Destino de la respuesta {{ i + 1 }}</legend>
+        <!-- BORRADOR: texto pendiente de Psicología -->
+        <label class="opcion"><input type="radio" [name]="'rdestino-' + r.id" value="escena" [checked]="modoDestino() === 'escena'" (change)="elegirModo('escena')" />Ir a una escena</label>
+        <!-- BORRADOR: texto pendiente de Psicología -->
+        <label class="opcion"><input type="radio" [name]="'rdestino-' + r.id" value="final" [checked]="modoDestino() === 'final'" (change)="elegirModo('final')" />Terminar el caso aquí</label>
+        <!-- BORRADOR: texto pendiente de Psicología -->
+        <label class="opcion"><input type="radio" [name]="'rdestino-' + r.id" value="ninguno" [checked]="modoDestino() === 'ninguno'" (change)="elegirModo('ninguno')" />Sin destino por ahora</label>
+      </fieldset>
+      @if (modoDestino() === 'escena') {
+        <div class="destino-escena">
+          <label [for]="'rl' + i" class="solo-lector">Lleva a…</label>
+          <select [id]="'rl' + i" [attr.data-respuesta-destino]="r.id" class="campo" (change)="destino.emit($any($event.target).value)">
+            <option value="" [selected]="!r.destinoId">Ninguna escena todavía</option>
+            @for (d of destinos(); track d.id) { <option [value]="d.id" [selected]="d.id === r.destinoId">{{ d.etiqueta }}</option> }
+            <option value="nueva">Crear y conectar una escena nueva</option>
+          </select>
+          <button type="button" class="boton boton-secundario" (click)="crearEscena.emit()">Crear la escena que sigue</button>
+        </div>
+      }
+      @if (modoDestino() === 'final') {
+        <div class="cierre">
+          <p class="nota">El caso termina al llegar a ella; no tiene respuestas. El estudiante llegará a una escena final y el caso terminará. Crea una o usa una existente; después revisa su contenido y los demás pendientes para enviar el caso.</p>
+          @for (d of destinosFinales(); track d.id) {
+            <button type="button" class="boton boton-secundario" [attr.aria-pressed]="d.id === r.destinoId" (click)="destino.emit(d.id)">Usar {{ d.etiqueta }}</button>
+          }
+          @for (d of destinosConvertibles(); track d.id) {
+            <button type="button" class="boton boton-secundario" (click)="convertirFinal.emit(d.id)">Convertir {{ d.etiqueta }} en final y usarla</button>
+          }
+          <button type="button" class="boton boton-secundario" data-accion="terminar-respuesta" (click)="crearFinal.emit()">Terminar el caso aquí: crear la escena final</button>
+          <p class="nota">Solo se pueden convertir escenas sin respuestas: al llegar a una escena final el estudiante ya no toma decisiones.</p>
+        </div>
+      }
       <!-- BORRADOR: pendiente de aprobación de Psicología. -->
       <p class="nota">Elige la escena que sigue. Si creas una escena desde aquí, queda conectada a esta respuesta. Sin destino, esta respuesta queda solo en esta pantalla.</p>
       @if (recuperada()) { <p class="nota" role="status">Recuperamos lo que escribiste en esta respuesta.</p> }
       @if (!respaldoDisponible()) { <p class="nota" role="alert">No pudimos guardar una copia en este dispositivo. Mantén abierta esta pantalla hasta completar y guardar la respuesta.</p> }
-      <select [id]="'rl' + i" [attr.data-respuesta-destino]="r.id" class="campo" (change)="destino.emit($any($event.target).value)">
-        <option value="" [selected]="!r.destinoId">Ninguna escena todavía</option>
-        @for (d of destinos(); track d.id) { <option [value]="d.id" [selected]="d.id === r.destinoId">{{ d.etiqueta }}</option> }
-        <option value="nueva">Crear y conectar una escena nueva</option>
-      </select>
     </div>
-    @if (!r.destinoId) {
-      <!-- BORRADOR: pendiente de aprobación de Psicología. -->
-      <button type="button" class="boton boton-secundario" (click)="crearEscena.emit()">Crear la escena que sigue</button>
-    }
-      <!-- Abierto solo mientras falta el destino: con destino elegido queda a mano, plegado, sin llenar cada ficha. -->
-      <details class="cierre" [open]="!r.destinoId">
-        <summary>Terminar el caso con esta respuesta</summary>
-        <p class="nota">El caso termina al llegar a ella; no tiene respuestas. El estudiante llegará a una escena final y el caso terminará. Crea una o usa una existente; después revisa su contenido y los demás pendientes para enviar el caso.</p>
-        @for (d of destinosFinales(); track d.id) {
-          <button type="button" class="boton boton-secundario" (click)="destino.emit(d.id)">Usar {{ d.etiqueta }}</button>
-        }
-        @for (d of destinosConvertibles(); track d.id) {
-          <button type="button" class="boton boton-secundario" (click)="convertirFinal.emit(d.id)">Convertir {{ d.etiqueta }} en final y usarla</button>
-        }
-        <button type="button" class="boton boton-secundario" data-accion="terminar-respuesta" (click)="crearFinal.emit()">Terminar el caso aquí: crear la escena final</button>
-        <p class="nota">Solo se pueden convertir escenas sin respuestas: al llegar a una escena final el estudiante ya no toma decisiones.</p>
-      </details>
     @if (creada(); as c) {
       <div role="group" aria-label="Escena creada" class="creada">
         <p>Se creó «{{ c.titulo }}», conectada a la respuesta {{ i + 1 }}. Usa la misma sala que esta escena; puedes cambiarla después.</p>
@@ -275,6 +287,17 @@ export class RespuestaComponent {
 
   /** La faceta abierta; vuelve a cerrarse cuando la ficha pasa a mostrar otra respuesta. */
   // Se ata al ID y no al objeto: cada cambio guardado rehace la respuesta, y eso no debe cerrar la faceta abierta.
+  protected readonly modoDestino = linkedSignal(() => {
+    const id = this.respuesta().destinoId;
+    if (!id) return 'ninguno' as 'ninguno' | 'escena' | 'final';
+    return this.destinos().some(d => d.id === id && d.esFinal) ? 'final' : 'escena';
+  });
+
+  protected elegirModo(modo: 'ninguno' | 'escena' | 'final'): void {
+    this.modoDestino.set(modo);
+    if (modo === 'ninguno') this.destino.emit('');
+  }
+
   private readonly idRespuesta = computed(() => this.respuesta().id);
   private readonly faceta = linkedSignal<string, Faceta | null>({ source: this.idRespuesta, computation: () => null });
   /** La clase que la docente tiene enfocada (o la elegida al entrar al grupo); `undefined` = el grupo no tiene el foco. */

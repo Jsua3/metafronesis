@@ -25,6 +25,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   `,
   styles: `
     :host { display: block; position: sticky; inset-block-end: 0.75rem; z-index: var(--autoria-capa-4); margin-block-start: auto; }
+    @media (min-width: 64rem) { :host { inset-block-end: calc(var(--alto-estado, 2.75rem) + 0.75rem); } }
     /* Material de panel, no de vidrio (el vidrio es solo de la barra superior): opaco del todo, para que nada de lo que se
        desplaza por detrás se lea a través (con 96 % se veían los temas del panel como un fantasma), filo de 1 px y sombra. */
     .barra {

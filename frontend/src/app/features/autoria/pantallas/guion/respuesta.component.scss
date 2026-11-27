@@ -114,3 +114,8 @@ button:active { scale: 0.97; }
   .ficha__letra { forced-color-adjust: none; }
 }
   
+
+.destino-escena { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; }
+.destino-escena select { flex: 1 1 12rem; }
+.destino-escena .boton { min-block-size: 2.75rem; }
+.cierre .boton { display: flex; min-block-size: 2.75rem; margin: .5rem 0; white-space: normal; text-align: start; }
