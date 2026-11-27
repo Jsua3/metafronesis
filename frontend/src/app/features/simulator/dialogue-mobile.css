@@ -1,0 +1,71 @@
+/* Las hojas viven en el borde del juego; los controles conservan su identidad. */
+@media (width < 1024px) {
+  :host .dialogue-strip, :host .dialogue-strip:not(.dialogue-strip--side),
+  :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones {
+    --dialogo-alto-max: 62dvh; --retrato: 64px; --tam: 16px; --tam-boton: .72em; --alto-boton: 48px;
+    position: fixed; z-index: 90; left: 0; right: 0; bottom: 0;
+    width: 100%; height: auto; max-height: 62dvh; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+    padding: 8px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    background-color: #1b1826; background-image: var(--trama-placa); background-size: 16px;
+    border-top: 3px solid #b89161;
+  }
+  :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones { height: 62dvh; }
+  :host .dialogue-strip .panel-head, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .panel-head,
+  :host .dialogue-strip:not(.dialogue-strip--side):not(.strip--con-opciones) .panel-head {
+    position: sticky; top: -8px; z-index: 5; display: block; padding: 0 0 4px;
+    background: #1b1826;
+  }
+  :host .panel-head__row, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .panel-head__row {
+    display: flex; justify-content: flex-start; gap: 8px; flex-wrap: nowrap;
+  }
+  :host .panel-back { min-height: 48px; padding-inline: 6px; gap: 4px; font-size: 12px; }
+  :host .panel-head__exit { flex: none; }
+  :host .dialogue-strip .instant-setting { display: none; }
+  :host .instant-compact { display: inline-block; flex: 0 1 auto; min-width: 48px; min-height: 48px; padding: 2px 4px; font: 600 11px/1.25 var(--f-nombre); text-align: center; }
+  :host .instant-compact[aria-pressed='true'] { color: #ffcd82; }
+  :host .dialogue-strip .strip-main, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-main {
+    display: flex; flex-direction: column; align-items: stretch; gap: 8px; flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding: 8px;
+  }
+  :host .strip-main > .placa, :host .strip-main > .strip-body { flex: 0 0 auto; }
+  :host .dialogue-strip .placa, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .placa { width: 100%; align-self: stretch; }
+  :host .dialogue-strip .speaker-name { margin-left: 80px; max-width: calc(100% - 80px); overflow-wrap: anywhere; }
+  :host .dialogue-strip .portrait, :host .dialogue-strip[data-compacto='3'] .portrait { display: grid; width: 64px; height: 64px; margin: 0; align-self: start; box-sizing: border-box; }
+  :host .portrait-img { width: 100%; height: 100%; object-fit: contain; }
+  :host .placa-cuerpo { gap: 8px; padding: 6px; }
+  :host .placa-habla:has(.dialogue-text[data-scroll-more])::after { content: '▼'; align-self: center; color: #ffcd82; line-height: 1; }
+  :host .dialogue-text { min-height: 0; max-height: 7.5em; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  :host .dialogue-strip .strip-body, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .strip-body { display: grid; grid-template-rows: auto; align-content: start; width: 100%; overflow: visible; }
+  :host .dialogue-strip:not(.strip--con-opciones) .strip-body { display: none; }
+  :host .dialogue-strip .choices, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .choices {
+    display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: 8px;
+    max-height: none; overflow: visible; margin: 0; padding: 2px;
+  }
+  :host .dialogue-strip .choice-btn, :host .dialogue-strip[data-compacto] .choice-btn { min-height: 48px; scroll-margin-top: 64px; font-size: .94em; line-height: 1.35; }
+  :host .dialogue-strip .panel-head__note { display: none; }
+  :host .strip-main[data-scroll-more]::after { content: '▼'; position: sticky; bottom: -8px; align-self: center; color: #ffcd82; line-height: 1; pointer-events: none; }
+  :host button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+}
+@media (min-width: 600px) and (width < 1024px) and (min-height: 500px) {
+  :host .dialogue-strip, :host .dialogue-strip:not(.dialogue-strip--side), :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones { width: min(760px, 100%); left: 50%; right: auto; transform: translateX(-50%); }
+}
+@media (width < 1024px) and (height < 500px) {
+  :host .dialogue-strip, :host .dialogue-strip:not(.dialogue-strip--side), :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones { left: auto; right: 0; top: 0; bottom: 0; width: 58%; height: 100dvh; max-height: 100dvh; border-top: 0; border-left: 3px solid #b89161; }
+  :host .dialogue-strip .choices, :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :host .dialogue-strip:not(.dialogue-strip--side).strip--con-opciones .choices.choices--larga, :host .dialogue-strip--side .choices.choices--larga { grid-template-columns: minmax(0, 1fr); }
+  :host .dialogue-text { max-height: 4.5em; }
+}
+@media (pointer: coarse) {
+  :host .keyboard-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) { :host .dialogue-strip, :host .choice-btn { animation: none; transition: none; } }
+
+@media (min-width: 1024px) {
+  :host .dialogue-strip .close-btn { transition: filter 160ms ease, transform 120ms ease; }
+  :host .choice-num { box-sizing: border-box; line-height: 1; }
+  @media (hover: hover) and (pointer: fine) { :host .close-btn:hover { filter: brightness(1.08); } }
+  :host .close-btn:focus-visible { outline: 2px solid #ffcd82; outline-offset: 2px; }
+}
+
+:host .choice-btn { transition: background-color 160ms ease, color 160ms ease, opacity 200ms ease, transform 120ms ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+@media (prefers-reduced-motion: reduce) { :host .choice-btn { transition: none; } }
