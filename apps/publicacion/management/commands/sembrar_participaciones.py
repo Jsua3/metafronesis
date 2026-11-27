@@ -1,6 +1,6 @@
 """Siembra de demostración más sesiones ya jugadas, para ver reportes con datos. Solo en desarrollo.
 
-    SIEP_SEMILLA_CLAVE=... python manage.py sembrar_participaciones --publicador admin@psychosim.edu.co
+    SIEP_SEMILLA_CLAVE=... python manage.py sembrar_participaciones [--publicador admin@...] [--docentes profe@...]
 
 Corre primero ``sembrar_demostracion`` (docentes, estudiantes, grupos, rúbrica y caso insignia) y luego juega las
 sesiones de ``apps/publicacion/siembra_participaciones.py``. La contraseña temporal no se imprime. Es idempotente.
@@ -20,11 +20,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--publicador", default=PUBLICADOR_DEMO, help="Correo de un ADMIN que ya existe; publica el caso.")
+        parser.add_argument("--docentes", default=None,
+                            help="Correos de 1 a 3 cuentas PROFESOR que ya existen, separados por comas: quedan a cargo de los "
+                                 "grupos y sus sesiones. Por defecto, profesora@psychosim.edu.co si existe.")
 
     def handle(self, *args, **options):
         require_dev_environment("sembrar_participaciones")
         try:
-            informe = siembra.sembrar(options["publicador"], os.environ.get("SIEP_SEMILLA_CLAVE", ""))
+            docentes = None if options["docentes"] is None else [
+                correo.strip() for correo in options["docentes"].split(",") if correo.strip()]
+            informe = siembra.sembrar(options["publicador"], os.environ.get("SIEP_SEMILLA_CLAVE", ""), docentes)
         except siembra.ErrorDeSiembra as error:
             raise CommandError(str(error)) from None
         self.stdout.write(f"Creado ({len(informe.creado)}):")

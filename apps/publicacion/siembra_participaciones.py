@@ -34,11 +34,12 @@ from apps.simulation.models import (
     SimulationAttempt,
 )
 from apps.simulation.services import attempt_api, bitacora, disponibilidad_mundo, evaluacion
-from apps.users.models import CustomUser
+from apps.users.models import CustomUser, UserRole
 
 ErrorDeSiembra = base.ErrorDeSiembra
 
 TIEMPO_MAXIMO_MIN = 40
+DOCENTE_DEMO = "profesora@psychosim.edu.co"
 RECOMENDADA, ACEPTABLE, RIESGOSA, CONTRAINDICADA = (
     ResponseClass.RECOMMENDED, ResponseClass.ACCEPTABLE, ResponseClass.RISKY, ResponseClass.CONTRAINDICATED)
 
@@ -227,10 +228,22 @@ def _programar(version, informe):
     informe.creado.append(f"sesión PROGRAMADA de {codigo} en {-dias} días")
 
 
+def docentes_por_defecto():
+    """La docente demo de desarrollo (``seed_demo_users``), si existe: así quien entra con ella ve grupos y reportes."""
+    existe = CustomUser.objects.filter(email=DOCENTE_DEMO, role=UserRole.PROFESOR, activo=True).exists()
+    return [DOCENTE_DEMO] if existe else []
+
+
 @transaction.atomic
-def sembrar(publicador_correo, clave):
-    """Corre la siembra de demostración y le suma las sesiones jugadas. Devuelve el ``Informe`` de las dos."""
-    informe = base.sembrar(publicador_correo, clave)
+def sembrar(publicador_correo, clave, correos_docentes=None):
+    """Corre la siembra de demostración y le suma las sesiones jugadas. Devuelve el ``Informe`` de las dos.
+
+    Los grupos quedan a cargo de ``correos_docentes`` (por defecto, la docente demo de desarrollo si existe): es quien
+    crea y dirige las sesiones y quien ve sus reportes.
+    """
+    if correos_docentes is None:
+        correos_docentes = docentes_por_defecto()
+    informe = base.sembrar(publicador_correo, clave, correos_docentes)
     version = (CaseAssignment.objects.filter(grupo__codigo=base.GRUPOS[0][0], active=True)
                .select_related("case_version").latest("pk").case_version)
     correos = [f"{local}@{base.DOMINIO}" for local, _, _ in base.ESTUDIANTES]

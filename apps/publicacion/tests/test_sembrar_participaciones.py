@@ -10,7 +10,7 @@ from apps.reportes import consultas
 from apps.sesiones.models import EstadoSesion, Sesion
 from apps.simulation.models import AttemptReport, AttemptStatus, ReflectionJournal, RubricEvaluation, SimulationAttempt
 from apps.users.models import CustomUser
-from shared.policies import ADMIN
+from shared.policies import ADMIN, PROFESOR
 
 pytestmark = pytest.mark.django_db
 
@@ -29,7 +29,11 @@ def sembrar(admin):
 
 
 def test_siembra_sesiones_jugadas_con_informes(admin):
+    docente = CustomUser.objects.create_user(email="profesora@psychosim.edu.co", password=secrets.token_urlsafe(20),
+                                             role=PROFESOR, nombre="Profesora", apellido="Demo")
     sembrar(admin)
+    # Los grupos y sus sesiones quedan a cargo de la docente demo de desarrollo: entrando con ella se ven los reportes.
+    assert set(Grupo.objects.values_list("profesor_id", flat=True)) == {docente.pk}
     finalizadas = Sesion.objects.filter(estado=EstadoSesion.FINALIZADA)
     assert finalizadas.count() == 3
     assert all(sesion.finalizada_en < timezone.now() - timezone.timedelta(days=4) for sesion in finalizadas)
