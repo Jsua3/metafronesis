@@ -77,12 +77,13 @@ export const ACCIONES: readonly Accion[] = [
   { id: 'abrir-guion', nombre: 'Escribir el guion de una escena', pantalla: PANTALLAS.mapa, ruta: '/editor', palabras: 'diálogo líneas libreto texto', ayuda: 'Con una escena elegida, «Abrir guion» te lleva a escribir lo que dicen.' },
   { id: 'agregar-linea', nombre: 'Agregar una línea de diálogo', pantalla: PANTALLAS.guion, ruta: '/editor/escena/:escena', palabras: 'diálogo dice personaje habla texto', ayuda: 'Agrega lo que dice un personaje, con su expresión.' },
   { id: 'agregar-respuesta', nombre: 'Agregar una respuesta del estudiante', pantalla: PANTALLAS.guion, ruta: '/editor/escena/:escena', palabras: 'opción decisión elegir contestar', ayuda: 'Agrega una respuesta, con su clasificación y lo que lee el estudiante después.' },
+  // BORRADOR: pendiente de aprobación de Psicología.
   {
     id: 'respuesta-a-escena-nueva', nombre: 'Hacer que una respuesta abra un camino nuevo', pantalla: PANTALLAS.guion, ruta: '/editor/escena/:escena',
     palabras: 'camino nuevo rama llevar a escena nueva',
-    pasos: ['En una respuesta, abre «Lleva a…».', 'Elige «Crear una escena nueva ahora»: se crea y queda conectada.'],
+    pasos: ['En una respuesta, abre «Lleva a…».', 'Elige «Crear y conectar una escena nueva»: se crea y queda conectada.'],
     objetivos: [['select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]'], ['select[id^="rl"]', '[data-accion~="respuesta-a-escena-nueva"]']],
-    ayuda: 'En «Lleva a…» elige «Crear una escena nueva ahora»; se crea y queda conectada.',
+    ayuda: 'En «Lleva a…» elige «Crear y conectar una escena nueva»; se crea y queda conectada.',
   },
   { id: 'terminar-respuesta', nombre: 'Terminar el caso con una respuesta', pantalla: PANTALLAS.guion, ruta: '/editor/escena/:escena', palabras: 'final cierre terminar', ayuda: 'En la respuesta, crea una escena final o elige una existente. Una escena sin respuestas también se puede convertir en final.' },
   { id: 'revisar-caminos', nombre: 'Revisar los caminos del caso', pantalla: PANTALLAS.mapa, ruta: '/editor', palabras: 'avisos problemas errores sin salida', ayuda: 'Aquí están los avisos de caminos; «Llévame ahí» te lleva a la escena.' },

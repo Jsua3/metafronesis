@@ -78,6 +78,12 @@ describe('reglas del caso: hitos, riesgo y finales', () => {
 });
 
 describe('cuerpoNodo: la escena como nodo', () => {
+  it('manda la pregunta de decisión cuando se edita y conserva la anterior si no cambia', () => {
+    const previo = casoSinLugar().editor.nodes[0];
+    expect(cuerpoNodo(escena({ pregunta: '¿Qué harías?' } as Partial<Escena>), { esInicio: false, previo }).decisionPrompt).toBe('¿Qué harías?');
+    expect(cuerpoNodo(escena({ pregunta: previo.decisionPrompt } as Partial<Escena>), { esInicio: false, previo })).not.toHaveProperty('decisionPrompt');
+  });
+
   it('una escena nueva manda lo que el docente ve y valores vacíos para lo demás', () => {
     expect(cuerpoNodo(escena(), { nodeKey: 'escena-nueva-en-consultorio', esInicio: false })).toEqual({
       nodeKey: 'escena-nueva-en-consultorio', title: 'Escena nueva', narrative: '', requiredTools: [], supportResources: [],

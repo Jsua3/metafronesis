@@ -141,7 +141,7 @@ describe('DialoguePanelComponent: a tu ritmo (P8)', () => {
     it('un clic sobre un botón del cuadro no se cuenta dos veces', () => {
       render(TRES_LINEAS);
       const saltar = speech().querySelector<HTMLButtonElement>('button.close-btn')!;
-      expect(saltar.textContent).toContain('Continuar');
+      expect(saltar.textContent).toContain('Mostrar texto completo');
 
       saltar.click();   // «Saltar»: muestra todo, no además avanza
       fixture.detectChanges();
@@ -199,11 +199,11 @@ describe('DialoguePanelComponent: a tu ritmo (P8)', () => {
     it('el control conserva su nombre al completar la escritura', () => {
       render(TRES_LINEAS);
       const boton = fixture.nativeElement.querySelector('button.close-btn') as HTMLButtonElement;
-      expect(boton.textContent).toContain('Continuar');
+      expect(boton.textContent).toContain('Mostrar texto completo');
       component.skipTypewriter();
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('button.close-btn')).toBe(boton);
-      expect(boton.textContent).toContain('Continuar');
+      expect(boton.textContent).toContain('Seguir leyendo');
     });
   });
 

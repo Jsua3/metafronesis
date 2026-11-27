@@ -284,7 +284,7 @@ export async function actualizarEscena(s: SesionServidor, caso: CasoBorrador, es
     && previo.positionX === cuerpo.positionX && previo.positionY === cuerpo.positionY && previo.intensity === cuerpo.intensity
     && (previo.warningMessage ?? null) === (cuerpo.warningMessage ?? null)
     && JSON.stringify(previo.supportResources ?? []) === JSON.stringify(cuerpo.supportResources ?? [])
-    && !('goal' in cuerpo) && !('comments' in cuerpo)) { // el objetivo y los comentarios viajan solo si cambiaron
+    && !('decisionPrompt' in cuerpo) && !('goal' in cuerpo) && !('comments' in cuerpo)) { // el objetivo y los comentarios viajan solo si cambiaron
     return; // nada que decirle al servidor
   }
   await s.actualizarNodo(nodoId, cuerpo);

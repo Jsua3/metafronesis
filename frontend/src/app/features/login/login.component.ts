@@ -341,6 +341,7 @@ export class LoginComponent implements AfterViewInit {
         this.forgotError.set(this.forgotErrorMessage(error));
         this.announcement.set('');
         this.forgotLoading.set(false);
+        this.focusError();
       },
     });
   }
@@ -423,6 +424,8 @@ export class LoginComponent implements AfterViewInit {
           this.demoLoading.set(false);
           this.demo.set(null);
           this.focusHeading();
+        } else {
+          this.focusError();
         }
       },
     });
@@ -457,6 +460,7 @@ export class LoginComponent implements AfterViewInit {
         this.registerError.set(this.registerErrorMessage(error));
         this.announcement.set('');
         this.registerLoading.set(false);
+        this.focusError();
       },
     });
   }
@@ -524,6 +528,15 @@ export class LoginComponent implements AfterViewInit {
   /** Tras pintar el formulario nuevo, el foco va a su encabezado (no cae a body con el que desaparece). */
   private focusHeading(): void {
     afterNextRender(() => this.heading()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  /**
+   * Un envío que falla lleva el foco al aviso de error (UA-E16): la alerta nace en el DOM con el foco aún en el botón, y
+   * quien usa lector de pantalla no la oía; con el foco en ella se lee el motivo en palabras y desde ahí Tab sigue al
+   * botón para reintentar (el aviso va justo antes). Después de pintar, para que el aviso ya exista.
+   */
+  private focusError(): void {
+    afterNextRender(() => this.pageRef.nativeElement.querySelector<HTMLElement>('.acceso__error[role="alert"]')?.focus(), { injector: this.injector });
   }
 
   /**
@@ -618,6 +631,7 @@ export class LoginComponent implements AfterViewInit {
       error: (error: unknown) => {
         this.error.set(this.googleErrorMessage(error));
         this.googleLoading.set(false);
+        this.focusError();
       },
     });
   }

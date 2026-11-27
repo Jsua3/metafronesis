@@ -20,8 +20,18 @@
       <section class="bloque">
         <label for="narracion-escena">Narración de la escena</label>
         <textarea id="narracion-escena" class="campo" rows="2" [value]="e.narracion"
-                  [readOnly]="store.soloLectura()" (change)="store.editarEscena(e.id, { narracion: $any($event.target).value })"></textarea>
+                  [readOnly]="store.soloLectura()" (input)="store.editarEscena(e.id, { narracion: $any($event.target).value })"></textarea>
       </section>
+
+      @if (!e.esFinal) {
+        <!-- BORRADOR: pendiente de aprobación de Psicología. -->
+        <section class="bloque">
+          <label for="pregunta-escena">Pregunta de decisión</label>
+          <textarea id="pregunta-escena" class="campo" rows="2" [value]="e.pregunta ?? ''" [readOnly]="store.soloLectura()"
+                    aria-describedby="pregunta-ayuda" (input)="store.editarEscena(e.id, { pregunta: $any($event.target).value })"></textarea>
+          <p id="pregunta-ayuda" class="nota">Es la pregunta que acompaña las respuestas; es distinta del objetivo de la escena.</p>
+        </section>
+      }
 
       <!-- La cámara: el cuarto con su elenco y un globo sobre quien dice la línea que se escribe (EDITOR-PRO.md §3). -->
       <app-camara-escena [caso]="store.caso()!" [escena]="e" [miniatura]="miniaturaDe(e)" [lineaEnfocada]="lineaVista()" />

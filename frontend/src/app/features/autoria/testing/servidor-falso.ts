@@ -195,7 +195,7 @@ export class ServidorFalso {
           id: this.id(), key: cuerpo.nodeKey, title: cuerpo.title, narrative: cuerpo.narrative, supportResources: cuerpo.supportResources,
           requiredTools: cuerpo.requiredTools, sensitiveContent: cuerpo.sensitiveContent, safeExitRequired: cuerpo.safeExitRequired,
           warningMessage: cuerpo.warningMessage, terminal: cuerpo.terminal, startNode: cuerpo.startNode, positionX: cuerpo.positionX,
-          positionY: cuerpo.positionY, intensity: cuerpo.intensity ?? 'MEDIUM', decisionPrompt: '',
+          positionY: cuerpo.positionY, intensity: cuerpo.intensity ?? 'MEDIUM', decisionPrompt: cuerpo.decisionPrompt ?? '',
           displayOrder: this.editor.nodes.length, aiSuggested: cuerpo.aiSuggested === true,
           goal: cuerpo.goal ?? '', comments: clonar(cuerpo.comments ?? []),
         });
@@ -210,6 +210,7 @@ export class ServidorFalso {
           supportResources: cuerpo.supportResources ?? nodo.supportResources,
         });
         if (cuerpo.aiSuggested !== undefined) nodo.aiSuggested = cuerpo.aiSuggested; // como el servidor: ausente = no se toca
+        if (cuerpo.decisionPrompt !== undefined) nodo.decisionPrompt = cuerpo.decisionPrompt;
         if (cuerpo.goal !== undefined) nodo.goal = cuerpo.goal;
         if (cuerpo.comments !== undefined) nodo.comments = clonar(cuerpo.comments ?? []); // `null` y `[]` los quitan
       }),

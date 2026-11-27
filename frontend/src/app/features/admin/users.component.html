@@ -102,12 +102,12 @@
       <span aria-hidden="true">Rol</span>
       <ui-segmentado etiqueta="Filtrar por rol" [opciones]="opcionesRol" [valor]="rol()" (valorChange)="rol.set($event)" />
     </div>
-    <label class="us-control">Estado <select [value]="estadoFiltro()" (change)="estadoFiltro.set($any($event.target).value)">
+    <div class="us-control"><label for="us-filtro-estado">Estado</label> <select id="us-filtro-estado" [value]="estadoFiltro()" (change)="estadoFiltro.set($any($event.target).value)">
       <option value="todos">Todos</option><option value="activa">Activas</option><option value="inactiva">Inactivas</option><option value="pendiente">Pendientes</option>
-    </select></label>
-    <label class="us-control">Ordenar por <select [value]="orden()" (change)="orden.set($any($event.target).value)">
+    </select></div>
+    <div class="us-control"><label for="us-filtro-orden">Ordenar por</label> <select id="us-filtro-orden" [value]="orden()" (change)="orden.set($any($event.target).value)">
       <option value="nombre">Nombre</option><option value="rol">Rol</option><option value="estado">Estado</option>
-    </select></label>
+    </select></div>
   </ui-filtros>
   @if (seleccion().length) {
     <div class="us-batch" aria-label="Acciones de cuentas seleccionadas">
