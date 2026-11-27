@@ -1,10 +1,23 @@
 import { reducedMotionQuery } from '../../../core/a11y/reduced-motion';
+import { TemaService } from '../../../core/tema/tema.service';
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, afterEveryRender, afterNextRender,
+  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injectable, ViewEncapsulation, afterEveryRender, afterNextRender,
   booleanAttribute, effect, inject, input, signal,
 } from '@angular/core';
 
 import { GlassBarMachine } from './glass-bar-machine';
+
+/** Vive durante la aplicación, también si una pantalla oculta temporalmente la barra. */
+@Injectable({ providedIn: 'root' })
+class ColorNavegador {
+  constructor() {
+    const tema = inject(TemaService);
+    effect(() => {
+      const color = tema.modo() === 'oscuro' ? '#0E1322' : '#F5F7FA';
+      document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(meta => { meta.content = color; });
+    });
+  }
+}
 
 const media = (query: string, fallback: boolean): (() => boolean) => {
   const list = typeof matchMedia === 'function' ? matchMedia(query) : null;
@@ -89,6 +102,8 @@ export class UiGlassBar {
 
   constructor() {
     effect(() => this.machine.freeze(this.congelada()));
+    // Las dos metas mantienen su media de respaldo antes de Angular; después siguen la elección de la app.
+    inject(ColorNavegador);
     const cleanups: Array<() => void> = [];
     const listen = (target: EventTarget, type: string, fn: (event: Event) => void, options?: AddEventListenerOptions) => {
       target.addEventListener(type, fn, options);

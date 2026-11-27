@@ -1,0 +1,30 @@
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-padding-block: max(6rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+:where(a[href], button, input, select, textarea, summary, [role='button'], [role='tab']) {
+  touch-action: manipulation;
+}
+
+:where(button, input[type='button'], input[type='submit'], input[type='reset'], [role='button'], [role='tab']) {
+  user-select: none;
+}
+
+@media (pointer: coarse) {
+  // Evita el zoom automático de iOS sin impedir que el usuario amplíe la página.
+  input:not([type='button'], [type='submit'], [type='reset'], [type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='image']),
+  select, textarea {
+    font-size: 16px !important;
+  }
+
+  :where(button, [role='button']):not(:disabled):active { opacity: .82; }
+}
+
+@media (max-width: 63.999rem) {
+  html {
+    scroll-padding-block-start: calc(var(--asb-alto-modulo-superior) + max(1rem, env(safe-area-inset-top, 0px)));
+    scroll-padding-block-end: calc(var(--asb-alto-modulo-inferior) + max(1rem, env(safe-area-inset-bottom, 0px)));
+  }
+}

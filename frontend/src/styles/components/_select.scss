@@ -1,0 +1,108 @@
+// El control sigue siendo nativo. La lista múltiple y los selectores con tamaño explícito
+// conservan su presentación de lista; la flecha solo corresponde al desplegable simple.
+select:not([multiple]):not([size]) {
+  appearance: none;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  min-block-size: var(--ds-target-min);
+  padding-block: var(--ds-space-2);
+  // Los controles de ui-field y de Usuarios declaran padding/background con más especificidad.
+  padding-inline: var(--ds-space-3) 2.75rem !important;
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--l-radio-control, var(--ds-radius-md));
+  background-color: var(--l-superficie-hundida, var(--ds-surface-1));
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%) !important;
+  background-position: calc(100% - 1.2rem) 50%, calc(100% - .9rem) 50%;
+  background-size: .3rem .3rem;
+  background-repeat: no-repeat;
+  color: var(--ds-text-1);
+  cursor: pointer;
+}
+
+select:not([multiple]):not([size]):disabled {
+  cursor: not-allowed;
+  background-color: var(--ds-surface-2);
+  color: var(--ds-text-3);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  select:not([multiple]):not([size]):not(:disabled):hover {
+    border-color: var(--ds-text-2);
+  }
+}
+
+// El navegador conserva la semántica, teclado, validación y colocación del desplegable.
+@supports (appearance: base-select) {
+  select:not([multiple]):not([size]) {
+    appearance: base-select;
+    background-image: none !important;
+    padding-inline-end: var(--ds-space-3) !important;
+  }
+
+  select:not([multiple]):not([size])::picker(select) {
+    appearance: base-select;
+    max-inline-size: min(32rem, calc(100vw - 2rem));
+    max-block-size: min(20rem, 50dvh);
+    padding: var(--ds-space-1);
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-md);
+    background: color-mix(in oklab, var(--ds-surface-1) 94%, transparent);
+    color: var(--ds-text-1);
+    box-shadow: var(--ds-shadow-lg, 0 8px 24px rgb(0 0 0 / .18));
+    backdrop-filter: blur(18px) saturate(125%);
+  }
+
+  select:not([multiple]):not([size])::picker-icon {
+    color: var(--ds-text-2);
+    transition: rotate var(--ds-dur-base) var(--ds-spring-soft);
+  }
+
+  select:not([multiple]):not([size]):open::picker-icon { rotate: 180deg; }
+
+  select:not([multiple]):not([size]) option {
+    min-block-size: var(--ds-target-min);
+    padding: var(--ds-space-2) var(--ds-space-3);
+    border-radius: var(--ds-radius-md);
+    color: var(--ds-text-1);
+    white-space: normal;
+  }
+
+  select:not([multiple]):not([size]) option:checked {
+    background: var(--ds-primary-subtle);
+    color: var(--ds-text-1);
+    font-weight: 600;
+  }
+
+  select:not([multiple]):not([size]) option:focus {
+    background: var(--ds-surface-2);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    select:not([multiple]):not([size]) option:hover { background: var(--ds-surface-2); }
+  }
+
+  select:not([multiple]):not([size]) option:disabled { color: var(--ds-text-3); }
+  select:not([multiple]):not([size]) option::checkmark { color: var(--ds-primary); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  select::picker-icon { transition: none; }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  select::picker(select) {
+    background: var(--ds-surface-1);
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  select:not([multiple]):not([size]) {
+    appearance: auto;
+    background-image: none !important;
+    color: FieldText;
+    border-color: FieldText;
+  }
+  select::picker(select) { appearance: auto; }
+}
