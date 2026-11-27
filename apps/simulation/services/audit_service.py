@@ -42,7 +42,7 @@ MAX_USER_AGENT_LEN = 500
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 200
 MAX_PAGE = 1_000_000  # más allá, el OFFSET se sale del rango de la base y el listado cae con un 500
-#: Bandera de sesión que mira el trigger de la migración 0026 (S4-2): ``on`` deja pasar UPDATE, DELETE y TRUNCATE.
+#: Bandera de sesión que mira el trigger de la migración 0020 (S4-2): ``on`` deja pasar UPDATE, DELETE y TRUNCATE.
 AUDIT_PURGE_SETTING = "siep.purge"
 
 #: Taxonomía canónica ``entidad.verbo`` (E5-7, §A16, C15).
