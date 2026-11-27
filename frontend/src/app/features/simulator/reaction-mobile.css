@@ -7,5 +7,5 @@
   :host .reaction-name { margin-left: 72px; }
   :host .reaction-continue { min-height: 48px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
 }
-@media (min-width: 600px) and (width < 1024px) and (min-height: 500px) { :host .reaction-dock { width: min(760px, 100%); left: 50%; right: auto; transform: translateX(-50%); } }
+@media (min-width: 600px) and (width < 1024px) and (min-height: 500px) { :host .reaction-dock { width: min(760px, 100%); margin-inline: auto; } }
 @media (width < 1024px) and (height < 500px) { :host .reaction-dock { left: auto; top: 0; width: 58%; max-height: 100dvh; } }
