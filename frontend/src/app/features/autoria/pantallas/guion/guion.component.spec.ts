@@ -49,6 +49,24 @@ async function elegirEnMenu(raiz: HTMLElement, listo: () => Promise<void>, menu:
 }
 
 describe('GuionComponent', () => {
+  it('la pregunta se edita en el guion y actualiza la orientación sin perder el foco', async () => {
+    const { store, id, raiz, listo } = await montar();
+    const campo = raiz.querySelector<HTMLTextAreaElement>('#pregunta-escena')!;
+    expect(campo).toBeTruthy();
+    campo.value = '¿Qué harías ahora?';
+    campo.dispatchEvent(new Event('input'));
+    await listo();
+    expect((store.caso()!.escenas.find(e => e.id === id) as { pregunta?: string })?.pregunta).toBe('¿Qué harías ahora?');
+  });
+
+  it('la narración se refleja mientras se escribe', async () => {
+    const { store, id, raiz } = await montar();
+    const campo = raiz.querySelector<HTMLTextAreaElement>('#narracion-escena')!;
+    campo.value = 'Una escena nueva.';
+    campo.dispatchEvent(new Event('input'));
+    expect(store.caso()!.escenas.find(e => e.id === id)?.narracion).toBe('Una escena nueva.');
+  });
+
   it('los recursos de apoyo de la escena se escriben uno por línea y respaldan la casilla «protocolos de seguridad»', async () => {
     const { store, id, raiz, listo } = await montar();
     // Vacío, «Antes de decidir» está plegado y dice qué le falta.
@@ -118,7 +136,7 @@ describe('GuionComponent', () => {
     const { store, id, raiz, listo } = await montar();
     boton(raiz, 'Agregar una respuesta').click();
     await listo();
-    boton(raiz, 'Crear escena final').click();
+    boton(raiz, 'Terminar el caso aquí: crear la escena final').click();
     await listo();
     const caso = store.caso()!;
     const origen = caso.escenas.find(e => e.id === id)!;

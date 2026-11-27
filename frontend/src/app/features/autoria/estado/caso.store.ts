@@ -1035,6 +1035,7 @@ export class CasoStore {
       id,
       titulo: sala ? `Escena nueva en ${sala.nombre.charAt(0).toLowerCase()}${sala.nombre.slice(1)}` : 'Escena nueva',
       narracion: '',
+      pregunta: '',
       salaId,
       lineas: [],
       respuestas: [],
@@ -1182,7 +1183,7 @@ export class CasoStore {
     });
   }
 
-  editarEscena(id: string, cambios: Partial<Pick<Escena, 'titulo' | 'narracion' | 'intensidad' | 'advertencia' | 'recursosApoyo'>>): void {
+  editarEscena(id: string, cambios: Partial<Pick<Escena, 'titulo' | 'narracion' | 'pregunta' | 'intensidad' | 'advertencia' | 'recursosApoyo'>>): void {
     const escena = this.tituloEscena(id);
     this.ejecutar({
       nombre: 'la escena',
@@ -1192,6 +1193,7 @@ export class CasoStore {
       resumen: [
         ...textoCompleto('Título de una escena', cambios.titulo),
         ...textoCompleto('Narración de una escena', cambios.narracion),
+        ...textoCompleto('Pregunta de una escena', cambios.pregunta),
         ...(cambios.intensidad ? [`Cambiaste la intensidad de la escena «${escena}»`] : []),
         ...textoCompleto(`Aviso para el estudiante de la escena «${escena}»`, cambios.advertencia ?? undefined),
         ...(cambios.recursosApoyo ? [`Cambiaste los recursos de apoyo de la escena «${escena}»${cambios.recursosApoyo.length ? `: ${cambios.recursosApoyo.map((r) => `«${r}»`).join(', ')}` : ''}`] : []),

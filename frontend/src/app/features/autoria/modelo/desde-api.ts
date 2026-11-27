@@ -214,7 +214,7 @@ function escenaDesdeApi(
   n: NodeEditorState, salaId: string | null, mundo: WorldDefinition | undefined, editor: CaseEditorView,
 ): Escena {
   return {
-    id: String(n.id), titulo: n.title, narracion: n.narrative ?? '', salaId, esFinal: n.terminal,
+    id: String(n.id), titulo: n.title, narracion: n.narrative ?? '', pregunta: n.decisionPrompt ?? '', salaId, esFinal: n.terminal,
     posicion: { x: n.positionX ?? 0, y: n.positionY ?? 0 },
     intensidad: n.intensity, advertencia: n.warningMessage ?? null, recursosApoyo: [...(n.supportResources ?? [])], marcaIa: n.aiSuggested === true,
     objetivo: n.goal ?? '', pistas: pistasDesdeApi(n, editor), comentarios: (n.comments ?? []).map(comentarioDesdeApi),

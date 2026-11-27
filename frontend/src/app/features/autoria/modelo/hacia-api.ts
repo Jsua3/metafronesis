@@ -116,6 +116,7 @@ export function cuerpoNodo(escena: Escena, opciones: OpcionesNodo): NodeUpsertRe
   if (!!escena.marcaIa !== !!previo?.aiSuggested) cuerpo.aiSuggested = !!escena.marcaIa;
   // Se compara contra el previo ya normalizado (lo que el borrador leyó), no contra el dato crudo del servidor.
   // Ausente = no tocar: el objetivo y los comentarios solo viajan si la docente los cambió (o si la escena es nueva).
+  if (escena.pregunta !== undefined && (!previo || escena.pregunta !== (previo.decisionPrompt ?? ''))) cuerpo.decisionPrompt = escena.pregunta;
   if (escena.objetivo !== undefined && (!previo || escena.objetivo !== (previo.goal ?? ''))) cuerpo.goal = escena.objetivo;
   if (escena.comentarios !== undefined && (!previo || !mismoJson(escena.comentarios, (previo.comments ?? []).map(comentarioDesdeApi)))) {
     cuerpo.comments = structuredClone(escena.comentarios);

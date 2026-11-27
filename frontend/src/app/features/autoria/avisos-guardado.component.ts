@@ -149,6 +149,8 @@ export class AvisosGuardadoComponent {
         this.anuncioGuardado.set(texto);
         return;
       }
+      // El anuncio anterior ya no describe el estado actual mientras se espera estabilidad.
+      this.anuncioGuardado.set('');
       const timer = setTimeout(() => this.anuncioGuardado.set(texto), 1500);
       onCleanup(() => clearTimeout(timer));
     });
