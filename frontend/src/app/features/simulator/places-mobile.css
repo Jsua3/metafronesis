@@ -1,0 +1,25 @@
+.places__item { grid-template-columns: minmax(0, 1fr) minmax(0, 12em); transition: background-color 160ms ease, color 160ms ease, transform 120ms ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+.places__item:active { transform: translateY(2px); }
+.places__item[aria-disabled='true'] { border-style: dashed; opacity: .85; }
+.places__item[aria-disabled='true'] .places__note[id] { grid-column: 1 / -1; display: block; padding: 4px 6px; border-left: 2px solid #ffcd82; color: #f2ecdf; line-height: 1.35; }
+.places__item:focus-visible { outline: 2px solid #ffcd82; outline-offset: -2px; }
+@media (hover: hover) and (pointer: fine) { .places__item:hover { filter: brightness(1.18); } }
+@media (width < 1024px) {
+  :host .places { position: fixed; box-sizing: border-box; max-height: 92dvh; gap: 8px; padding: 12px; }
+  :host .places__head { padding-right: 84px; min-height: 48px; display: flex; align-items: center; }
+  :host .places__list { grid-template-columns: 1fr; overscroll-behavior: contain; }
+  :host .places__item { min-height: 48px; padding: 8px; }
+  :host .places__close { position: absolute; top: 8px; right: 12px; min-height: 48px; }
+  :host .places__foot { min-height: 48px; }
+  :host button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+}
+@media (width < 600px) and (min-height: 500px) {
+  :host .places__item { grid-template-columns: minmax(0, 1fr); }
+  :host .places { left: 0; right: 0; top: auto; bottom: 0; width: 100%; transform: none; padding: 16px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  :host .places::before { content: ''; position: absolute; top: 4px; left: calc(50% - 20px); width: 40px; height: 3px; background: #ffcd82; }
+}
+@media (min-width: 600px) and (width < 1024px) and (min-height: 500px) { :host .places { width: min(560px, 94vw); } }
+@media (width < 1024px) and (height < 500px) {
+  :host .places { top: 0; bottom: 0; right: 0; left: auto; width: 58%; max-height: 100dvh; height: 100dvh; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .places__item { grid-template-columns: minmax(0, 1fr) minmax(0, 12em); transition: none; } .places__item:active { transform: none; } }

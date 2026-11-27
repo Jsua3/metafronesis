@@ -46,7 +46,7 @@ const medirVentana = () => typeof window === 'undefined'
       <div #dialogueBox
         cdkTrapFocus
         [cdkTrapFocusAutoCapture]="!encuadrando()"
-        class="dialogue-strip"
+        class="dialogue-strip" (scroll)="updateScrollCues()"
         [class.strip--angosta]="angosta()"
         [class.dialogue-strip--side]="mode() === 'side'"
         [class.strip--warning]="interaction()?.type === 'WARNING'"
@@ -74,6 +74,8 @@ const medirVentana = () => typeof window === 'undefined'
               <span class="panel-back__arrow" aria-hidden="true">◀</span> Volver al mapa
             </button>
             <app-safe-exit-button class="panel-head__exit" data-hide-key variante="placa" [pausing]="pausing()" (pause)="safeExit.emit()" />
+            <!-- BORRADOR: texto pendiente de Psicología. -->
+            <button type="button" class="instant-compact u-boton" title="Texto instantáneo" [attr.aria-label]="'Texto instantáneo: ' + (instantText.enabled() ? 'activado' : 'desactivado')" [attr.aria-pressed]="instantText.enabled()" (click)="toggleInstant($event)">Texto<br>instantáneo</button>
           </div>
           @if (hasDecisionOptions(d)) {
             <p class="panel-head__note">
@@ -83,7 +85,7 @@ const medirVentana = () => typeof window === 'undefined'
           }
         </header>
 
-        <div class="strip-main">
+        <div class="strip-main" (scroll)="updateScrollCues()">
           <!-- La placa de quien habla: nombre en su pestaña, retrato que asoma sobre el marco, estado y la línea. -->
           <section class="placa" [class.placa--tutor]="d.tutor">
             <p class="speaker-name">{{ activeSpeakerName(d) }}
@@ -121,7 +123,7 @@ const medirVentana = () => typeof window === 'undefined'
                   <p class="persona-state">@for (activacion of [e.activation]; track activacion) {<i class="pulso" [attr.data-activation]="activacion" aria-hidden="true"></i>}{{ e.texto }}</p>
                 }
                 <!-- La línea se maqueta entera desde el principio (lo que falta va invisible): ninguna palabra salta de renglón. -->
-                <p class="dialogue-text" aria-hidden="true">@for (t of piezas(); track $index) {<span [class.acot]="t.acotacion" [class.falta]="t.oculto">{{ t.texto }}</span>}</p>
+                <p class="dialogue-text" aria-hidden="true" (scroll)="updateScrollCues()">@for (t of piezas(); track $index) {<span [class.acot]="t.acotacion" [class.falta]="t.oculto">{{ t.texto }}</span>}</p>
                 <!-- Texto completo de la línea para el cursor de lectura. Sin role ni aria-live (H-09): una región que
                      nace dentro del @if con su texto no se anuncia; la línea la anuncia el servicio de regiones vivas. -->
                 <p class="visually-hidden">{{ fullText() }}</p>
@@ -167,7 +169,7 @@ const medirVentana = () => typeof window === 'undefined'
               }
               <div class="choices" role="group" aria-label="Opciones de intervención" tabindex="-1" cdkFocusInitial
                 [attr.aria-describedby]="notice ? 'choices-notice choice-instruction' : 'choice-instruction'"
-                [class.choices--locked]="chosenKey() !== null">
+                [class.choices--locked]="chosenKey() !== null" [class.choices--larga]="opcionesLargas(d)">
                 @for (choice of d.choices; track choice.key; let i = $index) {
                   @let etiqueta = etiquetaDeFicha(d, i);
                   <button
@@ -205,7 +207,9 @@ const medirVentana = () => typeof window === 'undefined'
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './dialogue-mobile.css',
   styles: [`
+    .instant-compact { display: none; }
     /* Hecho de la sala (bloque I1): la placa de quien habla y las fichas de respuesta son pixel art a la misma escala
        que el mundo, con la luz de la sala (canto cálido de lámpara de noche, claro de día). Los marcos, tramas y letras
        son PNG de assets/game/dialogo (tools/escenarios/dialogo_arte.py) que llegan como variables CSS (dialogo-arte.ts). */
@@ -910,7 +914,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   /** La escala entera del retrato del kit: la misma de `--retrato` en cada tramo (`pixel/tramos.ts`). */
   protected readonly escalaKit = computed(() => {
     const { ancho, alto } = this.ventana();
-    return escalaDelRetrato(ancho, alto, this.mode() === 'side');
+    return ancho < 1024 ? 2 : escalaDelRetrato(ancho, alto, this.mode() === 'side');
   });
 
   readonly close   = output<void>();
@@ -1009,8 +1013,16 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly coarsePointer = signal(false);
 
   constructor() {
+    const pointer = typeof window !== 'undefined' ? window.matchMedia?.('(pointer: coarse)') : null;
+    if (pointer) {
+      this.coarsePointer.set(pointer.matches);
+      const changed = (event: MediaQueryListEvent) => this.coarsePointer.set(event.matches);
+      pointer.addEventListener?.('change', changed);
+      this.destroyRef.onDestroy(() => pointer.removeEventListener?.('change', changed));
+    }
     this.kit.load().catch(() => undefined);
     effect(onCleanup => {
       const fase = this.fasePendiente();
@@ -1198,7 +1210,8 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   /** BORRADOR: texto pendiente de Psicología. No presume que ya se habló con la persona. */
   staleNote(d: DialogueState): string | null {
     if (!d.stale) return null;
-    return `${DRAFT_COPY.noStepNow.text}${this.nextStep() ? ` Ahora te toca: ${this.nextStep()}.` : ''}`;
+    const paso = this.nextStep()?.replace(/\.+$/, '');
+    return `${DRAFT_COPY.noStepNow.text}${paso ? ` Ahora te toca: ${paso}.` : ''}`;
   }
 
   /** Etiqueta de la ficha de herramienta, solo cuando conviven herramientas y decisiones (sin reordenar). Las decisiones
@@ -1220,8 +1233,15 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     return this.hasChoices(d) ? 'Ver las opciones' : this.finalActionLabel() ?? 'Volver al mapa';
   }
 
+  /** Una ficha larga necesita el ancho completo en pantallas horizontales bajas. */
+  protected opcionesLargas(d: DialogueState): boolean {
+    return d.choices.some(choice => choice.text.length > 150 || !!choice.toolMissing);
+  }
+
   // BORRADOR: texto pendiente de Psicología. No promete letras cuando los atajos están desactivados.
   choiceInstruction(d: DialogueState): string {
+    // BORRADOR: texto pendiente de Psicología.
+    if (this.coarsePointer()) return 'Toca una opción para elegirla.';
     if (!this.shortcuts.enabled()) return 'Elige una opción: haz clic en ella.';
     const letters = d.choices.map((_, i) => this.letra(i)).join(', ');
     return `Elige una opción: haz clic en ella o pulsa su letra (${letters}).`;
@@ -1229,6 +1249,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   /** Pista de teclado (solo se pinta con puntero fino); sin los atajos de una tecla no promete los números. */
   keyboardHint(d: DialogueState): string {
+    if (this.coarsePointer()) return '';
     const count = this.hasChoices(d) ? d.choices.length : 0;
     if (count === 0 || !this.shortcuts.enabled()) return 'Enter: continuar · Esc: volver al mapa';
     const range = count === 1 ? letraDe(0) : `${letraDe(0)} a ${letraDe(count - 1)}`;
@@ -1281,9 +1302,12 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   ngAfterViewChecked() {
     const strip = this.host.nativeElement.querySelector<HTMLDivElement>('.dialogue-strip');
     if (!strip) return;
+    const scroller = typeof matchMedia !== 'undefined' && matchMedia('(width < 1024px)').matches
+      ? strip.querySelector<HTMLElement>('.strip-main') ?? strip : strip;
+    this.updateScrollCues();
     if (!this.isTypingComplete()) {
       // Solo mientras se escribe se ancla abajo, para que la línea nueva no se salga de la vista.
-      strip.scrollTop = strip.scrollHeight;
+      scroller.scrollTop = scroller.scrollHeight;
       const cuerpo = strip.querySelector<HTMLElement>('.strip-body');
       if (cuerpo && !this.choicesVisible()) delete cuerpo.dataset['mas'];
       this.settled = false;
@@ -1304,7 +1328,18 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     // Al terminar la línea: las opciones se revelan una sola vez y el resto del tiempo el
     // estudiante manda sobre el scroll; sin opciones se deja a la vista el botón de avance.
     if (this.choicesVisible()) this.revealChoices(strip);
-    else strip.scrollTop = strip.scrollHeight;
+    else scroller.scrollTop = scroller.scrollHeight;
+  }
+
+  /** Señales visuales solo mientras queda contenido por leer debajo. */
+  protected updateScrollCues(): void {
+    const sheet = this.host.nativeElement.querySelector<HTMLElement>('.dialogue-strip');
+    if (!sheet) return;
+    const main = sheet.querySelector<HTMLElement>('.strip-main');
+    const scroller = typeof matchMedia !== 'undefined' && matchMedia('(width < 1024px)').matches && main ? main : sheet;
+    scroller.toggleAttribute('data-scroll-more', scroller.scrollHeight > scroller.clientHeight + scroller.scrollTop + 2);
+    const text = sheet.querySelector<HTMLElement>('.dialogue-text');
+    text?.toggleAttribute('data-scroll-more', text.scrollHeight > text.clientHeight + text.scrollTop + 2);
   }
 
   /**
@@ -1319,6 +1354,12 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
    */
   private ajustarAFilasEnteras(lista: HTMLElement): void {
     const cuerpo = lista.parentElement;
+    // En hojas pequeñas se desplaza el contenido completo sin cortar ninguna ficha.
+    if (typeof matchMedia !== 'undefined' && matchMedia('(width < 1024px)').matches) {
+      lista.style.maxHeight = '';
+      if (cuerpo) delete cuerpo.dataset['mas'];
+      return;
+    }
     lista.style.maxHeight = '';
     if (cuerpo) delete cuerpo.dataset['mas'];
     // Con medidas de maqueta: scrollHeight cuenta el desplazamiento de la entrada escalonada y daba por desbordada una
@@ -1545,6 +1586,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
    * página cabe en el alto que le queda. Sin maqueta (pruebas sin navegador), no hace nada.
    */
   private programarPaginado(text: string): void {
+    if (typeof matchMedia !== 'undefined' && matchMedia('(width < 1024px)').matches) return;
     if (typeof requestAnimationFrame === 'undefined') return;
     // `untracked`: se llama desde el efecto que arranca el diálogo; leer la línea ahí lo haría depender de ella.
     const linea = untracked(() => this.lineIndex());

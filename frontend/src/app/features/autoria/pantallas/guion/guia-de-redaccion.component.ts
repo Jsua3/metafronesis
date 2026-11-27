@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
+import { UiGlifoAyuda } from '../../../../shared/ui/ayuda-breve/glifo-ayuda';
+
 /**
  * Cuatro reglas para escribir buenas respuestas, a la mano junto a «Lo que puede responder el estudiante» (EDITOR.md
  * §3.4.1, investigación A.2.6, recomendación 7). Se abre en el sitio, debajo del título, y no en un diálogo: la docente
@@ -9,12 +11,13 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
  */
 @Component({
   selector: 'app-guia-de-redaccion',
+  imports: [UiGlifoAyuda],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'guia-redaccion', '(keydown.escape)': 'cerrar()' },
   template: `
     <button type="button" class="guia-redaccion__boton" [attr.aria-expanded]="abierta()" aria-controls="guia-redaccion-panel"
             (click)="abierta.set(!abierta())">
-      <span class="guia-redaccion__icono" aria-hidden="true">?</span>
+      <span class="guia-redaccion__icono" aria-hidden="true"><ui-glifo-ayuda /></span>
       <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
       ¿Cómo escribir buenas respuestas?
     </button>
@@ -41,8 +44,7 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
     .guia-redaccion__boton[aria-expanded='true'] { border-color: var(--primario); background: var(--primario-tinte); }
     .guia-redaccion__boton:active { scale: 0.97; }
     .guia-redaccion__icono {
-      display: inline-grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; border-radius: 50%;
-      background: var(--primario-tinte); font-weight: 800;
+      display: inline-grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; --glifo-ayuda-tam: 20px;
     }
     .guia-redaccion__panel {
       flex: 1 1 100%; order: 10; padding: 0.75rem 1rem; border: 1px solid var(--linea); border-radius: var(--radio-tarjeta);

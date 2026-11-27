@@ -1,0 +1,27 @@
+@media (width < 1024px) {
+  :host .journal-modal, :host .journal-modal--open { position: fixed; box-sizing: border-box; max-height: min(92dvh, calc(100dvh - var(--visual-bottom, 0px))); overflow: hidden; }
+  :host .journal-modal { border: 3px solid #735d55; background: #1b1826 var(--trama-placa); background-size: 16px; border-radius: 0; box-shadow: none; }
+  :host .sheet-header { border-bottom-color: #735d55; }
+  :host .sheet-header h2 { font-family: var(--pixel-f-nombre, monospace); color: #ffcd82; }
+  :host .sheet-close { display: inline-flex; gap: 4px; align-items: center; width: auto; padding-inline: 8px; }
+  :host .sheet-close__label { display: inline; font-size: 12px; }
+  :host textarea, :host .journal-context { border-radius: 0; background: #242038; }
+  :host .journal-columns, :host .journal-context { overscroll-behavior: contain; }
+  :host .journal-columns { overflow-y: auto; }
+  :host textarea { font-size: 16px; }
+  :host button { min-height: 48px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+  :host button:active { transform: translateY(1px); }
+}
+@media (width < 600px) and (min-height: 500px) {
+  :host .journal-modal, :host .journal-modal--open { top: auto; left: 0; right: 0; bottom: var(--visual-bottom, 0px); width: 100%; transform: none; padding: 12px max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); border-radius: 0; }
+  :host .sheet-header::before { content: ''; position: absolute; top: 3px; left: calc(50% - 20px); width: 40px; height: 3px; background: #b69cff; }
+  :host .sheet-header { padding-top: 8px; }
+}
+@media (min-width: 600px) and (width < 1024px) and (min-height: 500px) {
+  :host .journal-modal { width: min(560px, 94vw); top: calc((100dvh - var(--visual-bottom, 0px)) / 2); }
+}
+@media (width < 1024px) and (height < 500px) {
+  :host .journal-modal, :host .journal-modal--open { top: 0; left: auto; right: 0; bottom: var(--visual-bottom, 0px); width: min(560px, 58vw); max-height: 100dvh; height: calc(100dvh - var(--visual-bottom, 0px)); transform: none; border-radius: 0; }
+  :host .journal-columns { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { :host .journal-modal { transition: none; } }

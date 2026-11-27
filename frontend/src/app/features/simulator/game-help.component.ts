@@ -42,6 +42,8 @@ let nextHelpId = 0;
         cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
         [attr.aria-labelledby]="titleId" [attr.aria-describedby]="descId">
         <h2 class="help-card__title" [attr.id]="titleId">{{ text.controlsTitle }}</h2>
+        <!-- BORRADOR: texto pendiente de Psicología. -->
+        <button type="button" class="help-welcome__close help-btn u-boton" (click)="dismissed.emit()">Cerrar</button>
         <ul class="help-welcome__rows" [attr.id]="descId">
           @for (row of welcomeRows(); track row.id) {
             <li class="help-welcome__row" [attr.data-help-row]="row.id">
@@ -110,7 +112,9 @@ let nextHelpId = 0;
       </section>
     }
   `,
+  styleUrl: './help-mobile.css',
   styles: [`
+    .help-welcome__close { display: none; }
     :host { display: block; min-width: 0; }
 
     .help-card {
