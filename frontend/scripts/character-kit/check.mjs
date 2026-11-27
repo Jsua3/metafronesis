@@ -89,7 +89,7 @@ export function runCheck({ outDir = DEFAULT_OUT, retouchRoot = RETOUCH_ROOT } = 
   const palette = loadPalette();
   errors.push(...checkUpToDate(files, outDir));
   errors.push(...checkColors(bundle, palette));
-  errors.push(...checkSharedHead(bundle, Object.fromEntries(Object.entries(COMPLEXIONS).map(([id, def]) => [id, statureOf(def).lift]))));
+  errors.push(...checkSharedHead(bundle));
   const published = Object.values(bundle.recipes).flatMap(recipe => [
     [recipe.id, recipe],
     ...recipeVariants(bundle, recipe).map(([variantId, variantRecipe]) => [`${recipe.id}/${variantId}`, variantRecipe]),

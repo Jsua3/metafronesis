@@ -4,6 +4,8 @@
  * vestidos; devuelven listas de errores legibles (vacía = cumple).
  */
 
+import { COMPLEXIONS } from '../../character-kit/mannequins/index.mjs';
+import { statureOf } from './derive-complexion.mjs';
 import { FRAME, MIRROR_OF, PORTRAIT_FRAME, SHEETS, SHEET_IDS, VIEW_ROWS, decodeRle } from '../../src/app/features/character/kit/kit-engine.ts';
 
 export const RULES = Object.freeze({
@@ -286,7 +288,9 @@ const HEAD_LABELS = new Set(['H', 'e', 'E']);
  * contorno. Así el pelo sirve en todas las complexiones. Una complexión alta
  * la tiene igual pero `lift` filas más arriba (`lifts`, por id).
  */
-export function checkSharedHead(bundle, lifts = {}) {
+const DEFAULT_LIFTS = Object.fromEntries(Object.entries(COMPLEXIONS).map(([id, def]) => [id, statureOf(def).lift]));
+
+export function checkSharedHead(bundle, lifts = DEFAULT_LIFTS) {
   const errors = [];
   const ref = bundle.complexions.a;
   if (!ref) return ['falta la complexión a (referencia de la cabeza)'];
