@@ -82,6 +82,12 @@ def test_un_intento_de_sesiones_solapadas_solo_sale_en_su_sesion_de_origen(
     assert fila_de(origen)["estado"] == "IN_PROGRESS"
     assert fila_de(otra)["estado"] == "SIN_INTENTO"
 
+    from apps.sesiones import servicios
+    detalle_origen = {fila["estudianteId"]: fila for fila in servicios.detalle_dto(origen)["convocados"]}
+    detalle_otra = {fila["estudianteId"]: fila for fila in servicios.detalle_dto(otra)["convocados"]}
+    assert detalle_origen[estudiantes[0].pk]["intento"] == "JUGANDO"
+    assert detalle_otra[estudiantes[0].pk]["intento"] == "SIN_EMPEZAR"
+
 
 def test_migracion_historica_solo_enlaza_una_convocatoria_inequivoca(
     crear_sesion, estudiantes, version, docente,

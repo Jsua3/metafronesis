@@ -21,7 +21,9 @@ def en_curso(crear_sesion, **cambios):
 
 def intento(sesion, estudiante, status="IN_PROGRESS"):
     return SimulationAttempt.objects.create(
-        student=estudiante, case_version=sesion.case_version, current_node=sesion.case_version.nodes.get(start_node=True),
+        student=estudiante, case_version=sesion.case_version,
+        convocatoria=Convocatoria.objects.get(sesion=sesion, estudiante=estudiante),
+        current_node=sesion.case_version.nodes.get(start_node=True),
         status=status, attempt_token_hash=secrets.token_hex(32), last_activity_at=timezone.now(),
     )
 

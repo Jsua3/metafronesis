@@ -84,8 +84,7 @@ def detalle_dto(sesion):
     ultimo = {}
     if sesion.iniciada_en:
         intentos = SimulationAttempt.objects.filter(
-            student_id__in=[c.estudiante_id for c in filas], case_version=sesion.case_version,
-            is_rehearsal=False, started_at__gte=sesion.iniciada_en,
+            convocatoria__sesion=sesion, is_rehearsal=False,
         ).order_by("started_at", "pk")
         for intento in intentos:
             ultimo[intento.student_id] = intento.status
