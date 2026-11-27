@@ -53,6 +53,8 @@ export interface Caja { x: number; y: number; ancho: number; alto: number }
  */
 export interface Vista {
   ancho: number; alto: number; dpr: number; cubiertoAbajo: number; cubiertoArriba?: number; placas?: readonly Caja[];
+  /** En pantalla táctil vertical, el mundo cubre la ventana a escala entera. */
+  cubrir?: boolean;
 }
 
 export interface Sala { ancho: number; alto: number }
@@ -106,6 +108,7 @@ export function zoomCaminar(vista: Vista, sala: Sala): number {
 /** Zoom entero de la vista cercana manual: un paso más que caminar si aún se ve `MIN_CERCA`. */
 export function zoomCercano(vista: Vista, caminar: number): number {
   const k = caminar + 1;
+  if (vista.cubrir) return k;
   return vista.ancho / k >= MIN_CERCA.ancho && vista.alto / k >= MIN_CERCA.alto ? k : caminar;
 }
 
@@ -130,11 +133,27 @@ function limitar(centro: number, mitad: number, min: number, max: number): numbe
   return Math.min(max - mitad, Math.max(min + mitad, centro));
 }
 
+/** Evita mostrar fuera de la sala cuando la vista de exploración debe cubrir la ventana. */
+export function limitarASala(estado: EstadoCamara, vista: Vista, sala: Sala): EstadoCamara {
+  return { ...estado, centro: {
+    x: limitar(estado.centro.x, vista.ancho / (2 * estado.zoom), 0, sala.ancho),
+    y: limitar(estado.centro.y, vista.alto / (2 * estado.zoom), 0, sala.alto),
+  } };
+}
+
 /** Dónde debe mirar la cámara y con qué zoom. `previo` es el estado actual (para la zona muerta); null en un corte. */
 export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): EstadoCamara {
+  const estado = calcularObjetivoCamara(e, previo);
+  if (!e.vista.cubrir || (e.momento.tipo !== 'explorar' && e.momento.tipo !== 'general')) return estado;
+  // La protección frente a placas puede desplazar el encuadre; no debe enseñar el exterior de la sala.
+  return limitarASala(estado, e.vista, e.sala);
+}
+
+function calcularObjetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): EstadoCamara {
   const { vista, sala, momento, jugador } = e;
-  const general = zoomGeneral(vista, sala);
-  const caminar = zoomCaminar(vista, sala);
+  const cobertura = vista.cubrir ? Math.max(1, Math.ceil(vista.alto / sala.alto), Math.ceil(vista.ancho / sala.ancho)) : 1;
+  const general = Math.max(cobertura, zoomGeneral(vista, sala));
+  const caminar = Math.max(general, zoomCaminar(vista, sala));
   const base = e.cercana ? zoomCercano(vista, caminar) : caminar;
   // Con el acercamiento automático, un paso más cerca; siempre se abre lo que haga falta para que quepan las cabezas.
   const desde = e.acercarAuto ? base + 1 : base;
@@ -183,18 +202,18 @@ export function objetivoCamara(e: EntradaCamara, previo: EstadoCamara | null): E
   const resto = (e.cuerpos ?? []).filter(pie => !principales.some(p => mismoPunto(p, pie))
     && !opcionales.some(p => mismoPunto(p, pie)));
   // Mantiene el plano si cabe el grupo. Al abrirlo, conserva primero a quien juega, a su interlocutor y al destino.
-  for (let k = zoom; k >= 1; k--) {
+  for (let k = zoom; k >= cobertura; k--) {
     const base = k === zoom ? centro : centroBase(k, foco, pies, e, previo);
     const encuadre = centroLibre(base, k, vista, principales, opcionales, resto);
     if (encuadre) return { centro: encuadre, zoom: k };
   }
   // Si alguien más de la sala impide el encuadre, aún pueden caber la jugadora y la interacción.
-  const abierto = centroBase(1, foco, pies, e, previo);
-  const encuadre = centroLibre(abierto, 1, vista, principales, []);
-  if (encuadre) return { centro: encuadre, zoom: 1 };
+  const abierto = centroBase(cobertura, foco, pies, e, previo);
+  const encuadre = centroLibre(abierto, cobertura, vista, principales, []);
+  if (encuadre) return { centro: encuadre, zoom: cobertura };
   const soloJugadora = centroLibre(centro, zoom, vista, [jugador], []);
   return soloJugadora ? { centro: soloJugadora, zoom }
-    : { centro: esquivarPlacas(abierto, 1, vista, [jugador]), zoom: 1 };
+    : { centro: esquivarPlacas(abierto, cobertura, vista, [jugador]), zoom: cobertura };
 }
 
 const mismoPunto = (a: Punto, b: Punto) => a.x === b.x && a.y === b.y;

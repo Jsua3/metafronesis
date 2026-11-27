@@ -191,7 +191,7 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
       padding: var(--l-alto-barra) var(--l-canal) 44px;
     }
     .portal-main--juego {
-      height: 100vh;
+      height: 100dvh;
       padding: 0;
       overflow: hidden;
     }
@@ -201,6 +201,18 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
     @media (max-width: 63.999rem) {
       .portal-main:not(.portal-main--juego, .portal-main--propio) {
         padding-bottom: calc(var(--asb-alto-modulo-inferior) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+      }
+    }
+    @media (min-width: 600px) and (max-width: 1023px) and (min-height: 500px) {
+      .portal-main:not(.portal-main--juego, .portal-main--propio) {
+        padding-inline-start: calc(6.25rem + max(.75rem, env(safe-area-inset-left, 0px)));
+        padding-bottom: max(2.75rem, env(safe-area-inset-bottom, 0px));
+      }
+    }
+    @media (max-width: 1023px) and (max-height: 499px) {
+      .portal-main:not(.portal-main--juego, .portal-main--propio) {
+        padding-block: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-bottom, 0px));
+        padding-inline-start: calc(4.5rem + max(.5rem, env(safe-area-inset-left, 0px)));
       }
     }
   `],

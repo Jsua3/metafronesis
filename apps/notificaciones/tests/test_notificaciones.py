@@ -13,6 +13,14 @@ from shared.policies import ADMIN, ESTUDIANTE, PROFESOR
 pytestmark = [pytest.mark.django_db, pytest.mark.req("SIEP-38", "SIEP-45")]
 
 
+@pytest.fixture(autouse=True)
+def correos_al_confirmar(monkeypatch):
+    """Los correos salen cuando la transacción se confirma; aquí se ejecutan al momento (la prueba corre en una
+    transacción que nunca se confirma). ``test_envio_correos.py`` cubre la espera."""
+    from apps.notificaciones import servicios
+    monkeypatch.setattr(servicios, "al_confirmar", lambda funcion: funcion())
+
+
 @pytest.fixture
 def datos(settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
@@ -73,7 +81,7 @@ def test_fallo_de_correo_queda_marcado(datos):
     with patch("apps.notificaciones.servicios.send_mail", side_effect=OSError("falló")):
         emitir(datos)
     aviso = Notificacion.objects.get()
-    assert not aviso.correo_enviado and aviso.error_correo
+    assert not aviso.correo_enviado and aviso.error_correo == "OSError: falló"
 
 
 def test_solo_veo_las_mias(datos):

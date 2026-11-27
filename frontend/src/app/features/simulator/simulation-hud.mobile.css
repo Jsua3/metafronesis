@@ -1,0 +1,34 @@
+.hud-mobile-menu { display: none; }
+@media (hover: hover) and (pointer: fine) and (width >= 1024px) {
+  :host [data-hud-help] .hud-action__texto { color: var(--luz); }
+  :host [data-hud-settings] .hud-action__texto { color: var(--pixel-tinta); }
+}
+:host(.hud--touch-settings) .hud-strip { visibility: hidden; }
+:host(.hud--touch-settings) .settings-menu { visibility: visible; pointer-events: auto; }
+/* Las guardas del foco van junto al menú, dentro de la barra oculta: si heredan la ocultación, el foco se escapa. */
+:host(.hud--touch-settings) ::ng-deep .cdk-focus-trap-anchor { visibility: visible; }
+:host(.hud--touch-settings) .hud-persona, :host(.hud--touch-settings) .hud-case,
+:host(.hud--touch-settings) .hud-actions > .hud-action, :host(.hud--touch-settings) .hud-mobile-menu { visibility: hidden; pointer-events: none; }
+:host(.hud--touch-settings) .settings-menu { padding-bottom: 0; }
+/* «Salida segura» fija al pie de la hoja: su franja opaca llega hasta el borde y nada asoma por debajo. */
+:host(.hud--touch-settings) .settings-menu app-safe-exit-button { position: sticky; bottom: 0; z-index: 3; grid-column: 1 / -1; display: flex; padding: 8px 0 max(10px, env(safe-area-inset-bottom)); background: var(--pixel-penumbra); }
+:host(.hud--touch-settings) .settings-menu__header button { width: auto; min-width: 48px; padding: 0 8px; }
+@media (width < 600px) and (height >= 500px), (height < 500px) and (width < 1024px) {
+  :host, :host .hud-shell, :host .hud-strip, :host .hud-zone--right { width: 100%; box-sizing: border-box; }
+  :host { pointer-events: none; }
+  :host .hud-strip { height: 52px; padding: 2px; background: none; border: 0; border-image: none; box-shadow: none; }
+  :host .hud-strip::after { display: none; }
+  :host .hud-zone--right { justify-content: space-between; }
+  :host .hud-persona-copy, :host .hud-score, :host .hud-case { display: none; }
+  :host .hud-persona-ventanilla { width: 44px; height: 44px; }
+  :host .hud-actions { margin-left: auto; border: 0; padding: 0; }
+  :host .hud-actions > .hud-action { display: none; }
+  :host .hud-mobile-menu { display: inline-flex; min-width: 48px; min-height: 48px; padding-inline: 6px; }
+  .hud-persona, .hud-mobile-menu, .settings-menu { pointer-events: auto; }
+  :host .settings-menu {
+    inset: auto 0 0; width: 100%; max-height: 90dvh; grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (height < 500px) and (width < 1024px) {
+  :host .settings-menu { inset: 0 0 0 auto; width: min(440px, 80dvw); max-height: 100dvh; }
+}

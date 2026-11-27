@@ -966,6 +966,14 @@
       "audit": "STUDENTS_IMPORTED"
     },
     {
+      "route": "api/grupos/<int:pk>/estudiantes/sugerencias",
+      "method": "GET",
+      "exposure": "role:ADMIN,PROFESOR",
+      "body": "none",
+      "throttle": null,
+      "audit": "STUDENT_SUGGESTIONS_VIEWED"
+    },
+    {
       "route": "api/grupos/estudiantes/import/spec",
       "method": "GET",
       "exposure": "role:PROFESOR",

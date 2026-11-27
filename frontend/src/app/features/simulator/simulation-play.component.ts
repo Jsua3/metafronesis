@@ -46,7 +46,7 @@ import {
 } from './caso/pausa-local';
 import { npcsDeLaSala } from './caso/npcs-de-sala';
 import { memoriaDeComentarios } from './caso/comentarios';
-import { BurbujaVisible, MundoCercania, ProximityReactions, RELOJ_DE_VENTANA, acotarAncla } from './proximity-reactions';
+import { BURBUJA_ALTO_PX, BURBUJA_MEDIO_ANCHO_PX, BurbujaVisible, MundoCercania, ProximityReactions, RELOJ_DE_VENTANA, acotarAncla } from './proximity-reactions';
 import { CommentBubbleComponent } from './comment-bubble.component';
 import { RehearsalGoneComponent } from './rehearsal-gone.component';
 import { RehearsalPanelComponent } from './rehearsal-panel.component';
@@ -69,6 +69,7 @@ import { PlaceCandidate, selectPlacesWithNext, walkingText } from './world-place
 import { keyPersonAccessibleName, resolveKeyPerson } from './key-person.util';
 import { SimulationHudComponent } from './simulation-hud.component';
 import { ToolInventoryComponent } from './tool-inventory.component';
+import { MobileAction, MobileSheetComponent } from './mobile-sheet.component';
 import { AudioDirectorService } from './audio-director.service';
 import { VOLUME_DEFAULT_LEVEL, VolumeSettings } from './volume-settings.service';
 import {
@@ -92,6 +93,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { resolveViewMode, SimulationViewMode } from './simulation-view-mode.util';
 import { IntroGateStep, introCardLines, resolveIntroStep } from './intro-gate.util';
 import { COARSE_POINTER_QUERY, matchesMedia, watchMedia } from './pointer-modality.util';
+import { LOW_LANDSCAPE_QUERY, MENU_QUERY, SHEET_QUERY, TABLET_QUERY, textoSegunPantalla } from './screen-class.util';
 import { loadingPhase } from '../../shared/ui/skeleton/loading-phase';
 import { UiErrorKind } from '../../shared/ui/state/state-copy';
 import { UiButton } from '../../shared/ui/button/ui-button';
@@ -166,6 +168,8 @@ const PLACAS_SOBRE_EL_MUNDO = [
   '.dialogue-cinematic .placa', '.dialogue-cinematic .panel-head', '.dialogue-cinematic .strip-body',
   'app-reaction-director .reaction-strip', 'app-game-world .touch-dpad', 'app-game-world .touch-interact',
 ].join(', ');
+/** Alto de la barra del teléfono (56 px) más el de una burbuja de comentario: por encima de esto la burbuja la pisaría. */
+const CABECERA_Y_BURBUJA_PX = 164;
 /** Modo compacto (F§7.9): la misma condición que el CSS compacto y que el HUD. */
 const COMPACT_QUERY = '(max-height: 520px), (pointer: coarse) and (orientation: landscape)';
 /** Pantalla estrecha (móvil vertical): la tarjeta también arranca plegada, el mundo ocupa el ancho (F§4.6). */
@@ -207,7 +211,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
   imports: [
     A11yModule, CommonModule, RouterLink, MatIconModule,
     SimulationHudComponent, GameWorldComponent, DialoguePanelComponent,
-    ToolInventoryComponent, JournalPanelComponent, AttemptOutcomeComponent,
+    ToolInventoryComponent, MobileSheetComponent, JournalPanelComponent, AttemptOutcomeComponent,
     SafeExitButtonComponent, PixelIconoComponent, SceneGoalCardComponent, GameHelpComponent, WorldPlacesListComponent,
     MinimapaComponent, PlanoCompletoComponent,
     ReactionDirectorComponent, CommentBubbleComponent, RehearsalGoneComponent, RehearsalPanelComponent, SensitiveNoticeComponent, UiButton, UiErrorState, UiScopeNotice, UmbralCasoComponent, NotaTransicionComponent, ErrorConsentimientoComponent,
@@ -215,6 +219,10 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
   ],
   template: `
     <div class="game-container pixel-juego" data-skin="game" id="main-content" tabindex="-1" [attr.data-mode]="viewMode()" [style]="arteJuego"
+      [class.game-container--touch-overlay]="touchOverlay()" [class.game-container--settings-open]="settingsLayerOpen()"
+      [class.game-container--touch-mode]="touchMode()"
+      [class.game-container--goal-open]="goalOpen()"
+      [class.game-container--nearby]="!!nearbyInteraction()"
       [class.game-container--reduce-motion]="reduceMotion()" [class.game-container--cine]="cinemaBars()"
       [style.--alto-hud]="altoHud() + 'px'" [style.--alto-objetivo]="altoObjetivo() + 'px'" [style.--alto-pie]="altoPie() + 'px'"
       [attr.data-rehearsal]="mode() === 'rehearsal' ? 'true' : null">
@@ -315,7 +323,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                      registro van fuera de este bloque. -->
                 <div id="content-warning-body">
                   <p>{{ contentNoticeText.contenido }}</p>
-                  <p>{{ contentNoticeText.salida }}</p>
+                  <p>{{ coarsePointer() ? contentNoticeText.salida.replace(' (con teclado, también Esc)', '') : contentNoticeText.salida }}</p>
                 </div>
                 <!-- Aviso de alcance (RN-01, borrador de Psicología): fuera del texto validado. -->
                 <ui-scope-notice />
@@ -406,8 +414,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
 
         <!-- Envoltorio sin caja (display: contents): con el umbral a la vista, la barra, el mundo y el pie quedan inertes y
              ocultos a la tecnología asistiva de una vez, sin tocar los enlaces de inert propios de cada capa. -->
-        <div class="capas-del-mundo" [attr.inert]="umbralVisible() ? '' : null" [attr.aria-hidden]="umbralVisible() ? 'true' : null">
-        <header class="top-bar" [attr.inert]="inputBlocked() || transitionNote() ? '' : null" [attr.aria-hidden]="inputBlocked() || transitionNote() ? 'true' : null">
+        <div class="capas-del-mundo" [attr.inert]="umbralVisible() || mobileSheet() ? '' : null" [attr.aria-hidden]="umbralVisible() || mobileSheet() ? 'true' : null">
+        <header class="top-bar" [attr.inert]="inputBlocked() || transitionNote() || (touchOverlay() && !settingsLayerOpen()) ? '' : null" [attr.aria-hidden]="inputBlocked() || transitionNote() || (touchOverlay() && !settingsLayerOpen()) ? 'true' : null">
           @if (mode() === 'rehearsal') { <p class="rehearsal-banner" role="note">{{ draft.rehearsalBanner.text }}</p> }
           <!-- Bloque U1, variante B: una fila sobre el mundo. A la izquierda, el hueco de la ficha del objetivo (que vive en el
                lienzo); en medio, el carril de avisos; a la derecha, el grupo del caso, la persona y las teclas. -->
@@ -437,12 +445,13 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
             </div>
             <!-- Bloque U1: el HUD y, debajo de él, el minimapa (antes en la esquina del lienzo). Un solo grupo a la derecha. -->
             <div class="top-bar__derecha" #derecha>
-            <app-simulation-hud
+            <app-simulation-hud #hud
               [attempt]="game"
               [patientVisual]="patientVisual()"
               [stageLabel]="stageLabel()"
               [locationLabel]="world()?.map?.title ?? ''"
               [journalOpen]="journalOpen()"
+              [touchMode]="touchMode()"
               [musicMuted]="musicMuted()"
               [sfxMuted]="sfxMuted()"
               [musicLevel]="volume.musicLevel()" [sfxLevel]="volume.sfxLevel()"
@@ -455,6 +464,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
               (toggleReduceMotion)="toggleReduceMotion()"
               [instantText]="instantText.enabled()" (toggleInstantText)="toggleInstantText()"
               (openControls)="openControls()" (openHelp)="openHelp()" (helpReset)="resetHelpCard()"
+              (openMobileMenu)="mobileSheet.set('menu')"
+              (settingsOpenChange)="settingsLayerOpen.set($event)" (safeExit)="pauseFromOverlay()"
               [fichaDisponible]="mode() !== 'rehearsal' && !busy() && !fadeActive()" (openCaseBrief)="verFichaDelCaso()" />
             @if (world() && !cinemaBars()) {
               <!-- Minimapa (bloque M1, §5.3): abre el plano completo (también con M). Con las franjas de cine se va. -->
@@ -468,25 +479,31 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
 
         <div class="main-zone">
           <section #canvasZone class="canvas-zone" aria-label="Escena de la simulación"
-            [attr.inert]="inputBlocked() || transitionNote() || rehearsalGone() ? '' : null"
-            [attr.aria-hidden]="inputBlocked() || transitionNote() || rehearsalGone() ? 'true' : null">
+            [attr.inert]="inputBlocked() || transitionNote() || rehearsalGone() || (touchOverlay() && !goalOpen() && !reacting()) ? '' : null"
+            [attr.aria-hidden]="inputBlocked() || transitionNote() || rehearsalGone() || (touchOverlay() && !goalOpen() && !reacting()) ? 'true' : null">
             @if (world()) {
               <!-- Sin role="status": la ficha no trae región viva (los avisos salen por el anunciador de la app). -->
-              <div class="objective-card">
+              @if (goalOpen()) { <div class="goal-backdrop" aria-hidden="true" (click)="goalCard.close()"></div> }
+              <div class="objective-card" [attr.inert]="touchOverlay() && !goalOpen() ? '' : null" [attr.aria-hidden]="touchOverlay() && !goalOpen() ? 'true' : null"
+                [attr.role]="goalOpen() ? 'dialog' : null" [attr.aria-modal]="goalOpen() ? 'true' : null" [attr.aria-label]="goalOpen() ? 'Objetivo de la escena' : null"
+                [cdkTrapFocus]="goalOpen()" [cdkTrapFocusAutoCapture]="goalOpen()">
                 <!-- La ficha abierta se desplaza por dentro con tope de alto (no baja hasta las personas y objetos del suelo). -->
                 @if (stageLabel(); as etapa) {
                   <!-- La etapa es la pestaña de la ficha, como el nombre de quien habla sobre su placa (U1). -->
                   <p class="objective-card__etapa u-rotulo"><span class="u-rotulo__texto">{{ etapa }}</span></p>
                 }
                 <div class="objective-card__scroll">
-                  <app-scene-goal-card [guia]="guide()" [doorMessages]="doorMessages()" [walkingKey]="pendingWalkInteraction()?.key ?? null" [hintAttempt]="hintAttempt()" [compact]="cardFolded()" [reduceMotion]="reduceMotion()"
-                    (opened)="refreshGuide()" (goToStep)="goToStep($event)" (consentRequired)="requireConsentAgain()" />
+                  <app-scene-goal-card #goalCard [guia]="guide()" [doorMessages]="doorMessages()" [walkingKey]="pendingWalkInteraction()?.key ?? null" [hintAttempt]="hintAttempt()" [compact]="cardFolded()" [reduceMotion]="reduceMotion()" [touchMode]="goalAsSheet()"
+                    (opened)="refreshGuide(); goalOpen.set(goalAsSheet())" (closed)="goalOpen.set(false)" (goToStep)="goToStepFromGoal($event, goalCard)" (consentRequired)="consentFromGoal(goalCard)" />
                 </div>
+                @if (goalOpen()) {
+                  <app-safe-exit-button class="goal-safe-exit" variante="placa" data-hide-key [pausing]="pausing()" (pause)="goalCard.close(); pauseFromOverlay()" />
+                }
               </div>
             }
 
             @if (world(); as w) {
-              <app-game-world #gameWorld id="game-area" class="game-surface" [world]="w"
+              <app-game-world #gameWorld id="game-area" class="game-surface" [world]="w" [attr.inert]="goalOpen() ? '' : null"
                 [scenarioConfig]="scenarioConfig()"
                 [viewedNpcKeys]="viewedNpcKeys()" [shortcuts]="shortcuts.enabled()"
                 [nearbyInteraction]="nearbyInteraction()" [selectedInteractionKey]="selectedInteraction()?.key ?? null"
@@ -540,7 +557,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                 }
               </header>
               <app-dialogue-panel class="dialogue-side" mode="side" [reduceMotion]="reduceMotion()"
-                [dialogue]="dialogoConNombre()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente" [finalActionLabel]="dialogueFinalAction()"
+                [dialogue]="dialogoConNombre()" [world]="world()" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="pasoEnPantalla()" [finalActionLabel]="dialogueFinalAction()"
                 [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
                 (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
                 (execute)="executeDecision($event)" (useTool)="useTool($event)"
@@ -556,8 +573,8 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         <!-- REGLA-004: mientras el fundido de escena (o la nota de transición) espera al servidor, el pie queda por encima y «Salida segura» se ve y se toca. -->
         <!-- Con el cuadro de diálogo sobre el mundo, el pie se oculta y queda inerte: la franja de abajo es del cuadro. -->
         <footer class="bottom-zone" [class.bottom-zone--above-veils]="footerAboveVeils()"
-          [attr.inert]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? '' : null"
-          [attr.aria-hidden]="inputBlocked() || viewMode() === 'dialogue-cinematic' ? 'true' : null"
+          [attr.inert]="inputBlocked() || viewMode() === 'dialogue-cinematic' || touchOverlay() ? '' : null"
+          [attr.aria-hidden]="inputBlocked() || viewMode() === 'dialogue-cinematic' || touchOverlay() ? 'true' : null"
           [class.bottom-zone--bajo-dialogo]="viewMode() === 'dialogue-cinematic'"
           [class.bottom-zone--bajo-reaccion]="reacting()">
           @if (game.status === 'IN_PROGRESS' || reactingToLast()) {
@@ -567,6 +584,9 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
                  label-content-name-mismatch); la tecla Esc es aria-hidden. -->
             <app-safe-exit-button variante="placa" [compact]="compactMode()" [pausing]="pausing()" (pause)="pauseFromOverlay()" />
           }
+          <!-- BORRADOR: texto pendiente de Psicología. -->
+          <button type="button" class="mobile-tools-button u-boton u-sombra" data-mobile-tools
+            (click)="mobileSheet.set('tools')">Herramientas {{ mobileToolCount() }}/{{ world()?.tools?.length ?? 0 }}</button>
           <!-- Teléfono (≤ 560 px, bloque U1): el chip de contenido sensible baja junto a «Salida segura» y deja más sala a la vista.
                Con ≤ 560 px se oculta el del carril y con más se oculta este (display: none lo saca del árbol de accesibilidad:
                queda uno solo, visible y legible a la vez). -->
@@ -622,8 +642,20 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
         </footer>
         </div>
 
+        @if (mobileSheet(); as sheet) {
+          <app-mobile-sheet [kind]="sheet" [pausing]="pausing()" [sensitiveText]="sensitiveNotice() ?? contentNoticeText.contenido"
+            [musicLevel]="volume.musicLevel()" [sfxLevel]="volume.sfxLevel()" [musicMuted]="musicMuted()" [sfxMuted]="sfxMuted()" [reduceMotion]="reduceMotion()"
+            (musicLevelChange)="setMusicLevel($event)" (sfxLevelChange)="setSfxLevel($event)" (toggleMusic)="toggleMusicMute()" (toggleSfx)="toggleSfxMute()"
+            (closed)="closeMobileSheet()" (safeExit)="mobileSheet.set(null); pauseFromOverlay()" (action)="mobileAction($event)">
+            @if (sheet === 'tools') {
+              <app-tool-inventory [tools]="world()?.tools ?? []" [inventory]="world()?.inventory ?? []"
+                [selectedToolCode]="selectedToolCode()" (select)="mobileSheet.set(null); selectTool($event)" />
+            }
+          </app-mobile-sheet>
+        }
+
         @if (viewMode() === 'dialogue-cinematic') {
-          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogoConNombre()" [world]="world()" [avisoBreve]="softNotice() + (decisionSelection() ? ' ' + decisionSelection() : '')" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="guide().siguiente" [finalActionLabel]="dialogueFinalAction()"
+          <app-dialogue-panel class="dialogue-cinematic" [reduceMotion]="reduceMotion()" [dialogue]="dialogoConNombre()" [world]="world()" [avisoBreve]="softNotice() + (decisionSelection() ? ' ' + decisionSelection() : '')" [interaction]="selectedInteraction()" [speakerVisual]="speakerVisual()" [nextStep]="pasoEnPantalla()" [finalActionLabel]="dialogueFinalAction()"
             [esperarEncuadre]="esperarEncuadre()" [encuadreListo]="gameWorldRef()?.encuadreListo() ?? null"
             [releaseToken]="dialogueReleaseToken()" [pausing]="pausing()" [hintAttempt]="hintAttempt()" [startAt]="dialogueStart()"
             (close)="closeDialogue()" (safeExit)="pauseFromOverlay()"
@@ -637,6 +669,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
           <div class="help-layer help-layer--controles">
             <app-game-help view="welcome" [modality]="helpModality()" [safeExitPromise]="safeExitPromise"
               [shortcuts]="shortcuts.enabled()" (dismissed)="closeControls()" (openFull)="openHelpFromControls()" />
+            @if (touchMode()) { <app-safe-exit-button class="help-safe-exit" variante="placa" data-hide-key [pausing]="pausing()" (pause)="pauseFromOverlay()" /> }
           </div>
         }
 
@@ -645,6 +678,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
           <div class="help-layer">
             <app-game-help view="screen" [modality]="helpModality()" [safeExitPromise]="safeExitPromise" [shortcuts]="shortcuts.enabled()"
               (closed)="helpOpen.set(false)" />
+            @if (touchMode()) { <app-safe-exit-button class="help-safe-exit" variante="placa" data-hide-key [pausing]="pausing()" (pause)="pauseFromOverlay()" /> }
           </div>
         }
 
@@ -698,6 +732,7 @@ function umbralDelEstado(estado: Record<string, unknown> | null): { titulo: stri
       }
     </div>
   `,
+  styleUrl: './simulation-play.mobile.css',
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     :host { display: block; }
@@ -1382,6 +1417,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private readonly rehearsalApi = inject(RehearsalApi);
 
   @ViewChild('gameWorld')    private gameWorld?: GameWorldComponent;
+  @ViewChild('hud') private hud?: SimulationHudComponent;
   @ViewChild('journalPanel') private journalPanel?: JournalPanelComponent;
   @ViewChild('reaction')     private reaction?: ReactionDirectorComponent;
 
@@ -1395,6 +1431,14 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   readonly showResumePrompt = signal(false);
   readonly progressMap = signal<ProgressMapState | null>(null);
   readonly world      = signal<SimulationWorldState | null>(null);
+  readonly mobileSheet = signal<'menu' | 'tools' | null>(null);
+  readonly goalOpen = signal(false);
+  readonly settingsLayerOpen = signal(false);
+  readonly mobileToolCount = computed(() => {
+    const world = this.world();
+    const owned = new Set(world?.inventory ?? []);
+    return (world?.tools ?? []).filter(tool => owned.has(tool.code)).length;
+  });
   /** La última decisión vuelve a pedir el mundo, ya sincronizado con la escena terminal. */
   readonly revisionDelCierre = computed(() => {
     const intento = this.attempt();
@@ -1702,6 +1746,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** La guía de la escena: el objetivo del documento y lo que hay en la sala (la lista de lugares no es reactiva: se relee). */
   readonly guide = signal<GuiaEscena>(GUIA_VACIA);
+  /** El paso tal como se lee en esta pantalla (con menú, «Ir a…» no está arriba a la derecha). */
+  readonly pasoEnPantalla = computed(() => textoSegunPantalla(this.guide().siguiente, matchesMedia(MENU_QUERY)));
 
   /**
    * Un velo a pantalla completa (fundido de escena, nota de transición) cubre el pie: mientras dure, el pie sube por
@@ -1722,7 +1768,13 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
 
   /** Con la pantalla de ayuda abierta el personaje no camina mientras se lee. */
   readonly worldMotionPaused = computed(() => this.inputBlockedOutsidePlaces() || (this.placesOpen() && !this.pendingWalkInteraction()) || this.transitionNote() !== ''
-    || this.helpOpen() || this.controlsVisible() || this.reacting() || this.rehearsalGone());
+    || this.helpOpen() || this.controlsVisible() || this.reacting() || this.rehearsalGone() || !!this.mobileSheet() || this.goalOpen() || (this.touchMode() && this.settingsLayerOpen()));
+
+  readonly touchMode = computed(() => this.coarsePointer() || !!this.gameWorldRef()?.touchInput?.());
+  /** La ficha se abre como hoja modal solo con entrada táctil en teléfono o tableta; desde 1024 px se despliega en su sitio. */
+  goalAsSheet(): boolean { return this.touchMode() && matchesMedia(SHEET_QUERY); }
+  readonly touchOverlay = computed(() => this.touchMode() && (this.inputBlocked() || this.helpOpen() || this.controlsVisible()
+    || this.reacting() || this.rehearsalGone() || !!this.mobileSheet() || this.goalOpen() || this.settingsLayerOpen() || this.umbralVisible()));
 
   /**
    * Última decisión: el intento ya figura COMPLETED mientras el personaje reacciona, pero el resultado espera a la
@@ -1757,6 +1809,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (!raiz || !lienzo) return [];
     const base = lienzo.getBoundingClientRect();
     const cajas: PlacaDeInterfaz[] = [];
+    // La hoja horizontal del diálogo ocupa el lado derecho; la cámara reserva el lado izquierdo para quien habla.
+    if (this.touchMode() && matchesMedia(LOW_LANDSCAPE_QUERY) && (this.dialogue() || this.reacting())) {
+      cajas.push({ x: base.width * .42, y: 0, ancho: base.width * .58, alto: base.height });
+    }
     raiz.querySelectorAll<HTMLElement>(PLACAS_SOBRE_EL_MUNDO).forEach(el => {
       const r = el.getBoundingClientRect();
       if (el.hasAttribute('data-placa-flotante') && r.width >= 1 && r.height >= 1) {
@@ -2379,11 +2435,22 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (!b || this.destroyed) { this.bubbleFrame = 0; return; }
     const raw = this.gameWorld?.screenAnchorOf(b.objectKey) ?? null;
     const zone = this.canvasZone()?.nativeElement;
-    const next = raw && zone ? acotarAncla(raw, { ancho: zone.clientWidth, alto: zone.clientHeight }) : raw;
+    // En teléfono y tableta, una burbuja que pisaría la barra o la ficha pasa a su sitio de abajo (sin ancla).
+    const acotada = raw && zone ? acotarAncla(raw, { ancho: zone.clientWidth, alto: zone.clientHeight }) : raw;
+    const next = raw && zone && this.burbujaPisaLaInterfaz(raw, zone) ? null : acotada;
     const prev = this.bubbleAnchor();
     if (next?.x !== prev?.x || next?.y !== prev?.y) this.bubbleAnchor.set(next);
     this.bubbleFrame = requestAnimationFrame(this.followBubble);
   };
+
+  private burbujaPisaLaInterfaz(ancla: { x: number; y: number }, lienzo: HTMLElement): boolean {
+    if (matchesMedia(MENU_QUERY)) return ancla.y < CABECERA_Y_BURBUJA_PX;
+    if (!matchesMedia(TABLET_QUERY)) return false;
+    const ficha = lienzo.querySelector('.objective-card')?.getBoundingClientRect();
+    if (!ficha) return false;
+    const base = lienzo.getBoundingClientRect();
+    return ancla.x - BURBUJA_MEDIO_ANCHO_PX < ficha.right - base.left && ancla.y - BURBUJA_ALTO_PX < ficha.bottom - base.top;
+  }
 
   /** Reanudación desde el overlay de pausa (outcome), con el mundo ya cargado. */
   resumeCurrentAttempt(): void {
@@ -2903,6 +2970,7 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   private dialogueCoverCss(mode: string): number {
     const host = this.canvasZone()?.nativeElement;
     if (!host || typeof document === 'undefined') return 0;
+    if (this.touchMode() && matchesMedia(LOW_LANDSCAPE_QUERY)) return 0;
     // Lo que tapa abajo: el cuadro de diálogo y, durante la reacción, la franja con lo que dice quien reacciona.
     // El cuadro y TODO lo que se le monta encima (aviso, ficha «Decisión», «Volver al mapa», «Ver pista»: se dibujan
     // fuera de su caja). La franja de la reacción vive en el DOM aunque no se vea: solo cuenta durante la reacción.
@@ -4578,6 +4646,30 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   }
 
   /** «Ir a…» (F6-11): abre la lista de lo que se puede alcanzar en la sala (personas, puertas y objetos ya examinados). */
+  closeMobileSheet(): void {
+    const sheet = this.mobileSheet();
+    this.mobileSheet.set(null);
+    const selector = sheet === 'tools' ? '[data-mobile-tools]' : '[data-hud-mobile-menu]';
+    afterNextRender(() => document.querySelector<HTMLElement>(selector)?.focus(), { injector: this.injector });
+  }
+
+  mobileAction(action: MobileAction): void {
+    this.mobileSheet.set(null);
+    switch (action) {
+      case 'places': this.openPlaces(); break;
+      case 'plan': this.openPlan(); break;
+      case 'near': this.cameraSettings.toggleCercana(); break;
+      case 'controls': this.openControls(); break;
+      case 'help': this.openHelp(); break;
+      case 'journal': this.journalOpen.set(true); break;
+      case 'settings':
+        this.hud?.settingsOpen.set(true);
+        afterNextRender(() => document.querySelector<HTMLElement>('[aria-label="Cerrar ajustes"]')?.focus(), { injector: this.injector });
+        break;
+      case 'catalog': void this.router.navigate(['/portal/simulador']); break;
+    }
+  }
+
   openPlaces(): void {
     const examined = new Set(this.world()?.inspectedObjectKeys ?? []);
     // El siguiente paso de la ficha va primero y con su etiqueta (P9): la lista y la ficha no se contradicen.
@@ -4597,7 +4689,8 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (!this.planOpen()) return;
     this.planOpen.set(false);
     afterNextRender(() => {
-      const target = document.querySelector<HTMLElement>('[data-minimapa-abrir]') ?? document.getElementById('game-area');
+      const minimapa = document.querySelector<HTMLElement>('[data-minimapa-abrir]');
+      const target = minimapa?.getClientRects().length ? minimapa : document.querySelector<HTMLElement>('[data-hud-mobile-menu]') ?? document.getElementById('game-area');
       target?.focus();
     }, { injector: this.injector });
   }
@@ -4606,7 +4699,10 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
     if (!this.placesOpen()) return;
     if (this.pendingWalkInteraction()) this.stopPendingWalk();
     this.placesOpen.set(false);
-    if (restoreFocus) afterNextRender(() => document.querySelector<HTMLElement>('[data-hud-places]')?.focus(), { injector: this.injector });
+    if (restoreFocus) afterNextRender(() => {
+      const places = document.querySelector<HTMLElement>('[data-hud-places]');
+      (places?.getClientRects().length ? places : document.querySelector<HTMLElement>('[data-hud-mobile-menu]'))?.focus();
+    }, { injector: this.injector });
   }
 
   /** Al hablar se conserva la lista para mostrar y cancelar el trayecto; los demás destinos cierran la lista. */
@@ -4641,6 +4737,16 @@ export class SimulationPlayComponent implements OnInit, OnDestroy {
   }
 
   /** «Ir allí» de la ficha del objetivo (P9): el mismo camino automático que «Ir a…», sin abrir la lista. */
+  goToStepFromGoal(key: string, card: SceneGoalCardComponent): void {
+    if (this.goalAsSheet()) card.close();
+    this.goToStep(key);
+  }
+
+  consentFromGoal(card: SceneGoalCardComponent): void {
+    if (this.goalAsSheet()) card.close();
+    this.requireConsentAgain();
+  }
+
   goToStep(key: string): void {
     if (this.inputBlocked()) return;
     if (this.pendingWalkInteraction()?.key === key) { this.stopPendingWalk(); return; }

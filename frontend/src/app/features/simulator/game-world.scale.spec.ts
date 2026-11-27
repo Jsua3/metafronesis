@@ -39,7 +39,8 @@ describe('game-world: escala del canvas (T5.4)', () => {
   }
 
   function componentWith(game: unknown, host?: HTMLElement): GameWorldComponent {
-    const component = Object.create(GameWorldComponent.prototype) as { phaserGame?: unknown; gameHost?: unknown };
+    const component = Object.create(GameWorldComponent.prototype) as { phaserGame?: unknown; gameHost?: unknown; stick?: unknown };
+    component.stick = Object.assign(() => null, { set: vi.fn() });
     component.phaserGame = game;
     component.gameHost = host ? { nativeElement: host } : undefined;
     return component as unknown as GameWorldComponent;

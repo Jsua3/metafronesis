@@ -60,6 +60,26 @@ describe('SceneGoalCardComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
+  it('en táctil la ficha abierta ofrece cerrar y avisa al cerrarse', () => {
+    const { fixture, host, abrir } = montar({ guia: GUIA });
+    fixture.componentRef.setInput('touchMode', true);
+    const closed = vi.fn();
+    fixture.componentInstance.closed.subscribe(closed);
+    abrir();
+    host.querySelector<HTMLButtonElement>('[data-goal-close]')!.click();
+    expect(closed).toHaveBeenCalledOnce();
+  });
+
+  it('en táctil, al cerrar la hoja el foco vuelve a la ficha plegada', () => {
+    const { fixture, host, abrir } = montar({ guia: GUIA });
+    fixture.componentRef.setInput('touchMode', true);
+    abrir();
+    const toggle = host.querySelector<HTMLButtonElement>('.goal-card__toggle')!;
+    const foco = vi.spyOn(toggle, 'focus');
+    host.querySelector<HTMLButtonElement>('[data-goal-close]')!.click();
+    expect(foco).toHaveBeenCalledOnce();
+  });
+
   it('nombra la acción de persona y conserva el botón al cambiar el destino', () => {
     const { fixture, host } = montar({ guia: GUIA, compact: false });
     const button = host.querySelector<HTMLButtonElement>('[data-guia-ir]')!;

@@ -44,3 +44,11 @@ h3 a.nombre-grupo:focus-visible { text-decoration: underline; }
 .rejilla a:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 3px; }
 .grupo-inicio__cabecera { order: -2; }
 .grupo-inicio__acciones { order: -1; }
+
+@media (min-width: 64rem) {
+  :host { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :host > * { grid-column: 1 / -1; }
+  section[aria-labelledby='siguiente-titulo'] { grid-column: 1; }
+  section[aria-labelledby='revision-titulo'] { grid-column: 2; }
+  .panel:has(> ui-empty-state) { max-inline-size: 42rem; }
+}

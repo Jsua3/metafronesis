@@ -275,7 +275,7 @@ describe('pantalla Rúbricas: biblioteca (R1)', () => {
     it('con `?rubrica=<id>` se ve el editor de esa rúbrica, con su nombre como título y el regreso a la biblioteca', async () => {
       await render();
       await ir('/?rubrica=7');
-      expect(host().querySelector('.rb-list')).toBeNull();
+      expect(getComputedStyle(host().querySelector('.rb-list')!).display).toBe('none');
       expect(service['detail']).toHaveBeenCalledWith(7);
       expect(host().querySelectorAll('h1')).toHaveLength(1);
       expect(text(host().querySelector('h1'))).toBe('Observación de aula');

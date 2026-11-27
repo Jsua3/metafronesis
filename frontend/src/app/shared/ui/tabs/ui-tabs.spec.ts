@@ -78,4 +78,22 @@ describe('ui-tabs', () => {
     expect(tabs()[2].getAttribute('aria-selected')).toBe('true');
     expect(panels()[2].hasAttribute('inert')).toBe(false);
   });
+
+  it('señala en qué dirección quedan pestañas fuera de la vista', async () => {
+    const lista = root().querySelector<HTMLElement>('[role="tablist"]')!;
+    Object.defineProperties(lista, {
+      clientWidth: { configurable: true, value: 200 },
+      scrollWidth: { configurable: true, value: 400 },
+      scrollLeft: { configurable: true, writable: true, value: 0 },
+    });
+    lista.dispatchEvent(new Event('scroll'));
+    await fixture.whenStable();
+    const componente = root().querySelector('ui-tabs')!;
+    expect(componente.classList).toContain('ui-tabs--mas-fin');
+    lista.scrollLeft = 200;
+    lista.dispatchEvent(new Event('scroll'));
+    await fixture.whenStable();
+    expect(componente.classList).toContain('ui-tabs--mas-inicio');
+    expect(componente.classList).not.toContain('ui-tabs--mas-fin');
+  });
 });

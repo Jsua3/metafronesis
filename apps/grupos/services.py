@@ -421,15 +421,63 @@ def quitar_estudiante(grupo_id, estudiante_id, profesor):
     return grupo_dto(grupo)
 
 
+def _usuario_de(email):
+    """El nombre de usuario de una cuenta: lo que va antes de la @ de su correo (el correo es el login)."""
+    return email.split("@", 1)[0]
+
+
+def _cuenta_por_correo_o_usuario(identificador):
+    """La cuenta con ese correo o, sin @, el único estudiante con ese nombre de usuario (si hay varios, ninguno)."""
+    identificador = (identificador or "").strip()
+    if "@" in identificador:
+        return User.objects.filter(email=normalize_email_value(identificador)).first()
+    if not identificador:
+        return None
+    cuentas = list(User.objects.filter(role=ESTUDIANTE, email__istartswith=f"{identificador}@")[:2])
+    return cuentas[0] if len(cuentas) == 1 else None
+
+
+SUGERENCIAS_MIN = 2
+SUGERENCIAS_MAX = 8
+
+
+def sugerir_estudiantes(grupo_id, texto, actor):
+    """Estudiantes activos cuyo correo (y por tanto su nombre de usuario) contiene ``texto``, para invitar.
+
+    Solo para quien puede invitar a ese grupo; pocos resultados y solo nombre, usuario y correo. Quedan fuera
+    quienes ya son miembros o tienen la invitación pendiente.
+    """
+    grupo = _require_grupo_to_invite(grupo_id, actor)
+    texto = (texto or "").strip()
+    if len(texto) < SUGERENCIAS_MIN:
+        return []
+    ocupados = GrupoEstudiante.objects.filter(
+        grupo_id=grupo.id, status__in=[MembershipStatus.INVITED, MembershipStatus.ACTIVE]
+    ).values("estudiante_id")
+    cuentas = (
+        User.objects.filter(role=ESTUDIANTE, activo=True, email__icontains=texto)
+        .exclude(id__in=ocupados)
+        .order_by("email")
+        .only("nombre", "apellido", "email")[:SUGERENCIAS_MAX]
+    )
+    return [
+        {"nombre": f"{c.nombre} {c.apellido}".strip(), "usuario": _usuario_de(c.email), "email": c.email}
+        for c in cuentas
+    ]
+
+
 @auditable(
     "MEMBERSHIP_INVITED", "GRUPO",
     context=lambda args, kwargs, result: {"studentId": result[1]},
 )
 def _invitar_por_correo(grupo_id, email, actor):
-    """Devuelve ``(grupo, id del estudiante invitado o None, a quién avisar o None)``."""
+    """Devuelve ``(grupo, id del estudiante invitado o None, a quién avisar o None)``.
+
+    ``email`` es el correo o el nombre de usuario del estudiante.
+    """
     with transaction.atomic():
         grupo = _require_grupo_to_invite(grupo_id, actor)
-        estudiante = User.objects.filter(email=normalize_email_value(email)).first()
+        estudiante = _cuenta_por_correo_o_usuario(email)
         if estudiante is None or estudiante.role != ESTUDIANTE:
             return grupo, None, None
         row, changed = memberships.invite(grupo, estudiante, actor)
@@ -438,7 +486,7 @@ def _invitar_por_correo(grupo_id, email, actor):
 
 
 def agregar_estudiante(grupo_id, email, actor):
-    """Invita al estudiante con ese correo. La respuesta es la misma exista o no la cuenta, sea o
+    """Invita al estudiante con ese correo o nombre de usuario. La respuesta es la misma exista o no la cuenta, sea o
     no de un estudiante y ya sea o no miembro: no se enumeran cuentas (D-14, E2-10)."""
     grupo, _, notify = _invitar_por_correo(grupo_id, email, actor)
     if notify is not None:

@@ -44,7 +44,7 @@ function leerOculto(): boolean {
     }
     <!-- Vista cercana (Z) también con botón, para quien no usa teclado o usa lector de pantalla. -->
     <button type="button" class="minimapa__alternar u-boton" data-vista-cercana [attr.aria-pressed]="cercana()"
-      (click)="alternarCercana.emit()"><app-pixel-icono nombre="lupa" /><span class="minimapa__texto">Vista cercana (Z)</span></button>
+      (click)="alternarCercana.emit()"><app-pixel-icono nombre="lupa" /><span class="minimapa__texto">Vista cercana<span class="minimapa__tecla"> (Z)</span></span></button>
   `,
   styles: [`
     /* Bloque U1: piezas de la hoja común. El sitio lo da la pantalla (bajo el grupo de la derecha, variante B). */
@@ -58,6 +58,7 @@ function leerOculto(): boolean {
     .minimapa__abrir app-plano-del-lugar { display: block; height: 100%; }
     .minimapa__alternar { font-size: var(--pixel-letra-media); }
     .minimapa__alternar[aria-pressed='true'] { --m: var(--marco-placa-foco); background-color: var(--pixel-penumbra-alzada); color: var(--luz); }
+    @media (pointer: coarse) { .minimapa__tecla { display: none; } }
   `],
 })
 export class MinimapaComponent {
@@ -127,6 +128,24 @@ export class MinimapaComponent {
     /* Pantallas de portátil (1366×768): el plano deja ver el mundo a los lados y arriba; con más alto, el tamaño de siempre (P9). */
     @media (max-height: 800px) and (min-width: 561px) { .plano-dialogo { width: min(780px, 70vw); max-height: min(560px, 76vh); } }
     .plano-dialogo__pie { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-3); flex-wrap: wrap; }
+    @media (pointer: coarse) {
+      .plano-dialogo h2 { padding-right: 90px; min-height: 44px; }
+      .plano-dialogo__pie [data-plano-cerrar] { position: absolute; right: 12px; top: 12px; min-height: 44px; }
+    }
+    @media (pointer: coarse) and (width < 600px) and (height >= 500px) {
+      .plano-dialogo { position: fixed; inset: auto 0 0; transform: none; width: 100%; max-height: 90dvh; }
+      .plano-dialogo__plano ::ng-deep .plano__dibujo { min-height: 132px; }
+    }
+    @media (pointer: coarse) and (height < 500px) and (width < 1024px) {
+      .plano-dialogo { position: fixed; inset: 0; transform: none; width: auto; max-height: 100dvh; }
+      /* Con poco alto, el dibujo y la lista van lado a lado: el plano no se aplasta. */
+      .plano-dialogo__plano { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+      .plano-dialogo__plano ::ng-deep > * { min-height: 0; max-height: 100%; }
+      .plano-dialogo__plano ::ng-deep .plano__lista { overflow-y: auto; align-content: start; }
+    }
+    @media (pointer: coarse) and (width >= 600px) and (width < 1024px) and (height >= 500px) {
+      .plano-dialogo { width: min(560px, 94dvw); }
+    }
   `],
 })
 export class PlanoCompletoComponent {

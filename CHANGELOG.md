@@ -36,7 +36,7 @@ Metafrónesis en el teléfono y la tableta, y un acabado de escritorio a la altu
 - **Ayuda «?»:** pasa a ser un bocadillo de pixel art con una explicación flotante que no empuja el texto (#112). Las descripciones del menú de la barra van en un bocadillo propio (#118).
 
 ### Corregido
-- Los correos de las notificaciones que fallaban no dejaban rastro: ahora quedan en el registro y en el aviso, se envían al confirmar y usan una conexión por lote (#124).
+- **Correos de los avisos:** un correo que no sale queda en el registro del servidor con su causa (antes solo se guardaba el nombre del error en el aviso); los avisos de una sesión salen al confirmar la operación y por una sola conexión SMTP; la invitación a un grupo también deja su aviso en SIEP. (#124)
 - La barra pública dejaba una cápsula vacía y los iconos de los botones mostraban texto (#122).
 
 ## [0.7.1] - 2026-11-27

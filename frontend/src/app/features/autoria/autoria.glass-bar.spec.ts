@@ -199,7 +199,7 @@ describe('AutoriaShellComponent · el botón «Probar» de la barra', () => {
     expect(enlace.target).toBe('_blank');
     expect(enlace.rel).toContain('noopener');
     expect(enlace.getAttribute('aria-label')).toBe('Probar el caso en el juego (se abre en otra pestaña)');
-    expect(enlace.textContent?.replace(/\s+/g, ' ').trim()).toBe('Probar ↗');
+    expect(enlace.textContent?.replace(/\s+/g, ' ').trim()).toBe('Probar');
     expect(enlace.getAttribute('data-accion')).toBe('probar');
   });
 

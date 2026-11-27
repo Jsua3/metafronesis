@@ -1,5 +1,5 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -7,6 +7,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { UiDialog, UiDialogFrame } from '../ui/dialog/ui-dialog';
 import { UiGlassBar } from '../ui/glass-bar/ui-glass-bar';
+import { EstilosBarraMovilComponent } from './estilos-barra-movil';
 import { textoInsignia, textoInsigniaAccesible } from './nav-badges.service';
 
 /** Un destino de la barra inferior: ruta de la app (`route`) o ancla de la página (`href`). */
@@ -152,36 +153,38 @@ export class MoreSheetComponent {
  */
 @Component({
   selector: 'nav[app-bottom-tabs]',
-  imports: [MatIconModule, RouterLink, RouterLinkActive],
+  imports: [EstilosBarraMovilComponent, MatIconModule, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // En escritorio no existe para nadie (hidden), no solo para la vista: así nunca hay dos «Navegación principal».
   host: { class: 'modulo-inferior ds-motion', '[attr.aria-label]': 'label()', '[attr.hidden]': "bar?.desktop() ? '' : null" },
   template: `
+    <app-estilos-barra-movil />
     <div class="pestanas ds-motion">
       @for (tab of visible(); track tab.id) {
         @if (tab.route) {
-          <a class="pestana ds-motion" [routerLink]="tab.route" [attr.title]="tab.descripcion || null" [attr.aria-description]="tab.descripcion || null" routerLinkActive="pestana--activa" ariaCurrentWhenActive="page">
+          <a class="pestana ds-motion" [routerLink]="tab.route" [attr.title]="tab.descripcion || null" [attr.aria-description]="tab.descripcion || null" [attr.aria-label]="tab.label + (tab.cuenta ? insigniaAccesible(tab.cuenta) : '')" routerLinkActive="pestana--activa" ariaCurrentWhenActive="page">
             <span class="pestana__icono"><mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon>@if (tab.cuenta) {<span class="pestana__cuenta" aria-hidden="true">{{ insignia(tab.cuenta) }}</span>}</span>
-            <span class="pestana__rotulo ds-motion"><span>{{ tab.etiquetaCorta ?? tab.label }}</span></span>
+            <span class="pestana__rotulo ds-motion"><span>{{ (tab.etiquetaCorta ?? tab.label).split(' ')[0] }}@if ((tab.etiquetaCorta ?? tab.label).includes(' ')) {<span class="ds-sr-only">{{ (tab.etiquetaCorta ?? tab.label).slice((tab.etiquetaCorta ?? tab.label).indexOf(' ')) }}</span>}</span></span>
             @if (tab.cuenta) {<span class="ds-sr-only">{{ insigniaAccesible(tab.cuenta) }}</span>}
           </a>
         } @else {
-          <a class="pestana ds-motion" [href]="tab.href">
+          <a class="pestana ds-motion" [href]="tab.href" [attr.aria-label]="tab.label">
             <span class="pestana__icono"><mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon>@if (tab.cuenta) {<span class="pestana__cuenta" aria-hidden="true">{{ insignia(tab.cuenta) }}</span>}</span>
-            <span class="pestana__rotulo ds-motion"><span>{{ tab.etiquetaCorta ?? tab.label }}</span></span>
+            <span class="pestana__rotulo ds-motion"><span>{{ (tab.etiquetaCorta ?? tab.label).split(' ')[0] }}@if ((tab.etiquetaCorta ?? tab.label).includes(' ')) {<span class="ds-sr-only">{{ (tab.etiquetaCorta ?? tab.label).slice((tab.etiquetaCorta ?? tab.label).indexOf(' ')) }}</span>}</span></span>
             @if (tab.cuenta) {<span class="ds-sr-only">{{ insigniaAccesible(tab.cuenta) }}</span>}
           </a>
         }
       }
       @if (overflow().length) {
         <!-- Si la página actual está en la hoja, «Más» lo dice: aria-current="true" (actual dentro del conjunto). -->
-        <button class="pestana ds-motion" type="button" aria-haspopup="dialog" [attr.aria-current]="moreIsCurrent() ? 'true' : null"
+        <button class="pestana ds-motion" type="button" aria-haspopup="dialog" [attr.aria-label]="morePending() ? 'Más (hay pendientes)' : 'Más'" [attr.aria-current]="moreIsCurrent() ? 'true' : null"
           (click)="openMore()">
           <span class="pestana__icono"><mat-icon aria-hidden="true">menu</mat-icon>@if (morePending()) {<span class="pestana__cuenta pestana__cuenta--punto" aria-hidden="true"></span>}</span>
           <span class="pestana__rotulo ds-motion"><span>Más</span></span>
           @if (morePending()) {<span class="ds-sr-only"> (hay pendientes)</span>}
         </button>
       }
+      <span class="pestanas__indicador ds-motion" aria-hidden="true"></span>
     </div>
   `,
 })
@@ -194,10 +197,19 @@ export class BottomTabsComponent {
   private readonly dialog = inject(UiDialog);
   private readonly router = inject(Router);
   protected readonly bar = inject(UiGlassBar, { optional: true });
+  private readonly mediaCarril = typeof matchMedia === 'function'
+    ? matchMedia('(min-width: 600px) and (max-width: 1023px) and (min-height: 500px)') : null;
+  private readonly carril = signal(this.mediaCarril?.matches ?? false);
+
+  constructor() {
+    const actualizar = (evento: MediaQueryListEvent) => this.carril.set(evento.matches);
+    this.mediaCarril?.addEventListener('change', actualizar);
+    inject(DestroyRef).onDestroy(() => this.mediaCarril?.removeEventListener('change', actualizar));
+  }
 
   private readonly fits = computed(() => this.tabs().length + (this.more().length ? 1 : 0) <= MAX_TABS);
-  protected readonly visible = computed(() => (this.fits() ? this.tabs() : this.tabs().slice(0, MAX_TABS - 1)));
-  protected readonly overflow = computed(() => (this.fits() ? this.more() : [...this.tabs().slice(MAX_TABS - 1), ...this.more()]));
+  protected readonly visible = computed(() => this.carril() ? [...this.tabs(), ...this.more()] : (this.fits() ? this.tabs() : this.tabs().slice(0, MAX_TABS - 1)));
+  protected readonly overflow = computed(() => this.carril() ? [] : (this.fits() ? this.more() : [...this.tabs().slice(MAX_TABS - 1), ...this.more()]));
 
   /** Ruta actual sin consulta, fragmento ni matriz. */
   private readonly path = toSignal(
@@ -219,6 +231,7 @@ export class BottomTabsComponent {
   protected openMore(): void {
     // BORRADOR: texto pendiente de Psicología. En docencia la hoja también explica los destinos visibles de la barra.
     const destinos = this.tabs().some(tab => tab.descripcion) ? [...this.tabs(), ...this.more()] : this.overflow();
-    this.dialog.sheet(MoreSheetComponent, { side: 'bottom', data: [...destinos] });
+    const bajo = typeof matchMedia === 'function' && matchMedia('(max-width: 1023px) and (max-height: 499px)').matches;
+    this.dialog.sheet(MoreSheetComponent, { side: bajo ? 'end' : 'bottom', data: [...destinos] });
   }
 }

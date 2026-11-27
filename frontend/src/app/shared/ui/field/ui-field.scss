@@ -64,6 +64,10 @@
   }
 }
 
+@media (max-width: 63.999rem) {
+  .ui-control { font-size: 1rem; }
+}
+
 select.ui-control {
   cursor: pointer;
 }
@@ -81,8 +85,22 @@ textarea.ui-control {
 .ui-field__reveal {
   position: absolute;
   inset-block: 0;
-  inset-inline-end: 0;
+  inset-inline-end: 2px;
   margin-block: auto;
+}
+
+.ui-field__reveal.ui-icon-button {
+  --_bg: var(--l-relleno, var(--ds-surface-2));
+  --_bg-hover: var(--l-tinte, var(--ds-primary-subtle));
+  --_bg-active: var(--l-tinte, var(--ds-primary-subtle));
+  --_fg: var(--l-acento-tinta, var(--ds-primary));
+  --_border: var(--l-filo, var(--ds-border));
+  border-radius: var(--ds-radius-pill);
+  box-shadow: inset 0 1px 0 var(--l-brillo, transparent);
+}
+
+@media (forced-colors: active) {
+  .ui-field__reveal.ui-icon-button { border-color: ButtonText; }
 }
 
 .ui-field__message {

@@ -81,18 +81,22 @@ export class TutorialService {
       if (p.practico.cumplido(this.foto, ahora)) this.cumplido.set(true);
     });
     if (typeof document !== 'undefined') {
+      // Los atajos que anuncia el pie de la burbuja. Ninguno actúa si otra pieza ya atendió la tecla (un menú o un diálogo
+      // que se cierra con Esc) ni con Ctrl, Cmd o Mayús. `code` y no `key` para la B: en macOS Opción+B escribe «∫».
       document.addEventListener('keydown', (e) => {
-        if (!this.activo()) return;
-        if (e.key === 'Escape') {
+        if (!this.activo() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (e.key === 'Escape' && !e.altKey) {
+          // Con un menú, la paleta de Ayuda u otro diálogo abiertos, Esc es de ellos: cierra eso y no el tutorial.
+          if (document.querySelector('.cdk-overlay-pane:not(:empty), dialog[open], [aria-modal="true"]')) return;
           e.preventDefault();
           this.salir();
         } else if (e.altKey && e.key === 'ArrowRight') {
           e.preventDefault();
-          void this.siguiente();
+          void this.pasoSiguienteConTeclado();
         } else if (e.altKey && e.key === 'ArrowLeft') {
           e.preventDefault();
           void this.anterior();
-        } else if (e.altKey && (e.key === 'b' || e.key === 'B')) {
+        } else if (e.altKey && e.code === 'KeyB') {
           e.preventDefault();
           this.focoBurbuja.update((n) => n + 1);
         }
@@ -196,6 +200,17 @@ export class TutorialService {
     const p = this.paso();
     if (p.practico && !this.cumplido()) return;
     await this.avanzar(p.practico ? p.id : null);
+  }
+
+  /**
+   * Alt+→ «cambia de paso» siempre que hay uno después: en la insignia de un capítulo, continúa; en un paso práctico sin
+   * hacer, lo salta (como «Saltar este paso»); en cualquier otro, es «Siguiente». Antes no hacía nada en esos dos casos.
+   */
+  async pasoSiguienteConTeclado(): Promise<void> {
+    if (!this.activo() || this.final()) return;
+    if (this.logro()) return this.continuar();
+    if (this.paso().practico && !this.cumplido()) return this.saltarPractico();
+    return this.siguiente();
   }
 
   async saltarPractico(): Promise<void> {

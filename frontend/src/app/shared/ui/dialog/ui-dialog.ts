@@ -139,6 +139,8 @@ export class UiDialogActions {}
   encapsulation: ViewEncapsulation.None,
   host: { class: 'ui-dialog-frame', '[attr.title]': 'null' },
   template: `
+    <div class="ui-dialog-frame__handle" aria-hidden="true" (pointerdown)="startDrag($event)"
+      (pointermove)="moveDrag($event)" (pointerup)="endDrag($event)" (pointercancel)="cancelDrag()"></div>
     <header class="ui-dialog-frame__header">
       <h2 class="ui-dialog-frame__title" [id]="titleId">{{ title() }}</h2>
       @if (dismissible()) {
@@ -161,6 +163,8 @@ export class UiDialogFrame {
   protected readonly titleId = uniqueUiId('ui-dialog-title');
   protected readonly descriptionId = uniqueUiId('ui-dialog-description');
   private readonly ref = inject(DialogRef, { optional: true });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private drag: { pointer: number; start: number; distance: number } | null = null;
 
   constructor() {
     const container = this.ref?.containerInstance as LabelledContainer | undefined;
@@ -168,9 +172,8 @@ export class UiDialogFrame {
     inject(DestroyRef).onDestroy(() => container?._removeAriaLabelledBy?.(this.titleId));
     // La descripción va directo al atributo del contenedor: su enlace (config.ariaDescribedBy) sigue en null y no la
     // pisa; cambiar la configuración en plena detección de cambios daría NG0100.
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     effect(onCleanup => {
-      const container = this.description() ? host.closest('.cdk-dialog-container') : null;
+      const container = this.description() ? this.host.closest('.cdk-dialog-container') : null;
       if (!container) return;
       addAriaReferencedId(container, 'aria-describedby', this.descriptionId);
       onCleanup(() => removeAriaReferencedId(container, 'aria-describedby', this.descriptionId));
@@ -179,6 +182,34 @@ export class UiDialogFrame {
 
   protected close(): void {
     this.ref?.close();
+  }
+
+  protected startDrag(event: PointerEvent): void {
+    const phone = typeof matchMedia === 'function' && matchMedia('(max-width: 599px) and (min-height: 500px)').matches;
+    const body = this.host.querySelector<HTMLElement>('.ui-dialog-frame__body');
+    if (!phone || event.pointerType !== 'touch' || !event.isPrimary || !this.dismissible() || this.ref?.disableClose || (body?.scrollTop ?? 0) > 0) return;
+    this.drag = { pointer: event.pointerId, start: event.clientY, distance: 0 };
+    try { (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId); } catch { /* Sin captura no se impide cerrar con el botón. */ }
+  }
+
+  protected moveDrag(event: PointerEvent): void {
+    if (!this.drag || this.drag.pointer !== event.pointerId) return;
+    this.drag.distance = Math.max(0, event.clientY - this.drag.start);
+    const container = this.host.closest<HTMLElement>('.cdk-dialog-container');
+    if (container) container.style.translate = `0 ${this.drag.distance}px`;
+  }
+
+  protected endDrag(event: PointerEvent): void {
+    if (!this.drag || this.drag.pointer !== event.pointerId) return;
+    const distance = Math.max(this.drag.distance, event.clientY - this.drag.start);
+    this.cancelDrag();
+    const body = this.host.querySelector<HTMLElement>('.ui-dialog-frame__body');
+    if (distance >= 80 && (body?.scrollTop ?? 0) <= 0 && this.dismissible() && !this.ref?.disableClose) this.ref?.close();
+  }
+
+  protected cancelDrag(): void {
+    this.drag = null;
+    this.host.closest<HTMLElement>('.cdk-dialog-container')?.style.removeProperty('translate');
   }
 }
 
@@ -282,6 +313,8 @@ export class UiDialog {
     const disparador = options.origen instanceof HTMLElement ? options.origen
       : (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const leaveMs = (extra.panelClass as string[] | undefined)?.includes('ui-sheet-pane') ? UI_SHEET_LEAVE_MS : UI_DIALOG_LEAVE_MS;
+    const movil = typeof matchMedia === 'function' && matchMedia('(max-width: 599px), (max-width: 1023px) and (max-height: 499px)').matches;
+    const anterior = movil ? this.dialog.openDialogs.at(-1) : undefined;
     const ref: DialogRef<R, C> = this.dialog.open<R, D, C>(component, {
       data: options.data,
       ariaLabel: options.ariaLabel ?? null,
@@ -311,6 +344,15 @@ export class UiDialog {
       },
       ...extra,
     });
+    // La capa anterior conserva su estado para guardias de cambios, pero no queda otra hoja visible debajo.
+    if (anterior) {
+      anterior.overlayRef.overlayElement.classList.add('ui-overlay--debajo');
+      anterior.overlayRef.backdropElement?.classList.add('ui-overlay--debajo');
+      ref.closed.subscribe(() => {
+        anterior.overlayRef.overlayElement?.classList.remove('ui-overlay--debajo');
+        anterior.overlayRef.backdropElement?.classList.remove('ui-overlay--debajo');
+      });
+    }
     this.vestir(ref, fuente);
     if (options.restoreFocus !== false) this.garantizarFocoAlCerrar(ref, disparador);
     // Después del foco del CDK (que se registra al abrir): el foco por prioridad.

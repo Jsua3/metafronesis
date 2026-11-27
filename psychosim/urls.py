@@ -18,6 +18,7 @@ from apps.grupos.views import (
     GrupoEstudiantesImportView,
     GrupoEstudiantesImportSpecView,
     GrupoEstudiantesImportTemplateView,
+    GrupoEstudiantesSugerenciasView,
     GrupoEstudiantesView,
     GrupoListCreateView,
     MeInvitationAcceptView,
@@ -72,6 +73,7 @@ urlpatterns = [
     path("api/grupos", GrupoListCreateView.as_view()),
     path("api/grupos/<int:pk>", GrupoDetailView.as_view()),
     path("api/grupos/<int:pk>/estudiantes", GrupoEstudiantesView.as_view()),
+    path("api/grupos/<int:pk>/estudiantes/sugerencias", GrupoEstudiantesSugerenciasView.as_view()),
     path("api/grupos/<int:pk>/estudiantes/<int:estudiante_id>", GrupoEstudianteDetailView.as_view()),
     path("api/grupos/<int:pk>/estudiantes/<int:estudiante_id>/activar", GrupoEstudianteActivarView.as_view()),
     # C5 · invitaciones del estudiante a grupos (E2-10).

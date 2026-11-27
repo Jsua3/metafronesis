@@ -76,10 +76,10 @@ function sumarHora(local: string): string {
           </ui-field>
         </div>
         <ui-field label="Tiempo máximo (minutos)" required [error]="errores().tiempoMaximoMin" [hint]="ayudaTiempo()">
-          <input uiControl type="number" min="1" name="tiempoMaximoMin" [value]="tiempoMaximoMin()" (input)="tiempoMaximoMin.set(leer($event))" />
+          <input uiControl type="number" inputmode="numeric" enterkeyhint="next" min="1" name="tiempoMaximoMin" [value]="tiempoMaximoMin()" (input)="tiempoMaximoMin.set(leer($event))" />
         </ui-field>
         <ui-field label="Lugar" [error]="errores().lugar">
-          <input uiControl name="lugar" maxlength="255" [value]="lugar()" (input)="lugar.set(leer($event))" />
+          <input uiControl type="text" name="lugar" autocomplete="off" autocapitalize="sentences" enterkeyhint="next" maxlength="255" [value]="lugar()" (input)="lugar.set(leer($event))" />
         </ui-field>
         <ui-field label="Mensaje para los estudiantes" [error]="errores().mensaje">
           <textarea uiControl name="mensaje" rows="3" maxlength="2000" [value]="mensaje()" (input)="mensaje.set(leer($event))"></textarea>

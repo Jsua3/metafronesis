@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 
 import { LiveRegionAnnouncer } from '../../core/a11y/live-announcer.service';
+import { matchesMedia } from './pointer-modality.util';
+import { MENU_QUERY, textoSegunPantalla } from './screen-class.util';
 
 import type { ElementoSala, GuiaEscena } from './caso/guia';
 import { DRAFT_COPY } from './draft-copy';
@@ -37,6 +39,11 @@ let nextGoalCardId = 0;
 <i class="goal-card__chevron u-seguir" [class.goal-card__chevron--open]="open()" aria-hidden="true"></i>
       </button>
 
+      @if (touchMode() && open() && abiertaAMano()) {
+        <!-- BORRADOR: texto pendiente de Psicología. -->
+        <button type="button" class="goal-card__close u-boton" data-goal-close (click)="close()">Cerrar</button>
+      }
+
       <!-- El cuerpo se crea al abrir por primera vez y después solo se oculta: así «Pedir una pista» conserva su enfriamiento y sus pistas. -->
       @if (everOpened()) {
         <div class="goal-card__body u-placa" [id]="bodyId" [hidden]="!open()">
@@ -47,12 +54,12 @@ let nextGoalCardId = 0;
           } @else if (guia().siguiente; as paso) {
             <p class="goal-card__paso" data-guia-paso>
               <span class="goal-card__paso-cuenta">{{ cuentaDePasos() }}</span>
-              <span class="goal-card__paso-texto">{{ paso }}</span>
+              <span class="goal-card__paso-texto">{{ enPantalla(paso) }}</span>
             </p>
             <!-- «Siguiente paso» conectado con «Ir a…» (P9): el mismo camino automático, sin abrir la lista. -->
             @if (guia().siguienteLugar; as lugar) {
               <!-- BORRADOR: texto pendiente de Psicología. -->
-              <button type="button" class="goal-card__ir u-boton" data-guia-ir [attr.aria-disabled]="doorMessages()[lugar.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[lugar.key] ? reasonId : null" (click)="goToStep.emit(lugar.key)">
+              <button type="button" class="goal-card__ir u-boton" data-guia-ir [class.goal-card__ir--walking]="walkingKey() === lugar.key" [attr.aria-disabled]="doorMessages()[lugar.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[lugar.key] ? reasonId : null" (click)="goToStep.emit(lugar.key)">
                 {{ walkLabel(lugar.key, lugar.label, lugar.tipo) ?? actionForPlace(lugar.tipo === 'persona' ? 'person' : lugar.tipo === 'puerta' ? 'door' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
             }
           }
@@ -66,16 +73,16 @@ let nextGoalCardId = 0;
                   <span class="goal-card__pasotexto">{{ p.texto }}<span class="goal-card__sr"> · {{ p.hecho ? 'hecho' : $index === pasoActual() ? 'tu siguiente paso' : p.informativo ? 'información' : 'pendiente' }}</span></span>
                   @if ($index === pasoActual() && !guia().textoSalida && guia().siguienteLugar; as lugar) {
                     <!-- BORRADOR: texto pendiente de Psicología. -->
-                    <button type="button" class="goal-card__ir goal-card__ir--en-paso u-boton" data-guia-ir [attr.aria-disabled]="doorMessages()[lugar.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[lugar.key] ? reasonId : null" (click)="goToStep.emit(lugar.key)">
+                    <button type="button" class="goal-card__ir goal-card__ir--en-paso u-boton" data-guia-ir [class.goal-card__ir--walking]="walkingKey() === lugar.key" [attr.aria-disabled]="doorMessages()[lugar.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[lugar.key] ? reasonId : null" (click)="goToStep.emit(lugar.key)">
                       {{ walkLabel(lugar.key, lugar.label, lugar.tipo) ?? actionForPlace(lugar.tipo === 'persona' ? 'person' : lugar.tipo === 'puerta' ? 'door' : 'object', lugar.label) }} <span aria-hidden="true">▶</span></button>
                   }
                 </li>
               }
             </ol>
             @if (guia().textoSalida) {
-              <p class="goal-card__paso">{{ guia().textoSalida }}</p>
+              <p class="goal-card__paso">{{ enPantalla(guia().textoSalida) }}</p>
               @if (guia().siguienteLugar; as salida) {
-                <button type="button" class="goal-card__ir u-boton" data-guia-ir [attr.aria-disabled]="doorMessages()[salida.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[salida.key] ? reasonId : null" (click)="goToStep.emit(salida.key)">
+                <button type="button" class="goal-card__ir u-boton" data-guia-ir [class.goal-card__ir--walking]="walkingKey() === salida.key" [attr.aria-disabled]="doorMessages()[salida.key] ? 'true' : null" [attr.aria-describedby]="doorMessages()[salida.key] ? reasonId : null" (click)="goToStep.emit(salida.key)">
                   {{ walkLabel(salida.key, salida.label, 'puerta') ?? actionForPlace('door', salida.label) }} <span aria-hidden="true">▶</span></button>
               }
             }
@@ -113,6 +120,7 @@ let nextGoalCardId = 0;
       }
     </section>
   `,
+  styleUrl: './scene-goal-card.mobile.css',
   styles: [`
     /* Bloque U1: la ficha en las piezas del cuadro de diálogo (hoja común). Plegada es una placa-botón con el kicker en la
        letra de las pestañas y la flecha de seguir; abierta suma una placa con «En esta sala» y «Pedir una pista» (la placa
@@ -205,10 +213,16 @@ export class SceneGoalCardComponent {
   readonly hintAttempt = input<HintAttemptRef | null>(null);
   /** Pantalla baja o táctil horizontal: la ficha pide menos sitio y arranca plegada. */
   readonly compact = input(false);
+  readonly touchMode = input(false);
+  private readonly conMenu = signal(matchesMedia(MENU_QUERY));
+  protected enPantalla(texto: string | null | undefined): string | null | undefined {
+    return textoSegunPantalla(texto, this.conMenu());
+  }
   /** El ajuste «Reducir movimiento» del juego: sin pulso al cambiar el objetivo. */
   readonly reduceMotion = input(false);
   /** Se abrió: la pantalla refresca «En esta sala» antes de que se lea. */
   readonly opened = output<void>();
+  readonly closed = output<void>();
   /** La pista recibió 403 `CONSENT_REQUIRED`: la pantalla vuelve al aviso previo como con cualquier otra orden. */
   readonly consentRequired = output<void>();
   /** Pidió ir al siguiente paso (P9): quien aloja la ficha camina hasta esa clave como con «Ir a…». */
@@ -231,6 +245,7 @@ export class SceneGoalCardComponent {
   protected readonly pasoActual = computed(() => this.guia().pasoActual ?? -1);
   /** Los pasos que se cumplen salen por el anunciador de la app (la ficha no tiene región viva propia). */
   private readonly anunciador = inject(LiveRegionAnnouncer);
+  private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
   private hechosVistos: ReadonlySet<string> | null = null;
   private objetivoVisto: string | null = null;
 
@@ -270,7 +285,20 @@ export class SceneGoalCardComponent {
       this.everOpened.set(true);
       this.abiertaAMano.set(true);
       this.opened.emit();
-    }
+    } else this.closed.emit();
+  }
+
+  close(): void {
+    if (!this.open()) return;
+    this.toggle();
+    // Como hoja táctil, al cerrarse el foco vuelve a la ficha plegada que la abrió.
+    if (this.touchMode()) this.elemento.nativeElement.querySelector<HTMLElement>('.goal-card__toggle')?.focus({ preventScroll: true });
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: Event): void {
+    if (!this.touchMode() || !this.open() || !this.abiertaAMano()) return;
+    event.preventDefault(); event.stopPropagation(); this.close();
   }
 
   /**

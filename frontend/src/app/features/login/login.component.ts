@@ -62,8 +62,10 @@ const REQUEST_FIELDS = [['nombre', 'registro-nombre'], ['apellido', 'registro-ap
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login.component.scss',
+  host: { '[style.--acceso-teclado.px]': 'altoTeclado()' },
 })
 export class LoginComponent implements AfterViewInit {
+  protected readonly altoTeclado = signal(0);
   readonly brand = APP_BRAND;
   readonly roles = LOGIN_ROLES;
   readonly pedagogyPillars = LOGIN_PEDAGOGY_PILLARS;
@@ -186,6 +188,18 @@ export class LoginComponent implements AfterViewInit {
 
   constructor() {
     afterNextRender(() => this.trackPointer());
+    afterNextRender(() => {
+      const ventana = window.visualViewport;
+      if (!ventana) return;
+      const actualizar = () => {
+        const campo = document.activeElement;
+        const activo = window.innerWidth < 1024 && campo instanceof HTMLInputElement && !!campo.closest('.acceso__campos');
+        this.altoTeclado.set(activo && ventana.scale === 1 ? Math.max(0, window.innerHeight - ventana.height - ventana.offsetTop) : 0);
+        if (activo) requestAnimationFrame(() => this.despejarCampo(campo));
+      };
+      ventana.addEventListener('resize', actualizar);
+      this.destroyRef.onDestroy(() => ventana.removeEventListener('resize', actualizar));
+    });
 
     // SIEP-281: «Cambiar de cuenta» deja el correo elegido en memoria (nunca en la URL); se toma una sola vez y la
     // persona solo escribe la contraseña.
@@ -229,6 +243,21 @@ export class LoginComponent implements AfterViewInit {
   @HostListener('focusin', ['$event'])
   alEntrarFoco(event: FocusEvent): void {
     this.formularioActivo.set((event.target as Element | null)?.closest('form') != null);
+  }
+
+  @HostListener('focusin', ['$event'])
+  protected cuidarCampo(event: FocusEvent): void {
+    if (window.innerWidth >= 1024 || !(event.target instanceof HTMLInputElement) || !event.target.closest('.acceso__campos')) return;
+    const campo = event.target;
+    requestAnimationFrame(() => this.despejarCampo(campo));
+  }
+
+  private despejarCampo(campo: HTMLInputElement): void {
+    if (document.activeElement !== campo) return;
+    const boton = campo.closest('form')?.querySelector<HTMLElement>('.acceso__submit');
+    if (!boton) return;
+    const exceso = campo.getBoundingClientRect().bottom + 8 - boton.getBoundingClientRect().top;
+    if (exceso > 0) window.scrollBy({ top: exceso, behavior: 'instant' });
   }
 
   @HostListener('focusout', ['$event'])
