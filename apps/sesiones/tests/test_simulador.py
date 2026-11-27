@@ -1,11 +1,15 @@
+import json
+from importlib import import_module
 from datetime import timedelta
 
 import pytest
+from django.apps import apps as django_apps
 from django.utils import timezone
 
 from apps.grupos.models import CaseAssignment, Grupo, GrupoEstudiante
 from apps.sesiones import efectos
-from apps.sesiones.models import AutorizacionRepeticion, Convocatoria, EstadoSesion
+from apps.sesiones.models import AutorizacionRepeticion, Convocatoria, EstadoSesion, Sesion
+from apps.simulation.models import SimulationAttempt
 from apps.simulation.services.access import available_versions
 from apps.simulation.services.attempt_api import start, transition
 from shared.exceptions import ApiError
@@ -33,14 +37,91 @@ def test_no_entra_si_la_sesion_no_esta_en_curso(crear_sesion, estudiantes, versi
 
 
 def test_entra_en_curso_y_una_sola_vez(crear_sesion, estudiantes, version):
-    iniciada(crear_sesion)
+    sesion = iniciada(crear_sesion)
     intento, creado = start(estudiantes[0], version.pk)
     assert creado
+    assert intento.convocatoria_id == Convocatoria.objects.get(sesion=sesion, estudiante=estudiantes[0]).pk
     intento.status = "COMPLETED"
     intento.save(update_fields=["status"])
     with pytest.raises(ApiError) as error:
         start(estudiantes[0], version.pk)
     assert error.value.api_code == "SESSION_ALREADY_PARTICIPATED"
+
+
+def test_un_intento_de_sesiones_solapadas_solo_sale_en_su_sesion_de_origen(
+    crear_sesion, estudiantes, version, docente, cliente_docente,
+):
+    """La convocatoria que habilitó el inicio, no la hora, determina el reporte."""
+    from apps.grupos.models import CaseAssignment
+
+    ahora = timezone.now()
+    otra = crear_sesion(
+        estado=EstadoSesion.EN_CURSO,
+        iniciada_en=ahora - timedelta(minutes=2),
+        inicio=ahora - timedelta(minutes=5), fin=ahora + timedelta(minutes=55),
+    )
+    origen = crear_sesion(
+        estado=EstadoSesion.EN_CURSO,
+        iniciada_en=ahora - timedelta(minutes=1),
+        inicio=ahora - timedelta(minutes=5), fin=ahora + timedelta(minutes=55),
+    )
+    CaseAssignment.objects.create(
+        case_version=version, estudiante=estudiantes[0], opens_at=origen.iniciada_en,
+        closes_at=origen.fin, active=True, assigned_by=docente,
+    )
+
+    intento, creado = start(estudiantes[0], version.pk)
+    assert creado
+    assert intento.convocatoria_id == Convocatoria.objects.get(sesion=origen, estudiante=estudiantes[0]).pk
+
+    def fila_de(sesion):
+        respuesta = cliente_docente.get(f"/api/reportes/sesion/{sesion.pk}/export", {"formato": "json"})
+        assert respuesta.status_code == 200
+        return next(fila for fila in json.loads(respuesta.content) if fila["correo"] == estudiantes[0].email)
+
+    assert fila_de(origen)["estado"] == "IN_PROGRESS"
+    assert fila_de(otra)["estado"] == "SIN_INTENTO"
+
+    from apps.sesiones import servicios
+    detalle_origen = {fila["estudianteId"]: fila for fila in servicios.detalle_dto(origen)["convocados"]}
+    detalle_otra = {fila["estudianteId"]: fila for fila in servicios.detalle_dto(otra)["convocados"]}
+    assert detalle_origen[estudiantes[0].pk]["intento"] == "JUGANDO"
+    assert detalle_otra[estudiantes[0].pk]["intento"] == "SIN_EMPEZAR"
+
+
+def test_migracion_historica_solo_enlaza_una_convocatoria_inequivoca(
+    crear_sesion, estudiantes, version, docente,
+):
+    """El backfill conserva vacío el vínculo si dos sesiones explican el intento."""
+    ahora = timezone.now()
+    unica = crear_sesion(inicio=ahora - timedelta(minutes=5), fin=ahora + timedelta(minutes=5))
+    nodo = version.nodes.get(start_node=True)
+    identificable = SimulationAttempt.objects.create(
+        student=estudiantes[0], case_version=version, current_node=nodo, attempt_token_hash="historico-unico",
+    )
+    primera = Sesion.objects.create(
+        case_version=version, creada_por=docente, inicio=ahora - timedelta(minutes=5),
+        fin=ahora + timedelta(minutes=5), tiempo_maximo_min=30,
+    )
+    segunda = Sesion.objects.create(
+        case_version=version, creada_por=docente, inicio=ahora - timedelta(minutes=5),
+        fin=ahora + timedelta(minutes=5), tiempo_maximo_min=30,
+    )
+    Convocatoria.objects.bulk_create([
+        Convocatoria(sesion=primera, estudiante=estudiantes[1]),
+        Convocatoria(sesion=segunda, estudiante=estudiantes[1]),
+    ])
+    ambiguo = SimulationAttempt.objects.create(
+        student=estudiantes[1], case_version=version, current_node=nodo, attempt_token_hash="historico-ambiguo",
+    )
+
+    migracion = import_module("apps.simulation.migrations.0019_intento_convocatoria")
+    migracion.asignar_convocatorias_historicas(django_apps, None)
+
+    identificable.refresh_from_db()
+    ambiguo.refresh_from_db()
+    assert identificable.convocatoria_id == Convocatoria.objects.get(sesion=unica, estudiante=estudiantes[0]).pk
+    assert ambiguo.convocatoria_id is None
 
 
 def test_repeticion_autorizada_se_consume(crear_sesion, estudiantes, version, docente):
@@ -50,9 +131,35 @@ def test_repeticion_autorizada_se_consume(crear_sesion, estudiantes, version, do
     intento.save(update_fields=["status"])
     convocatoria = Convocatoria.objects.get(sesion=sesion, estudiante=estudiantes[0])
     autorizacion = AutorizacionRepeticion.objects.create(convocatoria=convocatoria, autorizada_por=docente, motivo="Otra vez")
-    _, creado = start(estudiantes[0], version.pk)
+    repetido, creado = start(estudiantes[0], version.pk)
     autorizacion.refresh_from_db()
     assert creado and autorizacion.usada
+    assert repetido.convocatoria_id == convocatoria.pk
+
+
+def test_reanudar_conserva_la_convocatoria_y_limite_de_la_sesion_de_origen(
+    crear_sesion, estudiantes, version,
+):
+    """Una sesión solapada posterior no reasigna un intento que ya existe."""
+    from apps.simulation.services import limites
+
+    origen = iniciada(crear_sesion, tiempo_maximo_min=25)
+    intento, _ = start(estudiantes[0], version.pk)
+    convocatoria_origen = Convocatoria.objects.get(sesion=origen, estudiante=estudiantes[0])
+    transition(estudiantes[0], intento.pk, "pause")
+
+    ahora = timezone.now()
+    crear_sesion(
+        estado=EstadoSesion.EN_CURSO,
+        iniciada_en=ahora,
+        inicio=ahora - timedelta(minutes=5), fin=ahora + timedelta(minutes=55),
+        tiempo_maximo_min=5,
+    )
+    reanudado = transition(estudiantes[0], intento.pk, "resume")
+    reanudado.refresh_from_db()
+
+    assert reanudado.convocatoria_id == convocatoria_origen.pk
+    assert limites.minutos_para(reanudado) == 25
 
 
 def test_ingreso_tardio_se_mide_desde_el_inicio_real(crear_sesion, estudiantes, version):

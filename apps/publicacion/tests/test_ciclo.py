@@ -1,5 +1,10 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 from apps.grupos.models import CaseAssignment
+from apps.sesiones.models import Sesion
+from apps.simulation.models import SimulationAttempt
 from apps.simulation.services.access import available_versions
 from apps.users.models import CustomUser
 from shared.policies import ADMIN, PROFESOR
@@ -65,6 +70,26 @@ def test_archivar_publicada(caso):
     assert respuesta.status_code == 200
     caso['version'].refresh_from_db()
     assert caso['version'].status == 'ARCHIVED'
+
+
+def test_archivar_conserva_las_sesiones_y_los_intentos_del_historial(caso):
+    version = caso['version']
+    version.status = 'PUBLISHED'
+    version.save(update_fields=['status'])
+    intento = SimulationAttempt.objects.create(
+        student=caso['autor'], case_version=version, current_node=caso['inicio'],
+        attempt_token_hash='historial-archivado', status='COMPLETED',
+    )
+    sesion = Sesion.objects.create(
+        case_version=version, creada_por=caso['autor'], inicio=timezone.now(),
+        fin=timezone.now() + timedelta(hours=1), tiempo_maximo_min=30,
+    )
+
+    respuesta = caso['cliente'].post(ruta(caso, 'lifecycle'), {'action': 'archive'}, format='json')
+
+    assert respuesta.status_code == 200
+    assert SimulationAttempt.objects.filter(pk=intento.pk, case_version=version).exists()
+    assert Sesion.objects.filter(pk=sesion.pk, case_version=version).exists()
 
 
 def test_transicion_invalida_409(caso):

@@ -9,5 +9,9 @@ def registrar(regla):
 
 
 def verificar(estudiante, version):
+    resultado = None
     for regla in _reglas:
-        regla(estudiante, version)
+        valor = regla(estudiante, version)
+        if valor is not None:
+            resultado = valor
+    return resultado

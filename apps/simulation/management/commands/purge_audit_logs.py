@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.simulation.models import AuditLog
-from apps.simulation.services.audit_service import retention_days
+from apps.simulation.services.audit_service import audit_purge_window, retention_days
 
 
 class Command(BaseCommand):
@@ -20,5 +20,6 @@ class Command(BaseCommand):
         )
         cantidad = registros.count()
         if not options["dry_run"]:
-            registros.delete()
+            with audit_purge_window():
+                registros.delete()
         self.stdout.write(f"Registros {'a eliminar' if options['dry_run'] else 'eliminados'}: {cantidad}")

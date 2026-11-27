@@ -58,7 +58,7 @@ def _filas(personas, case_version, sesion=None):
         case_version=case_version, student_id__in=[p.pk for p in personas],
     ).annotate(avance=Count('events', filter=Q(events__event_type__in=REGISTERED_DECISION_EVENT_TYPES)))
     if sesion is not None:
-        intentos = intentos.filter(started_at__gte=sesion.inicio, started_at__lt=sesion.fin)
+        intentos = intentos.filter(convocatoria__sesion=sesion)
     intentos = intentos.prefetch_related(Prefetch('rubric_evaluations', queryset=evaluaciones)).order_by('-started_at', '-id')
     ultimos = {}
     for intento in intentos:

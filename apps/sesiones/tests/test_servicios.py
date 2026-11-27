@@ -39,8 +39,9 @@ def test_crear_con_grupo_ajeno_es_404(docente, datos):
         servicios.crear(docente, {**datos, "grupoId": ajeno.pk})
 
 
-def test_crear_con_caso_no_publicado_es_400(docente, datos, version):
-    version.status = "DRAFT"
+@pytest.mark.parametrize("estado", ["DRAFT", "IN_REVIEW", "ARCHIVED"])
+def test_crear_con_caso_no_publicado_es_400(docente, datos, version, estado):
+    version.status = estado
     version.save(update_fields=["status"])
     with pytest.raises(ApiError) as error:
         servicios.crear(docente, datos)

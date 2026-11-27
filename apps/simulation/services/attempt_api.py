@@ -32,7 +32,7 @@ def start(user, version_id, expected_attempt_id=None):
     # Serializa inicios incluso cuando aún no existe una fila de intento.
     get_user_model().objects.select_for_update(no_key=True).get(pk=user.pk)
     version = get_object_or_404(available_versions(user), pk=version_id)
-    reglas_de_inicio.verificar(user, version)
+    convocatoria = reglas_de_inicio.verificar(user, version)
     abiertos = SimulationAttempt.objects.filter(
         student=user, case_version=version, status__in=lifecycle.OPEN_STATUSES
     )
@@ -58,6 +58,7 @@ def start(user, version_id, expected_attempt_id=None):
     attempt = SimulationAttempt.objects.create(
         student=user,
         case_version=version,
+        convocatoria=convocatoria,
         current_node=nodes[0],
         attempt_token_hash=hashlib.sha256(secrets.token_bytes(32)).hexdigest(),
         last_activity_at=timezone.now(),

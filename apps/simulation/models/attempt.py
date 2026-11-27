@@ -70,6 +70,15 @@ class SimulationAttempt(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, db_column="student_id"
     )
+    # La convocatoria que autorizó este inicio. Es opcional para conservar los
+    # intentos anteriores a este vínculo y los que no nacen en una sesión.
+    convocatoria = models.ForeignKey(
+        "sesiones.Convocatoria",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="intentos",
+    )
     current_node = models.ForeignKey(
         SimulationNode, on_delete=models.DO_NOTHING, db_column="current_node_id"
     )

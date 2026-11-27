@@ -135,6 +135,8 @@ def sesion_reporte(datos):
     )
     for persona in (datos['estudiante'], datos['sin_intento']):
         Convocatoria.objects.create(sesion=sesion, estudiante=persona, codigo_hash='hash')
+    datos['intento'].convocatoria = Convocatoria.objects.get(sesion=sesion, estudiante=datos['estudiante'])
+    datos['intento'].save(update_fields=['convocatoria'])
     SimulationRubricAssignment.objects.create(case_version=datos['version'], rubric=datos['rubrica'])
     return sesion
 

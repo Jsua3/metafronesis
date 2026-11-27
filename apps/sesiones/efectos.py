@@ -2,7 +2,6 @@
 
 Corren dentro de la transacción de la transición, con la fila de la sesión bloqueada: si uno falla, la sesión no
 cambia de estado."""
-from django.db.models import Q
 from django.utils import timezone
 
 from apps.grupos.models import CaseAssignment
@@ -67,26 +66,11 @@ def deshabilitar_caso(sesion, estudiantes_ids=None):
     ).update(active=False)
 
 
-def _estudiantes_de_la_sesion(sesion):
-    """Todos los convocados, también los retirados: el intento que alguien empezó en la sesión sigue siendo de la
-    sesión aunque el docente lo retire después (si no, nadie lo pausaría ni lo cerraría). Se excluye a quien ya está
-    convocado (ACTIVA) en otra sesión activa del mismo caso: sus intentos abiertos son de esa otra sesión."""
-    en_otra = Convocatoria.objects.filter(
-        estado=EstadoConvocatoria.ACTIVA, sesion__case_version=sesion.case_version, sesion__estado__in=ACTIVAS,
-    ).exclude(sesion=sesion).values_list("estudiante_id", flat=True)
-    return (
-        Convocatoria.objects.filter(sesion=sesion)
-        .exclude(Q(estado=EstadoConvocatoria.RETIRADA) & Q(estudiante_id__in=en_otra))
-        .values_list("estudiante_id", flat=True)
-    )
-
-
 def _intentos(sesion, estados):
     if sesion.iniciada_en is None:
         return SimulationAttempt.objects.none()
     return SimulationAttempt.objects.filter(
-        student_id__in=list(_estudiantes_de_la_sesion(sesion)), case_version=sesion.case_version, is_rehearsal=False,
-        started_at__gte=sesion.iniciada_en, status__in=estados,
+        convocatoria__sesion=sesion, is_rehearsal=False, status__in=estados,
     )
 
 

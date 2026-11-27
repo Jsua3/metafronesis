@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.grupos.models import CaseAssignment
 from apps.simulation.models import AuditLog, SimulationAttempt, SimulationCase
 from apps.simulation.services import attempt_api
+from shared.testing import rewrite_audit_rows
 from apps.users.models import CustomUser
 from shared.policies import ESTUDIANTE, PROFESOR
 
@@ -54,7 +55,7 @@ def test_purga_respeta_retencion_y_simulacion(settings):
     ahora = timezone.now()
     viejo = AuditLog.objects.create(action="TEST", retention_until=ahora - timedelta(days=1))
     reciente = AuditLog.objects.create(action="TEST", retention_until=ahora + timedelta(days=360))
-    AuditLog.objects.filter(pk=viejo.pk).update(occurred_at=ahora - timedelta(days=361))
+    rewrite_audit_rows(AuditLog.objects.filter(pk=viejo.pk), occurred_at=ahora - timedelta(days=361))
     call_command("purge_audit_logs", "--dry-run")
     assert AuditLog.objects.filter(pk=viejo.pk).exists()
     call_command("purge_audit_logs")
