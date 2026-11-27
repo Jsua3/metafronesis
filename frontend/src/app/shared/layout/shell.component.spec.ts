@@ -123,6 +123,49 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     expect(tabLabels()).toEqual(['Inicio', 'Usuarios', 'Casos', 'Más']);
   });
 
+  describe('descripciones de los destinos', () => {
+    const ayudas = () => [...host().querySelectorAll<HTMLElement>('.modulo-principal .nav-ayuda')];
+    const enlace = (rotulo: string) => links().find(link => link.textContent!.trim() === rotulo)!;
+
+    it('el docente ve un bocadillo por destino descrito, asociado con aria-describedby, sin title nativo', async () => {
+      currentUser.set(user('PROFESOR'));
+      await fixture.whenStable();
+      expect(ayudas()).toHaveLength(7);
+      for (const link of links()) {
+        const id = link.getAttribute('aria-describedby')!;
+        const ayuda = host().querySelector<HTMLElement>(`#${id}`)!;
+        expect(ayuda.classList).toContain('nav-ayuda');
+        expect(ayuda.textContent!.trim().length).toBeGreaterThan(0);
+        // Hermano del enlace, no hijo: los plegables recortan su contenido y el nombre del enlace queda intacto.
+        expect(link.contains(ayuda)).toBe(false);
+        expect(ayuda.getAttribute('aria-hidden')).toBe('true');
+        expect(link.hasAttribute('title')).toBe(false);
+        expect(link.hasAttribute('data-ayuda')).toBe(false);
+        expect(link.style.getPropertyValue('--ancla-nav')).toBe(ayuda.style.getPropertyValue('--ancla-nav'));
+      }
+      expect(host().querySelector(`#${enlace('Grupos').getAttribute('aria-describedby')}`)!.textContent!.trim())
+        .toBe('Invita estudiantes y asígnales casos para hacer a su ritmo.');
+    });
+
+    it('el estudiante no ve descripciones', () => {
+      expect(ayudas()).toHaveLength(0);
+      expect(links().some(link => link.hasAttribute('aria-describedby'))).toBe(false);
+    });
+
+    it('Escape cierra la descripción; vuelve al dejar el enlace o perder el foco', async () => {
+      currentUser.set(user('PROFESOR'));
+      await fixture.whenStable();
+      const link = enlace('Casos');
+      link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      expect(link.classList).toContain('nav-enlace--sin-ayuda');
+      link.dispatchEvent(new MouseEvent('mouseleave'));
+      expect(link.classList).not.toContain('nav-enlace--sin-ayuda');
+      link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      link.dispatchEvent(new FocusEvent('blur'));
+      expect(link.classList).not.toContain('nav-enlace--sin-ayuda');
+    });
+  });
+
   it('la cuenta muestra nombre y rol humanizado; su menú dice quién soy, ofrece «Cambiar contraseña» y «Cerrar sesión»', async () => {
     currentUser.set(user('PROFESOR'));
     await fixture.whenStable();
