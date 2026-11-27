@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import {
-  Component, ElementRef, Injector, afterNextRender, effect, inject, input, output, untracked, ChangeDetectionStrategy,
+  Component, DestroyRef, ElementRef, Injector, afterNextRender, effect, inject, input, output, untracked, ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AudioDirectorService } from './audio-director.service';
 import { DRAFT_COPY } from './draft-copy';
+import { observeVisualViewport } from './visual-viewport.util';
 import { UiButton } from '../../shared/ui/button/ui-button';
 import { SafeExitButtonComponent } from './safe-exit-button.component';
 
@@ -38,6 +39,8 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
         </div>
         <button cdkFocusInitial class="sheet-close u-boton u-boton--icono" type="button" aria-label="Cerrar bitácora y continuar la simulación" (click)="onCloseClick()">
           <mat-icon>close</mat-icon>
+          <!-- BORRADOR: texto pendiente de Psicología. -->
+          <span class="sheet-close__label">Cerrar</span>
         </button>
       </div>
 
@@ -50,6 +53,7 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
           </ul>
 
           <textarea
+            enterkeyhint="done"
             [(ngModel)]="text"
             [disabled]="disabled() || saveState() === 'saving'"
             placeholder="Registra señales observadas, hipótesis de riesgo, ruta ética y decisión profesional."
@@ -115,7 +119,9 @@ export type JournalSaveState = 'idle' | 'saving' | 'saved' | 'error';
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './journal-mobile.css',
   styles: [`
+    .sheet-close__label { display: none; }
     :host { display: contents; }
     .journal-modal {
       position: absolute;
@@ -295,6 +301,19 @@ export class JournalPanelComponent {
   private wasOpen = false;
 
   constructor() {
+    const viewport = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (viewport) {
+      const update = (bottom: number) => {
+        this.host.querySelector<HTMLElement>('.journal-modal')?.style.setProperty('--visual-bottom', `${bottom}px`);
+        const active = document.activeElement;
+        if (this.open() && active instanceof HTMLTextAreaElement && this.host.contains(active)) {
+          requestAnimationFrame(() => { if (active.isConnected) active.scrollIntoView({ block: 'nearest' }); });
+        }
+      };
+      const stop = observeVisualViewport(viewport, () => window.innerHeight, update);
+      afterNextRender(() => update(Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)), { injector: this.injector });
+      inject(DestroyRef).onDestroy(stop);
+    }
     effect(() => { if (this.open()) this.audio.playSfx('ui_select'); });
     // La bitácora no se destruye al cerrarse (solo se oculta), así que la trampa de foco del CDK no devuelve el foco al
     // destruirse: sin esto, cerrarla con Esc lo dejaba en <body> y quien navega con teclado volvía a empezar por arriba.

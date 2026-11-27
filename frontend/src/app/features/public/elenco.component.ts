@@ -56,7 +56,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     }
 
     .sprite--camila { background-image: url('/assets/characters/kit/camila/bata/idle.png'); }
-    .sprite--docente { background-image: url('/assets/characters/kit/docente-universidad/idle.png'); }
+    .sprite--docente { background-image: url('/assets/characters/kit/sebas/idle.png'); }
     .sprite--enfermera { background-image: url('/assets/characters/kit/enfermera-urgencias/idle.png'); }
     .sprite--david { background-image: url('/assets/characters/kit/david/bata/idle.png'); }
     .sprite--recepcion { background-image: url('/assets/characters/kit/funcionaria-recepcion/idle.png'); }

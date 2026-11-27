@@ -21,6 +21,7 @@ import {
   encodeRle,
   parseGrid,
 } from '../../src/app/features/character/kit/kit-engine.ts';
+import { deriveComplexion } from './derive-complexion.mjs';
 import { rasterizeMannequin } from './mannequin-raster.mjs';
 
 export const FRONTEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -108,6 +109,11 @@ export function loadRecipes(dir = path.join(KIT_ROOT, 'recipes')) {
 export function buildBundle() {
   const complexions = {};
   for (const [id, def] of Object.entries(COMPLEXIONS)) {
+    if (def.derive) {
+      if (!complexions[def.derive.from]) throw new Error(`complexión ${id}: su base ${def.derive.from} debe registrarse antes`);
+      complexions[id] = deriveComplexion(complexions[def.derive.from], def.derive);
+      continue;
+    }
     const frames = rasterizeMannequin(def);
     complexions[id] = Object.fromEntries(VIEW_ROWS.map(view => [view, {
       kind: VIEW_KIND[view],

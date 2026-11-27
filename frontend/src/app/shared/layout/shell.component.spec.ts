@@ -4,6 +4,8 @@ import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { CLAVE_CUENTAS_RECORDADAS, CuentasRecordadasService } from '../../core/auth/cuentas-recordadas.service';
+import { CuentasRecordadasDialogoComponent } from '../../core/auth/cuentas-recordadas-dialogo.component';
 import { User } from '../../core/models/user.model';
 import { TemaService } from '../../core/tema/tema.service';
 import { UiDialog } from '../ui/dialog/ui-dialog';
@@ -34,6 +36,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
   const labels = () => links().map(link => link.textContent!.trim());
   const folded = () => links().filter(link => link.classList.contains('control-plegable')).map(link => link.textContent!.trim());
   const sheet = vi.fn();
+  const open = vi.fn();
   const tabs = () => [...host().querySelectorAll<HTMLElement>('header.cromo > nav.modulo-inferior .pestana')];
   const tabLabels = () => tabs().map(tab => tab.querySelector('.pestana__rotulo')!.textContent!.trim());
 
@@ -46,6 +49,8 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     currentUser.set(user('ESTUDIANTE'));
     logout.mockReset();
     sheet.mockReset();
+    open.mockReset();
+    localStorage.clear();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -65,7 +70,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
           },
         ]),
         { provide: AuthService, useValue: { currentUser, logout } },
-        { provide: UiDialog, useValue: { sheet } },
+        { provide: UiDialog, useValue: { sheet, open } },
       ],
     });
     router = TestBed.inject(Router);
@@ -125,7 +130,7 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     expect(host().querySelector('.cuenta-chip__rol')!.textContent!.trim()).toBe('Docente');
     const menu = fixture.debugElement.query(By.directive(UiMenu)).componentInstance as UiMenu;
     expect(menu.label()).toBe('Cuenta');
-    expect(menu.items().map(item => item.label)).toEqual(['Ana María Rodríguez · Docente', 'Cambiar contraseña', 'Cerrar sesión']);
+    expect(menu.items().map(item => item.label)).toEqual(['Ana María Rodríguez · Docente', 'Agregar cuenta', 'Cambiar contraseña', 'Cerrar sesión']);
     // La fila de identidad no hace nada (en el teléfono es el único sitio donde se lee el rol).
     expect(menu.items()[0].disabled).toBe(true);
     expect(menu.items().at(-1)!.tone).toBe('danger');
@@ -143,6 +148,75 @@ describe('ShellComponent: barra de vidrio en el portal', () => {
     const menu = fixture.debugElement.query(By.directive(UiMenu)).componentInstance as UiMenu;
     menu.itemSelected.emit('salir');
     expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  // SIEP-281: «Cambiar de cuenta» con las cuentas recordadas en este navegador.
+  describe('cambiar de cuenta', () => {
+    const menu = () => fixture.debugElement.query(By.directive(UiMenu)).componentInstance as UiMenu;
+    const recordadas = () => TestBed.inject(CuentasRecordadasService);
+    const otra = (id: number, rol: User['role'], extra = {}) => ({
+      id, nombre: `Luis${id}`, apellido: 'Paz', email: `luis${id}@cue.edu.co`, rol, ultimaVez: new Date(Date.now() + id).toISOString(), ...extra,
+    });
+
+    it('sin cuentas guardadas ofrece «Agregar cuenta», sin «Quitar…» ni «olvidar»', () => {
+      const items = menu().items();
+      expect(items.map(i => i.label)).toEqual(['Ana María Rodríguez · Estudiante', 'Agregar cuenta', 'Cambiar contraseña', 'Cerrar sesión']);
+      expect(items[1]).toMatchObject({ value: 'agregar', icon: 'person_add', grupo: 'Cambiar de cuenta' });
+    });
+
+    it('muestra una entrada por cuenta guardada distinta de la actual, con rol y correo como detalle', async () => {
+      recordadas().recordar(otra(1, 'ESTUDIANTE', { id: 1, nombre: 'Ana María', apellido: 'Rodríguez', email: 'ana@cue.edu.co' }));
+      recordadas().recordar(otra(2, 'PROFESOR'));
+      await fixture.whenStable();
+      const items = menu().items();
+      expect(items.map(i => i.label)).toEqual([
+        'Ana María Rodríguez · Estudiante', 'Luis2 Paz', 'Agregar cuenta', 'Quitar cuentas de esta lista…',
+        'Cambiar contraseña', 'Cerrar sesión', 'Cerrar sesión y olvidar las cuentas',
+      ]);
+      expect(items[1]).toMatchObject({ value: 'cuenta:2', detalle: 'Docente · luis2@cue.edu.co', grupo: 'Cambiar de cuenta' });
+      expect(items.at(-1)!.tone).toBe('danger');
+      expect(items.filter(i => i.grupo).map(i => i.value)).toEqual(['cuenta:2', 'agregar', 'quitar']);
+    });
+
+    it('elegir una cuenta cierra la sesión y deja su correo en memoria, no en la URL', async () => {
+      recordadas().recordar(otra(2, 'PROFESOR'));
+      await fixture.whenStable();
+      menu().itemSelected.emit('cuenta:2');
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(recordadas().correoPorEntrar()).toBe('luis2@cue.edu.co');
+      expect(router.url).not.toContain('luis2');
+    });
+
+    it('«Agregar cuenta» guarda la actual, cierra sesión y deja el acceso vacío', () => {
+      menu().itemSelected.emit('agregar');
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(recordadas().cuentas().map(c => c.id)).toEqual([1]);
+      expect(recordadas().correoPorEntrar()).toBeNull();
+      expect(recordadas().guardarProxima()).toBe(true);
+    });
+
+    it('«Quitar cuentas de esta lista…» abre el diálogo compartido', async () => {
+      recordadas().recordar(otra(2, 'PROFESOR'));
+      await fixture.whenStable();
+      menu().itemSelected.emit('quitar');
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(open.mock.calls[0][0]).toBe(CuentasRecordadasDialogoComponent);
+      expect(logout).not.toHaveBeenCalled();
+    });
+
+    it('«Cerrar sesión y olvidar las cuentas» cierra sesión y vacía la lista', async () => {
+      recordadas().recordar(otra(2, 'PROFESOR'));
+      await fixture.whenStable();
+      menu().itemSelected.emit('olvidar');
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(recordadas().cuentas()).toEqual([]);
+      expect(localStorage.getItem(CLAVE_CUENTAS_RECORDADAS)).toBeNull();
+    });
+
+    it('una cuenta que ya no está en la lista no hace nada', () => {
+      menu().itemSelected.emit('cuenta:99');
+      expect(logout).not.toHaveBeenCalled();
+    });
   });
 
   it('la fila de identidad no navega ni cierra la sesión', async () => {

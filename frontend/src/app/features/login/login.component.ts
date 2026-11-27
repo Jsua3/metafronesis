@@ -12,6 +12,7 @@ import { map, merge, startWith } from 'rxjs';
 
 import { EXPIRED_SESSION_REASON } from '../../core/auth/auth.guard';
 import { AuthService } from '../../core/auth/auth.service';
+import { CuentasRecordadasService } from '../../core/auth/cuentas-recordadas.service';
 import { safeReturnUrl } from '../../core/auth/return-url';
 import { throttledMessage } from '../../core/auth/throttled';
 import { APP_BRAND } from '../../core/config/brand.config';
@@ -23,10 +24,10 @@ import { UiCheck } from '../../shared/ui/field/ui-check';
 import { UiControl, UiField } from '../../shared/ui/field/ui-field';
 import { UiScopeNotice } from '../../shared/ui/scope-notice/ui-scope-notice';
 import type { DemoCredentials } from './login-demo.dev';
-import { LOGIN_ASSETS, LOGIN_PEDAGOGY_PILLARS, LOGIN_REMEMBER_EMAIL_KEY } from './login-assets.config';
-import { AccesoEscenaComponent } from './acceso-escena.component';
+import { LOGIN_PEDAGOGY_PILLARS, LOGIN_REMEMBER_EMAIL_KEY } from './login-assets.config';
+import { AccesoTomasComponent } from './acceso-tomas.component';
+import { LOGIN_TOMAS } from './login-tomas.config';
 import { findLoginRole, LOGIN_ROLES, LoginRole } from './login-role.config';
-import { PASO_DE_PERFIL, indiceDePaso, pasoSiguiente } from './recorrido.util';
 
 // Google Identity Services (cargado dinámicamente desde accounts.google.com/gsi/client)
 declare const google: any;
@@ -44,22 +45,19 @@ const REQUEST_FIELDS = [['nombre', 'registro-nombre'], ['apellido', 'registro-ap
  * (TemaService; la piel va en el contenedor de la página, REGLA-010). Etiqueta visible en cada campo (ui-field, H-29)
  * y borde de control (H-28); un campo dice su error al salir de él solo si ya se escribió algo, y al enviar se muestran
  * todos y el foco va al primero; el botón dice que trabaja (ui-button [loading]) y no envía dos veces; al alternar
- * formularios el foco va al encabezado del nuevo (nunca a body). Al lado, desde 64rem, una ventana del simulador con UNA
- * imagen fija de la escena real.
+ * formularios el foco va al encabezado del nuevo (nunca a body).
  *
- * Interacción (rediseño del acceso, 2026-11-22): todo responde a la persona y nada corre solo (sin partículas, video,
- * canvas ni bucles; la guía §2 pide calma antes de entrar a un caso sensible y WCAG 2.2.2 no deja nada que pausar).
- * Con un ratón fino y sin «movimiento reducido», el puntero enciende una luz suave en el fondo y en el filo de la
- * tarjeta y desplaza la escena unos píxeles (paralaje); en cualquier dispositivo, elegir el perfil mueve la cámara de
- * la escena hacia lo que le toca y posa su rótulo, y los tres píxeles de la marca se encienden a medida que el
- * formulario se completa. Bloq Mayús se avisa en el campo de la contraseña.
+ * Al lado, la ventana de tomas reales del simulador (`app-acceso-tomas`), que se puede pausar (WCAG 2.2.2) y se detiene
+ * mientras se usa el formulario. Con un ratón fino y sin «movimiento reducido», el puntero enciende una luz suave en el
+ * fondo y en el filo de la tarjeta, y los tres píxeles de la marca se encienden a medida que el formulario se completa.
+ * Bloq Mayús se avisa en el campo de la contraseña.
  */
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
     ReactiveFormsModule, MatIconModule, PublicBarComponent, UiButton, UiCheck, UiControl, UiField, UiScopeNotice,
-    DoodlesComponent, AccesoEscenaComponent,
+    DoodlesComponent, AccesoTomasComponent,
   ],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -69,27 +67,16 @@ export class LoginComponent implements AfterViewInit {
   readonly brand = APP_BRAND;
   readonly roles = LOGIN_ROLES;
   readonly pedagogyPillars = LOGIN_PEDAGOGY_PILLARS;
-  readonly loginHeroImage = LOGIN_ASSETS.images.hero;
-
-  /**
-   * Recorrido de la ventana (explica cómo funciona el simulador): la cámara de la escena pasa por los cuatro pilares y cada
-   * uno enseña lo suyo. Avanza solo, pero se puede pausar (WCAG 2.2.2), se calla mientras se escribe en un formulario y,
-   * con «movimiento reducido», no corre. El avance lo marca el fin de la barra de progreso del paso activo (una animación
-   * CSS), no un temporizador: pausar la barra pausa el recorrido y las dos cosas no pueden desfasarse.
-   */
-  readonly paso = signal(0);
-  /** El botón «Pausar recorrido», o haber elegido un paso a mano: quien elige lleva el control. */
-  readonly recorridoPausado = signal(false);
-  /** Se escribe en un formulario: el recorrido espera sin cambiar de paso (la ventana no compite con quien llena el acceso). */
+  readonly tomaActual = signal(LOGIN_TOMAS[0]);
+  /** La ventana espera mientras se utiliza un formulario. */
   readonly formularioActivo = signal(false);
-  /** Con «movimiento reducido» nada avanza solo, y tampoco hay una pausa que ofrecer. */
-  readonly recorridoAutomatico = !((reducedMotionQuery()?.matches ?? false));
 
   /** Tema de las pantallas públicas: claro (piel portal) u oscuro (piel juego), en el contenedor de la página. */
   protected readonly tema = inject(TemaService);
 
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly cuentasRecordadas = inject(CuentasRecordadasService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly zone = inject(NgZone);
@@ -200,6 +187,14 @@ export class LoginComponent implements AfterViewInit {
   constructor() {
     afterNextRender(() => this.trackPointer());
 
+    // SIEP-281: «Cambiar de cuenta» deja el correo elegido en memoria (nunca en la URL); se toma una sola vez y la
+    // persona solo escribe la contraseña.
+    const correoElegido = this.cuentasRecordadas.consumirCorreoPorEntrar();
+    if (correoElegido) {
+      this.form.controls.email.setValue(correoElegido);
+      afterNextRender(() => this.pageRef.nativeElement.querySelector<HTMLInputElement>('#login-password')?.focus(), { injector: this.injector });
+    }
+
     // El build de producción pliega ngDevMode a false y descarta la rama: el import() y su chunk no existen.
     if (typeof ngDevMode === 'undefined' || ngDevMode) {
       this.auth.demoConfig().subscribe({
@@ -231,22 +226,6 @@ export class LoginComponent implements AfterViewInit {
     return null;
   }
 
-  elegirPaso(indice: number): void {
-    this.paso.set(indice);
-    this.recorridoPausado.set(true);
-  }
-
-  alternarRecorrido(): void {
-    this.recorridoPausado.update(pausado => !pausado);
-  }
-
-  /** Fin de la barra de progreso del paso activo: pasa al siguiente. Angular antepone su prefijo al nombre de la animación. */
-  alTerminarPaso(event: AnimationEvent, indice: number): void {
-    if (!event.animationName.endsWith('acceso-avance') || indice !== this.paso()) return;
-    if (!this.recorridoAutomatico || reducedMotionQuery()?.matches || this.recorridoPausado() || this.formularioActivo()) return;
-    this.paso.set(pasoSiguiente(indice));
-  }
-
   @HostListener('focusin', ['$event'])
   alEntrarFoco(event: FocusEvent): void {
     this.formularioActivo.set((event.target as Element | null)?.closest('form') != null);
@@ -254,14 +233,13 @@ export class LoginComponent implements AfterViewInit {
 
   @HostListener('focusout', ['$event'])
   alSalirFoco(event: FocusEvent): void {
-    // Pasar de un campo a otro del formulario no reanuda el recorrido entre medias.
+    // Pasar de un campo a otro del formulario no reanuda las tomas entre medias.
     if ((event.relatedTarget as Element | null)?.closest?.('form')) return;
     this.formularioActivo.set(false);
   }
 
   /** El rol que pide la solicitud de acceso (el inicio de sesión no lo pide: el rol lo trae la cuenta). */
   selectRole(role: LoginRole): void {
-    if (role !== this.selectedRole()) this.paso.set(indiceDePaso(PASO_DE_PERFIL[role]));
     this.selectedRole.set(role);
     this.registerError.set('');
   }
@@ -469,9 +447,9 @@ export class LoginComponent implements AfterViewInit {
    * La luz del puntero (solo con ratón y sin «movimiento reducido»). El filtro se aplica a CADA evento y no al
    * engancharse: un `pointermove` táctil o de lápiz se ignora (`pointerType`), y la preferencia de movimiento se lee viva
    * (`MediaQueryList.matches`), así que cambiarla con la página abierta surte efecto sin recargar. Escribe variables CSS
-   * en tres sitios con `style.setProperty` (no toca Angular ni atributos `style`, así que la CSP de estilos no se ve
+   * con `style.setProperty` (no toca Angular ni atributos `style`, así que la CSP de estilos no se ve
    * afectada): `--mx/--my/--luz` en la página (la luz del fondo), `--gx/--gy` en la tarjeta (el filo que sigue al
-   * cursor) y `--gx/--gy/--nx/--ny` en la escena (el brillo y el paralaje). Un cuadro de animación por lote de eventos.
+   * cursor). Un cuadro de animación por lote de eventos.
    */
   private trackPointer(): void {
     if (typeof matchMedia !== 'function' || typeof requestAnimationFrame !== 'function') return;
@@ -493,15 +471,6 @@ export class LoginComponent implements AfterViewInit {
         const r = card.getBoundingClientRect();
         card.style.setProperty('--gx', `${Math.round(x - r.left)}px`);
         card.style.setProperty('--gy', `${Math.round(y - r.top)}px`);
-      }
-      const scene = page.querySelector<HTMLElement>('.acceso__scene');
-      if (scene) {
-        const r = scene.getBoundingClientRect();
-        const clamp = (value: number) => Math.max(-1, Math.min(1, value));
-        scene.style.setProperty('--gx', `${Math.round(x - r.left)}px`);
-        scene.style.setProperty('--gy', `${Math.round(y - r.top)}px`);
-        scene.style.setProperty('--nx', clamp((x - (r.left + r.width / 2)) / (window.innerWidth / 2)).toFixed(3));
-        scene.style.setProperty('--ny', clamp((y - (r.top + r.height / 2)) / (window.innerHeight / 2)).toFixed(3));
       }
     };
     const onMove = (event: PointerEvent) => {

@@ -4,6 +4,8 @@
  * vestidos; devuelven listas de errores legibles (vacía = cumple).
  */
 
+import { COMPLEXIONS } from '../../character-kit/mannequins/index.mjs';
+import { statureOf } from './derive-complexion.mjs';
 import { FRAME, MIRROR_OF, PORTRAIT_FRAME, SHEETS, SHEET_IDS, VIEW_ROWS, decodeRle } from '../../src/app/features/character/kit/kit-engine.ts';
 
 export const RULES = Object.freeze({
@@ -19,6 +21,13 @@ export const RULES = Object.freeze({
   stanceTolerance: 6,
   soleY: 66,
 });
+
+/**
+ * Sin excepción de altura. Una complexión derivada más alta (D) declara cuánto
+ * sube la cabeza (`lift`) y cuánto bajan los pies (`drop`); el contrato le
+ * corre la base, la altura y el apoyo esa misma cantidad y nada más.
+ */
+export const NO_STATURE = Object.freeze({ lift: 0, drop: 0 });
 
 const SIDE_VIEWS = new Set(['left', 'right']);
 const QUARTER_VIEWS = new Set(['down-left', 'down-right', 'up-left', 'up-right']);
@@ -148,17 +157,18 @@ function feet(dressed) {
 }
 
 /** Reglas por cuadro de cuerpo: un componente, pies, altura, cabeza, hombros, apoyo. */
-export function checkSpriteFrame(image, col, row, { name, view, dressed, volume = false }) {
+export function checkSpriteFrame(image, col, row, { name, view, dressed, volume = false, stature = NO_STATURE }) {
   const errors = [];
   const where = `${name} ${view} [${col}]`;
   const c = cell(image, col, row);
   const parts = components(c);
   if (parts.length !== 1) return [`${where}: ${parts.length} componentes opacos; el personaje debe ser una sola silueta`];
   const body = parts[0];
-  const [b0, b1] = RULES.bodyBottom;
+  const [b0, b1] = RULES.bodyBottom.map(y => y + stature.drop);
   if (body.bottom < b0 || body.bottom > b1) errors.push(`${where}: el cuerpo termina en y=${body.bottom}; debe terminar entre ${b0} y ${b1}`);
   const height = body.bottom - body.top + 1;
-  const [h0, h1] = RULES.opaqueHeight;
+  const h0 = RULES.opaqueHeight[0];
+  const h1 = RULES.opaqueHeight[1] + stature.lift + stature.drop;
   if (height < h0 || height > h1) errors.push(`${where}: altura opaca ${height}; debe estar entre ${h0} y ${h1}`);
   errors.push(...bandErrors(body, c.fw, RULES.head, volume ? RULES.head.volumeWidth : RULES.head.width, `${where} cabeza`));
   const band = shoulderBand(view);
@@ -179,7 +189,8 @@ function bodyTop(image, col, row) {
 }
 
 /** Respiración de 1 px en reposo, bob ≤ 1 px en caminata y apoyo doble en los contactos. */
-export function checkAnimation(composed, name) {
+export function checkAnimation(composed, name, stature = NO_STATURE) {
+  const soleY = RULES.soleY + stature.drop;
   const errors = [];
   VIEW_ROWS.forEach((view, row) => {
     const idleTops = Array.from({ length: SHEETS.idle.frames }, (_, f) => bodyTop(composed.idle, f, row));
@@ -191,8 +202,8 @@ export function checkAnimation(composed, name) {
     if (SIDE_VIEWS.has(view) && composed.dressed) {
       for (const f of [0, 3]) {
         const ft = feet(composed.dressed.walk[view][f]);
-        if (ft.o !== RULES.soleY || ft.O !== RULES.soleY) {
-          errors.push(`${name} walk ${view} [${f}]: contacto con los pies en y=${ft.o} y y=${ft.O}; los dos deben pisar y=${RULES.soleY}`);
+        if (ft.o !== soleY || ft.O !== soleY) {
+          errors.push(`${name} walk ${view} [${f}]: contacto con los pies en y=${ft.o} y y=${ft.O}; los dos deben pisar y=${soleY}`);
         }
       }
     }
@@ -249,7 +260,7 @@ export function geometry(composed) {
 }
 
 /** Todas las reglas de un personaje compuesto (con `keepDressed`). */
-export function checkCharacter(composed, { name, palette, outline, volume = false }) {
+export function checkCharacter(composed, { name, palette, outline, volume = false, stature = NO_STATURE }) {
   const errors = [];
   for (const sheet of ['idle', 'walk']) {
     const image = composed[sheet];
@@ -257,12 +268,12 @@ export function checkCharacter(composed, { name, palette, outline, volume = fals
     errors.push(...checkImageContract(image, { name: `${name} ${sheet}`, fw: FRAME.width, fh: FRAME.height, cols, rows: VIEW_ROWS.length, palette, outline }));
     VIEW_ROWS.forEach((view, row) => {
       for (let col = 0; col < cols; col++) {
-        errors.push(...checkSpriteFrame(image, col, row, { name: `${name} ${sheet}`, view, dressed: composed.dressed?.[sheet][view][col], volume }));
+        errors.push(...checkSpriteFrame(image, col, row, { name: `${name} ${sheet}`, view, dressed: composed.dressed?.[sheet][view][col], volume, stature }));
       }
     });
     errors.push(...checkMirror(image, name, sheet));
   }
-  errors.push(...checkAnimation(composed, name));
+  errors.push(...checkAnimation(composed, name, stature));
   for (const [state, image] of Object.entries(composed.portraits)) {
     errors.push(...checkImageContract(image, { name: `${name} retrato ${state}`, fw: PORTRAIT_FRAME.width, fh: PORTRAIT_FRAME.height, cols: 1, rows: 1, palette, outline }));
   }
@@ -274,9 +285,12 @@ const HEAD_LABELS = new Set(['H', 'e', 'E']);
 /**
  * Cráneo compartido: toda complexión tiene exactamente la cabeza de A (H, e, E
  * en las mismas celdas de cada vista y cuadro), y de frente mide 17 px con
- * contorno. Así el pelo sirve en todas las complexiones.
+ * contorno. Así el pelo sirve en todas las complexiones. Una complexión alta
+ * la tiene igual pero `lift` filas más arriba (`lifts`, por id).
  */
-export function checkSharedHead(bundle) {
+const DEFAULT_LIFTS = Object.fromEntries(Object.entries(COMPLEXIONS).map(([id, def]) => [id, statureOf(def).lift]));
+
+export function checkSharedHead(bundle, lifts = DEFAULT_LIFTS) {
   const errors = [];
   const ref = bundle.complexions.a;
   if (!ref) return ['falta la complexión a (referencia de la cabeza)'];
@@ -295,8 +309,10 @@ export function checkSharedHead(bundle) {
         views[view][sheet].forEach((enc, f) => {
           const a = decodeRle(ref[view][sheet][f].labels);
           const b = decodeRle(enc.labels);
-          for (let i = 0; i < a.length; i++) {
-            if ((HEAD_LABELS.has(a[i]) || HEAD_LABELS.has(b[i])) && a[i] !== b[i]) {
+          const shift = (lifts[id] ?? 0) * FRAME.width;
+          for (let i = 0; i < b.length; i++) {
+            const ai = a[i + shift];
+            if ((HEAD_LABELS.has(ai) || HEAD_LABELS.has(b[i])) && ai !== b[i]) {
               errors.push(`complexión ${id} ${view}/${sheet} [${f}]: la cabeza no coincide con la de A en (${i % FRAME.width},${Math.floor(i / FRAME.width)})`);
               break;
             }

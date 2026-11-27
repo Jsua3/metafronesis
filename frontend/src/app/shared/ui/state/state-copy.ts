@@ -56,7 +56,7 @@ export const EMPTY_STATE_COPY: Readonly<Record<UiEmptyKind, EmptyStateCopy>> = {
  */
 export const FIGURAS_VACIO = {
   estudiante: 'camila/bata',
-  docente: 'docente-universidad',
+  docente: 'sebas',
   admin: 'funcionaria-recepcion',
   revision: 'supervisor-clinico',
 } as const;

@@ -4,6 +4,8 @@
  * todavía no lleva ninguna receta fija («toda pieza funciona en A y en B»).
  */
 
+import { COMPLEXIONS } from '../../character-kit/mannequins/index.mjs';
+
 /** Receta base de las muestras: la ropa de Valentina con colores neutros. */
 export const SAMPLE_BASE = Object.freeze({
   pieces: { hair: 'bob-flequillo', face: 'sereno', top: 'chaqueta-capucha', bottom: 'jean', shoes: 'tenis', accessories: [] },
@@ -28,7 +30,11 @@ export function sampleRecipe(pieceKey, complexion) {
 export function sampleRecipes(bundle) {
   const out = [];
   for (const key of Object.keys(bundle.pieces).sort()) {
-    for (const complexion of Object.keys(bundle.complexions).sort()) out.push(sampleRecipe(key, complexion));
+    for (const complexion of Object.keys(bundle.complexions).sort()) {
+      // Una complexión alta no admite los peinados que tocarían el borde de arriba.
+      if (COMPLEXIONS[complexion]?.hairNotSupported?.includes(key.replace(/^hair:/, ''))) continue;
+      out.push(sampleRecipe(key, complexion));
+    }
   }
   return out;
 }

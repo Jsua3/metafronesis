@@ -96,8 +96,8 @@ describe('P3: acceso directo y comprensible', () => {
     expect(submitIndex + 1).toBe(9); // Sin activar el salto: también se recorren los tres controles de la barra.
     const secondary = stops(form).slice(5).map(el => el.textContent?.trim());
     expect(secondary.slice(0, 2)).toEqual(['¿Olvidaste tu contraseña?', 'Solicitar acceso']);
-    expect(host.querySelectorAll('.acceso__paso')).toHaveLength(4);
-    for (const el of host.querySelectorAll<HTMLElement>('.acceso__paso, .acceso__pausa')) {
+    expect(host.querySelectorAll('.acceso__pilar')).toHaveLength(4);
+    for (const el of host.querySelectorAll<HTMLElement>('app-acceso-tomas button')) {
       expect(all.indexOf(el)).toBeGreaterThan(submitIndex);
     }
     expect(all.some(el => el.tabIndex > 0)).toBe(false);

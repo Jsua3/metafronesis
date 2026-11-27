@@ -53,7 +53,7 @@ export class UiEmptyState {
   readonly actionLabel = input<string | null | undefined>(null);
   /** Mostrar la acción con el texto del catálogo (si la clase lo tiene). */
   readonly withAction = input(false, { transform: booleanAttribute });
-  /** Personaje del kit en lugar del mueble (`'camila/bata'`, `'docente-universidad'`…); ver `FIGURAS_VACIO`. */
+  /** Personaje del kit en lugar del mueble (`'camila/bata'`, `'sebas'`…); ver `FIGURAS_VACIO`. */
   readonly figura = input<string | null | undefined>(null);
   readonly action = output<void>();
 

@@ -213,7 +213,7 @@ export const ESCENAS = {
     ancho: 160, alto: 96,
     capas: [
       { pieza: 'universidad/tablero-avisos', x: 0 },
-      { kit: 'docente-universidad', x: 90, protagonista: true },
+      { kit: 'sebas', x: 90, protagonista: true },
       { pieza: 'herramienta/ficha-riesgo', x: 120, y: 64, flota: true },
     ],
   },
@@ -242,7 +242,7 @@ export const ESCENAS = {
     ancho: 140, alto: 92,
     capas: [
       { pieza: 'hospital/hoja-ingreso', x: 0 },
-      { kit: 'docente-universidad', x: 30, protagonista: true },
+      { kit: 'sebas', x: 30, protagonista: true },
       { pieza: 'comisaria/sello-tinta', x: 84, y: 50, flota: true },
       { pieza: 'universidad/libro-abierto', x: 84 },
     ],

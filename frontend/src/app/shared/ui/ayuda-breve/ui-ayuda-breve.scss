@@ -1,0 +1,142 @@
+@use 'mixins' as m;
+
+// Ayuda breve: pastilla de vidrio de 1,5 rem en la línea del texto y popover anclado a ella.
+:host {
+  position: relative;
+  display: inline-block;
+  margin-inline-start: var(--ds-space-1);
+  vertical-align: middle;
+  line-height: 0;
+}
+
+.ayuda__boton {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  anchor-name: var(--ayuda-ancla);
+  // Glifo de 20 px (×2 exacto) con 6 px de aire a los lados y 3 arriba y abajo. El margen negativo evita que la pastilla
+  // agrande la línea del texto en la que va.
+  inline-size: 2rem;
+  block-size: 1.625rem;
+  margin-block: -0.125rem;
+  padding: 0;
+  border: 1px solid var(--ds-veil-edge);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-veil);
+  -webkit-backdrop-filter: var(--ds-glass-blur);
+  backdrop-filter: var(--ds-glass-blur);
+  color: var(--ds-text-2);
+  cursor: pointer;
+  transition:
+    color var(--ds-dur-fast) var(--ds-ease-out),
+    background-color var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-press) var(--ds-spring-soft);
+
+  // Área táctil de 44 px sin agrandar lo visual.
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    translate: -50% -50%;
+  }
+
+  @include m.ds-hover {
+    color: var(--ds-primary);
+    background: var(--ds-primary-subtle);
+  }
+
+  &[aria-expanded='true'] {
+    color: var(--ds-primary);
+    background: var(--ds-primary-subtle);
+  }
+
+  &:active {
+    scale: 0.94;
+  }
+
+  &:focus-visible {
+    @include m.ds-focus-ring;
+  }
+}
+
+.ayuda__panel {
+  @include m.ds-glass;
+
+  position: fixed;
+  position-anchor: var(--ayuda-ancla);
+  position-area: block-end span-inline-end;
+  position-try-fallbacks: flip-block, flip-inline;
+  inset: auto;
+  z-index: var(--ds-z-desplegable);
+  max-inline-size: min(22rem, calc(100vw - 2rem));
+  margin: var(--ds-space-1);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  overflow: visible;
+  border: 0;
+  border-radius: var(--ds-radius-md);
+  background: transparent;
+  color: var(--ds-text-1);
+  font-size: var(--ds-type-body-s-size);
+  line-height: var(--ds-type-body-s-line);
+  text-align: start;
+  transform-origin: top left;
+  transition:
+    opacity var(--ds-dur-fast) var(--ds-ease-out),
+    scale var(--ds-dur-base) var(--ds-spring-soft),
+    translate var(--ds-dur-base) var(--ds-spring-soft),
+    display var(--ds-dur-press) allow-discrete,
+    overlay var(--ds-dur-press) allow-discrete;
+
+  @starting-style {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 4px;
+  }
+
+  &:not(:popover-open) {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 4px;
+  }
+}
+
+.ayuda__termino,
+.ayuda__texto {
+  display: block;
+}
+
+.ayuda__termino {
+  margin-block-end: var(--ds-space-1);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ayuda__boton,
+  .ayuda__panel {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ayuda__boton {
+    background: var(--ds-surface-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .ayuda__panel::before {
+    background: var(--ds-surface-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ayuda__boton,
+  .ayuda__panel::before {
+    border-color: CanvasText;
+  }
+}

@@ -7,6 +7,7 @@ import { join } from 'path';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { CuentasRecordadasService } from '../../core/auth/cuentas-recordadas.service';
 import { TemaService } from '../../core/tema/tema.service';
 import { UiDialog } from '../../shared/ui/dialog/ui-dialog';
 import { LOGIN_REMEMBER_EMAIL_KEY } from './login-assets.config';
@@ -407,31 +408,26 @@ describe('LoginComponent', () => {
 
   // H-22 / WCAG 2.2.2 (rediseño 2026-11-20): antes, partículas con botón de pausa; ahora nada se mueve solo en el
   // acceso, así que no hay nada que pausar (y la guía §2 pide calma antes de entrar a un caso sensible).
-  it('nada se mueve solo en el acceso: sin capa de partículas, sin video y sin reproducción automática', async () => {
+  it('el acceso no usa partículas, canvas ni reproducción automática del navegador', async () => {
     await render();
     expect(host().querySelector('app-siep-particle-layer')).toBeNull();
-    expect(host().querySelector('video, [autoplay], canvas')).toBeNull();
+    expect(host().querySelector('[autoplay], canvas')).toBeNull();
   });
 
-  it('la escena real del simulador se pinta una sola vez, en WebP liviano, con su tamaño y texto alternativo', async () => {
-    // Rediseño 2026-11-20: la escena de la portada (581 × 415). Sigue el presupuesto de F4-4 (antes 18 KB + 43 KB).
+  it('los pósteres de las tomas tienen tamaño y texto alternativo', async () => {
     await render();
-    const scenes = host().querySelectorAll<HTMLImageElement>('.acceso__panel img');
-    expect(scenes).toHaveLength(1);
-    expect(scenes[0].getAttribute('src')).toBe('assets/images/institution/escena-portada.webp');
-    expect([scenes[0].getAttribute('width'), scenes[0].getAttribute('height')]).toEqual(['581', '415']);
-    // En escritorio es el elemento de mayor pintura (LCP): no se difiere (Angular lo advierte, NG0913); pesa < 40 KB.
-    expect(scenes[0].getAttribute('loading')).not.toBe('lazy');
-    expect(scenes[0].getAttribute('alt')!.length).toBeGreaterThan(20);
-    const file = join(__dirname, '..', '..', '..', 'assets/images/institution/escena-portada.webp');
-    expect(existsSync(file)).toBe(true);
-    expect(statSync(file).size).toBeLessThan(40 * 1024);
+    const escenas = host().querySelectorAll<HTMLImageElement>('.acceso__panel img');
+    expect(escenas).toHaveLength(5);
+    expect(escenas[0].getAttribute('src')).toBe('assets/login/tomas/llegada.webp');
+    expect([escenas[0].getAttribute('width'), escenas[0].getAttribute('height')]).toEqual(['1280', '800']);
+    expect(escenas[0].getAttribute('loading')).not.toBe('lazy');
+    expect([...escenas].filter(imagen => imagen.hasAttribute('src'))).toHaveLength(1);
+    expect(escenas[0].alt.length).toBeGreaterThan(20);
   });
 
-  // Rediseño de la interacción (2026-11-22): todo responde a la persona y nada corre solo.
+  // Interacciones del acceso.
   describe('interacción', () => {
     const page = () => host().querySelector<HTMLElement>('.acceso')!;
-    const scene = () => host().querySelector<HTMLElement>('.acceso__scene')!;
     const eyebrow = () => host().querySelector<HTMLElement>('.acceso__producto')!;
     const passwordMessage = () => host().querySelector('#login-password')!.closest('ui-field')!.querySelector<HTMLElement>('.ui-field__message')!;
     const caps = (type: 'keydown' | 'keyup', on: boolean) =>
@@ -445,157 +441,15 @@ describe('LoginComponent', () => {
       expect(doodles.querySelector('canvas, video')).toBeNull();
     });
 
-    it('en la solicitud de acceso, elegir el rol cambia el retrato y lleva la cámara al paso que le toca (sin tocar la imagen única)', async () => {
+    it('la toma activa resalta sus pilares y los controles están en la ventana', async () => {
       await render();
-      // El inicio de sesión ya no pide el rol (lo trae la cuenta): la escena abre en «Simula» y no hay retrato de perfil.
-      expect(scene().getAttribute('data-paso')).toBe('simula');
-      expect(host().querySelector('.acceso__avatar')).toBeNull();
-
-      button('Solicitar acceso').click();
+      expect(host().querySelectorAll('.acceso__pilar--activo')).toHaveLength(1);
+      const botones = host().querySelectorAll<HTMLButtonElement>('app-acceso-tomas .segmento');
+      expect(botones).toHaveLength(5);
+      botones[4].click();
       await fixture.whenStable();
-      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('camila/bata/portrait-alegre.png');
-
-      button('Docente').click();
-      await fixture.whenStable();
-      expect(scene().getAttribute('data-paso')).toBe('evalua');
-      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('docente-universidad/portrait-alegre.png');
-
-      button('Administrador').click();
-      await fixture.whenStable();
-      expect(scene().getAttribute('data-paso')).toBe('simula');
-      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('funcionaria-recepcion/portrait-alegre.png');
-
-      button('Estudiante').click();
-      await fixture.whenStable();
-      expect(scene().getAttribute('data-paso')).toBe('aprende');
-      expect(host().querySelector('.acceso__avatar')!.getAttribute('src')).toContain('camila/bata/portrait-alegre.png');
-
-      // Retrato, rótulo, brillo y detalles de la escena son decoración: el texto del paso lo dice todo y la escena sigue
-      // siendo UNA imagen.
-      for (const selector of ['.rotulo', '.brillo', '.opciones', '.nota', '.resalte', '.acceso__avatar']) {
-        expect(host().querySelector(selector)!.getAttribute('aria-hidden')).toBe('true');
-      }
-      expect(host().querySelectorAll('.acceso__panel img')).toHaveLength(1);
-    });
-
-    // El recorrido de la ventana: la cámara pasa por los cuatro pilares. Avanza solo, pero se pausa, espera a quien escribe y
-    // con «movimiento reducido» no corre (WCAG 2.2.2).
-    describe('recorrido de la ventana', () => {
-      const fichas = () => [...host().querySelectorAll<HTMLButtonElement>('.acceso__paso')];
-      const activa = () => fichas().findIndex(ficha => ficha.classList.contains('acceso__paso--activo'));
-      const lista = () => host().querySelector<HTMLElement>('.acceso__pillars')!;
-      const rotulo = () => text(host().querySelector('.rotulo'));
-      /** El botón de pausa trae un icono: se lee lo que se oye (sin lo decorativo), como en la portada. */
-      const pausa = () => host().querySelector<HTMLButtonElement>('.acceso__pausa')!;
-      /** Lo que hace el navegador al terminar la barra del paso (Angular antepone su prefijo al nombre de la animación). */
-      const terminaBarra = async (indice: number) => {
-        const evento = Object.assign(new Event('animationend', { bubbles: true }), { animationName: '_ngcontent-xyz_acceso-avance' });
-        fichas()[indice].dispatchEvent(evento);
-        await fixture.whenStable();
-      };
-
-      it('arranca en «Simula»: cuatro pasos como botones, el primero activo y el rótulo del caso ficticio', async () => {
-        await render();
-        expect(fichas().map(ficha => text(ficha.querySelector('strong')))).toEqual(['Simula', 'Decide', 'Evalúa', 'Aprende']);
-        expect(activa()).toBe(0);
-        expect(fichas().map(ficha => ficha.getAttribute('aria-current'))).toEqual(['step', null, null, null]);
-        expect(rotulo()).toBe('Caso ficticio');
-        expect(lista().getAttribute('data-pausa')).toBe('false');
-      });
-
-      it('al terminar la barra de un paso pasa al siguiente y, después del último, vuelve al primero', async () => {
-        await render();
-        for (const esperado of [1, 2, 3, 0]) {
-          await terminaBarra(activa());
-          expect(activa()).toBe(esperado);
-        }
-        expect(scene().getAttribute('data-paso')).toBe('simula');
-      });
-
-      it('la barra de un paso que ya no es el activo no mueve nada', async () => {
-        await render();
-        await terminaBarra(2);
-        expect(activa()).toBe(0);
-      });
-
-      it('elegir un paso a mano lo muestra y pausa el recorrido hasta pulsar «Reanudar recorrido»', async () => {
-        await render();
-        fichas()[2].click();
-        await fixture.whenStable();
-        expect(activa()).toBe(2);
-        expect(scene().getAttribute('data-paso')).toBe('evalua');
-        expect(rotulo()).toBe('Rúbrica formativa');
-        expect(lista().getAttribute('data-pausa')).toBe('true');
-
-        expect(spoken(pausa())).toBe('Reanudar recorrido');
-        pausa().click();
-        await fixture.whenStable();
-        expect(lista().getAttribute('data-pausa')).toBe('false');
-        expect(spoken(pausa())).toBe('Pausar recorrido');
-      });
-
-      it('el botón pausa y reanuda; en pausa, aunque la barra termine, no se cambia de paso', async () => {
-        await render();
-        expect(spoken(pausa())).toBe('Pausar recorrido');
-        pausa().click();
-        await fixture.whenStable();
-        expect(lista().getAttribute('data-pausa')).toBe('true');
-        expect(spoken(pausa())).toBe('Reanudar recorrido');
-        await terminaBarra(0);
-        expect(activa()).toBe(0);
-
-        pausa().click();
-        await fixture.whenStable();
-        await terminaBarra(0);
-        expect(activa()).toBe(1);
-      });
-
-      it('escribir en el formulario detiene el recorrido sin tocar el botón, y salir del formulario lo reanuda', async () => {
-        await render();
-        const correo = host().querySelector<HTMLInputElement>('#login-email')!;
-        correo.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-        await fixture.whenStable();
-        expect(lista().getAttribute('data-pausa')).toBe('true');
-        expect(spoken(pausa())).toBe('Pausar recorrido'); // la persona no pausó nada: el botón sigue ofreciendo pausar
-        await terminaBarra(0);
-        expect(activa()).toBe(0);
-
-        correo.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
-        await fixture.whenStable();
-        expect(lista().getAttribute('data-pausa')).toBe('false');
-      });
-
-      it('pasar de un campo del formulario a otro no reanuda el recorrido entre medias', async () => {
-        await render();
-        const correo = host().querySelector<HTMLInputElement>('#login-email')!;
-        const clave = host().querySelector<HTMLInputElement>('#login-password')!;
-        correo.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-        correo.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: clave }));
-        await fixture.whenStable();
-        expect(lista().getAttribute('data-pausa')).toBe('true');
-      });
-
-      it('con «movimiento reducido» no hay botón de pausa ni avance solo, y los pasos se eligen a mano', async () => {
-        window.matchMedia = ((query: string) => ({
-          matches: query.includes('reduce'), media: query, addEventListener: () => undefined, removeEventListener: () => undefined,
-          addListener: () => undefined, removeListener: () => undefined,
-        })) as unknown as typeof window.matchMedia;
-        await render();
-        expect(host().querySelector('.acceso__pausa')).toBeNull();
-        await terminaBarra(0);
-        expect(activa()).toBe(0);
-
-        fichas()[3].click();
-        await fixture.whenStable();
-        expect(activa()).toBe(3);
-        expect(scene().getAttribute('data-paso')).toBe('aprende');
-      });
-
-      it('la escena de la ventana no usa video, canvas ni autoplay: el movimiento es CSS y se detiene', async () => {
-        await render();
-        expect(scene().querySelector('video, canvas, [autoplay]')).toBeNull();
-        expect(host().querySelector('.acceso__pausa')).not.toBeNull();
-      });
+      expect(host().querySelectorAll('.acceso__pilar--activo')).toHaveLength(2);
+      expect(host().querySelector('.acceso__pillars button')).toBeNull();
     });
 
     it('los tres píxeles de la marca se encienden con el correo, la contraseña y el formulario completo; al solicitar acceso quedan encendidos', async () => {
@@ -680,7 +534,6 @@ describe('LoginComponent', () => {
         expect(page().style.getPropertyValue('--luz')).toBe('1');
         expect(page().style.getPropertyValue('--mx')).toBe('120px');
         expect(host().querySelector<HTMLElement>('.acceso__card')!.style.getPropertyValue('--gx')).not.toBe('');
-        expect(scene().style.getPropertyValue('--nx')).not.toBe('');
 
         page().dispatchEvent(new Event('pointerleave'));
         expect(page().style.getPropertyValue('--luz')).toBe('0');
@@ -788,6 +641,51 @@ describe('LoginComponent', () => {
       const aviso = host().querySelector<HTMLElement>('.acceso__error[role="alert"]')!;
       expect(aviso.getAttribute('tabindex')).toBe('-1');
       expect(document.activeElement).toBe(aviso);
+    });
+  });
+
+  // SIEP-281: «Cambiar de cuenta» deja el correo en memoria; el acceso lo toma una sola vez y pasa a la contraseña.
+  describe('cuenta elegida en «Cambiar de cuenta»', () => {
+    const cuenta = { id: 3, nombre: 'Luis', apellido: 'Paz', email: 'luis@cue.edu.co', rol: 'PROFESOR' as const, ultimaVez: new Date().toISOString() };
+    let cuentas: CuentasRecordadasService;
+
+    /** Monta el acceso ya dentro del documento (el foco no se mueve en un nodo suelto). */
+    async function montar(preparar: (c: CuentasRecordadasService) => void): Promise<void> {
+      cuentas = new CuentasRecordadasService();
+      preparar(cuentas);
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter([{ path: '**', component: Screen }]),
+          { provide: AuthService, useValue: { login, demoConfig: () => of({ enabled: false }), googleConfig: () => of({ enabled: false }) } },
+          { provide: UiDialog, useValue: { sheet: vi.fn() } },
+          { provide: CuentasRecordadasService, useValue: cuentas },
+        ],
+      });
+      fixture = TestBed.createComponent(LoginComponent);
+      document.body.appendChild(host());
+      await fixture.whenStable();
+    }
+
+    afterEach(() => host().remove());
+
+    it('con un correo por entrar, el campo queda relleno y el foco en la contraseña', async () => {
+      await montar(c => c.cambiarA(cuenta, () => undefined));
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('luis@cue.edu.co');
+      expect(host().querySelector<HTMLInputElement>('#login-password')!.value).toBe('');
+      expect(document.activeElement).toBe(host().querySelector('#login-password'));
+    });
+
+    it('el correo se consume: no queda en el servicio para la próxima vez', async () => {
+      await montar(c => c.cambiarA(cuenta, () => undefined));
+      expect(cuentas.correoPorEntrar()).toBeNull();
+    });
+
+    it('sin correo por entrar (o tras «Agregar cuenta») el formulario queda vacío, como siempre', async () => {
+      await montar(c => c.agregarCuenta(null, () => undefined));
+      expect(host().querySelector<HTMLInputElement>('#login-email')!.value).toBe('');
+      expect(host().querySelector<HTMLInputElement>('#login-password')!.value).toBe('');
+      expect(document.activeElement).not.toBe(host().querySelector('#login-password'));
     });
   });
 });

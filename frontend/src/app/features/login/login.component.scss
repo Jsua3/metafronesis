@@ -6,10 +6,8 @@
 // perfil y, al lado desde 64rem, una ventana del simulador como la vista previa de la portada. Enlaces en línea ≥ 24 px
 // y ≥ 44 px con dedo (H-21); sin `transition: all` ni `!important`; texto ≥ 12 px.
 //
-// Interacción (2026-11-22): todo responde a la persona y nada corre solo. Las entradas son de UNA vez (≤ 0,76 s); la luz
-// del puntero, el paralaje y el brillo solo existen con ratón fino y sin «movimiento reducido» (el componente escribe
-// --mx/--my/--luz, --gx/--gy y --nx/--ny; sin ellas, todo queda quieto y legible); elegir el perfil acerca la cámara de la
-// escena y posa su rótulo; y los tres píxeles de la marca se encienden con el formulario.
+// Interacción: la ventana de tomas puede pausarse. Con ratón y sin movimiento reducido, una luz sigue al puntero
+// sobre el fondo y el filo de la tarjeta; los tres píxeles de la marca se encienden con el formulario.
 
 :host {
   display: block;
@@ -568,57 +566,6 @@
   animation: acceso-aparece-ventana calc(var(--l-entrada) + 120ms) var(--l-curva) 140ms backwards;
 }
 
-// Tres puntos de ventana: se lee como una pantalla del simulador, no como otra tarjeta.
-.acceso__ventana {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-3);
-  min-width: 0;
-  padding: var(--ds-space-1) var(--ds-space-2) 0;
-}
-
-.acceso__ventana-puntos {
-  flex: none;
-  width: 0.625rem;
-  height: 0.625rem;
-  margin-right: 2.25rem;
-  border-radius: 50%;
-  background: var(--l-filo-fuerte);
-  box-shadow:
-    1rem 0 0 var(--l-filo-fuerte),
-    2rem 0 0 var(--l-filo-fuerte);
-}
-
-.acceso__panel .acceso__panel-eyebrow {
-  min-width: 0;
-  overflow: hidden;
-  font-size: var(--ds-type-caption-size);
-  font-weight: 600;
-  line-height: var(--ds-type-caption-line);
-  letter-spacing: 0.04em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.acceso__scene {
-  position: relative;
-  overflow: hidden;
-  border-radius: 1.25rem;
-  background: var(--ds-surface-page);
-  box-shadow: 0 8px 24px -12px color-mix(in oklab, black 70%, transparent);
-}
-
-// Filo interior sobre la imagen (como las fotos en iOS): separa la escena del vidrio sin un marco grueso.
-.acceso__scene::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px var(--l-filo);
-  pointer-events: none;
-}
-
 .acceso__panel-texto {
   display: grid;
   gap: var(--ds-space-2);
@@ -660,85 +607,18 @@
   animation: acceso-aparece var(--ds-dur-slow) var(--ds-ease-out) backwards;
 }
 
-// Cada pilar es un paso del recorrido de la ventana: un botón que ocupa toda la ficha y lleva la escena a ese paso.
-.acceso__paso {
+// Los pilares acompañan a las tomas: se tiñe el de la que está a la vista (solo acabado; el texto no cambia).
+.acceso__pillars li.acceso__pilar {
   display: grid;
   align-content: start;
   gap: 0.125rem;
-  width: 100%;
-  height: 100%;
   padding: var(--ds-space-3);
-  border: 0;
-  border-radius: inherit;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--ds-dur-base) ease;
+  transition: background-color var(--ds-dur-slow) ease, box-shadow var(--ds-dur-slow) ease;
 }
 
-.acceso__paso--activo {
-  background: color-mix(in oklab, var(--l-acento) 14%, transparent);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .acceso__paso:not(.acceso__paso--activo):hover {
-    background: color-mix(in oklab, var(--ds-text-1) 6%, transparent);
-  }
-}
-
-.acceso__paso:focus-visible {
-  outline: 2px solid var(--l-acento);
-  outline-offset: -2px;
-}
-
-// La barra de progreso del paso activo. Cuando termina, el recorrido pasa al siguiente (login.component.ts): el tiempo del
-// paso es esta animación, así que pausarla pausa el recorrido. Constante y sin curva (progreso): linear.
-.acceso__pillars {
-  --recorrido-paso: 6500ms;
-}
-
-.acceso__paso--activo::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0;
-  height: 0.1875rem;
-  background: var(--l-acento);
-  transform-origin: left;
-  animation: acceso-avance var(--recorrido-paso) linear forwards;
-}
-
-// El recorrido espera: el botón de pausa, escribir en el formulario o tener el cursor sobre las fichas detienen la barra.
-.acceso__pillars[data-pausa='true'] .acceso__paso--activo::after {
-  animation-play-state: paused;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .acceso__pillars:hover .acceso__paso--activo::after {
-    animation-play-state: paused;
-  }
-}
-
-// La pausa del recorrido vive en la barra de la ventana. En un teléfono angosto queda solo el icono; el texto sigue en el
-// nombre accesible.
-.acceso__pausa {
-  flex: none;
-  margin-left: auto;
-}
-
-@media (max-width: 30rem) {
-  .acceso__pausa-texto {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    padding: 0;
-    border: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+.acceso__pillars li.acceso__pilar--activo {
+  background: color-mix(in oklab, var(--l-acento) 14%, var(--l-relleno));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--l-acento) 55%, transparent);
 }
 
 // Los cuatro pilares llegan en cascada corta, después de la ventana.
@@ -767,7 +647,6 @@
   .acceso__card,
   .acceso__card::before,
   .acceso__panel,
-  .acceso__scene,
   .acceso .ui-control,
   .acceso .ui-scope-notice,
   .acceso__notice,
@@ -779,7 +658,6 @@
 
   .acceso__card,
   .acceso__panel { border-radius: 2.75rem; }
-  .acceso__scene { border-radius: 1.875rem; }
   .acceso .ui-control,
   .acceso .ui-scope-notice,
   .acceso__notice,
@@ -846,11 +724,6 @@
   .acceso__pillars li {
     animation: none;
   }
-
-  // Sin recorrido: nada avanza solo, y la barra del paso activo queda llena como marca de cuál es.
-  .acceso__paso--activo::after {
-    animation: none;
-  }
 }
 
 // Colores forzados: las superficies conservan su contorno y el perfil elegido se marca con el color del sistema.
@@ -860,7 +733,7 @@
     display: none;
   }
 
-  .acceso__paso--activo {
+  .acceso__pilar--activo {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }

@@ -1,0 +1,19 @@
+@media (pointer: coarse) { :host .help-draft { display: none; } }
+@media (width < 1024px) {
+  :host .help-screen, :host .help-welcome { position: fixed; box-sizing: border-box; z-index: 95; max-height: 92dvh; overflow: hidden; }
+  :host .help-welcome { padding-top: 60px; }
+  :host .help-welcome__close { display: inline-flex; position: absolute; top: 8px; right: 12px; }
+  :host .help-screen__body, :host .help-welcome__rows { overflow-y: auto; overscroll-behavior: contain; }
+  :host .help-btn { min-height: 48px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+  :host .help-welcome__row { min-height: 48px; }
+}
+@media (width < 600px) and (min-height: 500px) {
+  :host .help-screen, :host .help-welcome { left: 0; right: 0; bottom: 0; width: 100%; max-width: none; padding-bottom: env(safe-area-inset-bottom); border-radius: 0; }
+  :host .help-screen::before, :host .help-welcome::before { content: ''; flex: none; align-self: center; width: 40px; height: 3px; margin-top: 4px; background: #ffcd82; }
+}
+@media (min-width: 600px) and (width < 1024px) and (min-height: 500px) {
+  :host .help-screen, :host .help-welcome { left: 50%; top: 50%; width: min(560px, 94vw); transform: translate(-50%, -50%); }
+}
+@media (width < 1024px) and (height < 500px) {
+  :host .help-screen, :host .help-welcome { top: 0; right: 0; bottom: 0; width: 58%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+}
