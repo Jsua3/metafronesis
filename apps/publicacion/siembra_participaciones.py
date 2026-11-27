@@ -46,17 +46,24 @@ RECOMENDADA, ACEPTABLE, RIESGOSA, CONTRAINDICADA = (
 
 @dataclass(frozen=True)
 class Perfil:
-    """Cómo decide un estudiante: probabilidad de una primera respuesta riesgosa y de quedarse en «aceptable»."""
+    """Cómo decide un estudiante en cada escena.
+
+    ``tanteo``: probabilidad de una primera respuesta riesgosa que el juego hace reintentar (no cuenta en la nota).
+    ``desacierto``: probabilidad de que la respuesta que QUEDA registrada no sea la recomendada.
+    ``contraindicada``: de esos desaciertos, cuántos son contraindicados (topan la competencia en «En proceso»).
+    Con el caso insignia la nota esperada ronda 3,0 / 2,75 / 2,4 / 2,0 (simulada sobre sus 20 decisiones).
+    """
     nombre: str
-    riesgo: float
-    aceptable: float
+    tanteo: float
+    desacierto: float
+    contraindicada: float
     minutos: tuple  # rango del tiempo activo total
 
 
-EJEMPLAR = Perfil("ejemplar", 0.0, 0.1, (30, 36))
-SOLIDO = Perfil("sólido", 0.1, 0.35, (28, 38))
-EN_PROCESO = Perfil("en proceso", 0.3, 0.5, (32, 40))
-CON_DIFICULTADES = Perfil("con dificultades", 0.55, 0.6, (24, 34))
+EJEMPLAR = Perfil("ejemplar", 0.05, 0.03, 0.0, (30, 36))
+SOLIDO = Perfil("sólido", 0.15, 0.25, 0.15, (28, 38))
+EN_PROCESO = Perfil("en proceso", 0.25, 0.45, 0.3, (32, 40))
+CON_DIFICULTADES = Perfil("con dificultades", 0.3, 0.7, 0.55, (24, 34))
 
 # Por sesión: (código del grupo, días atrás, hora de inicio, lugar, mensaje, {índice de estudiante: perfil | None}).
 # Los índices son los de ``base.ESTUDIANTES``. ``None`` = no se conectó; ``"incompleto"`` = la sesión lo cerró a mitad.
@@ -120,16 +127,21 @@ def _jugar(estudiante, version, perfil, azar, *, hasta=None):
         if decisiones in reflexiones:
             bitacora.guardar(estudiante, intento.pk, {"nodeId": intento.current_node_id,
                                                       "text": azar.choice(REFLEXIONES), "requestId": uuid.uuid4().hex})
-        if azar.random() < perfil.riesgo:
-            # Primera respuesta riesgosa: el juego pide reintentar y no la aplica; después elige mejor (o no tanto).
+        if azar.random() < perfil.desacierto:
+            malas = (CONTRAINDICADA, RIESGOSA, ACEPTABLE) if azar.random() < perfil.contraindicada else (
+                RIESGOSA, ACEPTABLE, CONTRAINDICADA)
+            final = _elegir(opciones, malas, azar)
+        else:
+            final = _elegir(opciones, (RECOMENDADA,), azar)
+        tantea = final.response_class in (RIESGOSA, CONTRAINDICADA) or azar.random() < perfil.tanteo
+        if tantea:
+            # La primera respuesta riesgosa de la escena no se aplica: el juego pide reintentar. La segunda sí cuenta.
             primera = _elegir(opciones, (RIESGOSA, CONTRAINDICADA), azar)
             resultado = attempt_api.decide(estudiante, intento.pk, primera.pk, uuid.uuid4().hex)
-            if resultado and resultado.get("retry_required"):
-                segunda = (ACEPTABLE, RIESGOSA, RECOMENDADA) if azar.random() < perfil.aceptable else (RECOMENDADA, ACEPTABLE)
-                attempt_api.decide(estudiante, intento.pk, _elegir(opciones, segunda, azar).pk, uuid.uuid4().hex)
-        else:
-            clases = (ACEPTABLE, RECOMENDADA) if azar.random() < perfil.aceptable else (RECOMENDADA, ACEPTABLE)
-            attempt_api.decide(estudiante, intento.pk, _elegir(opciones, clases, azar).pk, uuid.uuid4().hex)
+            if not (resultado and resultado.get("retry_required")):
+                decisiones += 1
+                continue
+        attempt_api.decide(estudiante, intento.pk, final.pk, uuid.uuid4().hex)
         decisiones += 1
 
 
