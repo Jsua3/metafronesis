@@ -2,6 +2,7 @@
 // una, sus intentos. Solo tokens: sin vidrio ni sombras duras. `minmax(0, 1fr)` y `min-inline-size: 0` hacen que nada
 // ensanche la página: la tabla de intentos se apila en tarjetas cuando su contenedor es estrecho.
 :host {
+  --ui-table-max-block-size: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--ds-space-6);
@@ -130,7 +131,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ds-space-3);
-  min-block-size: var(--ds-target-min-strict);
+  min-block-size: var(--ds-target-min);
   cursor: pointer;
   font-weight: var(--ds-type-h3-weight);
   list-style: none;
@@ -169,4 +170,15 @@
 .cs-sin-accion {
   color: var(--ds-text-2);
   font-size: var(--ds-type-body-s-size);
+}
+
+@media (max-width: 599.98px) {
+  .cs-portada {
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (min-width: 37.5rem) and (max-width: 63.999rem) {
+  .p-rejilla:not(.cs-rejilla--uno) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

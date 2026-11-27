@@ -29,6 +29,12 @@
 // «Tu entrada» un poco más ancha que la columna lateral por defecto (22rem): «Continuar donde quedaste» cabe en una línea.
 .ficha__columnas {
   --p-lateral: 24rem;
+  @media (min-width: 52.5rem) and (min-height: 31.25rem) {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 40%);
+    align-items: start;
+    .ficha__lectura { grid-column: 1; grid-row: 1; }
+    .ficha__lateral { grid-column: 2; grid-row: 1; }
+  }
   @media (min-width: 64rem) {
     .ficha__lectura { grid-column: 1; grid-row: 1; }
     .ficha__lateral { grid-column: 2; grid-row: 1; }
@@ -236,6 +242,19 @@
   min-inline-size: 0;
 }
 
+// La entrada crece con su contenido; el desplazamiento vertical pertenece a la página.
+.ficha__lateral.p-pegajosa--desplaza {
+  max-block-size: none;
+  overflow-y: visible;
+}
+
+@media (min-width: 52.5rem) and (min-height: 31.25rem) and (max-width: 63.999rem) {
+  .ficha__lateral {
+    position: sticky;
+    top: calc(var(--l-alto-barra, 3.5rem) + var(--ds-space-4));
+  }
+}
+
 .ficha__entrada {
   display: grid;
   gap: var(--ds-space-4);
@@ -434,6 +453,16 @@
 
 // En una columna la barra del pie trae las acciones; el error queda justo encima de ella, a lo ancho de la lectura.
 @media (max-width: 63.999rem) {
+  .ficha {
+    padding-block-end: calc(10rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ficha__barra {
+    position: fixed;
+    inset-inline: var(--ds-space-4);
+    margin: 0;
+  }
+
   .ficha__error {
     margin-block-start: var(--ds-space-4);
   }
@@ -444,6 +473,14 @@
 
   .ficha__aviso-cuerpo {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023.98px) and (max-height: 499.98px) {
+  .ficha > ui-cabecera-ilustrada {
+    --ds-type-h1-size: 1.5rem;
+    --ds-type-h1-line: 1.15;
+    margin-block-end: 5rem;
   }
 }
 

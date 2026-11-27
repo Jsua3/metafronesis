@@ -40,7 +40,7 @@
             <div class="acceso__campos">
               <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(forgotForm.controls.email, { required: 'Escribe el correo de tu cuenta.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, forgotTried())">
-                <input uiControl id="olvido-email" type="email" formControlName="email" autocomplete="email" />
+                <input uiControl id="olvido-email" type="email" formControlName="email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" enterkeyhint="send" />
               </ui-field>
             </div>
 
@@ -76,12 +76,12 @@
             <div class="acceso__campos">
               <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(form.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, signInTried())">
-                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" />
+                <input uiControl id="login-email" type="email" formControlName="email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" enterkeyhint="next" />
               </ui-field>
               <ui-field label="Contraseña" required revealable
                 [hint]="capsLock() ? 'Bloq Mayús está activado.' : null"
                 [error]="fieldError(form.controls.password, { required: 'Escribe tu contraseña.' }, signInTried())">
-                <input uiControl id="login-password" type="password" formControlName="password" autocomplete="current-password"
+                <input uiControl id="login-password" type="password" formControlName="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" enterkeyhint="go"
                   (keydown)="onPasswordKey($event)" (keyup)="onPasswordKey($event)" (blur)="clearCapsLock()" />
               </ui-field>
             </div>
@@ -162,14 +162,14 @@
 
             <div class="acceso__campos">
               <ui-field label="Nombre" required [error]="fieldError(registerForm.controls.nombre, { required: 'Escribe tu nombre.' }, requestTried())">
-                <input uiControl id="registro-nombre" type="text" formControlName="nombre" autocomplete="given-name" />
+                <input uiControl id="registro-nombre" type="text" formControlName="nombre" autocomplete="given-name" autocapitalize="words" enterkeyhint="next" />
               </ui-field>
               <ui-field label="Apellido" required [error]="fieldError(registerForm.controls.apellido, { required: 'Escribe tu apellido.' }, requestTried())">
-                <input uiControl id="registro-apellido" type="text" formControlName="apellido" autocomplete="family-name" />
+                <input uiControl id="registro-apellido" type="text" formControlName="apellido" autocomplete="family-name" autocapitalize="words" enterkeyhint="next" />
               </ui-field>
               <ui-field label="Correo institucional" required hint="Por ejemplo: nombre@institucion.edu.co"
                 [error]="fieldError(registerForm.controls.email, { required: 'Escribe tu correo institucional.', email: 'Revisa el correo: debe verse como nombre@institucion.edu.co.' }, requestTried())">
-                <input uiControl id="registro-email" type="email" formControlName="email" autocomplete="email" />
+                <input uiControl id="registro-email" type="email" formControlName="email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" enterkeyhint="send" />
               </ui-field>
             </div>
 

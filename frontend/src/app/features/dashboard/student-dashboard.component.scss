@@ -57,6 +57,9 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ds-space-4);
+  box-sizing: border-box;
+  inline-size: min(100%, 52rem);
+  box-shadow: inset 0 1px 0 var(--l-brillo, transparent), var(--l-sombra, var(--ds-shadow-e1));
 }
 
 .sd-invitacion__texto {
@@ -225,4 +228,12 @@ a.sd-fila--cierre::after {
   border-inline-start: 2px solid var(--ds-border);
   color: var(--ds-text-2);
   font-size: var(--ds-type-body-s-size);
+}
+
+@media (max-width: 599.98px) {
+  .sd-protagonista__portada {
+    flex-basis: 100%;
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+  }
 }

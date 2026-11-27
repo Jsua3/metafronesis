@@ -84,6 +84,18 @@ describe('LoginComponent', () => {
     expect(labels).toEqual([{ label: 'Correo institucional', control: true }, { label: 'Contraseña', control: true }]);
   });
 
+  it('ofrece el teclado y la acción adecuados para correo y contraseña', async () => {
+    await render();
+    const correo = host().querySelector<HTMLInputElement>('#login-email')!;
+    const clave = host().querySelector<HTMLInputElement>('#login-password')!;
+    expect(correo.getAttribute('inputmode')).toBe('email');
+    expect(correo.getAttribute('autocapitalize')).toBe('none');
+    expect(correo.getAttribute('autocorrect')).toBe('off');
+    expect(correo.getAttribute('enterkeyhint')).toBe('next');
+    expect(clave.getAttribute('autocomplete')).toBe('current-password');
+    expect(clave.getAttribute('enterkeyhint')).toBe('go');
+  });
+
   it('al enviar vacío muestra todos los errores, lleva el foco al primero y no llama al servidor; el botón nunca se deshabilita por eso', async () => {
     await render();
     expect(submit().disabled).toBe(false);
