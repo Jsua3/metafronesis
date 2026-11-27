@@ -1,24 +1,24 @@
 {
-  "id": "docente-universidad",
-  "displayName": "Docente universitaria",
+  "id": "sebas",
+  "displayName": "Sebas",
   "kind": "npc",
-  "complexion": "a",
+  "complexion": "d",
   "pieces": {
-    "hair": "media-melena",
-    "face": "maduro",
+    "hair": "corto-liso",
+    "face": "cachetes",
     "top": "blazer",
     "bottom": "pantalon",
     "shoes": "zapatos",
-    "accessories": ["gafas"]
+    "accessories": ["gafas", "barba-corta"]
   },
   "colors": {
-    "skin": "piel-4",
-    "hair": "canoso",
-    "top": "vinotinto",
-    "inner": "blanco",
+    "skin": "piel-1",
+    "hair": "negro",
+    "top": "carbon",
+    "inner": "celeste",
     "bottom": "gris-oscuro",
-    "shoes": "carbon",
-    "sole": "gris-oscuro"
+    "shoes": "castano",
+    "sole": "castano-oscuro"
   },
   "portraits": ["neutral", "preocupada", "triste", "alegre", "cautelosa", "en-crisis"],
   "provenance": { "source": "Kit SIEP", "license": "SIEP-INTERNAL" }

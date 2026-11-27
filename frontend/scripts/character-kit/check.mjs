@@ -12,8 +12,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { OUTLINE, composeCharacter } from '../../src/app/features/character/kit/kit-engine.ts';
+import { COMPLEXIONS } from '../../character-kit/mannequins/index.mjs';
 import { KIT_ROOT } from './bundle.mjs';
 import { DEFAULT_OUT, buildOutputs, finishCharacter, recipeVariants, sha256 } from './build.mjs';
+import { statureOf } from './derive-complexion.mjs';
 import { decodePng } from './kit-png.mjs';
 import { checkCharacter, checkSharedHead } from './measure.mjs';
 import { RETOUCH_ROOT, checkRetouchLayer } from './retouch-lib.mjs';
@@ -78,6 +80,7 @@ export function checkUpToDate(files, outDir) {
 }
 
 const isVolume = (bundle, recipe) => bundle.pieces[`hair:${recipe.pieces.hair}`]?.volume === true;
+const stature = recipe => statureOf(COMPLEXIONS[recipe.complexion]);
 
 export function runCheck({ outDir = DEFAULT_OUT, retouchRoot = RETOUCH_ROOT } = {}) {
   const errors = [];
@@ -100,12 +103,12 @@ export function runCheck({ outDir = DEFAULT_OUT, retouchRoot = RETOUCH_ROOT } = 
         warnings.push(`${name}: la base cambió debajo del retoque; revisa la lámina y vuelve a guardarlo con npm run kit:retoque`);
       }
     }
-    errors.push(...checkCharacter(composed, { name: id, palette, outline: OUTLINE, volume: isVolume(bundle, recipe) }));
+    errors.push(...checkCharacter(composed, { name: id, palette, outline: OUTLINE, volume: isVolume(bundle, recipe), stature: stature(recipe) }));
     errors.push(...checkGiro(composed, id), ...checkApoyo(composed, id));
   }
   for (const recipe of sampleRecipes(bundle)) {
     const composed = composeCharacter(bundle, recipe, { keepDressed: true });
-    errors.push(...checkCharacter(composed, { name: recipe.id, palette, outline: OUTLINE, volume: isVolume(bundle, recipe) }));
+    errors.push(...checkCharacter(composed, { name: recipe.id, palette, outline: OUTLINE, volume: isVolume(bundle, recipe), stature: stature(recipe) }));
     errors.push(...checkGiro(composed, recipe.id), ...checkApoyo(composed, recipe.id));
   }
   const refs = referencedKeys(REPO_ROOT);

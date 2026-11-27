@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, signal, viewChild,
+  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, signal, untracked, viewChild,
 } from '@angular/core';
 
 import { CasoStore } from '../estado/caso.store';
@@ -7,6 +7,7 @@ import { reducirMovimiento } from '../guia/guia.service';
 import { rutaRetrato } from '../modelo/biblioteca.service';
 import { CAPITULOS, MENTOR } from './capitulos';
 import { TutorialService } from './tutorial.service';
+import { VozMentor } from './voz-mentor';
 
 interface Caja { top: number; left: number; width: number; height: number }
 const HOLGURA = 8;
@@ -22,6 +23,7 @@ const ANCHO_MINIMO = 280;
 @Component({
   selector: 'app-tutorial-capa',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: VozMentor, useFactory: () => new VozMentor(MENTOR.voz) }],
   template: `
     @if (t.activo()) {
       @if (t.pausado()) {
@@ -78,7 +80,13 @@ const ANCHO_MINIMO = 280;
               <p class="tut-paso">Paso {{ t.estado().paso + 1 }} de {{ t.capitulo().pasos.length }}</p>
               <h2 id="tut-titulo" class="tut-titulo">{{ p.titulo }}</h2>
               <div aria-live="polite">
-                <p>{{ p.texto }}</p>
+                <!-- El mentor «habla»: el texto se escribe con sus blips. Un clic lo muestra entero. El lector de pantalla lee
+                     el texto completo de una vez (solo-lector); lo que se escribe y el molde que reserva el alto no se leen. -->
+                <p class="tut-voz" (click)="voz.completar()">
+                  <span class="tut-voz__molde" aria-hidden="true">{{ p.texto }}</span>
+                  <span class="tut-voz__escrito" aria-hidden="true">{{ voz.escrito() }}</span>
+                  <span class="solo-lector">{{ p.texto }}</span>
+                </p>
                 @if (p.practico) {
                   @if (soloLectura() && !t.cumplido()) {
                     <!-- BORRADOR: texto nuevo, pendiente de la aprobación de Psicología -->
@@ -135,6 +143,10 @@ const ANCHO_MINIMO = 280;
     .tut-quien { font-weight: 800; color: var(--guia); }
     .tut-burbuja .tut-capitulo, .tut-burbuja .tut-paso, .tut-burbuja .tut-nota { color: var(--texto-secundario); font-size: var(--autoria-texto-14); }
     .tut-progreso { inline-size: 100%; block-size: 8px; accent-color: var(--guia); }
+    .tut-voz { display: grid; cursor: default; }
+    .tut-voz__molde, .tut-voz__escrito { grid-area: 1 / 1; }
+    .tut-voz__molde { visibility: hidden; }
+    .solo-lector { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .tut-titulo { margin: 0; font-size: var(--autoria-texto-18); line-height: 1.3; }
     .tut-burbuja .tut-consigna { margin-block-start: 8px; padding: 8px 10px; border-radius: var(--radio-control); background: var(--fondo-hundido); font-weight: 700; }
     .tut-burbuja .tut-consigna.hecho { color: var(--adecuada); background: var(--adecuada-tinte); }
@@ -169,6 +181,7 @@ export class TutorialCapaComponent {
   protected readonly soloLectura = computed(() => this.store.soloLectura());
   protected readonly holgura = HOLGURA;
   protected readonly reducir = reducirMovimiento();
+  protected readonly voz = inject(VozMentor);
   private readonly burbuja = viewChild<ElementRef<HTMLElement>>('burbuja');
   private readonly marco = signal(0);
 
@@ -254,6 +267,13 @@ export class TutorialCapaComponent {
       this.t.cumplido();
       if (this.t.activo() && typeof requestAnimationFrame === 'function') requestAnimationFrame(medir);
     });
+    // Cada paso nuevo, el mentor lo dice desde el principio; al salir, al pausar o en el logro, se calla.
+    effect(() => {
+      const hablando = this.t.activo() && !this.t.pausado() && !this.t.logro() && !this.t.final();
+      const texto = hablando ? this.t.paso().texto : '';
+      untracked(() => (texto ? this.voz.decir(texto) : this.voz.callar()));
+    });
+    inject(DestroyRef).onDestroy(() => this.voz.callar());
     // Alt+B, el logro y la pantalla final llevan el foco a la burbuja.
     effect(() => {
       const pedido = this.t.focoBurbuja();

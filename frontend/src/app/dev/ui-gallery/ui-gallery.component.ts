@@ -323,7 +323,7 @@ export class UiGalleryDialog {
       <ui-section title="Figuras del kit y portadas de caso" [level]="3">
         <div class="ui-gallery__figuras">
           <ui-figura-pixel personaje="camila/bata" [escala]="2" />
-          <ui-figura-pixel personaje="docente-universidad" [escala]="3" etiqueta="Docente de la universidad" />
+          <ui-figura-pixel personaje="sebas" [escala]="3" etiqueta="Docente de la universidad" />
           <ui-figura-pixel personaje="funcionaria-recepcion" [escala]="3" />
           <ui-figura-pixel personaje="supervisor-clinico" [escala]="4" respira />
         </div>

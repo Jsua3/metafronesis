@@ -32,7 +32,7 @@ export const LOGIN_ROLES: LoginRoleOption[] = [
     hint: 'Crea grupos e invita a tus estudiantes, uno a uno o desde Excel.',
     narrative:
       'Supervisa intentos, evalúa competencias y acompaña el aprendizaje con evidencia clínica trazable.',
-    avatar: RETRATO('docente-universidad'),
+    avatar: RETRATO('sebas'),
   },
   {
     id: 'ADMIN',

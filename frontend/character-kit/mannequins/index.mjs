@@ -2,5 +2,6 @@
 import { COMPLEXION_A } from './complexion-a.mjs';
 import { COMPLEXION_B } from './complexion-b.mjs';
 import { COMPLEXION_C } from './complexion-c.mjs';
+import { COMPLEXION_D } from './complexion-d.mjs';
 
-export const COMPLEXIONS = Object.freeze({ a: COMPLEXION_A, b: COMPLEXION_B, c: COMPLEXION_C });
+export const COMPLEXIONS = Object.freeze({ a: COMPLEXION_A, b: COMPLEXION_B, c: COMPLEXION_C, d: COMPLEXION_D });
