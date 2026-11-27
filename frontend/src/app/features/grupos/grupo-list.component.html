@@ -20,7 +20,7 @@
   <ui-vacio-ilustrado escena="grupos" titulo="Aún no tienes grupos" marco="placa"
     frase="Un grupo reúne a tus estudiantes: le pones un nombre y un código, los invitas y le asignas casos.">
   </ui-vacio-ilustrado>
-  <ng-container [ngTemplateOutlet]="formularioGrupo" />
+  <div class="gl-vacio-form"><ng-container [ngTemplateOutlet]="formularioGrupo" /></div>
 } @else {
   <div class="gl-layout" [class.gl-layout--detalle]="!!grupoId()">
     <section class="gl-list" aria-label="Lista de grupos" [attr.aria-busy]="state() === 'loading' ? 'true' : null">
@@ -101,7 +101,7 @@
                 }
 
                 @if (estudiantes().length) {
-                  <ui-field label="Buscar estudiante por nombre o correo">
+                  <ui-field class="gl-buscador" label="Buscar estudiante por nombre o correo">
                     <input uiControl type="search" autocomplete="off" [value]="busquedaEstudiante()"
                       (input)="busquedaEstudiante.set($any($event.target).value)">
                   </ui-field>
@@ -196,7 +196,8 @@
       <ui-field label="Nombre del grupo" required [error]="fieldError(form.controls.nombre, 'Escribe el nombre del grupo.')">
         <input uiControl type="text" formControlName="nombre" autocomplete="off">
       </ui-field>
-      <ui-field label="Código único" required [error]="fieldError(form.controls.codigo, 'Escribe el código del grupo.')">
+      <!-- BORRADOR: texto pendiente de Psicología (ayuda del código) -->
+      <ui-field class="gl-campo-codigo" label="Código único" required hint="Con él se reconoce el grupo; por ejemplo, PSI-2026-A." [error]="fieldError(form.controls.codigo, 'Escribe el código del grupo.')">
         <input uiControl type="text" formControlName="codigo" autocomplete="off">
       </ui-field>
       <div class="gl-actions">

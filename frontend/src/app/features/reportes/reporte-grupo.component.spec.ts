@@ -116,6 +116,14 @@ describe('pantalla Reportes (F7-3)', () => {
     expect(text(host().querySelector('a[href="/portal/grupos/1"]'))).toContain('Ver grupo Cohorte A');
   });
 
+  // SIEP-282: los desplegables no ocupan media pantalla.
+  it('los desplegables de grupo y caso llevan su clase de ancho acotado', async () => {
+    await render();
+    const campo = (label: string) => select(label).closest('ui-field')!;
+    expect(campo('Grupo').classList.contains('rg-campo-grupo')).toBe(true);
+    expect(campo('Caso de simulación').classList.contains('rg-campo-caso')).toBe(true);
+  });
+
   // req: RNF-04, BLOQUE-H
   describe('estados', () => {
     it('distingue la carga y el error de casos y permite reintentar sin recargar grupos', async () => {
