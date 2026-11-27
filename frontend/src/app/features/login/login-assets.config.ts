@@ -2,19 +2,12 @@
  * Assets y constantes del login SIEP.
  */
 
-/** Rutas relativas al `base href` (producción y `ng serve`). */
-export const LOGIN_ASSETS = {
-  images: {
-    // Rediseño Metafrónesis 2026-11-20: la escena real del simulador, la misma de la vista previa de la portada (WebP,
-    // 581 × 415). Antes, una ilustración del consultorio vacío a 640 y 1280 px (plan visual F4-4).
-    hero: 'assets/images/institution/escena-portada.webp',
-  }
-} as const;
+import type { PilarToma } from './login-tomas.config';
 
 export const LOGIN_REMEMBER_EMAIL_KEY = 'siep_login_email';
 
 export interface LoginPedagogyPillar {
-  key: string;
+  key: PilarToma;
   title: string;
   description: string;
 }

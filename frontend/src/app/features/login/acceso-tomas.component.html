@@ -1,0 +1,34 @@
+<!-- BORRADOR: texto pendiente de Psicología. -->
+<div class="ventana">
+  <span class="puntos" aria-hidden="true"></span>
+  <p class="rotulo">Caso SIM-VBG-002 · grabado en el simulador</p>
+  @if (!soloPoster()) {
+    <button ui-button type="button" variant="secondary" size="sm" class="pausa"
+      [icon]="pausado() || bloqueado() ? 'play_arrow' : 'pause'" (click)="alternar()">
+      <span class="pausa-texto">{{ pausado() || bloqueado() ? 'Reproducir las tomas' : 'Pausar las tomas' }}</span>
+    </button>
+  }
+</div>
+<div class="escenario">
+  @for (toma of tomas; track toma.id; let i = $index) {
+    <div class="capa" [class.activa]="entra(i)" [class.saliente]="i === saliente()" [attr.aria-hidden]="i === indice() ? null : 'true'">
+      <img [attr.src]="tienePoster(i) ? 'assets/login/tomas/' + toma.id + '.webp' : null" [alt]="toma.alt" width="1280" height="800" decoding="async" />
+      @if (tieneVideo(i)) {
+        <video #clip [attr.data-indice]="i" [class.reproduciendo]="conCuadro().has(i) && !bloqueado()" muted playsinline disablepictureinpicture disableremoteplayback aria-hidden="true" tabindex="-1" preload="auto"
+          (loadeddata)="listaParaVerse(i)" (playing)="listaParaVerse(i)" (timeupdate)="progreso(clip, i)" (ended)="terminado(i)" (error)="fallo(clip, i)">
+          <source [src]="'assets/login/tomas/' + toma.id + '.webm'" type='video/webm; codecs="av01.0.08M.08"' />
+          <source [src]="'assets/login/tomas/' + toma.id + '.mp4'" type="video/mp4" (error)="fallo(clip, i)" />
+        </video>
+      }
+    </div>
+  }
+</div>
+<div class="avance">
+  <p>{{ indice() + 1 }} de 5 · {{ tomas[indice()].titulo }}</p>
+  <div class="segmentos">
+    @for (toma of tomas; track toma.id; let i = $index) {
+      <button type="button" class="segmento" [class.actual]="i === indice()" [attr.aria-current]="i === indice() ? 'true' : null"
+        [attr.aria-label]="'Toma ' + (i + 1) + ' de 5: ' + toma.titulo" [style.--avance]="i === indice() ? avance() : 0" (click)="elegir(i)"><span></span></button>
+    }
+  </div>
+</div>
