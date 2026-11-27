@@ -1,6 +1,6 @@
 <!-- Rediseño Metafrónesis 2026-11-20: la piel (claro u oscuro) la pone el tema en el contenedor de la página (REGLA-010).
-     Rediseño de la interacción 2026-11-22: fondo de objetos como el de la portada, escena que sigue al perfil y píxeles de
-     la marca que se encienden con el formulario; todo responde a la persona y nada corre solo. -->
+     Rediseño de la interacción 2026-11-22: fondo de objetos como el de la portada y píxeles de
+     la marca que se encienden con el formulario; la ventana de tomas puede pausarse. -->
 <div class="acceso publico" [attr.data-skin]="tema.piel()">
   <!-- Los objetos del simulador de la portada, quietos detrás de las tarjetas: solo la luz del cursor enciende las figuras
        que roza (sin ratón, no se mueve nada). Decorativo (aria-hidden). -->
@@ -204,23 +204,9 @@
         }
       </section>
 
-      <!-- Una ventana del simulador (como la vista previa de la portada): la escena real y lo que hace SIEP. La escena es una
-           sola imagen, y una cámara la recorre por los cuatro pilares (el recorrido: se pausa, se detiene mientras se escribe y
-           con «movimiento reducido» no corre); elegir el perfil la lleva al paso que le toca. -->
+      <!-- Las tomas se detienen mientras se usa el formulario. -->
       <aside class="acceso__panel" aria-label="Sobre el simulador">
-        <div class="acceso__ventana">
-          <span class="acceso__ventana-puntos" aria-hidden="true"></span>
-          <p class="acceso__panel-eyebrow">{{ activeRole().previewCase }} · {{ activeRole().previewScene }}</p>
-          <!-- La pausa va en la barra de la ventana: a la vista con la escena que controla (al pie del panel quedaba fuera de
-               la pantalla en un portátil) y antes de ella en el orden de lectura (WCAG 2.2.2). -->
-          @if (recorridoAutomatico) {
-            <button ui-button type="button" variant="secondary" size="sm" class="acceso__pausa"
-              [icon]="recorridoPausado() ? 'play_arrow' : 'pause'" (click)="alternarRecorrido()">
-              <span class="acceso__pausa-texto">{{ recorridoPausado() ? 'Reanudar recorrido' : 'Pausar recorrido' }}</span>
-            </button>
-          }
-        </div>
-        <app-acceso-escena [imagen]="loginHeroImage" [paso]="paso()" />
+        <app-acceso-tomas [detenido]="formularioActivo()" (tomaActiva)="tomaActual.set($event)" />
         <div class="acceso__panel-texto">
           @if (showRegister()) {
             <h2>¿Primera vez en {{ brand.shortName }}?</h2>
@@ -230,16 +216,10 @@
             <p>{{ activeRole().narrative }}</p>
           }
         </div>
-        <!-- Cada pilar es un paso del recorrido: un botón que lleva la escena a ese paso. El activo lleva su barra de progreso;
-             cuando termina, el recorrido avanza (login.component.ts). -->
-        <ul class="acceso__pillars" [attr.aria-label]="'Qué haces en ' + brand.shortName" [attr.data-pausa]="recorridoPausado() || formularioActivo()">
-          @for (pillar of pedagogyPillars; track pillar.key; let i = $index) {
-            <li>
-              <button type="button" class="acceso__paso" [class.acceso__paso--activo]="i === paso()"
-                [attr.aria-current]="i === paso() ? 'step' : null"
-                (click)="elegirPaso(i)" (animationend)="alTerminarPaso($event, i)">
-                <strong>{{ pillar.title }}</strong> <span>{{ pillar.description }}</span>
-              </button>
+        <ul class="acceso__pillars" [attr.aria-label]="'Qué haces en ' + brand.shortName">
+          @for (pillar of pedagogyPillars; track pillar.key) {
+            <li class="acceso__pilar" [class.acceso__pilar--activo]="tomaActual().pilares.includes(pillar.key)">
+              <strong>{{ pillar.title }}</strong> <span>{{ pillar.description }}</span>
             </li>
           }
         </ul>
