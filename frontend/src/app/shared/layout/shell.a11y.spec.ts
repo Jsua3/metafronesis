@@ -1,12 +1,12 @@
 import { Component, provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../core/models/user.model';
 import { ShellComponent } from './shell.component';
 
-@Component({ template: '' })
+@Component({ template: '<h1>Pantalla</h1>' })
 class Screen {}
 
 /**
@@ -87,5 +87,43 @@ describe('shell: barra accesible', () => {
     const trigger = host.querySelector('.modulo-cuenta ui-menu button')!;
     expect(trigger.getAttribute('aria-label') ?? trigger.textContent).toMatch(/cuenta/i);
     expect(host.querySelector('.cuenta-chip__rol')!.textContent!.trim()).toBe('Administrador');
+  });
+  // UA-E18 (medición 0.7.0): el árbol de accesibilidad de la barra no tenía nodos con nombre entre el logo y los demás
+  // enlaces, y quien lo lee con lector de pantalla los veía colgando del logo, como si fuera un menú desplegable. Cada
+  // módulo es un grupo con nombre propio y el logo es un enlace sin hijos.
+  it('el logo es un enlace sin nada dentro y cada módulo de la barra es un grupo con nombre (no un menú que cuelga del logo)', async () => {
+    const host = await render();
+    const logo = host.querySelector('a.modulo-logo')!;
+    expect(logo.querySelector('a, button, [role]')).toBeNull();
+    expect(logo.hasAttribute('aria-haspopup')).toBe(false);
+    expect(logo.hasAttribute('aria-expanded')).toBe(false);
+    const principal = host.querySelector('.modulo-principal')!;
+    const cuenta = host.querySelector('.modulo-cuenta')!;
+    expect(principal.getAttribute('role')).toBe('group');
+    expect(principal.getAttribute('aria-label')).toBe('Secciones del portal');
+    expect(cuenta.getAttribute('role')).toBe('group');
+    expect(cuenta.getAttribute('aria-label')).toBe('Tema y cuenta');
+    expect(logo.contains(principal)).toBe(false);
+  });
+
+  it('un enlace es un enlace: con Enter en el logo estando ya en Inicio, el foco pasa al encabezado de la pantalla', async () => {
+    const host = await render();
+    await TestBed.inject(Router).navigateByUrl('/portal/dashboard');
+    const logo = host.querySelector<HTMLAnchorElement>('a.modulo-logo')!;
+    logo.focus();
+    logo.click();
+    await vi.waitFor(() => expect(document.activeElement).toBe(host.querySelector('h1')));
+  });
+
+  it('en cualquier otra pantalla, el logo solo navega (el foco lo lleva el servicio de rutas, no el enlace)', async () => {
+    const host = await render();
+    await TestBed.inject(Router).navigateByUrl('/portal/casos');
+    const logo = host.querySelector<HTMLAnchorElement>('a.modulo-logo')!;
+    logo.focus();
+    const alFoco = vi.fn();
+    host.querySelector('h1')!.addEventListener('focus', alFoco);
+    logo.click();
+    await Promise.resolve();
+    expect(alFoco).not.toHaveBeenCalled();
   });
 });

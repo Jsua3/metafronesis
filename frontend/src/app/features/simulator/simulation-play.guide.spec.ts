@@ -268,13 +268,72 @@ describe('SimulationPlayComponent: la sala ocupa la pantalla (guía genérica)',
     expect(removed.filter(n => n === primary || n === secondary || (n instanceof Element && !!n.querySelector('button')))).toHaveLength(0);
   }, 20000);
 
+  it('conserva el boton de la lista para cancelar la caminata', () => {
+    const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
+    const { fixture, component } = montarConMundo({ goal: 'Hablar', lugares: [{ key: person.key, label: person.label, kind: 'person' }] });
+    const world = (component as any).gameWorld;
+    vi.spyOn(world, 'walkToKey').mockReturnValue(true);
+    world.cancelWalk = vi.fn();
+    component.openPlaces(); fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('app-world-places-list .places__item') as HTMLButtonElement;
+    button.click(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-world-places-list .places__item')).toBe(button);
+    expect(button.textContent).toContain('Yendo hacia');
+    button.click(); fixture.detectChanges();
+    expect(button.textContent).toContain('Hablar con');
+    expect(world.cancelWalk).toHaveBeenCalled();
+  });
+
+  it('una puerta lejana camina y cruza al llegar, conservando el botón para cancelar', () => {
+    const door = { ...OBJETO_SIN_DECISION, key: 'puerta', label: 'Sala de escucha', type: 'EXIT' as const, metadata: { targetNodeKey: 'sala' } };
+    const { fixture, component } = montarConMundo({ lugares: [{ key: door.key, label: door.label, kind: 'door' }] });
+    component.world.set(mundo({ objects: [door] }));
+    const world = (component as any).gameWorld;
+    const walk = vi.spyOn(world, 'walkToKey').mockReturnValue(true);
+    const open = vi.spyOn(component, 'openInteraction');
+    component.openPlaces(); fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('app-world-places-list .places__item') as HTMLButtonElement;
+    expect(button.textContent).toContain('Pasar a Sala de escucha');
+    button.click(); fixture.detectChanges();
+    expect(walk).toHaveBeenCalledWith(door.key);
+    expect(fixture.nativeElement.querySelector('app-world-places-list .places__item')).toBe(button);
+    expect(button.textContent).toContain('Yendo hacia');
+    expect(open).not.toHaveBeenCalled();
+    component.onWalkEnded({ key: door.key, label: door.label, outcome: 'arrived' });
+    expect(open).toHaveBeenCalledWith(door);
+  });
+
+  it('la puerta cerrada explica el requisito en la lista sin perder el foco', () => {
+    const door = { ...OBJETO_SIN_DECISION, key: 'puerta', label: 'Sala de escucha', type: 'EXIT' as const, metadata: { targetNodeKey: 'sala', requiresInspected: ['carpeta'] } };
+    const { fixture, component } = montarConMundo({ lugares: [{ key: door.key, label: door.label, kind: 'door' }] });
+    component.world.set(mundo({ objects: [door, OBJETO_CON_DECISION] }));
+    component.openPlaces(); fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('app-world-places-list .places__item') as HTMLButtonElement;
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    const reason = fixture.nativeElement.querySelector('#' + button.getAttribute('aria-describedby'));
+    expect(reason?.textContent).toBe(component.doorMessages()[door.key]);
+    button.click();
+    expect(component.pendingWalkInteraction()).toBeNull();
+  });
+
+  it('la barra asocia el mismo motivo accesible de la puerta cerrada', () => {
+    const door = { ...OBJETO_SIN_DECISION, key: 'puerta', label: 'Sala', type: 'EXIT' as const, metadata: { targetNodeKey: 'sala', requiresInspected: ['carpeta'] } };
+    const { fixture, component } = montarConMundo();
+    component.world.set(mundo({ objects: [door, OBJETO_CON_DECISION] }));
+    component.nearbyInteraction.set(door);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('.context-bar__interaction') as HTMLButtonElement;
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(fixture.nativeElement.querySelector('#' + button.getAttribute('aria-describedby'))?.textContent).toBe(component.doorMessages()[door.key]);
+    expect(button.disabled).toBe(false);
+  });
+
   it('una persona lejana inicia la caminata y solo interactúa al llegar', () => {
     const person = { ...OBJETO_CON_DECISION, type: 'PERSON' as const };
     const { component } = montarConMundo();
     const world = (component as any).gameWorld;
     const walk = vi.spyOn(world, 'walkToKey').mockReturnValue(true);
     const open = vi.spyOn(component, 'openInteraction');
-    component.nearbyInteraction.set(person);
     (component as any).requestInteraction(person);
     expect(walk).toHaveBeenCalledWith(person.key);
     expect(open).not.toHaveBeenCalled();

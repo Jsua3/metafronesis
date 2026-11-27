@@ -160,6 +160,18 @@ describe('Inicio del estudiante', () => {
       expect(host.querySelector('.sd-invitacion a')?.getAttribute('href')).toBe('/portal/invitaciones');
     });
 
+    // UA-E27 (medición 0.7.0): la invitación se veía como una tarjeta más y su botón no resaltaba.
+    it('sin caso que jugar, la invitación es la acción principal de la pantalla', async () => {
+      const { host } = await render({ historial: [], catalogo: [], invitaciones: [grupo({ status: 'INVITED', casesCount: null })] });
+      expect(host.querySelector('.sd-invitacion a')?.classList.contains('ui-button--primary')).toBe(true);
+    });
+
+    it('con un caso listo, el caso manda: la invitación sigue arriba pero como acción secundaria', async () => {
+      const { host } = await render({ historial: [], invitaciones: [grupo({ status: 'INVITED', casesCount: null })] });
+      expect(host.querySelector('.sd-invitacion a')?.classList.contains('ui-button--primary')).toBe(false);
+      expect(host.querySelector('.sd-protagonista a')?.classList.contains('ui-button--primary')).toBe(true);
+    });
+
     it('un caso listo gana a una invitación pendiente, pero la invitación no se esconde', async () => {
       const { host } = await render({ historial: [], invitaciones: [grupo({ status: 'INVITED', casesCount: null })] });
       expect(host.querySelector('.sd-siguiente')).toBeNull();

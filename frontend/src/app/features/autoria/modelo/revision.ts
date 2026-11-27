@@ -83,6 +83,12 @@ function faltasDelModelo(caso: CasoBorrador): Falta[] {
   const faltas: Falta[] = [];
 
   for (const e of caso.escenas) {
+    // BORRADOR: pendiente de aprobación de Psicología.
+    if (!e.esFinal && e.pregunta !== undefined && !e.pregunta.trim()
+      && (e.respuestas.length > 0 || caso.escenas.some(origen => origen.respuestas.some(r => r.destinoId === e.id)))) {
+      faltas.push({ codigo: 'NODE_NO_QUESTION', mensaje: `Escribe la pregunta de decisión de «${e.titulo}».`,
+        ir: { ruta: rutaDeEscena(e.id), ancla: 'pregunta-escena' } });
+    }
     const clasificadas = e.respuestas.length > 0 && e.respuestas.every((r) => r.clase);
     if (!e.esFinal && clasificadas && !e.respuestas.some((r) => r.clase === 'RECOMMENDED')) {
       faltas.push({
@@ -304,6 +310,9 @@ export function faltasDelServidor(
     const escena = h.nodeId !== undefined ? rutaDeEscena(opciones.escenaDeNodo?.(h.nodeId) ?? h.nodeId) : null;
     const falta = (ir: Falta['ir']): Falta => ({ codigo: h.code, mensaje: h.message, ir });
     switch (h.code) {
+      case 'NODE_NO_QUESTION':
+        faltas.push(falta({ ruta: escena ?? '/editor', ...(escena ? { ancla: 'pregunta-escena' } : {}) }));
+        break;
       case 'CASE_NO_TERMINAL': {
         const primera = primeraRespuesta(caso);
         faltas.push(falta(primera ? { ruta: rutaDeEscena(primera.escena.id), ancla: `destino-${primera.respuestaId}` } : { ruta: '/editor' }));

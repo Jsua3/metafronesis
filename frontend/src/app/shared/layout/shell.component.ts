@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 
+import { encabezadoPrincipal, enfocarPorPrograma } from '../../core/a11y/foco.util';
 import { AuthService } from '../../core/auth/auth.service';
 import { DoodlesComponent } from '../ui/doodles/doodles.component';
 import { TemaService } from '../../core/tema/tema.service';
@@ -17,6 +18,9 @@ import { BottomTab, BottomTabsComponent } from './bottom-tabs.component';
 import { NavBadgesService, textoInsignia, textoInsigniaAccesible } from './nav-badges.service';
 import { NavItem, navItemsFor } from './nav-items';
 import { readRouteChrome } from './route-chrome';
+
+/** Inicio: adónde lleva el logo de la barra. */
+const RUTA_INICIO = '/portal/dashboard';
 
 /** Adónde lleva «Cambiar contraseña» del menú de cuenta (DP-22: cambio voluntario dentro del portal). */
 export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
@@ -46,10 +50,12 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
     @if (conBarra()) {
       <header ui-glass-bar class="barra-portal" label="Navegación principal" navSkip>
         <!-- DP-06: la marca completa de Metafrónesis (la misma de la barra pública); «SIEP» vive en títulos y textos. -->
-        <a class="modulo modulo-logo pulsable ds-motion" routerLink="/portal/dashboard" [attr.aria-label]="brand.shortName + ': ir al inicio'">
+        <a class="modulo modulo-logo pulsable ds-motion" routerLink="/portal/dashboard" [attr.aria-label]="brand.shortName + ': ir al inicio'" (click)="alLogo()">
           <app-marca class="barra-marca" />
         </a>
-        <div class="modulo modulo-principal ds-motion">
+        <!-- Cada módulo es un grupo con nombre (UA-E18): sin nodos con nombre entre el logo y los enlaces, un lector de
+             pantalla los lee como hijos del logo, como si el logo fuera un menú desplegable. -->
+        <div class="modulo modulo-principal ds-motion" role="group" aria-label="Secciones del portal">
           @for (item of navItems(); track item.id) {
             <a class="nav-enlace ds-motion" [class.control-plegable]="folds(item)" [routerLink]="item.route"
               [attr.title]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null" [attr.aria-description]="auth.currentUser()?.role === 'PROFESOR' ? item.descripcion : null"
@@ -59,7 +65,7 @@ export const RUTA_CAMBIAR_CONTRASENA = '/portal/cuenta/contrasena';
           }
           <span class="indicador-mas ds-motion" aria-hidden="true">···</span>
         </div>
-        <div class="modulo modulo-cuenta ds-motion">
+        <div class="modulo modulo-cuenta ds-motion" role="group" aria-label="Tema y cuenta">
           <!-- La cápsula Claro · Oscuro · Automático que se abre al pasar el cursor (pedido del usuario): cambia la piel
                de todo el portal. En el teléfono queda en la banda de arriba, entre la marca y la cuenta. -->
           <app-tema-selector class="tema" />
@@ -173,6 +179,16 @@ export class ShellComponent {
   folds(item: NavItem): boolean {
     const role = this.auth.currentUser()?.role;
     return !!role && item.fold.includes(role);
+  }
+
+  /**
+   * El logo es un enlace a Inicio. Estando ya en Inicio, el enlace no navega y no pasaba nada (quien usa teclado o lector
+   * de pantalla no recibía respuesta alguna, UA-E18): el foco pasa al encabezado de la pantalla, como al llegar a ella.
+   * En cualquier otra pantalla solo navega; el foco lo lleva el servicio de rutas.
+   */
+  protected alLogo(): void {
+    if (this.router.url.split(/[?#]/)[0] !== RUTA_INICIO) return;
+    enfocarPorPrograma(encabezadoPrincipal(document));
   }
 
   onAccount(value: string | undefined): void {

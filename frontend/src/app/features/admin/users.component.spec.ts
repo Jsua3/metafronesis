@@ -134,6 +134,48 @@ describe('pantalla Usuarios (F7-6)', () => {
     expect(text(host().querySelector('ui-filtros'))).toContain('Mostrando 1 de 2');
   });
 
+  describe('filtros de cuentas (SIEP-263)', () => {
+    const radio = (name: string) => [...host().querySelectorAll<HTMLElement>('[role="radiogroup"][aria-label="Filtrar por rol"] [role="radio"]')]
+      .find(el => text(el).startsWith(name))!;
+    const recuento = () => text(host().querySelector('.ui-filtros__recuento'));
+
+    it('los radios de rol responden al clic en el control y en su texto, y al teclado', async () => {
+      await render();
+      radio('Docentes').click();
+      fixture.detectChanges();
+      expect(radio('Docentes').getAttribute('aria-checked')).toBe('true');
+      expect(recuento()).toBe('Mostrando 1 de 2');
+      radio('Todos').querySelector<HTMLElement>('.ui-segmentado__texto')!.click();
+      fixture.detectChanges();
+      expect(recuento()).toBe('Mostrando 2 de 2');
+      radio('Todos').dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+      fixture.detectChanges();
+      expect(radio('Administradores').getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('«Estado» y «Ordenar por» son listas con su rótulo asociado: el nombre accesible es solo el rótulo', async () => {
+      await render();
+      const selects = [...host().querySelectorAll<HTMLSelectElement>('ui-filtros select')];
+      expect(selects.map(s => text(s.labels?.[0]))).toEqual(['Estado', 'Ordenar por']);
+      expect(selects.every(s => s.id && s.labels?.length === 1)).toBe(true);
+    });
+
+    it('«Estado» filtra y «Limpiar filtros» devuelve todo a su valor inicial', async () => {
+      await render();
+      const estado = host().querySelector<HTMLSelectElement>('ui-filtros select')!;
+      estado.value = 'inactiva';
+      estado.dispatchEvent(new Event('change', { bubbles: true }));
+      radio('Docentes').click();
+      fixture.detectChanges();
+      expect(recuento()).toBe('Mostrando 1 de 2');
+      host().querySelector<HTMLButtonElement>('.ui-filtros__limpiar')!.click();
+      fixture.detectChanges();
+      expect(recuento()).toBe('Mostrando 2 de 2');
+      expect(radio('Todos').getAttribute('aria-checked')).toBe('true');
+      expect(host().querySelector<HTMLSelectElement>('ui-filtros select')!.value).toBe('todos');
+    });
+  });
+
   it('anticipa las exclusiones y muestra un 409 parcial en línea', async () => {
     const propio = { ...ana, id: 99, role: 'PROFESOR' } as AdminUser;
     const admin = { ...beto, id: 7, role: 'ADMIN', activo: true } as AdminUser;

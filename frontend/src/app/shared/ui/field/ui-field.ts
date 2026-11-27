@@ -11,7 +11,8 @@ import { describeHostWith } from '../describe';
  * Campo del lenguaje visual (plan visual F2-2): etiqueta visible + control NATIVO marcado con `uiControl` + un
  * único renglón de mensaje que muestra la ayuda o, si hay error, el error EN EL MISMO SITIO. El campo es dueño del
  * id del control (o adopta el que el control ya trae) y de lo que su `aria-describedby` apunta. Con `revealable`,
- * un botón «Mostrar contraseña» (aria-pressed) alterna el tipo del control sin enviar el formulario.
+ * un botón «Mostrar contraseña» / «Ocultar contraseña» (el nombre dice la acción que hará; sin aria-pressed, que
+ * duplicaría el estado) alterna el tipo del control sin enviar el formulario.
  *
  * `required` se expone como `aria-required` (no como `required` nativo: la validación la hace el formulario y no
  * aparecen los globos del navegador). Estilos globales con nombres BEM: el control es contenido proyectado.
@@ -32,7 +33,7 @@ import { describeHostWith } from '../describe';
       <ng-content />
       @if (revealable()) {
         <button ui-icon-button class="ui-field__reveal" [icon]="revealed() ? 'visibility_off' : 'visibility'"
-          label="Mostrar contraseña" [attr.aria-pressed]="revealed()" (click)="toggleReveal()"></button>
+          [label]="revealed() ? 'Ocultar contraseña' : 'Mostrar contraseña'" (click)="toggleReveal()"></button>
       }
     </div>
     <p class="ui-field__message" [class.ui-field__message--error]="!!error()" [id]="messageId()" [hidden]="!message()">{{ message() }}</p>

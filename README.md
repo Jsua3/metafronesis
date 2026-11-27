@@ -2,7 +2,7 @@
 
 API en Django del simulador de casos situacionales de psicología social: el docente arma, valida y publica casos; el estudiante los resuelve en una sesión a la que fue convocado; el sistema califica con una rúbrica y muestra la retroalimentación al terminar.
 
-**Versión actual:** [`v0.7.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.7.0) · **Alcance:** backend y frontend completos: el estudiante juega los casos por salas, el docente los arma en el editor y los revisa, y la administración gestiona usuarios y rúbricas · Última revisión de este archivo: 26 de noviembre de 2026.
+**Versión actual:** [`v0.7.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.7.1) · **Alcance:** backend y frontend completos: el estudiante juega los casos por salas, el docente los arma en el editor y los revisa, y la administración gestiona usuarios y rúbricas · Última revisión de este archivo: 27 de noviembre de 2026.
 
 > **Origen del proyecto:** el desarrollo previo vive en [`Jsua3/psico_project_v2`](https://github.com/Jsua3/psico_project_v2), dentro del cual vive una versión mejorada de lo que fue el ganador a mejor proyecto nuclear de 3.er semestre. Ese repositorio queda como archivo de solo lectura. Este repositorio reorganiza y continúa ese trabajo con el equipo completo.
 
@@ -54,6 +54,7 @@ Abre http://127.0.0.1:4200. El archivo `frontend/proxy.conf.json` envía `/api` 
 | [`v0.6.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.1) | Salas por piezas con su luz, lugar hospital, editor sin parpadeo y proveedor de IA de NVIDIA |
 | [`v0.6.2`](https://github.com/Jsua3/metafronesis/releases/tag/v0.6.2) | Entorno de demostración con el caso insignia jugable (`sembrar_demostracion`) y el rol elegido al solicitar acceso |
 | [`v0.7.0`](https://github.com/Jsua3/metafronesis/releases/tag/v0.7.0) | Plan de choque de usabilidad: el editor dice la verdad y deja enviar, el estudiante y el docente siempre saben qué hacer, el juego responde al primer clic y la accesibilidad mejora; además sesiones con correos, edición compartida de casos, IA coautora (fase 1) y avatares de Karen y Sara |
+| [`v0.7.1`](https://github.com/Jsua3/metafronesis/releases/tag/v0.7.1) | Respuesta inmediata en el juego y el editor: cada acción dice qué está pasando y qué viene después, y el editor deja escribir la pregunta de cada escena |
 
 El detalle de cada versión está en [CHANGELOG.md](CHANGELOG.md).
 

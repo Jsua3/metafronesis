@@ -253,7 +253,7 @@ describe('DialoguePanelComponent - integración renderizada', () => {
 
       // DOM renderizado: no hay nada que saltar y el control de avance ya está disponible.
       expect(dialog.querySelector('[aria-label="Saltar animación de texto"]')).toBeNull();
-      expect(dialog.querySelector('button.close-btn')?.textContent).toContain('Continuar');
+      expect(dialog.querySelector('button.close-btn')?.textContent).toContain('Seguir leyendo');
       // La máquina de escribir no dejó ningún temporizador programado.
       expect(vi.getTimerCount()).toBe(0);
 
@@ -435,7 +435,7 @@ describe('DialoguePanelComponent - cabecera fija con salida (T4.1, REGLA-004)', 
     render(INFO_DIALOGUE);
     expect(head()!.querySelectorAll('.close-btn')).toHaveLength(0);
     const advance = Array.from(host().querySelectorAll('button.close-btn')).map(b => b.textContent?.replace(/\s+/g, ' ').trim());
-    expect(advance).toEqual(['Continuar ▶']);
+    expect(advance).toEqual(['Volver al mapa ▶']);
   });
 
   it('la salida segura de la cabecera reenvía pause como safeExit del panel', () => {
@@ -727,7 +727,7 @@ describe('DialoguePanelComponent - sin decisión accidental (T4.3, DLG-03)', () 
   it('apagados, la pista de teclado no promete los números; activos sí', () => {
     const settings = TestBed.inject(ShortcutSettings);
     try {
-      expect(component.keyboardHint(component.dialogue()!)).toBe('Enter: continuar · A a B: elegir · Esc: volver al mapa');
+      expect(component.keyboardHint(component.dialogue()!)).toBe('Enter: continuar · Pulsa A a B para elegir · Esc: volver al mapa');
       settings.set(false);
       expect(component.keyboardHint(component.dialogue()!)).toBe('Enter: continuar · Esc: volver al mapa');
     } finally {
@@ -788,7 +788,7 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     // El aviso va antes del grupo de opciones.
     const group = host().querySelector('.choices')!;
     expect(notices[0].compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(group.getAttribute('aria-describedby')).toBe('choices-notice');
+    expect(group.getAttribute('aria-describedby')).toBe('choices-notice choice-instruction');
     // Ni insignia por opción ni la frase en los nombres accesibles (el e2e chooseDecision la rechaza).
     expect(host().querySelector('.choice-btn__meta')).toBeNull();
     for (const button of Array.from(host().querySelectorAll('.choice-btn'))) {
@@ -809,7 +809,7 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
   it('sin aviso no hay párrafo ni aria-describedby en el grupo', () => {
     render(dialogueWith([decision(1, 'Escuchar')]));
     expect(host().querySelector('.choices-notice')).toBeNull();
-    expect(host().querySelector('.choices')!.hasAttribute('aria-describedby')).toBe(false);
+    expect(host().querySelector('.choices')!.getAttribute('aria-describedby')).toBe('choice-instruction');
   });
 
   it('una opción de herramienta sin la herramienta es aria-disabled, enfocable, con chip, y no ejecuta', () => {
@@ -904,7 +904,7 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
     expect(host().querySelector('.choice-btn')).toBeNull();
     expect(text(host().querySelector('.stale-note'))).toContain('Vuelve al mapa');
     const advance = Array.from(host().querySelectorAll('button.close-btn')).map(b => text(b));
-    expect(advance).toEqual(['Continuar ▶']);
+    expect(advance).toEqual(['Volver al mapa ▶']);
     // Enter cierra (no hay nada que elegir) y los dígitos no eligen.
     const execute = vi.fn();
     component.execute.subscribe(execute);
@@ -939,7 +939,7 @@ describe('DialoguePanelComponent - aviso, subtítulos y chips (T4.5)', () => {
 
   it('la pista de teclado nombra el rango real de opciones y solo se pinta con puntero fino', () => {
     render(dialogueWith([decision(1, 'Escuchar'), decision(2, 'Aconsejar'), decision(3, 'Derivar')]));
-    expect(text(host().querySelector('.keyboard-hint'))).toBe('Enter: continuar · A a C: elegir · Esc: volver al mapa');
+    expect(text(host().querySelector('.keyboard-hint'))).toBe('Elige una opción: haz clic en ella o pulsa su letra (A, B, C).');
     render(dialogueWith([]));
     expect(text(host().querySelector('.keyboard-hint'))).toBe('Enter: continuar · Esc: volver al mapa');
     expect(source).toMatch(/\.keyboard-hint \{ display: none;/);
@@ -1035,11 +1035,34 @@ describe('DialoguePanelComponent - «Continuar» y sonido de opciones (T4.7)', (
     fixture.detectChanges();
   }
 
+  it('explica el siguiente paso sin reemplazar el botón y numera las líneas', () => {
+    writeInputSignal(component.reduceMotion, false);
+    render({ ...MULTI_LINE_DIALOGUE, key: 'consequence-test' });
+    const button = host().querySelector<HTMLButtonElement>('button.close-btn')!;
+    expect(button.textContent).toContain('Mostrar texto completo');
+    component.skipTypewriter(); fixture.detectChanges();
+    expect(host().querySelector('button.close-btn')).toBe(button);
+    expect(button.textContent).toContain('Seguir leyendo (2 de 2)');
+    expect(host().textContent).toContain('1 de 2');
+    component.advanceLine(); fixture.detectChanges();
+    component.skipTypewriter(); fixture.detectChanges();
+    expect(button.textContent).toContain('Ver las opciones');
+    expect(host().textContent).toContain('Elige una opción');
+    expect(host().querySelector('kbd.choice-num')).not.toBeNull();
+  });
+
+  it('anuncia el paso real al cerrar una consecuencia', () => {
+    writeInputSignal(component.finalActionLabel, 'Continuar la historia');
+    render({ key: 'consequence-test', speakerName: 'Consecuencia', portraitKey: null, emotion: 'neutral',
+      lines: [{ order: 1, speakerName: 'Consecuencia', text: 'Texto', emotion: 'neutral' }], choices: [] });
+    expect(host().querySelector<HTMLButtonElement>('button.close-btn')!.textContent).toContain('Continuar la historia');
+  });
+
   it('«Continuar» tiene como nombre accesible su texto visible, no «Cerrar diálogo (Esc)»', () => {
     render({ key: 'c', speakerName: 'Enfermera', portraitKey: null, emotion: 'neutral',
       lines: [{ order: 1, speakerName: 'Enfermera', text: 'Hola', emotion: 'neutral' }], choices: [] });
     const button = host().querySelector<HTMLButtonElement>('button.close-btn')!;
-    expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('Continuar ▶');
+    expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('Volver al mapa ▶');
     expect(button.hasAttribute('aria-label')).toBe(false);
     expect(host().innerHTML).not.toMatch(/Cerrar diálogo/);
   });
@@ -1057,18 +1080,18 @@ describe('DialoguePanelComponent - «Continuar» y sonido de opciones (T4.7)', (
     // Línea 1 de 2, todavía escribiéndose: «Saltar».
     render({ ...MULTI_LINE_DIALOGUE, choices: [] });
     expectPrimary();
-    expect(advanceButtons()[0].textContent).toContain('Continuar');
+    expect(advanceButtons()[0].textContent).toContain('Mostrar texto completo');
     // Línea 1 completa: «Siguiente».
     component.skipTypewriter();
     fixture.detectChanges();
     expectPrimary();
-    expect(advanceButtons()[0].textContent).toContain('Continuar');
+    expect(advanceButtons()[0].textContent).toContain('Seguir leyendo (2 de 2)');
     // Última línea completa y sin opciones: «Continuar».
     component.advanceLine();
     component.skipTypewriter();
     fixture.detectChanges();
     expectPrimary();
-    expect(advanceButtons()[0].textContent?.replace(/\s+/g, ' ').trim()).toBe('Continuar ▶');
+    expect(advanceButtons()[0].textContent?.replace(/\s+/g, ' ').trim()).toBe('Volver al mapa ▶');
   });
 
   it('pasar el ratón por una opción no suena; el foco de teclado sí', () => {

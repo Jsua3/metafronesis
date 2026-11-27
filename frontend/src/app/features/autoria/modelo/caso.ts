@@ -163,6 +163,8 @@ export interface Escena {
   titulo: string;
   /** Lo que se cuenta de la escena antes de que la persona decida (la narración del nodo). */
   narracion: string;
+  /** Pregunta de decisión de la escena; ausente si todavía no se conoce. */
+  pregunta?: string;
   /** La sala de la escena; `null` si la escena no tiene mapa (un final sin sala, el inicio de un caso en blanco). */
   salaId: string | null;
   lineas: Linea[];

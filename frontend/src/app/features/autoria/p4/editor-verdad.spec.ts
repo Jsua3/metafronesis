@@ -37,6 +37,20 @@ describe('P4 · el editor dice la verdad', () => {
     expect(store.pendientes().some(p => p.tipo === 'sugerencia')).toBe(true);
   });
 
+  it('una pregunta escrita invalida el aviso anterior, se guarda y se conserva al reabrir', async () => {
+    const { store, servidor, escena } = await abrir();
+    const nodo = servidor.editor.nodes[0];
+    store.registrarRevision([{ code: 'NODE_NO_QUESTION', severity: 'error', message: 'La escena necesita una pregunta.', nodeId: nodo.id }]);
+    expect(store.faltas().some(f => f.codigo === 'NODE_NO_QUESTION')).toBe(true);
+    store.editarEscena(escena, { pregunta: '¿Qué harías ahora?' });
+    expect(store.revisionPendiente()).toBe(true);
+    expect(store.faltas().some(f => f.codigo === 'NODE_NO_QUESTION')).toBe(false);
+    await store.sincronizado();
+    expect(nodo.decisionPrompt).toBe('¿Qué harías ahora?');
+    await store.cargar(41);
+    expect(store.caso()!.escenas.find(e => e.id === escena)?.pregunta).toBe('¿Qué harías ahora?');
+  });
+
   it.each([
     'Respuesta 1 de la persona profesional.', '  RESPUESTA  23 DE LA PERSONA PROFESIONAL… ',
     'Esta respuesta tiene consecuencias en el vínculo con la persona consultante.',

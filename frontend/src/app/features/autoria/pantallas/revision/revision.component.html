@@ -45,7 +45,7 @@
           <!-- Un grupo por etapa: su cuenta y la hoja «Pendientes» de esa etapa; debajo, sus problemas. -->
           <ul class="etapas" aria-label="Estado de cada etapa">
             @for (e of etapas(); track e.etapa) {
-              <li class="etapa" [attr.data-listo]="e.total === 0">
+              <li class="etapa" [attr.data-listo]="e.total === 0 && !store.revisionPendiente()">
                 <div class="etapa__cab" [attr.data-etapa]="e.etapa">
                   <span class="marca" aria-hidden="true"></span>
                   <span class="etapa__nombre">{{ e.nombre }}</span>
